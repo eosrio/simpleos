@@ -61,16 +61,23 @@ External informations outside of the blockchain (such as the Block Producer stan
 - Linux
 
 ## Building Instructions
+
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
 npm install
 npm run build:prod
+```
+For development and quick preview
+```console
 electron-forge start
+```
+
+Create installable package
+```console
 electron-forge package
 electron-forge make
 ```
-
 ## Legal Disclaimer
 
 By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/terms-of-service/).

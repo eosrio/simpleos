@@ -66,6 +66,11 @@ body {
 .mat-tab-header-pagination-chevron {
     border-color: #b1b1b1;
 }
+
+.mat-tab-label .mat-tab-label-content {
+    display: flex !important;
+    flex-direction: column;
+}
 /*material's tab end*/
 
 /*material's autocomplete*/

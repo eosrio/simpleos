@@ -50,7 +50,7 @@ export class SendComponent implements OnInit {
     this.busy = false;
     this.sendForm = this.fb.group({
       to: ['', Validators.required],
-      amount: ['0.0001', Validators.required],
+      amount: ['', Validators.required],
       memo: [''],
       add: [false],
       alias: [''],
@@ -285,8 +285,7 @@ export class SendComponent implements OnInit {
     this.contactExist = true;
     this.sendForm.patchValue({
       to: contact.account,
-      alias: contact.name,
-      amount: 0.0001
+      alias: contact.name
     });
   }
 
@@ -317,6 +316,13 @@ export class SendComponent implements OnInit {
             this.busy = false;
             this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
             this.confirmForm.reset();
+            this.sendForm.setValue({
+                to: '',
+                amount: '',
+                memo: '',
+                add: false,
+                alias: '',
+            });
             if (this.add === true && this.sendForm.get('alias').value !== '') {
               this.addContactOnSend();
             }
