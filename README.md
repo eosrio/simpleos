@@ -7,7 +7,7 @@
 Your simple and secure EOS wallet.
 </h3>
 
-*Made with :hearts: by [EOS Rio](https://eosrio.io/)*. EOS Rio is a Block producer candidate for the EOS ecosystem.
+*Made with :hearts: by [EOS Rio](https://eosrio.io/)*, a Block producer candidate for the EOS ecosystem.
 
 # About
 
@@ -15,13 +15,13 @@ SimplEOS is a wallet made solely for the EOS ecosystem and fully integrated with
  
 EOS Rio made SimplEOS with a security and transparency philosophy. It is a desktop application compatible with the most popular operation systems (Windows, Linux and MacOS).
 
-User experience concerns were also a main part of the creation process of SimplEOS 
+User experience focus was also a main part of SimplEOS creation process.  
 
 ## Warning
 
 Only download SimplEOS from EOS Rio's [website](https://eosrio.io/simpleos/) or [github](https://github.com/eosrio/simpleos). Avoid scams, do not trust any other source.
 
-SimplEOS doesn't keep any of your information. 
+SimplEOS doesn't keep any of your information. All information is kept locally only, not in any cloud services or databases.
 ## Main Features
 As of 12/06/2018, SimplEOS main features include:
 
@@ -48,23 +48,16 @@ Next features to be implemented:
 - Mobile Version
 - Multi languages support
 
-# SimplEOS Wallet
+## Security Measures
+### Encryption & Local storage only
+Your private keys are stored locally only and are properly encrypted with a user defined password of 10+ characters.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.1.
+### Proxy to fetch external data
+External informations outside of the blockchain (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Installation Instructions
 
-## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
 
 ## Legal Disclaimer
 
