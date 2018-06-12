@@ -184,7 +184,7 @@ export class LandingComponent implements OnInit {
         this.eos.encryptAndStore(this.pk, this.importedAccounts[0]['account_name'], this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
           this.eos.decryptKeys(this.importedAccounts[0]['account_name']).then((data) => {
-            this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+            this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
           }).catch((error) => {

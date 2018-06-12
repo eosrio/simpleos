@@ -34,13 +34,12 @@
       "packagerConfig": {},
       "makers": [
         {
-          "name": "@electron-forge/maker-wix",
+          "name": "@electron-forge/maker-squirrel",
           "platforms": [
             "win32"
           ],
           "config": {
-            "language": 1033,
-            "manufacturer": "EOS Rio"
+            "name": "simpleos_wallet"
           }
         },
         {

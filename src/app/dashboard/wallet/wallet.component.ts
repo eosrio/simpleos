@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {AccountsService} from '../../accounts.service';
 import {EOSJSService} from '../../eosjs.service';
 
@@ -9,10 +9,10 @@ import * as moment from 'moment';
     templateUrl: './wallet.component.html',
     styleUrls: ['./wallet.component.css']
 })
-export class WalletComponent implements OnInit {
-    fullBalance: Number;
-    staked: Number;
-    unstaked: Number;
+export class WalletComponent implements OnInit, AfterViewInit {
+    fullBalance: number;
+    staked: number;
+    unstaked: number;
     moment: any;
 
     constructor(public aService: AccountsService, public eos: EOSJSService) {
@@ -27,6 +27,12 @@ export class WalletComponent implements OnInit {
                 this.unstaked = sel.full_balance - sel.staked;
             }
         });
+    }
+
+    ngAfterViewInit() {
+        setTimeout(() => {
+            this.aService.initFirst();
+        }, 1000);
     }
 
     openTXID(value) {

@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../accounts.service';
 import {EOSJSService} from '../../eosjs.service';
@@ -124,7 +124,7 @@ export class SendComponent implements OnInit {
   }
 
   checkAmount() {
-    if (parseInt(this.sendForm.value.amount, 10) > this.unstaked) {
+    if (parseFloat(this.sendForm.value.amount) > this.unstaked) {
       this.sendForm.controls['amount'].setErrors({'incorrect': true});
       this.amounterror = 'invalid amount';
     } else {
@@ -316,13 +316,6 @@ export class SendComponent implements OnInit {
             this.busy = false;
             this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
             this.confirmForm.reset();
-            this.sendForm.setValue({
-                to: '',
-                amount: '',
-                memo: '',
-                add: false,
-                alias: '',
-            });
             if (this.add === true && this.sendForm.get('alias').value !== '') {
               this.addContactOnSend();
             }
@@ -331,7 +324,7 @@ export class SendComponent implements OnInit {
             this.busy = false;
           }
         }).catch((error) => {
-          console.dir(error);
+          console.log(error);
           this.busy = false;
         });
       }).catch(() => {

@@ -68,16 +68,17 @@ cd simpleos
 npm install
 npm run build:prod
 ```
-For development and quick preview
-```console
-electron-forge start
+Creater installer on Windows:
+```
+npm install -g @electron-forge/maker-squirrel
+npx @electron-forge/cli make
 ```
 
-Create installable package
+For development and quick preview
 ```console
-electron-forge package
-electron-forge make
+npm run build && npx @electron-forge/cli start
 ```
+
 ## Legal Disclaimer
 
 By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/terms-of-service/).
