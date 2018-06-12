@@ -56,8 +56,20 @@ Your private keys are stored locally only and are properly encrypted with a user
 External informations outside of the blockchain (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Installation Instructions
+- Windows
+- MacOS
+- Linux
 
-
+## Building Instructions
+```console
+git clone https://github.com/eosrio/simpleos.git
+cd simpleos
+npm install
+npm run build:prod
+electron-forge start
+electron-forge package
+electron-forge make
+```
 
 ## Legal Disclaimer
 
