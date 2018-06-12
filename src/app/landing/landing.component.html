@@ -149,6 +149,9 @@
         </mat-error>
       </mat-form-field>
     </form>
+    <div *ngIf="importedAccounts.length > 0" style="color: #bebebe; margin-top: 6px;">
+      Account<span *ngIf="importedAccounts.length > 1">s</span>
+    </div>
     <div *ngFor="let importedAccount of importedAccounts">
       <span class="label label-blue">{{importedAccount['account_name']}}</span>
     </div>
