@@ -441,7 +441,7 @@ export class EOSJSService {
       });
       const broadcast_lib = info['last_irreversible_block_num'];
       console.log(info);
-      return this.eosio['voteproducer'](voter, '', currentVotes).then((voteResults) => {
+      this.eosio['voteproducer'](voter, '', currentVotes).then((voteResults) => {
         setTimeout(() => {
           this.txCheckQueue.push({
             block: broadcast_lib,

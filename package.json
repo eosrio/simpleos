@@ -1,13 +1,12 @@
 {
-  "name": "simpleos-wallet",
-  "productName": "simpleos-wallet",
-  "description": "EOS Blockchain Interface",
-  "author": {
-    "name": "Igor Lins e Silva",
-    "email": "igor.linsesilva@gmail.com"
-  },
+  "name": "simpleos",
+  "productName": "simpleos",
+  "description": "EOS Blockchain Interface & Wallet",
+  "author": "eosrio",
   "repository": "https://github.com/eosrio/simpleos",
-  "version": "0.2.1",
+  "homepage": "https://github.com/eosrio/simpleos",
+  "license": "UNLICENSED",
+  "version": "0.2.2",
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",
@@ -18,11 +17,6 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "build-watch": "ng build --prod --watch",
-    "electron:serve": "wait-on http-get://localhost:7878/ && electron src/index.js --serve",
-    "electron:run": "electron src/index.js",
-    "electron:linux": "npm run build:prod && npx electron-builder build --linux",
-    "electron:windows": "npx electron-builder build --windows",
-    "electron:mac": "npm run build:prod && npx electron-builder build --mac",
     "postinstall": "node patch.js",
     "package": "electron-forge package",
     "make": "electron-forge make"
@@ -40,9 +34,9 @@
           ],
           "config": {
             "name": "simpleos_wallet",
-            "loadingGif": "simpleos.gif",
-            "iconUrl": "src/assets/icons/ico/simpleos.ico",
-            "setupIcon": "src/assets/icons/ico/simpleos.ico"
+            "loadingGif": "C:/simpleos/simpleos.gif",
+            "icon": "C:/simpleos/src/favicon.ico",
+            "setupIcon": "C:/simpleos/src/favicon.ico"
           }
         },
         {
