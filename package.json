@@ -41,6 +41,7 @@
           "config": {
             "name": "simpleos_wallet",
             "loadingGif": "simpleos.gif",
+            "iconUrl": "src/assets/icons/ico/simpleos.ico",
             "setupIcon": "src/assets/icons/ico/simpleos.ico"
           }
         },
