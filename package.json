@@ -11,12 +11,14 @@
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",
+    "serve": "ng serve --port 7878",
     "build": "ng build",
     "build:prod": "ng build --prod",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "electron:serve": "wait-on http-get://localhost:7868/ && electron src/index.js --serve",
+    "build-watch": "ng build --prod --watch",
+    "electron:serve": "wait-on http-get://localhost:7878/ && electron src/index.js --serve",
     "electron:run": "electron src/index.js",
     "electron:linux": "npm run build:prod && npx electron-builder build --linux",
     "electron:windows": "npx electron-builder build --windows",
@@ -131,6 +133,7 @@
     "ts-node": "~5.0.1",
     "tslint": "~5.9.1",
     "typescript": "~2.7.2",
-    "wait-on": "^2.1.0"
+    "wait-on": "^2.1.0",
+    "electron": "latest"
   }
 }

@@ -25,17 +25,17 @@ function createWindow() {
   win.setMenu(null);
   if (serve) {
     require('electron-reload')(__dirname, {
-      electron: require(__dirname + '/../node_modules/electron')
+      electron: require(__dirname + '../node_modules/electron')
     });
     win.loadURL('http://localhost:7868');
   } else {
     win.loadURL(url.format({
-      pathname: path.join(__dirname, '/../dist/index.html'),
+      pathname: path.join(__dirname, '../dist/index.html'),
       protocol: 'file:',
       slashes: true
     }));
   }
-  // win.webContents.openDevTools();
+  win.webContents.openDevTools();
   win.on('closed', () => {
     win = null
   });
