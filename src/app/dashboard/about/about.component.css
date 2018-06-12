@@ -1,0 +1,34 @@
+.paragraph {
+    font-size: 17px;
+    color: #B1B18F;
+    margin-top: 16px;
+}
+
+.website:visited {
+    color: #0094d2;
+    text-decoration: none;
+}
+
+
+.website:link {
+    color: #0094d2;
+    text-decoration: none;
+}
+
+.social-icon {
+    color: #A9A9A9;
+}
+
+.social-icon i:hover {
+    color: white;
+}
+
+.steemit {
+    width: 29px;
+    margin-bottom: 11px;
+    opacity: 0.6;
+}
+
+.steemit:hover {
+    opacity: 1;
+}

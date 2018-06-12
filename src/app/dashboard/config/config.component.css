@@ -1,0 +1,65 @@
+.info-card {
+    background-color: #333333;
+    border-radius: 5px;
+    border: 0;
+    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+}
+
+.title {
+    color: #a4a4a4;
+    font-size: 21px;
+    border-bottom: 1px solid #4e4e4e;
+    margin-bottom: 10px;
+    padding-bottom: 17px;
+}
+
+.info {
+    color: #a4a4a4;
+    margin-bottom: 20px;
+}
+
+.info2 {
+    font-size: 17px;
+    color: #a4a4a4;
+}
+
+.chains-card {
+    background-color: transparent;
+    border: 1px solid #565656;
+    box-shadow: none;
+    color: #848484;
+}
+
+.chain-section {
+    border-bottom: 1px solid #444444;
+    -webkit-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    -webkit-transition-property: background-color;
+    transition-property: background-color;
+}
+
+.chain-section:not(.selected):hover {
+    background-color: #2b2b2b;
+    cursor: pointer;
+}
+
+.selected {
+    background-color: #0077b7;
+    color: white;
+}
+
+.disabled-card {
+    background-color: rgba(70, 70, 70, 0.7607843137254902);
+    z-index: 1000;
+    width: calc(100% - 1rem);
+    height: calc(100% - 20px);
+    top: 0;
+    left: .5rem;
+    position: absolute;
+    padding-right: .5rem;
+    padding-left: .5rem;
+}
+
+/deep/ .modal-body {
+    overflow-y: hidden !important;
+}

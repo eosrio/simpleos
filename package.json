@@ -1,48 +1,136 @@
 {
-  "name": "simpl-eos-wallet",
-  "version": "0.0.0",
+  "name": "simpleos-wallet",
+  "productName": "simpleos-wallet",
+  "description": "EOS Blockchain Interface",
+  "author": {
+    "name": "Igor Lins e Silva",
+    "email": "igor.linsesilva@gmail.com"
+  },
+  "repository": "https://github.com/eosrio/simpleos",
+  "version": "0.2.1",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "electron-forge start",
     "build": "ng build",
+    "build:prod": "ng build --prod",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "electron:serve": "wait-on http-get://localhost:7868/ && electron src/index.js --serve",
+    "electron:run": "electron src/index.js",
+    "electron:linux": "npm run build:prod && npx electron-builder build --linux",
+    "electron:windows": "npx electron-builder build --windows",
+    "electron:mac": "npm run build:prod && npx electron-builder build --mac",
+    "postinstall": "node patch.js",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "private": true,
+  "main": "src/index.js",
+  "config": {
+    "forge": {
+      "make_targets": {
+        "win32": [
+          "squirrel"
+        ],
+        "darwin": [
+          "zip"
+        ],
+        "linux": [
+          "deb",
+          "rpm"
+        ]
+      },
+      "electronPackagerConfig": {
+        "packageManager": "yarn"
+      },
+      "electronWinstallerConfig": {
+        "name": "simpleos_wallet"
+      },
+      "electronInstallerDebian": {},
+      "electronInstallerRedhat": {},
+      "github_repository": {
+        "owner": "",
+        "name": ""
+      },
+      "windowsStoreConfig": {
+        "packageName": "",
+        "name": "simpleoswallet"
+      }
+    }
+  },
   "dependencies": {
     "@angular/animations": "^6.0.0",
+    "@angular/cdk": "^6.0.2",
     "@angular/common": "^6.0.0",
     "@angular/compiler": "^6.0.0",
     "@angular/core": "^6.0.0",
     "@angular/forms": "^6.0.0",
     "@angular/http": "^6.0.0",
+    "@angular/material": "^6.0.2",
     "@angular/platform-browser": "^6.0.0",
     "@angular/platform-browser-dynamic": "^6.0.0",
     "@angular/router": "^6.0.0",
+    "@clr/angular": "^0.12.0-rc.2",
+    "@clr/icons": "^0.12.0-rc.2",
+    "@clr/ui": "^0.12.0-rc.2",
+    "@fortawesome/angular-fontawesome": "^0.1.0-10",
+    "@fortawesome/fontawesome-pro-webfonts": "^1.0.9",
+    "@fortawesome/fontawesome-svg-core": "^1.2.0-11",
+    "@fortawesome/free-brands-svg-icons": "^5.1.0-8",
+    "@fortawesome/pro-light-svg-icons": "^5.1.0-8",
+    "@fortawesome/pro-regular-svg-icons": "^5.1.0-8",
+    "@fortawesome/pro-solid-svg-icons": "^5.1.0-8",
+    "@webcomponents/custom-elements": "^1.0.0",
+    "angular2-text-mask": "^9.0.0",
+    "angular2-toaster": "^6.0.0",
+    "bootstrap": "^4.1.1",
     "core-js": "^2.5.4",
+    "electron-compile": "^6.4.2",
+    "electron-squirrel-startup": "^1.0.0",
+    "eosjs": "^14.0.0",
+    "hammerjs": "^2.0.8",
+    "jquery": "^3.3.1",
+    "moment": "^2.22.2",
+    "ng-lottie": "^0.3.1",
+    "popper.js": "^1.14.3",
+    "primeng": "^5.2.6",
     "rxjs": "^6.0.0",
+    "rxjs-compat": "^6.1.0",
+    "text-encoding-shim": "latest",
+    "text-mask-addons": "^3.7.2",
+    "update-electron-app": "^1.3.0",
     "zone.js": "^0.8.26"
   },
   "devDependencies": {
-    "@angular/compiler-cli": "^6.0.0",
     "@angular-devkit/build-angular": "~0.6.1",
-    "typescript": "~2.7.2",
     "@angular/cli": "~6.0.1",
+    "@angular/compiler-cli": "^6.0.0",
     "@angular/language-service": "^6.0.0",
     "@types/jasmine": "~2.8.6",
     "@types/jasminewd2": "~2.0.3",
-    "@types/node": "~8.9.4",
+    "@types/node": "^8.9.5",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
     "codelyzer": "~4.2.1",
+    "electron-forge": "^5.2.2",
+    "electron-prebuilt-compile": "2.0.2",
+    "electron-rebuild": "^1.7.3",
+    "electron-reload": "^1.2.2",
     "jasmine-core": "~2.99.1",
     "jasmine-spec-reporter": "~4.2.1",
-    "karma": "~1.7.1",
+    "karma": "^2.0.2",
     "karma-chrome-launcher": "~2.2.0",
     "karma-coverage-istanbul-reporter": "~1.4.2",
     "karma-jasmine": "~1.1.1",
     "karma-jasmine-html-reporter": "^0.2.2",
+    "npm-run-all": "^4.1.3",
+    "opn": "^5.3.0",
     "protractor": "~5.3.0",
     "ts-node": "~5.0.1",
-    "tslint": "~5.9.1"
+    "tslint": "~5.9.1",
+    "typescript": "~2.7.2",
+    "wait-on": "^2.1.0"
   }
 }

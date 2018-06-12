@@ -1,0 +1,178 @@
+/deep/ body {
+  overflow-y: auto !important;
+}
+
+.wrap {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-image: url("../../assets/bg2.jpg");
+  background-size: cover;
+}
+
+.container-fluid {
+  flex-grow: 1;
+  margin-bottom: 40px;
+}
+
+.anim-logo {
+  /*margin-top: 80px;*/
+  margin-top: 41px;
+}
+
+.slogan {
+  font-size: 20px;
+  font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+}
+
+@-webkit-keyframes fadeInDown {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+.fadeInDown {
+  -webkit-animation-name: fadeInDown;
+  animation-name: fadeInDown;
+  -webkit-animation-delay: 0.7s;
+  -moz-animation-delay: 0.7s;
+  animation-delay: 0.7s;
+}
+
+.animate {
+  -webkit-animation-duration: 0.7s;
+  animation-duration: 0.7s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+.copy {
+  margin-bottom: 8px;
+}
+
+.copy:hover {
+  cursor: pointer;
+  color: white;
+}
+
+.bold {
+  color: lightgrey;
+  font-weight: 500;
+}
+
+.check-card {
+  box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
+  border: none;
+  background-color: rgba(255, 255, 255, 0.12);
+  margin-top: 31px;
+}
+
+.info {
+  font-size: 18px;
+  color: #696969;
+}
+
+.public-input {
+  margin-top: 20px;
+  width: 335px;
+  margin-bottom: 5px;
+}
+
+.btn-check {
+  margin-bottom: 10px;
+  margin-left: 10px;
+}
+
+.card-block {
+  border-bottom: 0;
+}
+
+.card-footer {
+  border-top: 1px solid #050505;
+  overflow: hidden;
+  font-size: 16px;
+ }
+
+.red {
+  color: #e04848;
+}
+
+.label-blue {
+  font-size: 14px;
+  color: #d3d3d3;
+  border-radius: 2px;
+  padding: 14px 0.5rem;
+}
+
+.constitution {
+  border: 1px solid #484848;
+  border-radius: 4px;
+  padding: 10px 10px;
+  max-height: 260px;
+  margin-top: 5px;
+  overflow-y: scroll;
+  color: #808080;
+  margin-bottom: 10px;
+}
+
+/deep/ .modal-body {
+  height: 100%;
+}
+
+/deep/ .clr-wizard-content {
+  height: 100%;
+}
+
+.exoduspage.active {
+  display: flex !important;
+  flex-flow: column;
+  height: 100%;
+}
+
+.instructions {
+  flex: 0 1 auto;
+  color: #8c8c8c;
+}
+
+.main-item {
+  color: #a7a7a7;
+}
+
+.remaining-height {
+  flex: 1 1 auto;
+  border: 2px dashed #535353;
+  margin-top: 5px;
+  flex-direction: column;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.afterdrop {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+}

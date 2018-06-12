@@ -1,0 +1,272 @@
+.info-card {
+    background-color: #333333;
+    border-radius: 5px;
+    border: 0;
+    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+}
+
+.total {
+    font-size: 23px;
+    margin-bottom: 19px;
+}
+
+.eos {
+    font-size: 35px;
+    margin-bottom: 19px;
+}
+
+.stake-slider {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.instruction {
+    font-size: 16px;
+    color: #a4a4a4;
+}
+
+/*meterial's slider*/
+/deep/ .mat-accent .mat-slider-thumb {
+    background-color: #0094d2;
+}
+
+/deep/ .mat-accent .mat-slider-track-fill {
+    background-color: #0094d2;
+}
+
+/deep/ .mat-accent .mat-slider-thumb-label {
+    background-color: #0094d2;
+}
+
+/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb {
+    background-color: #a4a4a4;
+}
+
+/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb-label {
+    background-color: #a4a4a4;
+}
+
+/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb {
+    background-color: #a4a4a4;
+}
+
+/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb-label {
+    background-color: #8d8d8d;
+}
+
+/deep/ .mat-slider-horizontal .mat-slider-track-background {
+    height: 3px;
+}
+
+/deep/ .mat-slider-horizontal .mat-slider-track-wrapper {
+    height: 3px;
+}
+
+/*meterial's slider end*/
+
+.input-width {
+    width: 90%;
+    margin-top: 20px;
+}
+
+.suffix {
+    font-size: 21px;
+    color: darkgrey;
+}
+
+/deep/ .stake-slider .mat-slider-thumb-label-text::after {
+    content: '%';
+}
+
+/*prime's table*/
+/deep/ .bps-table .ui-table {
+    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+    font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
+
+/deep/ .bps-table .ui-table-tbody {
+    background: linear-gradient(to bottom, rgba(47, 47, 47, 0.7), rgba(35, 37, 38, 0.86));
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    border-radius: 5px;
+    border: 0;
+}
+
+/deep/ .bps-table .ui-table .ui-table-tbody > tr {
+    color: #b1b1b1;
+    background: transparent;
+}
+
+/deep/ .bps-table .ui-table .ui-table-tbody > tr > td {
+    border: none;
+}
+
+/deep/ .bps-table .ui-table .ui-table-tbody > tr {
+    border-bottom: 1px solid #3f3f3f;
+}
+
+/deep/ .bps-table .ui-table .ui-table-tbody > tr:last-child {
+    border-bottom: 0;
+}
+
+/deep/ .bps-table .ui-table .ui-table-tbody>tr>td {
+    padding: 0.7em .5em;
+    font-size: 18px;
+}
+
+/deep/ .bps-table .ui-table .ui-table-thead>tr>th {
+    padding: 0.7em .5em;
+}
+
+/deep/ .bps-table .ui-table .ui-table-caption {
+    border-bottom: 1px solid #262626;
+}
+
+/deep/ .ui-state-active {
+    border-color: #0094d2;
+    background: #0094d2;
+    color: #ffffff;
+}
+/*prime's table end*/
+
+.expandable i:hover {
+    color: #39c5ff;
+    cursor: pointer;
+}
+
+.tr-canexpand:hover {
+    cursor: pointer;
+    background-color: #272727 !important;
+    -webkit-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    -webkit-transition-property: background-color;
+    transition-property: background-color;
+}
+
+.tr-expanded {
+    border-bottom: 1px solid #3f3f3f;
+}
+
+.tr-expanded > td {
+    background: #272727;
+    padding: 0.8em .5em;
+}
+
+.row-expanded {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.title {
+    color: #d4d4d4;
+    font-weight: 500;
+    margin-left: 10px;
+    display: inline-flex;
+}
+
+.subtitle {
+    display: inline-flex;
+    margin-left: 10px;
+}
+
+.searchbar {
+    margin-right: 10px;
+    width: 237px;
+}
+
+li.social-icon {
+    list-style-type: none;
+    margin-right: 6px;
+    display: inline;
+}
+
+li:last-child {
+    list-style-type: none;
+    margin-right: 0;
+}
+
+.social-icon > a {
+    color: inherit;
+}
+
+a:visited {
+    color: #0094d2;
+    text-decoration: none;
+}
+
+.a-white {
+    color: #b1b1b1 !important;
+}
+
+.a-white:hover {
+    color: white !important;
+}
+
+.social-icon i:hover {
+    color: white;
+}
+
+.steemit {
+    width: 29px;
+    margin-bottom: 4px;
+    opacity: 0.6;
+}
+
+.steemit:hover {
+    opacity: 1;
+}
+
+.error {
+    color: #f44336 !important;
+}
+
+/*Classes that go out after activation*/
+.disabled-card {
+    background-color: rgba(70, 70, 70, 0.7607843137254902);
+    z-index: 1000;
+    width: calc(100% - 1rem);
+    height: calc(100% - 20px);
+    top: 0;
+    left: .5rem;
+    position: absolute;
+    padding-right: .5rem;
+    padding-left: .5rem;
+}
+
+.progress-block {
+    margin-top: 17px;
+    margin-bottom: -8px;
+}
+
+/deep/ .progress-static.labeled, .progress.labeled {
+     padding-right: 14px;
+}
+
+progress {
+    background-color: #333;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+/deep/ .progress > progress {
+    background-color: #333;
+}
+
+.progress-static>.progress-meter {
+    background-color: #333;
+}
+
+::-moz-progress-bar {
+    color: #333;
+}
+
+::-webkit-progress-bar {
+    background-color: #333;
+}
+
+.progress-meter {
+    background-color: #333;
+}
+
+/*Classes that go out after activation end*/

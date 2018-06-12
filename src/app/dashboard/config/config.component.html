@@ -1,0 +1,129 @@
+<div class="container" style="height: 100%">
+  <div class="row animate flex-items-xs-between" style="padding-top: 15px;">
+    <div class="col-lg-7">
+      <div class="card info-card disabled-card" pTooltip="soon"></div>
+      <div class="card info-card">
+        <div class="card-header title">
+          Advanced Options
+        </div>
+        <div class="card-block">
+          <div class="info2">Connect to another chain or testnet.</div>
+          <div class="card chains-card">
+            <div class="card-block chain-section selected">
+              Mainnet
+              <span style="float:right">endpoint</span>
+            </div>
+            <div class="card-block chain-section" (click)="confirmModal = true">
+              Jungle testnet
+              <span style="float:right">endpoint</span>
+            </div>
+          </div>
+          <button class="btn btn-info-outline mt-1" (click)="endpointModal = true">Other</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card info-card">
+        <div class="card-header title">
+          Logout Options
+        </div>
+        <div class="card-block">
+          <!--<button class="btn btn-info-outline">Logout</button>-->
+          <!--<div class="info">*Your data will still be saved in this PC. Your account will appear in the login page, should you want to login again, just put your password.</div>-->
+          <button class="btn btn-info-outline" (click)="logoutModal = true">Clear local data and logout</button>
+          <div class="info">*Your data will be cleared from this PC. Should you want to login again, you will have to
+            import your private key again.
+          </div>
+        </div>
+      </div>
+      <div class="card info-card">
+        <div class="card-header title">
+          Change Password
+        </div>
+        <div class="card-block">
+          <button class="btn btn-info-outline" (click)="changePassModal = true">CHANGE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<clr-modal [(clrModalOpen)]="logoutModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    Are you <span class="blue">sure</span> ?
+  </h3>
+  <div class="modal-body">
+    <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your private key again.</p>
+    <mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
+    <button type="button" class="btn btn-info-outline" (click)="logout()">
+      Yes
+    </button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    Place the endpoint yow want to connect to below
+  </h3>
+  <div class="modal-body">
+    <mat-form-field>
+      <input matInput type="text" placeholder="endpoint">
+    </mat-form-field>
+  </div>
+  <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+    <button type="button" class="btn btn-info-outline" (click)="endpointModal = false">
+      Connect
+    </button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="confirmModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    Connect to <span class="blue">Jungle Testnet</span> ?
+  </h3>
+  <div class="modal-body">
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-info-outline">
+      Connect
+    </button>
+    <button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="changePassModal" [clrModalSize]="'md'">
+  <h3 class="modal-title text-white">
+    <i class="fas fa-key"></i>&nbsp;&nbsp;Change Password
+  </h3>
+  <div class="modal-body">
+    <form [formGroup]="passForm">
+      <mat-form-field class="mt-1">
+        <input matInput type="password" placeholder="Old password"
+               formControlName="oldpass">
+      </mat-form-field>
+      <mat-form-field class="mt-1">
+        <input matInput #pass type="password" placeholder="New password" (blur)="passCompare()"
+               [formControl]="passForm['controls'].matchingPassword['controls']['pass1']">
+        <mat-hint align="start">
+          Min 10 characters
+        </mat-hint>
+        <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
+      </mat-form-field>
+      <mat-form-field style="margin-top: 19px">
+        <input matInput type="password" placeholder="Confirm password" (blur)="passCompare()"
+               [formControl]="passForm['controls'].matchingPassword['controls']['pass2']">
+        <mat-error *ngIf="!passmatch">
+          Passwords do not match!
+        </mat-error>
+      </mat-form-field>
+    </form>
+  </div>
+  <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+    <button type="submit" class="btn btn-info-outline" (click)="changePass()" [disabled]="!passForm.valid">
+      Change and Restart simplEOS
+    </button>
+  </div>
+</clr-modal>

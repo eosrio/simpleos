@@ -1,0 +1,90 @@
+<div class="main-container">
+  <div class="content-container">
+    <div class="content-area">
+      <div class="row" style="margin-right: 0;">
+        <div class="col-xs col-md max-width" style="padding-right: 0">
+          <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)">
+            <mat-tab *ngFor="let account of aService.accounts; let i = index">
+              <ng-template mat-tab-label>
+                <div style="font-size: 10px;">ACCOUNT {{i + 1}}</div>
+                <div style="font-size: 17px;">{{account.name}}</div>
+                <div class="value">{{account.full_balance}} EOS</div>
+              </ng-template>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+        <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0">
+          <div class="text-center navbar-btn newaccount" pTooltip="soon" tooltipPosition="left">
+            <div style="padding-top: 16px"><i class="fal fa-user-plus fa-lg"></i></div>
+            <div style="font-size: 15px;">NEW</div>
+            <div style="font-size: 15px;">ACCOUNT</div>
+          </div>
+        </div>
+        <div class="col-xs-auto" style="padding-left: 0; padding-right: 0">
+          <div class="text-center navbar-btn cog" [routerLink]="['config']">
+            <div><i class="fal fa-cog fa-2x"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <router-outlet></router-outlet>
+      </div>
+    </div>
+    <nav class="sidenav">
+      <section class="sidenav-header" (click)="refreshAccount()">
+        <!--<img height="150" src="../../assets/simpleos-all.png">-->
+        <lottie-animation-view
+          [options]="lottieConfig" [width]="'auto'" [height]="'auto'" (animCreated)="handleAnimation($event)">
+        </lottie-animation-view>
+      </section>
+      <section #sidenavContent class="sidenav-content">
+        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
+          <i class="far fa-history"></i>&nbsp;&nbsp;HISTORY
+        </a>
+        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['send']">
+          <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
+        </a>
+        <!--<a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['history']">-->
+        <!--<fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY-->
+        <!--</a>-->
+        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['vote']">
+          <fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
+        </a>
+      </section>
+      <section class="placeholder border-r">
+        <div class="credits">Made with <i class="far fa-heart"></i> by <a style="color: #d7d7d7;"
+                                                                          [routerLink]="['about']">EOS Rio</a>
+        </div>
+      </section>
+    </nav>
+  </div>
+</div>
+
+<!--<clr-wizard #wizardaccount [(clrWizardOpen)]="newAccountModal" clrWizardSize="md">-->
+<!--<clr-wizard-title>New account</clr-wizard-title>-->
+<!--<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
+<!--<clr-wizard-page>-->
+<!--<ng-template clrPageTitle>Step 1</ng-template>-->
+<!--<h5 style="color: #a9a9a9">Choose your account name</h5>-->
+<!--<h5 class="mt-0">12 characters. Allows all letters, numbers 1-5 and dots.</h5>-->
+<!--<mat-form-field class="mt-1">-->
+<!--<input matInput placeholder="Account name" [(ngModel)]="accountname">-->
+<!--<mat-error>-->
+<!--Please enter a valid email address-->
+<!--</mat-error>-->
+<!--</mat-form-field>-->
+<!--</clr-wizard-page>-->
+<!--<clr-wizard-page>-->
+<!--<ng-template clrPageTitle>Step 2</ng-template>-->
+<!--<h5>Define your password. This will be used to transactions confirmations.</h5>-->
+<!--<mat-form-field class="mt-1">-->
+<!--<input matInput type="password" placeholder="Password" [(ngModel)]="pass1">-->
+<!--</mat-form-field>-->
+<!--<mat-form-field style="margin-top: 10px">-->
+<!--<input matInput type="password" placeholder="Confirm password" [(ngModel)]="pass2">-->
+<!--</mat-form-field>-->
+<!--</clr-wizard-page>-->
+<!--</clr-wizard>-->
