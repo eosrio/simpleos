@@ -3,6 +3,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {EOSJSService} from '../../eosjs.service';
 import {AccountsService} from '../../accounts.service';
+import {VotingService} from '../vote/voting.service';
 
 @Component({
   selector: 'app-config',
@@ -18,7 +19,11 @@ export class ConfigComponent implements OnInit {
   passmatch: boolean;
   clearContacts: boolean;
 
-  constructor(private fb: FormBuilder, private router: Router, private eos: EOSJSService, public aService: AccountsService) {
+  constructor(private fb: FormBuilder,
+              public voteService: VotingService,
+              private router: Router,
+              private eos: EOSJSService,
+              public aService: AccountsService) {
     this.endpointModal = false;
     this.logoutModal = false;
     this.confirmModal = false;
@@ -46,9 +51,17 @@ export class ConfigComponent implements OnInit {
         }
       }
     }
-    this.router.navigateByUrl('/').catch((err) => {
-      console.log(err);
-    });
+    this.aService.accounts = [];
+    this.eos.accounts.next([]);
+
+    setTimeout(() => {
+      window['remote']['app']['relaunch']();
+      window['remote']['app'].exit(0);
+    }, 1000);
+
+    // this.router.navigateByUrl('/').catch((err) => {
+    //   console.log(err);
+    // });
   }
 
   changePass() {

@@ -78,8 +78,8 @@ export class EOSJSService {
         }
         this.eos['contract']('eosio').then(contract => {
           this.eosio = contract;
+          resolve(savedAcc);
         });
-        resolve(savedAcc);
       }).catch((err) => {
         reject(err);
       });
@@ -207,9 +207,11 @@ export class EOSJSService {
             }
             let votedProducers = null;
             let proxy = null;
+            let voter = null;
             if (action['account'] === 'eosio' && action['name'] === 'voteproducer') {
               votedProducers = action['data']['producers'];
               proxy = action['data']['proxy'];
+              voter = action['data']['voter'];
               type = 'vote';
             }
             this.actionHistory.push({
@@ -223,7 +225,8 @@ export class EOSJSService {
               amount: amount,
               memo: memo,
               votedProducers: votedProducers,
-              proxy: proxy
+              proxy: proxy,
+              voter: voter
             });
           });
         }
@@ -239,14 +242,26 @@ export class EOSJSService {
 
   async transfer(from, to, amount, memo): Promise<any> {
     if (this.auth) {
-      return await this.eos['transfer'](from, to, amount, memo).then((trx) => {
-        console.log(trx);
-        setTimeout(() => {
-          this.getTransaction(trx['transaction_id']);
-        }, 1000);
-        return true;
-      }).catch((err) => {
-        return err;
+      const info = await this.eos['getInfo']({}).then(result => {
+        return result;
+      });
+      const broadcast_lib = info['last_irreversible_block_num'];
+      return new Promise((resolve, reject) => {
+        this.eos['transfer'](from, to, amount, memo, (err, trx) => {
+          if (err) {
+            reject(JSON.parse(err));
+          } else {
+            console.log(trx);
+            setTimeout(() => {
+              this.txCheckQueue.push({
+                block: broadcast_lib,
+                id: trx['transaction_id']
+              });
+              this.startMonitoringLoop();
+            }, 500);
+            resolve(true);
+          }
+        });
       });
     }
   }
@@ -293,11 +308,10 @@ export class EOSJSService {
     );
   }
 
-  async changePass(account, newpass): Promise<boolean> {
+  async changePass(publickey, newpass): Promise<boolean> {
     const store = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
     if (store) {
-      const payload = store[account]['private'];
-      const pubkey = store[account]['publickey'];
+      const payload = store[publickey]['private'];
       if (payload) {
         const encryptedData = this.base64ToBuffer(payload);
         const iv = encryptedData.slice(0, this.ivLen);
@@ -307,8 +321,8 @@ export class EOSJSService {
           iv: iv
         }, this.masterKey, data);
         const tempKey = String.fromCharCode.apply(null, new Uint8Array(decrypted)).replace(/"/g, '');
-        await this.initKeys(pubkey, newpass);
-        await this.encryptAndStore(tempKey, account, pubkey);
+        await this.initKeys(publickey, newpass);
+        await this.encryptAndStore(tempKey, publickey);
         return true;
       } else {
         return false;
@@ -318,15 +332,14 @@ export class EOSJSService {
     }
   }
 
-  async encryptAndStore(data, account, publickey): Promise<void> {
+  async encryptAndStore(data, publickey): Promise<void> {
     const encryptedData = await this.encrypt(data);
     let store = {};
     const oldData = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
     if (oldData) {
       store = oldData;
     }
-    store[account] = {
-      publickey: publickey,
+    store[publickey] = {
       private: this.bufferToBase64(encryptedData)
     };
     localStorage.setItem('eos_keys.' + this.chainID, JSON.stringify(store));
@@ -362,18 +375,17 @@ export class EOSJSService {
     return buf;
   }
 
-  async authenticate(pass, account): Promise<boolean> {
-    const store = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
-    this.basePublicKey = store[account].publickey;
+  async authenticate(pass, publickey): Promise<boolean> {
+    console.log(pass, publickey);
     this.auth = false;
-    await this.initKeys(this.basePublicKey, pass);
-    return await this.decryptKeys(account);
+    await this.initKeys(publickey, pass);
+    return await this.decryptKeys(publickey);
   }
 
-  async decryptKeys(account): Promise<boolean> {
+  async decryptKeys(publickey): Promise<boolean> {
     const store = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
     if (store) {
-      const payload = store[account]['private'];
+      const payload = store[publickey]['private'];
       if (payload) {
         const encryptedData = this.base64ToBuffer(payload);
         const iv = encryptedData.slice(0, this.ivLen);
@@ -440,18 +452,23 @@ export class EOSJSService {
         return result;
       });
       const broadcast_lib = info['last_irreversible_block_num'];
-      console.log(info);
-      this.eosio['voteproducer'](voter, '', currentVotes).then((voteResults) => {
-        setTimeout(() => {
-          this.txCheckQueue.push({
-            block: broadcast_lib,
-            id: voteResults['transaction_id']
-          });
-          this.startMonitoringLoop();
-        }, 1000);
-        return voteResults;
-      }).catch((error) => {
-        return new Error('TX Error!');
+      return new Promise((resolve, reject) => {
+        const cb = (err, res) => {
+          if (err) {
+            reject(JSON.parse(err));
+          } else {
+            console.log(res);
+            setTimeout(() => {
+              this.txCheckQueue.push({
+                block: broadcast_lib,
+                id: res['transaction_id']
+              });
+              this.startMonitoringLoop();
+            }, 1000);
+            resolve(res);
+          }
+        };
+        this.eosio['voteproducer'](voter, '', currentVotes, cb);
       });
     } else {
       return new Error('Cannot cast more than 30 votes!');

@@ -78,6 +78,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
         this.selectedBPs.push(bp.account);
       }
     });
+    this.passForm.reset();
     this.voteModal = true;
   }
 
@@ -94,9 +95,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
   modalVote(pass) {
     this.busy = true;
     const voter = this.aService.selected.getValue();
-    this.eos.authenticate(pass, voter.name).then((data) => {
+    const publicKey = voter.details.permissions[0].required_auth.keys[0].key;
+    this.eos.authenticate(pass, publicKey).then((data) => {
       if (data === true) {
         this.eos.voteProducer(voter.name, this.selectedBPs).then((txdata) => {
+          console.log(txdata);
           this.wrongpass = '';
           this.voteModal = false;
           this.busy = false;
@@ -107,7 +110,12 @@ export class VoteComponent implements OnInit, AfterViewInit {
             this.loadPlacedVotes(this.aService.selected.getValue());
           }, 500);
         }).catch((err2) => {
-          console.log(err2);
+          console.log('Catch2', err2);
+          if (err2.error.code === 3081001) {
+            this.wrongpass = 'Not enough stake to perform this action.';
+          } else {
+            this.wrongpass = err2.error['what'];
+          }
           this.busy = false;
         });
       } else {

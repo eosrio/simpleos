@@ -70,8 +70,7 @@
 
             <td class="text-center">
               <ng-container *ngIf="item.action_name === 'voteproducer'">
-                <!--{{item.proxy === '' ? "no proxy" : "proxy: " + item.proxy}}-->
-                -
+                with {{item.voter}}
               </ng-container>
               <ng-container *ngIf="item.action_name === 'transfer'">
                 <span *ngIf="item.type === 'received'">from<span class="blue">{{item.user}}</span></span>

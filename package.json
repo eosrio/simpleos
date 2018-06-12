@@ -2,11 +2,11 @@
   "name": "simpleos",
   "productName": "simpleos",
   "description": "EOS Blockchain Interface & Wallet",
-  "author": "eosrio",
+  "author": "EOS Rio",
   "repository": "https://github.com/eosrio/simpleos",
   "homepage": "https://github.com/eosrio/simpleos",
   "license": "UNLICENSED",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",
@@ -33,10 +33,13 @@
             "win32"
           ],
           "config": {
-            "name": "simpleos_wallet",
+            "name": "simplEOS",
+            "title": "simplEOS",
             "loadingGif": "C:/simpleos/simpleos.gif",
-            "icon": "C:/simpleos/src/favicon.ico",
-            "setupIcon": "C:/simpleos/src/favicon.ico"
+            "iconUrl": "file:///C:/simpleos/src/favicon.ico",
+            "setupIcon": "C:/simpleos/src/favicon.ico",
+            "noMsi": false,
+            "setupMsi": "simplEOS-setup"
           }
         },
         {
@@ -45,7 +48,8 @@
             "darwin"
           ],
           "config": {
-            "format": "UFLO"
+            "name": "simplEOS",
+            "format": "UDZO"
           }
         },
         {
@@ -53,7 +57,17 @@
           "platforms": [
             "linux"
           ],
-          "config": {}
+          "config": {
+            "options": {
+              "name": "simplEOS",
+              "productName": "simplEOS",
+              "icon": "/home/entropia/simpleos/src/favicon.ico",
+              "homepage":"https://github.com/eosrio/simpleos",
+              "maintainer":"eosrio",
+              "productDescription": "EOS Blockchain Interface & Wallet by EOS Rio",
+              "description": "EOS Blockchain Interface & Wallet by EOS Rio"
+            }
+          }
         },
         {
           "name": "@electron-forge/maker-rpm",

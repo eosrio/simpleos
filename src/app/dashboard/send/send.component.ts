@@ -41,12 +41,14 @@ export class SendComponent implements OnInit {
     decimalLimit: 4,
   });
   config: ToasterConfig;
+  fromAccount: string;
 
   constructor(private fb: FormBuilder, public aService: AccountsService, public eos: EOSJSService,
               private toaster: ToasterService) {
     this.sendModal = false;
     this.newContactModal = false;
     this.contactExist = true;
+    this.fromAccount = '';
     this.busy = false;
     this.sendForm = this.fb.group({
       to: ['', Validators.required],
@@ -228,7 +230,6 @@ export class SendComponent implements OnInit {
       }
     });
     this.sortContacts();
-
   }
 
   addContact() {
@@ -300,36 +301,53 @@ export class SendComponent implements OnInit {
     }
   }
 
+  openSendModal() {
+    // this.confirmForm.reset();
+    this.fromAccount = this.aService.selected.getValue().name;
+    this.sendModal = true;
+  }
+
   transfer() {
     this.busy = true;
-    const from = this.aService.selected.getValue().name;
+    const selAcc = this.aService.selected.getValue();
+    const from = selAcc.name;
     const to = this.sendForm.get('to').value.toLowerCase();
     const amount = this.sendForm.get('amount').value;
     const memo = this.sendForm.get('memo').value;
+    const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
+    console.log(publicKey);
     if (amount > 0 && this.sendForm.valid) {
-      this.eos.authenticate(this.confirmForm.get('pass').value, from).then((res) => {
-        this.eos.transfer(from, to, amount + ' EOS', memo).then((result) => {
-          this.aService.refreshFromChain();
-          if (result === true) {
-            this.wrongpass = '';
-            this.sendModal = false;
-            this.busy = false;
-            this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
-            this.confirmForm.reset();
-            if (this.add === true && this.sendForm.get('alias').value !== '') {
-              this.addContactOnSend();
+      console.log(this.confirmForm.get('pass').value, publicKey);
+      this.eos.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
+        if (res === true) {
+          this.eos.transfer(from, to, amount.toFixed(4) + ' EOS', memo).then((result) => {
+            this.aService.refreshFromChain();
+            if (result === true) {
+              this.wrongpass = '';
+              this.sendModal = false;
+              this.busy = false;
+              this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+              this.confirmForm.reset();
+              if (this.add === true && this.sendForm.get('alias').value !== '') {
+                this.addContactOnSend();
+              }
+            } else {
+              this.wrongpass = JSON.parse(result).error.details[0].message;
+              this.busy = false;
             }
-          } else {
-            this.wrongpass = JSON.parse(result).error.details[0].message;
+          }).catch((error) => {
+            console.log('Catch2', error);
+            if (error.error.code === 3081001) {
+              this.wrongpass = 'Not enough stake to perform this action.';
+            } else {
+              this.wrongpass = error.error['what'];
+            }
             this.busy = false;
-          }
-        }).catch((error) => {
-          console.log(error);
+          });
+        } else {
           this.busy = false;
-        });
-      }).catch(() => {
-        this.busy = false;
-        this.wrongpass = 'Wrong password!';
+          this.wrongpass = 'Wrong password!';
+        }
       });
     }
   }

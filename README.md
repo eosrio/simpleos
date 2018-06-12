@@ -21,15 +21,18 @@ User experience focus was also a main part of SimplEOS creation process.
 
 Only download SimplEOS from EOS Rio's [website](https://eosrio.io/simpleos/) or [github](https://github.com/eosrio/simpleos). Avoid scams, do not trust any other source.
 
+Distribution or copy of this software or any of its parts and associated documentation, is not allowed by applicable law, unless previous written permission is given by EOS Rio. All rights are reserved.
+
 SimplEOS doesn't keep any of your information. All information is kept locally only, not in any cloud services or databases.
+
 ## Main Features
 As of 12/06/2018, SimplEOS main features include:
 
 - Local Storage: private keys are encrypted and stored locally only.
-- Import exodus wallet
+- Import Exodus wallet
 - Multiple accounts support
 - Token transfer
-- Password Protected
+- All transactions are password protected
 - Contacts List / Add contacts
 - Transactions / Actions History
 - Voting Portal
@@ -42,6 +45,7 @@ As soon as mainnet is activated with 15% of votes:
 Next features to be implemented:
 - Create new account *- high priority*
 - Create new wallet *- high priority*
+- Edit/remove contacts *- high priority*
 - Testnets support
 - Delegate Permissions
 - Secured Delayed Transactions
@@ -55,13 +59,14 @@ Your private keys are stored locally only and are properly encrypted with a user
 ### Proxy to fetch external data
 External informations outside of the blockchain (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
-## Installation Instructions
-- Windows
-- MacOS
-- Linux
+## Download
+- [Windows]()
+- [MacOS]()
+- [Linux]()
 
 ## Building Instructions
 
+#### Windows
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
@@ -78,6 +83,10 @@ For development and quick preview
 ```console
 npm run build && npx @electron-forge/cli start
 ```
+
+#### MacOS
+
+#### Linux
 
 ## Legal Disclaimer
 

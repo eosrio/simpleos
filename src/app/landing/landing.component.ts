@@ -13,7 +13,6 @@ import {ClrWizard} from '@clr/angular';
 export class LandingComponent implements OnInit {
 
   @ViewChild('wizardexodus') wizard: ClrWizard;
-  bgPos: string;
   lottieConfig: Object;
   anim: any;
   existingWallet: boolean;
@@ -162,9 +161,9 @@ export class LandingComponent implements OnInit {
   importCredentials() {
     if (this.passform.value.matchingPassword.pass1 === this.passform.value.matchingPassword.pass2) {
       this.eos.initKeys(this.publicEOS, this.passform.value.matchingPassword.pass1).then(() => {
-        this.eos.encryptAndStore(this.pvtform.value.private_key, this.importedAccounts[0]['account_name'], this.publicEOS).then(() => {
+        this.eos.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
-          this.eos.decryptKeys(this.importedAccounts[0]['account_name']).then((data) => {
+          this.eos.decryptKeys(this.publicEOS).then((data) => {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
@@ -181,9 +180,9 @@ export class LandingComponent implements OnInit {
   importCredentialsExodus() {
     if (this.passformexodus.value.matchingPassword.pass1 === this.passformexodus.value.matchingPassword.pass2) {
       this.eos.initKeys(this.publicEOS, this.passformexodus.value.matchingPassword.pass1).then(() => {
-        this.eos.encryptAndStore(this.pk, this.importedAccounts[0]['account_name'], this.publicEOS).then(() => {
+        this.eos.encryptAndStore(this.pk, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
-          this.eos.decryptKeys(this.importedAccounts[0]['account_name']).then((data) => {
+          this.eos.decryptKeys(this.publicEOS).then((data) => {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
