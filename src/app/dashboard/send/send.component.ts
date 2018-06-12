@@ -133,6 +133,13 @@ export class SendComponent implements OnInit {
       this.sendForm.controls['amount'].setErrors(null);
       this.amounterror = '';
     }
+    if (parseFloat(this.sendForm.value.amount) === 0 || this.sendForm.value.amount === '') {
+      this.sendForm.controls['amount'].setErrors({'incorrect': true});
+      this.amounterror = 'invalid amount';
+    } else {
+      this.sendForm.controls['amount'].setErrors(null);
+      this.amounterror = '';
+    }
   }
 
   checkAccountName() {
@@ -302,7 +309,7 @@ export class SendComponent implements OnInit {
   }
 
   openSendModal() {
-    // this.confirmForm.reset();
+    this.confirmForm.reset();
     this.fromAccount = this.aService.selected.getValue().name;
     this.sendModal = true;
   }
@@ -315,12 +322,11 @@ export class SendComponent implements OnInit {
     const amount = this.sendForm.get('amount').value;
     const memo = this.sendForm.get('memo').value;
     const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
-    console.log(publicKey);
     if (amount > 0 && this.sendForm.valid) {
-      console.log(this.confirmForm.get('pass').value, publicKey);
       this.eos.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
+        console.log('AuthResult', res);
         if (res === true) {
-          this.eos.transfer(from, to, amount.toFixed(4) + ' EOS', memo).then((result) => {
+          this.eos.transfer(from, to, parseFloat(amount).toFixed(4) + ' EOS', memo).then((result) => {
             this.aService.refreshFromChain();
             if (result === true) {
               this.wrongpass = '';
@@ -348,6 +354,9 @@ export class SendComponent implements OnInit {
           this.busy = false;
           this.wrongpass = 'Wrong password!';
         }
+      }).catch(() => {
+        this.busy = false;
+        this.wrongpass = 'Error: Wrong password!';
       });
     }
   }

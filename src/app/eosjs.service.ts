@@ -376,7 +376,6 @@ export class EOSJSService {
   }
 
   async authenticate(pass, publickey): Promise<boolean> {
-    console.log(pass, publickey);
     this.auth = false;
     await this.initKeys(publickey, pass);
     return await this.decryptKeys(publickey);

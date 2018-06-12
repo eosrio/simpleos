@@ -31,7 +31,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
               private fb: FormBuilder, private toaster: ToasterService) {
     this.max = 100;
     this.min = 0;
-    this.nVotes = 0;
     this.valuetoStake = 0;
     this.percenttoStake = 0;
     this.stakeModal = false;
@@ -56,6 +55,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
       this.stakedBalance = selected.staked;
       this.loadPlacedVotes(selected);
     });
+    this.voteService.listReady.asObservable().subscribe((state) => {
+      if (state) {
+        this.updateCounter();
+      }
+    });
     this.aService.accounts.forEach((a) => {
       if (a.name === selectedAcc.name) {
         const currentVotes = a.details['voter_info']['producers'];
@@ -67,8 +71,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    console.log('ngAfterViewInit');
     this.voteService.listProducers();
-    this.updateCounter();
   }
 
   processVotes() {
@@ -85,10 +89,12 @@ export class VoteComponent implements OnInit, AfterViewInit {
   updateCounter() {
     let val = 0;
     this.voteService.bps.forEach((bp) => {
+      console.log(bp.checked);
       if (bp.checked) {
         val++;
       }
     });
+    console.log('Count votes:' + val);
     this.nVotes = val;
   }
 
@@ -134,6 +140,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.voteService.bps.forEach((elem) => {
       elem.checked = currentVotes.indexOf(elem.account) !== -1;
     });
+    this.updateCounter();
   }
 
   private showToast(type: string, title: string, body: string) {
