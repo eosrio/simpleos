@@ -39,7 +39,9 @@
             "win32"
           ],
           "config": {
-            "name": "simpleos_wallet"
+            "name": "simpleos_wallet",
+            "loadingGif": "simpleos.gif",
+            "setupIcon": "src/assets/icons/ico/simpleos.ico"
           }
         },
         {
