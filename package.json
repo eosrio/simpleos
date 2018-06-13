@@ -41,7 +41,7 @@
     },
     "dmg": {
       "icon": "src/assets/icons/256x256.icns",
-      "format": "ULFO"
+      "format": "UDZO"
     },
     "linux": {
       "target": [

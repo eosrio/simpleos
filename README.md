@@ -77,7 +77,7 @@ yarn run build:prod
 ```
 Create installer:
 ```
-yarn pack
+yarn dist
 ```
 The packages will be available on the `/dist` folder.
 
