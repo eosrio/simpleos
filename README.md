@@ -67,21 +67,25 @@ External informations outside of the blockchain (such as the Block Producer stan
 ## Building Instructions
 
 #### Windows
+
+Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
 npm install
 npm run build:prod
 ```
-Creater installer on Windows:
+Create installer:
 ```
+npm install -g @electron-forge/cli
 npm install -g @electron-forge/maker-squirrel
-npx @electron-forge/cli make
+electron-forge make
+# installer will be available on ./out/make/...
 ```
 
-For development and quick preview
+For quick preview:
 ```console
-npm run build && npx @electron-forge/cli start
+npm run build:prod && npx @electron-forge/cli start
 ```
 
 #### MacOS
