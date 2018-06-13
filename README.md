@@ -68,7 +68,20 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 
 [Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
 
-Setup sources:
+### Linux Dependencies
+```
+# Install Node.js 10
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo apt-get install -y build-essential
+
+# Install Yarn
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+sudo apt-get update && sudo apt-get install yarn
+```
+
+### Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
