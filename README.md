@@ -39,16 +39,16 @@ As of 12/06/2018, SimplEOS main features include:
 
 ## Roadmap
 As soon as mainnet is activated with 15% of votes:
-- Stake/Unstake functions
-- Display the other tokens
+- Stake / Unstake functions - (un)delegatebw
+- Support for generic tokens
 
 Next features to be implemented:
 - Create new account *- high priority*
 - Create new wallet *- high priority*
-- Edit/remove contacts *- high priority*
+- Edit / Remove contacts *- high priority*
 - Testnets support
 - Delegate Permissions
-- Secured Delayed Transactions
+- Setup Delayed Transactions
 - Mobile Version
 - Multi languages support
 
@@ -57,7 +57,7 @@ Next features to be implemented:
 Your private keys are stored locally only and are properly encrypted with a user defined password of 10+ characters.
 
 ### Proxy to fetch external data
-External informations outside of the blockchain (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
+Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
 - [Windows](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos-setup-0.3.5.exe)
@@ -79,6 +79,7 @@ Create installer:
 ```
 yarn pack
 ```
+The packages will be available on the `/dist` folder.
 
 ## Legal Disclaimer
 
