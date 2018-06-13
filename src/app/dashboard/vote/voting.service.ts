@@ -117,7 +117,10 @@ export class VotingService {
         if (data) {
           if (data['org']) {
             const org = data['org'];
-            const loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
+            let loc = ' - ';
+            if (org['location']) {
+              loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
+            }
             const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
             if (data['producer_account_name'] === prod['owner']) {
               this.bps[idx].name = org['candidate_name'];

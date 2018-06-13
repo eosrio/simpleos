@@ -1,11 +1,7 @@
 const {app, BrowserWindow} = require('electron');
 const path = require('path');
 const url = require('url');
-require('update-electron-app')();
-
-if (require('electron-squirrel-startup')) {
-  app.quit();
-}
+require("electron-updater").autoUpdater.checkForUpdatesAndNotify();
 
 let win, serve;
 const args = process.argv.slice(1);
@@ -20,17 +16,17 @@ function createWindow() {
     'min-width': 800,
     'min-height': 500,
     frame: true,
-    icon: path.join(__dirname, 'assets/icons/ico/simpleos.ico')
+    icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
   win.setMenu(null);
   if (serve) {
     require('electron-reload')(__dirname, {
-      electron: require(__dirname + '../node_modules/electron')
+      electron: require(__dirname + 'node_modules/electron')
     });
     win.loadURL('http://localhost:7868');
   } else {
     win.loadURL(url.format({
-      pathname: path.join(__dirname, '../dist/index.html'),
+      pathname: path.join(__dirname, 'ng-dist', 'index.html'),
       protocol: 'file:',
       slashes: true
     }));
