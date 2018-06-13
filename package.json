@@ -8,7 +8,7 @@
   },
   "repository": "https://github.com/eosrio/simpleos",
   "license": "UNLICENSED",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 7878",
@@ -16,13 +16,12 @@
     "build:prod": "ng build --prod",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
+    "publish": "electron-builder build --win -p always",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "build-watch": "ng build --prod --watch",
-    "postinstall": "node patch.js && electron-builder install-app-deps",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "postinstall": "node patch.js && electron-builder install-app-deps"
   },
   "private": true,
   "main": "index.js",

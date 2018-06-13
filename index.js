@@ -9,7 +9,7 @@ serve = args.some(val => val === '--serve');
 
 function createWindow() {
   win = new BrowserWindow({
-    x: 1280 / 2,
+    x: 100,
     y: 100,
     width: 1280,
     height: 720,
@@ -19,19 +19,11 @@ function createWindow() {
     icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
   win.setMenu(null);
-  if (serve) {
-    require('electron-reload')(__dirname, {
-      electron: require(__dirname + 'node_modules/electron')
-    });
-    win.loadURL('http://localhost:7868');
-  } else {
-    win.loadURL(url.format({
-      pathname: path.join(__dirname, 'ng-dist', 'index.html'),
-      protocol: 'file:',
-      slashes: true
-    }));
-  }
-  // win.webContents.openDevTools();
+  win.loadURL(url.format({
+    pathname: path.join(__dirname, 'ng-dist', 'index.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
   win.on('closed', () => {
     win = null
   });
