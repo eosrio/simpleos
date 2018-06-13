@@ -34,7 +34,14 @@
       "node_modules/{opn}/*"
     ],
     "mac": {
-      "category": "your.app.category.type"
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg"
+      ]
+    },
+    "dmg": {
+      "icon": "src/assets/icons/256x256.icns",
+      "format": "ULFO"
     },
     "linux": {
       "target": [
