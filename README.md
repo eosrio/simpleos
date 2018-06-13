@@ -59,38 +59,26 @@ Your private keys are stored locally only and are properly encrypted with a user
 ### Proxy to fetch external data
 External informations outside of the blockchain (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
-## Download
-- [Windows]()
-- [MacOS]()
+## Download a pre-compiled build
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.3.4/simpleos-setup-0.3.4.exe)
+- [MacOS]() - coming soon...
 - [Linux]()
 
-## Building Instructions
+## Build it yourself
 
-#### Windows
+[Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
 
 Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
-npm install
-npm run build:prod
+yarn install
+yarn run build:prod
 ```
 Create installer:
 ```
-npm install -g @electron-forge/cli
-npm install -g @electron-forge/maker-squirrel
-electron-forge make
-# installer will be available on ./out/make/...
+yarn pack
 ```
-
-For quick preview:
-```console
-npm run build:prod && npx @electron-forge/cli start
-```
-
-#### MacOS
-
-#### Linux
 
 ## Legal Disclaimer
 

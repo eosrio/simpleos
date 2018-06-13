@@ -99,7 +99,6 @@ export class SendComponent implements OnInit {
         this.unstaked = sel.full_balance - sel.staked;
       }
     });
-    this.aService.initFirst();
     this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
     this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
     this.addAccountsAsContacts();

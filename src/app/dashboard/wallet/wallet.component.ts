@@ -31,7 +31,7 @@ export class WalletComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         setTimeout(() => {
-            this.aService.initFirst();
+            // this.aService.initFirst();
         }, 1000);
     }
 
