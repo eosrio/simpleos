@@ -54,6 +54,21 @@
           }
         },
         {
+          "name": "@electron-forge/maker-snap",
+          "platforms": [
+            "linux"
+          ],
+          "config": {
+            "name": "simpleos",
+            "confinement": "classic",
+            "features": {
+              "mpris": "io.eosrio.simpleos",
+              "webgl": true
+            },
+            "summary": "EOS Blockchain Interface & Wallet by EOS Rio"
+          }
+        },
+        {
           "name": "@electron-forge/maker-deb",
           "platforms": [
             "linux"
