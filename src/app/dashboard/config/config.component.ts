@@ -41,9 +41,20 @@ export class ConfigComponent implements OnInit {
   ngOnInit() {
   }
 
+  resetApp() {
+    this.aService.accounts = [];
+    this.eos.accounts.next([]);
+    this.voteService.bps = [];
+    this.aService.selected.next(null);
+    this.eos.ready = false;
+    window['remote']['app']['relaunch']();
+    window['remote']['app'].exit(0);
+  }
+
   logout() {
     if (this.clearContacts) {
       localStorage.clear();
+      this.resetApp();
     } else {
       for (let i = 0; i < localStorage.length; i++) {
         if (localStorage.key(i) !== 'simpleos.contacts') {
@@ -51,17 +62,7 @@ export class ConfigComponent implements OnInit {
         }
       }
     }
-    this.aService.accounts = [];
-    this.eos.accounts.next([]);
-
-    setTimeout(() => {
-      window['remote']['app']['relaunch']();
-      window['remote']['app'].exit(0);
-    }, 1000);
-
-    // this.router.navigateByUrl('/').catch((err) => {
-    //   console.log(err);
-    // });
+    this.resetApp();
   }
 
   changePass() {
@@ -69,8 +70,7 @@ export class ConfigComponent implements OnInit {
       const name = this.aService.selected.getValue().name;
       this.eos.authenticate(this.passForm.value.oldpass, name).then(() => {
         this.eos.changePass(name, this.passForm.value.matchingPassword.pass2).then(() => {
-          window['remote']['app'].relaunch();
-          window['remote']['app'].exit(0);
+          this.resetApp();
         });
       });
     }

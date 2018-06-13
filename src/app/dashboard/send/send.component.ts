@@ -126,20 +126,18 @@ export class SendComponent implements OnInit {
   }
 
   checkAmount() {
-    if (parseFloat(this.sendForm.value.amount) > this.unstaked) {
-      this.sendForm.controls['amount'].setErrors({'incorrect': true});
-      this.amounterror = 'invalid amount';
-    } else {
-      this.sendForm.controls['amount'].setErrors(null);
-      this.amounterror = '';
-    }
-    if (parseFloat(this.sendForm.value.amount) === 0 || this.sendForm.value.amount === '') {
-      this.sendForm.controls['amount'].setErrors({'incorrect': true});
-      this.amounterror = 'invalid amount';
-    } else {
-      this.sendForm.controls['amount'].setErrors(null);
-      this.amounterror = '';
-    }
+      if (parseFloat(this.sendForm.value.amount) === 0 || this.sendForm.value.amount === '') {
+          this.sendForm.controls['amount'].setErrors({'incorrect': true});
+          this.amounterror = 'invalid amount';
+      } else {
+          if (parseFloat(this.sendForm.value.amount) > this.unstaked) {
+              this.sendForm.controls['amount'].setErrors({'incorrect': true});
+              this.amounterror = 'invalid amount';
+          } else {
+              this.sendForm.controls['amount'].setErrors(null);
+              this.amounterror = '';
+          }
+      }
   }
 
   checkAccountName() {
@@ -324,7 +322,6 @@ export class SendComponent implements OnInit {
     const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
     if (amount > 0 && this.sendForm.valid) {
       this.eos.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
-        console.log('AuthResult', res);
         if (res === true) {
           this.eos.transfer(from, to, parseFloat(amount).toFixed(4) + ' EOS', memo).then((result) => {
             this.aService.refreshFromChain();

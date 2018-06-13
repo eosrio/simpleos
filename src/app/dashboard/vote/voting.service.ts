@@ -77,7 +77,6 @@ export class VotingService {
           const total_votes = this.totalProducerVoteWeight;
           // Pass 1 - Add accounts
           const myAccount = this.aService.selected.getValue();
-          console.log('MyAccount', myAccount, this.selectedAccount);
           producers.rows.forEach((prod: any, idx) => {
             const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
             const voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;

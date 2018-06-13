@@ -71,7 +71,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    console.log('ngAfterViewInit');
     this.voteService.listProducers();
   }
 
@@ -89,12 +88,10 @@ export class VoteComponent implements OnInit, AfterViewInit {
   updateCounter() {
     let val = 0;
     this.voteService.bps.forEach((bp) => {
-      console.log(bp.checked);
       if (bp.checked) {
         val++;
       }
     });
-    console.log('Count votes:' + val);
     this.nVotes = val;
   }
 
@@ -105,7 +102,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.eos.authenticate(pass, publicKey).then((data) => {
       if (data === true) {
         this.eos.voteProducer(voter.name, this.selectedBPs).then((txdata) => {
-          console.log(txdata);
           this.wrongpass = '';
           this.voteModal = false;
           this.busy = false;
@@ -116,7 +112,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
             this.loadPlacedVotes(this.aService.selected.getValue());
           }, 500);
         }).catch((err2) => {
-          console.log('Catch2', err2);
           if (err2.error.code === 3081001) {
             this.wrongpass = 'Not enough stake to perform this action.';
           } else {

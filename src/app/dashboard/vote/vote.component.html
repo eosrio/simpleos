@@ -71,7 +71,7 @@
     <div class="row animate">
         <div class="col-lg-12">
             <p-table #dt [value]="voteService.bps" [globalFilterFields]="['name','account','location']"
-                     [responsive]="true" dataKey="account" class="bps-table" [paginator]="true" [rows]="42">
+                     [responsive]="true" dataKey="account" class="bps-table" [paginator]="voteService.bps.length > 42" [rows]="42">
                 <ng-template pTemplate="caption">
                     <div class="row flex-items-xs-between">
                         <div class="col-lg-5 col-md-5 text-left">
