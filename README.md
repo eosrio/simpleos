@@ -61,7 +61,7 @@ External informations outside of the blockchain (such as the Block Producer stan
 
 ## Download a pre-compiled build
 - [Windows](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos-setup-0.3.5.exe)
-- [MacOS]() - coming soon...
+- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos-0.3.5-mac.zip)
 - [Linux](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos_0.3.5_amd64.deb)
 
 ## Build it yourself
