@@ -38,7 +38,8 @@
       "category": "public.app-category.finance",
       "target": [
         "dmg"
-      ]
+      ],
+      "icon": "icon.png"
     },
     "dmg": {
       "icon": "src/assets/icons/256x256.icns",
