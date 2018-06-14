@@ -2,9 +2,9 @@ const {app, BrowserWindow, Menu} = require('electron');
 const path = require('path');
 const url = require('url');
 
-let win, serve;
+let win, devtools;
 const args = process.argv.slice(1);
-serve = args.some(val => val === '--serve');
+devtools = args.some(val => val === '--devtools');
 
 function createWindow() {
   win = new BrowserWindow({
@@ -25,6 +25,9 @@ function createWindow() {
     protocol: 'file:',
     slashes: true
   }));
+  if (devtools) {
+    win.webContents.openDevTools();
+  }
   win.on('closed', () => {
     win = null
   });

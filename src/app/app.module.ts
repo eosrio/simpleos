@@ -35,6 +35,8 @@ import {TooltipModule} from 'primeng/primeng';
 import {AboutComponent} from './dashboard/about/about.component';
 import {TextMaskModule} from 'angular2-text-mask';
 import {ToasterModule} from 'angular2-toaster';
+import {AccountsService} from './accounts.service';
+import {NetworkService} from './network.service';
 
 library.add(far, fas, fab, fal);
 
@@ -72,7 +74,7 @@ library.add(far, fas, fab, fal);
     HttpClientModule,
     AppRoutingModule
   ],
-  providers: [EOSJSService],
+  providers: [EOSJSService, AccountsService, NetworkService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

@@ -16,7 +16,7 @@
     "build:prod": "ng build --prod",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "start:electron": "electron-builder start",
+    "start:electron": "electron index.js --devtools",
     "publish": "electron-builder build --win -p always",
     "test": "ng test",
     "lint": "ng lint",

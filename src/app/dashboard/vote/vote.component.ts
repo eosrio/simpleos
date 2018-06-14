@@ -1,9 +1,10 @@
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit} from '@angular/core';
 import {VotingService} from './voting.service';
 import {AccountsService} from '../../accounts.service';
 import {EOSJSService} from '../../eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {ISubscription, Subscription} from 'rxjs-compat/Subscription';
 
 @Component({
   selector: 'app-vote',
@@ -51,9 +52,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     const selectedAcc = this.aService.selected.getValue();
     this.aService.selected.asObservable().subscribe((selected: any) => {
-      this.totalBalance = selected.full_balance;
-      this.stakedBalance = selected.staked;
-      this.loadPlacedVotes(selected);
+      if (selected) {
+        this.totalBalance = selected.full_balance;
+        this.stakedBalance = selected.staked;
+        this.loadPlacedVotes(selected);
+      }
     });
     this.voteService.listReady.asObservable().subscribe((state) => {
       if (state) {
@@ -61,11 +64,13 @@ export class VoteComponent implements OnInit, AfterViewInit {
       }
     });
     this.aService.accounts.forEach((a) => {
-      if (a.name === selectedAcc.name) {
-        const currentVotes = a.details['voter_info']['producers'];
-        this.voteService.bps.forEach((elem) => {
-          elem.checked = currentVotes.indexOf(elem.account) !== -1;
-        });
+      if (a) {
+        if (a.name === selectedAcc.name) {
+          const currentVotes = a.details['voter_info']['producers'];
+          this.voteService.bps.forEach((elem) => {
+            elem.checked = currentVotes.indexOf(elem.account) !== -1;
+          });
+        }
       }
     });
   }
