@@ -109,7 +109,7 @@
   <div class="modal-footer">
     <form [formGroup]="confirmForm" class="confirmForm">
       <mat-form-field>
-        <input matInput type="password" (keyup.enter)="transfer()" placeholder="Password" formControlName="pass">
+        <input matInput #pass type="password" (keyup.enter)="transfer()" placeholder="Password" formControlName="pass">
         <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
           {{wrongpass}}
         </mat-hint>

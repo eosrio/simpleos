@@ -4,6 +4,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../accounts.service';
 import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
+import {NetworkService} from '../network.service';
 
 @Component({
   selector: 'app-landing',
@@ -12,9 +13,11 @@ import {ClrWizard} from '@clr/angular';
 })
 export class LandingComponent implements OnInit {
 
+  @ViewChild('wizardexists') exisitswizard: ClrWizard;
   @ViewChild('wizardexodus') wizard: ClrWizard;
   lottieConfig: Object;
   anim: any;
+  busy: boolean;
   existingWallet: boolean;
   exodusWallet: boolean;
   newWallet: boolean;
@@ -23,7 +26,6 @@ export class LandingComponent implements OnInit {
   checkerr: string;
   errormsg: string;
   accounts: any[];
-  pkValid: boolean;
   dropReady: boolean;
   passmatch: boolean;
   passexodusmatch: boolean;
@@ -44,7 +46,12 @@ export class LandingComponent implements OnInit {
     }
   }
 
-  constructor(public eos: EOSJSService, private fb: FormBuilder, private aService: AccountsService, private router: Router) {
+  constructor(public eos: EOSJSService,
+              private fb: FormBuilder,
+              private aService: AccountsService,
+              public network: NetworkService,
+              private router: Router) {
+    this.busy = true;
     this.existingWallet = false;
     this.exodusWallet = false;
     this.dropReady = false;
@@ -57,12 +64,15 @@ export class LandingComponent implements OnInit {
     this.accounts = [];
     this.importedAccounts = [];
     this.checkerr = '';
-    this.pkValid = true;
     this.lottieConfig = {
       path: 'assets/logoanim.json',
       autoplay: true,
       loop: false
     };
+
+    this.network.networkingReady.asObservable().subscribe((status) => {
+      this.busy = !status;
+    });
 
     this.publicEOS = '';
 
@@ -203,6 +213,7 @@ export class LandingComponent implements OnInit {
         this.importedAccounts = [];
         this.importedAccounts = [...results.foundAccounts];
         this.pvtform.controls['private_key'].setErrors(null);
+        this.exisitswizard.forceNext();
         this.errormsg = '';
       }).catch((e) => {
         this.pvtform.controls['private_key'].setErrors({'incorrect': true});
@@ -215,6 +226,10 @@ export class LandingComponent implements OnInit {
         }
       });
     }
+  }
+
+  doCancel(): void {
+    this.exisitswizard.close();
   }
 
   checkAccount() {

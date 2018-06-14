@@ -8,7 +8,7 @@
   },
   "repository": "https://github.com/eosrio/simpleos",
   "license": "UNLICENSED",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 7878",

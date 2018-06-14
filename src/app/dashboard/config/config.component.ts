@@ -5,6 +5,7 @@ import {EOSJSService} from '../../eosjs.service';
 import {AccountsService} from '../../accounts.service';
 import {VotingService} from '../vote/voting.service';
 import {AppComponent} from '../../app.component';
+import {NetworkService} from '../../network.service';
 
 @Component({
   selector: 'app-config',
@@ -27,6 +28,7 @@ export class ConfigComponent implements OnInit {
 
   constructor(private fb: FormBuilder,
               public voteService: VotingService,
+              public network: NetworkService,
               private router: Router,
               private eos: EOSJSService,
               public aService: AccountsService) {

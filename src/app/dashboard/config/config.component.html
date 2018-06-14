@@ -11,7 +11,7 @@
           <div class="card chains-card">
             <div class="card-block chain-section selected">
               Mainnet
-              <span style="float:right">endpoint</span>
+              <span style="float:right">endpoint: {{network.selectedEndpoint.getValue().url}}</span>
             </div>
             <div class="card-block chain-section" (click)="confirmModal = true">
               Jungle testnet
@@ -53,14 +53,18 @@
     Are you <span class="blue">sure</span> ?
   </h3>
   <div class="modal-body">
-    <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your private key again.</p>
+    <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your
+      private key again.</p>
     <mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
   </div>
   <div class="modal-footer">
     <button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
-    <button type="button" class="btn btn-info-outline" (click)="logout()">
-      Yes
-    </button>
+    <div>
+      <button type="button" class="btn btn-info-outline" (click)="logout()">
+        Yes
+      </button>
+      <div class="text-center">*SimplEOS will <br> be restarted</div>
+    </div>
   </div>
 </clr-modal>
 

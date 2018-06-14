@@ -12,37 +12,47 @@
           </lottie-animation-view>
         </div>
         <div class="slogan">Your simple and secure EOS wallet</div>
-        <div style="margin-top: 30px">
-          <button class="btn btn-inverse" (click)="existingWallet = true">Import existing
-            key
-          </button>
-          <button class="btn btn-inverse" (click)="importFromExodus()">Import Exodus wallet
-          </button>
-          <button class="btn btn-inverse disabled" pTooltip="soon">
-            Create new wallet
-          </button>
-        </div>
-        <div class="card check-card">
-          <div class="card-block">
-            <div class="info">You can do a quick check of your account here</div>
-            <mat-form-field class="public-input">
-              <input matInput type="text" placeholder="EOS Public key" [(ngModel)]="publicEOS">
-            </mat-form-field>
-            <button class="btn btn-inverse btn-check" (click)="checkAccount()" [disabled]="!publicEOS">Check</button>
+        <ng-container *ngIf="busy">
+          <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
+          <div>Connecting to the Blockchain...</div>
+        </ng-container>
+        <ng-container *ngIf="!busy">
+          <div style="margin-top: 30px">
+            <button class="btn btn-inverse" (click)="existingWallet = true">Import existing
+              key
+            </button>
+            <button class="btn btn-inverse" (click)="importFromExodus()">Import Exodus wallet
+            </button>
+            <button class="btn btn-inverse disabled" pTooltip="soon">
+              Create new wallet
+            </button>
           </div>
-          <ng-container *ngIf="checkerr === ''">
-            <div class="card-footer" *ngFor="let account of accounts">
-              <span style="float: left;">You have: <span class="blue">{{account.full_balance}} EOS</span></span>
-              <span style="float: right;">Account name: <span class="blue">{{account.name}}</span></span>
+          <div class="card check-card">
+            <div class="card-block">
+              <div class="info">You can do a quick check of your account here</div>
+              <mat-form-field class="public-input">
+                <input matInput type="text" placeholder="EOS Public key" [(ngModel)]="publicEOS">
+              </mat-form-field>
+              <button class="btn btn-inverse btn-check" (click)="checkAccount()" [disabled]="!publicEOS">
+                Check
+              </button>
             </div>
-          </ng-container>
-          <div class="card-footer" *ngIf="checkerr === 'invalid'">
-            <span class="red">Invalid public key</span>
+            <ng-container *ngIf="checkerr === ''">
+              <div class="card-footer" *ngFor="let account of accounts">
+                                <span style="float: left;">You have: <span
+                                  class="blue">{{account.full_balance}} EOS</span></span>
+                <span style="float: right;">Account name: <span
+                  class="blue">{{account.name}}</span></span>
+              </div>
+            </ng-container>
+            <div class="card-footer" *ngIf="checkerr === 'invalid'">
+              <span class="red">Invalid public key</span>
+            </div>
+            <div class="card-footer" *ngIf="checkerr === 'no_account'">
+              <span class="red">No account found :(</span>
+            </div>
           </div>
-          <div class="card-footer" *ngIf="checkerr === 'no_account'">
-            <span class="red">No account found :(</span>
-          </div>
-        </div>
+        </ng-container>
       </div>
     </div>
   </div>
@@ -55,17 +65,22 @@
 
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
   <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-  <clr-wizard-button [type]="'next'" (clicked)="verifyPrivateKey(pkField)">Next</clr-wizard-button>
+  <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)">
+                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)" clrWizardPagePreventDefault="true"
+                   (clrWizardPageOnCancel)="doCancel()">
     <ng-template clrPageTitle>Step 1</ng-template>
     <h5>Insert your existing private key below</h5>
     <form [formGroup]="pvtform">
       <mat-form-field class="mt-1">
-        <input #pkField matInput type="password" (blur)="verifyPrivateKey(pkField.value)" formControlName="private_key"
+        <input #pkField matInput type="password" formControlName="private_key"
                placeholder="EOS Private key">
+        <i matSuffix *ngIf="pkField.type === 'password'" class="far fa-eye fa-lg copy"
+           (click)="pkField.type = 'text'"></i>
+        <i matSuffix *ngIf="pkField.type === 'text'" class="far fa-eye-slash fa-lg copy"
+           (click)="pkField.type = 'password'"></i>
         <mat-error *ngIf="!pvtform.valid">
           {{this.errormsg}}
         </mat-error>
@@ -85,14 +100,22 @@
       <mat-form-field class="mt-1">
         <input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
+        <i matSuffix *ngIf="pass.type === 'password'" class="far fa-eye fa-lg copy"
+           (click)="pass.type = 'text'"></i>
+        <i matSuffix *ngIf="pass.type === 'text'" class="far fa-eye-slash fa-lg copy"
+           (click)="pass.type = 'password'"></i>
         <mat-hint align="start">
           Min 10 characters
         </mat-hint>
         <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
       </mat-form-field>
       <mat-form-field style="margin-top: 19px">
-        <input matInput type="password" placeholder="Confirm password" (blur)="passCompare()"
+        <input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
+        <i matSuffix *ngIf="pass2.type === 'password'" class="far fa-eye fa-lg copy"
+           (click)="pass2.type = 'text'"></i>
+        <i matSuffix *ngIf="pass2.type === 'text'" class="far fa-eye-slash fa-lg copy"
+           (click)="pass2.type = 'password'"></i>
         <mat-error *ngIf="!passmatch">
           Passwords do not match!
         </mat-error>
@@ -137,14 +160,22 @@
       <mat-form-field class="mt-1">
         <input matInput #passexodus type="password" placeholder="Password" (blur)="passExodusCompare()"
                [formControl]="passformexodus['controls'].matchingPassword['controls']['pass1']">
+        <i matSuffix *ngIf="passexodus.type === 'password'" class="far fa-eye fa-lg copy"
+           (click)="passexodus.type = 'text'"></i>
+        <i matSuffix *ngIf="passexodus.type === 'text'" class="far fa-eye-slash fa-lg copy"
+           (click)="passexodus.type = 'password'"></i>
         <mat-hint align="start">
           Min 10 characters
         </mat-hint>
         <mat-hint align="end">{{passexodus.value.length}} / 10+</mat-hint>
       </mat-form-field>
       <mat-form-field style="margin-top: 19px">
-        <input matInput type="password" placeholder="Confirm password" (blur)="passExodusCompare()"
+        <input matInput #passexodus2 type="password" placeholder="Confirm password" (blur)="passExodusCompare()"
                [formControl]="passformexodus['controls'].matchingPassword['controls']['pass2']">
+        <i matSuffix *ngIf="passexodus2.type === 'password'" class="far fa-eye fa-lg copy"
+           (click)="passexodus2.type = 'text'"></i>
+        <i matSuffix *ngIf="passexodus2.type === 'text'" class="far fa-eye-slash fa-lg copy"
+           (click)="passexodus2.type = 'password'"></i>
         <mat-error *ngIf="!passexodusmatch">
           Passwords do not match!
         </mat-error>

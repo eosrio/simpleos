@@ -301,7 +301,7 @@
     </div>
     <form [formGroup]="passForm" class="modal-footer">
         <mat-form-field>
-            <input matInput type="password" formControlName="pass" (keyup.enter)="modalVote(password.value)" #password
+            <input matInput #pass type="password" formControlName="pass" (keyup.enter)="modalVote(password.value)" #password
                    placeholder="Password">
             <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
                 {{wrongpass}}

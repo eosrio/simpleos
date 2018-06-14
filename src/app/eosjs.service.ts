@@ -6,7 +6,6 @@ import {BehaviorSubject, Subject} from 'rxjs';
 
 @Injectable()
 export class EOSJSService {
-  eos: any;
   eosio: any;
   tokens: any;
   ecc: any;
@@ -34,8 +33,9 @@ export class EOSJSService {
   private masterKey: CryptoKey;
   private textEncoder = new TextEncoder('utf-8');
   public accounts = new BehaviorSubject<any>({});
-  public online = new BehaviorSubject<Boolean>(false);
+  public online = new BehaviorSubject<boolean>(false);
   public chainID: string;
+  private eos: any;
 
   constructor() {
     this.eosio = null;

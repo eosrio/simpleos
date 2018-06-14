@@ -284,3 +284,12 @@ input:not([readonly]) {
 .mat-checkbox-checked.mat-accent .mat-checkbox-background {
     background-color: #0094d2 !important;
 }
+
+.copy {
+    margin-bottom: 8px;
+}
+
+.copy:hover {
+    cursor: pointer;
+    color: white;
+}
