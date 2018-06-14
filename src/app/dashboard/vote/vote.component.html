@@ -97,14 +97,17 @@
                     <tr>
                         <th style="width: 50px;">
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'name'">
                             name
+                            <p-sortIcon [field]="'name'"></p-sortIcon>
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'account'">
                             account
+                            <p-sortIcon [field]="'account'"></p-sortIcon>
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'location'">
                             location
+                            <p-sortIcon [field]="'location'"></p-sortIcon>
                         </th>
                         <th>
                             social
