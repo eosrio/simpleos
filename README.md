@@ -81,6 +81,18 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt-get update && sudo apt-get install yarn
 ```
 
+### MacOS Dependencies
+```
+# Install brew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+# Install Node.js 10
+brew install node
+
+# Install Yarn
+brew install yarn
+```
+
 ### Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
