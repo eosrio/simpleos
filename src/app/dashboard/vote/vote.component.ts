@@ -74,6 +74,10 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.voteService.listProducers();
   }
 
+  shuffleBps() {
+    this.voteService.randomizeList();
+  }
+
   processVotes() {
     this.selectedBPs = [];
     this.voteService.bps.forEach((bp) => {

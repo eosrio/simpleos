@@ -78,12 +78,18 @@
                             <h4 class="title">Vote for Block Producers! </h4>
                             <h5 class="subtitle mt-0">You can vote for up to 30</h5>
                         </div>
-                        <div class="col-lg-4 col-md-6 text-right">
+                        <div class="col-lg-3 col-md-6 text-right">
                             <mat-form-field class="searchbar">
                                 <input type="text" matInput placeholder="Search..."
                                        (input)="dt.filterGlobal($event.target.value, 'contains')">
                                 <fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
                             </mat-form-field>
+                        </div>
+                        <div class="col-lg text-right">
+                            <button (click)="shuffleBps()" class="btn btn-info-outline"
+                                    style="margin-top: 12px; margin-right: 25px">
+                                SHUFFLE
+                            </button>
                         </div>
                         <div class="col-lg text-right">
                             <button (click)="processVotes()" class="btn btn-info-outline"
@@ -97,14 +103,17 @@
                     <tr>
                         <th style="width: 50px;">
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'name'">
                             name
+                            <p-sortIcon [field]="'name'"></p-sortIcon>
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'account'">
                             account
+                            <p-sortIcon [field]="'account'"></p-sortIcon>
                         </th>
-                        <th>
+                        <th [pSortableColumn]="'location'">
                             location
+                            <p-sortIcon [field]="'location'"></p-sortIcon>
                         </th>
                         <th>
                             social
