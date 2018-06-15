@@ -68,7 +68,13 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 
 [Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
 
-### Linux Dependencies
+### Dependencies Setup
+
+#### Windows
+- [Node.js](https://nodejs.org/en/download/current/)
+- [Yarn](https://yarnpkg.com/en/docs/install#windows-stable)
+
+#### Ubuntu
 ```
 # Install Node.js 10
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
@@ -81,7 +87,19 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt-get update && sudo apt-get install yarn
 ```
 
-### MacOS Dependencies
+#### Fedora / Red Hat®
+```
+# Install Node.js 10
+curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo bash -
+sudo yum -y install nodejs
+sudo yum install gcc-c++ make
+
+# Install Yarn
+curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+sudo yum install yarn
+```
+
+#### MacOS
 ```
 # Install brew
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -93,7 +111,7 @@ brew install node
 brew install yarn
 ```
 
-### Setup sources:
+## Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
