@@ -64,6 +64,10 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 - [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.4.0/simpleos-0.4.0.dmg)
 - [Linux](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos_0.3.5_amd64.deb)
 
+## Legal Disclaimer
+
+By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/terms-of-service/).
+
 ## Build it yourself
 
 [Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
@@ -123,10 +127,6 @@ Create installer:
 yarn dist
 ```
 The packages will be available on the `/dist` folder.
-
-## Legal Disclaimer
-
-By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/terms-of-service/).
 
 ## Further help
 
