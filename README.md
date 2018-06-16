@@ -60,7 +60,7 @@ Your private keys are stored locally only and are properly encrypted with a user
 Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
-- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.4.0/simpleos-setup-0.4.0.exe)
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.5.0/simpleos-setup-0.5.0.exe)
 - [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.4.0/simpleos-0.4.0.dmg)
 - [Linux](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos_0.3.5_amd64.deb)
 
