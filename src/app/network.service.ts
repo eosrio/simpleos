@@ -34,6 +34,8 @@ export class NetworkService {
     chainId: ''
   };
   validEndpoints: Endpoint[];
+  status: string;
+  connectionTimeout: any;
   selectedEndpoint = new BehaviorSubject<Endpoint>(null);
   networkingReady = new BehaviorSubject<boolean>(false);
 
@@ -42,6 +44,8 @@ export class NetworkService {
       {url: 'http://br.eosrio.io:8080', owner: 'EOS Rio', latency: 0, filters: []},
       {url: 'http://api.eosnewyork.io', owner: 'EOS New York', latency: 0, filters: []},
       {url: 'https://eos.greymass.com', owner: 'Greymass', latency: 0, filters: []},
+      {url: 'https://eosapi.blockmatrix.network', owner: 'Blockmatrix', latency: 0, filters: []},
+      // {url: 'http://api.proxy1a.sheos.org', owner: 'shEOS', latency: 0, filters: []},
       // {url: 'http://bp.cryptolions.io:8888', owner: 'CryptoLions', latency: 0, filters: []},
       // {url: 'http://mainnet.eoscalgary.io', owner: 'EOS Cafe', latency: 0, filters: []},
       // {url: 'http://api.hkeos.com', owner: 'HK EOS', latency: 0, filters: []},
@@ -49,14 +53,28 @@ export class NetworkService {
       // {url: 'http://dc1.eosemerge.io:8888', owner: 'EOS Emerge Poland', latency: 0, filters: []},
     ];
     this.validEndpoints = [];
+    this.status = '';
+    this.connectionTimeout = null;
   }
 
   connect() {
+    this.status = '';
+    this.networkingReady.next(false);
     this.scanNodes().then(() => {
       this.verifyFilters().then(() => {
         this.extractValidNode();
       });
     });
+    console.log('Starting timer...');
+    this.connectionTimeout = setTimeout(() => {
+      console.log('Timeout!');
+      if (!this.networkingReady.getValue()) {
+        this.status = 'timeout';
+        clearTimeout(this.connectionTimeout);
+        this.networkingReady.next(false);
+        this.connectionTimeout = null;
+      }
+    }, 10000);
   }
 
   async scanNodes() {
@@ -82,8 +100,12 @@ export class NetworkService {
         this.selectedEndpoint.next(node);
       }
     });
-    // console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-    this.startup();
+    if (this.selectedEndpoint.getValue() === null) {
+      this.networkingReady.next(false);
+    } else {
+      console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
+      this.startup();
+    }
   }
 
   async verifyFilters() {
@@ -136,14 +158,14 @@ export class NetworkService {
 
   apiCheck(server: Endpoint) {
     console.log('Starting latency check for ' + server.url);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const config = this.baseConfig;
       config.httpEndpoint = server.url;
       config.chainId = this.mainnetId;
       const eos = Eos(config);
       const refTime = new Date().getTime();
       try {
-        eos['getInfo']({}, (err, chainInfo) => {
+        eos['getInfo']({}, (err) => {
           if (err) {
             server.latency = -1;
           } else {
@@ -159,8 +181,12 @@ export class NetworkService {
   }
 
   startup() {
-    this.networkingReady.next(true);
     this.eosjs.init(this.selectedEndpoint.getValue().url, this.mainnetId).then((savedAccounts: any) => {
+      if (this.connectionTimeout) {
+        clearTimeout(this.connectionTimeout);
+        this.networkingReady.next(true);
+        this.connectionTimeout = null;
+      }
       if (savedAccounts) {
         if (savedAccounts.length > 0) {
           this.aService.loadLocalAccounts(savedAccounts);

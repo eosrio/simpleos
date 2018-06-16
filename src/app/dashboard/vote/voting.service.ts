@@ -35,7 +35,7 @@ export class VotingService {
     });
   }
 
-  shuffle(array) {
+  static shuffle(array) {
     let currentIndex = array.length, temporaryValue, randomIndex;
     while (0 !== currentIndex) {
       randomIndex = Math.floor(Math.random() * currentIndex);
@@ -48,7 +48,7 @@ export class VotingService {
   }
 
   randomizeList() {
-    this.bps = this.shuffle(this.bps);
+    this.bps = VotingService.shuffle(this.bps);
   }
 
   updateGlobalStake() {

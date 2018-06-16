@@ -37,6 +37,7 @@ import {TextMaskModule} from 'angular2-text-mask';
 import {ToasterModule} from 'angular2-toaster';
 import {AccountsService} from './accounts.service';
 import {NetworkService} from './network.service';
+import {CryptoService} from './services/crypto.service';
 
 library.add(far, fas, fab, fal);
 
@@ -74,7 +75,7 @@ library.add(far, fas, fab, fal);
     HttpClientModule,
     AppRoutingModule
   ],
-  providers: [EOSJSService, AccountsService, NetworkService],
+  providers: [EOSJSService, AccountsService, NetworkService, CryptoService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

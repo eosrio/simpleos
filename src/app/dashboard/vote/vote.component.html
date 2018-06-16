@@ -1,316 +1,325 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
 
 <div class="container" style="height: 100%">
-    <div class="row animate" style="padding-top: 15px;">
-        <div class="col-lg-6">
-            <div class="card info-card">
-                <div class="card-block text-center">
-                    <div class="total">TOTAL (${{(totalBalance * aService.usd_rate) | number}})</div>
-                    <div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
-                        number: '1.2-2') + "K" : ((totalBalance) | number: '1.2-2') }} EOS
-                    </div>
-                </div>
-            </div>
-            <div class="card info-card">
-                <div class="card-block text-center">
-                    <div class="total">STAKED (${{(stakedBalance * aService.usd_rate) | number}})</div>
-                    <div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-                        number: '1.2-2') + "K" : ((stakedBalance) | number: '1.2-2') }} EOS
-                    </div>
-                </div>
-            </div>
+  <div class="row animate" style="padding-top: 15px;">
+    <div class="col-lg-6">
+      <div class="card info-card">
+        <div class="card-block text-center">
+          <div class="total">TOTAL (${{(totalBalance * aService.usd_rate) | number}})</div>
+          <div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
+            number: '1.2-2') + "K" : ((totalBalance) | number: '1.2-2') }} EOS
+          </div>
         </div>
-        <div class="col-lg-6">
-            <div class="card info-card disabled-card" pTooltip="soon"></div>
-            <div class="card info-card">
-                <div class="card-block">
-                    <div class="instruction">Stake your EOS</div>
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <mat-form-field class="input-width">
-                                <input matInput type="number" min="0" max="100" placeholder="Value (%)"
-                                       [(ngModel)]="percenttoStake">
-                                <span class="suffix" matSuffix>%</span>
-                            </mat-form-field>
-                        </div>
-                        <div class="col-lg-6">
-                            <mat-form-field class="input-width">
-                                <input matInput type="number" min="0" placeholder="Value (EOS)"
-                                       [(ngModel)]="valuetoStake">
-                                <span class="suffix" matSuffix>EOS</span>
-                            </mat-form-field>
-                        </div>
-                    </div>
+      </div>
+      <div class="card info-card">
+        <div class="card-block text-center">
+          <div class="total">STAKED (${{(stakedBalance * aService.usd_rate) | number}})</div>
+          <div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
+            number: '1.2-2') + "K" : ((stakedBalance) | number: '1.2-2') }} EOS
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card info-card">
+        <div class="card-block">
+          <div class="instruction expandable">Stake your EOS&nbsp;&nbsp;
+            <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+            <i class="far fa-question-circle blue"></i>
+              <span class="tooltip-content">Think of EOS as a farm. <br>
+                You need eos tokens to rent land on the farm. <br>
+                In order to rent, you <strong>stake</strong> your tokens. <br>
+                When you stake, you also have power to vote, as a “resident” on the farm, but <strong>those tokens will be locked</strong> for use in transactions. <br>
+                When you unstake, your tokens will only be free for transfers after 3 days.
+              </span>
+            </a>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <mat-form-field class="input-width">
+                <input matInput type="text" [min]="1/totalBalance" max="100" placeholder="Value (%)" (blur)="updateStakeValue(); checkPercent();"
+                       [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event" [textMask]="{mask: percentMask}">
+                <span class="suffix" matSuffix>%</span>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-6">
+              <mat-form-field class="input-width">
+                <input matInput type="text" min="1" placeholder="Value (EOS)"
+                       [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
+                       [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                <span class="suffix" matSuffix>EOS</span>
+              </mat-form-field>
+            </div>
+          </div>
 
-                    <div>
-                        <mat-slider class="stake-slider" [min]="min" [max]="max" [thumbLabel]="true"
-                                    [tickInterval]="25" [(ngModel)]="percenttoStake"></mat-slider>
-                    </div>
-                    <button (click)="stakeModal = true" class="btn btn-outline btn-info-outline"
-                            style="margin-top: 14px">Set Stake
-                    </button>
-                </div>
-            </div>
+          <div>
+            <mat-slider class="stake-slider" [min]="100/totalBalance" [max]="max" [thumbLabel]="true" (change)="updateStakeValue()"
+                        [tickInterval]="25" [displayWith]="sliderLabel" [(ngModel)]="percenttoStake"></mat-slider>
+          </div>
+          <button (click)="setStake()" class="btn btn-outline btn-info-outline"
+                  style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
+          </button>
+          <span class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</span>
         </div>
-        <!--<div class="col-lg-4">-->
-        <!--</div>-->
+      </div>
     </div>
-    <!--progress bar-->
-    <div class="row animate">
-        <div class="col-lg-12">
-            <div class="progress-block">
-                <label>Activation status</label>
-                <div class="progress flash progress-fade labeled">
-                    <progress max="100" [value]="voteService.stakePercent" data-displayval="0%"></progress>
-                </div>
-                <span>{{voteService.stakePercent}}%</span>
+    <!--<div class="col-lg-4">-->
+    <!--</div>-->
+  </div>
+  <div class="row animate">
+    <div class="col-lg-12">
+      <p-table #dt [value]="voteService.bps" [globalFilterFields]="['name','account','location']"
+               [responsive]="true" dataKey="account" class="bps-table" [paginator]="voteService.bps.length > 42"
+               [rows]="42">
+        <ng-template pTemplate="caption">
+          <div class="row flex-items-xs-between">
+            <div class="col-lg-5 col-md-5 text-left">
+              <h4 class="title">Vote for Block Producers! </h4>
+              <h5 class="subtitle mt-0">You can vote for up to 30</h5>
             </div>
-        </div>
-    </div>
-    <!--progress bar end-->
-    <div class="row animate">
-        <div class="col-lg-12">
-            <p-table #dt [value]="voteService.bps" [globalFilterFields]="['name','account','location']"
-                     [responsive]="true" dataKey="account" class="bps-table" [paginator]="voteService.bps.length > 42" [rows]="42">
-                <ng-template pTemplate="caption">
-                    <div class="row flex-items-xs-between">
-                        <div class="col-lg-5 col-md-5 text-left">
-                            <h4 class="title">Vote for Block Producers! </h4>
-                            <h5 class="subtitle mt-0">You can vote for up to 30</h5>
-                        </div>
-                        <div class="col-lg-3 col-md-6 text-right">
-                            <mat-form-field class="searchbar">
-                                <input type="text" matInput placeholder="Search..."
-                                       (input)="dt.filterGlobal($event.target.value, 'contains')">
-                                <fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
-                            </mat-form-field>
-                        </div>
-                        <div class="col-lg text-right">
-                            <button (click)="shuffleBps()" class="btn btn-info-outline"
-                                    style="margin-top: 12px; margin-right: 25px">
-                                SHUFFLE
-                            </button>
-                        </div>
-                        <div class="col-lg text-right">
-                            <button (click)="processVotes()" class="btn btn-info-outline"
-                                    style="margin-top: 12px; margin-right: 25px" [disabled]="nVotes > 30">
-                                CONFIRM VOTES
-                            </button>
-                        </div>
-                    </div>
-                </ng-template>
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th style="width: 50px;">
-                        </th>
-                        <th [pSortableColumn]="'name'">
-                            name
-                            <p-sortIcon [field]="'name'"></p-sortIcon>
-                        </th>
-                        <th [pSortableColumn]="'account'">
-                            account
-                            <p-sortIcon [field]="'account'"></p-sortIcon>
-                        </th>
-                        <th [pSortableColumn]="'location'">
-                            location
-                            <p-sortIcon [field]="'location'"></p-sortIcon>
-                        </th>
-                        <th>
-                            social
-                        </th>
-                        <th [pSortableColumn]="'total_votes'">
-                            total votes
-                            <p-sortIcon [field]="'total_votes'"></p-sortIcon>
-                        </th>
-                        <th style="width: 100px;">
-                            {{nVotes}}/30
-                        </th>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-item let-expanded="expanded">
-                    <tr [pSelectableRow]="item" class="tr-canexpand">
-                        <td class="text-right expandable" [pRowToggler]="item">
-                            <i [ngClass]="expanded ? 'fa-search-minus' : 'fa-search-plus'"
-                               class="fal fa-lg blue"></i>
-                        </td>
-                        <td class="text-center" [pRowToggler]="item">
-                            {{item.name}}
-                        </td>
-                        <td class="text-center" [pRowToggler]="item">
-                            {{item.account}}
-                        </td>
-                        <td class="text-center" [pRowToggler]="item">
-                            {{item.location}}
-                        </td>
-                        <td class="text-center">
-                            <ul>
-                                <li class="social-icon" *ngIf="item.website">
-                                    <a [href]="item.website" target="_blank">
-                                        <i class="fas fa-globe fa-lg"></i>
-                                    </a>
-                                </li>
-                                <li class="social-icon" *ngIf="item.social.steemit">
-                                    <a [href]="'https://steemit.com/' + item.social.steemit" target="_blank">
-                                        <img src="assets/steemit.png" class="steemit" style="">
-                                    </a>
-                                </li>
-                                <li class="social-icon" *ngIf="item.social.telegram">
-                                    <a [href]="'https://t.me/' + item.social.telegram" target="_blank">
-                                        <i class="fab fa-telegram-plane fa-lg"></i>
-                                    </a>
-                                </li>
-                                <li class="social-icon" *ngIf="item.social.twitter">
-                                    <a [href]="'https://twitter.com/' + item.social.twitter" target="_blank">
-                                        <i class="fab fa-twitter fa-lg"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </td>
-                        <td class="text-center" [pRowToggler]="item">
-                            {{item.total_votes}}
-                        </td>
-                        <td>
-                            <mat-checkbox [(ngModel)]="item.checked" (change)="updateCounter()">Vote</mat-checkbox>
-                        </td>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="rowexpansion" let-item>
-                    <tr class="tr-expanded">
-                        <td colspan="7">
-                            <div class="row row-expanded">
-                                <div class="col-xs-auto">
-                                    <div>
-                                        <img [src]="item.logo_256" style="width: 150px; border-radius: 5px">
-                                    </div>
-                                </div>
-                                <div class="col-xs">
-                                    <!--<div>-->
-                                        <!--<span *ngIf="item.status === 'producing'" class="label label-success">producing</span>-->
-                                        <!--<span *ngIf="item.status === 'standby'" class="label label-warning">stand-by</span>-->
-                                    <!--</div>-->
-                                    <div *ngIf="item.code">
+            <div class="col-lg-3 col-md-6 text-right">
+              <mat-form-field class="searchbar">
+                <input type="text" matInput placeholder="Search..."
+                       (input)="dt.filterGlobal($event.target.value, 'contains')">
+                <fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
+              </mat-form-field>
+            </div>
+            <div class="col-lg text-right">
+              <button (click)="shuffleBps()" class="btn btn-info-outline"
+                      style="margin-top: 12px; margin-right: 25px">
+                SHUFFLE
+              </button>
+            </div>
+            <div class="col-lg text-right">
+              <button (click)="processVotes()" class="btn btn-info-outline"
+                      style="margin-top: 12px; margin-right: 25px" [disabled]="nVotes > 30">
+                CONFIRM VOTES
+              </button>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 50px;">
+            </th>
+            <th [pSortableColumn]="'name'">
+              name
+              <p-sortIcon [field]="'name'"></p-sortIcon>
+            </th>
+            <th [pSortableColumn]="'account'">
+              account
+              <p-sortIcon [field]="'account'"></p-sortIcon>
+            </th>
+            <th [pSortableColumn]="'location'">
+              location
+              <p-sortIcon [field]="'location'"></p-sortIcon>
+            </th>
+            <th>
+              social
+            </th>
+            <th [pSortableColumn]="'total_votes'">
+              total votes
+              <p-sortIcon [field]="'total_votes'"></p-sortIcon>
+            </th>
+            <th style="width: 100px;">
+              {{nVotes}}/30
+            </th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item let-expanded="expanded">
+          <tr [pSelectableRow]="item" class="tr-canexpand">
+            <td class="text-right expandable" [pRowToggler]="item">
+              <i [ngClass]="expanded ? 'fa-search-minus' : 'fa-search-plus'"
+                 class="fal fa-lg blue"></i>
+            </td>
+            <td class="text-center" [pRowToggler]="item">
+              {{item.name}}
+            </td>
+            <td class="text-center" [pRowToggler]="item">
+              {{item.account}}
+            </td>
+            <td class="text-center" [pRowToggler]="item">
+              {{item.location}}
+            </td>
+            <td class="text-center">
+              <ul>
+                <li class="social-icon" *ngIf="item.website">
+                  <a [href]="item.website" target="_blank">
+                    <i class="fas fa-globe fa-lg"></i>
+                  </a>
+                </li>
+                <li class="social-icon" *ngIf="item.social['steemit']">
+                  <a [href]="'https://steemit.com/' + item.social['steemit']" target="_blank">
+                    <img src="../../../assets/steemit.png" class="steemit" style="">
+                  </a>
+                </li>
+                <li class="social-icon" *ngIf="item.social['telegram']">
+                  <a [href]="'https://t.me/' + item.social['telegram']" target="_blank">
+                    <i class="fab fa-telegram-plane fa-lg"></i>
+                  </a>
+                </li>
+                <li class="social-icon" *ngIf="item.social['twitter']">
+                  <a [href]="'https://twitter.com/' + item.social['twitter']" target="_blank">
+                    <i class="fab fa-twitter fa-lg"></i>
+                  </a>
+                </li>
+              </ul>
+            </td>
+            <td class="text-center" [pRowToggler]="item">
+              {{item.total_votes}}
+            </td>
+            <td>
+              <mat-checkbox [(ngModel)]="item.checked" (change)="updateCounter()">Vote</mat-checkbox>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="rowexpansion" let-item>
+          <tr class="tr-expanded">
+            <td colspan="7">
+              <div class="row row-expanded">
+                <div class="col-xs-auto">
+                  <div>
+                    <img [src]="item.logo_256" style="width: 150px; border-radius: 5px">
+                  </div>
+                </div>
+                <div class="col-xs">
+                  <!--<div>-->
+                  <!--<span *ngIf="item.status === 'producing'" class="label label-success">producing</span>-->
+                  <!--<span *ngIf="item.status === 'standby'" class="label label-warning">stand-by</span>-->
+                  <!--</div>-->
+                  <div *ngIf="item.code">
                       <span class="blue">
                           <a [href]="item.code" target="_blank">Code of conduct</a>
                       </span>
-                                    </div>
-                                    <div *ngIf="item.website">
-                                        <span class="blue">Website: </span>
-                                        <a [href]="item.website" class="a-white">{{item.website}}</a>
-                                    </div>
-                                    <div *ngIf="item.email">
-                                        <span class="blue">Email:</span> {{item.email}}
-                                    </div>
-                                    <div>
-                                        <span class="blue" *ngIf="item.social">All social media:</span>
-                                    </div>
-                                    <div style="margin-top: 5px;">
-                                        <ul>
-                                            <li class="social-icon" *ngIf="item.social.steemit">
-                                                <a [href]="'https://steemit.com/@' + item.social.steemit"
-                                                   target="_blank">
-                                                    <img src="../../../assets/steemit.png" class="steemit" style="">
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.telegram">
-                                                <a [href]="'https://t.me/' + item.social.telegram" target="_blank">
-                                                    <i class="fab fa-telegram-plane fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.twitter">
-                                                <a [href]="'https://twitter.com/' + item.social.twitter"
-                                                   target="_blank">
-                                                    <i class="fab fa-twitter fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.youtube">
-                                                <a [href]="'https://www.youtube.com/channel/' + item.social.youtube"
-                                                   target="_blank">
-                                                    <i class="fab fa-youtube fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.facebook">
-                                                <a [href]="'https://www.facebook.com/' + item.social.facebook"
-                                                   target="_blank">
-                                                    <i class="fab fa-facebook fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.github">
-                                                <a [href]="'https://github.com/' + item.social.github" target="_blank">
-                                                    <i class="fab fa-github fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="">
-                                                <a [href]="'https://www.reddit.com/user/' + item.social.reddit"
-                                                   target="_blank">
-                                                    <i class="fab fa-reddit fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.keybase">
-                                                <a [href]="'https://keybase.io/' + item.social.keybase" target="_blank">
-                                                    <i class="fab fa-keybase fa-lg"></i>
-                                                </a>
-                                            </li>
-                                            <li class="social-icon" *ngIf="item.social.wechat">
-                                                <a [href]="'weixin://contacts/profile/' + item.social.wechat"
-                                                   target="_blank">
-                                                    <i class="fab fa-weixin fa-lg"></i>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="summary">
-                    <div class="ui-helper-clearfix">
-                        <button (click)="processVotes()" class="btn btn-info-outline"
-                                style="margin-top: 10px; margin-right: 25px; float:right;" [disabled]="nVotes > 30"
-                                pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
-                            CONFIRM VOTES
-                        </button>
-                    </div>
-                </ng-template>
-            </p-table>
-        </div>
+                  </div>
+                  <div *ngIf="item.website">
+                    <span class="blue">Website: </span>
+                    <a [href]="item.website" class="a-white">{{item.website}}</a>
+                  </div>
+                  <div *ngIf="item.email">
+                    <span class="blue">Email:</span> {{item.email}}
+                  </div>
+                  <div>
+                    <span class="blue" *ngIf="item.social">All social media:</span>
+                  </div>
+                  <div style="margin-top: 5px;">
+                    <ul>
+                      <li class="social-icon" *ngIf="item.social['steemit']">
+                        <a [href]="'https://steemit.com/@' + item.social['steemit']"
+                           target="_blank">
+                          <img src="assets/steemit.png" class="steemit" style="">
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['telegram']">
+                        <a [href]="'https://t.me/' + item.social['telegram']" target="_blank">
+                          <i class="fab fa-telegram-plane fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['twitter']">
+                        <a [href]="'https://twitter.com/' + item.social['twitter']"
+                           target="_blank">
+                          <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['youtube']">
+                        <a [href]="'https://www.youtube.com/channel/' + item.social['youtube']"
+                           target="_blank">
+                          <i class="fab fa-youtube fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['facebook']">
+                        <a [href]="'https://www.facebook.com/' + item.social['facebook']"
+                           target="_blank">
+                          <i class="fab fa-facebook fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['github']">
+                        <a [href]="'https://github.com/' + item.social['github']" target="_blank">
+                          <i class="fab fa-github fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="">
+                        <a [href]="'https://www.reddit.com/user/' + item.social['reddit']"
+                           target="_blank">
+                          <i class="fab fa-reddit fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['keybase']">
+                        <a [href]="'https://keybase.io/' + item.social['keybase']" target="_blank">
+                          <i class="fab fa-keybase fa-lg"></i>
+                        </a>
+                      </li>
+                      <li class="social-icon" *ngIf="item.social['wechat']">
+                        <a [href]="'weixin://contacts/profile/' + item.social['wechat']"
+                           target="_blank">
+                          <i class="fab fa-weixin fa-lg"></i>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="summary">
+          <div class="ui-helper-clearfix">
+            <button (click)="processVotes()" class="btn btn-info-outline"
+                    style="margin-top: 10px; margin-right: 25px; float:right;" [disabled]="nVotes > 30"
+                    pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
+              CONFIRM VOTES
+            </button>
+          </div>
+        </ng-template>
+      </p-table>
     </div>
+  </div>
 </div>
 
 <clr-modal [(clrModalOpen)]="stakeModal">
-    <h3 class="modal-title text-white">Stake <span class="blue">20 EOS</span> ?</h3>
-    <div class="modal-body">
-        <h4 class="text-white">Voting power: <span class="blue">0,002%</span></h4>
-        <h5 class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
-    </div>
-    <div class="modal-footer">
-        <mat-form-field>
-            <input matInput type="password" placeholder="Password">
-        </mat-form-field>
-        <button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="stakeModal = false">
-            Confirm
-        </button>
-    </div>
+  <h3 *ngIf="stakingDiff > 0" class="modal-title text-white">Stake <span class="blue">+{{stakingHRV}}</span> ?</h3>
+  <h3 *ngIf="stakingDiff < 0" class="modal-title text-white">Unstake <span class="blue">{{stakingHRV}}</span> ?</h3>
+  <div class="modal-body">
+    <h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number}}</span></h4>
+    <h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
+    <h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
+    <h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
+  </div>
+  <div class="modal-footer">
+    <form [formGroup]="passFormStake" class="modal-footer">
+      <mat-form-field>
+        <input #passtake matInput type="password" formControlName="pass" placeholder="Password">
+        <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+          {{wrongpass}}
+        </mat-hint>
+      </mat-form-field>
+      <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+              (click)="callSetStake(passtake.value)" [disabled]="busy">
+        Confirm
+        <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
+      </button>
+    </form>
+  </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="voteModal" [clrModalStaticBackdrop]="true">
-    <h3 class="modal-title text-white">Confirm <span class="blue">vote</span></h3>
-    <div class="modal-body">
-        <h4 class="text-white">Do you confirm voting on the following BPs?</h4>
-        <h5 class="mt-0">{{selectedBPs.join(', ')}}</h5>
-    </div>
-    <form [formGroup]="passForm" class="modal-footer">
-        <mat-form-field>
-            <input matInput #pass type="password" formControlName="pass" (keyup.enter)="modalVote(password.value)" #password
-                   placeholder="Password">
-            <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-                {{wrongpass}}
-            </mat-hint>
-        </mat-form-field>
-        <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
-                (click)="modalVote(password.value);" [disabled]="busy">
-            Confirm
-            <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
-        </button>
-    </form>
+  <h3 class="modal-title text-white">Confirm <span class="blue">vote</span></h3>
+  <div class="modal-body">
+    <h4 class="text-white">Do you confirm voting on the following BPs?</h4>
+    <h5 class="mt-0">{{selectedBPs.join(', ')}}</h5>
+  </div>
+  <form [formGroup]="passForm" class="modal-footer">
+    <mat-form-field>
+      <input matInput #pass type="password" formControlName="pass" (keyup.enter)="modalVote(pass.value)"
+             placeholder="Password">
+      <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+        {{wrongpass}}
+      </mat-hint>
+    </mat-form-field>
+    <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+            (click)="modalVote(pass.value);" [disabled]="busy">
+      Confirm
+      <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
+    </button>
+  </form>
 </clr-modal>

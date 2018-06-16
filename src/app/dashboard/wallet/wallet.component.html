@@ -13,8 +13,8 @@
           <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number}} EOS
         </span>
       </div>
-      <p-table [value]="eos.actionHistory" [responsive]="true" dataKey="id" class="overview-table flex-column"
-               [paginator]="eos.actionHistory.length > 12" [rows]="12">
+      <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"
+               [paginator]="actions.length > 12" [rows]="12">
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 70px;">
@@ -39,7 +39,7 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="summary">
-          <ng-container *ngIf="eos.actionHistory.length === 0">
+          <ng-container *ngIf="actions.length === 0">
             No transactions yet
           </ng-container>
         </ng-template>
@@ -66,6 +66,12 @@
               <ng-container *ngIf="item.action_name === 'voteproducer'">
                 Voted on {{item.votedProducers.length}} BPs
               </ng-container>
+              <ng-container *ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
+                <span class="white">
+                  <span *ngIf="item.type === 'staked'">+</span>
+                  {{item.amount}}
+                </span> EOS (${{item.amount * aService.usd_rate | number}})
+              </ng-container>
             </td>
 
             <td class="text-center">
@@ -76,17 +82,15 @@
                 <span *ngIf="item.type === 'received'">from<span class="blue">{{item.user}}</span></span>
                 <span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
               </ng-container>
-              <ng-container *ngIf="item.action_name === 'delegatebw'">
                 <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
                 <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
-              </ng-container>
             </td>
 
             <td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
 
             <td class="text-center" style="width: 90px;">
-              <i *ngIf="item.type !== 'unstaked'" class="far fa-check fa-lg"></i>
-              <span *ngIf="item.type === 'unstaked'"><i class="far fa-hourglass fa-lg"></i>&nbsp;3 days</span>
+              <i *ngIf="LIB >= item.block" class="far fa-check fa-lg"></i>
+              <span *ngIf="LIB < item.block"><i class="far fa-hourglass fa-lg"></i></span>
             </td>
 
             <td class="text-right expandable" style="width: 35px;">
@@ -108,7 +112,7 @@
                 <div class="col-xs-11 text-left">
                   <div>
                     <span class="blue">Transaction ID: </span>
-                    <a (click)="openTXID(item.id)" pTooltip="Open on explorer" style="cursor: pointer;">
+                    <a (click)="openTX(item.id)" pTooltip="Open on explorer" style="cursor: pointer;">
                       {{item.id}}
                     </a>
                   </div>
@@ -141,8 +145,7 @@
             <div>{{fullBalance}} EOS</div>
           </li>
         </ul>
-        <div class="tokens-pad">Your other tokens will appear here. Airdrops tokens you may have can only appear after
-          mainnet activation
+        <div class="tokens-pad">Your other tokens, such as Airdrops, will appear here.
         </div>
       </div>
     </div>

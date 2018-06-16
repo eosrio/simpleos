@@ -1,1 +1,8 @@
 <router-outlet></router-outlet>
+
+<div id="update-box" [ngClass]="update ? 'show' : ''">
+    <div>There is a new version available</div>
+    <div>Update?</div>
+    <button class="btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>
+    <a class="btn btn-link btn-sm" href="https://github.com/eosrio/simpleos/releases/latest" target="_blank">View on Github</a>
+</div>

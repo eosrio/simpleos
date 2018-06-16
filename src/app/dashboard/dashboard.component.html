@@ -31,22 +31,22 @@
       </div>
     </div>
     <nav class="sidenav">
-      <section class="sidenav-header" (click)="refreshAccount()">
+      <section class="sidenav-header">
         <lottie-animation-view
           [options]="lottieConfig" [width]="'auto'" [height]="'auto'" (animCreated)="handleAnimation($event)">
         </lottie-animation-view>
       </section>
       <section #sidenavContent class="sidenav-content">
-        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
           <i class="far fa-history"></i>&nbsp;&nbsp;HISTORY
         </a>
-        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['send']">
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['send']">
           <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
         </a>
         <!--<a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['history']">-->
         <!--<fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY-->
         <!--</a>-->
-        <a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['vote']">
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['vote']">
           <fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
         </a>
       </section>

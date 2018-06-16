@@ -4,8 +4,8 @@ import {Router} from '@angular/router';
 import {EOSJSService} from '../../eosjs.service';
 import {AccountsService} from '../../accounts.service';
 import {VotingService} from '../vote/voting.service';
-import {AppComponent} from '../../app.component';
 import {NetworkService} from '../../network.service';
+import {CryptoService} from '../../services/crypto.service';
 
 @Component({
   selector: 'app-config',
@@ -31,6 +31,7 @@ export class ConfigComponent implements OnInit {
               public network: NetworkService,
               private router: Router,
               private eos: EOSJSService,
+              private crypto: CryptoService,
               public aService: AccountsService) {
     this.endpointModal = false;
     this.logoutModal = false;
@@ -69,8 +70,8 @@ export class ConfigComponent implements OnInit {
   changePass() {
     if (this.passmatch) {
       const name = this.aService.selected.getValue().name;
-      this.eos.authenticate(this.passForm.value.oldpass, name).then(() => {
-        this.eos.changePass(name, this.passForm.value.matchingPassword.pass2).then(() => {
+      this.crypto.authenticate(this.passForm.value.oldpass, name).then(() => {
+        this.crypto.changePass(name, this.passForm.value.matchingPassword.pass2).then(() => {
           ConfigComponent.resetApp();
         });
       });

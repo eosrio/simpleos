@@ -293,3 +293,7 @@ input:not([readonly]) {
     cursor: pointer;
     color: white;
 }
+
+.error {
+    color: #f44336 !important;
+}

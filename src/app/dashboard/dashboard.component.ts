@@ -34,15 +34,11 @@ export class DashboardComponent implements OnInit {
 
   handleAnimation(anim: any) {
     this.anim = anim;
-    this.anim.setSpeed(0.8);
+    this.anim['setSpeed'](0.8);
   }
 
   selectAccount(idx) {
     this.aService.select(idx);
-  }
-
-  refreshAccount() {
-    const accountName = this.aService.selected.getValue().name;
   }
 
   loadStoredAccounts() {

@@ -5,6 +5,7 @@ import {AccountsService} from '../accounts.service';
 import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../network.service';
+import {CryptoService} from '../services/crypto.service';
 
 @Component({
   selector: 'app-landing',
@@ -47,6 +48,7 @@ export class LandingComponent implements OnInit {
   }
 
   constructor(public eos: EOSJSService,
+              private crypto: CryptoService,
               private fb: FormBuilder,
               private aService: AccountsService,
               public network: NetworkService,
@@ -103,6 +105,10 @@ export class LandingComponent implements OnInit {
     }, 900);
   }
 
+  retryConn() {
+    this.network.connect();
+  }
+
   importFromExodus() {
     this.exodusWallet = true;
     this.dropReady = true;
@@ -117,7 +123,7 @@ export class LandingComponent implements OnInit {
         for (const f of e.dataTransfer.files) {
           const path = f['path'];
           this.dropReady = false;
-          window['fs']['readFile'](path, 'utf-8', (err, data) => {
+          window['filesystem']['readFile'](path, 'utf-8', (err, data) => {
             if (!err) {
               const csvdata = data.split(',');
               this.pk = csvdata[csvdata.length - 1];
@@ -125,7 +131,7 @@ export class LandingComponent implements OnInit {
               document.removeEventListener('dragover', handleDragOver, true);
               this.verifyPrivateKey(this.pk);
               this.wizard.navService.next();
-              window['fs']['unlink'](path, (err2) => {
+              window['filesystem']['unlink'](path, (err2) => {
                 if (err2) {
                   console.log(err2);
                 }
@@ -170,10 +176,10 @@ export class LandingComponent implements OnInit {
 
   importCredentials() {
     if (this.passform.value.matchingPassword.pass1 === this.passform.value.matchingPassword.pass2) {
-      this.eos.initKeys(this.publicEOS, this.passform.value.matchingPassword.pass1).then(() => {
-        this.eos.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
+      this.crypto.initKeys(this.publicEOS, this.passform.value.matchingPassword.pass1).then(() => {
+        this.crypto.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
-          this.eos.decryptKeys(this.publicEOS).then((data) => {
+          this.crypto.decryptKeys(this.publicEOS).then(() => {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
@@ -189,10 +195,10 @@ export class LandingComponent implements OnInit {
 
   importCredentialsExodus() {
     if (this.passformexodus.value.matchingPassword.pass1 === this.passformexodus.value.matchingPassword.pass2) {
-      this.eos.initKeys(this.publicEOS, this.passformexodus.value.matchingPassword.pass1).then(() => {
-        this.eos.encryptAndStore(this.pk, this.publicEOS).then(() => {
+      this.crypto.initKeys(this.publicEOS, this.passformexodus.value.matchingPassword.pass1).then(() => {
+        this.crypto.encryptAndStore(this.pk, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
-          this.eos.decryptKeys(this.publicEOS).then((data) => {
+          this.crypto.decryptKeys(this.publicEOS).then(() => {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });

@@ -12,9 +12,13 @@
           </lottie-animation-view>
         </div>
         <div class="slogan">Your simple and secure EOS wallet</div>
-        <ng-container *ngIf="busy">
+        <ng-container *ngIf="busy && network.status === ''">
           <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
           <div>Connecting to the Blockchain...</div>
+        </ng-container>
+        <ng-container *ngIf="busy && network.status === 'timeout'">
+          <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
+          <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
         </ng-container>
         <ng-container *ngIf="!busy">
           <div style="margin-top: 30px">
@@ -60,7 +64,7 @@
 
 
 <!--IMPORT EXISTING WALLET-->
-<clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" clrWizardSize="md">
+<clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -69,7 +73,7 @@
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)" clrWizardPagePreventDefault="true"
+                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)" [clrWizardPagePreventDefault]="true"
                    (clrWizardPageOnCancel)="doCancel()">
     <ng-template clrPageTitle>Step 1</ng-template>
     <h5>Insert your existing private key below</h5>
@@ -132,7 +136,7 @@
 <!--IMPORT EXISTING WALLET END-->
 
 <!--IMPORT EXODUS WALLET-->
-<clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" clrWizardSize="md">
+<clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Import Exodus wallet</clr-wizard-title>
 
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>

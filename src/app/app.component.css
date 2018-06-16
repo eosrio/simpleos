@@ -1,0 +1,31 @@
+#update-box {
+    visibility: hidden;
+    max-width: 13rem;
+    min-width: 9rem;
+    width: 18%;
+    background-color: #191919;
+    color: #fff;
+    text-align: center;
+    border: 1px solid #343434;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: -1px;
+    bottom: 0;
+}
+
+#update-box.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s;
+    animation: fadein 0.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {bottom: -10px; opacity: 0;}
+    to {bottom: 0; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {bottom: -10px; opacity: 0;}
+    to {bottom: 0; opacity: 1;}
+}

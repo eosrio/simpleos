@@ -4,10 +4,14 @@
     <div class="col-md-6 text-center animate" style="align-self: center;">
       <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
         <div class="balance">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;UNSTAKED
+          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
+          '1.2-4'}})
         </div>
         <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
-        <div class="dollar">${{unstaked * aService.usd_rate | number : '1.2-4'}}</div>
+        <div *ngIf="unstaking > 0">
+          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
+          '1.2-4'}} EOS {{unstakeTime}}
+        </div>
         <form [formGroup]="sendForm">
           <div>
             <mat-form-field class="field-width" style="margin-top: 12px; margin-bottom: 12px">

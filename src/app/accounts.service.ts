@@ -47,7 +47,7 @@ export class AccountsService {
       console.log('onlineStatus', onlineStatus);
       if (onlineStatus) {
         setTimeout(() => {
-          this.refreshFromChain();
+          // this.refreshFromChain();
         }, 1000);
       }
     });
@@ -83,33 +83,59 @@ export class AccountsService {
           this.accounts.push(acc_data);
         }
       });
+      this.refreshFromChain();
     }
   }
 
   refreshFromChain() {
+    console.log('REFRESH!');
     const PQ = [];
     // Build promise queue
+    // if (this.accounts.length === 0) {
+    //   setTimeout(() => {
+    //     this.refreshFromChain();
+    //   }, 2000);
+    // }
     this.accounts.forEach((account, idx) => {
+      // console.log(account, idx);
       const tempPromise = new Promise((resolve, reject) => {
         this.eos.getAccountInfo(account['name']).then((newdata) => {
+          // console.log(newdata);
           this.eos.getTokens(account['name']).then((tokens) => {
-            let balance = 0;
-            tokens.forEach((tk) => {
-              balance += AccountsService.parseEOS(tk);
+            // console.log(tokens);
+            this.eos.getRefunds(account['name']).then((refunds) => {
+              console.log(refunds);
+              let ref_time = null;
+              let balance = 0;
+              let ref_net = 0;
+              let ref_cpu = 0;
+
+              if (refunds.rows.length > 0) {
+                ref_net = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
+                ref_cpu = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
+                balance += ref_net;
+                balance += ref_cpu;
+                ref_time = new Date(refunds.rows[0]['request_time']);
+              }
+              tokens.forEach((tk) => {
+                balance += AccountsService.parseEOS(tk);
+              });
+              const net = AccountsService.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
+              const cpu = AccountsService.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+              balance += net;
+              balance += cpu;
+              this.accounts[idx].name = account['name'];
+              this.accounts[idx].full_balance = Math.round((balance) * 10000) / 10000;
+              this.accounts[idx].staked = net + cpu;
+              this.accounts[idx].unstaking = ref_net + ref_cpu;
+              this.accounts[idx].unstakeTime = ref_time;
+              this.accounts[idx].details = newdata;
+              this.lastUpdate.next({
+                account: account['name'],
+                timestamp: new Date()
+              });
+              resolve();
             });
-            const net = AccountsService.parseEOS(newdata['total_resources']['net_weight']);
-            const cpu = AccountsService.parseEOS(newdata['total_resources']['cpu_weight']);
-            balance += net;
-            balance += cpu;
-            this.accounts[idx].name = account['name'];
-            this.accounts[idx].full_balance = Math.round((balance) * 10000) / 10000;
-            this.accounts[idx].staked = net + cpu;
-            this.accounts[idx].details = newdata;
-            this.lastUpdate.next({
-              account: account['name'],
-              timestamp: new Date()
-            });
-            resolve();
           }).catch((error2) => {
             console.log('Error on getTokens', error2);
             reject();

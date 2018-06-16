@@ -1,5 +1,4 @@
 import {Injectable} from '@angular/core';
-import {TextEncoder} from 'text-encoding-shim';
 
 import * as EOSJS from '../assets/eos.js';
 import {BehaviorSubject, Subject} from 'rxjs';
@@ -29,9 +28,6 @@ export class EOSJSService {
   txCheckQueue = [];
   txMonitorInterval = null;
 
-  private ivLen = 12;
-  private masterKey: CryptoKey;
-  private textEncoder = new TextEncoder('utf-8');
   public accounts = new BehaviorSubject<any>({});
   public online = new BehaviorSubject<boolean>(false);
   public chainID: string;
@@ -46,18 +42,10 @@ export class EOSJSService {
     this.actionHistory = [];
   }
 
-  static concatUint8Array(...arrays: Uint8Array[]): Uint8Array {
-    let totalLength = 0;
-    for (const arr of arrays) {
-      totalLength += arr.length;
-    }
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const arr of arrays) {
-      result.set(arr, offset);
-      offset += arr.length;
-    }
-    return result;
+  reloadInstance() {
+    this.auth = true;
+    this.eos = EOSJS(this.baseConfig);
+    this.baseConfig.keyProvider = [];
   }
 
   init(url, chain) {
@@ -70,14 +58,15 @@ export class EOSJSService {
         this.ready = true;
         this.online.next(result['head_block_num'] - result['last_irreversible_block_num'] < 400);
         this.getConstitution();
-        const savedpayload = localStorage.getItem('simpleos.accounts.' + this.chainID);
         let savedAcc = [];
+        const savedpayload = localStorage.getItem('simpleos.accounts.' + this.chainID);
         if (savedpayload) {
           savedAcc = JSON.parse(savedpayload).accounts;
           this.loadHistory();
         }
         this.eos['contract']('eosio').then(contract => {
           this.eosio = contract;
+          console.log(savedAcc);
           resolve(savedAcc);
         });
       }).catch((err) => {
@@ -100,6 +89,15 @@ export class EOSJSService {
       code: 'eosio',
       scope: 'eosio',
       table: 'global'
+    });
+  }
+
+  getRefunds(account): Promise<any> {
+    return this.eos['getTableRows']({
+      json: true,
+      code: 'eosio',
+      scope: account,
+      table: 'refunds'
     });
   }
 
@@ -184,55 +182,55 @@ export class EOSJSService {
 
   loadHistory() {
     this.actionHistory = [];
-    const payload = localStorage.getItem('simpleos.txhistory.' + this.chainID);
-    if (payload) {
-      this.txh = JSON.parse(payload);
-      this.txh.forEach((data) => {
-        if (data['trx']) {
-          data['trx']['trx']['actions'].forEach((action) => {
-            const status = data['trx']['receipt']['status'];
-            const date = data['block_time'];
-            const contract = action['account'];
-            const action_name = action['name'];
-            let amount = 0;
-            let user = '';
-            let type = '';
-            let memo = '';
-
-            if (action['account'] === 'eosio.token' && action['name'] === 'transfer') {
-              amount = action['data']['quantity'];
-              user = action['data']['to'];
-              memo = action['data']['memo'];
-              type = 'sent';
-            }
-            let votedProducers = null;
-            let proxy = null;
-            let voter = null;
-            if (action['account'] === 'eosio' && action['name'] === 'voteproducer') {
-              votedProducers = action['data']['producers'];
-              proxy = action['data']['proxy'];
-              voter = action['data']['voter'];
-              type = 'vote';
-            }
-            this.actionHistory.push({
-              id: data['id'],
-              type: type,
-              action_name: action_name,
-              contract: contract,
-              user: user,
-              status: status,
-              date: date,
-              amount: amount,
-              memo: memo,
-              votedProducers: votedProducers,
-              proxy: proxy,
-              voter: voter
-            });
-          });
-        }
-      });
-      this.actionHistory.reverse();
-    }
+    // const payload = localStorage.getItem('simpleos.txhistory.' + this.chainID);
+    // if (payload) {
+    //   this.txh = JSON.parse(payload);
+    //   this.txh.forEach((data) => {
+    //     if (data['trx']) {
+    //       data['trx']['trx']['actions'].forEach((action) => {
+    //         const status = data['trx']['receipt']['status'];
+    //         const date = data['block_time'];
+    //         const contract = action['account'];
+    //         const action_name = action['name'];
+    //         let amount = 0;
+    //         let user = '';
+    //         let type = '';
+    //         let memo = '';
+    //
+    //         if (action['account'] === 'eosio.token' && action['name'] === 'transfer') {
+    //           amount = action['data']['quantity'];
+    //           user = action['data']['to'];
+    //           memo = action['data']['memo'];
+    //           type = 'sent';
+    //         }
+    //         let votedProducers = null;
+    //         let proxy = null;
+    //         let voter = null;
+    //         if (action['account'] === 'eosio' && action['name'] === 'voteproducer') {
+    //           votedProducers = action['data']['producers'];
+    //           proxy = action['data']['proxy'];
+    //           voter = action['data']['voter'];
+    //           type = 'vote';
+    //         }
+    //         this.actionHistory.push({
+    //           id: data['id'],
+    //           type: type,
+    //           action_name: action_name,
+    //           contract: contract,
+    //           user: user,
+    //           status: status,
+    //           date: date,
+    //           amount: amount,
+    //           memo: memo,
+    //           votedProducers: votedProducers,
+    //           proxy: proxy,
+    //           voter: voter
+    //         });
+    //       });
+    //     }
+    //   });
+    //   this.actionHistory.reverse();
+    // }
   }
 
   saveHistory() {
@@ -275,134 +273,6 @@ export class EOSJSService {
       return new Promise((resolve, reject) => {
         reject(e);
       });
-    }
-  }
-
-  async initKeys(publickey, pass): Promise<void> {
-    const salt = this.textEncoder.encode(publickey);
-    this.basePublicKey = publickey;
-    const importedPassword = await crypto.subtle.importKey('raw', this.textEncoder.encode(pass), 'PBKDF2', false, ['deriveKey']);
-    const tempKey = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      importedPassword,
-      {name: 'AES-GCM', length: 256},
-      true,
-      ['encrypt']
-    );
-    const exportedTempKey = await crypto.subtle.exportKey('raw', tempKey);
-    const importedTempKey = await crypto.subtle.importKey('raw', exportedTempKey, 'PBKDF2', false, ['deriveKey']);
-    this.masterKey = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2', salt: salt,
-        iterations: 100000, hash: 'SHA-256'
-      },
-      importedTempKey,
-      {name: 'AES-GCM', length: 256},
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
-
-  async changePass(publickey, newpass): Promise<boolean> {
-    const store = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
-    if (store) {
-      const payload = store[publickey]['private'];
-      if (payload) {
-        const encryptedData = this.base64ToBuffer(payload);
-        const iv = encryptedData.slice(0, this.ivLen);
-        const data = encryptedData.slice(this.ivLen);
-        const decrypted = await crypto.subtle.decrypt({
-          name: 'AES-GCM',
-          iv: iv
-        }, this.masterKey, data);
-        const tempKey = String.fromCharCode.apply(null, new Uint8Array(decrypted)).replace(/"/g, '');
-        await this.initKeys(publickey, newpass);
-        await this.encryptAndStore(tempKey, publickey);
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  }
-
-  async encryptAndStore(data, publickey): Promise<void> {
-    const encryptedData = await this.encrypt(data);
-    let store = {};
-    const oldData = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
-    if (oldData) {
-      store = oldData;
-    }
-    store[publickey] = {
-      private: this.bufferToBase64(encryptedData)
-    };
-    localStorage.setItem('eos_keys.' + this.chainID, JSON.stringify(store));
-  }
-
-  private async encrypt(data): Promise<Uint8Array> {
-    const compressed = this.textEncoder.encode(JSON.stringify(data));
-    const initializationVector = new Uint8Array(this.ivLen);
-    crypto.getRandomValues(initializationVector);
-    const encrypted = await crypto.subtle.encrypt({
-        name: 'AES-GCM',
-        iv: initializationVector
-      },
-      this.masterKey,
-      compressed
-    );
-    return EOSJSService.concatUint8Array(initializationVector, new Uint8Array(encrypted));
-  }
-
-  bufferToBase64(buf) {
-    const binstr = Array.prototype.map.call(buf, function (ch) {
-      return String.fromCharCode(ch);
-    }).join('');
-    return btoa(binstr);
-  }
-
-  base64ToBuffer(base64) {
-    const binstr = atob(base64);
-    const buf = new Uint8Array(binstr.length);
-    Array.prototype.forEach.call(binstr, function (ch, i) {
-      buf[i] = ch.charCodeAt(0);
-    });
-    return buf;
-  }
-
-  async authenticate(pass, publickey): Promise<boolean> {
-    this.auth = false;
-    await this.initKeys(publickey, pass);
-    return await this.decryptKeys(publickey);
-  }
-
-  async decryptKeys(publickey): Promise<boolean> {
-    const store = JSON.parse(localStorage.getItem('eos_keys.' + this.chainID));
-    if (store) {
-      const payload = store[publickey]['private'];
-      if (payload) {
-        const encryptedData = this.base64ToBuffer(payload);
-        const iv = encryptedData.slice(0, this.ivLen);
-        const data = encryptedData.slice(this.ivLen);
-        const decrypted = await crypto.subtle.decrypt({
-          name: 'AES-GCM',
-          iv: iv
-        }, this.masterKey, data);
-        this.baseConfig.keyProvider.push(String.fromCharCode.apply(null, new Uint8Array(decrypted)).replace(/"/g, ''));
-        this.auth = true;
-        this.eos = EOSJS(this.baseConfig);
-        this.baseConfig.keyProvider = [];
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
     }
   }
 
@@ -472,6 +342,59 @@ export class EOSJSService {
     } else {
       return new Error('Cannot cast more than 30 votes!');
     }
+  }
+
+  stake(account, amount) {
+    return new Promise((resolve, reject) => {
+      if (amount > 2) {
+        const split = ((amount / 2) / 10000).toFixed(4);
+        console.log(split);
+        this.eos['delegatebw']({
+          from: account,
+          receiver: account,
+          stake_net_quantity: split + ' EOS',
+          stake_cpu_quantity: split + ' EOS',
+          transfer: 1
+        }, (err, result) => {
+          if (err) {
+            console.log(err);
+            reject();
+          } else {
+            console.log(result);
+            resolve();
+          }
+        });
+      } else {
+        reject();
+      }
+    });
+  }
+
+  unstake(account, amount) {
+    return new Promise((resolve, reject) => {
+      this.eos['getAccount'](account).then((accountInfo) => {
+        const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+        if (current_stake - amount > 10000) {
+          const split = ((amount / 2) / 10000).toFixed(4);
+          this.eos['undelegatebw']({
+            from: account,
+            receiver: account,
+            unstake_net_quantity: split + ' EOS',
+            unstake_cpu_quantity: split + ' EOS'
+          }, (err, result) => {
+            if (err) {
+              console.log(err);
+              reject();
+            } else {
+              console.log(result);
+              resolve();
+            }
+          });
+        } else {
+          reject();
+        }
+      });
+    });
   }
 
 }

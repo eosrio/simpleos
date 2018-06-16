@@ -11,7 +11,7 @@
           <div class="card chains-card">
             <div class="card-block chain-section selected">
               Mainnet
-              <span style="float:right">endpoint: {{network.selectedEndpoint.getValue().url}}</span>
+              <span style="float:right">endpoint: {{network.selectedEndpoint.getValue().url}} | latency: {{network.selectedEndpoint.getValue().latency}}ms</span>
             </div>
             <div class="card-block chain-section" (click)="confirmModal = true">
               Jungle testnet

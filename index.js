@@ -1,10 +1,50 @@
-const {app, BrowserWindow, Menu} = require('electron');
+const {app, BrowserWindow, Menu, dialog} = require('electron');
 const path = require('path');
 const url = require('url');
+const {version} = require('./package.json');
+app.getVersion = () => version;
+const {autoUpdater} = require('electron-updater');
+const ipcMain = require('electron').ipcMain;
+
+let sender;
+autoUpdater.autoDownload = true;
 
 let win, devtools;
 const args = process.argv.slice(1);
 devtools = args.some(val => val === '--devtools');
+
+if (devtools) {
+  autoUpdater.updateConfigPath = path.join('./dev-app-update.yml');
+}
+
+
+ipcMain.on('checkUpdate', (event, arg) => {
+  autoUpdater.checkForUpdates().then((data) => {
+    console.log(data);
+    sender = event.sender;
+    sender.send('update_data', data);
+  });
+});
+
+ipcMain.on('startUpdate', (event, arg) => {
+  autoUpdater.quitAndInstall();
+});
+
+autoUpdater.on('error', (error) => {
+  dialog.showErrorBox('Error: ', error == null ? "unknown" : (error.stack || error).toString())
+});
+
+autoUpdater.on('update-available', () => {
+  autoUpdater.downloadUpdate();
+});
+
+autoUpdater.on('update-not-available', () => {
+  sender.send('update_ready',false);
+});
+
+autoUpdater.on('update-downloaded', () => {
+  sender.send('update_ready',true);
+});
 
 function createWindow() {
   win = new BrowserWindow({
