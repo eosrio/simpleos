@@ -19,9 +19,8 @@ if (devtools) {
 
 
 ipcMain.on('checkUpdate', (event, arg) => {
+  sender = event.sender;
   autoUpdater.checkForUpdates().then((data) => {
-    console.log(data);
-    sender = event.sender;
     sender.send('update_data', data);
   });
 });
@@ -35,15 +34,15 @@ autoUpdater.on('error', (error) => {
 });
 
 autoUpdater.on('update-available', () => {
-  autoUpdater.downloadUpdate();
+  autoUpdater['downloadUpdate']();
 });
 
 autoUpdater.on('update-not-available', () => {
-  sender.send('update_ready',false);
+  sender.send('update_ready', false);
 });
 
 autoUpdater.on('update-downloaded', () => {
-  sender.send('update_ready',true);
+  sender.send('update_ready', true);
 });
 
 function createWindow() {
@@ -52,10 +51,10 @@ function createWindow() {
     darkTheme: true,
     x: 100,
     y: 100,
-    width: 1280,
-    height: 720,
+    width: 1440,
+    height: 800,
     minWidth: 800,
-    minHeight: 500,
+    minHeight: 600,
     frame: true,
     icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });

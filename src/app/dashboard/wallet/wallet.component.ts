@@ -67,7 +67,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
                 const date = item['block_time'];
                 const contract = act['account'];
                 const action_name = act['name'];
-                console.log(id, block_num, item);
                 let amount = 0;
                 let user = '';
                 let type = '';
