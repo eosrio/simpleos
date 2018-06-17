@@ -2,15 +2,15 @@
   <div class="row flex-items-xs-between" style="height: 100%;">
     <div class="col-md-10 text-center flex-column animate" *ngIf="aService.selected !== undefined"
          style="padding: 39px;">
-      <div class="balance">BALANCE (${{(fullBalance * aService.usd_rate) | number}})</div>
-      <div class="eos">{{fullBalance | number}} EOS</div>
+      <div class="balance">BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
+      <div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>
       <div class="infos">
         <span style="padding-right: 15px">
-          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number}} EOS
+          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.2-4'}} EOS
         </span>
         |
         <span style="padding-left: 15px">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number}} EOS
+          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.2-4'}} EOS
         </span>
       </div>
       <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"

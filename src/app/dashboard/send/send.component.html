@@ -5,7 +5,7 @@
       <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
         <div class="balance">
           <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
-          '1.2-4'}})
+          '1.2-2'}})
         </div>
         <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
         <div *ngIf="unstaking > 0">
