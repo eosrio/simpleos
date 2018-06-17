@@ -62,7 +62,7 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 ## Download a pre-compiled build
 - [Windows](https://github.com/eosrio/simpleos/releases/download/v0.5.1/simpleos-setup-0.5.1.exe)
 - [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.4.0/simpleos-0.4.0.dmg)
-- [Linux](https://github.com/eosrio/simpleos/releases/download/v0.3.5/simpleos_0.3.5_amd64.deb)
+- [Linux](https://github.com/eosrio/simpleos/releases/download/v0.5.1/simpleos-0.5.1-x86_64.AppImage)
 
 ## Legal Disclaimer
 
