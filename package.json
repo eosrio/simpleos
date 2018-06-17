@@ -38,7 +38,8 @@
     "mac": {
       "category": "public.app-category.finance",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "icon": "icon.png"
     },
