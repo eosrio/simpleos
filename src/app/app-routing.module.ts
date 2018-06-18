@@ -10,42 +10,42 @@ import {ConfigComponent} from './dashboard/config/config.component';
 import {AboutComponent} from './dashboard/about/about.component';
 
 const routes: Routes = [
-    {path: '', component: LandingComponent},
-    {
-        path: 'dashboard',
-        component: DashboardComponent,
-        children: [
-            {
-                path: 'wallet',
-                component: WalletComponent,
-            },
-            {
-                path: 'send',
-                component: SendComponent,
-            },
-            {
-                path: 'history',
-                component: HistoryComponent,
-            },
-            {
-                path: 'vote',
-                component: VoteComponent,
-            },
-            {
-                path: 'config',
-                component: ConfigComponent,
-            },
-            {
-                path: 'about',
-                component: AboutComponent,
-            }
-        ]
-    }
+  {path: '', component: LandingComponent},
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    children: [
+      {
+        path: 'wallet',
+        component: WalletComponent,
+      },
+      {
+        path: 'send',
+        component: SendComponent,
+      },
+      {
+        path: 'history',
+        component: HistoryComponent,
+      },
+      {
+        path: 'vote',
+        component: VoteComponent,
+      },
+      {
+        path: 'config',
+        component: ConfigComponent,
+      },
+      {
+        path: 'about',
+        component: AboutComponent,
+      }
+    ]
+  }
 ];
 
 @NgModule({
-    imports: [RouterModule.forRoot(routes)],
-    exports: [RouterModule]
+  imports: [RouterModule.forRoot(routes, {useHash: true})],
+  exports: [RouterModule]
 })
 export class AppRoutingModule {
 }

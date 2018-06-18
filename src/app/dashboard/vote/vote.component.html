@@ -27,7 +27,7 @@
             <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
             <i class="far fa-question-circle blue"></i>
               <span class="tooltip-content">Think of EOS as a farm. <br>
-                You need eos tokens to rent land on the farm. <br>
+                You need eos tokens to rent land on the farm and use its resources. <br>
                 In order to rent, you <strong>stake</strong> your tokens. <br>
                 When you stake, you also have power to vote, as a “resident” on the farm, but <strong>those tokens will be locked</strong> for use in transactions. <br>
                 When you unstake, your tokens will only be free for transfers after 3 days.
@@ -37,7 +37,7 @@
           <div class="row">
             <div class="col-lg-6">
               <mat-form-field class="input-width">
-                <input matInput type="text" [min]="1/totalBalance" max="100" placeholder="Value (%)" (blur)="updateStakeValue(); checkPercent();"
+                <input matInput type="text" placeholder="Value (%)" (blur)="updateStakeValue(); checkPercent();"
                        [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event" [textMask]="{mask: percentMask}">
                 <span class="suffix" matSuffix>%</span>
               </mat-form-field>
@@ -60,6 +60,14 @@
                   style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
           </button>
           <span class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</span>
+          <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right" *ngIf="minstake">
+            <i class="far fa-exclamation-circle error"></i>
+            <span class="tooltip-content">
+              Please, be careful when staking the minimum. <br>
+              This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
+              However, if you just want to remove the tokens to an exchange, that is fine.
+            </span>
+          </a>
         </div>
       </div>
     </div>
@@ -280,7 +288,7 @@
   <h3 *ngIf="stakingDiff > 0" class="modal-title text-white">Stake <span class="blue">+{{stakingHRV}}</span> ?</h3>
   <h3 *ngIf="stakingDiff < 0" class="modal-title text-white">Unstake <span class="blue">{{stakingHRV}}</span> ?</h3>
   <div class="modal-body">
-    <h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number}}</span></h4>
+    <h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number: '1.4-4'}}</span></h4>
     <h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
     <h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
     <h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
@@ -288,7 +296,7 @@
   <div class="modal-footer">
     <form [formGroup]="passFormStake" class="modal-footer">
       <mat-form-field>
-        <input #passtake matInput type="password" formControlName="pass" placeholder="Password">
+        <input #passtake matInput type="password" formControlName="pass" placeholder="Password" (keyup.enter)="callSetStake(passtake.value)">
         <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
           {{wrongpass}}
         </mat-hint>

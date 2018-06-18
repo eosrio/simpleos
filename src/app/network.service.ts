@@ -42,9 +42,9 @@ export class NetworkService {
   constructor(private eosjs: EOSJSService, private router: Router, public aService: AccountsService) {
     this.publicEndpoints = [
       {url: 'http://br.eosrio.io:8080', owner: 'EOS Rio', latency: 0, filters: []},
-      {url: 'http://api.eosnewyork.io', owner: 'EOS New York', latency: 0, filters: []},
-      {url: 'https://eos.greymass.com', owner: 'Greymass', latency: 0, filters: []},
-      {url: 'https://eosapi.blockmatrix.network', owner: 'Blockmatrix', latency: 0, filters: []},
+      // {url: 'http://api.eosnewyork.io', owner: 'EOS New York', latency: 0, filters: []},
+      // {url: 'https://eos.greymass.com', owner: 'Greymass', latency: 0, filters: []},
+      // {url: 'https://eosapi.blockmatrix.network', owner: 'Blockmatrix', latency: 0, filters: []},
       // {url: 'http://api.proxy1a.sheos.org', owner: 'shEOS', latency: 0, filters: []},
       // {url: 'http://bp.cryptolions.io:8888', owner: 'CryptoLions', latency: 0, filters: []},
       // {url: 'http://mainnet.eoscalgary.io', owner: 'EOS Cafe', latency: 0, filters: []},
@@ -190,7 +190,8 @@ export class NetworkService {
       if (savedAccounts) {
         if (savedAccounts.length > 0) {
           this.aService.loadLocalAccounts(savedAccounts);
-          this.router['navigate'](['dashboard', 'vote']);
+          this.aService.initFirst();
+          this.router['navigate'](['dashboard', 'wallet']);
         } else {
           console.log('No saved accounts!');
         }

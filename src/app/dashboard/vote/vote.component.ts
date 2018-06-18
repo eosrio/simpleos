@@ -15,6 +15,7 @@ import {CryptoService} from '../../services/crypto.service';
 export class VoteComponent implements OnInit, AfterViewInit {
     max: number;
     min: number;
+    minstake: boolean;
     valuetoStake: string;
     percenttoStake: string;
     stakeModal: boolean;
@@ -38,9 +39,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
     percentMask = createNumberMask({
         prefix: '',
         allowDecimal: true,
-        decimalSymbol: '',
         includeThousandsSeparator: false,
-        decimalLimit: 0,
+        decimalLimit: 1,
         integerLimit: 3,
     });
     stakingDiff: number;
@@ -56,6 +56,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
                 private toaster: ToasterService) {
         this.max = 100;
         this.min = 0;
+        this.minstake = false;
         this.valuetoStake = '';
         this.percenttoStake = '';
         this.stakeModal = false;
@@ -120,12 +121,17 @@ export class VoteComponent implements OnInit, AfterViewInit {
                     this.showToast('success', 'Action broadcasted', 'Check your history for confirmation.');
                     this.aService.refreshFromChain();
                 }).catch((error) => {
-                    console.log('Catch', error);
-                    this.wrongpass = 'Something went wrong!';
+                    console.log(JSON.parse(error));
+                    if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
+                        this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
+                    } else {
+                        this.wrongpass = JSON.parse(error).error.what;
+                    }
                     this.busy = false;
                 });
             } else {
-                this.wrongpass = 'Something went wrong!';
+                console.dir(data);
+                this.wrongpass = 'Catch2!';
                 this.busy = false;
             }
         }).catch(() => {
@@ -172,7 +178,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
 
     updateStakeValue() {
         this.stakedisabled = false;
+        this.minstake = false;
         this.valuetoStake = (this.totalBalance * (parseFloat(this.percenttoStake) / 100)).toString();
+        if (this.valuetoStake ===  '1') {
+            this.minstake = true;
+        }
     }
 
     updateStakePercent() {
@@ -181,10 +191,12 @@ export class VoteComponent implements OnInit, AfterViewInit {
     }
 
     checkPercent() {
+        this.minstake = false;
         const min = 100 / this.totalBalance;
-        if (parseFloat(this.percenttoStake) < min) {
+        if (parseFloat(this.percenttoStake) <= min) {
             this.percenttoStake = min.toString();
             this.updateStakeValue();
+            this.minstake = true;
         }
         if (parseFloat(this.percenttoStake) > 100) {
             this.percenttoStake = '100';
@@ -193,9 +205,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
     }
 
     checkValue() {
-        if (parseFloat(this.valuetoStake) < 1) {
+        this.minstake = false;
+        if (parseFloat(this.valuetoStake) <= 1) {
             this.valuetoStake = '1';
             this.updateStakePercent();
+            this.minstake = true;
         }
         if (parseFloat(this.valuetoStake) > this.totalBalance) {
             this.valuetoStake = this.totalBalance.toString();

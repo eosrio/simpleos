@@ -358,7 +358,7 @@ export class EOSJSService {
         }, (err, result) => {
           if (err) {
             console.log(err);
-            reject();
+            reject(err);
           } else {
             console.log(result);
             resolve();
@@ -384,7 +384,7 @@ export class EOSJSService {
           }, (err, result) => {
             if (err) {
               console.log(err);
-              reject();
+              reject(err);
             } else {
               console.log(result);
               resolve();
