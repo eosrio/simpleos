@@ -320,7 +320,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-primeng@5.2.7
+primeng@6.0.0-rc.1
 MIT
 The MIT License (MIT)
 
@@ -406,7 +406,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/core@6.0.4
+@angular/core@6.0.5
 MIT
 MIT
 
@@ -441,15 +441,15 @@ For more information, please refer to <http://unlicense.org>
 MIT
 MIT
 
-@angular/common@6.0.4
+@angular/common@6.0.5
 MIT
 MIT
 
-@clr/angular@0.12.0-rc.2
+@clr/angular@0.12.0
 MIT
 MIT
 
-@angular/animations@6.0.4
+@angular/animations@6.0.5
 MIT
 MIT
 
@@ -620,15 +620,15 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/router@6.0.4
+@angular/router@6.0.5
 MIT
 MIT
 
-@angular/platform-browser@6.0.4
+@angular/platform-browser@6.0.5
 MIT
 MIT
 
-@angular/forms@6.0.4
+@angular/forms@6.0.5
 MIT
 MIT
 
@@ -802,11 +802,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-@clr/ui@0.12.0-rc.2
+primeicons@1.0.0-beta.7
+MIT
+MIT License
+
+Copyright (c) 2018 PrimeTek
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+@clr/ui@0.12.0
 MIT
 MIT
 
-@clr/icons@0.12.0-rc.2
+@clr/icons@0.12.0
 MIT
 MIT
 

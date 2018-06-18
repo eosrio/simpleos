@@ -48,6 +48,11 @@ export class EOSJSService {
     this.baseConfig.keyProvider = [];
   }
 
+  clearInstance() {
+    this.baseConfig.keyProvider = [];
+    this.eos = EOSJS(this.baseConfig);
+  }
+
   init(url, chain) {
     this.chainID = chain;
     return new Promise((resolve, reject) => {
@@ -66,7 +71,6 @@ export class EOSJSService {
         }
         this.eos['contract']('eosio').then(contract => {
           this.eosio = contract;
-          console.log(savedAcc);
           resolve(savedAcc);
         });
       }).catch((err) => {
@@ -166,7 +170,6 @@ export class EOSJSService {
     if (this.ready) {
       this.eos['getTransaction'](hash).then((result) => {
         this.txh.push(result);
-        console.log(result);
         this.saveHistory();
         this.loadHistory();
       });
@@ -182,55 +185,6 @@ export class EOSJSService {
 
   loadHistory() {
     this.actionHistory = [];
-    // const payload = localStorage.getItem('simpleos.txhistory.' + this.chainID);
-    // if (payload) {
-    //   this.txh = JSON.parse(payload);
-    //   this.txh.forEach((data) => {
-    //     if (data['trx']) {
-    //       data['trx']['trx']['actions'].forEach((action) => {
-    //         const status = data['trx']['receipt']['status'];
-    //         const date = data['block_time'];
-    //         const contract = action['account'];
-    //         const action_name = action['name'];
-    //         let amount = 0;
-    //         let user = '';
-    //         let type = '';
-    //         let memo = '';
-    //
-    //         if (action['account'] === 'eosio.token' && action['name'] === 'transfer') {
-    //           amount = action['data']['quantity'];
-    //           user = action['data']['to'];
-    //           memo = action['data']['memo'];
-    //           type = 'sent';
-    //         }
-    //         let votedProducers = null;
-    //         let proxy = null;
-    //         let voter = null;
-    //         if (action['account'] === 'eosio' && action['name'] === 'voteproducer') {
-    //           votedProducers = action['data']['producers'];
-    //           proxy = action['data']['proxy'];
-    //           voter = action['data']['voter'];
-    //           type = 'vote';
-    //         }
-    //         this.actionHistory.push({
-    //           id: data['id'],
-    //           type: type,
-    //           action_name: action_name,
-    //           contract: contract,
-    //           user: user,
-    //           status: status,
-    //           date: date,
-    //           amount: amount,
-    //           memo: memo,
-    //           votedProducers: votedProducers,
-    //           proxy: proxy,
-    //           voter: voter
-    //         });
-    //       });
-    //     }
-    //   });
-    //   this.actionHistory.reverse();
-    // }
   }
 
   saveHistory() {
@@ -240,23 +194,11 @@ export class EOSJSService {
 
   async transfer(from, to, amount, memo): Promise<any> {
     if (this.auth) {
-      const info = await this.eos['getInfo']({}).then(result => {
-        return result;
-      });
-      const broadcast_lib = info['last_irreversible_block_num'];
       return new Promise((resolve, reject) => {
         this.eos['transfer'](from, to, amount, memo, (err, trx) => {
           if (err) {
             reject(JSON.parse(err));
           } else {
-            console.log(trx);
-            setTimeout(() => {
-              this.txCheckQueue.push({
-                block: broadcast_lib,
-                id: trx['transaction_id']
-              });
-              this.startMonitoringLoop();
-            }, 500);
             resolve(true);
           }
         });
@@ -274,6 +216,14 @@ export class EOSJSService {
         reject(e);
       });
     }
+  }
+
+  ramBuy() {
+
+  }
+
+  ramSell() {
+
   }
 
   startMonitoringLoop() {

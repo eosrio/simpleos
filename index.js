@@ -49,8 +49,6 @@ function createWindow() {
   win = new BrowserWindow({
     title: 'simplEOS',
     darkTheme: true,
-    x: 100,
-    y: 100,
     width: 1440,
     height: 800,
     minWidth: 800,
@@ -59,14 +57,17 @@ function createWindow() {
     icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
   win.setMenu(null);
+
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'ng-dist', 'index.html'),
     protocol: 'file:',
     slashes: true
   }));
+
   if (devtools) {
     win.webContents.openDevTools();
   }
+
   win.on('closed', () => {
     win = null
   });

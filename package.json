@@ -1,6 +1,6 @@
 {
   "name": "simpleos",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "productName": "simpleos",
   "description": "EOS Blockchain Interface & Wallet",
   "author": {
@@ -82,7 +82,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^0.6.8",
-    "@angular/cli":"^6.0.8",
+    "@angular/cli": "^6.0.8",
     "@angular/compiler": "^6.0.5",
     "@angular/compiler-cli": "^6.0.5",
     "@types/jasmine": "~2.8.6",
@@ -94,20 +94,20 @@
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
-    "bootstrap":"^4.1.1",
+    "bootstrap": "^4.1.1",
     "codelyzer": "~4.2.1",
     "core-js": "^2.5.4",
-    "electron":"^2.0.2",
-    "electron-builder":"20.14.7",
-    "electron-reload":"^1.2.2",
-    "eosjs":"^15.0.0",
+    "electron": "^2.0.2",
+    "electron-builder": "20.14.7",
+    "electron-reload": "^1.2.2",
+    "eosjs": "^15.0.0",
     "hammerjs": "^2.0.8",
     "jquery": "^3.3.1",
     "moment": "^2.22.2",
-    "ng-lottie":"^0.3.1",
+    "ng-lottie": "^0.3.1",
     "npm-run-all": "^4.1.3",
     "popper.js": "^1.14.3",
-    "primeng":"^6.0.0-rc.1",
+    "primeng": "^6.0.0-rc.1",
     "protractor": "~5.3.0",
     "rxjs": "^6.2.0",
     "rxjs-compat": "^6.2.0",
@@ -119,7 +119,7 @@
     "zone.js": "^0.8.26"
   },
   "dependencies": {
-    "@angular/animations":"^6.0.5",
+    "@angular/animations": "^6.0.5",
     "@angular/cdk": "^6.0.5",
     "@angular/common": "^6.0.5",
     "@angular/core": "^6.0.5",
@@ -141,9 +141,10 @@
     "@fortawesome/pro-regular-svg-icons": "^5.1.0-8",
     "@fortawesome/pro-solid-svg-icons": "^5.1.0-8",
     "electron-builder-squirrel-windows": "^20.15.0",
-    "electron-updater":"^2.21.11",
-    "electron-webpack":"^2.1.2",
+    "electron-updater": "2.21.10",
+    "electron-webpack": "^2.1.2",
     "menu": "^0.2.5",
-    "opn":"^5.3.0"
+    "opn": "^5.3.0",
+    "primeicons": "^1.0.0-beta.7"
   }
 }

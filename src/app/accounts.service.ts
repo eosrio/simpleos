@@ -41,7 +41,7 @@ export class AccountsService {
 
   constructor(private http: HttpClient, private eos: EOSJSService) {
     this.accounts = [];
-    this.usd_rate = 0;
+    this.usd_rate = 10.00;
     this.fetchEOSprice();
     this.eos.online.asObservable().subscribe((onlineStatus) => {
       console.log('onlineStatus', onlineStatus);
@@ -87,29 +87,17 @@ export class AccountsService {
     }
   }
 
-  refreshFromChain() {
-    console.log('REFRESH!');
+  refreshFromChain(): void {
     const PQ = [];
-    // Build promise queue
-    // if (this.accounts.length === 0) {
-    //   setTimeout(() => {
-    //     this.refreshFromChain();
-    //   }, 2000);
-    // }
     this.accounts.forEach((account, idx) => {
-      // console.log(account, idx);
       const tempPromise = new Promise((resolve, reject) => {
         this.eos.getAccountInfo(account['name']).then((newdata) => {
-          // console.log(newdata);
           this.eos.getTokens(account['name']).then((tokens) => {
-            // console.log(tokens);
             this.eos.getRefunds(account['name']).then((refunds) => {
-              console.log(refunds);
               let ref_time = null;
               let balance = 0;
               let ref_net = 0;
               let ref_cpu = 0;
-
               if (refunds.rows.length > 0) {
                 ref_net = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
                 ref_cpu = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
@@ -147,17 +135,14 @@ export class AccountsService {
       });
       PQ.push(tempPromise);
     });
-    // Verify completion
     Promise.all(PQ).then(() => {
-      console.log('Update finished!');
-      // this.eos.accounts.next(accountMap);
       this.eos.storeAccountData(this.accounts);
     });
   }
 
   fetchEOSprice() {
     this.http.get('https://api.coinmarketcap.com/v2/ticker/1765/').subscribe((result: any) => {
-      this.usd_rate = result.data.quotes.USD['price'];
+      this.usd_rate = parseFloat(result.data.quotes.USD['price']);
     });
   }
 }

@@ -6,13 +6,16 @@
       <div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>
       <div class="infos">
         <span style="padding-right: 15px">
-          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.2-4'}} EOS
+          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS
         </span>
         |
         <span style="padding-left: 15px">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.2-4'}} EOS
+          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
         </span>
       </div>
+      <a class="blue text-right btn btn-link" style="max-width: none; height: 41px;" (click)="refresh()">
+        <i class="far fa-undo"></i> Refresh
+      </a>
       <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"
                [paginator]="actions.length > 12" [rows]="12">
         <ng-template pTemplate="header">
@@ -30,7 +33,7 @@
               date
               <p-sortIcon [field]="'date'"></p-sortIcon>
             </th>
-            <th>
+            <th style="width: 80px;">
               status
             </th>
             <th style="width: 60px;">
@@ -79,7 +82,7 @@
                 with {{item.voter}}
               </ng-container>
               <ng-container *ngIf="item.action_name === 'transfer'">
-                <span *ngIf="item.type === 'received'">from<span class="blue">{{item.user}}</span></span>
+                <span *ngIf="item.type === 'received'">from <span class="blue">{{item.user}}</span></span>
                 <span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
               </ng-container>
                 <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>

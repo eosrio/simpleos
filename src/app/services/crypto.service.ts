@@ -140,6 +140,9 @@ export class CryptoService {
         const encryptedData = this.base64ToBuffer(payload);
         const iv = encryptedData.slice(0, this.ivLen);
         const data = encryptedData.slice(this.ivLen);
+        setTimeout(() => {
+          this.eosjs.clearInstance();
+        }, 5000);
         const decrypted = await crypto.subtle.decrypt({
           name: 'AES-GCM',
           iv: iv
