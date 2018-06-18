@@ -49,10 +49,9 @@
     },
     "linux": {
       "target": [
-        "deb",
-        "rpm"
+        "appImage"
       ],
-      "icon": "src/assets/icons/png/256x256.png",
+      "icon": "256x256.png",
       "category": "Network"
     },
     "win": {
@@ -72,12 +71,6 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "src/favicon.ico"
-    },
-    "snap": {
-      "confinement": "classic"
-    },
-    "deb": {
-      "packageCategory": "Network"
     }
   },
   "devDependencies": {
