@@ -36,11 +36,11 @@ As of 12/06/2018, SimplEOS main features include:
 - Contacts List / Add contacts
 - Transactions / Actions History
 - Voting Portal
+- Stake / Unstake functions - (un)delegatebw
+- Support for generic tokens (airdrops)
+- Custom endpoints on the mainnet
 
 ## Roadmap
-As soon as mainnet is activated with 15% of votes:
-- Stake / Unstake functions - (un)delegatebw
-- Support for generic tokens
 
 Next features to be implemented:
 - Create new account *- high priority*
