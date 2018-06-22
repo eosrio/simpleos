@@ -25,7 +25,7 @@
         <div class="card-block">
           <div class="instruction expandable">Stake your EOS&nbsp;&nbsp;
             <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-              <i class="far fa-question-circle blue"></i>
+              <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
               <span class="tooltip-content">Think of EOS as a farm. <br>
                 You need eos tokens to rent land on the farm and use its resources. <br>
                 In order to rent, you <strong>stake</strong> your tokens. <br>
@@ -67,7 +67,7 @@
               <span class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</span>
               <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
                  *ngIf="minstake">
-                <i class="far fa-exclamation-circle error"></i>
+                <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
                 <span class="tooltip-content">
                   Please, be careful when staking the minimum. <br>
                   This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
@@ -154,8 +154,9 @@
         <ng-template pTemplate="body" let-item let-expanded="expanded" let-index="rowIndex">
           <tr [pSelectableRow]="item" class="tr-canexpand">
             <td class="text-right expandable" [pRowToggler]="item">
-              <i [ngClass]="expanded ? 'fa-search-minus' : 'fa-search-plus'"
-                 class="fal fa-lg blue"></i>
+              <fa-icon [icon]="['fal', expanded ? 'search-minus' : 'search-plus']"
+                       size="lg" class="blue">
+              </fa-icon>
             </td>
             <td class="text-center" [pRowToggler]="item" style="padding-left: 20px">
               {{item.position}}
@@ -172,23 +173,23 @@
             <td class="text-center">
               <ul>
                 <li class="social-icon" *ngIf="item.website">
-                  <a [href]="item.website" target="_blank">
-                    <i class="fas fa-globe fa-lg"></i>
+                  <a (click)="extOpen(item.website)">
+                    <fa-icon [icon]="['fas', 'globe']" size="lg"></fa-icon>
                   </a>
                 </li>
                 <li class="social-icon" *ngIf="item.social['steemit']">
-                  <a [href]="'https://steemit.com/' + item.social['steemit']" target="_blank">
+                  <a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
                     <img src="assets/steemit.png" class="steemit" style="">
                   </a>
                 </li>
                 <li class="social-icon" *ngIf="item.social['telegram']">
-                  <a [href]="'https://t.me/' + item.social['telegram']" target="_blank">
-                    <i class="fab fa-telegram-plane fa-lg"></i>
+                  <a (click)="extOpen('https://t.me/' + item.social['telegram'])">
+                    <fa-icon [icon]="['fab', 'telegram-plane']" size="lg"></fa-icon>
                   </a>
                 </li>
                 <li class="social-icon" *ngIf="item.social['twitter']">
-                  <a [href]="'https://twitter.com/' + item.social['twitter']" target="_blank">
-                    <i class="fab fa-twitter fa-lg"></i>
+                  <a (click)="extOpen('https://twitter.com/' + item.social['twitter'])">
+                    <fa-icon [icon]="['fab', 'twitter']" size="lg"></fa-icon>
                   </a>
                 </li>
               </ul>
@@ -207,18 +208,18 @@
               <div class="row row-expanded flex-items-xs-between">
                 <div class="col-xs-auto">
                   <div>
-                    <img [src]="item.logo_256" style="width: 150px; border-radius: 5px">
+                    <img src="{{item.logo_256}}" style="width: 150px; border-radius: 5px">
                   </div>
                 </div>
                 <div class="col-xs-6">
                   <div *ngIf="item.code">
-                                      <span class="blue">
-                                          <a [href]="item.code" target="_blank">Code of conduct</a>
-                                      </span>
+                    <span class="blue">
+                        <a (click)="extOpen(item.code)" style="cursor: pointer;">Code of conduct</a>
+                    </span>
                   </div>
                   <div *ngIf="item.website">
                     <span class="blue">Website: </span>
-                    <a [href]="item.website" class="a-white">{{item.website}}</a>
+                    <a (click)="extOpen(item.website)" class="a-white">{{item.website}}</a>
                   </div>
                   <div *ngIf="item.email">
                     <span class="blue">Email:</span> {{item.email}}
@@ -229,55 +230,48 @@
                   <div style="margin-top: 5px;">
                     <ul>
                       <li class="social-icon" *ngIf="item.social['steemit']">
-                        <a [href]="'https://steemit.com/@' + item.social['steemit']"
-                           target="_blank">
+                        <a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
                           <img src="assets/steemit.png" class="steemit" style="">
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['telegram']">
-                        <a [href]="'https://t.me/' + item.social['telegram']" target="_blank">
-                          <i class="fab fa-telegram-plane fa-lg"></i>
+                        <a (click)="extOpen('https://t.me/' + item.social['telegram'])">
+                          <fa-icon [icon]="['fab', 'telegram-plane']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['twitter']">
-                        <a [href]="'https://twitter.com/' + item.social['twitter']"
-                           target="_blank">
-                          <i class="fab fa-twitter fa-lg"></i>
+                        <a (click)="extOpen('https://twitter.com/' + item.social['twitter'])">
+                          <fa-icon [icon]="['fab', 'twitter']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['youtube']">
-                        <a [href]="'https://www.youtube.com/channel/' + item.social['youtube']"
-                           target="_blank">
-                          <i class="fab fa-youtube fa-lg"></i>
+                        <a (click)="extOpen('https://www.youtube.com/channel/' + item.social['youtube'])">
+                          <fa-icon [icon]="['fab', 'youtube']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['facebook']">
-                        <a [href]="'https://www.facebook.com/' + item.social['facebook']"
-                           target="_blank">
-                          <i class="fab fa-facebook fa-lg"></i>
+                        <a (click)="extOpen('https://www.facebook.com/' + item.social['facebook'])">
+                          <fa-icon [icon]="['fab', 'facebook']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['github']">
-                        <a [href]="'https://github.com/' + item.social['github']"
-                           target="_blank">
-                          <i class="fab fa-github fa-lg"></i>
+                        <a (click)="extOpen('https://github.com/' + item.social['github'])">
+                          <fa-icon [icon]="['fab', 'github']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="">
-                        <a [href]="'https://www.reddit.com/user/' + item.social['reddit']"
-                           target="_blank">
-                          <i class="fab fa-reddit fa-lg"></i>
+                        <a (click)="extOpen('https://www.reddit.com/user/' + item.social['reddit'])">
+                          <fa-icon [icon]="['fab', 'reddit']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['keybase']">
-                        <a [href]="'https://keybase.io/' + item.social['keybase']"
-                           target="_blank">
-                          <i class="fab fa-keybase fa-lg"></i>
+                        <a (click)="extOpen('https://keybase.io/' + item.social['keybase'])">
+                          <fa-icon [icon]="['fab', 'keybase']" size="lg"></fa-icon>
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['wechat']">
                         <a [pTooltip]="item.social['wechat']" tooltipPosition="right">
-                          <i class="fab fa-weixin fa-lg"></i>
+                          <fa-icon [icon]="['fab', 'weixin']" size="lg"></fa-icon>
                         </a>
                       </li>
                     </ul>
@@ -315,22 +309,29 @@
     <h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
     <p-accordion *ngIf="stakingDiff > 0">
       <p-accordionTab header="By submiting this action, you agree to the delegatebw Terms & Conditions">
-        The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer ownership.
+        The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer
+        ownership.
         <br><br>
-        As an authorized party I {{ fromAccount }} wish to stake {{ (getValuetoStake / 2) | number: '1.0-4' }} for CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} for bandwidth from the liquid tokens of {{ fromAccount }} for the use of delegatee {{ fromAccount }}.
+        As an authorized party I {{ fromAccount }} wish to stake {{ (getValuetoStake / 2) | number: '1.0-4' }} for CPU
+        and {{ (getValuetoStake / 2) | number: '1.0-4' }} for bandwidth from the liquid tokens of {{ fromAccount }} for
+        the use of delegatee {{ fromAccount }}.
         <br><br>
         It is true that I wish these tokens to become immediately owned by the delegatee.
         <br><br>
-        As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve been authorized to take this action by their beneficial owner(s).
+        As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve been
+        authorized to take this action by their beneficial owner(s).
       </p-accordionTab>
     </p-accordion>
     <p-accordion *ngIf="stakingDiff < 0">
       <p-accordionTab header="By submiting this action, you agree to the undelegatebw Terms & Conditions">
         The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
         <br><br>
-        As an authorized party I {{ fromAccount }} wish to unstake {{ (getValuetoStake / 2) | number: '1.0-4' }} from CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} from bandwidth from the tokens owned by {{ fromAccount }} previously delegated for the use of delegatee {{ fromAccount }}.
+        As an authorized party I {{ fromAccount }} wish to unstake {{ (getValuetoStake / 2) | number: '1.0-4' }} from
+        CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} from bandwidth from the tokens owned by {{ fromAccount }}
+        previously delegated for the use of delegatee {{ fromAccount }}.
         <br><br>
-        If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been authorized to take this action by their beneficial owner(s).
+        If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been authorized to
+        take this action by their beneficial owner(s).
       </p-accordionTab>
     </p-accordion>
   </div>
@@ -346,7 +347,7 @@
       <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
               (click)="callSetStake(passtake.value)" [disabled]="busy">
         Confirm
-        <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
+        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
       </button>
     </form>
   </div>
@@ -361,13 +362,18 @@
       <p-accordionTab header="By submiting this action, you agree to the voteproducer Terms & Conditions">
         The intent of the voteproducer action is to cast a valid vote for up to 30 BP candidates.
         <br><br>
-        As an authorized party I, {{ fromAccount }}, wish to vote on behalf of {{ fromAccount }} in favor of the block producer candidates {{selectedBPs.join(', ')}} with a voting weight equal to all tokens currently owned by {{ fromAccount }} and staked for CPU or bandwidth.
+        As an authorized party I, {{ fromAccount }}, wish to vote on behalf of {{ fromAccount }} in favor of the block
+        producer candidates {{selectedBPs.join(', ')}} with a voting weight equal to all tokens currently owned by {{
+        fromAccount }} and staked for CPU or bandwidth.
         <br><br>
-        If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to vote these shares by their beneficial owner(s).
+        If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to vote
+        these shares by their beneficial owner(s).
         <br><br>
-        I stipulate I have not and will not accept anything of value in exchange for these votes, on penalty of confiscation of these tokens, and other penalties.
+        I stipulate I have not and will not accept anything of value in exchange for these votes, on penalty of
+        confiscation of these tokens, and other penalties.
         <br><br>
-        I acknowledge that using any system of automatic voting, re-voting, or vote refreshing, or allowing such a system to be used on my behalf or on behalf of another, is forbidden and doing so violates this contract.
+        I acknowledge that using any system of automatic voting, re-voting, or vote refreshing, or allowing such a
+        system to be used on my behalf or on behalf of another, is forbidden and doing so violates this contract.
       </p-accordionTab>
     </p-accordion>
   </div>
@@ -382,7 +388,7 @@
     <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
             (click)="modalVote(pass.value);" [disabled]="busy">
       Confirm
-      <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
+      <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
     </button>
   </form>
 </clr-modal>

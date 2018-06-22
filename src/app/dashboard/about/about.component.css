@@ -19,8 +19,9 @@
     color: #A9A9A9;
 }
 
-.social-icon i:hover {
+.social-icon fa-icon:hover {
     color: white;
+    cursor: pointer;
 }
 
 .steemit {

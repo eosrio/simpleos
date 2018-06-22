@@ -8,7 +8,6 @@ import {LandingComponent} from './landing/landing.component';
 import {EOSJSService} from './eosjs.service';
 import {DashboardComponent} from './dashboard/dashboard.component';
 import {AppRoutingModule} from './app-routing.module';
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {far} from '@fortawesome/pro-regular-svg-icons';
 import {fas} from '@fortawesome/pro-solid-svg-icons';
@@ -38,6 +37,7 @@ import {ToasterModule} from 'angular2-toaster';
 import {AccountsService} from './accounts.service';
 import {NetworkService} from './network.service';
 import {CryptoService} from './services/crypto.service';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
 library.add(far, fas, fab, fal);
 

@@ -130,7 +130,7 @@
 }
 /*prime's table end*/
 
-.expandable i:hover {
+.expandable fa-icon:hover {
     color: #39c5ff;
     cursor: pointer;
 }
@@ -188,6 +188,7 @@ li:last-child {
 
 .social-icon > a {
     color: inherit;
+    cursor: pointer;
 }
 
 a:visited {
@@ -201,10 +202,12 @@ a:visited {
 
 .a-white:hover {
     color: white !important;
+    cursor: pointer;
 }
 
-.social-icon i:hover {
+.social-icon fa-icon:hover {
     color: white;
+    cursor: pointer;
 }
 
 .steemit {

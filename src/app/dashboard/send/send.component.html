@@ -134,7 +134,7 @@
       <button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="transfer()"
               [disabled]="!confirmForm.valid || busy">
         Confirm
-        <i class="far fa-spinner fa-spin" *ngIf="busy"></i>
+        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
       </button>
     </form>
   </div>

@@ -15,7 +15,8 @@
       </div>
       <div class="text-right" (click)="refresh()">
         <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
-          <i class="far fa-undo"></i> Refresh
+          <fa-icon [icon]="['far', 'undo']"></fa-icon>
+          Refresh
         </a>
       </div>
       <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"
@@ -52,10 +53,13 @@
           <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item">
 
             <td class="text-center" style="width: 50px;">
-              <i *ngIf="item.type === 'received'" class="fal fa-arrow-alt-to-bottom fa-lg blue"></i>
-              <i *ngIf="item.type === 'sent'" class="fal fa-paper-plane blue"></i>
-              <i *ngIf="item.type === 'unstaked'" class="fal fa-lock-open blue"></i>
-              <i *ngIf="item.type === 'staked'" class="fal fa-lock blue"></i>
+              <fa-icon *ngIf="item.type === 'received' && item.user !== item.contract"
+                       [icon]="['fal', 'arrow-alt-to-bottom']" size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'received' && item.user === item.contract" [icon]="['far', 'parachute-box']"
+                       size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'sent'" [icon]="['fal', 'paper-plane']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'unstaked'" [icon]="['fal', 'lock-open']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'staked'" [icon]="['fal', 'lock']" class="blue"></fa-icon>
               <fa-icon *ngIf="item.type === 'vote'" class="blue" [icon]="['far', 'edit']"></fa-icon>
             </td>
 
@@ -64,9 +68,11 @@
                 <span class="white">
                   <span *ngIf="item.type === 'received'">+</span>
                   <span *ngIf="item.type === 'sent'">-</span>
-                  {{item.amount}}
+                  {{item.amount}} <span class="blue">{{item.symbol}}</span>
                 </span>
-                (${{item.amount.split(" ")[0] * aService.usd_rate | number}})
+                <ng-container *ngIf="item.symbol === 'EOS'">
+                  (${{item.amount * aService.usd_rate | number}})
+                </ng-container>
               </ng-container>
               <ng-container *ngIf="item.action_name === 'voteproducer'">
                 Voted on {{item.votedProducers.length}} BPs
@@ -87,21 +93,22 @@
                 <span *ngIf="item.type === 'received'">from <span class="blue">{{item.user}}</span></span>
                 <span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
               </ng-container>
-                <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
-                <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
+              <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
+              <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
             </td>
 
             <td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
 
             <td class="text-center" style="width: 90px;">
-              <i *ngIf="LIB >= item.block" class="far fa-check fa-lg"></i>
-              <span *ngIf="LIB < item.block"><i class="far fa-hourglass fa-lg"></i></span>
+              <fa-icon *ngIf="LIB >= item.block" [icon]="['far', 'check']" size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="LIB < item.block" [icon]="['far', 'hourglass']" size="lg"></fa-icon>
             </td>
 
             <td class="text-right expandable" style="width: 35px;">
               <a [pRowToggler]="item">
-                <i [ngClass]="expanded ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"
-                   class="fal fa-lg blue"></i>
+                <fa-icon [icon]="['fal', expanded ? 'chevron-circle-up' : 'chevron-circle-down']"
+                         size="lg" class="blue">
+                </fa-icon>
               </a>
             </td>
 
@@ -149,8 +156,13 @@
             <h5 class="gray mt-0">EOS</h5>
             <div>{{fullBalance}} EOS</div>
           </li>
+          <li *ngFor="let token of tokens" class="tokens-pad">
+            <h5 class="gray mt-0">{{token.name}}</h5>
+            <div>{{token.balance}}</div>
+            <div pTooltip="token contract">{{token.contract}}</div>
+          </li>
         </ul>
-        <div class="tokens-pad">Your other tokens, such as Airdrops, will appear here.
+        <div *ngIf="tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will appear here.
         </div>
       </div>
     </div>

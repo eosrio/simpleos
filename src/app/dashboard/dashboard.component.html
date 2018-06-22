@@ -15,14 +15,18 @@
         </div>
         <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0">
           <div class="text-center navbar-btn newaccount" pTooltip="soon" tooltipPosition="left">
-            <div style="padding-top: 16px"><i class="fal fa-user-plus fa-lg"></i></div>
+            <div style="padding-top: 16px">
+              <fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
+            </div>
             <div style="font-size: 15px;">NEW</div>
             <div style="font-size: 15px;">ACCOUNT</div>
           </div>
         </div>
         <div class="col-xs-auto" style="padding-left: 0; padding-right: 0">
           <div class="text-center navbar-btn cog" [routerLink]="['config']">
-            <div><i class="fal fa-cog fa-2x"></i></div>
+            <div>
+              <fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
+            </div>
           </div>
         </div>
       </div>
@@ -38,7 +42,7 @@
       </section>
       <section #sidenavContent class="sidenav-content">
         <a class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
-          <i class="far fa-history"></i>&nbsp;&nbsp;HISTORY
+          <fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY
         </a>
         <a class="nav-link" routerLinkActive="active" [routerLink]="['send']">
           <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
@@ -51,10 +55,12 @@
         </a>
       </section>
       <section class="placeholder border-r">
-        <div class="credits">Made with <i class="fas fa-heart"></i> by <a style="color: #d7d7d7;"
-                                                                          [routerLink]="['about']">EOS Rio</a>
+        <div class="credits">Made with
+          <fa-icon [icon]="['fas', 'heart']"></fa-icon>
+          by <a style="color: #d7d7d7;"
+                [routerLink]="['about']">EOS Rio</a>
         </div>
-        <div class="version">v0.5.4</div>
+        <div class="version">v0.5.5</div>
       </section>
     </nav>
   </div>

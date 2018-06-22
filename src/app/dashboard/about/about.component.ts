@@ -12,4 +12,8 @@ export class AboutComponent implements OnInit {
   ngOnInit() {
   }
 
+  extOpen(value) {
+    window['shell'].openExternal(value);
+  }
+
 }

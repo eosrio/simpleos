@@ -13,20 +13,27 @@
         </div>
         <div class="slogan">Your simple and secure EOS wallet</div>
         <ng-container *ngIf="busy && network.status === ''">
-          <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
+          <fa-layers class="mt-2 mb-1">
+            <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"></fa-icon>
+          </fa-layers>
           <div>Connecting to the Blockchain...</div>
         </ng-container>
         <ng-container *ngIf="busy && network.status === 'timeout'">
           <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
-          <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
-
+          <button (click)="retryConn()" class="btn btn-link">
+            <fa-icon [icon]="['far', 'undo']"></fa-icon>
+            &nbsp;RETRY
+          </button>
           <div class="card check-card">
             <div class="card-block fit-content">
-              <div class="text-left advanced"><span class="warn">Advanced Option:</span> you can also try to connect to another endpoint</div>
+              <div class="text-left advanced"><span class="warn">Advanced Option:</span> you can also try to connect to
+                another endpoint
+              </div>
               <mat-form-field class="public-input">
                 <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
                 <mat-hint align="start" style="font-size: 12px">
-                  endpoint should have history api enabled, otherwise some functions on the wallet may not work as expected.
+                  endpoint should have history api enabled, otherwise some functions on the wallet may not work as
+                  expected.
                 </mat-hint>
               </mat-form-field>
               <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint">
@@ -36,9 +43,9 @@
             <ng-container *ngIf="checkerr === ''">
               <div class="card-footer" *ngFor="let account of accounts">
                                 <span style="float: left;">You have: <span
-                                        class="blue">{{account.full_balance}} EOS</span></span>
+                                  class="blue">{{account.full_balance}} EOS</span></span>
                 <span style="float: right;">Account name: <span
-                        class="blue">{{account.name}}</span></span>
+                  class="blue">{{account.name}}</span></span>
               </div>
             </ng-container>
             <div class="card-footer" *ngIf="checkerr === 'invalid'">
@@ -102,7 +109,8 @@
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value, false, '')" [clrWizardPagePreventDefault]="true"
+                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value, false, '')"
+                   [clrWizardPagePreventDefault]="true"
                    (clrWizardPageOnCancel)="doCancel()">
     <ng-template clrPageTitle>Step 1</ng-template>
     <h5>Insert your existing private key below</h5>
@@ -110,10 +118,10 @@
       <mat-form-field class="mt-1">
         <input #pkField matInput type="password" formControlName="private_key"
                placeholder="EOS Private key">
-        <i matSuffix *ngIf="pkField.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pkField.type = 'text'"></i>
-        <i matSuffix *ngIf="pkField.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pkField.type = 'password'"></i>
+        <fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pkField.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pkField.type = 'password'"></fa-icon>
         <mat-error *ngIf="!pvtform.valid">
           {{this.errormsg}}
         </mat-error>
@@ -133,10 +141,10 @@
       <mat-form-field class="mt-1">
         <input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
-        <i matSuffix *ngIf="pass.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pass.type = 'text'"></i>
-        <i matSuffix *ngIf="pass.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pass.type = 'password'"></i>
+        <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pass.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pass.type = 'password'"></fa-icon>
         <mat-hint align="start">
           Min 10 characters
         </mat-hint>
@@ -145,10 +153,12 @@
       <mat-form-field style="margin-top: 19px">
         <input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
-        <i matSuffix *ngIf="pass2.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pass2.type = 'text'"></i>
-        <i matSuffix *ngIf="pass2.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pass2.type = 'password'"></i>
+
+        <fa-icon matSuffix *ngIf="pass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pass2.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pass2.type = 'password'"></fa-icon>
+
         <mat-error *ngIf="!passmatch">
           Passwords do not match!
         </mat-error>
@@ -189,7 +199,9 @@
         Oops, error reading csv file! Try again or import the key the conventional way
       </span>
     </div>
-    <div style="line-height: 17px; padding-top: 1px">*For your safety, csv file will be automatically deleted from your computer after.</div>
+    <div style="line-height: 17px; padding-top: 1px">*For your safety, csv file will be automatically deleted from your
+      computer after.
+    </div>
     <h5 *ngIf="exodusValid" class="afterdrop blue">Alright! Click to go to next page</h5>
   </clr-wizard-page>
   <clr-wizard-page [clrWizardPageNextDisabled]="!passformexodus.valid">
@@ -199,10 +211,12 @@
       <mat-form-field class="mt-1">
         <input matInput #passexodus type="password" placeholder="Password" (blur)="passExodusCompare()"
                [formControl]="passformexodus['controls'].matchingPassword['controls']['pass1']">
-        <i matSuffix *ngIf="passexodus.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="passexodus.type = 'text'"></i>
-        <i matSuffix *ngIf="passexodus.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="passexodus.type = 'password'"></i>
+
+        <fa-icon matSuffix *ngIf="passexodus.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="passexodus.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="passexodus.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="passexodus.type = 'password'"></fa-icon>
+
         <mat-hint align="start">
           Min 10 characters
         </mat-hint>
@@ -211,10 +225,12 @@
       <mat-form-field style="margin-top: 19px">
         <input matInput #passexodus2 type="password" placeholder="Confirm password" (blur)="passExodusCompare()"
                [formControl]="passformexodus['controls'].matchingPassword['controls']['pass2']">
-        <i matSuffix *ngIf="passexodus2.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="passexodus2.type = 'text'"></i>
-        <i matSuffix *ngIf="passexodus2.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="passexodus2.type = 'password'"></i>
+
+        <fa-icon matSuffix *ngIf="passexodus2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="passexodus2.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="passexodus2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="passexodus2.type = 'password'"></fa-icon>
+
         <mat-error *ngIf="!passexodusmatch">
           Passwords do not match!
         </mat-error>

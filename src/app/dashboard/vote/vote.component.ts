@@ -87,6 +87,10 @@ export class VoteComponent implements OnInit, AfterViewInit {
     });
   }
 
+  extOpen(value) {
+    window['shell'].openExternal(value);
+  }
+
   sliderLabel(value: number): string {
     const val = parseInt(value.toString(), 10);
     return val.toString();

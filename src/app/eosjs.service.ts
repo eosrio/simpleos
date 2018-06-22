@@ -31,7 +31,7 @@ export class EOSJSService {
   public accounts = new BehaviorSubject<any>({});
   public online = new BehaviorSubject<boolean>(false);
   public chainID: string;
-  private eos: any;
+  public eos: any;
 
   constructor() {
     this.eosio = null;
