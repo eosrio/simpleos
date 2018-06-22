@@ -3096,15 +3096,20 @@ function WriteApi(Network, network, config, Transaction) {
         return callback(null, argHeaders);
       };
     } else if (config.transactionHeaders) {
-      assert.equal((0, _typeof3.default)(config.transactionHeaders), 'function', 'config.transactionHeaders');
-      headers = config.transactionHeaders;
+      if ((0, _typeof3.default)(config.transactionHeaders) === 'object') {
+        headers = function headers(exp, callback) {
+          return callback(null, config.transactionHeaders);
+        };
+      } else {
+        assert.equal((0, _typeof3.default)(config.transactionHeaders), 'function', 'config.transactionHeaders');
+        headers = config.transactionHeaders;
+      }
     } else {
-      assert(network, 'Network is required, provide config.httpEndpoint');
+      assert(network, 'Network is required, provide httpEndpoint or own transaction headers');
       headers = network.createTransaction;
     }
-
     headers(options.expireInSeconds, checkError(callback, config.logger, function _callee2(rawTx) {
-      var txObject, buf, tr, transactionId, sigs, chainIdBuf, signBuf;
+      var defaultHeaders, txObject, buf, tr, transactionId, sigs, chainIdBuf, signBuf;
       return _regenerator2.default.async(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -3115,7 +3120,14 @@ function WriteApi(Network, network, config, Transaction) {
               assert.equal((0, _typeof3.default)(rawTx.ref_block_num), 'number', 'expecting ref_block_num number');
               assert.equal((0, _typeof3.default)(rawTx.ref_block_prefix), 'number', 'expecting ref_block_prefix number');
 
-              rawTx = Object.assign({}, rawTx);
+              defaultHeaders = {
+                net_usage_words: 0,
+                max_cpu_usage_ms: 0,
+                delay_sec: 0
+              };
+
+
+              rawTx = Object.assign({}, defaultHeaders, rawTx);
 
               rawTx.actions = arg.actions;
 
@@ -3184,19 +3196,17 @@ function WriteApi(Network, network, config, Transaction) {
                     transaction: packedTr
                   });
                 } else {
-                  network.pushTransaction(packedTr, function (error) {
+                  network.pushTransaction(packedTr, function (error, processedTransaction) {
                     if (!error) {
-                      callback(null, {
-                        transaction_id: transactionId,
+                      callback(null, Object.assign({
                         broadcast: true,
-                        transaction: packedTr
-                      });
+                        transaction: packedTr,
+                        transaction_id: transactionId
+                      }, processedTransaction));
                     } else {
-
                       if (config.logger.error) {
                         config.logger.error('[push_transaction error] \'' + error.message + '\', transaction \'' + buf.toString('hex') + '\'');
                       }
-
                       callback(error.message);
                     }
                   });
@@ -3208,7 +3218,7 @@ function WriteApi(Network, network, config, Transaction) {
                 callback(error);
               });
 
-            case 13:
+            case 14:
             case 'end':
               return _context2.stop();
           }
@@ -30692,7 +30702,7 @@ function hasOwnProperty(obj, prop) {
 },{}],206:[function(require,module,exports){
 module.exports={
   "name": "eosjs",
-  "version": "15.0.1",
+  "version": "15.0.2",
   "description": "General purpose library for the EOS blockchain.",
   "main": "lib/index.js",
   "scripts": {
