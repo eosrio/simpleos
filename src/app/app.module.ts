@@ -31,7 +31,7 @@ import {TableModule} from 'primeng/table';
 import {LottieAnimationViewModule} from 'ng-lottie';
 import {ConfigComponent} from './dashboard/config/config.component';
 import {HttpClientModule} from '@angular/common/http';
-import {TooltipModule} from 'primeng/primeng';
+import {AccordionModule, TooltipModule} from 'primeng/primeng';
 import {AboutComponent} from './dashboard/about/about.component';
 import {TextMaskModule} from 'angular2-text-mask';
 import {ToasterModule} from 'angular2-toaster';
@@ -65,6 +65,7 @@ library.add(far, fas, fab, fal);
     FormsModule,
     TextMaskModule,
     TooltipModule,
+    AccordionModule,
     ReactiveFormsModule,
     MatCheckboxModule,
     ToasterModule.forRoot(),

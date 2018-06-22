@@ -10,6 +10,7 @@ import {AccountsService} from '../../accounts.service';
 export class VotingService {
 
   public bps: any[];
+  public cachedList: any[];
   public listReady = new Subject<Boolean>();
   public counter = new Subject<Number>();
   selectedAccount: any;
@@ -85,6 +86,7 @@ export class VotingService {
               account: prod['owner'],
               key: prod['producer_key'],
               location: '',
+              position: idx + 1,
               status: (idx < 21 && this.chainActive) ? 'producing' : 'standby',
               total_votes: vote_pct + '%',
               social: '',
@@ -98,45 +100,68 @@ export class VotingService {
           });
           this.listReady.next(true);
           // Pass 2 - Enhance metadata
-          setTimeout(() => {
-            producers.rows.forEach((prod: any, idx) => {
-              this.improveMeta(prod, idx);
-            });
-          }, 500);
+          producers.rows.forEach((prod: any, idx) => {
+            const cachedPayload = JSON.parse(localStorage.getItem(prod['owner']));
+            if (cachedPayload) {
+              if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > (1000 * 60 * 60 * 6)) {
+                setTimeout(() => {
+                  this.improveMeta(prod, idx);
+                }, 100 + idx * 10);
+              } else {
+                this.bps[idx] = cachedPayload['meta'];
+              }
+            } else {
+              setTimeout(() => {
+                this.improveMeta(prod, idx);
+              }, 100 + idx * 10);
+            }
+          });
         });
       });
     }
   }
 
   improveMeta(prod, idx) {
-    const url = prod.url.endsWith('.json') ? prod.url : prod.url + '/bp.json';
-    if (url !== '') {
-      this.http.post('http://proxy.eosrio.io:4200', {
-        url: url
-      }).subscribe((data) => {
-        if (data) {
-          if (data['org']) {
-            const org = data['org'];
-            let loc = ' - ';
-            if (org['location']) {
-              loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
-            }
-            const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
-            if (data['producer_account_name'] === prod['owner']) {
-              this.bps[idx].name = org['candidate_name'];
-              this.bps[idx].account = data['producer_account_name'];
-              this.bps[idx].location = loc;
-              this.bps[idx].social = org['social'] || {};
-              this.bps[idx].email = org['email'];
-              this.bps[idx].website = org['website'];
-              this.bps[idx].logo_256 = logo_256;
-              this.bps[idx].code = org['code_of_conduct'];
+    if (prod.url !== '') {
+      const url = prod.url.endsWith('.json') ? prod.url : prod.url + '/bp.json';
+      if (url !== '') {
+        this.http.post('http://proxy.eosrio.io:4200', {
+          url: url
+        }).subscribe((data) => {
+          if (data) {
+            if (data['org']) {
+              const org = data['org'];
+              let loc = ' - ';
+              if (org['location']) {
+                loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
+              }
+              const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
+              if (data['producer_account_name'] === prod['owner']) {
+                this.bps[idx].name = org['candidate_name'];
+                this.bps[idx].account = data['producer_account_name'];
+                this.bps[idx].location = loc;
+                this.bps[idx].social = org['social'] || {};
+                this.bps[idx].email = org['email'];
+                this.bps[idx].website = org['website'];
+                this.bps[idx].logo_256 = logo_256;
+                this.bps[idx].code = org['code_of_conduct'];
+
+                // Add to cache
+                const payload = {
+                  lastUpdate: new Date(),
+                  meta: this.bps[idx],
+                  source: url
+                };
+                localStorage.setItem(prod['owner'], JSON.stringify(payload));
+              }
             }
           }
-        }
-      }, () => {
-        // console.log(url, err);
-      });
+        }, () => {
+          // console.log(url, err);
+        });
+      }
+    } else {
+      // console.log(prod['owner'] + ' provided no bp.json');
     }
   }
 }

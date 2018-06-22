@@ -13,9 +13,11 @@
           <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
         </span>
       </div>
-      <a class="blue text-right btn btn-link" style="max-width: none; height: 41px;" (click)="refresh()">
-        <i class="far fa-undo"></i> Refresh
-      </a>
+      <div class="text-right" (click)="refresh()">
+        <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
+          <i class="far fa-undo"></i> Refresh
+        </a>
+      </div>
       <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"
                [paginator]="actions.length > 12" [rows]="12">
         <ng-template pTemplate="header">

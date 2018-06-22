@@ -297,3 +297,25 @@ input:not([readonly]) {
 .error {
     color: #f44336 !important;
 }
+
+/*Prime's accordion*/
+.ui-accordion .ui-accordion-header a {
+    padding: 0.5em 0 0.5em 0 !important;
+}
+
+.ui-accordion .ui-accordion-header {
+    margin-top: 11px !important;
+}
+
+.ui-accordion .ui-state-default {
+    border: none;
+    background-color: transparent;
+    color: #eeeeee;
+}
+
+.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
+    border-color: #0094d2;
+    background-color: #0094d2;
+    color: #ffffff;
+}
+/*Prime's accordion end*/

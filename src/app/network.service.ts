@@ -45,10 +45,11 @@ export class NetworkService {
       {url: 'http://api.eosnewyork.io', owner: 'EOS New York', latency: 0, filters: []},
       {url: 'https://eos.greymass.com', owner: 'Greymass', latency: 0, filters: []},
       {url: 'https://eosapi.blockmatrix.network', owner: 'Blockmatrix', latency: 0, filters: []},
-      // {url: 'http://api.proxy1a.sheos.org', owner: 'shEOS', latency: 0, filters: []},
+      {url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0, filters: []},
+      {url: 'http://api.hkeos.com', owner: 'HK EOS', latency: 0, filters: []},
+      {url: 'http://api.proxy1a.sheos.org', owner: 'shEOS', latency: 0, filters: []},
       // {url: 'http://bp.cryptolions.io:8888', owner: 'CryptoLions', latency: 0, filters: []},
       // {url: 'http://mainnet.eoscalgary.io', owner: 'EOS Cafe', latency: 0, filters: []},
-      // {url: 'http://api.hkeos.com', owner: 'HK EOS', latency: 0, filters: []},
       // {url: 'https://dc1.eosemerge.io:5443', owner: 'EOS Emerge Poland', latency: 0, filters: []},
       // {url: 'http://dc1.eosemerge.io:8888', owner: 'EOS Emerge Poland', latency: 0, filters: []},
     ];
@@ -66,6 +67,10 @@ export class NetworkService {
       });
     });
     console.log('Starting timer...');
+    this.startTimeout();
+  }
+
+  startTimeout() {
     this.connectionTimeout = setTimeout(() => {
       console.log('Timeout!');
       if (!this.networkingReady.getValue()) {
@@ -104,7 +109,7 @@ export class NetworkService {
       this.networkingReady.next(false);
     } else {
       console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-      this.startup();
+      this.startup(null);
     }
   }
 
@@ -170,6 +175,7 @@ export class NetworkService {
             server.latency = -1;
           } else {
             server.latency = ((new Date().getTime()) - refTime);
+            console.log(server.url, server.latency);
           }
           resolve();
         });
@@ -180,8 +186,16 @@ export class NetworkService {
     });
   }
 
-  startup() {
-    this.eosjs.init(this.selectedEndpoint.getValue().url, this.mainnetId).then((savedAccounts: any) => {
+  startup(url) {
+    let endpoint = url;
+    if (!url) {
+      endpoint = this.selectedEndpoint.getValue().url;
+    } else {
+      this.status = '';
+      this.networkingReady.next(false);
+      this.startTimeout();
+    }
+    this.eosjs.init(endpoint, this.mainnetId).then((savedAccounts: any) => {
       if (this.connectionTimeout) {
         clearTimeout(this.connectionTimeout);
         this.networkingReady.next(true);

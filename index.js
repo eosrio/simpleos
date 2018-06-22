@@ -17,7 +17,6 @@ if (devtools) {
   autoUpdater.updateConfigPath = path.join('./dev-app-update.yml');
 }
 
-
 ipcMain.on('checkUpdate', (event, arg) => {
   sender = event.sender;
   autoUpdater.checkForUpdates().then((data) => {

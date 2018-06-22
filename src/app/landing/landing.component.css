@@ -176,3 +176,16 @@
   text-align: center;
   justify-content: center;
 }
+
+.advanced {
+  font-size: 14px;
+  color: #696969;
+}
+
+.warn {
+  color: #ff3f32;
+}
+
+.fit-content {
+  overflow: -webkit-paged-x;
+}

@@ -47,6 +47,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
   stakingHRV: string;
   stakerr: string;
   stakedisabled: boolean;
+  fromAccount: string;
+  nbps: number;
 
   constructor(public voteService: VotingService,
               public aService: AccountsService,
@@ -54,6 +56,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
               public crypto: CryptoService,
               private fb: FormBuilder,
               private toaster: ToasterService) {
+    if (this.voteService.bps) {
+      this.nbps = this.voteService.bps.length;
+    } else {
+      this.nbps = 100;
+    }
     this.max = 100;
     this.min = 0;
     this.minstake = false;
@@ -66,6 +73,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.stakedBalance = 0;
     this.wrongpass = '';
     this.stakerr = '';
+    this.fromAccount = '';
     this.stakedisabled = true;
     this.singleSelectionBP = {
       name: ''
@@ -161,6 +169,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     });
     this.aService.selected.asObservable().subscribe((selected: any) => {
       if (selected) {
+        this.fromAccount = selected.name;
         this.totalBalance = selected.full_balance;
         this.stakedBalance = selected.staked;
         this.loadPlacedVotes(selected);
@@ -169,6 +178,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.voteService.listReady.asObservable().subscribe((state) => {
       if (state) {
         this.updateCounter();
+        this.nbps = this.voteService.bps.length;
       }
     });
     this.aService.accounts.forEach((a) => {

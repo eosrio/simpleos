@@ -103,7 +103,8 @@ export class AccountsService {
                 ref_cpu = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
                 balance += ref_net;
                 balance += ref_cpu;
-                ref_time = new Date(refunds.rows[0]['request_time']);
+                const tempDate = refunds.rows[0]['request_time'] + '.000Z';
+                ref_time = new Date(tempDate);
               }
               tokens.forEach((tk) => {
                 balance += AccountsService.parseEOS(tk);

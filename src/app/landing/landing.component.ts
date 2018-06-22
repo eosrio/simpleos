@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {ApplicationRef, Component, NgZone, OnInit, ViewChild} from '@angular/core';
 import {EOSJSService} from '../eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../accounts.service';
@@ -6,6 +6,7 @@ import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../network.service';
 import {CryptoService} from '../services/crypto.service';
+import {el} from '@angular/platform-browser/testing/src/browser_util';
 
 @Component({
   selector: 'app-landing',
@@ -38,6 +39,8 @@ export class LandingComponent implements OnInit {
   pk: String;
   publickey: String;
   importedAccounts: any[];
+  exodusValid = false;
+  endpoint = null;
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -52,7 +55,8 @@ export class LandingComponent implements OnInit {
               private fb: FormBuilder,
               private aService: AccountsService,
               public network: NetworkService,
-              private router: Router) {
+              private router: Router,
+              private zone: NgZone) {
     this.busy = true;
     this.existingWallet = false;
     this.exodusWallet = false;
@@ -66,6 +70,7 @@ export class LandingComponent implements OnInit {
     this.accounts = [];
     this.importedAccounts = [];
     this.checkerr = '';
+    this.errormsg = '';
     this.lottieConfig = {
       path: 'assets/logoanim.json',
       autoplay: true,
@@ -109,9 +114,16 @@ export class LandingComponent implements OnInit {
     this.network.connect();
   }
 
+  customConnect() {
+    this.network.startup(this.endpoint);
+  }
+
   importFromExodus() {
+    this.wizard.reset();
+    this.exodusValid = false;
     this.exodusWallet = true;
     this.dropReady = true;
+    this.errormsg = '';
     const handleDragOver = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -123,19 +135,15 @@ export class LandingComponent implements OnInit {
         for (const f of e.dataTransfer.files) {
           const path = f['path'];
           this.dropReady = false;
+          this.exodusValid = false;
           window['filesystem']['readFile'](path, 'utf-8', (err, data) => {
             if (!err) {
               const csvdata = data.split(',');
               this.pk = csvdata[csvdata.length - 1];
+              this.pk = this.pk.trim();
               document.removeEventListener('drop', handleDrop, true);
               document.removeEventListener('dragover', handleDragOver, true);
-              this.verifyPrivateKey(this.pk);
-              this.wizard.navService.next();
-              window['filesystem']['unlink'](path, (err2) => {
-                if (err2) {
-                  console.log(err2);
-                }
-              });
+              this.verifyPrivateKey(this.pk, true, path);
             }
           });
         }
@@ -212,24 +220,40 @@ export class LandingComponent implements OnInit {
     }
   }
 
-  verifyPrivateKey(input) {
+  verifyPrivateKey(input, exodus, path) {
     if (input !== '') {
       this.eos.checkPvtKey(input).then((results) => {
         this.publicEOS = results.publicKey;
         this.importedAccounts = [];
         this.importedAccounts = [...results.foundAccounts];
         this.pvtform.controls['private_key'].setErrors(null);
-        this.exisitswizard.forceNext();
-        this.errormsg = '';
+        this.zone.run(() => {
+          if (exodus) {
+            this.exodusValid = true;
+            this.dropReady = false;
+            window['filesystem']['unlink'](path, (err2) => {
+              if (err2) {
+                console.log(err2);
+              }
+            });
+          } else {
+            this.exisitswizard.forceNext();
+          }
+          this.errormsg = '';
+        });
       }).catch((e) => {
-        this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-        this.importedAccounts = [];
-        if (e.message.includes('Invalid checksum')) {
-          this.errormsg = 'invalid private key';
-        }
-        if (e.message === 'no_account') {
-          this.errormsg = 'No account associated with this private key';
-        }
+        this.zone.run(() => {
+          this.dropReady = true;
+          this.exodusValid = false;
+          this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+          this.importedAccounts = [];
+          if (e.message.includes('Invalid checksum')) {
+            this.errormsg = 'invalid private key';
+          }
+          if (e.message === 'no_account') {
+            this.errormsg = 'No account associated with this private key';
+          }
+        });
       });
     }
   }

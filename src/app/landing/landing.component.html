@@ -19,6 +19,35 @@
         <ng-container *ngIf="busy && network.status === 'timeout'">
           <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
           <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
+
+          <div class="card check-card">
+            <div class="card-block fit-content">
+              <div class="text-left advanced"><span class="warn">Advanced Option:</span> you can also try to connect to another endpoint</div>
+              <mat-form-field class="public-input">
+                <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
+                <mat-hint align="start" style="font-size: 12px">
+                  endpoint should have history api enabled, otherwise some functions on the wallet may not work as expected.
+                </mat-hint>
+              </mat-form-field>
+              <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint">
+                Connect
+              </button>
+            </div>
+            <ng-container *ngIf="checkerr === ''">
+              <div class="card-footer" *ngFor="let account of accounts">
+                                <span style="float: left;">You have: <span
+                                        class="blue">{{account.full_balance}} EOS</span></span>
+                <span style="float: right;">Account name: <span
+                        class="blue">{{account.name}}</span></span>
+              </div>
+            </ng-container>
+            <div class="card-footer" *ngIf="checkerr === 'invalid'">
+              <span class="red">Invalid public key</span>
+            </div>
+            <div class="card-footer" *ngIf="checkerr === 'no_account'">
+              <span class="red">No account found :(</span>
+            </div>
+          </div>
         </ng-container>
         <ng-container *ngIf="!busy">
           <div style="margin-top: 30px">
@@ -73,7 +102,7 @@
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)" [clrWizardPagePreventDefault]="true"
+                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value, false, '')" [clrWizardPagePreventDefault]="true"
                    (clrWizardPageOnCancel)="doCancel()">
     <ng-template clrPageTitle>Step 1</ng-template>
     <h5>Insert your existing private key below</h5>
@@ -144,7 +173,7 @@
   <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
-  <clr-wizard-page class="exoduspage" [clrWizardPageNextDisabled]="dropReady">
+  <clr-wizard-page class="exoduspage" [clrWizardPageNextDisabled]="!exodusValid" style="padding: 0.75rem 1rem 4px;">
     <ng-template clrPageTitle>Step 1</ng-template>
     <div class="instructions">
       <h5 class="main-item">1. On your Exodus wallet, open the Developer Menu:</h5>
@@ -152,10 +181,16 @@
       <div>1.2 MacOS: Exodus menu next to the Apple Symbol</div>
       <h5 class="main-item">2. Choose Developer > Assets > EOS Mainnet > Export Private Keys </h5>
     </div>
-    <div class="remaining-height" *ngIf="dropReady">
-      <span>Drag and drop your exodus csv file here</span>
+    <div class="remaining-height" *ngIf="!exodusValid">
+      <span *ngIf="errormsg === ''">
+        Drag and drop your exodus csv file here
+      </span>
+      <span class="error" *ngIf="errormsg !== ''">
+        Oops, error reading csv file! Try again or import the key the conventional way
+      </span>
     </div>
-    <h5 *ngIf="!dropReady" class="afterdrop blue">Alright! Click to go to next page</h5>
+    <div style="line-height: 17px; padding-top: 1px">*For your safety, csv file will be automatically deleted from your computer after.</div>
+    <h5 *ngIf="exodusValid" class="afterdrop blue">Alright! Click to go to next page</h5>
   </clr-wizard-page>
   <clr-wizard-page [clrWizardPageNextDisabled]="!passformexodus.valid">
     <ng-template clrPageTitle>Step 2</ng-template>

@@ -102,9 +102,17 @@
 }
 
 .credits {
-    margin-bottom: 19px;
     text-align: center;
     font-size: 15px;
+    margin-bottom: -4px;
+    /*margin-bottom: 5px;*/
+}
+
+.version {
+    text-align: center;
+    margin-bottom: 5px;
+    /*margin-bottom: -4px;*/
+    font-size: 12px;
 }
 
 .newaccount {

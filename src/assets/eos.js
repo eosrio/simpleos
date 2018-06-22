@@ -1,5 +1,12 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Eos = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (Buffer){
 'use strict';
+
+var _typeof2 = require('babel-runtime/helpers/typeof');
+
+var _typeof3 = _interopRequireDefault(_typeof2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var assert = require('assert');
 var Structs = require('./structs');
@@ -12,30 +19,47 @@ function AbiCache(network, config) {
   var cache = {};
 
   /**
-    @arg {boolean} force false when ABI is immutable.  When force is true, API
-    user is still free to cache the contract object returned by eosjs.
+    Asynchronously fetch and cache an ABI from the blockchain.
+     @arg {string} account - blockchain account with deployed contract
+    @arg {boolean} [force = true] false when ABI is immutable.
   */
   function abiAsync(account) {
     var force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
-    assert(account, 'required account');
+    assert.equal(typeof account === 'undefined' ? 'undefined' : (0, _typeof3.default)(account), 'string', 'account string required');
 
     if (force == false && cache[account] != null) {
       return Promise.resolve(cache[account]);
     }
 
-    assert(network, 'Network is required, provide config.httpEndpoint');
-    return network.getCode(account).then(function (_ref) {
-      var abi = _ref.abi;
+    if (network == null) {
+      var _abi = cache[account];
+      assert(_abi, 'Missing ABI for account: ' + account + ', provide httpEndpoint or add to abiCache');
+      return Promise.resolve(_abi);
+    }
 
-      assert(abi, 'Missing ABI for account: ' + account);
-      var schema = abiToFcSchema(abi);
-      var structs = Structs(config, schema); // structs = {structs, types}
-      return cache[account] = Object.assign({ abi: abi, schema: schema }, structs);
+    return network.getAbi(account).then(function (code) {
+      assert(code.abi, 'Missing ABI for account: ' + account);
+      return abi(account, code.abi);
     });
   }
 
-  function abi(account) {
+  /**
+    Synchronously set or fetch an ABI from local cache.
+     @arg {string} account - blockchain account with deployed contract
+    @arg {string} [abi] - blockchain ABI json data.  Null to fetch or non-null to cache
+  */
+  function abi(account, abi) {
+    assert.equal(typeof account === 'undefined' ? 'undefined' : (0, _typeof3.default)(account), 'string', 'account string required');
+    if (abi) {
+      assert.equal(typeof abi === 'undefined' ? 'undefined' : (0, _typeof3.default)(abi), 'object', 'abi');
+      if (Buffer.isBuffer(abi)) {
+        abi = JSON.parse(abi);
+      }
+      var schema = abiToFcSchema(abi);
+      var structs = Structs(config, schema); // structs = {structs, types}
+      return cache[account] = Object.assign({ abi: abi, schema: schema }, structs);
+    }
     var c = cache[account];
     if (c == null) {
       throw new Error('Abi \'' + account + '\' is not cached');
@@ -99,7 +123,8 @@ function abiToFcSchema(abi) {
 
   return abiSchema;
 }
-},{"./structs":8,"assert":10}],2:[function(require,module,exports){
+}).call(this,{"isBuffer":require("../node_modules/is-buffer/index.js")})
+},{"../node_modules/is-buffer/index.js":159,"./structs":8,"assert":10,"babel-runtime/helpers/typeof":16}],2:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray2 = require('babel-runtime/helpers/slicedToArray');
@@ -129,12 +154,16 @@ module.exports = {
     var littleEndian = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
     return decodeName(Long.fromString(hex, true, 16).toString(), littleEndian);
   },
-  UDecimalString: UDecimalString,
-  UDecimalPad: UDecimalPad,
-  UDecimalImply: UDecimalImply,
-  UDecimalUnimply: UDecimalUnimply,
+  DecimalString: DecimalString,
+  DecimalPad: DecimalPad,
+  DecimalImply: DecimalImply,
+  DecimalUnimply: DecimalUnimply,
   printAsset: printAsset,
   parseAsset: parseAsset
+
+  /** @private */
+};var signed = function signed(fn) {
+  return function () {};
 };
 
 function ULong(value) {
@@ -316,9 +345,14 @@ function decodeName(value) {
 
   @return {string} value
 */
-function UDecimalString(value) {
+function DecimalString(value) {
   assert(value != null, 'value is required');
   value = value === 'object' && value.toString ? value.toString() : String(value);
+
+  var neg = /^-/.test(value);
+  if (neg) {
+    value = value.substring(1);
+  }
 
   if (value[0] === '.') {
     value = '0' + value;
@@ -340,7 +374,7 @@ function UDecimalString(value) {
   if (part[0] === '') {
     part[0] = '0';
   }
-  return part.join('.');
+  return (neg ? '-' : '') + part.join('.');
 }
 
 /**
@@ -348,14 +382,14 @@ function UDecimalString(value) {
 
   @see ./format.test.js
 
-  @example UDecimalPad(10.2, 3) === '10.200'
+  @example DecimalPad(10.2, 3) === '10.200'
 
   @arg {number|string|object.toString} value
   @arg {number} [precision = null] - number of decimal places (null skips padding)
   @return {string} decimal part is added and zero padded to match precision
 */
-function UDecimalPad(num, precision) {
-  var value = UDecimalString(num);
+function DecimalPad(num, precision) {
+  var value = DecimalString(num);
   if (precision == null) {
     return num;
   }
@@ -378,8 +412,8 @@ function UDecimalPad(num, precision) {
 }
 
 /** Ensures proper trailing zeros then removes decimal place. */
-function UDecimalImply(value, precision) {
-  return UDecimalPad(value, precision).replace('.', '');
+function DecimalImply(value, precision) {
+  return DecimalPad(value, precision).replace('.', '');
 }
 
 /**
@@ -390,9 +424,13 @@ function UDecimalImply(value, precision) {
   @arg {number} precision 4
   @return {number} 1.0000
 */
-function UDecimalUnimply(value, precision) {
+function DecimalUnimply(value, precision) {
   assert(value != null, 'value is required');
   value = value === 'object' && value.toString ? value.toString() : String(value);
+  var neg = /^-/.test(value);
+  if (neg) {
+    value = value.substring(1);
+  }
   assert(/^\d+$/.test(value), 'invalid whole number ' + value);
   assert(precision != null, 'precision required');
   assert(precision >= 0 && precision <= 18, 'Precision should be 18 characters or less');
@@ -405,7 +443,7 @@ function UDecimalUnimply(value, precision) {
 
   var dotIdx = value.length - precision;
   value = value.slice(0, dotIdx) + '.' + value.slice(dotIdx);
-  return UDecimalPad(value, precision); // Normalize
+  return (neg ? '-' : '') + DecimalPad(value, precision); // Normalize
 }
 
 /** @private for now, support for asset strings is limited
@@ -419,7 +457,7 @@ function printAsset(_ref) {
   assert.equal(typeof symbol === 'undefined' ? 'undefined' : (0, _typeof3.default)(symbol), 'string', 'symbol is a required string');
 
   if (amount != null && precision != null) {
-    amount = UDecimalPad(amount, precision);
+    amount = DecimalPad(amount, precision);
   }
 
   var join = function join(e1, e2) {
@@ -447,7 +485,7 @@ function parseAsset(str) {
       _str$split2 = (0, _slicedToArray3.default)(_str$split, 1),
       amountRaw = _str$split2[0];
 
-  var amountMatch = amountRaw.match(/^([0-9]+(\.[0-9]+)?)( |$)/);
+  var amountMatch = amountRaw.match(/^(-?[0-9]+(\.[0-9]+)?)( |$)/);
   var amount = amountMatch ? amountMatch[1] : null;
 
   var precisionMatch = str.match(/(^| )([0-9]+),([A-Z]+)(@|$)/);
@@ -466,7 +504,7 @@ function parseAsset(str) {
 
   var check = printAsset({ amount: amount, precision: precision, symbol: symbol, contract: contract });
 
-  assert.equal(str, check, 'Invalid extended asset string: ' + str + ' !== ' + check);
+  assert.equal(str, check, 'Invalid asset string: ' + str + ' !== ' + check);
 
   if (precision != null) {
     assert(precision >= 0 && precision <= 18, 'Precision should be 18 characters or less');
@@ -557,7 +595,8 @@ function createEos(config) {
   var network = config.httpEndpoint != null ? EosApi(config) : null;
   config.network = network;
 
-  config.abiCache = AbiCache(network, config);
+  var abiCache = AbiCache(network, config);
+  config.abiCache = abiCache;
 
   if (!config.chainId) {
     config.chainId = 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f';
@@ -589,7 +628,12 @@ function createEos(config) {
       structs: structs,
       types: types,
       fromBuffer: fromBuffer,
-      toBuffer: toBuffer
+      toBuffer: toBuffer,
+      abiCache: abiCache
+    } });
+
+  Object.assign(eos, { modules: {
+      format: format
     } });
 
   if (!config.signProvider) {
@@ -1630,10 +1674,7 @@ module.exports={
       "staked": "int64",
       "last_vote_weight": "float64",
       "proxied_vote_weight": "float64",
-      "is_proxy": "bool",
-      "deferred_trx_id": "uint32",
-      "last_unstake_time": "time_point_sec",
-      "unstaking": "asset"
+      "is_proxy": "bool"
     }
   },
   "wait_weight": {
@@ -1733,9 +1774,9 @@ var _require2 = require('./format'),
     isName = _require2.isName,
     encodeName = _require2.encodeName,
     decodeName = _require2.decodeName,
-    UDecimalPad = _require2.UDecimalPad,
-    UDecimalImply = _require2.UDecimalImply,
-    UDecimalUnimply = _require2.UDecimalUnimply,
+    DecimalPad = _require2.DecimalPad,
+    DecimalImply = _require2.DecimalImply,
+    DecimalUnimply = _require2.DecimalUnimply,
     printAsset = _require2.printAsset,
     parseAsset = _require2.parseAsset;
 
@@ -2092,7 +2133,7 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       assert(precision != null, 'precision');
       assert(symbol != null, 'symbol');
 
-      return UDecimalUnimply(amount, precision) + ' ' + symbol;
+      return DecimalUnimply(amount, precision) + ' ' + symbol;
     },
     appendByteBuffer: function appendByteBuffer(b, value) {
       var _parseAsset4 = parseAsset(value),
@@ -2104,7 +2145,7 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       assert(precision != null, 'precision');
       assert(symbol != null, 'symbol');
 
-      amountType.appendByteBuffer(b, UDecimalImply(amount, precision));
+      amountType.appendByteBuffer(b, DecimalImply(amount, precision));
       symbolType.appendByteBuffer(b, precision + ',' + symbol);
     },
     fromObject: function fromObject(value) {
@@ -2117,7 +2158,7 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       assert(precision != null, 'precision');
       assert(symbol != null, 'symbol');
 
-      return UDecimalPad(amount, precision) + ' ' + symbol;
+      return DecimalPad(amount, precision) + ' ' + symbol;
     },
     toObject: function toObject(value) {
       if (validation.defaults && value == null) {
@@ -2133,7 +2174,7 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       assert(precision != null, 'precision');
       assert(symbol != null, 'symbol');
 
-      return UDecimalPad(amount, precision) + ' ' + symbol;
+      return DecimalPad(amount, precision) + ' ' + symbol;
     }
   };
 };
@@ -2207,7 +2248,7 @@ var ExtendedAsset = function ExtendedAsset(validation, baseTypes, customTypes) {
 
 
       return {
-        amount: UDecimalPad(amount, precision),
+        amount: DecimalPad(amount, precision),
         precision: precision,
         symbol: symbol,
         contract: contract
@@ -18053,6 +18094,16 @@ module.exports={
     }
   },
 
+  "get_abi": {
+    "params": {
+      "account_name": "name"
+    },
+    "results": {
+      "account_name": "name",
+      "abi": "abi_def?"
+    }
+  },
+
   "abi_json_to_bin": {
     "brief": "Manually serialize json into binary hex.  The binayargs is usually stored in Action.data.",
     "params": {
@@ -30641,7 +30692,7 @@ function hasOwnProperty(obj, prop) {
 },{}],206:[function(require,module,exports){
 module.exports={
   "name": "eosjs",
-  "version": "15.0.0",
+  "version": "15.0.1",
   "description": "General purpose library for the EOS blockchain.",
   "main": "lib/index.js",
   "scripts": {
@@ -30688,7 +30739,7 @@ module.exports={
     "babel-runtime": "^6.26.0",
     "binaryen": "^37.0.0",
     "create-hash": "^1.1.3",
-    "eosjs-api": "6.2.1",
+    "eosjs-api": "6.3.0",
     "eosjs-ecc": "4.0.1",
     "fcbuffer": "2.2.0"
   },

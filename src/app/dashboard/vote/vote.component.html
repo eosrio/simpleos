@@ -60,7 +60,7 @@
                         [(ngModel)]="percenttoStake"></mat-slider>
           </div>
           <div class="row">
-            <div class="col-lg-6">
+            <div class="col-lg-7">
               <button (click)="setStake()" class="btn btn-outline btn-info-outline"
                       style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
               </button>
@@ -69,13 +69,13 @@
                  *ngIf="minstake">
                 <i class="far fa-exclamation-circle error"></i>
                 <span class="tooltip-content">
-                                  Please, be careful when staking the minimum. <br>
-                                  This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
-                                  However, if you just want to remove the tokens to an exchange, that is fine.
-                                </span>
+                  Please, be careful when staking the minimum. <br>
+                  This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
+                  However, if you just want to remove the tokens to an exchange, that is fine.
+                </span>
               </a>
             </div>
-            <div class="col-lg-6 text-right" style="align-self: flex-end;">
+            <div class="col-lg-5 text-right" style="align-self: flex-end;">
               <span *ngIf="valuetoStake !== ''">{{(getValuetoStake / 2) | number: '1.0-4'}} </span>
               <span *ngIf="valuetoStake === ''">50% </span>CPU /
               <span *ngIf="valuetoStake !== ''">{{ (getValuetoStake / 2) | number: '1.0-4'}} </span>
@@ -91,8 +91,8 @@
   <div class="row animate">
     <div class="col-lg-12" *ngIf="voteService">
       <p-table #dt [value]="voteService.bps" [globalFilterFields]="['name','account','location']"
-               [responsive]="true" dataKey="account" class="bps-table" [paginator]="voteService.bps.length > 42"
-               [rows]="42">
+               [responsive]="true" dataKey="account" [totalRecords]="nbps" [alwaysShowPaginator]="false"
+               class="bps-table" [paginator]="true" [rows]="50">
         <ng-template pTemplate="caption">
           <div class="row flex-items-xs-between">
             <div class="col-lg-5 col-md-5 text-left">
@@ -124,6 +124,9 @@
           <tr>
             <th style="width: 50px;">
             </th>
+            <th style="width: 50px; padding-left: 20px">
+              #
+            </th>
             <th [pSortableColumn]="'name'">
               name
               <p-sortIcon [field]="'name'"></p-sortIcon>
@@ -139,7 +142,7 @@
             <th>
               social
             </th>
-            <th [pSortableColumn]="'total_votes'">
+            <th [pSortableColumn]="'total_votes'" style="width: 150px;">
               total votes
               <p-sortIcon [field]="'total_votes'"></p-sortIcon>
             </th>
@@ -148,11 +151,14 @@
             </th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-item let-expanded="expanded">
+        <ng-template pTemplate="body" let-item let-expanded="expanded" let-index="rowIndex">
           <tr [pSelectableRow]="item" class="tr-canexpand">
             <td class="text-right expandable" [pRowToggler]="item">
               <i [ngClass]="expanded ? 'fa-search-minus' : 'fa-search-plus'"
                  class="fal fa-lg blue"></i>
+            </td>
+            <td class="text-center" [pRowToggler]="item" style="padding-left: 20px">
+              {{item.position}}
             </td>
             <td class="text-center" [pRowToggler]="item">
               {{item.name}}
@@ -205,10 +211,6 @@
                   </div>
                 </div>
                 <div class="col-xs-6">
-                  <!--<div>-->
-                  <!--<span *ngIf="item.status === 'producing'" class="label label-success">producing</span>-->
-                  <!--<span *ngIf="item.status === 'standby'" class="label label-warning">stand-by</span>-->
-                  <!--</div>-->
                   <div *ngIf="item.code">
                                       <span class="blue">
                                           <a [href]="item.code" target="_blank">Code of conduct</a>
@@ -274,15 +276,14 @@
                         </a>
                       </li>
                       <li class="social-icon" *ngIf="item.social['wechat']">
-                        <a [href]="'weixin://contacts/profile/' + item.social['wechat']"
-                           target="_blank">
+                        <a [pTooltip]="item.social['wechat']" tooltipPosition="right">
                           <i class="fab fa-weixin fa-lg"></i>
                         </a>
                       </li>
                     </ul>
                   </div>
                 </div>
-                <div class="col-xs-4 text-right">
+                <div class="col-xs-3 text-right">
                   <span *ngIf="item.status === 'producing'" class="label label-success">producing</span>
                   <span *ngIf="item.status === 'standby'" class="label label-warning">stand-by</span>
                 </div>
@@ -312,6 +313,26 @@
     <h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
     <h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
     <h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
+    <p-accordion *ngIf="stakingDiff > 0">
+      <p-accordionTab header="By submiting this action, you agree to the delegatebw Terms & Conditions">
+        The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer ownership.
+        <br><br>
+        As an authorized party I {{ fromAccount }} wish to stake {{ (getValuetoStake / 2) | number: '1.0-4' }} for CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} for bandwidth from the liquid tokens of {{ fromAccount }} for the use of delegatee {{ fromAccount }}.
+        <br><br>
+        It is true that I wish these tokens to become immediately owned by the delegatee.
+        <br><br>
+        As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve been authorized to take this action by their beneficial owner(s).
+      </p-accordionTab>
+    </p-accordion>
+    <p-accordion *ngIf="stakingDiff < 0">
+      <p-accordionTab header="By submiting this action, you agree to the undelegatebw Terms & Conditions">
+        The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
+        <br><br>
+        As an authorized party I {{ fromAccount }} wish to unstake {{ (getValuetoStake / 2) | number: '1.0-4' }} from CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} from bandwidth from the tokens owned by {{ fromAccount }} previously delegated for the use of delegatee {{ fromAccount }}.
+        <br><br>
+        If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been authorized to take this action by their beneficial owner(s).
+      </p-accordionTab>
+    </p-accordion>
   </div>
   <div class="modal-footer">
     <form [formGroup]="passFormStake" class="modal-footer">
@@ -336,6 +357,19 @@
   <div class="modal-body">
     <h4 class="text-white">Do you confirm voting on the following BPs?</h4>
     <h5 class="mt-0">{{selectedBPs.join(', ')}}</h5>
+    <p-accordion>
+      <p-accordionTab header="By submiting this action, you agree to the voteproducer Terms & Conditions">
+        The intent of the voteproducer action is to cast a valid vote for up to 30 BP candidates.
+        <br><br>
+        As an authorized party I, {{ fromAccount }}, wish to vote on behalf of {{ fromAccount }} in favor of the block producer candidates {{selectedBPs.join(', ')}} with a voting weight equal to all tokens currently owned by {{ fromAccount }} and staked for CPU or bandwidth.
+        <br><br>
+        If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to vote these shares by their beneficial owner(s).
+        <br><br>
+        I stipulate I have not and will not accept anything of value in exchange for these votes, on penalty of confiscation of these tokens, and other penalties.
+        <br><br>
+        I acknowledge that using any system of automatic voting, re-voting, or vote refreshing, or allowing such a system to be used on my behalf or on behalf of another, is forbidden and doing so violates this contract.
+      </p-accordionTab>
+    </p-accordion>
   </div>
   <form [formGroup]="passForm" class="modal-footer">
     <mat-form-field>

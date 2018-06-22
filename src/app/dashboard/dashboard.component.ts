@@ -13,9 +13,11 @@ export class DashboardComponent implements OnInit {
   anim: any;
   newAccountModal: boolean;
   accounts: any;
+  appVersion: string;
 
   constructor(public eos: EOSJSService, public aService: AccountsService) {
     this.newAccountModal = false;
+    this.appVersion = window['appversion'];
     this.lottieConfig = {
       path: 'assets/logoanim2.json',
       autoplay: true,
