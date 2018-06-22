@@ -53,8 +53,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     frame: true,
-    icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico'),
-    allowRunningInsecureContent: true
+    icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
   win.setMenu(null);
 
