@@ -2,6 +2,8 @@ import {Injectable} from '@angular/core';
 import {TextEncoder} from 'text-encoding-shim';
 import {EOSJSService} from '../eosjs.service';
 
+import * as CryptoJS from 'crypto-js';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -156,6 +158,25 @@ export class CryptoService {
     } else {
       return false;
     }
+  }
+
+  createPIN(pin: string) {
+    const salt = CryptoJS.lib.WordArray['random'](128 / 8);
+    const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
+    localStorage.setItem('simpleos-salt', JSON.stringify(salt));
+    localStorage.setItem('simpleos-hash', hash);
+  }
+
+  unlock() {
+
+  }
+
+  lock() {
+
+  }
+
+  updatePIN() {
+
   }
 
 }

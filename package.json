@@ -1,6 +1,6 @@
 {
   "name": "simpleos",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "productName": "simpleos",
   "description": "EOS Blockchain Interface & Wallet",
   "author": {
@@ -105,8 +105,8 @@
     "ts-node": "~5.0.1",
     "tslint": "~5.9.1",
     "typescript": "~2.7.2",
-    "zone.js": "^0.8.26",
-    "webpack": "^4.12.0"
+    "webpack": "^4.12.0",
+    "zone.js": "^0.8.26"
   },
   "dependencies": {
     "@angular/animations": "^6.0.6",
@@ -131,6 +131,8 @@
     "@fortawesome/pro-light-svg-icons": "^5.1.0",
     "@fortawesome/pro-regular-svg-icons": "^5.1.0",
     "@fortawesome/pro-solid-svg-icons": "^5.1.0",
+    "@types/crypto-js": "^3.1.40",
+    "crypto-js": "^3.1.9-1",
     "electron-updater": "^2.21.10",
     "electron-webpack": "^2.1.2",
     "menu": "^0.2.5",

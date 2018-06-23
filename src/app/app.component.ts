@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {NetworkService} from './network.service';
+import {CryptoService} from './services/crypto.service';
 
 @Component({
   selector: 'app-root',
@@ -10,8 +11,9 @@ export class AppComponent implements OnInit {
   update: boolean;
   ipc: any;
 
-  constructor(public network: NetworkService) {
+  constructor(public network: NetworkService, private crypto: CryptoService) {
     this.update = false;
+    this.crypto.createPIN('123456');
   }
 
   checkUpdate() {

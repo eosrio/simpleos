@@ -42,12 +42,11 @@ export class NetworkService {
   constructor(private eosjs: EOSJSService, private router: Router, public aService: AccountsService) {
     this.publicEndpoints = [
       {url: 'http://br.eosrio.io:8080', owner: 'EOS Rio', latency: 0, filters: []},
-      {url: 'http://api.eosnewyork.io', owner: 'EOS New York', latency: 0, filters: []},
-      {url: 'https://eosapi.blockmatrix.network', owner: 'Blockmatrix', latency: 0, filters: []},
       {url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0, filters: []},
       {url: 'http://api.hkeos.com', owner: 'HK EOS', latency: 0, filters: []},
-      {url: 'http://bp.cryptolions.io:8888', owner: 'CryptoLions', latency: 0, filters: []},
-      {url: 'http://jhb.eosio.africa:8088', owner: 'eosAfrica', latency: 0, filters: []}
+      {url: 'http://jhb.eosio.africa:8088', owner: 'eosAfrica', latency: 0, filters: []},
+      {url: 'https://eu1.eosdac.io', owner: 'eosDAC', latency: 0, filters: []},
+      {url: 'https://fn.eossweden.se', owner: 'eossweden.se', latency: 0, filters: []}
     ];
     this.validEndpoints = [];
     this.status = '';

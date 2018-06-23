@@ -40,7 +40,7 @@ export class LandingComponent implements OnInit {
   publickey: String;
   importedAccounts: any[];
   exodusValid = false;
-  endpoint = null;
+  endpoint = 'http://br.eosrio.io:8080';
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
