@@ -46,6 +46,22 @@
   color: #818896;
 }
 
+.form-control::-webkit-input-placeholder {
+  color: #1e2840;
+} /* WebKit, Blink, Edge */
+.form-control:-moz-placeholder {
+  color: #1e2840;
+} /* Mozilla Firefox 4 to 18 */
+.form-control::-moz-placeholder {
+  color: #1e2840;
+} /* Mozilla Firefox 19+ */
+.form-control:-ms-input-placeholder {
+  color: #1e2840;
+} /* Internet Explorer 10-11 */
+.form-control::-ms-input-placeholder {
+  color: #1e2840;
+} /* Microsoft Edge */
+
 .btn-raise-white {
   background: #ffffff;
   color: #818896;
@@ -56,9 +72,14 @@
   height: 56px;
 }
 
-.btn-inverse {
+.btn-link {
   border: none;
   color: #818896;
+  margin: 0;
+}
+
+.btn-link:hover {
+  color: #1e2840;
 }
 
 .btn-create-wallet {
