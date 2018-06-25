@@ -6,23 +6,71 @@
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  background-image: url("../../assets/bg2.jpg");
-  background-size: cover;
 }
 
 .container-fluid {
   flex-grow: 1;
   margin-bottom: 40px;
+  /* margin-top: 80px; */
 }
 
-.anim-logo {
-  /*margin-top: 80px;*/
-  margin-top: 41px;
+.landing-logo {
+  background-image: url("../../assets/logos/metatron-logo.svg");
+  height: 300px;
+  width: 300px;
+  margin: auto;
+}
+
+.landing-password-background {
+  height: 160px;
+  width: 568px;
+  background-color: #fff;
+  box-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.16);
+  border-radius: 8px;
+  margin: 56px auto;
+  padding: 52px;
+}
+
+.landing-password-input {
+  border-radius: 4px;
+  margin: 0;
+  width: 456px;
+  height: 56px;
+  background-color: #f1f1f2;
+}
+
+.form-control {
+  text-align: center;
+  font-size: 16px;
+  margin-top: 19px;
+  color: #818896;
+}
+
+.btn-raise-white {
+  background: #ffffff;
+  color: #818896;
+  box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+  border: none;
+  padding: 12px 24px 16px;
+  height: 56px;
+}
+
+.btn-inverse {
+  border: none;
+  color: #818896;
+}
+
+.btn-create-wallet {
+  position: absolute;
+  top: 32px;
+  right: 32px;
 }
 
 .slogan {
   font-size: 20px;
-  font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Helvetica Neue,
+    Arial, sans-serif;
 }
 
 @-webkit-keyframes fadeInDown {
@@ -112,7 +160,7 @@
   border-top: 1px solid #050505;
   overflow: hidden;
   font-size: 16px;
- }
+}
 
 .red {
   color: #e04848;
@@ -175,17 +223,4 @@
   flex-direction: column;
   text-align: center;
   justify-content: center;
-}
-
-.advanced {
-  font-size: 14px;
-  color: #696969;
-}
-
-.warn {
-  color: #ff3f32;
-}
-
-.fit-content {
-  overflow: -webkit-paged-x;
 }
