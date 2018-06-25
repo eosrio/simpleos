@@ -67,7 +67,7 @@
   color: #818896;
   box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.16);
   border-radius: 4px;
-  border: none;
+  border: 5px Solid Red;
   padding: 12px 24px 16px;
   height: 56px;
 }
