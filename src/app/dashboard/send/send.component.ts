@@ -48,6 +48,11 @@ export class SendComponent implements OnInit {
   });
   config: ToasterConfig;
   fromAccount: string;
+  token_balance = 0.0000;
+  selectedToken = {
+    name: 'EOS',
+    price: 1.0000
+  };
 
   constructor(private fb: FormBuilder,
               public aService: AccountsService,
@@ -60,6 +65,7 @@ export class SendComponent implements OnInit {
     this.fromAccount = '';
     this.busy = false;
     this.sendForm = this.fb.group({
+      token: ['EOS', Validators.required],
       to: ['', Validators.required],
       amount: ['', Validators.required],
       memo: [''],
@@ -112,6 +118,20 @@ export class SendComponent implements OnInit {
         this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
       }
     });
+    this.sendForm.get('token').valueChanges.subscribe((symbol) => {
+      this.sendForm.patchValue({
+        amount: ''
+      });
+      if (symbol !== 'EOS') {
+        const tk_idx = this.aService.tokens.findIndex((val) => {
+          return val.name === symbol;
+        });
+        this.selectedToken = this.aService.tokens[tk_idx];
+        this.token_balance = parseFloat(this.selectedToken['balance'].split(' ')[0]);
+      } else {
+        this.selectedToken = {name: 'EOS', price: 1.0000};
+      }
+    });
     this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
     this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
     this.addAccountsAsContacts();
@@ -133,7 +153,7 @@ export class SendComponent implements OnInit {
 
   setMax() {
     this.sendForm.patchValue({
-      amount: this.unstaked
+      amount: this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance
     });
   }
 
@@ -142,7 +162,8 @@ export class SendComponent implements OnInit {
       this.sendForm.controls['amount'].setErrors({'incorrect': true});
       this.amounterror = 'invalid amount';
     } else {
-      if (parseFloat(this.sendForm.value.amount) > this.unstaked) {
+      const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;
+      if (parseFloat(this.sendForm.value.amount) > max) {
         this.sendForm.controls['amount'].setErrors({'incorrect': true});
         this.amounterror = 'invalid amount';
       } else {
@@ -276,7 +297,7 @@ export class SendComponent implements OnInit {
       this.eos.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
         this.insertNewContact({
           type: 'contact',
-          name: this.sendForm.value.alias,
+          name: this.sendForm.value['alias'],
           account: this.sendForm.value.to.toLowerCase()
         }, false);
         this.addDividers();
@@ -335,7 +356,16 @@ export class SendComponent implements OnInit {
     if (amount > 0 && this.sendForm.valid) {
       this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
         if (res === true) {
-          this.eos.transfer(from, to, parseFloat(amount).toFixed(4) + ' EOS', memo).then((result) => {
+          let contract = 'eosio.token';
+          const tk_name = this.sendForm.get('token').value;
+          if (tk_name !== 'EOS') {
+            const idx = this.aService.tokens.findIndex((val) => {
+              return val.name === tk_name;
+            });
+            contract = this.aService.tokens[idx].contract;
+          }
+          console.log(contract, from, to, parseFloat(amount).toFixed(4) + ' ' + tk_name, memo);
+          this.eos.transfer(contract, from, to, parseFloat(amount).toFixed(4) + ' ' + tk_name, memo).then((result) => {
             if (result === true) {
               this.wrongpass = '';
               this.sendModal = false;

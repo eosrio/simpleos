@@ -8,12 +8,24 @@ import {VoteComponent} from './dashboard/vote/vote.component';
 import {SendComponent} from './dashboard/send/send.component';
 import {ConfigComponent} from './dashboard/config/config.component';
 import {AboutComponent} from './dashboard/about/about.component';
+import {LockscreenComponent} from './lockscreen/lockscreen.component';
+import {LockGuard} from './lock.guard';
+import {RamMarketComponent} from './dashboard/ram-market/ram-market.component';
 
 const routes: Routes = [
-  {path: '', component: LandingComponent},
+  {
+    path: '',
+    component: LockscreenComponent
+  },
+  {
+    path: 'landing',
+    component: LandingComponent,
+    canActivate: [LockGuard]
+  },
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [LockGuard],
     children: [
       {
         path: 'wallet',
@@ -34,6 +46,10 @@ const routes: Routes = [
       {
         path: 'config',
         component: ConfigComponent,
+      },
+      {
+        path: 'ram',
+        component: RamMarketComponent,
       },
       {
         path: 'about',

@@ -13,8 +13,9 @@
             </mat-tab>
           </mat-tab-group>
         </div>
-        <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0">
-          <div class="text-center navbar-btn newaccount" pTooltip="soon" tooltipPosition="left">
+        <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0"
+             (click)="newAccountModal = true">
+          <div class="text-center navbar-btn newaccount">
             <div style="padding-top: 16px">
               <fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
             </div>
@@ -37,7 +38,8 @@
     <nav class="sidenav">
       <section class="sidenav-header">
         <lottie-animation-view
-          [options]="lottieConfig" [width]="'auto'" [height]="'auto'" (animCreated)="handleAnimation($event)">
+          [options]="lottieConfig" [width]="'auto'" [height]="'auto'"
+          (animCreated)="handleAnimation($event)">
         </lottie-animation-view>
       </section>
       <section #sidenavContent class="sidenav-content">
@@ -53,43 +55,235 @@
         <a class="nav-link" routerLinkActive="active" [routerLink]="['vote']">
           <fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
         </a>
+        <!--<a class="nav-link" routerLinkActive="active" [routerLink]="['ram']">-->
+          <!--<fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RAM MARKET-->
+        <!--</a>-->
       </section>
       <section class="placeholder border-r">
         <div class="credits">Made with
           <fa-icon [icon]="['fas', 'heart']"></fa-icon>
           by <a style="color: #d7d7d7;" [routerLink]="['about']">EOS Rio</a>
         </div>
-        <div class="version">v0.5.7</div>
+        <div class="version">v0.6.0</div>
       </section>
     </nav>
   </div>
 </div>
 
-<!--<clr-wizard #wizardaccount [(clrWizardOpen)]="newAccountModal" clrWizardSize="md">-->
-<!--<clr-wizard-title>New account</clr-wizard-title>-->
-<!--<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
-<!--<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
-<!--<clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
-<!--<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
-<!--<clr-wizard-page>-->
-<!--<ng-template clrPageTitle>Step 1</ng-template>-->
-<!--<h5 style="color: #a9a9a9">Choose your account name</h5>-->
-<!--<h5 class="mt-0">12 characters. Allows all letters, numbers 1-5 and dots.</h5>-->
-<!--<mat-form-field class="mt-1">-->
-<!--<input matInput placeholder="Account name" [(ngModel)]="accountname">-->
-<!--<mat-error>-->
-<!--Please enter a valid email address-->
-<!--</mat-error>-->
-<!--</mat-form-field>-->
-<!--</clr-wizard-page>-->
-<!--<clr-wizard-page>-->
-<!--<ng-template clrPageTitle>Step 2</ng-template>-->
-<!--<h5>Define your password. This will be used to transactions confirmations.</h5>-->
-<!--<mat-form-field class="mt-1">-->
-<!--<input matInput type="password" placeholder="Password" [(ngModel)]="pass1">-->
-<!--</mat-form-field>-->
-<!--<mat-form-field style="margin-top: 10px">-->
-<!--<input matInput type="password" placeholder="Confirm password" [(ngModel)]="pass2">-->
-<!--</mat-form-field>-->
-<!--</clr-wizard-page>-->
-<!--</clr-wizard>-->
+
+<clr-wizard #newAccountWizard [(clrWizardOpen)]="newAccountModal" clrWizardSize="lg">
+  <clr-wizard-title>New account</clr-wizard-title>
+  <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+  <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+  <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+  <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+  <clr-wizard-page [clrWizardPageNextDisabled]="newAccOptions === ''">
+    <ng-template clrPageTitle>Select Method</ng-template>
+    <h5 style="color: #a9a9a9" class="mb-1">Create new account</h5>
+    <mat-radio-group class="example-radio-group" [(ngModel)]="newAccOptions">
+      <mat-radio-button class="example-radio-button" value="thispk">
+        Associated with this private key
+      </mat-radio-button>
+      <mat-radio-button class="example-radio-button" value="newpk">
+        Associated with new private key
+      </mat-radio-button>
+      <mat-radio-button class="example-radio-button" value="friend">
+        For a friend
+      </mat-radio-button>
+    </mat-radio-group>
+  </clr-wizard-page>
+
+  <clr-wizard-page *ngIf="newAccOptions === 'friend'" [clrWizardPageNextDisabled]="payloadError">
+    <ng-template clrPageTitle>Import Code</ng-template>
+    <h5 style="color: #a9a9a9" class="mb-1">Create an account for a friend</h5>
+    <h5>Please paste the code you've received on the area below.</h5>
+    <div class="form-group">
+      <label for="textarea">Account request code</label>
+      <textarea #requestcode id="textarea" rows="5" (keyup)="decodeAccountPayload(requestcode.value)"
+                (blur)="decodeAccountPayload(requestcode.value)"></textarea>
+      <mat-hint>ctrl v to paste</mat-hint>
+    </div>
+    <mat-error *ngIf="payloadError">
+      Invalid code, please verify with the sender. It must always end with a <strong>equal (=) char.</strong>
+    </mat-error>
+    <ng-container *ngIf="requestcode.value !== '' && !payloadError">
+      <h5 class="m-0" style="color: #a9a9a9">Requested On: <span class="blue">{{newAccountData.t}}</span></h5>
+      <h5 class="m-0" style="color: #a9a9a9">Account Name: <span class="blue">{{newAccountData.n}}</span></h5>
+      <h5 class="m-0" style="color: #a9a9a9">Owner Public Key: </h5><span class="blue">{{newAccountData.o}}</span>
+      <h5 class="m-0" style="color: #a9a9a9">Active Public Key: </h5><span
+      class="blue">{{newAccountData.a}}</span>
+    </ng-container>
+  </clr-wizard-page>
+
+  <!--Choose acc name: Associated with THIS or NEW pk-->
+  <clr-wizard-page *ngIf="newAccOptions === 'thispk' || newAccOptions === 'newpk'"
+                   [clrWizardPageNextDisabled]="!accountname_valid"
+                   [clrWizardPagePreventDefault]="true"
+                   (clrWizardPageOnCommit)="verifyAccountName(true)"
+                   (clrWizardPagePrevious)="newAccountWizard.previous()"
+                   (clrWizardPageOnCancel)="resetAndClose()">
+    <ng-template clrPageTitle>Account Name</ng-template>
+    <h5 style="color: #a9a9a9">Choose your account name</h5>
+    <h5 class="mt-0">12 characters. Allows all letters and numbers 1-5.</h5>
+    <mat-form-field class="mt-1" style="display: block; width: 180px">
+      <input matInput #account placeholder="EOS account name" maxlength="12"
+             (keyup.enter)="verifyAccountName(false)"
+             [(ngModel)]="accountname">
+      <mat-hint align="end">{{account.value.length}} / 12</mat-hint>
+    </mat-form-field>
+    <button class="btn btn-info-outline mt-1" (click)="verifyAccountName(false)">Check availability</button>
+    <p class="error">{{accountname_err}}</p>
+    <p *ngIf="account.value.length === 12 && accountname_valid" class="blue">
+      <strong>{{accountname}}</strong>
+      is currently available. Click
+      <strong>NEXT</strong>
+      to continue.
+    </p>
+  </clr-wizard-page>
+
+  <clr-wizard-page *ngIf="newAccOptions === 'newpk'"
+                   [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
+    <ng-template clrPageTitle>Define Keys</ng-template>
+    <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
+    <h5>Please enter your desired public keys or click the <span
+      class="blue"> Generate Key Pairs </span>
+      button.</h5>
+    <mat-form-field class="mt-1" style="width: 470px">
+      <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
+      <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+    </mat-form-field>
+    <mat-form-field class="mt-1" style="width: 470px">
+      <input matInput placeholder="Active Public key" [(ngModel)]="activepub">
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
+    </mat-form-field>
+
+    <button class="btn btn-info-outline" (click)="generateKeys()">Generate Key Pairs</button>
+
+    <fa-layers *ngIf="generating" class="blue fa-fw">
+      <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
+    </fa-layers>
+
+    <ng-container *ngIf="generated">
+      <mat-form-field class="mt-1" style="width: 470px">
+        <input matInput placeholder="Owner Private key" [(ngModel)]="ownerpk">
+        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpk)"></fa-icon>
+      </mat-form-field>
+      <mat-form-field class="mt-1" style="width: 470px">
+        <input matInput placeholder="Active Private key" [(ngModel)]="activepk">
+        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepk)"></fa-icon>
+      </mat-form-field>
+      <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys on a safe place</mat-checkbox>
+    </ng-container>
+  </clr-wizard-page>
+
+  <clr-wizard-page [clrWizardPageNextDisabled]="!delegateForm.valid">
+    <ng-template clrPageTitle>Account Resources</ng-template>
+
+    <h5 style="color: #a9a9a9">You will create the account: {{newAccountData.n}}</h5>
+
+    <form [formGroup]="delegateForm" class="pt-0">
+      <!--Amount to delegate-->
+      <mat-form-field class="mt-1" style="width: 273px">
+        <input matInput type="text" placeholder="Amount to delegate (min = 1.0000 EOS)"
+               [textMask]="{mask: numberMask}"
+               formControlName="delegate_amount">
+        <mat-error align="start" *ngIf="amounterror !== ''">
+          {{amounterror}}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="delegate_transfer">
+        Check this if you want to transfer the delegated stake.
+        <br>If you chose so your friend will be able to unstake
+        <br>and claim those funds. If you leave unchecked you
+        <br>will be able to remove the delegated stake in the future.
+      </mat-checkbox>
+
+      <!-- Ram to buy-->
+      <mat-form-field class="mt-1" style="width: 273px;">
+        <input matInput #ramAmount type="text"
+               placeholder="How much ram to buy for this account (min = 4096 bytes)"
+               formControlName="ram_amount" [textMask]="{mask: intMask}">
+      </mat-form-field>
+      <span style="margin: 0 12px;">=</span>
+      <mat-form-field style="width: 100px">
+        <input matInput placeholder="Price in eos" disabled readonly
+               value="{{ram.ramPriceEOS * (ramAmount.value/1024) | number: '1.0-4'}} EOS">
+      </mat-form-field>
+      <!--Amount to Gift-->
+      <mat-form-field class="mt-1" style="width: 273px">
+        <input matInput placeholder="EOS Amount to gift (optional)" [textMask]="{mask: numberMask}"
+               formControlName="gift_amount" type="text">
+      </mat-form-field>
+    </form>
+  </clr-wizard-page>
+
+  <clr-wizard-page *ngIf="newAccOptions === 'thispk' || newAccOptions === 'newpk'">
+    <ng-template clrPageTitle>Set Password</ng-template>
+    <h5>Define your password for this account. This will be used to transactions confirmations.</h5>
+    <form [formGroup]="passform" class="confirmForm">
+      <mat-form-field class="mt-1" style="width: 180px;">
+        <input matInput #newpass type="password" placeholder="Password"
+               [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
+        <fa-icon matSuffix *ngIf="newpass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="newpass.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="newpass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
+                 class="copy" (click)="newpass.type = 'password'"></fa-icon>
+        <mat-hint align="start">
+          Min 10 characters
+        </mat-hint>
+        <mat-hint align="end">{{newpass.value.length}} / 10+</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field style="margin-top: 10px; display: block; width: 180px;">
+        <input matInput #newpass2 type="password" placeholder="Confirm password"
+               [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
+        <fa-icon matSuffix *ngIf="newpass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="newpass2.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="newpass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
+                 class="copy" (click)="newpass2.type = 'password'"></fa-icon>
+      </mat-form-field>
+    </form>
+    <h5>By creating this account 1 EOS will be delegated to the new account and 8KB of RAM will be purchased.</h5>
+  </clr-wizard-page>
+
+  <clr-wizard-page (clrWizardPageOnLoad)="loadLastPage()">
+    <ng-template clrPageTitle>Sign Transaction</ng-template>
+    <p-accordion>
+      <p-accordionTab header="By submiting this transaction, you agree to the following Ricardian Contract">
+        As an authorized party I {{ final_creator }} wish to exercise the authority of {{ final_creator }}
+        to create a new account on this system named {{ final_name }} such that the new account's owner public
+        key shall be {{ final_owner }} and the active public key shall be {{ final_active }}.
+      </p-accordionTab>
+    </p-accordion>
+    <form [formGroup]="submitTXForm" class="confirmForm">
+      <mat-form-field>
+        <input matInput type="password" (keyup.enter)="executeTX()" placeholder="Password"
+               formControlName="pass">
+        <mat-hint class="error" align="start" *ngIf="wrongwalletpass !== ''">
+          {{wrongwalletpass}}
+        </mat-hint>
+        <br clear="all"/>
+      </mat-form-field>
+      <button type="button" class="btn btn-info-outline" style="margin-top: 1px; margin-left: 10px;"
+              (click)="executeTX()" [disabled]="!submitTXForm.valid || busy">
+        Confirm
+        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+      </button>
+      <ng-container *ngIf="success">
+        <div class="blue mt-1">Account created successfully!</div>
+        <div><span class="blue">Transaction id:</span>
+          <a (click)="openTX(confirmationID)" pTooltip="Open on explorer" appendTo="body"
+             style="cursor: pointer; color: #bebebe;">
+            {{confirmationID}}
+          </a>
+        </div>
+        <span *ngIf="newAccOptions === 'friend'">
+                    Send the transaction id to your friend to confirm you created the account! :D
+                </span>
+      </ng-container>
+    </form>
+  </clr-wizard-page>
+
+</clr-wizard>

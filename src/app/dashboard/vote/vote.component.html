@@ -1,5 +1,4 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-
 <div class="container" style="height: 100%; overflow-x: hidden;">
   <div class="row animate" style="padding-top: 15px;">
     <div class="col-lg-6">
@@ -54,13 +53,13 @@
             </div>
           </div>
           <div>
-            <mat-slider class="stake-slider" [min]="100/totalBalance" [max]="max" [thumbLabel]="true"
+            <mat-slider class="stake-slider" [min]="minToStake" [max]="max" [thumbLabel]="true"
                         (change)="updateStakeValue()"
                         [tickInterval]="25" [displayWith]="sliderLabel"
                         [(ngModel)]="percenttoStake"></mat-slider>
           </div>
           <div class="row">
-            <div class="col-lg-7">
+            <div class="col-lg-6">
               <button (click)="setStake()" class="btn btn-outline btn-info-outline"
                       style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
               </button>
@@ -75,7 +74,7 @@
                 </span>
               </a>
             </div>
-            <div class="col-lg-5 text-right" style="align-self: flex-end;">
+            <div class="col-lg-6 text-right" style="align-self: flex-end;">
               <span *ngIf="valuetoStake !== ''">{{(getValuetoStake / 2) | number: '1.0-4'}} </span>
               <span *ngIf="valuetoStake === ''">50% </span>CPU /
               <span *ngIf="valuetoStake !== ''">{{ (getValuetoStake / 2) | number: '1.0-4'}} </span>
@@ -85,8 +84,23 @@
         </div>
       </div>
     </div>
-    <!--<div class="col-lg-4">-->
-    <!--</div>-->
+  </div>
+  <div class="row animate">
+    <div class="col-lg-12">
+      <div class="card info-card">
+        <div class="card-block" style="padding: 0;">
+          <p-accordion class="map">
+            <p-accordionTab header="Block Producers Map (Organization Location)">
+              <echarts [options]="options" [merge]="voteService.updateOptions"
+                       [autoResize]="true" [initOpts]="initOptions"
+                       class="bp-map"
+                       (chartInit)="onChartInit($event)">
+              </echarts>
+            </p-accordionTab>
+          </p-accordion>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="row animate">
     <div class="col-lg-12" *ngIf="voteService">

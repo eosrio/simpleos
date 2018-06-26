@@ -24,24 +24,16 @@ ipcMain.on('checkUpdate', (event, arg) => {
   });
 });
 
-ipcMain.on('startUpdate', (event, arg) => {
-  autoUpdater.quitAndInstall();
-});
-
 autoUpdater.on('error', (error) => {
   dialog.showErrorBox('Error: ', error == null ? "unknown" : (error.stack || error).toString())
 });
 
 autoUpdater.on('update-available', () => {
-  autoUpdater['downloadUpdate']();
+  sender.send('update_ready', true);
 });
 
 autoUpdater.on('update-not-available', () => {
   sender.send('update_ready', false);
-});
-
-autoUpdater.on('update-downloaded', () => {
-  sender.send('update_ready', true);
 });
 
 function createWindow() {

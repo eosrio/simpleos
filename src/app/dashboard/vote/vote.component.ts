@@ -6,6 +6,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto.service';
+import {HttpClient} from '@angular/common/http';
 
 @Component({
   selector: 'app-vote',
@@ -18,6 +19,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
   minstake: boolean;
   valuetoStake: string;
   percenttoStake: string;
+  minToStake = 0.01;
   stakeModal: boolean;
   voteModal: boolean;
   nVotes: number;
@@ -50,7 +52,21 @@ export class VoteComponent implements OnInit, AfterViewInit {
   fromAccount: string;
   nbps: number;
 
+  echartsInstance: any;
+  location: string[];
+  country: string[];
+  graphMerge: any;
+  options: any;
+  nodeList = [];
+  links = [];
+  initOptions = {
+    renderer: 'z',
+    width: 1000,
+    height: 400
+  };
+
   constructor(public voteService: VotingService,
+              private http: HttpClient,
               public aService: AccountsService,
               public eos: EOSJSService,
               public crypto: CryptoService,
@@ -85,6 +101,75 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.passFormStake = this.fb.group({
       pass: ['', [Validators.required, Validators.minLength(10)]]
     });
+
+    this.graphMerge = {
+      series: {
+        data: this.nodeList,
+        links: this.links,
+      }
+    };
+
+    this.options = {
+      geo: {
+        map: 'world',
+        roam: false,
+        left: 0,
+        right: 0,
+        silent: true,
+        aspectScale: 1,
+        itemStyle: {
+          normal: {
+            borderColor: '#1076a1',
+            color: '#17181c'
+          }
+        }
+      },
+      animationDuration: 1500,
+      animationEasingUpdate: 'quinticInOut',
+      series: [
+        {
+          name: 'EOS',
+          type: 'graph',
+          coordinateSystem: 'geo',
+          symbol: 'pin',
+          symbolSize: 15,
+          data: this.voteService.data,
+          animation: true,
+          animationDuration: 2000,
+          focusNodeAdjacency: true,
+          itemStyle: {
+            normal: {
+              borderColor: '#fff',
+              borderWidth: 1,
+              shadowBlur: 10,
+              color: '#fff',
+              shadowColor: 'rgba(0, 0, 0, 0.3)'
+            }
+          },
+          label: {
+            position: 'top',
+            formatter: '{b}',
+            show: false,
+            distance: 6,
+            fontSize: 16
+          },
+          lineStyle: {
+            color: 'source',
+            curveness: 0.01,
+            width: 2
+          },
+          force: {
+            repulsion: 600,
+            edgeLength: 150,
+          },
+          emphasis: {
+            lineStyle: {
+              width: 10
+            }
+          }
+        }
+      ]
+    };
   }
 
   extOpen(value) {
@@ -175,7 +260,9 @@ export class VoteComponent implements OnInit, AfterViewInit {
       if (selected) {
         this.fromAccount = selected.name;
         this.totalBalance = selected.full_balance;
+        this.minToStake = 100 / this.totalBalance;
         this.stakedBalance = selected.staked;
+        this.valuetoStake = this.stakedBalance.toString();
         this.loadPlacedVotes(selected);
       }
     });
@@ -188,10 +275,16 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.aService.accounts.forEach((a) => {
       if (a) {
         if (a.name === selectedAcc.name) {
-          const currentVotes = a.details['voter_info']['producers'];
-          this.voteService.bps.forEach((elem) => {
-            elem.checked = currentVotes.indexOf(elem.account) !== -1;
-          });
+          if (a.details['voter_info']) {
+            const currentVotes = a.details['voter_info']['producers'];
+            this.voteService.bps.forEach((elem) => {
+              elem.checked = currentVotes.indexOf(elem.account) !== -1;
+            });
+          } else {
+            this.voteService.bps.forEach((elem) => {
+              elem.checked = false;
+            });
+          }
         }
       }
     });
@@ -308,12 +401,18 @@ export class VoteComponent implements OnInit, AfterViewInit {
   }
 
   loadPlacedVotes(selectedAccount) {
-    const currentVotes = selectedAccount.details['voter_info']['producers'];
-    this.nVotes = currentVotes.length;
-    this.voteService.bps.forEach((elem) => {
-      elem.checked = currentVotes.indexOf(elem.account) !== -1;
-    });
-    this.updateCounter();
+    if (selectedAccount.details['voter_info']) {
+      const currentVotes = selectedAccount.details['voter_info']['producers'];
+      this.nVotes = currentVotes.length;
+      this.voteService.bps.forEach((elem) => {
+        elem.checked = currentVotes.indexOf(elem.account) !== -1;
+      });
+      this.updateCounter();
+    } else {
+      this.voteService.bps.forEach((elem) => {
+        elem.checked = false;
+      });
+    }
   }
 
   private showToast(type: string, title: string, body: string) {
@@ -335,6 +434,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
       bodyOutputType: BodyOutputType.TrustedHtml,
     };
     this.toaster.popAsync(toast);
+  }
+
+  onChartInit(e: any) {
+    this.echartsInstance = e;
+    console.log('on chart init:', e);
   }
 
 }

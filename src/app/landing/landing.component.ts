@@ -1,4 +1,4 @@
-import {ApplicationRef, Component, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
 import {EOSJSService} from '../eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../accounts.service';
@@ -6,7 +6,7 @@ import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../network.service';
 import {CryptoService} from '../services/crypto.service';
-import {el} from '@angular/platform-browser/testing/src/browser_util';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 
 @Component({
   selector: 'app-landing',
@@ -16,6 +16,7 @@ import {el} from '@angular/platform-browser/testing/src/browser_util';
 export class LandingComponent implements OnInit {
 
   @ViewChild('wizardexists') exisitswizard: ClrWizard;
+  @ViewChild('wizardnew') wizardnew: ClrWizard;
   @ViewChild('wizardexodus') wizard: ClrWizard;
   lottieConfig: Object;
   anim: any;
@@ -23,6 +24,15 @@ export class LandingComponent implements OnInit {
   existingWallet: boolean;
   exodusWallet: boolean;
   newWallet: boolean;
+  accountname = '';
+  accountname_err = '';
+  accountname_valid = false;
+  ownerpk = '';
+  ownerpub = '';
+  activepk = '';
+  activepub = '';
+  newAccountPayload = '';
+  agreeKeys = false;
   check: boolean;
   publicEOS: string;
   checkerr: string;
@@ -33,14 +43,22 @@ export class LandingComponent implements OnInit {
   passexodusmatch: boolean;
   agree: boolean;
   agree2: boolean;
+  generating = false;
   passform: FormGroup;
   passformexodus: FormGroup;
   pvtform: FormGroup;
-  pk: String;
-  publickey: String;
+  pk: string;
+  publickey: string;
+  pin: string;
+  pinexodus: string;
+  lockscreen: boolean;
+  lockscreen2: boolean;
   importedAccounts: any[];
   exodusValid = false;
   endpoint = 'http://br.eosrio.io:8080';
+  payloadValid = false;
+  generated = false;
+  config: ToasterConfig;
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -54,6 +72,7 @@ export class LandingComponent implements OnInit {
               private crypto: CryptoService,
               private fb: FormBuilder,
               private aService: AccountsService,
+              private toaster: ToasterService,
               public network: NetworkService,
               private router: Router,
               private zone: NgZone) {
@@ -67,6 +86,8 @@ export class LandingComponent implements OnInit {
     this.passexodusmatch = true;
     this.agree = false;
     this.agree2 = false;
+    this.lockscreen = false;
+    this.lockscreen2 = false;
     this.accounts = [];
     this.importedAccounts = [];
     this.checkerr = '';
@@ -100,6 +121,37 @@ export class LandingComponent implements OnInit {
     });
   }
 
+  cc(text) {
+    this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+    window['clipboard']['writeText'](text);
+  }
+
+  resetAndClose() {
+    this.wizardnew.reset();
+    this.wizardnew.close();
+  }
+
+  private showToast(type: string, title: string, body: string) {
+    this.config = new ToasterConfig({
+      positionClass: 'toast-top-right',
+      timeout: 10000,
+      newestOnTop: true,
+      tapToDismiss: true,
+      preventDuplicates: false,
+      animation: 'slideDown',
+      limit: 1,
+    });
+    const toast: Toast = {
+      type: type,
+      title: title,
+      body: body,
+      timeout: 10000,
+      showCloseButton: true,
+      bodyOutputType: BodyOutputType.TrustedHtml,
+    };
+    this.toaster.popAsync(toast);
+  }
+
   ngOnInit() {
     setTimeout(() => {
       this.anim.pause();
@@ -108,6 +160,85 @@ export class LandingComponent implements OnInit {
     setTimeout(() => {
       this.anim.play();
     }, 900);
+  }
+
+  setPin(exodus) {
+    setTimeout(() => {
+      if (exodus) {
+        this.crypto.createPIN(this.pinexodus);
+      } else {
+        this.crypto.createPIN(this.pin);
+      }
+    }, 4000);
+  }
+
+  verifyAccountName(next) {
+    try {
+      this.accountname_valid = false;
+      const res = this.eos.checkAccountName(this.accountname);
+      console.log(res);
+      if (res !== 0) {
+        if (this.accountname.length === 12) {
+          this.eos.eos['getAccount'](this.accountname, (err, data) => {
+            console.log(err, data);
+            if (err) {
+              this.accountname_valid = true;
+              this.accountname_err = '';
+              if (next) {
+                this.wizardnew.next();
+              }
+            } else {
+              if (data) {
+                this.accountname_err = 'This account name is not available. Please try another.';
+                this.accountname_valid = false;
+              }
+            }
+          });
+        } else {
+          this.accountname_err = 'The account name must have exactly 12 characters. a-z, 1-5';
+        }
+      }
+    } catch (e) {
+      this.accountname_err = e.message;
+    }
+  }
+
+  generateKeys() {
+    this.generating = true;
+    setTimeout(() => {
+      this.eos.ecc.initialize().then(() => {
+        this.eos.ecc['randomKey'](128).then((privateKey) => {
+          this.ownerpk = privateKey;
+          this.ownerpub = this.eos.ecc['privateToPublic'](this.ownerpk);
+          console.log(this.ownerpk, this.ownerpub);
+          this.eos.ecc['randomKey'](128).then((privateKey2) => {
+            this.activepk = privateKey2;
+            this.activepub = this.eos.ecc['privateToPublic'](this.activepk);
+            this.generating = false;
+            this.generated = true;
+            console.log(this.activepk, this.activepub);
+          });
+        });
+      });
+    }, 100);
+  }
+
+  makePayload() {
+    if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
+      console.log('Generating account payload');
+      this.newAccountPayload = btoa(JSON.stringify({
+        n: this.accountname,
+        o: this.ownerpub,
+        a: this.activepub,
+        t: new Date().getTime()
+      }));
+      this.payloadValid = true;
+    } else {
+      alert('Invalid public key!');
+      this.newAccountPayload = 'Invalid public key! Please go back and fix it!';
+      this.payloadValid = false;
+      this.wizardnew.navService.previous();
+    }
   }
 
   retryConn() {
@@ -191,6 +322,9 @@ export class LandingComponent implements OnInit {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
+            if (this.lockscreen) {
+              this.setPin(false);
+            }
           }).catch((error) => {
             console.log('Error', error);
           });
@@ -210,6 +344,9 @@ export class LandingComponent implements OnInit {
             this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
+            if (this.lockscreen2) {
+              this.setPin(true);
+            }
           }).catch((error) => {
             console.log('Error', error);
           });

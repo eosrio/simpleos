@@ -21,7 +21,7 @@ import {
   MatAutocompleteModule,
   MatCheckboxModule,
   MatFormFieldModule,
-  MatInputModule,
+  MatInputModule, MatRadioModule, MatSelectModule,
   MatSliderModule,
   MatTabsModule
 } from '@angular/material';
@@ -38,6 +38,10 @@ import {AccountsService} from './accounts.service';
 import {NetworkService} from './network.service';
 import {CryptoService} from './services/crypto.service';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
+import {LockscreenComponent} from './lockscreen/lockscreen.component';
+import {RamMarketComponent} from './dashboard/ram-market/ram-market.component';
+import {NgxEchartsModule} from 'ngx-echarts';
+import {RamService} from './services/ram.service';
 
 library.add(far, fas, fab, fal);
 
@@ -51,32 +55,36 @@ library.add(far, fas, fab, fal);
     HistoryComponent,
     VoteComponent,
     ConfigComponent,
-    AboutComponent
+    AboutComponent,
+    LockscreenComponent,
+    RamMarketComponent
   ],
   imports: [
+    AccordionModule,
+    BrowserAnimationsModule,
     BrowserModule,
     ClarityModule,
-    MatTabsModule,
+    FontAwesomeModule,
+    FormsModule,
+    HttpClientModule,
+    LottieAnimationViewModule.forRoot(),
+    MatAutocompleteModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
-    MatAutocompleteModule,
+    MatRadioModule,
+    MatSelectModule,
     MatSliderModule,
+    MatTabsModule,
+    NgxEchartsModule,
+    ReactiveFormsModule,
     TableModule,
-    FormsModule,
     TextMaskModule,
-    TooltipModule,
-    AccordionModule,
-    ReactiveFormsModule,
-    MatCheckboxModule,
     ToasterModule.forRoot(),
-    BrowserAnimationsModule,
-    LottieAnimationViewModule.forRoot(),
-    FontAwesomeModule,
-    ReactiveFormsModule,
-    HttpClientModule,
+    TooltipModule,
     AppRoutingModule
   ],
-  providers: [EOSJSService, AccountsService, NetworkService, CryptoService],
+  providers: [EOSJSService, AccountsService, NetworkService, CryptoService, RamService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

@@ -6,6 +6,7 @@ import {AccountsService} from '../../accounts.service';
 import {VotingService} from '../vote/voting.service';
 import {NetworkService} from '../../network.service';
 import {CryptoService} from '../../services/crypto.service';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 
 @Component({
   selector: 'app-config',
@@ -16,10 +17,14 @@ export class ConfigComponent implements OnInit {
   endpointModal: boolean;
   logoutModal: boolean;
   confirmModal: boolean;
+  pinModal: boolean;
+  clearPinModal: boolean;
   changePassModal: boolean;
   passForm: FormGroup;
+  pinForm: FormGroup;
   passmatch: boolean;
   clearContacts: boolean;
+  config: ToasterConfig;
 
   static resetApp() {
     window['remote']['app']['relaunch']();
@@ -32,10 +37,13 @@ export class ConfigComponent implements OnInit {
               private router: Router,
               private eos: EOSJSService,
               private crypto: CryptoService,
-              public aService: AccountsService) {
+              public aService: AccountsService,
+              private toaster: ToasterService) {
     this.endpointModal = false;
     this.logoutModal = false;
     this.confirmModal = false;
+    this.pinModal = false;
+    this.clearPinModal = false;
     this.clearContacts = false;
     this.changePassModal = false;
     this.passForm = this.fb.group({
@@ -45,6 +53,30 @@ export class ConfigComponent implements OnInit {
         pass2: ['', [Validators.required, Validators.minLength(10)]]
       })
     });
+    this.pinForm = this.fb.group({
+      pin: ['', Validators.required],
+    });
+  }
+
+  private showToast(type: string, title: string, body: string) {
+    this.config = new ToasterConfig({
+      positionClass: 'toast-top-right',
+      timeout: 10000,
+      newestOnTop: true,
+      tapToDismiss: true,
+      preventDuplicates: false,
+      animation: 'slideDown',
+      limit: 1,
+    });
+    const toast: Toast = {
+      type: type,
+      title: title,
+      body: body,
+      timeout: 10000,
+      showCloseButton: true,
+      bodyOutputType: BodyOutputType.TrustedHtml,
+    };
+    this.toaster.popAsync(toast);
   }
 
   ngOnInit() {
@@ -89,5 +121,24 @@ export class ConfigComponent implements OnInit {
       }
     }
   }
+
+  clearPin() {
+    this.crypto.removePIN();
+    this.clearPinModal = false;
+    this.showToast('success', 'Lockscreen PIN removed!', '');
+  }
+
+  setPIN() {
+    if (this.pinForm.value.pin !== '') {
+      if (localStorage.getItem('simpleos-hash')) {
+        this.crypto.updatePIN(this.pinForm.value.pin);
+      } else {
+        this.crypto.createPIN(this.pinForm.value.pin);
+      }
+      this.showToast('success', 'New Lockscreen PIN defined!', '');
+    }
+    this.pinModal = false;
+  }
+
 
 }
