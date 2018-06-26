@@ -177,7 +177,7 @@ export class DashboardComponent implements OnInit {
                   });
                 }
               });
-            }, 5000);
+            }, 7500);
           } else if (this.newAccOptions === 'friend') {
             this.wrongwalletpass = '';
             this.confirmationID = txdata['transaction_id'];
@@ -196,7 +196,7 @@ export class DashboardComponent implements OnInit {
                 this.showToast('success', 'Account created', 'Check your history for confirmation.');
                 this.submitTXForm.reset();
               });
-            }, 5000);
+            }, 7500);
           }
         }).catch((err2) => {
           const errorJSON = JSON.parse(err2);

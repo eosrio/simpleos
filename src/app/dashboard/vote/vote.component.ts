@@ -260,9 +260,18 @@ export class VoteComponent implements OnInit, AfterViewInit {
       if (selected) {
         this.fromAccount = selected.name;
         this.totalBalance = selected.full_balance;
-        this.minToStake = 100 / this.totalBalance;
+        if (this.totalBalance > 0) {
+          this.minToStake = 100 / this.totalBalance;
+        } else {
+          this.minToStake = 0;
+        }
         this.stakedBalance = selected.staked;
-        this.valuetoStake = this.stakedBalance.toString();
+        const tempVal = this.stakedBalance;
+        if (isNaN(tempVal)) {
+          this.valuetoStake = '0.0000';
+        } else {
+          this.valuetoStake = tempVal.toString();
+        }
         this.loadPlacedVotes(selected);
       }
     });
@@ -296,7 +305,9 @@ export class VoteComponent implements OnInit, AfterViewInit {
   }
 
   getCurrentStake() {
-    this.percenttoStake = ((this.stakedBalance / this.totalBalance) * 100).toString();
+    if (this.totalBalance > 0) {
+      this.percenttoStake = ((this.stakedBalance / this.totalBalance) * 100).toString();
+    }
     this.valuetoStake = this.stakedBalance.toString();
   }
 
@@ -311,12 +322,19 @@ export class VoteComponent implements OnInit, AfterViewInit {
 
   updateStakePercent() {
     this.stakedisabled = false;
-    this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) / this.totalBalance).toString();
+    if (this.totalBalance > 0) {
+      this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) / this.totalBalance).toString();
+    }
   }
 
   checkPercent() {
     this.minstake = false;
-    const min = 100 / this.totalBalance;
+    let min;
+    if (this.totalBalance > 0) {
+      min = 100 / this.totalBalance;
+    } else {
+      min = 0;
+    }
     if (parseFloat(this.percenttoStake) <= min) {
       this.percenttoStake = min.toString();
       this.updateStakeValue();
