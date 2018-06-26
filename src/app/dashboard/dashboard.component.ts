@@ -328,10 +328,12 @@ export class DashboardComponent implements OnInit {
           });
         } else {
           this.accountname_err = 'The account name must have exactly 12 characters. a-z, 1-5';
+          this.accountname_valid = false;
         }
       }
     } catch (e) {
       this.accountname_err = e.message;
+      this.accountname_valid = false;
     }
   }
 

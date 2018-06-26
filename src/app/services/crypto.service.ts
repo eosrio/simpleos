@@ -164,7 +164,6 @@ export class CryptoService {
 
   createPIN(pin: string) {
     if (pin !== '') {
-      console.log('PIN', pin);
       this.locked = false;
       const salt = CryptoJS.lib.WordArray['random'](128 / 8);
       const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
