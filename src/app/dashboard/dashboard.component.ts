@@ -42,6 +42,7 @@ export class DashboardComponent implements OnInit {
   accountname_valid = false;
   accountname_err = '';
   amounterror = '';
+  passmatch = false;
 
   ownerpk = '';
   ownerpub = '';
@@ -177,7 +178,7 @@ export class DashboardComponent implements OnInit {
                   });
                 }
               });
-            }, 7500);
+            }, 5000);
           } else if (this.newAccOptions === 'friend') {
             this.wrongwalletpass = '';
             this.confirmationID = txdata['transaction_id'];
@@ -187,16 +188,21 @@ export class DashboardComponent implements OnInit {
             this.submitTXForm.reset();
           } else if (this.newAccOptions === 'thispk') {
             setTimeout(() => {
-              this.eos.loadPublicKey(this.final_active).then((newAccount) => {
-                this.aService.appendNewAccount(newAccount);
-                this.wrongwalletpass = '';
-                this.busy = false;
-                this.success = true;
-                this.confirmationID = txdata['transaction_id'];
-                this.showToast('success', 'Account created', 'Check your history for confirmation.');
-                this.submitTXForm.reset();
+              this.eos.getAccountInfo(this.final_name).then((acc_data) => {
+                this.eos.getTokens(acc_data['account_name']).then((tokens) => {
+                  acc_data['tokens'] = tokens;
+                  this.aService.appendNewAccount(acc_data);
+                  this.wrongwalletpass = '';
+                  this.busy = false;
+                  this.success = true;
+                  this.confirmationID = txdata['transaction_id'];
+                  this.showToast('success', 'Account created', 'Check your history for confirmation.');
+                  this.submitTXForm.reset();
+                }).catch((err) => {
+                  console.log(err);
+                });
               });
-            }, 7500);
+            }, 5000);
           }
         }).catch((err2) => {
           const errorJSON = JSON.parse(err2);
@@ -343,6 +349,19 @@ export class DashboardComponent implements OnInit {
   //         }
   //     }
   // }
+
+  passCompare() {
+    const pForm = this.passform.value.matchingPassword;
+    if (pForm.pass1 && pForm.pass2) {
+      if (pForm.pass1 === pForm.pass2) {
+        this.passform['controls'].matchingPassword['controls']['pass2'].setErrors(null);
+        this.passmatch = true;
+      } else {
+        this.passform['controls'].matchingPassword['controls']['pass2'].setErrors({'incorrect': true});
+        this.passmatch = false;
+      }
+    }
+  }
 
   generateKeys() {
     this.generating = true;

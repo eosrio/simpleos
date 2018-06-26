@@ -375,7 +375,7 @@ export class SendComponent implements OnInit {
               setTimeout(() => {
                 const sel = this.aService.selected.getValue();
                 this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-              }, 1000);
+              }, 2000);
 
               this.confirmForm.reset();
               if (this.add === true && this.sendForm.get('alias').value !== '') {

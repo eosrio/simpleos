@@ -114,6 +114,16 @@ export class EOSJSService {
     });
   }
 
+  claimRefunds(account, k): Promise<any> {
+    this.baseConfig.keyProvider = [k];
+    const tempEos = EOSJS(this.baseConfig);
+    return tempEos['refund']({owner: account}, {
+      broadcast: true,
+      sign: true,
+      authorization: account + '@active'
+    });
+  }
+
   checkAccountName(name) {
     return this.format['encodeName'](name);
   }

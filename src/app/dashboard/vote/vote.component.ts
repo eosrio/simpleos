@@ -228,7 +228,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
           if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
             this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
           } else {
-            this.wrongpass = JSON.parse(error).error.what;
+            this.wrongpass = JSON.parse(error).error['what'];
           }
           this.busy = false;
         });
@@ -260,18 +260,18 @@ export class VoteComponent implements OnInit, AfterViewInit {
       if (selected) {
         this.fromAccount = selected.name;
         this.totalBalance = selected.full_balance;
+        this.stakedBalance = selected.staked;
         if (this.totalBalance > 0) {
           this.minToStake = 100 / this.totalBalance;
+          this.valuetoStake = this.stakedBalance.toString();
+          console.log('StakedBalance:', this.stakedBalance);
+          console.log('valuetoStake:', this.valuetoStake);
         } else {
           this.minToStake = 0;
+          this.valuetoStake = '0';
+          this.percenttoStake = '0';
         }
-        this.stakedBalance = selected.staked;
-        const tempVal = this.stakedBalance;
-        if (isNaN(tempVal)) {
-          this.valuetoStake = '0.0000';
-        } else {
-          this.valuetoStake = tempVal.toString();
-        }
+        this.updateStakePercent();
         this.loadPlacedVotes(selected);
       }
     });
@@ -324,6 +324,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.stakedisabled = false;
     if (this.totalBalance > 0) {
       this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) / this.totalBalance).toString();
+      console.log(this.percenttoStake);
     }
   }
 

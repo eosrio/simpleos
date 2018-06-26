@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 7878",
+    "start": "ng serve --port 7777",
     "build": "ng build",
     "build:prod": "ng build --prod",
     "pack": "electron-builder --dir",
@@ -50,7 +50,8 @@
     },
     "linux": {
       "target": [
-        "appImage"
+        "appImage",
+        "deb"
       ],
       "icon": "256x256.png",
       "category": "Network"

@@ -219,12 +219,12 @@
     </form>
   </clr-wizard-page>
 
-  <clr-wizard-page *ngIf="newAccOptions === 'thispk' || newAccOptions === 'newpk'">
+  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'thispk' || newAccOptions === 'newpk'">
     <ng-template clrPageTitle>Set Password</ng-template>
     <h5>Define your password for this account. This will be used to transactions confirmations.</h5>
     <form [formGroup]="passform" class="confirmForm">
       <mat-form-field class="mt-1" style="width: 180px;">
-        <input matInput #newpass type="password" placeholder="Password"
+        <input matInput #newpass type="password" placeholder="Password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
         <fa-icon matSuffix *ngIf="newpass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
                  (click)="newpass.type = 'text'"></fa-icon>
@@ -237,15 +237,17 @@
       </mat-form-field>
 
       <mat-form-field style="margin-top: 10px; display: block; width: 180px;">
-        <input matInput #newpass2 type="password" placeholder="Confirm password"
+        <input matInput #newpass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
                [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
         <fa-icon matSuffix *ngIf="newpass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
                  (click)="newpass2.type = 'text'"></fa-icon>
         <fa-icon matSuffix *ngIf="newpass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
                  class="copy" (click)="newpass2.type = 'password'"></fa-icon>
+        <mat-error *ngIf="!passmatch">
+          Passwords do not match!
+        </mat-error>
       </mat-form-field>
     </form>
-    <h5>By creating this account 1 EOS will be delegated to the new account and 8KB of RAM will be purchased.</h5>
   </clr-wizard-page>
 
   <clr-wizard-page (clrWizardPageOnLoad)="loadLastPage()">

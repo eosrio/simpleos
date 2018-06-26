@@ -319,7 +319,7 @@ export class LandingComponent implements OnInit {
         this.crypto.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
           this.crypto.decryptKeys(this.publicEOS).then(() => {
-            this.router.navigate(['dashboard', 'vote']).catch((err) => {
+            this.router.navigate(['dashboard', 'wallet']).catch((err) => {
               console.log(err);
             });
             if (this.lockscreen) {
@@ -341,7 +341,7 @@ export class LandingComponent implements OnInit {
         this.crypto.encryptAndStore(this.pk, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
           this.crypto.decryptKeys(this.publicEOS).then(() => {
-            this.router.navigate(['dashboard', 'vote']).catch((err) => {
+            this.router.navigate(['dashboard', 'wallet']).catch((err) => {
               console.log(err);
             });
             if (this.lockscreen2) {
@@ -363,6 +363,20 @@ export class LandingComponent implements OnInit {
         this.publicEOS = results.publicKey;
         this.importedAccounts = [];
         this.importedAccounts = [...results.foundAccounts];
+        this.importedAccounts.forEach((item) => {
+          if (item['refund_request']) {
+            const tempDate = item['refund_request']['request_time'] + '.000Z';
+            const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+            const now = new Date().getTime();
+            if (now > refundTime) {
+              this.eos.claimRefunds(item.account_name, input).then((tx) => {
+                console.log(tx);
+              });
+            } else {
+              console.log('Refund not ready!');
+            }
+          }
+        });
         this.pvtform.controls['private_key'].setErrors(null);
         this.zone.run(() => {
           if (exodus) {
@@ -418,8 +432,6 @@ export class LandingComponent implements OnInit {
             full_balance: Math.round((balance) * 10000) / 10000
           };
           this.accounts.push(accData);
-          // this.aService.accounts.push(accData);
-          // this.aService.initFirst();
         });
         this.checkerr = '';
       }).catch((err) => {
