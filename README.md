@@ -39,12 +39,11 @@ As of 12/06/2018, SimplEOS main features include:
 - Stake / Unstake functions - (un)delegatebw
 - Support for generic tokens (airdrops)
 - Custom endpoints on the mainnet
+- Create new account
 
 ## Roadmap
 
 Next features to be implemented:
-- Create new account *- high priority*
-- Create new wallet *- high priority*
 - Edit / Remove contacts *- high priority*
 - Testnets support
 - Delegate Permissions
@@ -60,9 +59,10 @@ Your private keys are stored locally only and are properly encrypted with a user
 Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
-- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.5.5/simpleos-setup-0.5.5.exe)
-- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.5.5/simpleos-0.5.5.dmg)
-- [Linux](https://github.com/eosrio/simpleos/releases/download/v0.5.5/simpleos-0.5.5-x86_64.AppImage)
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.0/simpleos-setup-0.6.0.exe)
+- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.0/simpleos-0.6.0-mac.zip)
+- [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.0/simpleos-0.6.0-x86_64.AppImage)
+- [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.0/simpleos_0.6.0_amd64.deb)
 
 ## Legal Disclaimer
 
