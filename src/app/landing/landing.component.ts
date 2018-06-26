@@ -319,7 +319,7 @@ export class LandingComponent implements OnInit {
         this.crypto.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
           this.crypto.decryptKeys(this.publicEOS).then(() => {
-            this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+            this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
             if (this.lockscreen) {
@@ -341,7 +341,7 @@ export class LandingComponent implements OnInit {
         this.crypto.encryptAndStore(this.pk, this.publicEOS).then(() => {
           this.aService.importAccounts(this.importedAccounts);
           this.crypto.decryptKeys(this.publicEOS).then(() => {
-            this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+            this.router.navigate(['dashboard', 'vote']).catch((err) => {
               console.log(err);
             });
             if (this.lockscreen2) {
