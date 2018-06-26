@@ -10,6 +10,7 @@ import * as moment from 'moment';
 import {CryptoService} from '../services/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
+import {WalletComponent} from './wallet/wallet.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -79,10 +80,6 @@ export class DashboardComponent implements OnInit {
     includeThousandsSeparator: false
   });
 
-  static openTXID(value) {
-    window['shell']['openExternal']('https://eosflare.io/tx/' + value);
-  }
-
   constructor(
     public eos: EOSJSService,
     private fb: FormBuilder,
@@ -115,6 +112,10 @@ export class DashboardComponent implements OnInit {
       autoplay: true,
       loop: false
     };
+  }
+
+  openTXID() {
+    window['shell']['openExternal']('https://eosflare.io/tx/' + this.confirmationID);
   }
 
   verifyPrivateKey(input) {

@@ -219,7 +219,7 @@
     </form>
   </clr-wizard-page>
 
-  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'thispk' || newAccOptions === 'newpk'">
+  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'newpk'">
     <ng-template clrPageTitle>Set Password</ng-template>
     <h5>Define your password for this account. This will be used to transactions confirmations.</h5>
     <form [formGroup]="passform" class="confirmForm">
@@ -250,7 +250,7 @@
     </form>
   </clr-wizard-page>
 
-  <clr-wizard-page (clrWizardPageOnLoad)="loadLastPage()">
+  <clr-wizard-page (clrWizardPageOnLoad)="loadLastPage()" [clrWizardPageNextDisabled]="!success">
     <ng-template clrPageTitle>Sign Transaction</ng-template>
     <p-accordion>
       <p-accordionTab header="By submiting this transaction, you agree to the following Ricardian Contract">
@@ -276,7 +276,7 @@
       <ng-container *ngIf="success">
         <div class="blue mt-1">Account created successfully!</div>
         <div><span class="blue">Transaction id:</span>
-          <a (click)="openTX(confirmationID)" pTooltip="Open on explorer" appendTo="body"
+          <a (click)="openTXID()" pTooltip="Open on explorer" appendTo="body"
              style="cursor: pointer; color: #bebebe;">
             {{confirmationID}}
           </a>
