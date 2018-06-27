@@ -89,7 +89,7 @@
     "core-js": "^2.5.4",
     "echarts": "^4.1.0",
     "electron": "^2.0.3",
-    "electron-builder": "^20.15.3",
+    "electron-builder": "^20.16.4",
     "electron-reload": "^1.2.2",
     "eosjs": "^15.0.3",
     "hammerjs": "^2.0.8",
