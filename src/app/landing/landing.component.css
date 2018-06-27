@@ -5,7 +5,19 @@
 .wrap {
   display: flex;
   min-height: 100vh;
+  min-width: 100vw;
   /* flex-direction: column; */
+}
+
+.container {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.row {
+  margin: 0;
+  padding: 0;
 }
 
 .container-fluid {
@@ -16,17 +28,19 @@
 }
 
 .landing-logo-background {
-  background-color: red;
-  height: 884px;
-  width: 50%;
+  background-image: url("../../assets/images/landing-background.png");
+  background-repeat: none;
+  background-size: initial;
   border-radius: 6px;
+  margin: 8px;
+  height: 100%;
 }
 
 .landing-logo {
   background-image: url("../../assets/logos/metatron-logo.svg");
   height: 300px;
   width: 300px;
-  margin: auto;
+  margin: 50% auto;
 }
 
 .landing-password-background {

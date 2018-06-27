@@ -1,197 +1,23 @@
 <div class="wrap">
-  <div class="landing-logo-background">
-    <div class="row animate fadeInDown">
-      <div class="landing-logo">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-6">
+        <div class="landing-logo-background">
+          <div class="row animate fadeInDown">
+            <div class="landing-logo">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xs-6">
+        2 of 2
       </div>
     </div>
   </div>
-  <ng-container *ngIf="busy && network.status === ''">
-    <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
-    <div>Connecting to the Blockchain...</div>
-  </ng-container>
-  <ng-container *ngIf="busy && network.status === 'timeout'">
-    <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
-    <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
-  </ng-container>
-
-  <ng-container *ngIf="!busy">
-    <div class="landing-password-background">
-      <div class="landing-password-input">
-        <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Enter Wallet Password">
-      </div>
-      <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
-        Create new wallet
-      </button>
-    </div>
-    <div>
-      <button class="btn btn-link" (click)="existingWallet = true">Import existing key</button>
-      <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button>
-    </div>
-    <div class="card check-card">
-      <!-- <div class="card-block">
-        <div class="info">You can do a quick check of your account here</div>
-        <mat-form-field class="public-input">
-          <input matInput type="text" placeholder="EOS Public key" [(ngModel)]="publicEOS">
-        </mat-form-field>
-        <button class="btn btn-inverse btn-check" (click)="checkAccount()" [disabled]="!publicEOS">
-          Check
-        </button>
-      </div> -->
-      <ng-container *ngIf="checkerr === ''">
-        <div class="card-footer" *ngFor="let account of accounts">
-          <span style="float: left;">You have:
-          <span class="blue">{{account.full_balance}} EOS</span></span>
-          <span style="float: right;">Account name:
-          <span class="blue">{{account.name}}</span></span>
-        </div>
-      </ng-container>
-      <div class="card-footer" *ngIf="checkerr === 'invalid'">
-        <span class="red">Invalid public key</span>
-      </div>
-      <div class="card-footer" *ngIf="checkerr === 'no_account'">
-        <span class="red">No account found :(</span>
-      </div>
-    </div>
-</ng-container>
 </div>
 
 
-<!--IMPORT EXISTING WALLET-->
-<clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
-  <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
-  <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-  <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-  <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-  <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
-
-  <clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-                   (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)" [clrWizardPagePreventDefault]="true"
-                   (clrWizardPageOnCancel)="doCancel()">
-    <ng-template clrPageTitle>Step 1</ng-template>
-    <h5>Insert your existing private key below</h5>
-    <form [formGroup]="pvtform">
-      <mat-form-field class="mt-1">
-        <input #pkField matInput type="password" formControlName="private_key"
-               placeholder="EOS Private key">
-        <i matSuffix *ngIf="pkField.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pkField.type = 'text'"></i>
-        <i matSuffix *ngIf="pkField.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pkField.type = 'password'"></i>
-        <mat-error *ngIf="!pvtform.valid">
-          {{this.errormsg}}
-        </mat-error>
-      </mat-form-field>
-    </form>
-    <div *ngIf="importedAccounts.length > 0" style="color: #bebebe;">
-      Account<span *ngIf="importedAccounts.length > 1">s</span>
-    </div>
-    <div *ngFor="let importedAccount of importedAccounts">
-      <span class="label label-blue">{{importedAccount['account_name']}}</span>
-    </div>
-  </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid">
-    <ng-template clrPageTitle>Step 2</ng-template>
-    <form [formGroup]="passform">
-      <h5>Define your password. This will be used to transactions confirmations.</h5>
-      <mat-form-field class="mt-1">
-        <input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
-               [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
-        <i matSuffix *ngIf="pass.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pass.type = 'text'"></i>
-        <i matSuffix *ngIf="pass.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pass.type = 'password'"></i>
-        <mat-hint align="start">
-          Min 10 characters
-        </mat-hint>
-        <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
-      </mat-form-field>
-      <mat-form-field style="margin-top: 19px">
-        <input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
-               [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
-        <i matSuffix *ngIf="pass2.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="pass2.type = 'text'"></i>
-        <i matSuffix *ngIf="pass2.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="pass2.type = 'password'"></i>
-        <mat-error *ngIf="!passmatch">
-          Passwords do not match!
-        </mat-error>
-      </mat-form-field>
-    </form>
-  </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!agree" (clrWizardPageOnCommit)="importCredentials()">
-    <ng-template clrPageTitle>Step 3</ng-template>
-    <h5 style="color: #bebebe;">EOS Constitution</h5>
-    <div class="constitution" [innerHTML]="eos.constitution"></div>
-    <mat-checkbox [(ngModel)]="agree">I abide by the constitution</mat-checkbox>
-  </clr-wizard-page>
-</clr-wizard>
-<!--IMPORT EXISTING WALLET END-->
-
-<!--IMPORT EXODUS WALLET-->
-<clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
-  <clr-wizard-title>Import Exodus wallet</clr-wizard-title>
-
-  <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-  <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-  <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-  <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
-
-  <clr-wizard-page class="exoduspage" [clrWizardPageNextDisabled]="dropReady">
-    <ng-template clrPageTitle>Step 1</ng-template>
-    <div class="instructions">
-      <h5 class="main-item">1. On your Exodus wallet, open the Developer Menu:</h5>
-      <div>1.1 Windows & Linux: (CTRL + SHIFT + D )</div>
-      <div>1.2 MacOS: Exodus menu next to the Apple Symbol</div>
-      <h5 class="main-item">2. Choose Developer > Assets > EOS Mainnet > Export Private Keys </h5>
-    </div>
-    <div class="remaining-height" *ngIf="dropReady">
-      <span>Drag and drop your exodus csv file here</span>
-    </div>
-    <h5 *ngIf="!dropReady" class="afterdrop blue">Alright! Click to go to next page</h5>
-  </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!passformexodus.valid">
-    <ng-template clrPageTitle>Step 2</ng-template>
-    <form [formGroup]="passformexodus">
-      <h5>Define your password. This will be used to transactions confirmations.</h5>
-      <mat-form-field class="mt-1">
-        <input matInput #passexodus type="password" placeholder="Password" (blur)="passExodusCompare()"
-               [formControl]="passformexodus['controls'].matchingPassword['controls']['pass1']">
-        <i matSuffix *ngIf="passexodus.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="passexodus.type = 'text'"></i>
-        <i matSuffix *ngIf="passexodus.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="passexodus.type = 'password'"></i>
-        <mat-hint align="start">
-          Min 10 characters
-        </mat-hint>
-        <mat-hint align="end">{{passexodus.value.length}} / 10+</mat-hint>
-      </mat-form-field>
-      <mat-form-field style="margin-top: 19px">
-        <input matInput #passexodus2 type="password" placeholder="Confirm password" (blur)="passExodusCompare()"
-               [formControl]="passformexodus['controls'].matchingPassword['controls']['pass2']">
-        <i matSuffix *ngIf="passexodus2.type === 'password'" class="far fa-eye fa-lg copy"
-           (click)="passexodus2.type = 'text'"></i>
-        <i matSuffix *ngIf="passexodus2.type === 'text'" class="far fa-eye-slash fa-lg copy"
-           (click)="passexodus2.type = 'password'"></i>
-        <mat-error *ngIf="!passexodusmatch">
-          Passwords do not match!
-        </mat-error>
-      </mat-form-field>
-    </form>
-    <div *ngIf="importedAccounts.length > 0" style="color: #bebebe; margin-top: 6px;">
-      Account<span *ngIf="importedAccounts.length > 1">s</span>
-    </div>
-    <div *ngFor="let importedAccount of importedAccounts">
-      <span class="label label-blue">{{importedAccount['account_name']}}</span>
-    </div>
-  </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!agree2" (clrWizardPageOnCommit)="importCredentialsExodus()">
-    <ng-template clrPageTitle>Step 3</ng-template>
-    <h5 style="color: #bebebe;">EOS Constitution</h5>
-    <div class="constitution" [innerHTML]="eos.constitution"></div>
-    <mat-checkbox [(ngModel)]="agree2">I abide by the constitution</mat-checkbox>
-  </clr-wizard-page>
-</clr-wizard>
 <!--IMPORT EXODUS WALLET END-->
 
 <!--<clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="md">-->

@@ -6,22 +6,15 @@
 
 html,
 body {
-  /*background: url("assets/rio.jpg") fixed;*/
+  background: url("assets/rio.jpg") fixed;
   /*background-size: cover;*/
-  background: -webkit-linear-gradient(
+  /* background: -webkit-linear-gradient(
     to right,
     #232526,
     #414345
   ); /* Chrome 10-25, Safari 5.1-6 */
-  background: radial-gradient(74% 91%, #f4f4f4 23%, #b0bcca 100%);
-}
-
-/* border around view */
-.wrapper {
-  margin: 16px;
-  height: auto;
-  background-color: #f6f6f6;
-  border-radius: 6px;
+  /* background: radial-gradient(74% 91%, #f4f4f4 23%, #b0bcca 100%); */
+  background: #292929;
 }
 
 html {
@@ -34,6 +27,14 @@ body {
   flex-direction: column;
   overflow-y: hidden;
   margin: 0;
+}
+
+/* border around view */
+.wrapper {
+  margin: 16px;
+  height: auto;
+  background-color: #f6f6f6;
+  border-radius: 6px;
 }
 
 .content-area {
