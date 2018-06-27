@@ -5,13 +5,21 @@
 .wrap {
   display: flex;
   min-height: 100vh;
-  flex-direction: column;
+  /* flex-direction: column; */
 }
 
 .container-fluid {
+  width: 100%;
   flex-grow: 1;
   margin-bottom: 40px;
   /* margin-top: 80px; */
+}
+
+.landing-logo-background {
+  background-color: red;
+  height: 884px;
+  width: 50%;
+  border-radius: 6px;
 }
 
 .landing-logo {

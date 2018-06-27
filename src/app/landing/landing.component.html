@@ -1,65 +1,58 @@
 <div class="wrap">
-  <div class="wrapper">
-    <div class="container-fluid">
-      <div class="row animate fadeInDown">
-        <div class="col-md-12 text-center">
-            <div class="landing-logo">
-            </div>
-            <!-- <div class="slogan">Minimal EOS Wallet</div> -->
-            <ng-container *ngIf="busy && network.status === ''">
-              <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
-              <div>Connecting to the Blockchain...</div>
-            </ng-container>
-            <ng-container *ngIf="busy && network.status === 'timeout'">
-              <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
-              <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
-            </ng-container>
-
-            <ng-container *ngIf="!busy">
-              <div class="landing-password-background">
-                <div class="landing-password-input">
-                  <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Enter Wallet Password">
-                </div>
-                <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
-                  Create new wallet
-                </button>
-              </div>
-
-              <div>
-                <button class="btn btn-link" (click)="existingWallet = true">Import existing key</button>
-                <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button>
-              </div>
-
-              <div class="card check-card">
-                <!-- <div class="card-block">
-                  <div class="info">You can do a quick check of your account here</div>
-                  <mat-form-field class="public-input">
-                    <input matInput type="text" placeholder="EOS Public key" [(ngModel)]="publicEOS">
-                  </mat-form-field>
-                  <button class="btn btn-inverse btn-check" (click)="checkAccount()" [disabled]="!publicEOS">
-                    Check
-                  </button>
-                </div> -->
-                <ng-container *ngIf="checkerr === ''">
-                  <div class="card-footer" *ngFor="let account of accounts">
-                                    <span style="float: left;">You have: <span
-                                      class="blue">{{account.full_balance}} EOS</span></span>
-                    <span style="float: right;">Account name: <span
-                      class="blue">{{account.name}}</span></span>
-                  </div>
-                </ng-container>
-                <div class="card-footer" *ngIf="checkerr === 'invalid'">
-                  <span class="red">Invalid public key</span>
-                </div>
-                <div class="card-footer" *ngIf="checkerr === 'no_account'">
-                  <span class="red">No account found :(</span>
-                </div>
-              </div>
-            </ng-container>
-        </div>
+  <div class="landing-logo-background">
+    <div class="row animate fadeInDown">
+      <div class="landing-logo">
       </div>
     </div>
   </div>
+  <ng-container *ngIf="busy && network.status === ''">
+    <i class="far fa-spinner fa-spin fa-2x mt-2"></i>
+    <div>Connecting to the Blockchain...</div>
+  </ng-container>
+  <ng-container *ngIf="busy && network.status === 'timeout'">
+    <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try again</div>
+    <button (click)="retryConn()" class="btn btn-link"><i class="far fa-undo"></i>&nbsp;RETRY</button>
+  </ng-container>
+
+  <ng-container *ngIf="!busy">
+    <div class="landing-password-background">
+      <div class="landing-password-input">
+        <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Enter Wallet Password">
+      </div>
+      <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
+        Create new wallet
+      </button>
+    </div>
+    <div>
+      <button class="btn btn-link" (click)="existingWallet = true">Import existing key</button>
+      <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button>
+    </div>
+    <div class="card check-card">
+      <!-- <div class="card-block">
+        <div class="info">You can do a quick check of your account here</div>
+        <mat-form-field class="public-input">
+          <input matInput type="text" placeholder="EOS Public key" [(ngModel)]="publicEOS">
+        </mat-form-field>
+        <button class="btn btn-inverse btn-check" (click)="checkAccount()" [disabled]="!publicEOS">
+          Check
+        </button>
+      </div> -->
+      <ng-container *ngIf="checkerr === ''">
+        <div class="card-footer" *ngFor="let account of accounts">
+          <span style="float: left;">You have:
+          <span class="blue">{{account.full_balance}} EOS</span></span>
+          <span style="float: right;">Account name:
+          <span class="blue">{{account.name}}</span></span>
+        </div>
+      </ng-container>
+      <div class="card-footer" *ngIf="checkerr === 'invalid'">
+        <span class="red">Invalid public key</span>
+      </div>
+      <div class="card-footer" *ngIf="checkerr === 'no_account'">
+        <span class="red">No account found :(</span>
+      </div>
+    </div>
+</ng-container>
 </div>
 
 
