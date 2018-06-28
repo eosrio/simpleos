@@ -6,6 +6,8 @@
   display: flex;
   min-height: 100vh;
   min-width: 100vw;
+  background-image: url("/../assets/images/circles-background.svg");
+  background-repeat: no-repeat;
   /* flex-direction: column; */
 }
 
@@ -38,6 +40,7 @@
 
 .landing-logo {
   background-image: url("../../assets/logos/metatron-logo.svg");
+  background-repeat: none;
   height: 300px;
   width: 300px;
   margin: 50% auto;
@@ -53,7 +56,13 @@
   padding: 52px;
 }
 
-.landing-password-input {
+.landing-right {
+  height: 100%;
+  justify-content: space-evenly;
+  /* margin: 50% auto; */
+}
+
+.wallet-password-input {
   border-radius: 4px;
   margin: 0;
   width: 456px;
@@ -96,18 +105,22 @@
 
 .btn-link {
   border: none;
-  color: #818896;
+  color: #f3f3f3;
   margin: 0;
 }
 
 .btn-link:hover {
-  color: #1e2840;
+  color: #8d8d8d;
 }
 
 .btn-create-wallet {
   position: absolute;
   top: 32px;
   right: 32px;
+}
+
+.secondary-options {
+  margin: 0 auto;
 }
 
 .slogan {
