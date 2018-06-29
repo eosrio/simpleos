@@ -352,6 +352,7 @@ export class SendComponent implements OnInit {
     const to = this.sendForm.get('to').value.toLowerCase();
     const amount = this.sendForm.get('amount').value;
     const memo = this.sendForm.get('memo').value;
+    console.log(selAcc.details['permissions']);
     const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
     if (amount > 0 && this.sendForm.valid) {
       this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {

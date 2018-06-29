@@ -10,7 +10,6 @@ import * as moment from 'moment';
 import {CryptoService} from '../services/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
-import {WalletComponent} from './wallet/wallet.component';
 
 @Component({
   selector: 'app-dashboard',
