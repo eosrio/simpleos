@@ -5,24 +5,128 @@
 .wrap {
   display: flex;
   min-height: 100vh;
-  flex-direction: column;
-  background-image: url("../../assets/bg2.jpg");
-  background-size: cover;
+  min-width: 100vw;
+  background-image: url("/../assets/images/circles-background.svg");
+  background-repeat: no-repeat;
+  /* flex-direction: column; */
+}
+
+.container {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.row {
+  margin: 0;
+  padding: 0;
 }
 
 .container-fluid {
+  width: 100%;
   flex-grow: 1;
   margin-bottom: 40px;
+  /* margin-top: 80px; */
 }
 
-.anim-logo {
-  /*margin-top: 80px;*/
-  margin-top: 41px;
+.landing-logo-background {
+  background-image: url("../../assets/images/landing-background.png");
+  background-repeat: none;
+  background-size: initial;
+  border-radius: 6px;
+  margin: 8px;
+  height: 100%;
+}
+
+.landing-logo {
+  background-image: url("../../assets/logos/metatron-logo.svg");
+  background-repeat: none;
+  height: 300px;
+  width: 300px;
+  margin: 50% auto;
+}
+
+.landing-password-background {
+  height: 160px;
+  width: 568px;
+  background-color: #fff;
+  box-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.16);
+  border-radius: 8px;
+  margin: 56px auto;
+  padding: 52px;
+}
+
+.landing-right {
+  height: 100%;
+  justify-content: space-evenly;
+  /* margin: 50% auto; */
+}
+
+.wallet-password-input {
+  border-radius: 4px;
+  margin: 0;
+  width: 456px;
+  height: 56px;
+  background-color: #f1f1f2;
+}
+
+.form-control {
+  text-align: center;
+  font-size: 16px;
+  margin-top: 19px;
+  color: #818896;
+}
+
+.form-control::-webkit-input-placeholder {
+  color: #1e2840;
+} /* WebKit, Blink, Edge */
+.form-control:-moz-placeholder {
+  color: #1e2840;
+} /* Mozilla Firefox 4 to 18 */
+.form-control::-moz-placeholder {
+  color: #1e2840;
+} /* Mozilla Firefox 19+ */
+.form-control:-ms-input-placeholder {
+  color: #1e2840;
+} /* Internet Explorer 10-11 */
+.form-control::-ms-input-placeholder {
+  color: #1e2840;
+} /* Microsoft Edge */
+
+.btn-raise-white {
+  background: #ffffff;
+  color: #818896;
+  box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+  border: none;
+  padding: 12px 24px 16px;
+  height: 56px;
+}
+
+.btn-link {
+  border: none;
+  color: #f3f3f3;
+  margin: 0;
+}
+
+.btn-link:hover {
+  color: #8d8d8d;
+}
+
+.btn-create-wallet {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+}
+
+.secondary-options {
+  margin: 0 auto;
 }
 
 .slogan {
   font-size: 20px;
-  font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Helvetica Neue,
+    Arial, sans-serif;
 }
 
 @-webkit-keyframes fadeInDown {
@@ -112,7 +216,7 @@
   border-top: 1px solid #050505;
   overflow: hidden;
   font-size: 16px;
- }
+}
 
 .red {
   color: #e04848;

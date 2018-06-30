@@ -1,24 +1,24 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
 <div class="wrap">
-  <div class="container-fluid">
-    <div class="row animate fadeInDown">
-
-      <div class="col-md-12 text-center">
-        <div class="anim-logo">
-          <lottie-animation-view
-            [options]="lottieConfig"
-            [width]="300"
-            [height]="'auto'"
-            (animCreated)="handleAnimation($event)">
-          </lottie-animation-view>
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-6">
+        <div class="landing-logo-background">
+          <div class="row animate fadeInDown">
+            <div class="landing-logo">
+            </div>
+          </div>
         </div>
-        <div class="slogan">Your simple and secure EOS wallet</div>
+      </div>
+      <!-- LANDING RIGHT -->
+      <div class="col-xs-6">
         <ng-container *ngIf="busy && network.status === ''">
           <fa-layers class="mt-2 mb-1">
             <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"></fa-icon>
           </fa-layers>
           <div>Connecting to the Blockchain...</div>
         </ng-container>
+
         <ng-container *ngIf="busy && network.status === 'timeout'">
           <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try
             again
@@ -45,14 +45,20 @@
                 Connect
               </button>
             </div>
+
+            <!-- Quick Check -->
+
             <ng-container *ngIf="checkerr === ''">
               <div class="card-footer" *ngFor="let account of accounts">
-                                <span style="float: left;">You have: <span
-                                  class="blue">{{account.full_balance}} EOS</span></span>
-                <span style="float: right;">Account name: <span
-                  class="blue">{{account.name}}</span></span>
+                <span style="float: left;">You have:
+                <span class="blue">{{account.full_balance}} EOS</span></span>
+                <span style="float: right;">Account name:
+                <span class="blue">{{account.name}}</span></span>
               </div>
             </ng-container>
+
+            <!-- Quick Check Results  -->
+
             <div class="card-footer" *ngIf="checkerr === 'invalid'">
               <span class="red">Invalid public key</span>
             </div>
@@ -60,20 +66,30 @@
               <span class="red">No account found :(</span>
             </div>
           </div>
+
         </ng-container>
+        <!-- if connection to blockchain -->
         <ng-container *ngIf="!busy">
-          <div style="margin-top: 30px">
-            <button class="btn btn-inverse" (click)="existingWallet = true">
-              Import existing key
-            </button>
-            <button class="btn btn-inverse" (click)="importFromExodus()">
-              Import Exodus wallet
-            </button>
-            <button class="btn btn-inverse" (click)="newWallet = true">
-              Request New Account
-            </button>
+          <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
+            Create new wallet
+          </button>
+          <div class="d-flex flex-column landing-right">
+            <div class="align-items-start">
+            </div>
+            <div class="align-items-center">
+              <div class="mx-auto wallet-password-input">
+                <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Enter Wallet Password">
+              </div>
+            </div>
+            <div class="align-items-end secondary-options">
+              <button class="btn btn-link" (click)="existingWallet = true">Import existing key</button>
+              <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button>
+            </div>
           </div>
-          <div class="card check-card">
+
+          <!-- Quick Check account -->
+
+          <!-- <div class="card check-card">
             <div class="card-block">
               <div class="info">You can do a quick check of your account here</div>
               <mat-form-field class="public-input">
@@ -100,8 +116,9 @@
             <div class="card-footer" *ngIf="checkerr === 'no_account'">
               <span class="red">No account found :(</span>
             </div>
-          </div>
+          </div> -->
         </ng-container>
+
       </div>
     </div>
   </div>
