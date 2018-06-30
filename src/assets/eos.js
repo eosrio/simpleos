@@ -5729,36 +5729,40 @@ require('./convert')
 module.exports = BigInteger
 },{"./bigi":20,"./convert":21}],23:[function(require,module,exports){
 module.exports={
-  "_from": "bigi@^1.4.2",
+  "_args": [
+    [
+      "bigi@1.4.2",
+      "C:\\Users\\IgorLS\\eosjs"
+    ]
+  ],
+  "_from": "bigi@1.4.2",
   "_id": "bigi@1.4.2",
   "_inBundle": false,
   "_integrity": "sha1-nGZalfiLiwj8Bc/XMfVhhZ1yWCU=",
   "_location": "/bigi",
   "_phantomChildren": {},
   "_requested": {
-    "type": "range",
+    "type": "version",
     "registry": true,
-    "raw": "bigi@^1.4.2",
+    "raw": "bigi@1.4.2",
     "name": "bigi",
     "escapedName": "bigi",
-    "rawSpec": "^1.4.2",
+    "rawSpec": "1.4.2",
     "saveSpec": null,
-    "fetchSpec": "^1.4.2"
+    "fetchSpec": "1.4.2"
   },
   "_requiredBy": [
     "/ecurve",
-    "/eosjs-ecc"
+    "/eosjs-ecc",
+    "/eosjs-keygen/eosjs-ecc"
   ],
   "_resolved": "https://registry.npmjs.org/bigi/-/bigi-1.4.2.tgz",
-  "_shasum": "9c665a95f88b8b08fc05cfd731f561859d725825",
-  "_spec": "bigi@^1.4.2",
-  "_where": "/home/jcalfee/eosjs/eosjs/node_modules/eosjs-ecc",
+  "_spec": "1.4.2",
+  "_where": "C:\\Users\\IgorLS\\eosjs",
   "bugs": {
     "url": "https://github.com/cryptocoinjs/bigi/issues"
   },
-  "bundleDependencies": false,
   "dependencies": {},
-  "deprecated": false,
   "description": "Big integers.",
   "devDependencies": {
     "coveralls": "^2.11.2",
@@ -30702,19 +30706,25 @@ function hasOwnProperty(obj, prop) {
 },{}],206:[function(require,module,exports){
 module.exports={
   "name": "eosjs",
-  "version": "15.0.2",
+  "version": "15.0.3",
   "description": "General purpose library for the EOS blockchain.",
   "main": "lib/index.js",
+  "files": [
+    "README.md",
+    "docs",
+    "lib"
+  ],
   "scripts": {
     "test": "mocha --use_strict src/*.test.js",
     "test_lib": "mocha --use_strict lib/*.test.js",
     "coverage": "nyc --reporter=html npm test",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
     "build": "babel --copy-files src --out-dir lib",
-    "build_browser": "npm run build && mkdir -p dist && browserify -o dist/eos.js -s Eos lib/index.js",
-    "build_browser_test": "npm run build && mkdir -p dist && browserify -o dist/test.js lib/*.test.js",
+    "build_browser": "npm run build && browserify -o lib/eos.js -s Eos lib/index.js",
+    "build_browser_test": "npm run build && browserify -o dist/test.js lib/*.test.js",
+    "minimize": "uglifyjs lib/eos.js -o lib/eos.min.js --source-map --compress --mangle",
     "docs": "jsdoc2md src/format.js > docs/index.md",
-    "prepublishOnly": "npm run build_browser && npm run test_lib && npm run docs"
+    "prepublishOnly": "npm run build_browser && npm run test_lib && npm run minimize && npm run docs"
   },
   "repository": {
     "type": "git",

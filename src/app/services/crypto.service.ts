@@ -2,6 +2,9 @@ import {Injectable} from '@angular/core';
 import {TextEncoder} from 'text-encoding-shim';
 import {EOSJSService} from '../eosjs.service';
 
+import * as CryptoJS from 'crypto-js';
+import {Router} from '@angular/router';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,8 +14,9 @@ export class CryptoService {
   private masterKey: CryptoKey;
   private textEncoder = new TextEncoder();
   private basePublicKey = '';
+  public locked = true;
 
-  constructor(private eosjs: EOSJSService) {
+  constructor(private eosjs: EOSJSService, private router: Router) {
   }
 
   static concatUint8Array(...arrays: Uint8Array[]): Uint8Array {
@@ -156,6 +160,54 @@ export class CryptoService {
     } else {
       return false;
     }
+  }
+
+  createPIN(pin: string) {
+    if (pin !== '') {
+      this.locked = false;
+      const salt = CryptoJS.lib.WordArray['random'](128 / 8);
+      const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
+      localStorage.setItem('simpleos-salt', JSON.stringify(salt));
+      localStorage.setItem('simpleos-hash', hash);
+    }
+    // this.lock();
+  }
+
+  unlock(pin: string, target: string[]): boolean {
+    const saved_hash = localStorage.getItem('simpleos-hash');
+    const salt = JSON.parse(localStorage.getItem('simpleos-salt'));
+    const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
+    if (hash === saved_hash) {
+      this.locked = false;
+      this.router.navigate(target).catch(() => {
+        alert('cannot navigate :(');
+      });
+      return true;
+    } else {
+      this.locked = true;
+      return false;
+    }
+  }
+
+  lock() {
+    this.locked = true;
+    this.router.navigate(['']).catch(() => {
+      alert('cannot navigate :(');
+    });
+  }
+
+  updatePIN(newPIN: string) {
+    if (this.locked === false) {
+      this.createPIN(newPIN);
+    } else {
+      alert('please unlock before updating!');
+    }
+  }
+
+  removePIN() {
+    localStorage.removeItem('simpleos-salt');
+    localStorage.removeItem('simpleos-hash');
+    this.locked = false;
   }
 
 }

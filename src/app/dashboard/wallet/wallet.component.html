@@ -19,8 +19,9 @@
           Refresh
         </a>
       </div>
-      <p-table [value]="actions" [responsive]="true" dataKey="id" class="overview-table flex-column"
-               [paginator]="actions.length > 12" [rows]="12">
+      <p-table [value]="aService.actions" [responsive]="true"
+               dataKey="id" class="overview-table flex-column"
+               [rows]="12">
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 70px;">
@@ -45,7 +46,7 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="summary">
-          <ng-container *ngIf="actions.length === 0">
+          <ng-container *ngIf="aService.actions.length === 0">
             No transactions yet
           </ng-container>
         </ng-template>
@@ -154,15 +155,20 @@
         <ul>
           <li class="tokens-pad">
             <h5 class="gray mt-0">EOS</h5>
-            <div>{{fullBalance}} EOS</div>
+            <div style="color: #2e7db2;">{{fullBalance}} EOS</div>
           </li>
-          <li *ngFor="let token of tokens" class="tokens-pad">
-            <h5 class="gray mt-0">{{token.name}}</h5>
-            <div>{{token.balance}}</div>
-            <div pTooltip="token contract">{{token.contract}}</div>
+          <li *ngFor="let token of aService.tokens" class="tokens-pad">
+            <h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
+            <div style="color: #2e7db2;">{{token.balance}}</div>
+            <ng-container *ngIf="token.balance">
+              <span *ngIf="token.price !== null" style="color: #696969">
+                ${{(token.balance.split(' ')[0] * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
+              </span>
+            </ng-container>
           </li>
         </ul>
-        <div *ngIf="tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will appear here.
+        <div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will appear
+          here.
         </div>
       </div>
     </div>

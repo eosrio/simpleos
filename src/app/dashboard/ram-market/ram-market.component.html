@@ -1,0 +1,14 @@
+<div class="container">
+  <h5>Total Reserved RAM:
+    <span class="blue">{{total_ram_bytes_reserved / (1024 * 1024 * 1024) | number: '1.2-2'}} GB</span>
+  </h5>
+  <h5>Total RAM Stake:
+    <span class="blue">{{total_ram_stake / (10000) | number: '1.2-2'}} EOS</span>
+  </h5>
+  <h5>Max On-Chain RAM:
+    <span class="blue">{{max_ram_size / (1024 * 1024 * 1024) | number: '1.2-2'}} GB</span>
+  </h5>
+  <h5>RAM Price:
+    <span class="blue">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</span>
+  </h5>
+</div>

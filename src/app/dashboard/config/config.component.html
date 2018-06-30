@@ -1,4 +1,5 @@
-<div class="container" style="height: 100%">
+<toaster-container [toasterconfig]="config"></toaster-container>
+<div class="container" style="height: 100%; overflow-x: hidden;">
   <div class="row animate flex-items-xs-between" style="padding-top: 15px;">
     <div class="col-lg-7">
       <div class="card info-card disabled-card" pTooltip="soon"></div>
@@ -38,7 +39,26 @@
       </div>
       <div class="card info-card">
         <div class="card-header title">
-          Change Password
+          Lockscreen Pin &nbsp;
+          <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+            <fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+            <span class="tooltip-content">Small security pin <br> used to unlock the screen.
+              </span>
+          </a>
+        </div>
+        <div class="card-block">
+          <button class="btn btn-info-outline" (click)="pinModal = true">SET PIN</button>
+          <button class="btn btn-danger-outline" (click)="clearPinModal = true">REMOVE lOCKSCREEN</button>
+        </div>
+      </div>
+      <div class="card info-card">
+        <div class="card-header title">
+          Change Password &nbsp;
+          <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+            <fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+            <span class="tooltip-content">Password used to <br> make transactions / actions.
+              </span>
+          </a>
         </div>
         <div class="card-block">
           <button class="btn btn-info-outline" (click)="changePassModal = true">CHANGE</button>
@@ -131,3 +151,46 @@
     </button>
   </div>
 </clr-modal>
+
+<clr-modal [(clrModalOpen)]="pinModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    Set lockscreen pin
+  </h3>
+  <div class="modal-body" style="overflow-y: -webkit-paged-x !important;">
+    <form [formGroup]="pinForm">
+      <mat-form-field class="mt-1">
+        <input matInput #pin type="password" placeholder="New pin" formControlName="pin">
+        <fa-icon matSuffix *ngIf="pin.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pin.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pin.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pin.type = 'password'"></fa-icon>
+        <mat-hint align="start">
+          This pin can be anything you want
+        </mat-hint>
+      </mat-form-field>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" (click)="setPIN()" class="btn btn-info-outline" [disabled]="!pinForm.valid">
+      Set pin
+    </button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="clearPinModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    Are you <span class="blue">sure</span> ?
+  </h3>
+  <div class="modal-body">
+    <p style="margin-bottom: 20px;">If you remove the lockscreen, your balance will be displayed when opening the
+      wallet</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-danger-outline" (click)="clearPinModal = false">Cancel</button>
+    <button type="button" class="btn btn-info-outline" (click)="clearPin()">
+      Yes
+    </button>
+  </div>
+</clr-modal>
+
+

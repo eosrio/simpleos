@@ -7,7 +7,7 @@ import {BehaviorSubject, Subject} from 'rxjs';
 export class EOSJSService {
   eosio: any;
   tokens: any;
-  ecc: any;
+  public ecc: any;
   format: any;
   ready: boolean;
   status = new Subject<Boolean>();
@@ -96,12 +96,31 @@ export class EOSJSService {
     });
   }
 
+  getRamMarketInfo(): Promise<any> {
+    return this.eos['getTableRows']({
+      json: true,
+      code: 'eosio',
+      scope: 'eosio',
+      table: 'rammarket'
+    });
+  }
+
   getRefunds(account): Promise<any> {
     return this.eos['getTableRows']({
       json: true,
       code: 'eosio',
       scope: account,
       table: 'refunds'
+    });
+  }
+
+  claimRefunds(account, k): Promise<any> {
+    this.baseConfig.keyProvider = [k];
+    const tempEos = EOSJS(this.baseConfig);
+    return tempEos['refund']({owner: account}, {
+      broadcast: true,
+      sign: true,
+      authorization: account + '@active'
     });
   }
 
@@ -192,14 +211,34 @@ export class EOSJSService {
     localStorage.setItem('simpleos.txhistory.' + this.chainID, payload);
   }
 
-  async transfer(from, to, amount, memo): Promise<any> {
-    if (this.auth) {
+  async transfer(contract, from, to, amount, memo): Promise<any> {
+    if (this.auth && contract === 'eosio.token') {
       return new Promise((resolve, reject) => {
         this.eos['transfer'](from, to, amount, memo, (err, trx) => {
           if (err) {
             reject(JSON.parse(err));
           } else {
             resolve(true);
+          }
+        });
+      });
+    } else {
+      return new Promise((resolve, reject) => {
+        this.eos.contract(contract, (err, tokenContract) => {
+          if (!err) {
+            if (tokenContract['transfer']) {
+              tokenContract['transfer'](from, to, amount, memo, (err2, trx) => {
+                if (err2) {
+                  reject(JSON.parse(err2));
+                } else {
+                  resolve(true);
+                }
+              });
+            } else {
+              reject();
+            }
+          } else {
+            reject(JSON.parse(err));
           }
         });
       });
@@ -224,6 +263,34 @@ export class EOSJSService {
 
   ramSell() {
 
+  }
+
+  async createAccount(creator: string, name: string, owner: string,
+                      active: string, delegateAmount: number,
+                      rambytes: number, transfer: boolean,
+                      giftAmount: number, giftMemo: string): Promise<any> {
+    if (this.auth) {
+      return this.eos.transaction(tr => {
+        tr['newaccount']({creator: creator, name: name, owner: owner, active: active});
+        tr['buyrambytes']({payer: creator, receiver: name, bytes: rambytes});
+        tr['delegatebw']({
+          from: creator, receiver: name,
+          stake_net_quantity: (delegateAmount * 0.3).toFixed(4) + ' EOS',
+          stake_cpu_quantity: (delegateAmount * 0.7).toFixed(4) + ' EOS',
+          transfer: transfer ? 1 : 0
+        });
+        if (giftAmount > 0) {
+          tr['transfer']({
+            from: creator,
+            to: name,
+            quantity: giftAmount.toFixed(4) + ' EOS',
+            memo: giftMemo
+          });
+        }
+      });
+    } else {
+      return new Promise(resolve => resolve(null));
+    }
   }
 
   startMonitoringLoop() {

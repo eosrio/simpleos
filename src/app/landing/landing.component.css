@@ -188,7 +188,7 @@
 .check-card {
   box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
   border: none;
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(162, 162, 162, 0.12);
   margin-top: 31px;
 }
 
@@ -279,4 +279,22 @@
   flex-direction: column;
   text-align: center;
   justify-content: center;
+}
+
+.advanced {
+  font-size: 14px;
+  color: #696969;
+}
+
+.warn {
+  color: #ff3f32;
+}
+
+.fit-content {
+  overflow: -webkit-paged-x;
+}
+
+#textarea {
+    background: #b1b1b1;
+    border: 2px solid #065e8d;
 }

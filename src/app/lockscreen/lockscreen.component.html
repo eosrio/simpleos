@@ -1,0 +1,64 @@
+<div class="wrap">
+    <div class="container-fluid">
+        <div class="row animate fadeInDown">
+
+            <div class="col-md-12 text-center">
+                <div class="anim-logo">
+                    <lottie-animation-view
+                            [options]="lottieConfig"
+                            [width]="300"
+                            [height]="'auto'"
+                            (animCreated)="handleAnimation($event)">
+                    </lottie-animation-view>
+                </div>
+                <div class="slogan">Your simple and secure EOS wallet</div>
+                <div class="card check-card">
+                    <div class="card-block fit-content text-center">
+                        <div class="text-center"> Enter your pin to unlock
+                        </div>
+                        <mat-form-field class="public-input">
+                            <input matInput #pin2 type="password" autocomplete="off" placeholder="Pin"
+                                   (keyup.enter)="unlock()" [(ngModel)]="pin">
+                            <button mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
+                                    (click)="unlock()" [disabled]="pin2.value.length === 0">
+                                Unlock
+                            </button>
+                            <mat-hint *ngIf="wrongpass" class="error">
+                                Wrong password.<br>{{nAttempts}} attempts left!
+                                <fa-icon [icon]="['far','exclamation-circle']"
+                                         pTooltip="Data will be cleared after the last attempt" class="error">
+                                </fa-icon>
+                            </mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div>Forgot your pin?
+                    <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="logoutModal = true">
+                        Clear all data and logout
+                        <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<clr-modal [(clrModalOpen)]="logoutModal" [clrModalSize]="'sm'">
+    <h3 class="modal-title text-white">
+        Are you <span class="blue">sure</span> ?
+    </h3>
+    <div class="modal-body">
+        <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your
+            private key again.</p>
+        <mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
+        <div>
+            <button type="button" class="btn btn-info-outline" (click)="logout()">
+                Yes
+            </button>
+            <div class="text-center">*SimplEOS will <br> be restarted</div>
+        </div>
+    </div>
+</clr-modal>

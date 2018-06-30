@@ -118,6 +118,10 @@ mat-option:not(.last) {
     border-bottom: 1px solid #404040;
 }
 
+/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
+    background: #3a3a3a;
+}
+
 .btn-max {
     margin: -10px 0 .25rem 0;
     min-width: unset;
