@@ -4,16 +4,38 @@
     <div class="col-md-6 text-center animate" style="align-self: center;">
       <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
         <div class="balance">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
-          '1.2-2'}})
+          <ng-container *ngIf="sendForm.value.token === 'EOS'">
+            <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
+            '1.2-2'}})
+          </ng-container>
+          <ng-container *ngIf="sendForm.value.token !== 'EOS' && selectedToken.price !== null">
+            ${{token_balance * selectedToken.price | number :'1.2-2'}}
+          </ng-container>
         </div>
-        <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
-        <div *ngIf="unstaking > 0">
-          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
-          '1.2-4'}} EOS {{unstakeTime}}
-        </div>
+        <ng-container *ngIf="sendForm.value.token === 'EOS'">
+          <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
+          <div *ngIf="unstaking > 0">
+            <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
+            '1.2-4'}} EOS {{unstakeTime}}
+          </div>
+        </ng-container>
+        <ng-container *ngIf="sendForm.value.token !== 'EOS'">
+          <div class="eos">{{token_balance | number : '1.2-4'}} {{sendForm.value.token}}</div>
+        </ng-container>
         <form [formGroup]="sendForm">
           <div>
+            <mat-form-field class="example-full-width">
+              <input type="text" placeholder="Token" matInput formControlName="token" [matAutocomplete]="auto1">
+              <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
+              <mat-autocomplete #auto1="matAutocomplete">
+                <mat-option value="EOS">
+                  EOS
+                </mat-option>
+                <mat-option *ngFor="let token of aService.tokens" [value]="token.name">
+                  {{ token.name }}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
             <mat-form-field class="field-width" style="margin-top: 12px; margin-bottom: 12px">
               <input #toAccount matInput type="text" formControlName="to"
                      placeholder="Send to (account name)" maxlength="12" class="text-lowercase"
@@ -32,7 +54,7 @@
             </mat-form-field>
             <mat-form-field class="field-width">
               <input matInput formControlName="amount" [textMask]="{mask: numberMask}" type="text"
-                     placeholder="Amount (EOS)" (blur)="checkAmount();">
+                     placeholder="Amount ({{selectedToken.name}})" (blur)="checkAmount();">
               <button mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
                       (click)="setMax()">
                 MAX
@@ -103,22 +125,28 @@
 
 
 <clr-modal [(clrModalOpen)]="sendModal">
-  <h3 class="modal-title text-white"><span class="blue">{{ fromAccount }}</span> sends <span class="blue">{{ sendForm.value.amount | number : '1.2-4' }} EOS</span>
+  <h3 class="modal-title text-white"><span class="blue">{{ fromAccount }}</span> sends <span class="blue">{{ sendForm.value.amount | number : '1.2-4' }} {{sendForm.value.token}}</span>
     to
   </h3>
   <div class="modal-body">
     <h3 class="blue">{{ sendForm.value.to }}</h3>
     <h5 class="mt-0" *ngIf="sendForm.value.alias !== ''">{{ sendForm.value.alias }}</h5>
-    <p-accordion>
+    <p-accordion *ngIf="sendForm.value.token === 'EOS'">
       <p-accordionTab header="By submiting this transaction, you agree to the EOS Transfer Terms & Conditions">
         I, {{fromAccount}}, certify the following to be true to the best of my knowledge:
         <br><br>
-        &#9; 1. I certify that {{sendForm.value.amount | number : '1.2-4'}} EOS is not the proceeds of fraudulent or violent activities.<br>
-        2. I certify that, to the best of my knowledge, {{sendForm.value.to}} is not supporting initiation of violence against others.<br>
-        3. I have disclosed any contractual terms & conditions with respect to {{sendForm.value.amount | number : '1.2-4'}} EOS to {{sendForm.value.to}}.<br>
-        4. I understand that funds transfers are not reversible after the  seconds or other delay as configured by {{fromAccount}}'s permissions.<br>
+        &#9; 1. I certify that {{sendForm.value.amount | number : '1.2-4'}} EOS is not the proceeds of fraudulent or
+        violent activities.<br>
+        2. I certify that, to the best of my knowledge, {{sendForm.value.to}} is not supporting initiation of violence
+        against others.<br>
+        3. I have disclosed any contractual terms & conditions with respect to {{sendForm.value.amount | number :
+        '1.2-4'}} EOS to {{sendForm.value.to}}.<br>
+        4. I understand that funds transfers are not reversible after the seconds or other delay as configured by
+        {{fromAccount}}'s permissions.<br>
         <br><br>
-        If this action fails to be irreversibly confirmed after receiving goods or services from '{{sendForm.value.to}}', I agree to either return the goods or services or resend {{sendForm.value.amount | number : '1.2-4'}} EOS in a timely manner.
+        If this action fails to be irreversibly confirmed after receiving goods or services from
+        '{{sendForm.value.to}}', I agree to either return the goods or services or resend {{sendForm.value.amount |
+        number : '1.2-4'}} EOS in a timely manner.
       </p-accordionTab>
     </p-accordion>
   </div>

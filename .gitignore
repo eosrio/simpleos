@@ -41,3 +41,4 @@ testem.log
 Thumbs.db
 /.sync
 /archive
+.npmrc

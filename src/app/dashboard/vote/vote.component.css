@@ -219,3 +219,20 @@ a:visited {
 .steemit:hover {
     opacity: 1;
 }
+
+/deep/ .bp-map > div {
+  margin: auto !important;
+}
+
+/deep/ .map .ui-widget-content {
+    border: none;
+    background-color: transparent;
+}
+
+/deep/ .map .ui-accordion-header-text {
+    font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+
+/deep/ .map .ui-accordion-header>a {
+    padding: .5rem .75rem !important;
+}

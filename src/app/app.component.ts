@@ -14,28 +14,29 @@ export class AppComponent implements OnInit {
     this.update = false;
   }
 
-  checkUpdate() {
-    this.ipc['send']('checkUpdate', null);
-  }
+  // checkUpdate() {
+  //   this.ipc['send']('checkUpdate', null);
+  // }
 
-  performUpdate() {
-    this.ipc['send']('startUpdate', null);
-  }
+  // performUpdate() {
+  //   // this.ipc['send']('startUpdate', null);
+  //   window['shell'].openExternal('https://eosrio.io/simpleos/');
+  // }
+  //
+  // openGithub() {
+  //   window['shell'].openExternal('https://github.com/eosrio/simpleos/releases/latest');
+  // }
 
   ngOnInit() {
-    if (window['ipcRenderer']) {
-      this.ipc = window['ipcRenderer'];
-      this.ipc.on('update_data', (event, data) => {
-        console.log(data);
-      });
-      this.ipc.on('update_ready', (event, data) => {
-        this.update = data;
-        console.log('Update status: ', data);
-      });
-      setTimeout(() => {
-        this.checkUpdate();
-      }, 2000);
-    }
+    // if (window['ipcRenderer']) {
+    //   this.ipc = window['ipcRenderer'];
+    //   this.ipc.on('update_ready', (event, data) => {
+    //     this.update = data;
+    //   });
+    //   setTimeout(() => {
+    //     this.checkUpdate();
+    //   }, 5000);
+    // }
     this.network.connect();
   }
 }
