@@ -95,15 +95,15 @@
     "@angular-devkit/core" "0.6.8"
     rxjs "^6.0.0"
 
-"@angular/animations@6.0.7":
+"@angular/animations@^6.0.7":
   version "6.0.7"
   resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-6.0.7.tgz#af9fd317556f3bf425f77905eb6a7f3281dca12a"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/cdk@^6.0.6":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@angular/cdk/-/cdk-6.3.0.tgz#fd914e4e145e48db1d51f38012178b97ddb78772"
+"@angular/cdk@^6.3.1":
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/@angular/cdk/-/cdk-6.3.1.tgz#88f65710b3f9fdc64c956a2862076eeb4e7a4d57"
   dependencies:
     tslib "^1.7.1"
 
@@ -124,9 +124,9 @@
     symbol-observable "^1.2.0"
     yargs-parser "^10.0.0"
 
-"@angular/common@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/common/-/common-6.0.6.tgz#0e0dd67d2a360bc1f232277b29c9be2471b315f5"
+"@angular/common@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/common/-/common-6.0.7.tgz#ce741587d94fee81bb1c9b79fd45690fae2ea7a8"
   dependencies:
     tslib "^1.9.0"
 
@@ -145,65 +145,65 @@
   dependencies:
     tslib "^1.9.0"
 
-"@angular/core@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/core/-/core-6.0.6.tgz#d7d9ee10bd895ad4115ca7ace40c678039d0bc32"
+"@angular/core@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/core/-/core-6.0.7.tgz#f4a577615ee284d47250a506f7ba98296c0f9d4e"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/forms@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/forms/-/forms-6.0.6.tgz#da187c024db7c86acd30ae48a155fd866fad7601"
+"@angular/forms@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/forms/-/forms-6.0.7.tgz#1c6740b3b6b88fadcb1dc48862d102575c8d0f6e"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/http@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/http/-/http-6.0.6.tgz#bfb3ef8177c424c2a7b9af2bcfd9f3503913cbf1"
+"@angular/http@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/http/-/http-6.0.7.tgz#1d132eda965f4a0e3371c35cf1610f394537b996"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/language-service@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-6.0.6.tgz#270db3e6ff3eda2c1e828af7ea2fe2e16a8e17cb"
+"@angular/language-service@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-6.0.7.tgz#047dcd762be8a6c24e7309905e468ca82bcf91ec"
 
-"@angular/material@^6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@angular/material/-/material-6.3.0.tgz#c78ca3c0d9651d4d8786b9693a83dca0916cfe01"
+"@angular/material@^6.3.1":
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/@angular/material/-/material-6.3.1.tgz#d1da2bc6d20a710a9affc36132e872206e67d698"
   dependencies:
     tslib "^1.7.1"
 
-"@angular/platform-browser-dynamic@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/platform-browser-dynamic/-/platform-browser-dynamic-6.0.6.tgz#20c5cf50d9c3b08cf8e34ee1d5f15af6921fee98"
+"@angular/platform-browser-dynamic@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/platform-browser-dynamic/-/platform-browser-dynamic-6.0.7.tgz#1c5f63f62eef1ca564e4db62f8e8419f402f044b"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/platform-browser@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/platform-browser/-/platform-browser-6.0.6.tgz#004ebc0265c7b472be6868bbd177c85bcf310f97"
+"@angular/platform-browser@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/platform-browser/-/platform-browser-6.0.7.tgz#53470304671534b545c2b00385b9d6dfe5dbb722"
   dependencies:
     tslib "^1.9.0"
 
-"@angular/router@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/router/-/router-6.0.6.tgz#30a2281e88fbdb5b530fe4cd14bb5b18bae96c52"
+"@angular/router@^6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/router/-/router-6.0.7.tgz#53ce5dba1bb0f033687caca1451a12489a615415"
   dependencies:
     tslib "^1.9.0"
 
-"@clr/angular@^0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@clr/angular/-/angular-0.12.1.tgz#90b03e10512119b36fddd61c4998658b05a72c86"
+"@clr/angular@^0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@clr/angular/-/angular-0.12.2.tgz#89eae61888ebece5e4f7ad29a5f3b0bf7f289e94"
   dependencies:
     tslib "^1.9.0"
 
-"@clr/icons@^0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@clr/icons/-/icons-0.12.1.tgz#eac2a1d7f73e415c98644e106738ed47b8491891"
+"@clr/icons@^0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@clr/icons/-/icons-0.12.2.tgz#67e1e39581daddcba59a9ff197ff108ca249fef1"
 
-"@clr/ui@^0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@clr/ui/-/ui-0.12.1.tgz#129942d40da15d3313e2bb6937ba09a8083d8dac"
+"@clr/ui@^0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@clr/ui/-/ui-0.12.2.tgz#1cbcf9b6cb614ccecc2c68dc44c0327fce1a9281"
 
 "@fortawesome/angular-fontawesome@0.1.1":
   version "0.1.1"

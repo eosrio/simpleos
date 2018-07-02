@@ -61,10 +61,10 @@ Your private keys are stored locally only and are properly encrypted with a user
 Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
-- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.2/simpleos-setup-0.6.2.exe)
-  - `a1e830adae5f78f28bdfac6157d4f2be03fa27a39c30791ae26c8c7721cd1505  simpleos-setup-0.6.2.exe`
-- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.2/simpleos-0.6.2.dmg)
-  - `807646c8b3c42fb7ee6b6f2cc03c966befea6bf1415b367e55030d086607db78  simpleos-0.6.2.dmg`
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.2-1/simpleos.Setup.0.6.2-1.exe)
+  - `d4b5b4fa569f00764a82184fc4b86df9e21c6bfd36e7c26c9c5e82dae7b9bd02  simpleos Setup 0.6.2-1.exe`
+- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.2-1/simpleos-0.6.2-1.dmg)
+  - `04516e87629331f27bd4a3ecdff5d24278ff9a8fca241ec440f781775d00755c  simpleos-0.6.2-1.dmg`
 - [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.2/simpleos-0.6.2-x86_64.AppImage)
   - `eee5f46b806853539d2401276cf900ace592affcddca59ad0f6f1a2a4f83dd22  simpleos-0.6.2-x86_64.AppImage`
 - [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.2/simpleos_0.6.2_amd64.deb)
