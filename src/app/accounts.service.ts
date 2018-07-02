@@ -324,7 +324,7 @@ export class AccountsService {
           id = this.cmcListings[i].id;
         }
       }
-      if (id) {
+      if (id && symbol === 'EOSDAC') {
         this.http.get('https://api.coinmarketcap.com/v2/ticker/' + id + '/').subscribe((result: any) => {
           resolve(parseFloat(result.data.quotes.USD['price']));
         }, (err) => {

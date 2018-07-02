@@ -371,7 +371,7 @@ export class EOSJSService {
           receiver: account,
           stake_net_quantity: split + ' EOS',
           stake_cpu_quantity: split + ' EOS',
-          transfer: 1
+          transfer: 0
         }, (err, result) => {
           if (err) {
             console.log(err);

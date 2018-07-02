@@ -95,9 +95,9 @@
     "@angular-devkit/core" "0.6.8"
     rxjs "^6.0.0"
 
-"@angular/animations@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-6.0.6.tgz#90a6e5acd693d2860017cdf83ec7fcd5daa74717"
+"@angular/animations@6.0.7":
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-6.0.7.tgz#af9fd317556f3bf425f77905eb6a7f3281dca12a"
   dependencies:
     tslib "^1.9.0"
 
@@ -205,11 +205,11 @@
   version "0.12.1"
   resolved "https://registry.yarnpkg.com/@clr/ui/-/ui-0.12.1.tgz#129942d40da15d3313e2bb6937ba09a8083d8dac"
 
-"@fortawesome/angular-fontawesome@0.1.0-10":
-  version "0.1.0-10"
-  resolved "https://npm.fontawesome.com/@fortawesome/angular-fontawesome/-/angular-fontawesome-0.1.0-10.tgz#27684efffde1ab7bd67ec479f5597712da273ad7"
+"@fortawesome/angular-fontawesome@0.1.1":
+  version "0.1.1"
+  resolved "https://npm.fontawesome.com/@fortawesome/angular-fontawesome/-/angular-fontawesome-0.1.1.tgz#18270a06553b93f357cd0a54cabe5fa1cf633ca5"
   dependencies:
-    tslib "^1.7.1"
+    tslib "^1.9.0"
 
 "@fortawesome/fontawesome-common-types@^0.2.0":
   version "0.2.0"
