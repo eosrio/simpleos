@@ -121,6 +121,24 @@ brew install node
 brew install yarn
 ```
 
+#### MacOS Development
+```
+# cd in to directory where Metatron was cloned
+
+# Install dependencies
+yarn install
+
+# Build project
+yarn build
+
+# Option 1: Run Electron
+./node_modules/.bin/electron .
+
+# Option 2: Run Electron with dev tools
+./node_modules/.bin/electron . --devtools
+
+```
+
 ## Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
