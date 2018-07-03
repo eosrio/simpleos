@@ -2,7 +2,8 @@
 <div class="main-container">
   <div class="content-container">
     <div class="content-area">
-      <div class="row" style="margin-right: 0;">
+      <!-- HEADER -->
+      <!-- <div class="row" style="margin-right: 0;">
         <div class="col-xs col-md max-width" style="padding-right: 0">
           <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)">
             <mat-tab *ngFor="let account of aService.accounts; let i = index">
@@ -31,24 +32,27 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
+
       <div class="content">
         <router-outlet></router-outlet>
       </div>
     </div>
     <nav class="sidenav">
       <section class="sidenav-header">
-        <lottie-animation-view
+        <div class="sidenav-logo">
+        </div>
+        <!-- <lottie-animation-view
           [options]="lottieConfig" [width]="'auto'" [height]="'auto'"
           (animCreated)="handleAnimation($event)">
-        </lottie-animation-view>
+        </lottie-animation-view> -->
       </section>
       <section #sidenavContent class="sidenav-content">
         <a class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
           <fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY
         </a>
         <a class="nav-link" routerLinkActive="active" [routerLink]="['send']">
-          <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
+          <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;Wallet
         </a>
         <!--<a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['history']">-->
         <!--<fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY-->
@@ -60,11 +64,7 @@
           <!--<fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RAM MARKET-->
         <!--</a>-->
       </section>
-      <section class="placeholder border-r">
-        <div class="credits">Made with
-          <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-          by <a style="color: #d7d7d7;" [routerLink]="['about']">EOS Rio</a>
-        </div>
+      <section class="placeholder">
         <div class="version">v0.6.2-1</div>
       </section>
     </nav>
