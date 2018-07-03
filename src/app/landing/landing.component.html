@@ -27,52 +27,66 @@
             <fa-icon [icon]="['far', 'undo']"></fa-icon>
             &nbsp;RETRY
           </button>
-          <div class="card check-card">
-            <div class="card-block fit-content">
+          <!-- <div class="card check-card"> -->
+            <!-- <div class="card-block fit-content">
               <div class="text-left advanced"><span class="warn">Advanced Option:</span> you can also try
                 to connect to
                 another endpoint
-              </div>
-              <mat-form-field class="public-input">
+              </div> -->
+              <!-- <mat-form-field class="public-input">
                 <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
                 <mat-hint align="start" style="font-size: 12px">
                   endpoint should have history api enabled, otherwise some functions on the wallet may
                   not work as
                   expected.
                 </mat-hint>
-              </mat-form-field>
-              <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint">
+              </mat-form-field> -->
+              <!-- <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint"></button>
                 Connect
-              </button>
-            </div>
+              </button> -->
+            <!-- </div> -->
 
             <!-- Quick Check -->
 
-            <ng-container *ngIf="checkerr === ''">
+            <!-- <ng-container *ngIf="checkerr === ''">
               <div class="card-footer" *ngFor="let account of accounts">
                 <span style="float: left;">You have:
                 <span class="blue">{{account.full_balance}} EOS</span></span>
                 <span style="float: right;">Account name:
                 <span class="blue">{{account.name}}</span></span>
               </div>
-            </ng-container>
+            </ng-container> -->
 
             <!-- Quick Check Results  -->
 
-            <div class="card-footer" *ngIf="checkerr === 'invalid'">
+            <!-- <div class="card-footer" *ngIf="checkerr === 'invalid'">
               <span class="red">Invalid public key</span>
             </div>
             <div class="card-footer" *ngIf="checkerr === 'no_account'">
               <span class="red">No account found :(</span>
-            </div>
-          </div>
+            </div> -->
+          <!-- </div> -->
 
         </ng-container>
+
+        <ng-container *ngIf="!busy && (exodusWallet || existingWallet)">
+          <button class="btn btn-link" (click)="goBack()">Back</button>
+        </ng-container>
+
+        <ng-container *ngIf="!busy && !exodusWallet && existingWallet">
+          <h1 style="color: #ffffff;">Existing Wallet</h1>
+        </ng-container>
+
+        <ng-container *ngIf="!busy && exodusWallet && !existingWallet">
+          <h1 style="color: #ffffff;">Exodus Wallet</h1>
+        </ng-container>
+
+
         <!-- if connection to blockchain -->
-        <ng-container *ngIf="!busy">
-          <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
+        <ng-container *ngIf="!busy && !exodusWallet && !existingWallet">
+          <!-- <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
             Create new wallet
-          </button>
+          </button> -->
           <div class="d-flex flex-column landing-right">
             <div class="align-items-start">
             </div>
@@ -82,10 +96,12 @@
               </div>
             </div>
             <div class="align-items-end secondary-options">
-              <button class="btn btn-link" (click)="existingWallet = true">Import existing key</button>
-              <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button>
+              <button class="btn btn-link" (click)="existingWallet = !existingWallet">Import existing key</button>
+              <button class="btn btn-link" (click)="exodusWallet = !exodusWallet">Import Exodus wallet</button>
+              <!-- <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button> -->
             </div>
           </div>
+          
 
           <!-- Quick Check account -->
 
@@ -124,8 +140,8 @@
   </div>
 </div>
 
+<!--IMPORT EXISTING WALLET
 
-<!--IMPORT EXISTING WALLET-->
 <clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
@@ -221,10 +237,11 @@
     </mat-form-field>
   </clr-wizard-page>
 </clr-wizard>
-<!--IMPORT EXISTING WALLET END-->
+
+IMPORT EXISTING WALLET END-->
 
 <!--IMPORT EXODUS WALLET-->
-<clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
+<!-- <clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Import Exodus wallet</clr-wizard-title>
 
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -322,11 +339,11 @@
       </mat-hint>
     </mat-form-field>
   </clr-wizard-page>
-</clr-wizard>
+</clr-wizard> -->
 <!--IMPORT EXODUS WALLET END-->
 
 
-<clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="lg">
+<!-- <clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="lg">
   <clr-wizard-title>Create new wallet</clr-wizard-title>
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
   <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
@@ -370,9 +387,9 @@
   <clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
     <ng-template clrPageTitle>Step 2</ng-template>
     <h5 class="bold">At this point, we recommend you <span class="error">disconnet from the internet</span></h5>
-    <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
+    <h5>Selected account: <span class="blue">{{accountname}}</span></h5> -->
     <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-    <h5>Please enter your desired public keys or click the <span
+    <!-- <h5>Please enter your desired public keys or click the <span
       class="blue"> Generate Key Pairs </span>
       button.</h5>
     <mat-form-field class="mt-1" style="width: 470px">
@@ -417,5 +434,5 @@
       </mat-hint>
     </div>
   </clr-wizard-page>
-</clr-wizard>
+</clr-wizard> -->
 

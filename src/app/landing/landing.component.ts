@@ -35,9 +35,9 @@ export class LandingComponent implements OnInit {
   agreeKeys = false;
   check: boolean;
   publicEOS: string;
-  checkerr: string;
+  // checkerr: string;
   errormsg: string;
-  accounts: any[];
+  // accounts: any[];
   dropReady: boolean;
   passmatch: boolean;
   passexodusmatch: boolean;
@@ -55,7 +55,7 @@ export class LandingComponent implements OnInit {
   lockscreen2: boolean;
   importedAccounts: any[];
   exodusValid = false;
-  endpoint = 'http://br.eosrio.io:8080';
+  // endpoint = 'http://br.eosrio.io:8080';
   payloadValid = false;
   generated = false;
   config: ToasterConfig;
@@ -88,9 +88,9 @@ export class LandingComponent implements OnInit {
     this.agree2 = false;
     this.lockscreen = false;
     this.lockscreen2 = false;
-    this.accounts = [];
+    // this.accounts = [];
     this.importedAccounts = [];
-    this.checkerr = '';
+    // this.checkerr = '';
     this.errormsg = '';
     this.lottieConfig = {
       path: 'assets/logoanim.json',
@@ -121,6 +121,11 @@ export class LandingComponent implements OnInit {
     });
   }
 
+  goBack() {
+    this.existingWallet = false;
+    this.exodusWallet = false;
+  }
+  
   cc(text) {
     this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
     window['clipboard']['writeText'](text);
@@ -245,9 +250,9 @@ export class LandingComponent implements OnInit {
     this.network.connect();
   }
 
-  customConnect() {
-    this.network.startup(this.endpoint);
-  }
+  // customConnect() {
+  //   this.network.startup(this.endpoint);
+  // }
 
   importFromExodus() {
     this.wizard.reset();
@@ -413,32 +418,32 @@ export class LandingComponent implements OnInit {
     this.exisitswizard.close();
   }
 
-  checkAccount() {
-    if (this.eos.ready) {
-      this.check = true;
-      this.accounts = [];
-      this.eos.loadPublicKey(this.publicEOS).then((account_data: any) => {
-        account_data.foundAccounts.forEach((acc) => {
-          let balance = 0;
-          // Parse tokens and calsulate balance
-          acc['tokens'].forEach((tk) => {
-            balance += LandingComponent.parseEOS(tk);
-          });
-          // Add stake balance
-          balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-          balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-          const accData = {
-            name: acc['account_name'],
-            full_balance: Math.round((balance) * 10000) / 10000
-          };
-          this.accounts.push(accData);
-        });
-        this.checkerr = '';
-      }).catch((err) => {
-        console.log(err);
-        this.checkerr = err;
-      });
-    }
-  }
+  // checkAccount() {
+  //   if (this.eos.ready) {
+  //     this.check = true;
+  //     this.accounts = [];
+  //     this.eos.loadPublicKey(this.publicEOS).then((account_data: any) => {
+  //       account_data.foundAccounts.forEach((acc) => {
+  //         let balance = 0;
+  //         // Parse tokens and calsulate balance
+  //         acc['tokens'].forEach((tk) => {
+  //           balance += LandingComponent.parseEOS(tk);
+  //         });
+  //         // Add stake balance
+  //         balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+  //         balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+  //         const accData = {
+  //           name: acc['account_name'],
+  //           full_balance: Math.round((balance) * 10000) / 10000
+  //         };
+  //         this.accounts.push(accData);
+  //       });
+  //       this.checkerr = '';
+  //     }).catch((err) => {
+  //       console.log(err);
+  //       this.checkerr = err;
+  //     });
+  //   }
+  // }
 
 }
