@@ -41,9 +41,9 @@ function createWindow() {
     title: 'simplEOS',
     darkTheme: true,
     width: 1440,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    height: 770,
+    minWidth: 1440,
+    minHeight: 770,
     frame: true,
     icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
