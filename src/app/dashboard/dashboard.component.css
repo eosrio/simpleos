@@ -19,6 +19,7 @@
 .sidenav {
   background-color: #292929;
   border: none;
+  width: 288px;
 }
 
 .sidenav-logo {
@@ -30,24 +31,23 @@
 }
 
 .sidenav-content {
-  /*display: table-row;*/
   flex: 0 1 auto;
   padding-bottom: 0;
+  /* padding-left: 48px; */
 }
 
 .sidenav .sidenav-content > .nav-link {
-  border-right: 1px solid #535353;
-  color: #b1b1b1;
+  color: #8d8d8d;
   margin: 0;
-  padding: 20px 0 20px 25px;
+  padding: 20px 0 20px 48px;
 }
 
 .sidenav .sidenav-content > .nav-link.active {
-  background: #272727;
-  color: #e3e3e3;
-  border-right: 1px solid #272727;
-  border-bottom: 1px solid #535353;
-  border-top: 1px solid #535353;
+  background: #1f1f1f;
+  color: #c3c3c3;
+  border-left: 3px solid #c3c3c3;
+  /* border-bottom: 1px solid #535353;
+  border-top: 1px solid #535353; */
 }
 
 .sidenav .sidenav-content > .nav-link.active:hover {
@@ -62,10 +62,9 @@
   transition-property: background-color;
 }
 
-.placeholder {
-  border-right: 1px solid #535353;
+.accounts-nav {
   flex: 1 1 auto;
-  background-color: #292929;
+  /* background-color: #292929; */
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -109,12 +108,44 @@
   color: #e3e3e3;
 }
 
-.credits {
+/* .credits {
   text-align: center;
   font-size: 15px;
   margin-bottom: -4px;
   /*margin-bottom: 5px;*/
+/* } */
+
+.nav-icons {
+  color: white;
+  height: 24px;
+  width: 24px;
+  fill: white;
+  background-repeat: no-repeat;
 }
+
+/* .dashboard-icon {
+  background-image: url("../../assets/icons/portfolio.svg");
+} */
+
+/* .wallet-icon {
+  background-image: url("../../assets/icons/wallet.svg");
+}
+
+.history-icon {
+  background-image: url("../../assets/icons/airdrop.svg");
+} */
+
+/* .vote-icon {
+  background-image: url("../../assets/icons/vote.svg");
+} */
+
+/* .airdrop-icon {
+  background-image: url("../../assets/icons/airdrop.svg");
+}
+
+.settings-icon {
+  background-image: url("../../assets/icons/settings.svg");
+} */
 
 .version {
   text-align: center;
