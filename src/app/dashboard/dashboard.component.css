@@ -33,7 +33,6 @@
 .sidenav-content {
   flex: 0 1 auto;
   padding-bottom: 0;
-  /* padding-left: 48px; */
 }
 
 .sidenav .sidenav-content > .nav-link {
@@ -46,8 +45,6 @@
   background: #1f1f1f;
   color: #c3c3c3;
   border-left: 3px solid #c3c3c3;
-  /* border-bottom: 1px solid #535353;
-  border-top: 1px solid #535353; */
 }
 
 .sidenav .sidenav-content > .nav-link.active:hover {
