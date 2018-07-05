@@ -29,21 +29,29 @@
   /* margin-top: 80px; */
 }
 
+.landing-logo-padding {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.landing-logo-row-height {
+  height: 100%;
+}
 .landing-logo-background {
   background-image: url("../../assets/images/landing-background.png");
-  background-repeat: none;
-  background-size: initial;
+  background-repeat: no-repeat;
+  background-size: cover;
   border-radius: 6px;
-  margin: 8px;
+  /* margin: 8px; */
   height: 100%;
 }
 
 .landing-logo {
   background-image: url("../../assets/logos/metatron-logo.svg");
-  background-repeat: none;
+  background-repeat: no-repeat;
   height: 300px;
   width: 300px;
-  margin: 50% auto;
+  margin: auto;
 }
 
 .landing-password-background {
