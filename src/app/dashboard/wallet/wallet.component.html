@@ -1,20 +1,23 @@
 <div class="container-fluid" style="height: 100%; overflow:hidden;">
   <div class="row flex-items-xs-between" style="height: 100%;">
-    <div class="col-md-10 text-center flex-column animate" *ngIf="aService.selected !== undefined"
-         style="padding: 39px;">
-      <div class="balance">BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
-      <div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>
-      <div class="infos">
-        <span style="padding-right: 15px">
-          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS
-        </span>
-        |
-        <span style="padding-left: 15px">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
-        </span>
+    <div class="col-md-12 text-center flex-column animate" *ngIf="aService.selected !== undefined">
+      <!-- BALANCE COMPONENT -->
+      <div class="balance-component">
+        <div class="balance">Your EOS Balance</div>
+        <!-- <div class="balance">Your EOS Balance (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div> -->
+        <div class="eos">{{fullBalance | number: '1.2-4'}}</div>
+        <!-- <div class="infos">
+          <span style="padding-right: 15px">
+            <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS
+          </span>|<span style="padding-left: 15px">
+            <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
+          </span>
+        </div> -->
       </div>
+
+
       <div class="text-right" (click)="refresh()">
-        <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
+        <a class="btn btn-sm btn-primary" style="max-width: none;" (click)="refresh()">
           <fa-icon [icon]="['far', 'undo']"></fa-icon>
           Refresh
         </a>
@@ -147,7 +150,10 @@
         </ng-template>
       </p-table>
     </div>
-    <div class="col-md-2 tokens-panel">
+  </div>
+</div>
+    <!-- TOKENS PANEL !!MOVE TO OWN TAB -->
+    <!-- <div class="col-md-2 tokens-panel">
       <div class="row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
         <div class="col-xs-12"><h3 class="gray">All tokens</h3></div>
       </div>
@@ -171,6 +177,4 @@
           here.
         </div>
       </div>
-    </div>
-  </div>
-</div>
+    </div> -->

@@ -7,7 +7,7 @@
     "name": "EOSRio",
     "email": "contact@eosrio.io"
   },
-  "repository": "https://github.com/eosrio/simpleos",
+  "repository": "https://github.com/EOSTribe/metatron",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -32,18 +32,10 @@
   "main": "index.js",
   "build": {
     "appId": "simpleos",
-    "files": [
-      "ng-dist",
-      "index.js",
-      "native.js",
-      "node_modules/{opn}/*"
-    ],
+    "files": ["ng-dist", "index.js", "native.js", "node_modules/{opn}/*"],
     "mac": {
       "category": "public.app-category.finance",
-      "target": [
-        "dmg",
-        "zip"
-      ],
+      "target": ["dmg", "zip"],
       "icon": "icon.png"
     },
     "dmg": {
@@ -51,17 +43,12 @@
       "format": "UDZO"
     },
     "linux": {
-      "target": [
-        "appImage",
-        "deb"
-      ],
+      "target": ["appImage", "deb"],
       "icon": "256x256.png",
       "category": "Network"
     },
     "win": {
-      "target": [
-        "nsis"
-      ],
+      "target": ["nsis"],
       "publish": [
         {
           "provider": "github",

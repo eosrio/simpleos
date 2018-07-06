@@ -1,106 +1,107 @@
 /deep/ body {
-    overflow-y: auto !important;
+  overflow-y: auto !important;
 }
 
 .wrap {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-    background-image: url("../../assets/bg2.jpg");
-    background-size: cover;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-image: url("../../assets/bg2.jpg");
+  background-size: cover;
 }
 
 .container-fluid {
-    flex-grow: 1;
-    margin-bottom: 40px;
+  flex-grow: 1;
+  margin-bottom: 40px;
 }
 
 .anim-logo {
-    margin-top: 41px;
+  margin-top: 41px;
 }
 
 .slogan {
-    font-size: 20px;
-    font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+  font-size: 20px;
+  font-family: Avenir Next, -apple-system, BlinkMacSystemFont, Helvetica Neue,
+    Arial, sans-serif;
 }
 
 @-webkit-keyframes fadeInDown {
-    from {
-        opacity: 0;
-        -webkit-transform: translateY(-100%);
-        transform: translateY(-100%);
-    }
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+  }
 
-    to {
-        opacity: 1;
-        -webkit-transform: none;
-        transform: none;
-    }
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
 }
 @keyframes fadeInDown {
-    from {
-        opacity: 0;
-        -webkit-transform: translateY(-100%);
-        transform: translateY(-100%);
-    }
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+  }
 
-    to {
-        opacity: 1;
-        -webkit-transform: none;
-        transform: none;
-    }
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
 }
 
 .fadeInDown {
-    -webkit-animation-name: fadeInDown;
-    animation-name: fadeInDown;
-    -webkit-animation-delay: 0.7s;
-    -moz-animation-delay: 0.7s;
-    animation-delay: 0.7s;
+  -webkit-animation-name: fadeInDown;
+  animation-name: fadeInDown;
+  -webkit-animation-delay: 0.7s;
+  -moz-animation-delay: 0.7s;
+  animation-delay: 0.7s;
 }
 
 .animate {
-    -webkit-animation-duration: 0.7s;
-    animation-duration: 0.7s;
-    -webkit-animation-fill-mode: both;
-    animation-fill-mode: both;
+  -webkit-animation-duration: 0.7s;
+  animation-duration: 0.7s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 
 .check-card {
-    box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
-    border: none;
-    background-color: rgba(162, 162, 162, 0.12);
-    margin-top: 31px;
-    width: 350px;
+  box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
+  border: none;
+  background-color: rgba(162, 162, 162, 0.12);
+  margin-top: 31px;
+  width: 350px;
 }
 
 .info {
-    font-size: 18px;
-    color: #696969;
+  font-size: 18px;
+  color: #696969;
 }
 
 .public-input {
-    margin-top: 20px;
-    margin-bottom: 5px;
-    width: 175px;
+  margin-top: 20px;
+  margin-bottom: 5px;
+  width: 175px;
 }
 
 .btn-check {
-    margin-bottom: 10px;
-    margin-left: 10px;
+  margin-bottom: 10px;
+  margin-left: 10px;
 }
 
 .card-block {
-    border-bottom: 0;
-    overflow-y: -webkit-paged-x;
-    height: 154px;
+  border-bottom: 0;
+  overflow-y: -webkit-paged-x;
+  height: 154px;
 }
 
 .btn-max {
-    margin: -10px 0 .25rem 0;
-    min-width: unset;
+  margin: -10px 0 .25rem 0;
+  min-width: unset;
 }
 
 .modal-body {
-    overflow-y: hidden !important;
+  overflow-y: hidden !important;
 }

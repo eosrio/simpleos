@@ -2,43 +2,6 @@
 <div class="main-container">
   <div class="content-container">
     <div class="content-area">
-      <!-- HEADER -->
-
-      <!-- need to add dropdown to accounts -->
-
-      <!-- <div class="row" style="margin-right: 0;">
-        <div class="col-xs col-md max-width" style="padding-right: 0">
-          <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)">
-            <mat-tab *ngFor="let account of aService.accounts; let i = index">
-              <ng-template mat-tab-label>
-                <div style="font-size: 10px;">ACCOUNT {{i + 1}}</div>
-                <div style="font-size: 17px;">{{account.name}}</div>
-                <div class="value">{{account.full_balance}} EOS</div>
-              </ng-template>
-            </mat-tab>
-          </mat-tab-group>
-        </div> -->
-        <!-- New Account -->
-        <!-- <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0"
-             (click)="newAccountModal = true">
-          <div class="text-center navbar-btn newaccount">
-            <div style="padding-top: 16px">
-              <fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
-            </div>
-            <div style="font-size: 15px;">NEW</div>
-            <div style="font-size: 15px;">ACCOUNT</div>
-          </div>
-        </div>
-        SETTINGS-OLD
-        <div class="col-xs-auto" style="padding-left: 0; padding-right: 0">
-          <div class="text-center navbar-btn cog" [routerLink]="['config']">
-            <div>
-              <fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
-            </div>
-          </div>
-        </div>
-      </div> -->
-
       <div class="content">
         <router-outlet></router-outlet>
       </div>
@@ -144,7 +107,7 @@
       </section>
       <section class="accounts-nav">
         <div class="col-xs-auto mx-auto">
-          <div class="dropdown mb-2">
+          <div class="btn-group dropdown mb-2">
             <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <!-- <div>{{account.name}}</div> -->
               Account Name
@@ -161,7 +124,6 @@
     </nav>
   </div>
 </div>
-
 
 <clr-wizard #newAccountWizard [(clrWizardOpen)]="newAccountModal" clrWizardSize="lg">
   <clr-wizard-title>New account</clr-wizard-title>

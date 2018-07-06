@@ -7,13 +7,6 @@
 html,
 body {
   background: url("assets/rio.jpg") fixed;
-  /*background-size: cover;*/
-  /* background: -webkit-linear-gradient(
-    to right,
-    #232526,
-    #414345
-  ); /* Chrome 10-25, Safari 5.1-6 */
-  /* background: radial-gradient(74% 91%, #f4f4f4 23%, #b0bcca 100%); */
   background: #292929;
 }
 
@@ -38,17 +31,25 @@ body {
 }
 
 .content-area {
-  /*display: flex;*/
-  /*flex-direction: column;*/
+  display: flex;
+  /* flex-direction: column; */
 }
 
-.content {
+/* .content {
   height: calc(100% - 4.5rem);
+} */
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  background-color: #f3f3f3;
+  margin: 0;
 }
 
 /*material's tabs*/
 .mat-tab-group {
-  font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif;
+  font-family: Avenir Next, -apple-system, BlinkMacSystemFont, Helvetica Neue,
+    Arial, sans-serif;
 }
 
 .mat-tab-labels {
@@ -57,7 +58,8 @@ body {
 
 .mat-tab-label {
   color: #b1b1b1;
-  font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif;
+  font-family: Avenir Next, -apple-system, BlinkMacSystemFont, Helvetica Neue,
+    Arial, sans-serif;
   opacity: 1 !important;
 }
 
@@ -128,6 +130,10 @@ body {
   transition-property: color, background-color;
 }
 
+.btn-primary {
+  background-color: red;
+}
+
 .btn-info-outline:hover {
   background-color: #0077b7 !important;
   color: white !important;
@@ -155,8 +161,12 @@ body {
 }
 /*clarity's modal end*/
 
-.blue {
+/* .blue {
   color: #0094d2;
+} */
+
+.color-primary {
+  color: #e6b000;
 }
 
 .white {
@@ -299,7 +309,8 @@ input:not([readonly]) {
 }
 
 .mat-checkbox-label {
-  font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif !important;
+  font-family: Avenir Next, -apple-system, BlinkMacSystemFont, Helvetica Neue,
+    Arial, sans-serif;
   color: #0094d2;
 }
 

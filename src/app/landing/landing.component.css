@@ -133,7 +133,7 @@
 
 .slogan {
   font-size: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Helvetica Neue,
+  font-family: Avenir Next, -apple-system, BlinkMacSystemFont, Helvetica Neue,
     Arial, sans-serif;
 }
 
@@ -303,6 +303,6 @@
 }
 
 #textarea {
-    background: #b1b1b1;
-    border: 2px solid #065e8d;
+  background: #b1b1b1;
+  border: 2px solid #065e8d;
 }
