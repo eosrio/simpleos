@@ -153,10 +153,21 @@
         <!--<a class="nav-link" routerLinkActive="active" [routerLink]="['ram']">-->
           <!--<fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RAM MARKET-->
         <!--</a>-->
+      <!-- ACCOUNTS -->
       </section>
       <section class="accounts-nav">
-        <div class="col-xs-auto" style="padding-left: 0; padding-right: 0">
-
+        <div class="col-xs-auto mx-auto">
+          <div class="dropdown mb-2">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <!-- <div>{{account.name}}</div> -->
+              Account Name
+            </button>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="#">Account 1</a>
+              <a class="dropdown-item" href="#">Account 2</a>
+              <!-- Dropdown menu links -->
+            </div>
+          </div>
         </div>
         <!-- <div class="version">v0.6.2-1</div> -->
       </section>
