@@ -1,118 +1,182 @@
-<div class="container" style="height: 100%; overflow:hidden;">
-  <div class="row flex-items-xs-center history-row animate">
-    <div class="col-lg-12 flex-column">
-      <div class="row flex-items-xs-between">
-          <div class="col-lg col-md-5" style="margin-bottom: 20px;">
-              <div>
-                  <span class="eos">1000 EOS</span><span class="dollar">&nbsp;($11000)</span>
-              </div>
-          </div>
-          <div class="col-lg text-right col-md-7" style="align-self: center;">
-              <div class="infos">
-                  <span style="padding-right: 15px">
-                      <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked 500 EOS
-                  </span>
-                  |
-                  <span style="padding-left: 15px">
-                      <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked 500 EOS
-                  </span>
-              </div>
-          </div>
+<div class="container-fluid" style="height: 100%; overflow:hidden;">
+  <div class="row flex-items-xs-between" style="height: 100%;">
+    <div class="col-md-12 text-center flex-column animate" *ngIf="aService.selected !== undefined">
+      <!-- BALANCE COMPONENT -->
+      <div class="balance-component">
+        <div class="balance">Your EOS Balance</div>
+        <!-- <div class="balance">Your EOS Balance (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div> -->
+        <div class="eos">{{fullBalance | number: '1.2-4'}}</div>
+        <!-- <div class="infos">
+          <span style="padding-right: 15px">
+            <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS
+          </span>|<span style="padding-left: 15px">
+            <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
+          </span>
+        </div> -->
       </div>
 
-      <div class="row">
-        <mat-tab-group id="history-tabs">
-          <mat-tab>
-            <ng-template mat-tab-label>
-                <div style="font-size: 17px;">ALL</div>
-            </ng-template>
-            <p-table [value]="history" [responsive]="true" dataKey="id" class="history-table">
-              <ng-template pTemplate="header">
-                <tr>
-                  <th style="width: 70px;">
-                  </th>
-                  <th [pSortableColumn]="'amount'">
-                      amount
-                      <p-sortIcon [field]="'amount'"></p-sortIcon>
-                  </th>
-                  <th>
 
-                  </th>
-                  <th [pSortableColumn]="'date'">
-                      date
-                      <p-sortIcon [field]="'date'"></p-sortIcon>
-                  </th>
-                  <th>
-                      status
-                  </th>
-                  <th style="width: 60px;">
+      <div class="text-right" (click)="refresh()">
+        <a class="btn btn-sm btn-primary" style="max-width: none;" (click)="refresh()">
+          <fa-icon [icon]="['far', 'undo']"></fa-icon>
+          Refresh
+        </a>
+      </div>
 
-                  </th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-item let-expanded="expanded">
-                <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item">
-                  <td class="text-center">
-                    <i *ngIf="item.type === 'received'"
-                       class="fal fa-arrow-alt-to-bottom fa-lg blue"></i>
-                    <i *ngIf="item.type === 'sent'" class="fal fa-paper-plane blue"></i>
-                    <i *ngIf="item.type === 'unstaked'" class="fal fa-lock-open blue"></i>
-                    <i *ngIf="item.type === 'staked'" class="fal fa-lock blue"></i>
-                  </td>
-                  <td class="text-center">
-                    <span class="white">
-                    <span *ngIf="item.type === 'received'">+</span>
-                    <span *ngIf="item.type === 'sent'">-</span>
-                    {{item.amount}} EOS</span> ($60)
-                  </td>
-                  <td class="text-center">
-                    <span *ngIf="item.type === 'received'">from <span
-                            class="blue">{{item.user}}</span></span>
-                    <span *ngIf="item.type === 'sent'">to <span
-                            class="blue">{{item.user}}</span></span>
-                    <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
-                    <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
-                  </td>
-                  <td class="text-center">{{item.date}}</td>
-                  <td class="text-center">
-                    <i *ngIf="item.type !== 'unstaked'" class="far fa-check fa-lg"></i>
-                    <span *ngIf="item.type === 'unstaked'"><i class="far fa-hourglass fa-lg"></i>&nbsp;3 days</span>
-                  </td>
-                  <td class="text-right expandable">
-                    <a [pRowToggler]="item">
-                      <i [ngClass]="expanded ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"
-                           class="fal fa-lg blue"></i>
+
+      <p-table [value]="aService.actions" [responsive]="true"
+               dataKey="id" class="overview-table flex-column"
+               [rows]="12">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 70px;">
+            </th>
+            <th [pSortableColumn]="'amount'">
+              amount
+              <p-sortIcon [field]="'amount'"></p-sortIcon>
+            </th>
+            <th>
+
+            </th>
+            <th [pSortableColumn]="'date'">
+              date
+              <p-sortIcon [field]="'date'"></p-sortIcon>
+            </th>
+            <th style="width: 80px;">
+              status
+            </th>
+            <th style="width: 60px;">
+
+            </th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="summary">
+          <ng-container *ngIf="aService.actions.length === 0">
+            No transactions yet
+          </ng-container>
+        </ng-template>
+        <ng-template pTemplate="body" let-item let-expanded="expanded">
+          <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item">
+
+            <td class="text-center" style="width: 50px;">
+              <fa-icon *ngIf="item.type === 'received' && item.user !== item.contract"
+                       [icon]="['fal', 'arrow-alt-to-bottom']" size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'received' && item.user === item.contract" [icon]="['far', 'parachute-box']"
+                       size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'sent'" [icon]="['fal', 'paper-plane']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'unstaked'" [icon]="['fal', 'lock-open']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'staked'" [icon]="['fal', 'lock']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'vote'" class="blue" [icon]="['far', 'edit']"></fa-icon>
+            </td>
+
+            <td class="text-center">
+              <ng-container *ngIf="item.action_name === 'transfer'">
+                <span class="white">
+                  <span *ngIf="item.type === 'received'">+</span>
+                  <span *ngIf="item.type === 'sent'">-</span>
+                  {{item.amount}} <span class="blue">{{item.symbol}}</span>
+                </span>
+                <ng-container *ngIf="item.symbol === 'EOS'">
+                  (${{item.amount * aService.usd_rate | number}})
+                </ng-container>
+              </ng-container>
+              <ng-container *ngIf="item.action_name === 'voteproducer'">
+                Voted on {{item.votedProducers.length}} BPs
+              </ng-container>
+              <ng-container *ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
+                <span class="white">
+                  <span *ngIf="item.type === 'staked'">+</span>
+                  {{item.amount}}
+                </span> EOS (${{item.amount * aService.usd_rate | number}})
+              </ng-container>
+            </td>
+
+            <td class="text-center">
+              <ng-container *ngIf="item.action_name === 'voteproducer'">
+                with {{item.voter}}
+              </ng-container>
+              <ng-container *ngIf="item.action_name === 'transfer'">
+                <span *ngIf="item.type === 'received'">from <span class="blue">{{item.user}}</span></span>
+                <span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
+              </ng-container>
+              <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
+              <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
+            </td>
+
+            <td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
+
+            <td class="text-center" style="width: 90px;">
+              <fa-icon *ngIf="LIB >= item.block" [icon]="['far', 'check']" size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="LIB < item.block" [icon]="['far', 'hourglass']" size="lg"></fa-icon>
+            </td>
+
+            <td class="text-right expandable" style="width: 35px;">
+              <a [pRowToggler]="item">
+                <fa-icon [icon]="['fal', expanded ? 'chevron-circle-up' : 'chevron-circle-down']"
+                         size="lg" class="blue">
+                </fa-icon>
+              </a>
+            </td>
+
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="rowexpansion" let-item>
+          <tr class="tr-expanded">
+            <td colspan="6">
+              <div class="row row-expanded">
+                <div class="col-xs-1">
+                  <div class="vertical-line"></div>
+                </div>
+                <div class="col-xs-11 text-left">
+                  <div>
+                    <span class="blue">Transaction ID: </span>
+                    <a (click)="openTX(item.id)" pTooltip="Open on explorer" style="cursor: pointer;">
+                      {{item.id}}
                     </a>
-                  </td>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="rowexpansion" let-item>
-                <tr class="tr-expanded">
-                  <td colspan="6">
-                    <div class="row row-expanded">
-                      <div class="col-xs-1">
-                        <div class="vertical-line"></div>
-                      </div>
-                      <div class="col-xs-11">
-                        <div>
-                          <span class="blue">Transaction-id:</span>
-                          0000161633f0287f6639c8579df4a105c46a92e393b74a50d9ad3f80cc42f37f
-                        </div>
-                        <div>
-                          <span class="blue">Memo:</span> -
-                        </div>
-                        <div>
-                          <span class="blue">Date:</span> 12/05/2018, 9:59 am UTC
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </mat-tab>
-        </mat-tab-group>
-      </div>
+                  </div>
+                  <div>
+                    <ng-container *ngIf="item.action_name === 'voteproducer'">
+                      <span class="blue">Producers: </span>{{item.votedProducers.join(", ")}}
+                    </ng-container>
+                    <ng-container *ngIf="item.action_name === 'transfer'">
+                      <span class="blue">Memo: </span>{{item.memo}}
+                    </ng-container>
+                  </div>
+                  <div>
+                    <span class="blue">Date: </span>{{moment(item.date).format('DD/MM/YYYY H:mm:ss')}} (UTC)
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
   </div>
 </div>
+    <!-- TOKENS PANEL !!MOVE TO OWN TAB -->
+    <!-- <div class="col-md-2 tokens-panel">
+      <div class="row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
+        <div class="col-xs-12"><h3 class="gray">All tokens</h3></div>
+      </div>
+      <div class="tokens-panel-body">
+        <ul>
+          <li class="tokens-pad">
+            <h5 class="gray mt-0">EOS</h5>
+            <div style="color: #2e7db2;">{{fullBalance}} EOS</div>
+          </li>
+          <li *ngFor="let token of aService.tokens" class="tokens-pad">
+            <h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
+            <div style="color: #2e7db2;">{{token.balance}}</div>
+            <ng-container *ngIf="token.balance">
+              <span *ngIf="token.price !== null" style="color: #696969">
+                ${{(token.balance.split(' ')[0] * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
+              </span>
+            </ng-container>
+          </li>
+        </ul>
+        <div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will appear
+          here.
+        </div>
+      </div>
+    </div> -->

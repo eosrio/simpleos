@@ -1,0 +1,118 @@
+<div class="container" style="height: 100%; overflow:hidden;">
+  <div class="row flex-items-xs-center history-row animate">
+    <div class="col-lg-12 flex-column">
+      <div class="row flex-items-xs-between">
+          <div class="col-lg col-md-5" style="margin-bottom: 20px;">
+              <div>
+                  <span class="eos">1000 EOS</span><span class="dollar">&nbsp;($11000)</span>
+              </div>
+          </div>
+          <div class="col-lg text-right col-md-7" style="align-self: center;">
+              <div class="infos">
+                  <span style="padding-right: 15px">
+                      <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked 500 EOS
+                  </span>
+                  |
+                  <span style="padding-left: 15px">
+                      <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked 500 EOS
+                  </span>
+              </div>
+          </div>
+      </div>
+
+      <div class="row">
+        <mat-tab-group id="history-tabs">
+          <mat-tab>
+            <ng-template mat-tab-label>
+                <div style="font-size: 17px;">ALL</div>
+            </ng-template>
+            <p-table [value]="history" [responsive]="true" dataKey="id" class="history-table">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 70px;">
+                  </th>
+                  <th [pSortableColumn]="'amount'">
+                      amount
+                      <p-sortIcon [field]="'amount'"></p-sortIcon>
+                  </th>
+                  <th>
+
+                  </th>
+                  <th [pSortableColumn]="'date'">
+                      date
+                      <p-sortIcon [field]="'date'"></p-sortIcon>
+                  </th>
+                  <th>
+                      status
+                  </th>
+                  <th style="width: 60px;">
+
+                  </th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item let-expanded="expanded">
+                <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item">
+                  <td class="text-center">
+                    <i *ngIf="item.type === 'received'"
+                       class="fal fa-arrow-alt-to-bottom fa-lg blue"></i>
+                    <i *ngIf="item.type === 'sent'" class="fal fa-paper-plane blue"></i>
+                    <i *ngIf="item.type === 'unstaked'" class="fal fa-lock-open blue"></i>
+                    <i *ngIf="item.type === 'staked'" class="fal fa-lock blue"></i>
+                  </td>
+                  <td class="text-center">
+                    <span class="white">
+                    <span *ngIf="item.type === 'received'">+</span>
+                    <span *ngIf="item.type === 'sent'">-</span>
+                    {{item.amount}} EOS</span> ($60)
+                  </td>
+                  <td class="text-center">
+                    <span *ngIf="item.type === 'received'">from <span
+                            class="blue">{{item.user}}</span></span>
+                    <span *ngIf="item.type === 'sent'">to <span
+                            class="blue">{{item.user}}</span></span>
+                    <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
+                    <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
+                  </td>
+                  <td class="text-center">{{item.date}}</td>
+                  <td class="text-center">
+                    <i *ngIf="item.type !== 'unstaked'" class="far fa-check fa-lg"></i>
+                    <span *ngIf="item.type === 'unstaked'"><i class="far fa-hourglass fa-lg"></i>&nbsp;3 days</span>
+                  </td>
+                  <td class="text-right expandable">
+                    <a [pRowToggler]="item">
+                      <i [ngClass]="expanded ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"
+                           class="fal fa-lg blue"></i>
+                    </a>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="rowexpansion" let-item>
+                <tr class="tr-expanded">
+                  <td colspan="6">
+                    <div class="row row-expanded">
+                      <div class="col-xs-1">
+                        <div class="vertical-line"></div>
+                      </div>
+                      <div class="col-xs-11">
+                        <div>
+                          <span class="blue">Transaction-id:</span>
+                          0000161633f0287f6639c8579df4a105c46a92e393b74a50d9ad3f80cc42f37f
+                        </div>
+                        <div>
+                          <span class="blue">Memo:</span> -
+                        </div>
+                        <div>
+                          <span class="blue">Date:</span> 12/05/2018, 9:59 am UTC
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+</div>

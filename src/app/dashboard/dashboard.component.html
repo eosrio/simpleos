@@ -14,7 +14,7 @@
         </div>
       </section>
       <section #sidenavContent class="sidenav-content">
-        <a class="nav-link">
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['portfolio']">
           <div class="row">
             <div class="col">
               <svg width="24" height="24" viewBox="0 0 23 23">
@@ -41,10 +41,10 @@
                 </g>
               </svg>
             </div>
-            <div class="col pl-1">Wallet</div>
+            <div class="col pl-1">Assets</div>
           </div>
         </a>
-        <a class="nav-link" routerLinkActive="active" [routerLink]="['wallet']">
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['history']">
           <div class="row">
             <div class="col">
               <svg width="20" height="24" viewBox="0 0 24 24">
@@ -81,7 +81,7 @@
                 </g>
               </svg>
             </div>
-            <div class="col pl-1">Airdrop Support</div>
+            <div class="col pl-1">Airdrops</div>
           </div>
         </a>
         <a class="nav-link" routerLinkActive="active" [routerLink]="['config']">
