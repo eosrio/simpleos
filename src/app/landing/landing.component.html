@@ -1,24 +1,24 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
 <div class="wrap">
-  <div class="container-fluid">
-    <div class="row animate fadeInDown">
-
-      <div class="col-md-12 text-center">
-        <div class="anim-logo">
-          <lottie-animation-view
-            [options]="lottieConfig"
-            [width]="300"
-            [height]="'auto'"
-            (animCreated)="handleAnimation($event)">
-          </lottie-animation-view>
+  <div class="container">
+    <div class="row landing-logo-row-height">
+      <div class="col-xs-6 landing-logo-padding">
+        <div class="landing-logo-background">
+          <div class="row landing-logo-row-height animate fadeInDown">
+            <div class="landing-logo">
+            </div>
+          </div>
         </div>
-        <div class="slogan">Your simple and secure EOS wallet</div>
+      </div>
+      <!-- LANDING RIGHT -->
+      <div class="col-xs-6">
         <ng-container *ngIf="busy && network.status === ''">
           <fa-layers class="mt-2 mb-1">
             <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"></fa-icon>
           </fa-layers>
           <div>Connecting to the Blockchain...</div>
         </ng-container>
+
         <ng-container *ngIf="busy && network.status === 'timeout'">
           <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try
             again
@@ -27,53 +27,85 @@
             <fa-icon [icon]="['far', 'undo']"></fa-icon>
             &nbsp;RETRY
           </button>
-          <div class="card check-card">
-            <div class="card-block fit-content">
+          <!-- <div class="card check-card"> -->
+            <!-- <div class="card-block fit-content">
               <div class="text-left advanced"><span class="warn">Advanced Option:</span> you can also try
                 to connect to
                 another endpoint
-              </div>
-              <mat-form-field class="public-input">
+              </div> -->
+              <!-- <mat-form-field class="public-input">
                 <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
                 <mat-hint align="start" style="font-size: 12px">
                   endpoint should have history api enabled, otherwise some functions on the wallet may
                   not work as
                   expected.
                 </mat-hint>
-              </mat-form-field>
-              <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint">
+              </mat-form-field> -->
+              <!-- <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint"></button>
                 Connect
-              </button>
-            </div>
-            <ng-container *ngIf="checkerr === ''">
+              </button> -->
+            <!-- </div> -->
+
+            <!-- Quick Check -->
+
+            <!-- <ng-container *ngIf="checkerr === ''">
               <div class="card-footer" *ngFor="let account of accounts">
-                                <span style="float: left;">You have: <span
-                                  class="blue">{{account.full_balance}} EOS</span></span>
-                <span style="float: right;">Account name: <span
-                  class="blue">{{account.name}}</span></span>
+                <span style="float: left;">You have:
+                <span class="blue">{{account.full_balance}} EOS</span></span>
+                <span style="float: right;">Account name:
+                <span class="blue">{{account.name}}</span></span>
               </div>
-            </ng-container>
-            <div class="card-footer" *ngIf="checkerr === 'invalid'">
+            </ng-container> -->
+
+            <!-- Quick Check Results  -->
+
+            <!-- <div class="card-footer" *ngIf="checkerr === 'invalid'">
               <span class="red">Invalid public key</span>
             </div>
             <div class="card-footer" *ngIf="checkerr === 'no_account'">
               <span class="red">No account found :(</span>
+            </div> -->
+          <!-- </div> -->
+
+        </ng-container>
+
+        <ng-container *ngIf="!busy && (exodusWallet || existingWallet)">
+          <button class="btn btn-link" (click)="goBack()">Back</button>
+        </ng-container>
+
+        <ng-container *ngIf="!busy && !exodusWallet && existingWallet">
+          <h1 style="color: #ffffff;">Existing Wallet</h1>
+        </ng-container>
+
+        <ng-container *ngIf="!busy && exodusWallet && !existingWallet">
+          <h1 style="color: #ffffff;">Exodus Wallet</h1>
+        </ng-container>
+
+
+        <!-- if connection to blockchain -->
+        <ng-container *ngIf="!busy && !exodusWallet && !existingWallet">
+          <!-- <button class="btn btn-raise-white btn-create-wallet" pTooltip="soon">
+            Create new wallet
+          </button> -->
+          <div class="d-flex flex-column landing-right">
+            <div class="align-items-start">
+            </div>
+            <div class="align-items-center">
+              <div class="mx-auto wallet-password-input">
+                <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Enter Wallet Password">
+              </div>
+            </div>
+            <div class="align-items-end secondary-options">
+              <button class="btn btn-link" (click)="existingWallet = !existingWallet">Import existing key</button>
+              <button class="btn btn-link" (click)="exodusWallet = !exodusWallet">Import Exodus wallet</button>
+              <!-- <button class="btn btn-link" (click)="importFromExodus()">Import Exodus wallet</button> -->
             </div>
           </div>
-        </ng-container>
-        <ng-container *ngIf="!busy">
-          <div style="margin-top: 30px">
-            <button class="btn btn-inverse" (click)="existingWallet = true">
-              Import existing key
-            </button>
-            <button class="btn btn-inverse" (click)="importFromExodus()">
-              Import Exodus wallet
-            </button>
-            <button class="btn btn-inverse" (click)="newWallet = true">
-              Request New Account
-            </button>
-          </div>
-          <div class="card check-card">
+          
+
+          <!-- Quick Check account -->
+
+          <!-- <div class="card check-card">
             <div class="card-block">
               <div class="info">You can do a quick check of your account here</div>
               <mat-form-field class="public-input">
@@ -100,15 +132,16 @@
             <div class="card-footer" *ngIf="checkerr === 'no_account'">
               <span class="red">No account found :(</span>
             </div>
-          </div>
+          </div> -->
         </ng-container>
+
       </div>
     </div>
   </div>
 </div>
 
+<!--IMPORT EXISTING WALLET
 
-<!--IMPORT EXISTING WALLET-->
 <clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
@@ -204,10 +237,11 @@
     </mat-form-field>
   </clr-wizard-page>
 </clr-wizard>
-<!--IMPORT EXISTING WALLET END-->
+
+IMPORT EXISTING WALLET END-->
 
 <!--IMPORT EXODUS WALLET-->
-<clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
+<!-- <clr-wizard #wizardexodus [(clrWizardOpen)]="exodusWallet" [clrWizardSize]="'md'">
   <clr-wizard-title>Import Exodus wallet</clr-wizard-title>
 
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -305,11 +339,11 @@
       </mat-hint>
     </mat-form-field>
   </clr-wizard-page>
-</clr-wizard>
+</clr-wizard> -->
 <!--IMPORT EXODUS WALLET END-->
 
 
-<clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="lg">
+<!-- <clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="lg">
   <clr-wizard-title>Create new wallet</clr-wizard-title>
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
   <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
@@ -353,9 +387,9 @@
   <clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
     <ng-template clrPageTitle>Step 2</ng-template>
     <h5 class="bold">At this point, we recommend you <span class="error">disconnet from the internet</span></h5>
-    <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
+    <h5>Selected account: <span class="blue">{{accountname}}</span></h5> -->
     <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-    <h5>Please enter your desired public keys or click the <span
+    <!-- <h5>Please enter your desired public keys or click the <span
       class="blue"> Generate Key Pairs </span>
       button.</h5>
     <mat-form-field class="mt-1" style="width: 470px">
@@ -400,5 +434,5 @@
       </mat-hint>
     </div>
   </clr-wizard-page>
-</clr-wizard>
+</clr-wizard> -->
 
