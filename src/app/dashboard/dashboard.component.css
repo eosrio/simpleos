@@ -10,10 +10,10 @@
 }
 
 .sidenav-header {
-  flex: 0 0 auto;
-  padding: 17px 20px 17px 20px;
-  text-align: center;
-  border-right: 1px solid #535353;
+  /* flex: 0 0 auto; */
+  /* padding: 24px; */
+  /* text-align: center; */
+  /* border-right: 1px solid #535353; */
 }
 
 .sidenav {
@@ -27,7 +27,7 @@
   background-repeat: no-repeat;
   height: 126px;
   width: 112px;
-  margin: auto;
+  margin: 40px auto;
 }
 
 .sidenav-content {
