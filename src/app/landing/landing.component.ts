@@ -59,6 +59,7 @@ export class LandingComponent implements OnInit {
   payloadValid = false;
   generated = false;
   config: ToasterConfig;
+  verifyPanel = false;
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -403,6 +404,9 @@ export class LandingComponent implements OnInit {
           }
           if (e.message === 'no_account') {
             this.errormsg = 'No account associated with this private key';
+          }
+          if (e.message === 'non_active') {
+            this.errormsg = 'This is not the active key. Please import the active key.';
           }
         });
       });

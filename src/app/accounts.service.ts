@@ -86,7 +86,7 @@ export class AccountsService {
     this.tokens = [];
     this.eos['eos']['getActions']({
       account_name: account,
-      offset: -200,
+      offset: -500,
       pos: -1
     }).then((data) => {
       const allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];

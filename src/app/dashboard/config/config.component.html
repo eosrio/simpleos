@@ -124,21 +124,29 @@
   </h3>
   <div class="modal-body">
     <form [formGroup]="passForm">
-      <mat-form-field class="mt-1">
+      <mat-form-field class="mt-1 pass-input">
         <input matInput type="password" placeholder="Old password"
                formControlName="oldpass">
       </mat-form-field>
-      <mat-form-field class="mt-1">
+      <mat-form-field class="mt-1  pass-input">
         <input matInput #pass type="password" placeholder="New password" (blur)="passCompare()"
                [formControl]="passForm['controls'].matchingPassword['controls']['pass1']">
+        <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pass.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pass.type = 'password'"></fa-icon>
         <mat-hint align="start">
           Min 10 characters
         </mat-hint>
         <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
       </mat-form-field>
-      <mat-form-field style="margin-top: 19px">
-        <input matInput type="password" placeholder="Confirm password" (blur)="passCompare()"
+      <mat-form-field style="margin-top: 19px" class="pass-input">
+        <input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
                [formControl]="passForm['controls'].matchingPassword['controls']['pass2']">
+        <fa-icon matSuffix *ngIf="pass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="pass2.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="pass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="pass2.type = 'password'"></fa-icon>
         <mat-error *ngIf="!passmatch">
           Passwords do not match!
         </mat-error>

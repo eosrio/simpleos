@@ -63,3 +63,7 @@
 /deep/ .modal-body {
     overflow-y: hidden !important;
 }
+
+.pass-input {
+    display: block;
+}

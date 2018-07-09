@@ -101,9 +101,10 @@ export class ConfigComponent implements OnInit {
 
   changePass() {
     if (this.passmatch) {
-      const name = this.aService.selected.getValue().name;
-      this.crypto.authenticate(this.passForm.value.oldpass, name).then(() => {
-        this.crypto.changePass(name, this.passForm.value.matchingPassword.pass2).then(() => {
+      const account = this.aService.selected.getValue();
+      const publicKey = account.details['permissions'][0]['required_auth'].keys[0].key;
+      this.crypto.authenticate(this.passForm.value.oldpass, publicKey).then(() => {
+        this.crypto.changePass(publicKey, this.passForm.value.matchingPassword.pass2).then(() => {
           ConfigComponent.resetApp();
         });
       });

@@ -63,17 +63,32 @@
         </ng-container>
         <ng-container *ngIf="!busy">
           <div style="margin-top: 30px">
-            <button class="btn btn-inverse" (click)="existingWallet = true">
-              Import existing key
-            </button>
-            <button class="btn btn-inverse" (click)="importFromExodus()">
-              Import Exodus wallet
-            </button>
-            <button class="btn btn-inverse" (click)="newWallet = true">
-              Request New Account
-            </button>
+            <div class="row">
+              <div class="col-md-6">
+                <button class="btn btn-inverse btn-block" (click)="existingWallet = true">
+                  Import existing key
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button class="btn btn-inverse btn-block" (click)="newWallet = true">
+                  Request New Account
+                </button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <button class="btn btn-inverse btn-block" (click)="importFromExodus()">
+                  Import Exodus wallet
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button class="btn btn-inverse btn-block" (click)="verifyPanel = true">
+                  Verify Account
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="card check-card">
+          <div class="card check-card" *ngIf="verifyPanel">
             <div class="card-block">
               <div class="info">You can do a quick check of your account here</div>
               <mat-form-field class="public-input">
@@ -122,11 +137,11 @@
                    [clrWizardPagePreventDefault]="true"
                    (clrWizardPageOnCancel)="doCancel()">
     <ng-template clrPageTitle>Step 1</ng-template>
-    <h5>Insert your existing private key below</h5>
+    <h5 style="color: #a7a7a7;">Insert your existing <strong>ACTIVE</strong> private key below</h5>
     <form [formGroup]="pvtform">
       <mat-form-field class="mt-1" style="width: 100%;">
         <input #pkField matInput type="password" formControlName="private_key"
-               placeholder="EOS Private key">
+               placeholder="EOS Active Private key">
         <fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
                  (click)="pkField.type = 'text'"></fa-icon>
         <fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
@@ -340,7 +355,7 @@
              [(ngModel)]="accountname">
       <mat-hint align="end">{{account.value.length}} / 12</mat-hint>
     </mat-form-field>
-    <button class="btn btn-info-outline mt-1" (click)="verifyAccountName(false)">Check availability</button>
+    <button class="btn btn-primary mt-1" (click)="verifyAccountName(false)">Check availability</button>
     <p class="error">{{accountname_err}}</p>
     <p *ngIf="account.value.length === 12 && accountname_valid" class="blue">
       <strong>{{accountname}}</strong>
@@ -356,7 +371,7 @@
     <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
     <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
     <h5>Please enter your desired public keys or click the <span
-      class="blue"> Generate Key Pairs </span>
+      class="blue" (click)="generateKeys()"> Generate Key Pairs </span>
       button.</h5>
     <mat-form-field class="mt-1" style="width: 470px">
       <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
@@ -368,7 +383,7 @@
       <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
     </mat-form-field>
 
-    <button class="btn btn-info-outline" (click)="generateKeys()">Generate Key Pairs</button>
+    <button class="btn btn-primary" (click)="generateKeys()">Generate Key Pairs</button>
 
     <fa-layers *ngIf="generating" class="blue fa-fw">
       <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
@@ -388,9 +403,10 @@
   </clr-wizard-page>
   <clr-wizard-page [clrWizardPageNextDisabled]="!payloadValid" (clrWizardPageOnLoad)="makePayload()">
     <ng-template clrPageTitle>Step 3</ng-template>
-    <h5 style="color: #ABABAB;">Send the account creation code to a friend to create your account for you on simplEOS. <strong>This
-      code does not
-      contain your private key</strong> :)
+    <h5 style="color: #ABABAB;">Send the account creation code to a friend to create your account for you on simplEOS.
+      <strong>This
+        code does not
+        contain your private key</strong> :)
       <br>After your account is created please import the active key only on your wallet!</h5>
     <div class="form-group mt-1">
       <label for="textarea">Account creation code</label>

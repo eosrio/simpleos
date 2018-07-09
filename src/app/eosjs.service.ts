@@ -137,14 +137,18 @@ export class EOSJSService {
             data['account_names'].forEach((acc) => {
               const tempPromise = new Promise((resolve1, reject1) => {
                 this.getAccountInfo(acc).then((acc_data) => {
-                  this.getTokens(acc_data['account_name']).then((tokens) => {
-                    acc_data['tokens'] = tokens;
-                    this.accounts[acc] = acc_data;
-                    resolve1(acc_data);
-                  }).catch((err) => {
-                    console.log(err);
+                  if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
+                    this.getTokens(acc_data['account_name']).then((tokens) => {
+                      acc_data['tokens'] = tokens;
+                      this.accounts[acc] = acc_data;
+                      resolve1(acc_data);
+                    }).catch((err) => {
+                      console.log(err);
+                      reject1();
+                    });
+                  } else {
                     reject1();
-                  });
+                  }
                 });
               });
               promiseQueue.push(tempPromise);
@@ -154,6 +158,8 @@ export class EOSJSService {
                 foundAccounts: results,
                 publicKey: pubkey
               });
+            }).catch(() => {
+              reject({message: 'non_active'});
             });
           } else {
             reject({message: 'no_account'});

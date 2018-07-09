@@ -251,7 +251,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-@angular/cdk@6.3.1
+@angular/cdk@6.2.1
 MIT
 The MIT License
 
@@ -347,7 +347,7 @@ trademarks does not indicate endorsement of the trademark holder by Font
 Awesome, nor vice versa. **Please do not use brand logos for any purpose except
 to represent the company, product, or service to which they refer.**
 
-@angular/material@6.3.1
+@angular/material@6.2.1
 MIT
 The MIT License
 
@@ -457,7 +457,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/core@6.0.7
+@angular/core@6.0.6
 MIT
 MIT
 
@@ -488,19 +488,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
 
-@fortawesome/angular-fontawesome@0.1.1
+@fortawesome/angular-fontawesome@0.1.0-10
 MIT
 MIT
 
-@angular/common@6.0.7
+@angular/common@6.0.6
 MIT
 MIT
 
-@clr/angular@0.12.1
+@clr/angular@0.12.0
 MIT
 MIT
 
-@angular/animations@6.0.7
+@angular/animations@6.0.6
 MIT
 MIT
 
@@ -648,15 +648,15 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/router@6.0.7
+@angular/router@6.0.6
 MIT
 MIT
 
-@angular/platform-browser@6.0.7
+@angular/platform-browser@6.0.6
 MIT
 MIT
 
-@angular/forms@6.0.7
+@angular/forms@6.0.6
 MIT
 MIT
 
@@ -854,11 +854,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-@clr/ui@0.12.1
+@clr/ui@0.12.0
 MIT
 MIT
 
-@clr/icons@0.12.1
+@clr/icons@0.12.0
 MIT
 MIT
 
