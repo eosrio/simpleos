@@ -143,12 +143,14 @@
   </clr-wizard-page>
 
   <clr-wizard-page *ngIf="newAccOptions === 'newpk'"
-                   [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
+                   [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys"
+				   (clrWizardPageOnLoad)="generateKeys()">
     <ng-template clrPageTitle>Define Keys</ng-template>
     <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
-    <h5>Please enter your desired public keys or click the <span
+    <h5>If you'd like to use your own keys(!), please paste them into the fields below.
+    You may also press the <span
       class="blue"> Generate Key Pairs </span>
-      button.</h5>
+      button for new keys, or continue with those displayed below. </h5>
     <mat-form-field class="mt-1" style="width: 470px">
       <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
       <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
