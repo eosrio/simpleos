@@ -223,7 +223,12 @@ export class LandingComponent implements OnInit {
       });
     }, 100);
   }
-
+  
+  openAccountCreator(e) {
+      e.preventDefault();
+      window['shell'].openExternal('https://eos-account-creator.com/purchase/?d=' + this.newAccountPayload);
+  }
+  
   makePayload() {
     if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
       console.log('Generating account payload');

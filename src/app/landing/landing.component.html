@@ -414,6 +414,9 @@
       <mat-hint>ctrl c to copy or &nbsp;
         <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(newAccountPayload)"></fa-icon>
       </mat-hint>
+      <div>
+          <a href="#" (click)="openAccountCreator($event)">Create account with EOS Account Creator</a>          
+      </div>
     </div>
   </clr-wizard-page>
 </clr-wizard>
