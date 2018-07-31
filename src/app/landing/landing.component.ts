@@ -55,7 +55,7 @@ export class LandingComponent implements OnInit {
   lockscreen2: boolean;
   importedAccounts: any[];
   exodusValid = false;
-  endpoint = 'http://br.eosrio.io:8080';
+  endpoint = 'https://api.eosrio.io';
   payloadValid = false;
   generated = false;
   config: ToasterConfig;
