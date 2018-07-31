@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {EOSJSService} from './eosjs.service';
+import {HttpClient} from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +15,7 @@ export class AccountsService {
   cmcListings = [];
   tokens = [];
   actions = [];
+  sessionTokens = {};
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -54,39 +55,58 @@ export class AccountsService {
     this.fetchEOSprice();
   }
 
-  registerSymbol(symbol, contract) {
+  registerSymbol(symbol, contract, balance) {
     const idx = this.tokens.findIndex((val) => {
       return val.name === symbol;
     });
     if (idx === -1) {
-      this.tokens.push({
+      const obj = {
         name: symbol,
         contract: contract,
-        balance: '',
+        balance: balance,
         price: null
+      };
+      this.sessionTokens[this.selectedIdx].push(obj);
+      this.tokens.push(obj);
+    }
+  }
+
+  fetchTokens(account) {
+    if (!this.sessionTokens[this.selectedIdx]) {
+      this.sessionTokens[this.selectedIdx] = [];
+      console.log('Fetching tokens');
+      this.http.get('https://api.eosrio.io/data/tokens/' + account).subscribe((data) => {
+        const contracts = Object.keys(data);
+        console.log(data);
+        console.log(contracts);
+        contracts.forEach((contract) => {
+          console.log('Registering ' + data[contract]['symbol']);
+          if (data[contract]['symbol'] !== 'EOS') {
+            this.registerSymbol(data[contract]['symbol'], contract, data[contract]['balance']);
+          }
+        });
+        this.getTokenBalances();
+        this.accounts[this.selectedIdx]['tokens'] = this.tokens;
       });
     }
   }
 
   getTokenBalances() {
     this.tokens.forEach((tk, index) => {
-      this.eos.eos['getCurrencyBalance'](tk.contract, this.selected.getValue().name).then((tokendata) => {
-        if (this.tokens[index]) {
-          this.tokens[index]['balance'] = tokendata[0];
-          this.fetchTokenPrice(tk.name).then((price) => {
-            this.tokens[index]['price'] = price;
-          });
-        }
-      });
+      if (this.tokens[index]) {
+        this.fetchTokenPrice(tk.name).then((price) => {
+          this.tokens[index]['price'] = price;
+        });
+      }
     });
   }
 
   reloadActions(account) {
     this.actions = [];
-    this.tokens = [];
+    // this.tokens = [];
     this.eos['eos']['getActions']({
       account_name: account,
-      offset: -500,
+      offset: -100,
       pos: -1
     }).then((data) => {
       const allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
@@ -117,7 +137,7 @@ export class AccountsService {
             // CUSTOM TOKEN
             amount = act['data']['quantity']['split'](' ')[0];
             symbol = act['data']['quantity']['split'](' ')[1];
-            this.registerSymbol(symbol, contract);
+            // this.registerSymbol(symbol, contract);
           }
           memo = act['data']['memo'];
           if (act['data']['to'] === this.selected.getValue().name) {
@@ -184,9 +204,8 @@ export class AccountsService {
         }
       });
       this.actions.reverse();
-      this.accounts[this.selectedIdx]['tokens'] = this.tokens;
       this.accounts[this.selectedIdx]['actions'] = this.actions;
-      this.getTokenBalances();
+      // this.getTokenBalances();
     });
   }
 
@@ -208,14 +227,21 @@ export class AccountsService {
     }
     this.selectedIdx = index;
     this.selected.next(sel);
-    if (this.actions.length === 0 || this.tokens.length === 0) {
-      this.reloadActions(this.selected.getValue().name);
+    if (this.tokens.length === 0) {
+      this.fetchTokens(this.selected.getValue().name);
     }
+    // if (this.actions.length === 0 || this.tokens.length === 0) {
+    //   // this.reloadActions(this.selected.getValue().name);
+    //   this.fetchTokens(this.selected.getValue().name);
+    // }
   }
 
   initFirst() {
     this.selectedIdx = 0;
     this.selected.next(this.accounts[0]);
+    // if (this.tokens.length === 0) {
+    //   this.fetchTokens(this.selected.getValue().name);
+    // }
   }
 
   importAccounts(accounts) {
@@ -306,6 +332,7 @@ export class AccountsService {
       PQ.push(tempPromise);
     });
     Promise.all(PQ).then(() => {
+      this.fetchTokens(this.selected.getValue().name);
       this.eos.storeAccountData(this.accounts);
     });
   }

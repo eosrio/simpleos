@@ -23,7 +23,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-rxjs@6.2.1
+rxjs@6.2.2
 Apache-2.0
 Apache License
                          Version 2.0, January 2004
@@ -251,7 +251,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-@angular/cdk@6.2.1
+@angular/cdk@6.4.2
 MIT
 The MIT License
 
@@ -326,7 +326,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-@fortawesome/pro-solid-svg-icons@5.1.0
+@fortawesome/pro-solid-svg-icons@5.2.0
 UNLICENSED
 Font Awesome Pro License
 ------------------------
@@ -347,7 +347,7 @@ trademarks does not indicate endorsement of the trademark holder by Font
 Awesome, nor vice versa. **Please do not use brand logos for any purpose except
 to represent the company, product, or service to which they refer.**
 
-@angular/material@6.2.1
+@angular/material@6.4.2
 MIT
 The MIT License
 
@@ -371,7 +371,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-primeng@6.0.0
+primeng@6.0.2
 MIT
 The MIT License (MIT)
 
@@ -395,7 +395,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-@fortawesome/fontawesome-svg-core@1.2.0
+@fortawesome/fontawesome-svg-core@1.2.2
 MIT
 Font Awesome Free License
 -------------------------
@@ -457,7 +457,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/core@6.0.6
+@angular/core@6.1.0
 MIT
 MIT
 
@@ -488,19 +488,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
 
-@fortawesome/angular-fontawesome@0.1.0-10
+@fortawesome/angular-fontawesome@0.1.1
 MIT
 MIT
 
-@angular/common@6.0.6
+@angular/common@6.1.0
 MIT
 MIT
 
-@clr/angular@0.12.0
+@clr/angular@0.12.6
 MIT
 MIT
 
-@angular/animations@6.0.6
+@angular/animations@6.1.0
 MIT
 MIT
 
@@ -604,7 +604,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
 
-@fortawesome/pro-light-svg-icons@5.1.0
+@fortawesome/pro-light-svg-icons@5.2.0
 UNLICENSED
 Font Awesome Pro License
 ------------------------
@@ -648,15 +648,15 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@angular/router@6.0.6
+@angular/router@6.1.0
 MIT
 MIT
 
-@angular/platform-browser@6.0.6
+@angular/platform-browser@6.1.0
 MIT
 MIT
 
-@angular/forms@6.0.6
+@angular/forms@6.1.0
 MIT
 MIT
 
@@ -687,7 +687,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
 
-lottie-web@5.1.18
+lottie-web@5.1.20
 MIT
 The MIT License (MIT)
 
@@ -785,7 +785,7 @@ If the Work includes a "NOTICE" text file as part of its distribution, then any 
 
 END OF TERMS AND CONDITIONS
 
-@fortawesome/pro-regular-svg-icons@5.1.0
+@fortawesome/pro-regular-svg-icons@5.2.0
 UNLICENSED
 Font Awesome Pro License
 ------------------------
@@ -854,11 +854,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-@clr/ui@0.12.0
+@clr/ui@0.12.6
 MIT
 MIT
 
-@clr/icons@0.12.0
+@clr/icons@0.12.6
 MIT
 MIT
 

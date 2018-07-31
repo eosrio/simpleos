@@ -2,7 +2,6 @@ import {Component, OnInit} from '@angular/core';
 import {CryptoService} from '../services/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../network.service';
-import {ConfigComponent} from '../dashboard/config/config.component';
 
 @Component({
     selector: 'app-lockscreen',

@@ -359,14 +359,17 @@ export class SendComponent implements OnInit {
         if (res === true) {
           let contract = 'eosio.token';
           const tk_name = this.sendForm.get('token').value;
+          let precision = 4;
           if (tk_name !== 'EOS') {
             const idx = this.aService.tokens.findIndex((val) => {
               return val.name === tk_name;
             });
             contract = this.aService.tokens[idx].contract;
+            precision = this.aService.tokens[idx].balance.split(' ')[0].toString().split('.')[1].toString().length;
           }
-          console.log(contract, from, to, parseFloat(amount).toFixed(4) + ' ' + tk_name, memo);
-          this.eos.transfer(contract, from, to, parseFloat(amount).toFixed(4) + ' ' + tk_name, memo).then((result) => {
+          console.log(precision);
+          console.log(contract, from, to, parseFloat(amount).toFixed(precision) + ' ' + tk_name, memo);
+          this.eos.transfer(contract, from, to, parseFloat(amount).toFixed(precision) + ' ' + tk_name, memo).then((result) => {
             if (result === true) {
               this.wrongpass = '';
               this.sendModal = false;

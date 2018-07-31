@@ -14,8 +14,13 @@ var Structs = require('./structs');
 module.exports = AbiCache;
 
 function AbiCache(network, config) {
-  // Help (or "usage") needs {defaults: true}
-  config = Object.assign({}, { defaults: true }, config);
+  config.abiCache = {
+    abiAsync: abiAsync,
+    abi: abi
+
+    // Help (or "usage") needs {defaults: true}
+  };var abiCacheConfig = Object.assign({}, { defaults: true }, config);
+
   var cache = {};
 
   /**
@@ -57,7 +62,7 @@ function AbiCache(network, config) {
         abi = JSON.parse(abi);
       }
       var schema = abiToFcSchema(abi);
-      var structs = Structs(config, schema); // structs = {structs, types}
+      var structs = Structs(abiCacheConfig, schema); // structs = {structs, types}
       return cache[account] = Object.assign({ abi: abi, schema: schema }, structs);
     }
     var c = cache[account];
@@ -67,10 +72,7 @@ function AbiCache(network, config) {
     return c;
   }
 
-  return {
-    abiAsync: abiAsync,
-    abi: abi
-  };
+  return config.abiCache;
 }
 
 function abiToFcSchema(abi) {
@@ -541,24 +543,36 @@ var AbiCache = require('./abi-cache');
 var writeApiGen = require('./write-api');
 var format = require('./format');
 var schema = require('./schema');
-var pkg = require('../package.json');
 
 var Eos = function Eos() {
   var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-  config = Object.assign({}, {
+  var configDefaults = {
     httpEndpoint: 'http://127.0.0.1:8888',
     debug: false,
     verbose: false,
     broadcast: true,
-    sign: true
-  }, config);
+    logger: {
+      log: function log() {
+        var _console;
 
-  var defaultLogger = {
-    log: config.verbose ? console.log : null,
-    error: console.error
+        return config.verbose ? (_console = console).log.apply(_console, arguments) : null;
+      },
+      error: console.error
+    },
+    sign: true
   };
-  config.logger = Object.assign({}, defaultLogger, config.logger);
+
+  function applyDefaults(target, defaults) {
+    Object.keys(defaults).forEach(function (key) {
+      if (target[key] === undefined) {
+        target[key] = defaults[key];
+      }
+    });
+  }
+
+  applyDefaults(config, configDefaults);
+  applyDefaults(config.logger, configDefaults.logger);
 
   return createEos(config);
 };
@@ -566,7 +580,7 @@ var Eos = function Eos() {
 module.exports = Eos;
 
 Object.assign(Eos, {
-  version: pkg.version,
+  version: '16.0.0',
   modules: {
     format: format,
     api: EosApi,
@@ -596,7 +610,6 @@ function createEos(config) {
   config.network = network;
 
   var abiCache = AbiCache(network, config);
-  config.abiCache = abiCache;
 
   if (!config.chainId) {
     config.chainId = 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f';
@@ -624,23 +637,57 @@ function createEos(config) {
 
   var eos = mergeWriteFunctions(config, EosApi, structs);
 
-  Object.assign(eos, { fc: {
+  Object.assign(eos, {
+    config: safeConfig(config),
+    fc: {
       structs: structs,
       types: types,
       fromBuffer: fromBuffer,
       toBuffer: toBuffer,
       abiCache: abiCache
-    } });
-
-  Object.assign(eos, { modules: {
+    },
+    modules: {
       format: format
-    } });
+    }
+  });
 
   if (!config.signProvider) {
     config.signProvider = defaultSignProvider(eos, config);
   }
 
   return eos;
+}
+
+/**
+  Set each property as read-only, read-write, no-access.  This is shallow
+  in that it applies only to the root object and does not limit access
+  to properties under a given object.
+*/
+function safeConfig(config) {
+  // access control is shallow references only
+  var readOnly = new Set(['httpEndpoint', 'abiCache']);
+  var readWrite = new Set(['verbose', 'debug', 'broadcast', 'logger', 'sign']);
+  var protectedConfig = {};
+
+  Object.keys(config).forEach(function (key) {
+    Object.defineProperty(protectedConfig, key, {
+      set: function set(value) {
+        if (readWrite.has(key)) {
+          config[key] = value;
+          return;
+        }
+        throw new Error('Access denied');
+      },
+
+      get: function get() {
+        if (readOnly.has(key) || readWrite.has(key)) {
+          return config[key];
+        }
+        throw new Error('Access denied');
+      }
+    });
+  });
+  return protectedConfig;
 }
 
 /**
@@ -951,17 +998,17 @@ var defaultSignProvider = function defaultSignProvider(eos, config) {
 function checkChainId(network, chainId, logger) {
   network.getInfo({}).then(function (info) {
     if (info.chain_id !== chainId) {
-      if (logger.error) {
-        logger.error('chainId mismatch, signatures will not match transaction authority. ' + ('expected ' + chainId + ' !== actual ' + info.chain_id));
+      if (logger.log) {
+        logger.log('chainId mismatch, signatures will not match transaction authority. ' + ('expected ' + chainId + ' !== actual ' + info.chain_id));
       }
     }
   }).catch(function (error) {
     if (logger.error) {
-      logger.error(error);
+      logger.error('Warning, unable to validate chainId: ' + error.message);
     }
   });
 }
-},{"../package.json":206,"./abi-cache":1,"./format":2,"./schema":7,"./structs":8,"./write-api":9,"assert":10,"babel-runtime/helpers/typeof":16,"babel-runtime/regenerator":17,"eosjs-api":134,"eosjs-ecc":143,"fcbuffer":152}],4:[function(require,module,exports){
+},{"./abi-cache":1,"./format":2,"./schema":7,"./structs":8,"./write-api":9,"assert":10,"babel-runtime/helpers/typeof":16,"babel-runtime/regenerator":17,"eosjs-api":134,"eosjs-ecc":143,"fcbuffer":152}],4:[function(require,module,exports){
 module.exports={
   "name": "uint64",
   "checksum160": "fixed_bytes20",
@@ -2614,7 +2661,7 @@ function WriteApi(Network, network, config, Transaction) {
               break;
 
             case 13:
-              if (!((0, _typeof3.default)(args[0]) === 'object' && (0, _typeof3.default)(Array.isArray(args[0].actions)))) {
+              if (!((0, _typeof3.default)(args[0]) === 'object' && Array.isArray(args[0].actions))) {
                 _context.next = 39;
                 break;
               }
@@ -3109,7 +3156,7 @@ function WriteApi(Network, network, config, Transaction) {
       headers = network.createTransaction;
     }
     headers(options.expireInSeconds, checkError(callback, config.logger, function _callee2(rawTx) {
-      var defaultHeaders, txObject, buf, tr, transactionId, sigs, chainIdBuf, signBuf;
+      var defaultHeaders, txObject, buf, tr, transactionId, sigs, chainIdBuf, packedContextFreeData, signBuf;
       return _regenerator2.default.async(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -3140,7 +3187,9 @@ function WriteApi(Network, network, config, Transaction) {
 
               if (options.sign) {
                 chainIdBuf = new Buffer(config.chainId, 'hex');
-                signBuf = Buffer.concat([chainIdBuf, buf, new Buffer(new Uint8Array(32))]);
+                packedContextFreeData = new Buffer(new Uint8Array(32)); // TODO
+
+                signBuf = Buffer.concat([chainIdBuf, buf, packedContextFreeData]);
 
                 sigs = config.signProvider({ transaction: tr, buf: signBuf, sign: sign });
                 if (!Array.isArray(sigs)) {
@@ -3948,7 +3997,7 @@ module.exports = function base (ALPHABET) {
     var string = ''
 
     // deal with leading zeros
-    for (var k = 0; source[k] === 0 && k < source.length - 1; ++k) string += ALPHABET[0]
+    for (var k = 0; source[k] === 0 && k < source.length - 1; ++k) string += LEADER
     // convert digits to a string
     for (var q = digits.length - 1; q >= 0; --q) string += ALPHABET[digits[q]]
 
@@ -5732,7 +5781,7 @@ module.exports={
   "_args": [
     [
       "bigi@1.4.2",
-      "C:\\Users\\IgorLS\\eosjs"
+      "/home/james/eosjs/eosjs"
     ]
   ],
   "_from": "bigi@1.4.2",
@@ -5753,12 +5802,11 @@ module.exports={
   },
   "_requiredBy": [
     "/ecurve",
-    "/eosjs-ecc",
-    "/eosjs-keygen/eosjs-ecc"
+    "/eosjs-ecc"
   ],
   "_resolved": "https://registry.npmjs.org/bigi/-/bigi-1.4.2.tgz",
   "_spec": "1.4.2",
-  "_where": "C:\\Users\\IgorLS\\eosjs",
+  "_where": "/home/james/eosjs/eosjs",
   "bugs": {
     "url": "https://github.com/cryptocoinjs/bigi/issues"
   },
@@ -17978,6 +18026,132 @@ module.exports = Point
 
 },{"assert":10,"bigi":22,"safe-buffer":189}],129:[function(require,module,exports){
 module.exports={
+  "get_info": {
+    "brief": "Return general network information.",
+    "params": null,
+    "results": "string"
+  },
+  "get_account": {
+    "brief": "Fetch a blockchain account",
+    "params": {
+      "account_name": "name"
+    },
+    "results": "string"
+  },
+  "get_code": {
+    "brief": "Fetch smart contract code",
+    "params": {
+      "account_name": "name",
+      "code_as_wasm": {"type": "bool", "default": false}
+    },
+    "results": {
+      "account_name": "name",
+      "wast": "string",
+      "wasm": "string",
+      "code_hash": "sha256",
+      "abi": "optional<abi_def>"
+    }
+  },
+  "get_abi": {
+    "params": {
+      "account_name": "name"
+    },
+    "results": {
+      "account_name": "name",
+      "abi": "abi_def?"
+    }
+  },
+  "get_raw_code_and_abi": {
+    "params": {
+      "account_name": "name"
+    },
+    "results": {
+      "account_name": "name",
+      "wasm": "bytes",
+      "abi": "abi_def?"
+    }
+  },
+  "abi_json_to_bin": {
+    "brief": "Manually serialize json into binary hex.  The binayargs is usually stored in Action.data.",
+    "params": {
+      "code": "name",
+      "action": "name",
+      "args": "bytes"
+    },
+    "results": {
+      "binargs": "bytes"
+    }
+  },
+  "abi_bin_to_json": {
+    "brief": "Convert bin hex back into Abi json definition.",
+    "params": {
+      "code": "name",
+      "action": "name",
+      "binargs": "bytes"
+    },
+    "results": {
+      "args": "bytes"
+    }
+  },
+  "get_required_keys": {
+    "params": {
+      "transaction": "transaction",
+      "available_keys": "set[public_key]"
+    },
+    "results": "Set[public_key]"
+  },
+  "get_block": {
+    "brief": "Fetch a block from the blockchain.",
+    "params": {
+      "block_num_or_id": "string"
+    },
+    "results": "variant",
+    "errors": {
+      "unknown block": null
+    }
+  },
+  "get_block_header_state": {
+    "brief": "Fetch the minimum state necessary to validate transaction headers.",
+    "params": {
+      "block_num_or_id": "string"
+    },
+    "results": "string",
+    "errors": {
+      "block_id_type_exception": "Invalid block ID",
+      "unknown_block_exception": "Could not find reversible block"
+    }
+  },
+  "get_table_rows": {
+    "brief": "Fetch smart contract data from an account.",
+    "params": {
+      "json": { "type": "bool", "default": false},
+      "code": "name",
+      "scope": "string",
+      "table": "name",
+      "table_key": "string",
+      "lower_bound": {"type": "string", "default": "0"},
+      "upper_bound": {"type": "string", "default": "-1"},
+      "limit": {"type": "uint32", "default": "10"},
+      "key_type": {
+        "type": "string",
+        "doc": "The key type of --index, primary only supports (i64), all others support (i64, i128, i256, float64, float128). Special type 'name' indicates an account name."
+      },
+      "index_position": {
+        "type": "string",
+        "doc": "1 - primary (first), 2 - secondary index (in order defined by multi_index), 3 - third index, etc"
+      }
+    },
+    "results": {
+      "rows": {
+        "type": "vector",
+        "doc": "One row per item, either encoded as hex String or JSON object"
+      },
+      "more": {
+        "type": "bool",
+        "doc": "True if last element in data is not the end and sizeof data() < limit"
+      }
+    }
+  },
   "get_currency_balance": {
     "params": {
       "code": "name",
@@ -18002,7 +18176,7 @@ module.exports={
     "params": {
       "json": { "type": "bool", "default": false},
       "lower_bound": "string",
-      "limit": {"type": "uint32", "default": "10"}
+      "limit": {"type": "uint32", "default": "50"}
     },
     "results": {
       "rows": {
@@ -18010,7 +18184,7 @@ module.exports={
         "doc": "one row per item, either encoded as hex String or JSON object"
       },
       "total_producer_vote_weight": {
-        "type": "float64",
+        "type": "double",
         "doc": "total vote"
       },
       "more": {
@@ -18019,139 +18193,30 @@ module.exports={
       }
     }
   },
-  "get_info": {
-    "brief": "Return general network information.",
-    "params": null,
+  "get_producer_schedule": {
+    "brief": "",
+    "params": {},
     "results": {
-      "server_version" : "string",
-      "head_block_num" : "uint32",
-      "last_irreversible_block_num" : "uint32",
-      "last_irreversible_block_id" : "block_id",
-      "head_block_id" : "block_id",
-      "head_block_time" : "time_point_sec",
-      "head_block_producer" : "account_name",
-      "virtual_block_cpu_limit" : "uint64",
-      "virtual_block_net_limit" : "uint64",
-      "block_cpu_limit" : "uint64",
-      "block_net_limit" : "uint64"
+      "vector": "active",
+      "vector": "pending",
+      "vector": "proposed"
     }
   },
-
-  "get_block": {
-    "brief": "Fetch a block from the blockchain.",
-    "params": {
-      "block_num_or_id": "string"
-    },
-    "results": "variant",
-    "errors": {
-      "unknown block": null
-    }
-  },
-
-  "get_account": {
-    "brief": "Fetch a blockchain account",
-    "params": {
-      "account_name": "name"
-    },
-    "results": {
-      "account_name": "name",
-      "privileged": "bool",
-      "last_code_update": "time_point",
-      "created": "time_point",
-      "ram_quota": "int64",
-      "net_weight": "int64",
-      "cpu_weight": "int64",
-      "net_limit": "int64",
-      "cpu_limit": "int64",
-      "ram_usage": "int64",
-      "permissions": "vector<permission>",
-      "total_resources": "variant",
-      "self_delegated_bandwidth": "variant",
-      "voter_info": "variant"
-    }
-  },
-
-  "get_code": {
-    "brief": "Fetch smart contract code",
-    "params": {
-      "account_name": "name"
-    },
-    "results": {
-      "account_name": "name",
-      "wast": "string",
-      "code_hash": "sha256",
-      "abi": "optional<abi_def>"
-    }
-  },
-
-  "get_table_rows": {
-    "brief": "Fetch smart contract data from an account.",
+  "get_scheduled_transactions": {
+    "brief": "",
     "params": {
       "json": { "type": "bool", "default": false},
-      "code": "name",
-      "scope": "name",
-      "table": "name",
-      "table_key": "string",
-      "lower_bound": {"type": "string", "default": "0"},
-      "upper_bound": {"type": "string", "default": "-1"},
-      "limit": {"type": "uint32", "default": "10"}
+      "lower_bound": {"type": "string", "doc": "timestamp OR transaction ID"},
+      "limit": {"type": "uint32", "default": "50"}
     },
     "results": {
-      "rows": {
-        "type": "vector",
-        "doc": "one row per item, either encoded as hex String or JSON object"
-      },
+      "vector": "transactions",
       "more": {
-        "type": "bool",
-        "doc": "true if last element"
+        "type": "string",
+        "doc": "fill lower_bound with this to fetch next set of transactions"
       }
     }
   },
-
-  "get_abi": {
-    "params": {
-      "account_name": "name"
-    },
-    "results": {
-      "account_name": "name",
-      "abi": "abi_def?"
-    }
-  },
-
-  "abi_json_to_bin": {
-    "brief": "Manually serialize json into binary hex.  The binayargs is usually stored in Action.data.",
-    "params": {
-      "code": "name",
-      "action": "name",
-      "args": "bytes"
-    },
-    "results": {
-      "binargs": "bytes"
-    }
-  },
-
-  "abi_bin_to_json": {
-    "brief": "Convert bin hex back into Abi json definition.",
-    "params": {
-      "code": "name",
-      "action": "name",
-      "binargs": "bytes"
-    },
-    "results": {
-      "args": "bytes",
-      "required_scope": "name[]",
-      "required_auth": "name[]"
-    }
-  },
-
-  "get_required_keys": {
-    "params": {
-      "transaction": "transaction",
-      "available_keys": "set[public_key]"
-    },
-    "results": "Set[public_key]"
-  },
-
   "push_block": {
     "brief": "Append a block to the chain database.",
     "params": {
@@ -18159,7 +18224,6 @@ module.exports={
     },
     "results": null
   },
-
   "push_transaction": {
     "brief": "Attempts to push the transaction into the pending queue.",
     "params": {
@@ -18170,7 +18234,6 @@ module.exports={
       "processed": "bytes"
     }
   },
-
   "push_transactions": {
     "brief": "Attempts to push transactions into the pending queue.",
     "params": {
@@ -18178,7 +18241,6 @@ module.exports={
     },
     "results": "vector[push_transaction.results]"
   }
-
 }
 
 },{}],130:[function(require,module,exports){
@@ -18186,8 +18248,14 @@ module.exports={
   "get_actions": {
     "params": {
       "account_name": "account_name",
-      "pos": "int32?",
-      "offset": "int32?"
+      "pos": {
+        "type": "int32?",
+        "doc": "An absolute sequence positon -1 is the end/last action"
+      },
+      "offset": {
+        "type": "int32?",
+        "doc": "The number of actions relative to pos, negative numbers return [pos-offset,pos), positive numbers return [pos,pos+offset)"
+      }
     },
     "results": {
       "actions": "ordered_action_result[]",
@@ -18205,12 +18273,19 @@ module.exports={
       }
     }]
   },
-  "get_controlled_accounts": {
+  "get_transaction": {
+    "brief": "Retrieve a transaction from the blockchain.",
     "params": {
-      "controlling_account": "account_name"
+      "id": "transaction_id_type",
+      "block_num_hint": "uint32?"
     },
     "results": {
-      "controlled_accounts": "account_name[]"
+      "id": "transaction_id_type",
+      "trx": "variant",
+      "block_time": "block_timestamp_type",
+      "block_num": "uint32",
+      "last_irreversible_block": "uint32",
+      "traces": "variant[]"
     }
   },
   "get_key_accounts": {
@@ -18221,18 +18296,12 @@ module.exports={
       "account_names": "account_name[]"
     }
   },
-  "get_transaction": {
-    "brief": "Retrieve a transaction from the blockchain.",
+  "get_controlled_accounts": {
     "params": {
-      "id": "transaction_id_type"
+      "controlling_account": "account_name"
     },
     "results": {
-      "id": "transaction_id_type",
-      "trx": "variant",
-      "block_time": "block_timestamp_type",
-      "block_num": "uint32",
-      "last_irreversible_block": "uint32",
-      "traces": "variant[]"
+      "controlled_accounts": "account_name[]"
     }
   }
 }
@@ -18254,22 +18323,35 @@ var processArgs = require('./process-args');
 
 module.exports = apiGen;
 
-function apiGen(version, definitions, config) {
-  config = Object.assign({
-    httpEndpoint: 'http://127.0.0.1:8888',
-    verbose: false
-  }, config);
+function apiGen(version, definitions) {
+  var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  var defaultLogger = {
-    log: config.verbose ? console.log : '',
-    error: console.error
+  var configDefaults = {
+    httpEndpoint: 'http://127.0.0.1:8888',
+    verbose: false,
+    logger: {
+      log: function log() {
+        var _console;
+
+        return config.verbose ? (_console = console).log.apply(_console, arguments) : '';
+      },
+      error: console.error
+    }
   };
 
-  config.logger = Object.assign({}, defaultLogger, config.logger);
+  function applyDefaults(target, defaults) {
+    Object.keys(defaults).forEach(function (key) {
+      if (target[key] === undefined) {
+        target[key] = defaults[key];
+      }
+    });
+  }
+
+  applyDefaults(config, configDefaults);
+  applyDefaults(config.logger, configDefaults.logger);
 
   var api = {};
-  var _config = config,
-      httpEndpoint = _config.httpEndpoint;
+  var httpEndpoint = config.httpEndpoint;
 
 
   for (var apiGroup in definitions) {
@@ -19022,14 +19104,15 @@ var ecc = {
         return signature.recoverHash(dataSha256, encoding).toString();
     },
 
-    /** @arg {string|Buffer} data
-        @arg {string} [encoding = 'hex'] - 'hex', 'binary' or 'base64'
+    /** @arg {string|Buffer} data - always binary, you may need Buffer.from(data, 'hex')
+        @arg {string} [encoding = 'hex'] - result encoding 'hex', 'binary' or 'base64'
         @return {string|Buffer} - Buffer when encoding is null, or string
          @example ecc.sha256('hashme') === '02208b..'
+        @example ecc.sha256(Buffer.from('02208b', 'hex')) === '29a23..'
     */
     sha256: function sha256(data) {
-        var encoding = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'hex';
-        return hash.sha256(data, encoding);
+        var resultEncoding = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'hex';
+        return hash.sha256(data, resultEncoding);
     }
 };
 
@@ -19459,27 +19542,27 @@ var createHmac = require('create-hmac');
 /** @namespace hash */
 
 /** @arg {string|Buffer} data
-    @arg {string} [encoding = null] - 'hex', 'binary' or 'base64'
-    @return {string|Buffer} - Buffer when encoding is null, or string
+    @arg {string} [resultEncoding = null] - 'hex', 'binary' or 'base64'
+    @return {string|Buffer} - Buffer when resultEncoding is null, or string
 */
-function sha1(data, encoding) {
-    return createHash('sha1').update(data).digest(encoding);
+function sha1(data, resultEncoding) {
+    return createHash('sha1').update(data).digest(resultEncoding);
 }
 
 /** @arg {string|Buffer} data
-    @arg {string} [encoding = null] - 'hex', 'binary' or 'base64'
-    @return {string|Buffer} - Buffer when encoding is null, or string
+    @arg {string} [resultEncoding = null] - 'hex', 'binary' or 'base64'
+    @return {string|Buffer} - Buffer when resultEncoding is null, or string
 */
-function sha256(data, encoding) {
-    return createHash('sha256').update(data).digest(encoding);
+function sha256(data, resultEncoding) {
+    return createHash('sha256').update(data).digest(resultEncoding);
 }
 
 /** @arg {string|Buffer} data
-    @arg {string} [encoding = null] - 'hex', 'binary' or 'base64'
-    @return {string|Buffer} - Buffer when encoding is null, or string
+    @arg {string} [resultEncoding = null] - 'hex', 'binary' or 'base64'
+    @return {string|Buffer} - Buffer when resultEncoding is null, or string
 */
-function sha512(data, encoding) {
-    return createHash('sha512').update(data).digest(encoding);
+function sha512(data, resultEncoding) {
+    return createHash('sha512').update(data).digest(resultEncoding);
 }
 
 function HmacSHA256(buffer, secret) {
@@ -19666,7 +19749,7 @@ function PrivateKey(d) {
 
 /** @private */
 function parseKey(privateStr) {
-    assert(typeof privateStr === 'undefined' ? 'undefined' : _typeof(privateStr), 'string', 'privateStr');
+    assert.equal(typeof privateStr === 'undefined' ? 'undefined' : _typeof(privateStr), 'string', 'privateStr');
     var match = privateStr.match(/^PVT_([A-Za-z0-9]+)_([A-Za-z0-9]+)$/);
 
     if (match === null) {
@@ -19999,7 +20082,7 @@ PublicKey.fromString = function (public_key) {
     @return PublicKey
 */
 PublicKey.fromStringOrThrow = function (public_key) {
-    assert(typeof public_key === 'undefined' ? 'undefined' : _typeof(public_key), 'string', 'public_key');
+    assert.equal(typeof public_key === 'undefined' ? 'undefined' : _typeof(public_key), 'string', 'public_key');
     var match = public_key.match(/^PUB_([A-Za-z0-9]+)_([A-Za-z0-9]+)$/);
     if (match === null) {
         // legacy
@@ -20072,8 +20155,8 @@ function random32ByteBuffer() {
         _ref$safe = _ref.safe,
         safe = _ref$safe === undefined ? true : _ref$safe;
 
-    assert(typeof cpuEntropyBits === 'undefined' ? 'undefined' : _typeof(cpuEntropyBits), 'number', 'cpuEntropyBits');
-    assert(typeof safe === 'undefined' ? 'undefined' : _typeof(safe), 'boolean', 'boolean');
+    assert.equal(typeof cpuEntropyBits === 'undefined' ? 'undefined' : _typeof(cpuEntropyBits), 'number', 'cpuEntropyBits');
+    assert.equal(typeof safe === 'undefined' ? 'undefined' : _typeof(safe), 'boolean', 'boolean');
 
     if (safe) {
         assert(_entropyCount >= 128, 'Call initialize() to add entropy');
@@ -20589,7 +20672,7 @@ Signature.fromString = function (signature) {
     @return {Signature}
 */
 Signature.fromStringOrThrow = function (signature) {
-    assert(typeof signature === 'undefined' ? 'undefined' : _typeof(signature), 'string', 'signature');
+    assert.equal(typeof signature === 'undefined' ? 'undefined' : _typeof(signature), 'string', 'signature');
     var match = signature.match(/^SIG_([A-Za-z0-9]+)_([A-Za-z0-9]+)$/);
     assert(match != null && match.length === 3, 'Expecting signature like: SIG_K1_base58signature..');
 
@@ -30702,84 +30785,6 @@ function hasOwnProperty(obj, prop) {
   }
   self.fetch.polyfill = true
 })(typeof self !== 'undefined' ? self : this);
-
-},{}],206:[function(require,module,exports){
-module.exports={
-  "name": "eosjs",
-  "version": "15.0.3",
-  "description": "General purpose library for the EOS blockchain.",
-  "main": "lib/index.js",
-  "files": [
-    "README.md",
-    "docs",
-    "lib"
-  ],
-  "scripts": {
-    "test": "mocha --use_strict src/*.test.js",
-    "test_lib": "mocha --use_strict lib/*.test.js",
-    "coverage": "nyc --reporter=html npm test",
-    "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
-    "build": "babel --copy-files src --out-dir lib",
-    "build_browser": "npm run build && browserify -o lib/eos.js -s Eos lib/index.js",
-    "build_browser_test": "npm run build && browserify -o dist/test.js lib/*.test.js",
-    "minimize": "uglifyjs lib/eos.js -o lib/eos.min.js --source-map --compress --mangle",
-    "docs": "jsdoc2md src/format.js > docs/index.md",
-    "prepublishOnly": "npm run build_browser && npm run test_lib && npm run minimize && npm run docs"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/EOSIO/eosjs.git"
-  },
-  "keywords": [
-    "EOS",
-    "Blockchain"
-  ],
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/EOSIO/eosjs/issues"
-  },
-  "homepage": "https://github.com/EOSIO/eosjs#readme",
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-plugin-syntax-async-functions": "^6.13.0",
-    "babel-plugin-transform-regenerator": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-es2015": "^6.24.1",
-    "browserify": "^14.4.0",
-    "camel-case": "^3.0.0",
-    "coveralls": "^3.0.0",
-    "eosjs-keygen": "^1.3.2",
-    "jsdoc-to-markdown": "^3.0.4",
-    "mocha": "^3.4.2",
-    "nyc": "^11.4.1"
-  },
-  "dependencies": {
-    "babel-runtime": "^6.26.0",
-    "binaryen": "^37.0.0",
-    "create-hash": "^1.1.3",
-    "eosjs-api": "6.3.0",
-    "eosjs-ecc": "4.0.1",
-    "fcbuffer": "2.2.0"
-  },
-  "babel": {
-    "presets": [
-      "es2015"
-    ],
-    "plugins": [
-      "syntax-async-functions",
-      "transform-regenerator",
-      [
-        "transform-runtime",
-        {
-          "polyfill": false,
-          "regenerator": true
-        }
-      ]
-    ]
-  }
-}
 
 },{}]},{},[3])(3)
 });
