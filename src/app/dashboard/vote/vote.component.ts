@@ -205,6 +205,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.busy = true;
     const account = this.aService.selected.getValue();
     const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+    console.log(pubkey);
     this.crypto.authenticate(password, pubkey).then((data) => {
       if (data === true) {
         let call;

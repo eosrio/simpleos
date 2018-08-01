@@ -45,7 +45,9 @@ export class EOSJSService {
   reloadInstance() {
     this.auth = true;
     this.eos = EOSJS(this.baseConfig);
-    this.baseConfig.keyProvider = [];
+    setTimeout(() => {
+      this.baseConfig.keyProvider = [];
+    }, 1000);
   }
 
   clearInstance() {

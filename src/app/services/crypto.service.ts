@@ -151,7 +151,8 @@ export class CryptoService {
           name: 'AES-GCM',
           iv: iv
         }, this.masterKey, data);
-        this.eosjs.baseConfig.keyProvider.push(String.fromCharCode.apply(null, new Uint8Array(decrypted)).replace(/"/g, ''));
+        const decryptedKey = String.fromCharCode.apply(null, new Uint8Array(decrypted));
+        this.eosjs.baseConfig.keyProvider = decryptedKey.replace(/^"(.+(?="$))"$/, '$1');
         this.eosjs.reloadInstance();
         return true;
       } else {
