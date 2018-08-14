@@ -31,11 +31,10 @@ SimplEOS doesn't keep any of your information. All information is kept locally o
 As of 12/06/2018, SimplEOS main features include:
 
 - Local Storage: private keys are encrypted and stored locally only.
-- Import Exodus wallet
 - Multiple accounts support
 - Token transfer
 - All transactions are password protected
-- Contacts List / Add contacts
+- Contacts List
 - Transactions / Actions History
 - Voting Portal
 - Stake / Unstake functions - (un)delegatebw
@@ -46,7 +45,6 @@ As of 12/06/2018, SimplEOS main features include:
 ## Roadmap
 
 Next features to be implemented:
-- Edit / Remove contacts *- high priority*
 - Testnets support
 - Delegate Permissions
 - Setup Delayed Transactions
@@ -61,14 +59,14 @@ Your private keys are stored locally only and are properly encrypted with a user
 Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
-- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.3-2/simpleos-setup-0.6.3-2.exe)
-  - `d2f091d64441814cefea049fd44494b2de2832e4f489f91a1a3b3ed98e456d25  simpleos-setup-0.6.3-2.exe`
-- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.3-2/simpleos-0.6.3-2.dmg)
-  - `90a6b4e4a3c75840269c872e32cb4a0ecc1e94148a2b3d4f3a02157c5ea99f47  simpleos-0.6.3-2.dmg`
-- [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.3-2/simpleos-0.6.3-2-x86_64.AppImage)
-  - `b39ce10a34bfbf5da933ac7b83092a5088ef4afd2c891e2f9485d5b6b9a9411f  simpleos-0.6.3-2-x86_64.AppImage`
-- [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.3-2/simpleos_0.6.3-2_amd64.deb)
-  - `f5771134c582a5aa70f29036da57459fd8bfa01eea53b54002a043c816fd21e7  simpleos_0.6.3-2_amd64.deb`
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-setup-0.6.4.exe)
+  - `f8402bd807e0708ed28ceb554d146c7e3d72a64db3bc1837a907b3086fb4fb03  simpleos-setup-0.6.4.exe`
+- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-0.6.4.dmg)
+  - `82040b00b75d510650a29a078b1b94df471ec4bdec33092b557c9ef1b71cfce6  simpleos-0.6.4.dmg`
+- [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-0.6.4-x86_64.AppImage)
+  - `f9a374cdbb5bcaa3ec23a7db28b8cd236c7d47db1679f39d524aea29a72031ac  simpleos-0.6.4-x86_64.AppImage`
+- [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos_0.6.4_amd64.deb)
+  - `137839622a94ce54f4b45a0de055db918102f76af22e736278c52dcbcdaf8e86  simpleos_0.6.4_amd64.deb`
 
 ## Legal Disclaimer
 
