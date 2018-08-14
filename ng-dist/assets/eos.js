@@ -217,6 +217,7 @@ var charidx = function charidx(ch) {
   @see types.hpp string_to_name
 
   @arg {string} name - A string to encode, up to 12 characters long.
+  @arg {string} [littleEndian = true] - Little or Bigendian encoding
 
   @return {string<uint64>} - compressed string (from name arg).  A string is
     always used because a number could exceed JavaScript's 52 bit limit.
@@ -281,6 +282,8 @@ function encodeName(name) {
 
 /**
   @arg {Long|String|number} value uint64
+  @arg {string} [littleEndian = true] - Little or Bigendian encoding
+
   @return {string}
 */
 function decodeName(value) {
@@ -386,14 +389,15 @@ function DecimalString(value) {
 
   @example DecimalPad(10.2, 3) === '10.200'
 
-  @arg {number|string|object.toString} value
-  @arg {number} [precision = null] - number of decimal places (null skips padding)
+  @arg {number|string|object.toString} num
+  @arg {number} [precision = null] - number of decimal places.  Null skips
+    padding suffix but still applies number format normalization.
   @return {string} decimal part is added and zero padded to match precision
 */
 function DecimalPad(num, precision) {
   var value = DecimalString(num);
   if (precision == null) {
-    return num;
+    return value;
   }
 
   assert(precision >= 0 && precision <= 18, 'Precision should be 18 characters or less');
@@ -500,7 +504,8 @@ function parseAsset(str) {
 
   var _str$split3 = str.split('@'),
       _str$split4 = (0, _slicedToArray3.default)(_str$split3, 2),
-      contractRaw = _str$split4[1];
+      _str$split4$ = _str$split4[1],
+      contractRaw = _str$split4$ === undefined ? '' : _str$split4$;
 
   var contract = /^[a-z0-5]+(\.[a-z0-5]+)*$/.test(contractRaw) ? contractRaw : null;
 
@@ -558,7 +563,11 @@ var Eos = function Eos() {
 
         return config.verbose ? (_console = console).log.apply(_console, arguments) : null;
       },
-      error: console.error
+      error: function error() {
+        var _console2;
+
+        return config.verbose ? (_console2 = console).error.apply(_console2, arguments) : null;
+      }
     },
     sign: true
   };
@@ -646,6 +655,7 @@ function createEos(config) {
       toBuffer: toBuffer,
       abiCache: abiCache
     },
+    // Repeat of static Eos.modules, help apps that use dependency injection
     modules: {
       format: format
     }
@@ -1060,7 +1070,7 @@ module.exports={
       "expiration": "time",
       "ref_block_num": "uint16",
       "ref_block_prefix": "uint32",
-      "net_usage_words": "unsigned_int",
+      "max_net_usage_words": "unsigned_int",
       "max_cpu_usage_ms": "uint8",
       "delay_sec": "unsigned_int"
     }
@@ -1898,6 +1908,9 @@ module.exports = function () {
     symbol: function symbol() {
       return [_Symbol];
     },
+    symbol_code: function symbol_code() {
+      return [SymbolCode];
+    },
     extended_symbol: function extended_symbol() {
       return [ExtendedSymbol];
     },
@@ -2118,6 +2131,70 @@ var _Symbol = function _Symbol(validation) {
   };
 };
 
+/** Symbol type without the precision */
+var SymbolCode = function SymbolCode(validation) {
+  return {
+    fromByteBuffer: function fromByteBuffer(b) {
+      var bcopy = b.copy(b.offset, b.offset + 8);
+      b.skip(8);
+
+      var bin = bcopy.toBinary();
+
+      var symbol = '';
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = bin[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var code = _step3.value;
+
+          if (code == '\0') {
+            break;
+          }
+          symbol += code;
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+
+      return '' + symbol;
+    },
+    appendByteBuffer: function appendByteBuffer(b, value) {
+      var _parseAsset3 = parseAsset(value),
+          symbol = _parseAsset3.symbol;
+
+      var pad = '\0'.repeat(8 - symbol.length);
+      b.append(symbol + pad);
+    },
+    fromObject: function fromObject(value) {
+      assert(value != null, 'Symbol is required: ' + value);
+
+      var _parseAsset4 = parseAsset(value),
+          symbol = _parseAsset4.symbol;
+
+      return symbol;
+    },
+    toObject: function toObject(value) {
+      if (validation.defaults && value == null) {
+        return 'SYS';
+      }
+      return parseAsset(value).symbol;
+    }
+  };
+};
+
 /**
   Internal: precision, symbol, contract
   External: symbol, contract
@@ -2173,9 +2250,9 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
 
       var sym = symbolType.fromByteBuffer(b);
 
-      var _parseAsset3 = parseAsset('' + sym),
-          precision = _parseAsset3.precision,
-          symbol = _parseAsset3.symbol;
+      var _parseAsset5 = parseAsset('' + sym),
+          precision = _parseAsset5.precision,
+          symbol = _parseAsset5.symbol;
 
       assert(precision != null, 'precision');
       assert(symbol != null, 'symbol');
@@ -2183,10 +2260,10 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       return DecimalUnimply(amount, precision) + ' ' + symbol;
     },
     appendByteBuffer: function appendByteBuffer(b, value) {
-      var _parseAsset4 = parseAsset(value),
-          amount = _parseAsset4.amount,
-          precision = _parseAsset4.precision,
-          symbol = _parseAsset4.symbol;
+      var _parseAsset6 = parseAsset(value),
+          amount = _parseAsset6.amount,
+          precision = _parseAsset6.precision,
+          symbol = _parseAsset6.symbol;
 
       assert(amount != null, 'amount');
       assert(precision != null, 'precision');
@@ -2196,10 +2273,10 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
       symbolType.appendByteBuffer(b, precision + ',' + symbol);
     },
     fromObject: function fromObject(value) {
-      var _parseAsset5 = parseAsset(value),
-          amount = _parseAsset5.amount,
-          precision = _parseAsset5.precision,
-          symbol = _parseAsset5.symbol;
+      var _parseAsset7 = parseAsset(value),
+          amount = _parseAsset7.amount,
+          precision = _parseAsset7.precision,
+          symbol = _parseAsset7.symbol;
 
       assert(amount != null, 'amount');
       assert(precision != null, 'precision');
@@ -2212,10 +2289,10 @@ var Asset = function Asset(validation, baseTypes, customTypes) {
         return '0.0001 SYS';
       }
 
-      var _parseAsset6 = parseAsset(value),
-          amount = _parseAsset6.amount,
-          precision = _parseAsset6.precision,
-          symbol = _parseAsset6.symbol;
+      var _parseAsset8 = parseAsset(value),
+          amount = _parseAsset8.amount,
+          precision = _parseAsset8.precision,
+          symbol = _parseAsset8.symbol;
 
       assert(amount != null, 'amount');
       assert(precision != null, 'precision');
@@ -2362,14 +2439,20 @@ var authorityOverride = {
 
 var abiOverride = function abiOverride(structLookup) {
   return {
-    'abi.fromObject': function abiFromObject(value) {
+    'abi_def.fromObject': function abi_defFromObject(value) {
       if (typeof value === 'string') {
-        return JSON.parse(value);
+        var _json = Buffer.from(value, 'hex').toString();
+        if (_json.length === 0) {
+          _json = Buffer.from(value).toString();
+        }
+        return JSON.parse(_json);
       }
       if (Buffer.isBuffer(value)) {
         return JSON.parse(value.toString());
       }
+      return null; // let the default type take care of it
     },
+
     'setabi.abi.appendByteBuffer': function setabiAbiAppendByteBuffer(_ref) {
       var fields = _ref.fields,
           object = _ref.object,
@@ -2377,7 +2460,13 @@ var abiOverride = function abiOverride(structLookup) {
 
       var ser = structLookup('abi_def', 'eosio');
       var b2 = new ByteBuffer(ByteBuffer.DEFAULT_CAPACITY, ByteBuffer.LITTLE_ENDIAN);
-      ser.appendByteBuffer(b2, object.abi);
+
+      if (Buffer.isBuffer(object.abi)) {
+        b2.append(object.abi);
+      } else if ((0, _typeof3.default)(object.abi) == 'object') {
+        ser.appendByteBuffer(b2, object.abi);
+      }
+
       b.writeVarint32(b2.offset); // length prefix
       b.append(b2.copy(0, b2.offset), 'binary');
     }
@@ -3119,21 +3208,12 @@ function WriteApi(Network, network, config, Transaction) {
     arg.expiration != null && arg.ref_block_num != null && arg.ref_block_prefix != null) {
       var expiration = arg.expiration,
           ref_block_num = arg.ref_block_num,
-          ref_block_prefix = arg.ref_block_prefix,
-          _arg$net_usage_words = arg.net_usage_words,
-          net_usage_words = _arg$net_usage_words === undefined ? 0 : _arg$net_usage_words,
-          _arg$max_cpu_usage_ms = arg.max_cpu_usage_ms,
-          max_cpu_usage_ms = _arg$max_cpu_usage_ms === undefined ? 0 : _arg$max_cpu_usage_ms,
-          _arg$delay_sec = arg.delay_sec,
-          delay_sec = _arg$delay_sec === undefined ? 0 : _arg$delay_sec;
+          ref_block_prefix = arg.ref_block_prefix;
 
       argHeaders = {
         expiration: expiration,
         ref_block_num: ref_block_num,
-        ref_block_prefix: ref_block_prefix,
-        net_usage_words: net_usage_words,
-        max_cpu_usage_ms: max_cpu_usage_ms,
-        delay_sec: delay_sec
+        ref_block_prefix: ref_block_prefix
       };
     }
 
@@ -3155,6 +3235,7 @@ function WriteApi(Network, network, config, Transaction) {
       assert(network, 'Network is required, provide httpEndpoint or own transaction headers');
       headers = network.createTransaction;
     }
+
     headers(options.expireInSeconds, checkError(callback, config.logger, function _callee2(rawTx) {
       var defaultHeaders, txObject, buf, tr, transactionId, sigs, chainIdBuf, packedContextFreeData, signBuf;
       return _regenerator2.default.async(function _callee2$(_context2) {
@@ -3168,15 +3249,16 @@ function WriteApi(Network, network, config, Transaction) {
               assert.equal((0, _typeof3.default)(rawTx.ref_block_prefix), 'number', 'expecting ref_block_prefix number');
 
               defaultHeaders = {
-                net_usage_words: 0,
+                max_net_usage_words: 0,
                 max_cpu_usage_ms: 0,
                 delay_sec: 0
               };
 
 
               rawTx = Object.assign({}, defaultHeaders, rawTx);
-
+              rawTx.context_free_actions = arg.context_free_actions;
               rawTx.actions = arg.actions;
+              rawTx.transaction_extensions = arg.transaction_extensions;
 
               // Resolve shorthand
               txObject = Transaction.fromObject(rawTx);
@@ -3267,7 +3349,7 @@ function WriteApi(Network, network, config, Transaction) {
                 callback(error);
               });
 
-            case 14:
+            case 16:
             case 'end':
               return _context2.stop();
           }
@@ -18333,9 +18415,13 @@ function apiGen(version, definitions) {
       log: function log() {
         var _console;
 
-        return config.verbose ? (_console = console).log.apply(_console, arguments) : '';
+        return config.verbose ? (_console = console).log.apply(_console, arguments) : null;
       },
-      error: console.error
+      error: function error() {
+        var _console2;
+
+        return config.verbose ? (_console2 = console).error.apply(_console2, arguments) : null;
+      }
     }
   };
 
@@ -18378,7 +18464,7 @@ function apiGen(version, definitions) {
   for (var helper in helpers.api) {
     _loop(helper);
   }
-  return Object.assign(api, helpers);
+  return api;
 }
 
 function fetchMethod(methodName, url, definition, config) {
@@ -18531,7 +18617,7 @@ module.exports = {
     Because all transactions use TaPOS, this solves the nothing at stake attack.
   
     This is usually called for every transaction or maybe cached per block.  Although
-    longer caching may be possible, a longer cache time increases the risk of a
+    longer caching is possible, a longer cache time increases the risk of a
     transaction replay attack.
   
     @arg {number} expireInSeconds - How many seconds until expiration
@@ -18558,7 +18644,7 @@ module.exports = {
         expiration: expiration.toISOString().split('.')[0],
         ref_block_num: ref_block_num,
         ref_block_prefix: block.ref_block_prefix,
-        net_usage_words: 0,
+        max_net_usage_words: 0,
         max_cpu_usage_ms: 0,
         delay_sec: 0,
         context_free_actions: [],
@@ -18980,11 +19066,13 @@ var ecc = {
 
     /**
         @arg {wif} wif
-        @return {pubkey}
+        @arg {string} [pubkey_prefix = 'EOS'] - public key prefix
+         @return {pubkey}
          @example ecc.privateToPublic(wif) === pubkey
     */
     privateToPublic: function privateToPublic(wif) {
-        return PrivateKey(wif).toPublic().toString();
+        var pubkey_prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'EOS';
+        return PrivateKey(wif).toPublic().toString(pubkey_prefix);
     },
 
     /**
@@ -19995,9 +20083,13 @@ function PublicKey(Q) {
     //     return pubdata;
     // }
 
-    /** @todo rename to toStringLegacy */
+    /** @todo rename to toStringLegacy
+     * @arg {string} [pubkey_prefix = 'EOS'] - public key prefix
+    */
     function toString() {
-        return 'EOS' + keyUtils.checkEncode(toBuffer());
+        var pubkey_prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'EOS';
+
+        return pubkey_prefix + keyUtils.checkEncode(toBuffer());
     }
 
     function toUncompressed() {
@@ -20066,11 +20158,14 @@ PublicKey.fromPoint = function (point) {
 
 /**
     @arg {string} public_key - like PUB_K1_base58pubkey..
+    @arg {string} [pubkey_prefix = 'EOS'] - public key prefix
     @return PublicKey or `null` (invalid)
 */
 PublicKey.fromString = function (public_key) {
+    var pubkey_prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'EOS';
+
     try {
-        return PublicKey.fromStringOrThrow(public_key);
+        return PublicKey.fromStringOrThrow(public_key, pubkey_prefix);
     } catch (e) {
         return null;
     }
@@ -20078,16 +20173,23 @@ PublicKey.fromString = function (public_key) {
 
 /**
     @arg {string} public_key - like PUB_K1_base58pubkey..
+    @arg {string} [pubkey_prefix = 'EOS'] - public key prefix
+
     @throws {Error} if public key is invalid
+
     @return PublicKey
 */
 PublicKey.fromStringOrThrow = function (public_key) {
+    var pubkey_prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'EOS';
+
     assert.equal(typeof public_key === 'undefined' ? 'undefined' : _typeof(public_key), 'string', 'public_key');
     var match = public_key.match(/^PUB_([A-Za-z0-9]+)_([A-Za-z0-9]+)$/);
     if (match === null) {
         // legacy
-        if (/^EOS/.test(public_key)) {
-            public_key = public_key.substring(3);
+        // TELOS addition: support for variable public_key prefixes
+        var prefix_match = new RegExp("^" + pubkey_prefix);
+        if (prefix_match.test(public_key)) {
+            public_key = public_key.substring(pubkey_prefix.length);
         }
         return PublicKey.fromBuffer(keyUtils.checkDecode(public_key));
     }

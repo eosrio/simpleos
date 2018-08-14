@@ -231,36 +231,40 @@ export class EOSJSService {
   }
 
   async transfer(contract, from, to, amount, memo): Promise<any> {
-    if (this.auth && contract === 'eosio.token') {
-      return new Promise((resolve, reject) => {
-        this.eos['transfer'](from, to, amount, memo, (err, trx) => {
-          if (err) {
-            reject(JSON.parse(err));
-          } else {
-            resolve(true);
-          }
-        });
-      });
-    } else {
-      return new Promise((resolve, reject) => {
-        this.eos.contract(contract, (err, tokenContract) => {
-          if (!err) {
-            if (tokenContract['transfer']) {
-              tokenContract['transfer'](from, to, amount, memo, (err2, trx) => {
-                if (err2) {
-                  reject(JSON.parse(err2));
-                } else {
-                  resolve(true);
-                }
-              });
+    if (this.auth) {
+      if (contract === 'eosio.token') {
+        return new Promise((resolve, reject) => {
+          this.eos['transfer'](from, to, amount, memo, (err, trx) => {
+            console.log(err, trx);
+            if (err) {
+              reject(JSON.parse(err));
             } else {
-              reject();
+              resolve(true);
             }
-          } else {
-            reject(JSON.parse(err));
-          }
+          });
         });
-      });
+      } else {
+        return new Promise((resolve, reject) => {
+          this.eos['contract'](contract, (err, tokenContract) => {
+            if (!err) {
+              if (tokenContract['transfer']) {
+                tokenContract['transfer'](from, to, amount, memo, (err2, trx) => {
+                  console.log(err, trx);
+                  if (err2) {
+                    reject(JSON.parse(err2));
+                  } else {
+                    resolve(true);
+                  }
+                });
+              } else {
+                reject();
+              }
+            } else {
+              reject(JSON.parse(err));
+            }
+          });
+        });
+      }
     }
   }
 

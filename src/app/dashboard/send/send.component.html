@@ -69,7 +69,7 @@
               <mat-hint align="end">{{message.value.length}} / 256</mat-hint>
             </mat-form-field>
           </div>
-          <ng-container *ngIf="!contactExist && errormsg === ''">
+          <ng-container *ngIf="errormsg === '' && sendForm.value.to !== ''">
             <div class="gray" style="margin-top: 6px">This account is not yet in your contacts</div>
             <div class="toggle-switch text-left">
               <input type="checkbox" id="addtoContacts" formControlName="add">

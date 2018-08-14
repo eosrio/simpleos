@@ -64,7 +64,10 @@ export class SendComponent implements OnInit {
   };
   selectedEditContact = null;
 
-  knownExchanges = ['bitfinexdep1', 'krakenkraken', 'chainceoneos', 'huobideposit', 'zbeoscharge1', 'okbtothemoon', 'gateiowallet', 'eosusrwallet', 'binancecleos'];
+  knownExchanges = [
+    'bitfinexdep1', 'krakenkraken', 'chainceoneos',
+    'huobideposit', 'zbeoscharge1', 'okbtothemoon',
+    'gateiowallet', 'eosusrwallet', 'binancecleos'];
   memoMsg = 'optional';
 
   constructor(private fb: FormBuilder,
@@ -154,7 +157,7 @@ export class SendComponent implements OnInit {
           return val.name === symbol;
         });
         this.selectedToken = this.aService.tokens[tk_idx];
-        this.token_balance = parseFloat(this.selectedToken['balance'].split(' ')[0]);
+        this.token_balance = this.selectedToken['balance'];
       } else {
         this.selectedToken = {name: 'EOS', price: 1.0000};
       }
@@ -172,10 +175,10 @@ export class SendComponent implements OnInit {
 
   checkContact(value) {
     this.checkExchangeAccount();
-    const found = this.contacts.find((el) => {
+    const found = this.contacts.findIndex((el) => {
       return el.account === value;
     });
-    this.contactExist = found !== null || value === '';
+    this.contactExist = found === -1;
   }
 
   setMax() {
@@ -389,26 +392,32 @@ export class SendComponent implements OnInit {
     const selAcc = this.aService.selected.getValue();
     const from = selAcc.name;
     const to = this.sendForm.get('to').value.toLowerCase();
-    const amount = this.sendForm.get('amount').value;
+    const amount = parseFloat(this.sendForm.get('amount').value);
     const memo = this.sendForm.get('memo').value;
-    console.log(selAcc.details['permissions']);
     const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
     if (amount > 0 && this.sendForm.valid) {
       this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
-        if (res === true) {
+        // console.log(res);
+        if (res) {
           let contract = 'eosio.token';
           const tk_name = this.sendForm.get('token').value;
+          // console.log(tk_name);
+          // console.log(this.aService.tokens);
           let precision = 4;
           if (tk_name !== 'EOS') {
             const idx = this.aService.tokens.findIndex((val) => {
               return val.name === tk_name;
             });
+            // console.log(idx);
             contract = this.aService.tokens[idx].contract;
-            precision = this.aService.tokens[idx].balance.split(' ')[0].toString().split('.')[1].toString().length;
+            const balance = this.aService.tokens[idx].balance.toString();
+            if (balance.indexOf('.') !== -1) {
+              precision = balance.split('.')[1].toString().length;
+            }
           }
-          console.log(precision);
-          console.log(contract, from, to, parseFloat(amount).toFixed(precision) + ' ' + tk_name, memo);
-          this.eos.transfer(contract, from, to, parseFloat(amount).toFixed(precision) + ' ' + tk_name, memo).then((result) => {
+          // console.log(precision);
+          // console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
+          this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo).then((result) => {
             if (result === true) {
               this.wrongpass = '';
               this.sendModal = false;
@@ -441,7 +450,8 @@ export class SendComponent implements OnInit {
           this.busy = false;
           this.wrongpass = 'Wrong password!';
         }
-      }).catch(() => {
+      }).catch((err) => {
+        console.log(err);
         this.busy = false;
         this.wrongpass = 'Error: Wrong password!';
       });
