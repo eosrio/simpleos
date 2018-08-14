@@ -3,6 +3,7 @@ import {BehaviorSubject, Subject} from 'rxjs';
 import {EOSJSService} from './eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
+import {split} from 'ts-node';
 
 @Injectable({
   providedIn: 'root'
@@ -94,24 +95,37 @@ export class AccountsService {
   }
 
   fetchTokens(account) {
-    if (!this.sessionTokens[this.selectedIdx]) {
-      this.sessionTokens[this.selectedIdx] = [];
-      this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
-        const contracts = Object.keys(data);
-        this.loading = false;
-        contracts.forEach((contract) => {
-          if (data[contract]['symbol'] !== 'EOS') {
-            this.registerSymbol(data[contract], contract);
-          }
-        });
-        this.tokens.sort((a: any, b: any) => {
-          return a.usd_value < b.usd_value ? 1 : -1;
-        });
-        this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-      });
-    } else {
+    // let valid = true;
+    // if (this.sessionTokens[this.selectedIdx]) {
+    //   this.sessionTokens[this.selectedIdx].forEach((tk) => {
+    //     try {
+    //       tk.balance.split(' ');
+    //     } catch (e) {
+    //       valid = false;
+    //     }
+    //     if (tk.balance.indexOf(' ') >= 0) {
+    //       valid = false;
+    //     }
+    //   });
+    // }
+    // if (!valid) {
+    this.sessionTokens[this.selectedIdx] = [];
+    this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
+      const contracts = Object.keys(data);
       this.loading = false;
-    }
+      contracts.forEach((contract) => {
+        if (data[contract]['symbol'] !== 'EOS') {
+          this.registerSymbol(data[contract], contract);
+        }
+      });
+      this.tokens.sort((a: any, b: any) => {
+        return a.usd_value < b.usd_value ? 1 : -1;
+      });
+      this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+    });
+    // } else {
+    //   this.loading = false;
+    // }
   }
 
   getTokenBalances() {
@@ -309,6 +323,7 @@ export class AccountsService {
     if (data.length > 0) {
       this.accounts = [];
       data.forEach((acc_data) => {
+        acc_data.tokens = [];
         if (!acc_data.details) {
           this.accounts.push(AccountsService.extendAccount(acc_data));
         } else {
