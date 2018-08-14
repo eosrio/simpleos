@@ -95,34 +95,21 @@ export class AccountsService {
   }
 
   fetchTokens(account) {
-    // let valid = true;
-    // if (this.sessionTokens[this.selectedIdx]) {
-    //   this.sessionTokens[this.selectedIdx].forEach((tk) => {
-    //     try {
-    //       tk.balance.split(' ');
-    //     } catch (e) {
-    //       valid = false;
-    //     }
-    //     if (tk.balance.indexOf(' ') >= 0) {
-    //       valid = false;
-    //     }
-    //   });
-    // }
-    // if (!valid) {
-    this.sessionTokens[this.selectedIdx] = [];
-    this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
-      const contracts = Object.keys(data);
-      this.loading = false;
-      contracts.forEach((contract) => {
-        if (data[contract]['symbol'] !== 'EOS') {
-          this.registerSymbol(data[contract], contract);
-        }
+    // if (!this.sessionTokens[this.selectedIdx]) {
+      this.sessionTokens[this.selectedIdx] = [];
+      this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
+        const contracts = Object.keys(data);
+        this.loading = false;
+        contracts.forEach((contract) => {
+          if (data[contract]['symbol'] !== 'EOS') {
+            this.registerSymbol(data[contract], contract);
+          }
+        });
+        this.tokens.sort((a: any, b: any) => {
+          return a.usd_value < b.usd_value ? 1 : -1;
+        });
+        this.accounts[this.selectedIdx]['tokens'] = this.tokens;
       });
-      this.tokens.sort((a: any, b: any) => {
-        return a.usd_value < b.usd_value ? 1 : -1;
-      });
-      this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-    });
     // } else {
     //   this.loading = false;
     // }
@@ -247,13 +234,14 @@ export class AccountsService {
   select(index) {
     const sel = this.accounts[index];
     this.loading = true;
-    if (sel['tokens']) {
-      if (sel.tokens.length > 0) {
-        this.tokens = sel.tokens;
-      }
-    } else {
-      this.tokens = [];
-    }
+    // if (sel['tokens']) {
+    //   if (sel.tokens.length > 0) {
+    //     this.tokens = sel.tokens;
+    //   }
+    // } else {
+    //   this.tokens = [];
+    // }
+    this.tokens = [];
     if (sel['actions']) {
       if (sel.actions.length > 0) {
         this.actions = sel.actions;
@@ -263,9 +251,9 @@ export class AccountsService {
     }
     this.selectedIdx = index;
     this.selected.next(sel);
-    if (this.tokens.length === 0) {
-      this.fetchTokens(this.selected.getValue().name);
-    }
+    // if (this.tokens.length === 0) {
+    this.fetchTokens(this.selected.getValue().name);
+    // }
   }
 
   initFirst() {
