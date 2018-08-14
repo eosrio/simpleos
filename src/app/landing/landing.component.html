@@ -63,25 +63,22 @@
         </ng-container>
         <ng-container *ngIf="!busy">
           <div style="margin-top: 30px">
-            <div class="row">
-              <div class="col-md-6">
+            <div class="row" style="justify-content: center;">
+              <div class="col-md-9">
                 <button class="btn btn-inverse btn-block" (click)="existingWallet = true">
                   Import existing key
                 </button>
               </div>
-              <div class="col-md-6">
+            </div>
+            <div class="row" style="justify-content: center;">
+              <div class="col-md-9">
                 <button class="btn btn-inverse btn-block" (click)="newWallet = true">
                   Request New Account
                 </button>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6">
-                <button class="btn btn-inverse btn-block" (click)="importFromExodus()">
-                  Import Exodus wallet
-                </button>
-              </div>
-              <div class="col-md-6">
+            <div class="row" style="justify-content: center;">
+              <div class="col-md-9">
                 <button class="btn btn-inverse btn-block" (click)="verifyPanel = true">
                   Verify Account
                 </button>
@@ -161,7 +158,7 @@
       <span class="label label-blue">{{importedAccount['account_name']}}</span>
     </div>
   </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid">
+  <clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" (clrWizardPageOnLoad)="eos.getConstitution()">
     <ng-template clrPageTitle>Step 2</ng-template>
     <form [formGroup]="passform">
       <h5>Define your password. This will be used to <strong>transactions confirmations.</strong></h5>

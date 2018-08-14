@@ -189,7 +189,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
     const prevStake = Math.round(this.aService.selected.getValue().staked * 10000);
     const nextStakeFloat = parseFloat(this.valuetoStake);
     const nextStakeInt = Math.round(nextStakeFloat * 10000);
-    console.log(prevStake, nextStakeInt);
     const diff = nextStakeInt - prevStake;
     this.stakingDiff = diff;
     this.stakingHRV = (Math.abs(this.stakingDiff) / 10000) + ' EOS';
@@ -205,7 +204,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.busy = true;
     const account = this.aService.selected.getValue();
     const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
-    console.log(pubkey);
     this.crypto.authenticate(password, pubkey).then((data) => {
       if (data === true) {
         let call;
@@ -265,8 +263,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
         if (this.totalBalance > 0) {
           this.minToStake = 100 / this.totalBalance;
           this.valuetoStake = this.stakedBalance.toString();
-          console.log('StakedBalance:', this.stakedBalance);
-          console.log('valuetoStake:', this.valuetoStake);
         } else {
           this.minToStake = 0;
           this.valuetoStake = '0';
@@ -325,7 +321,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.stakedisabled = false;
     if (this.totalBalance > 0) {
       this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) / this.totalBalance).toString();
-      console.log(this.percenttoStake);
     }
   }
 
@@ -458,7 +453,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
 
   onChartInit(e: any) {
     this.echartsInstance = e;
-    console.log('on chart init:', e);
   }
 
 }

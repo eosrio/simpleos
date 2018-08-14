@@ -64,7 +64,6 @@ export class EOSJSService {
       this.eos['getInfo']({}).then(result => {
         this.ready = true;
         this.online.next(result['head_block_num'] - result['last_irreversible_block_num'] < 400);
-        this.getConstitution();
         let savedAcc = [];
         const savedpayload = localStorage.getItem('simpleos.accounts.' + this.chainID);
         if (savedpayload) {
@@ -90,21 +89,33 @@ export class EOSJSService {
   }
 
   getChainInfo(): Promise<any> {
-    return this.eos['getTableRows']({
-      json: true,
-      code: 'eosio',
-      scope: 'eosio',
-      table: 'global'
-    });
+    if (this.eos) {
+      return this.eos['getTableRows']({
+        json: true,
+        code: 'eosio',
+        scope: 'eosio',
+        table: 'global'
+      });
+    } else {
+      return new Promise(resolve => {
+        resolve();
+      });
+    }
   }
 
   getRamMarketInfo(): Promise<any> {
-    return this.eos['getTableRows']({
-      json: true,
-      code: 'eosio',
-      scope: 'eosio',
-      table: 'rammarket'
-    });
+    if (this.eos) {
+      return this.eos['getTableRows']({
+        json: true,
+        code: 'eosio',
+        scope: 'eosio',
+        table: 'rammarket'
+      });
+    } else {
+      return new Promise(resolve => {
+        resolve();
+      });
+    }
   }
 
   getRefunds(account): Promise<any> {

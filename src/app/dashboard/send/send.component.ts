@@ -11,19 +11,28 @@ import {EOSAccount} from '../../interfaces/account';
 
 import * as moment from 'moment';
 
+export interface Contact {
+  name: string;
+  type: string;
+  account?: string;
+  default_memo?: string;
+}
+
 @Component({
   selector: 'app-send',
   templateUrl: './send.component.html',
   styleUrls: ['./send.component.css'],
 })
 export class SendComponent implements OnInit {
-  contacts: any[];
+  contacts: Contact[];
   sendForm: FormGroup;
   contactForm: FormGroup;
   searchForm: FormGroup;
   confirmForm: FormGroup;
   sendModal: boolean;
   newContactModal: boolean;
+  editContactModal: boolean;
+  deleteContactModal: boolean;
   accountvalid: boolean;
   busy: boolean;
   add: boolean;
@@ -38,8 +47,8 @@ export class SendComponent implements OnInit {
   unstakeTime: string;
   contactExist: boolean;
   search: string;
-  filteredContacts: Observable<string[]>;
-  searchedContacts: Observable<string[]>;
+  filteredContacts: Observable<Contact[]>;
+  searchedContacts: Observable<Contact[]>;
   numberMask = createNumberMask({
     prefix: '',
     allowDecimal: true,
@@ -53,6 +62,10 @@ export class SendComponent implements OnInit {
     name: 'EOS',
     price: 1.0000
   };
+  selectedEditContact = null;
+
+  knownExchanges = ['bitfinexdep1', 'krakenkraken', 'chainceoneos', 'huobideposit', 'zbeoscharge1', 'okbtothemoon', 'gateiowallet', 'eosusrwallet', 'binancecleos'];
+  memoMsg = 'optional';
 
   constructor(private fb: FormBuilder,
               public aService: AccountsService,
@@ -94,7 +107,7 @@ export class SendComponent implements OnInit {
     this.unstakeTime = '';
   }
 
-  filter(val: string, indexed): string[] {
+  filter(val: string, indexed): Contact[] {
     return this.contacts.filter(contact => {
       if (contact.type === 'contact') {
         return contact.name.toLowerCase().includes(val.toLowerCase()) || contact.account.toLowerCase().includes(val.toLowerCase());
@@ -106,6 +119,20 @@ export class SendComponent implements OnInit {
         }
       }
     });
+  }
+
+  checkExchangeAccount() {
+    const memo = this.sendForm.get('memo');
+    const acc = this.sendForm.get('to').value;
+    if (this.knownExchanges.includes(acc)) {
+      this.memoMsg = 'required';
+      memo.setValidators([Validators.required]);
+      memo.updateValueAndValidity();
+    } else {
+      this.memoMsg = 'optional';
+      memo.setValidators(null);
+      memo.updateValueAndValidity();
+    }
   }
 
   ngOnInit() {
@@ -134,7 +161,6 @@ export class SendComponent implements OnInit {
     });
     this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
     this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
-    this.addAccountsAsContacts();
     this.onChanges();
   }
 
@@ -145,10 +171,11 @@ export class SendComponent implements OnInit {
   }
 
   checkContact(value) {
+    this.checkExchangeAccount();
     const found = this.contacts.find((el) => {
       return el.account === value;
     });
-    this.contactExist = found || value === '';
+    this.contactExist = found !== null || value === '';
   }
 
   setMax() {
@@ -244,7 +271,16 @@ export class SendComponent implements OnInit {
     this.storeContacts();
   }
 
+  removeDividers() {
+    this.contacts.forEach((contact, idx) => {
+      if (contact.type === 'letter') {
+        this.contacts.splice(idx, 1);
+      }
+    });
+  }
+
   addDividers() {
+    this.removeDividers();
     const divs = [];
     this.contacts.forEach((contact) => {
       if (contact.type === 'contact') {
@@ -336,6 +372,8 @@ export class SendComponent implements OnInit {
     const contacts = localStorage.getItem('simpleos.contacts');
     if (contacts) {
       this.contacts = JSON.parse(contacts);
+    } else {
+      this.addAccountsAsContacts();
     }
   }
 
@@ -346,6 +384,7 @@ export class SendComponent implements OnInit {
   }
 
   transfer() {
+    this.checkExchangeAccount();
     this.busy = true;
     const selAcc = this.aService.selected.getValue();
     const from = selAcc.name;
@@ -428,6 +467,42 @@ export class SendComponent implements OnInit {
       bodyOutputType: BodyOutputType.TrustedHtml,
     };
     this.toaster.popAsync(toast);
+  }
+
+  openEditContactModal(contact) {
+    console.log(contact);
+    this.contactForm.patchValue({
+      account: contact.account
+    });
+    this.editContactModal = true;
+    this.selectedEditContact = contact;
+  }
+
+  doEditContact() {
+    const index = this.contacts.findIndex((el) => {
+      return el.account === this.selectedEditContact.account;
+    });
+    this.contacts[index].name = this.contactForm.get('name').value;
+    this.editContactModal = false;
+    this.selectedEditContact = null;
+    this.contactForm.reset();
+    this.addDividers();
+    this.storeContacts();
+  }
+
+  openDeleteContactModal(contact) {
+    this.deleteContactModal = true;
+    this.selectedEditContact = contact;
+  }
+
+  doDeleteContact() {
+    const index = this.contacts.findIndex((el) => {
+      return el.account === this.selectedEditContact.account;
+    });
+    this.contacts.splice(index, 1);
+    this.deleteContactModal = false;
+    this.addDividers();
+    this.storeContacts();
   }
 
 }

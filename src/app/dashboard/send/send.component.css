@@ -141,3 +141,7 @@ mat-option:not(.last) {
 .error {
     color: #f44336 !important;
 }
+
+.deleteBtn, .editBtn {
+  min-width: 0;
+}

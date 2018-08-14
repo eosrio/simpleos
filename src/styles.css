@@ -119,6 +119,11 @@ body {
   color: white !important;
 }
 
+.btn-danger-outline:hover {
+  background-color: #c92100 !important;
+  color: white !important;
+}
+
 .btn:focus {
   outline: 0 !important;
 }

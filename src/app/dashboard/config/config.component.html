@@ -1,25 +1,43 @@
-<toaster-container [toasterconfig]="config"></toaster-container>
 <div class="container" style="height: 100%; overflow-x: hidden;">
+
   <div class="row animate flex-items-xs-between" style="padding-top: 15px;">
     <div class="col-lg-7">
-      <div class="card info-card disabled-card" pTooltip="soon"></div>
+      <!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
       <div class="card info-card">
         <div class="card-header title">
-          Advanced Options
+          Network Options
         </div>
         <div class="card-block">
-          <div class="info2">Connect to another chain or testnet.</div>
+          <div class="info2">Connect to another endpoint.</div>
           <div class="card chains-card">
-            <div class="card-block chain-section selected">
-              Mainnet
-              <span style="float:right">endpoint: {{network.selectedEndpoint.getValue().url}} | latency: {{network.selectedEndpoint.getValue().latency}}ms</span>
+            <ng-container *ngFor="let endpoint of network.publicEndpoints">
+              <div class="card-block chain-section"
+                   [ngClass]="{selected: network.selectedEndpoint.getValue().url === endpoint.url}"
+                   (click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
+                {{endpoint.url}}
+                <span style="float:right">latency: {{endpoint.latency}} ms</span>
+              </div>
+            </ng-container>
+          </div>
+          <div class="row" style="margin-left: 0;">
+            <div class="col-xs-auto">
+              <button class="btn btn-info-outline mt-1" (click)="endpointModal = true">Other</button>
             </div>
-            <div class="card-block chain-section" (click)="confirmModal = true">
-              Jungle testnet
-              <span style="float:right">endpoint</span>
+            <div class="col-xs-auto">
+              <button class="btn btn-info-outline mt-1" (click)="network.connect()"
+                      pTooltip="Automatically connects on the fastest endpoint for you">Auto
+              </button>
+            </div>
+            <div class="col-xs-auto" *ngIf="!network.networkingReady.getValue()">
+              <fa-layers class="mt-2 mb-1">
+                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
+              </fa-layers>
+            </div>
+            <div class="col-xs my-auto" *ngIf="!network.networkingReady.getValue()"
+                 style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
+              <span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
             </div>
           </div>
-          <button class="btn btn-info-outline mt-1" (click)="endpointModal = true">Other</button>
         </div>
       </div>
     </div>
@@ -29,8 +47,6 @@
           Logout Options
         </div>
         <div class="card-block">
-          <!--<button class="btn btn-info-outline">Logout</button>-->
-          <!--<div class="info">*Your data will still be saved in this PC. Your account will appear in the login page, should you want to login again, just put your password.</div>-->
           <button class="btn btn-info-outline" (click)="logoutModal = true">Clear local data and logout</button>
           <div class="info">*Your data will be cleared from this PC. Should you want to login again, you will have to
             import your private key again.
@@ -88,33 +104,33 @@
   </div>
 </clr-modal>
 
-<clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'sm'">
+<clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'md'">
   <h3 class="modal-title text-white">
-    Place the endpoint yow want to connect to below
+    Connect to another endpoint, enter url below:
   </h3>
   <div class="modal-body">
     <mat-form-field>
-      <input matInput type="text" placeholder="endpoint">
+      <input matInput type="text" placeholder="endpoint" #customEndpoint>
     </mat-form-field>
   </div>
   <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
-    <button type="button" class="btn btn-info-outline" (click)="endpointModal = false">
+    <button type="button" class="btn btn-info-outline" (click)="connectCustom(customEndpoint.value)">
       Connect
     </button>
   </div>
 </clr-modal>
 
-<clr-modal [(clrModalOpen)]="confirmModal" [clrModalSize]="'sm'">
-  <h3 class="modal-title text-white">
-    Connect to <span class="blue">Jungle Testnet</span> ?
+<clr-modal [(clrModalOpen)]="confirmModal" [clrModalSize]="'md'">
+  <h3 class="modal-title text-white" *ngIf="selectedEndpoint">
+    Connect to <span class="blue">{{selectedEndpoint.url}}</span> ?
   </h3>
   <div class="modal-body">
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-info-outline">
+    <button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
+    <button type="button" class="btn btn-info-outline" (click)="connectEndpoint()">
       Connect
     </button>
-    <button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
   </div>
 </clr-modal>
 

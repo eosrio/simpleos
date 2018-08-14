@@ -42,11 +42,10 @@ export class NetworkService {
   constructor(private eosjs: EOSJSService, private router: Router, public aService: AccountsService) {
     this.publicEndpoints = [
       {url: 'https://api.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
-      {url: 'https://eu1.eosdac.io', owner: 'eosDAC', latency: 0, filters: []},
-      // {url: 'https://br.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
-      // {url: 'http://api.eosnewyork.io', owner: 'EOS NY', latency: 0, filters: []},
-      // {url: 'http://api.hkeos.com', owner: 'HK EOS', latency: 0, filters: []},
-      // {url: 'https://eos.greymass.com', owner: 'Greymass', latency: 0, filters: []},
+      {url: 'https://hapi.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
+      {url: 'https://eu.eosdac.io', owner: 'eosDAC', latency: 0, filters: []},
+      {url: 'https://br.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
+      {url: 'http://api.eosnewyork.io', owner: 'EOS NY', latency: 0, filters: []}
     ];
     this.validEndpoints = [];
     this.status = '';
@@ -164,6 +163,10 @@ export class NetworkService {
       config.chainId = this.mainnetId;
       const eos = Eos(config);
       const refTime = new Date().getTime();
+      const tempTimer = setTimeout(() => {
+        server.latency = -1;
+        resolve();
+      }, 2000);
       try {
         eos['getInfo']({}, (err) => {
           if (err) {
@@ -172,6 +175,7 @@ export class NetworkService {
             server.latency = ((new Date().getTime()) - refTime);
             console.log(server.url, server.latency);
           }
+          clearTimeout(tempTimer);
           resolve();
         });
       } catch (e) {
@@ -200,6 +204,7 @@ export class NetworkService {
         if (savedAccounts.length > 0) {
           this.aService.loadLocalAccounts(savedAccounts);
           this.aService.initFirst();
+          this.networkingReady.next(true);
           this.router['navigate'](['dashboard', 'wallet']);
         } else {
           console.log('No saved accounts!');

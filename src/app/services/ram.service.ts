@@ -39,7 +39,7 @@ export class RamService {
     if (!this.reloaderInterval) {
       this.reloaderInterval = setInterval(() => {
         this.reload();
-      }, 5000);
+      }, 15000);
     }
   }
 

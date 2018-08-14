@@ -1,8 +1,20 @@
 <div class="container-fluid" style="height: 100%; overflow:hidden;">
+
+  <div class="row" style="height: 100%;" *ngIf="aService.loading">
+    <div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+      <ng-container>
+        <fa-layers class="mt-2 mb-1">
+          <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
+        </fa-layers>
+        <div style="color:#0094d2; padding-left: 17px; font-size: 18px;">LOADING...</div>
+      </ng-container>
+    </div>
+  </div>
+
   <div class="row flex-items-xs-between" style="height: 100%;">
     <div class="col-md-10 text-center flex-column animate" *ngIf="aService.selected !== undefined"
          style="padding: 39px;">
-      <div class="balance">BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
+      <div class="balance">EOS BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
       <div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>
       <div class="infos">
         <span style="padding-right: 15px">
@@ -21,7 +33,7 @@
       </div>
       <p-table [value]="aService.actions" [responsive]="true"
                dataKey="id" class="overview-table flex-column"
-               [rows]="12">
+               [rows]="12" [paginator]="true">
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 70px;">
@@ -149,20 +161,29 @@
     </div>
     <div class="col-md-2 tokens-panel">
       <div class="row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
-        <div class="col-xs-12"><h3 class="gray">All tokens</h3></div>
+        <div class="col-xs-12"><h3 class="gray">All tokens</h3>
+          <ng-container *ngIf="aService.totalAssetsSum !== 0">
+            <div style="font-size: 16px;">${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
+              '1.2-2'}}
+            </div>
+          </ng-container>
+        </div>
       </div>
       <div class="tokens-panel-body">
         <ul>
           <li class="tokens-pad">
             <h5 class="gray mt-0">EOS</h5>
-            <div style="color: #2e7db2;">{{fullBalance}} EOS</div>
+            <div style="color: #2e7db2;">{{fullBalance}}</div>
+            <span *ngIf="aService.usd_rate !== null" style="color: #696969">
+                ${{(fullBalance * aService.usd_rate) | number:'1.2-2'}} @{{aService.usd_rate | number: '1.2-2'}}
+              </span>
           </li>
           <li *ngFor="let token of aService.tokens" class="tokens-pad">
             <h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
             <div style="color: #2e7db2;">{{token.balance}}</div>
             <ng-container *ngIf="token.balance">
               <span *ngIf="token.price !== null" style="color: #696969">
-                ${{(token.balance.split(' ')[0] * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
+                ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
               </span>
             </ng-container>
           </li>

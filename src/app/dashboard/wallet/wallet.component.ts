@@ -22,7 +22,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
   tokens: any[];
 
   static openTXID(value) {
-    window['shell']['openExternal']('https://eosflare.io/tx/' + value);
+    window['shell']['openExternal']('https://www.bloks.io/transaction/' + value);
   }
 
   constructor(public aService: AccountsService, public eos: EOSJSService) {

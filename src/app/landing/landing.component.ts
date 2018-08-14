@@ -424,7 +424,7 @@ export class LandingComponent implements OnInit {
       this.eos.loadPublicKey(this.publicEOS).then((account_data: any) => {
         account_data.foundAccounts.forEach((acc) => {
           let balance = 0;
-          // Parse tokens and calsulate balance
+          // Parse tokens and calculate balance
           acc['tokens'].forEach((tk) => {
             balance += LandingComponent.parseEOS(tk);
           });

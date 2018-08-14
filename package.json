@@ -1,6 +1,6 @@
 {
   "name": "simpleos",
-  "version": "0.6.3-2",
+  "version": "0.6.4",
   "productName": "simpleos",
   "description": "EOS Blockchain Interface & Wallet",
   "author": {
@@ -90,7 +90,7 @@
     "codelyzer": "~4.2.1",
     "core-js": "^2.5.4",
     "echarts": "^4.1.0",
-    "electron": "^2.0.5",
+    "electron": "2.0.7",
     "electron-builder": "^20.26.1",
     "hammerjs": "^2.0.8",
     "jquery": "^3.3.1",
@@ -99,7 +99,7 @@
     "ngx-echarts": "^3.2.0",
     "npm-run-all": "^4.1.3",
     "popper.js": "^1.14.3",
-    "primeng": "^6.0.2",
+    "primeng": "6.1.0",
     "protractor": "~5.3.0",
     "rxjs": "^6.2.2",
     "rxjs-compat": "^6.2.0",
@@ -136,9 +136,10 @@
     "@fortawesome/pro-solid-svg-icons": "^5.2.0",
     "@types/crypto-js": "^3.1.40",
     "crypto-js": "^3.1.9-1",
+    "electron-context-menu": "^0.10.0",
     "eosjs": "^16.0.0",
     "menu": "^0.2.5",
     "opn": "^5.3.0",
-    "primeicons": "^1.0.0-beta.9"
+    "primeicons": "1.0.0-beta.10"
   }
 }

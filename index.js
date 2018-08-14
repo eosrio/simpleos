@@ -12,6 +12,9 @@ const ipcMain = require('electron').ipcMain;
 let win, devtools;
 const args = process.argv.slice(1);
 devtools = args.some(val => val === '--devtools');
+require('electron-context-menu')({
+  showInspectElement: false
+});
 
 // if (devtools) {
 //   autoUpdater.updateConfigPath = path.join('./dev-app-update.yml');

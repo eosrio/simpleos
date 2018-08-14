@@ -65,7 +65,7 @@
             </mat-form-field>
             <mat-form-field class="field-width" style="margin-bottom: 12px;">
               <input matInput #message maxlength="256" formControlName="memo" type="text"
-                     placeholder="Memo (optional)">
+                     placeholder="Memo ({{memoMsg}})">
               <mat-hint align="end">{{message.value.length}} / 256</mat-hint>
             </mat-form-field>
           </div>
@@ -108,8 +108,20 @@
           </div>
           <ul *ngIf="contact.type === 'contact'" (click)="selectContact(contact)">
             <li class="contacts-pad" [class.last-item]="last">
-              <h5 class="gray mt-0">{{contact.name}}</h5>
-              <div>{{contact.account}}</div>
+              <div class="row justify-content-between">
+                <div class="col-lg-8 col-sm-6 col-md-7">
+                  <h5 class="gray mt-0">{{contact.name}}</h5>
+                  <div>{{contact.account}}</div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-md-5" style="text-align: right">
+                  <button class="btn btn-info-outline editBtn" (click)="openEditContactModal(contact)">
+                    <fa-icon [icon]="['far', 'pencil']"></fa-icon>
+                  </button>
+                  <button class="btn btn-danger-outline deleteBtn" (click)="openDeleteContactModal(contact)">
+                    <fa-icon [icon]="['far', 'times']"></fa-icon>
+                  </button>
+                </div>
+              </div>
             </li>
           </ul>
         </ng-container>
@@ -191,6 +203,43 @@
   <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
     <button type="submit" class="btn btn-info-outline" (click)="addContact()" [disabled]="!contactForm.valid">
       Add
+    </button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="editContactModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    <fa-icon [icon]="['far', 'user-edit']"></fa-icon>&nbsp;&nbsp;Edit contact
+  </h3>
+  <div class="modal-body">
+    <form [formGroup]="contactForm">
+      <mat-form-field>
+        <input matInput type="text" formControlName="account" placeholder="EOS Account name"
+               class="text-lowercase" maxlength="12" readonly>
+      </mat-form-field>
+      <mat-form-field>
+        <input matInput type="text" (keyup.enter)="doEditContact()" formControlName="name" placeholder="Contact name">
+      </mat-form-field>
+    </form>
+  </div>
+  <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+    <button type="submit" class="btn btn-info-outline" (click)="doEditContact()" [disabled]="!contactForm.valid">
+      Edit
+    </button>
+  </div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="deleteContactModal" [clrModalSize]="'sm'">
+  <h3 class="modal-title text-white">
+    <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="blue">Delete</span> contact?
+  </h3>
+  <div class="modal-body">
+    <p style="margin-bottom: 20px;">Are you sure you want do delete the contact X?</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-danger-outline" (click)="deleteContactModal = false">Cancel</button>
+    <button type="button" class="btn btn-info-outline" (click)="doDeleteContact()">
+      Yes, delete
     </button>
   </div>
 </clr-modal>

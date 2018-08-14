@@ -26,6 +26,8 @@ export class ConfigComponent implements OnInit {
   clearContacts: boolean;
   config: ToasterConfig;
 
+  selectedEndpoint = null;
+
   static resetApp() {
     window['remote']['app']['relaunch']();
     window['remote']['app'].exit(0);
@@ -97,6 +99,25 @@ export class ConfigComponent implements OnInit {
       });
     }
     ConfigComponent.resetApp();
+  }
+
+  selectEndpoint(data) {
+    this.selectedEndpoint = data;
+    this.confirmModal = true;
+  }
+
+  connectEndpoint() {
+    this.network.selectedEndpoint.next(this.selectedEndpoint);
+    this.network.networkingReady.next(false);
+    this.network.startup(null);
+    this.confirmModal = false;
+  }
+
+  connectCustom(url) {
+    this.network.selectedEndpoint.next({url: url, owner: 'Other', latency: 0, filters: []});
+    this.network.networkingReady.next(false);
+    this.network.startup(url);
+    this.endpointModal = false;
   }
 
   changePass() {

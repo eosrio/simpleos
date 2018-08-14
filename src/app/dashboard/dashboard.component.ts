@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, NgZone, ViewChild} from '@angular/core';
 import {EOSJSService} from '../eosjs.service';
 import {AccountsService} from '../accounts.service';
 import {LandingComponent} from '../landing/landing.component';
@@ -18,6 +18,7 @@ import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 })
 export class DashboardComponent implements OnInit {
   @ViewChild('newAccountWizard') wizardaccount: ClrWizard;
+  @ViewChild('importAccountWizard') importwizard: ClrWizard;
   lottieConfig: Object;
   anim: any;
   busy = false;
@@ -29,6 +30,8 @@ export class DashboardComponent implements OnInit {
   // New account
   passform: FormGroup;
   newAccountModal: boolean;
+  importKeyModal: boolean;
+  deleteAccModal: boolean;
   newAccountData = {
     t: 0,
     n: '',
@@ -43,6 +46,12 @@ export class DashboardComponent implements OnInit {
   accountname_err = '';
   amounterror = '';
   passmatch = false;
+
+  pvtform: FormGroup;
+  passform2: FormGroup;
+  passmatch2 = false;
+  errormsg: string;
+  importedAccounts: any[];
 
   ownerpk = '';
   ownerpub = '';
@@ -79,15 +88,23 @@ export class DashboardComponent implements OnInit {
     includeThousandsSeparator: false
   });
 
+  selectedAccRem = null;
+  accRemovalIndex = null;
+  selectedTab = '';
+  importedPublicKey = '';
+
   constructor(
     public eos: EOSJSService,
     private fb: FormBuilder,
     public aService: AccountsService,
     private toaster: ToasterService,
     private crypto: CryptoService,
-    public ram: RamService
+    public ram: RamService,
+    private zone: NgZone
   ) {
     this.newAccountModal = false;
+    this.importKeyModal = false;
+    this.deleteAccModal = false;
     this.appVersion = window['appversion'];
 
     this.passform = this.fb.group({
@@ -105,6 +122,17 @@ export class DashboardComponent implements OnInit {
     this.submitTXForm = this.fb.group({
       pass: ['', [Validators.required, Validators.minLength(10)]]
     });
+    this.pvtform = this.fb.group({
+      private_key: ['', Validators.required]
+    });
+    this.passform2 = this.fb.group({
+      matchingPassword: this.fb.group({
+        pass1: ['', [Validators.required, Validators.minLength(10)]],
+        pass2: ['', [Validators.required, Validators.minLength(10)]]
+      })
+    });
+    this.errormsg = '';
+    this.importedAccounts = [];
 
     this.lottieConfig = {
       path: 'assets/logoanim2.json',
@@ -114,17 +142,97 @@ export class DashboardComponent implements OnInit {
   }
 
   openTXID() {
-    window['shell']['openExternal']('https://eosflare.io/tx/' + this.confirmationID);
+    window['shell']['openExternal']('https://www.bloks.io/transaction/' + this.confirmationID);
   }
+
+  // verifyPrivateKey(input) {
+  //   if (input !== '') {
+  //     this.eos.checkPvtKey(input).then((results) => {
+  //       this.importedAccount = results.foundAccounts[0];
+  //     }).catch((e) => {
+  //       this.importedAccount = null;
+  //     });
+  //   }
+  // }
 
   verifyPrivateKey(input) {
     if (input !== '') {
       this.eos.checkPvtKey(input).then((results) => {
-        this.importedAccount = results.foundAccounts[0];
+        this.importedPublicKey = results.publicKey;
+        this.importedAccounts = [];
+        this.importedAccounts = [...results.foundAccounts];
+        this.importedAccounts.forEach((item) => {
+          if (item['refund_request']) {
+            const tempDate = item['refund_request']['request_time'] + '.000Z';
+            const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+            const now = new Date().getTime();
+            if (now > refundTime) {
+              this.eos.claimRefunds(item.account_name, input).then((tx) => {
+                console.log(tx);
+              });
+            } else {
+              console.log('Refund not ready!');
+            }
+          }
+        });
+        this.pvtform.controls['private_key'].setErrors(null);
+        this.zone.run(() => {
+          this.importwizard.forceNext();
+          this.errormsg = '';
+        });
       }).catch((e) => {
-        this.importedAccount = null;
+        this.zone.run(() => {
+          this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+          this.importedAccounts = [];
+          if (e.message.includes('Invalid checksum')) {
+            this.errormsg = 'invalid private key';
+          }
+          if (e.message === 'no_account') {
+            this.errormsg = 'No account associated with this private key';
+          }
+          if (e.message === 'non_active') {
+            this.errormsg = 'This is not the active key. Please import the active key.';
+          }
+        });
       });
     }
+  }
+
+  doCancel(): void {
+    this.importwizard.close();
+  }
+
+  importAccounts() {
+    if (this.passform2.value.matchingPassword.pass1 === this.passform2.value.matchingPassword.pass2) {
+      this.crypto.initKeys(this.importedPublicKey, this.passform2.value.matchingPassword.pass1).then(() => {
+        this.crypto.encryptAndStore(this.pvtform.value.private_key, this.importedPublicKey).then(() => {
+          this.passform2.reset();
+          this.importwizard.reset();
+          this.pvtform.reset();
+          this.aService.appendAccounts(this.importedAccounts);
+        }).catch((err) => {
+          console.log(err);
+        });
+      });
+    }
+  }
+
+  openRemoveAccModal(index, account) {
+    this.selectedAccRem = account;
+    this.accRemovalIndex = index;
+    this.deleteAccModal = true;
+  }
+
+  doRemoveAcc() {
+    this.aService.accounts.splice(this.accRemovalIndex, 1);
+    this.deleteAccModal = false;
+    this.aService.select(0);
+    this.selectedTab = '0';
+  }
+
+  resetAndClose() {
+    this.wizardaccount.reset();
+    this.wizardaccount.close();
   }
 
   loadLastPage() {
@@ -266,6 +374,7 @@ export class DashboardComponent implements OnInit {
   }
 
   selectAccount(idx) {
+    this.selectedTab = idx;
     this.aService.select(idx);
   }
 
@@ -361,6 +470,19 @@ export class DashboardComponent implements OnInit {
       } else {
         this.passform['controls'].matchingPassword['controls']['pass2'].setErrors({'incorrect': true});
         this.passmatch = false;
+      }
+    }
+  }
+
+  importedPassCompare() {
+    const pForm = this.passform2.value.matchingPassword;
+    if (pForm.pass1 && pForm.pass2) {
+      if (pForm.pass1 === pForm.pass2) {
+        this.passform2['controls'].matchingPassword['controls']['pass2'].setErrors(null);
+        this.passmatch2 = true;
+      } else {
+        this.passform2['controls'].matchingPassword['controls']['pass2'].setErrors({'incorrect': true});
+        this.passmatch2 = false;
       }
     }
   }

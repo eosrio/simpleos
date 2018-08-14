@@ -114,13 +114,15 @@ export class VotingService {
           this.activeCounter = 50;
           const expiration = (1000 * 60 * 60 * 6);
           // const expiration = 1000;
+          const requestQueue = [];
           producers.rows.forEach((prod: any, idx) => {
             const cachedPayload = JSON.parse(localStorage.getItem(prod['owner']));
             if (cachedPayload) {
               if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
-                setTimeout(() => {
-                  this.improveMeta(prod, idx);
-                }, 100 + idx * 10);
+                // setTimeout(() => {
+                //   this.improveMeta(prod, idx);
+                // }, 100 + idx * 10);
+                requestQueue.push({producer: prod, index: idx});
               } else {
                 this.bps[idx] = cachedPayload['meta'];
                 if (idx < 50) {
@@ -128,14 +130,69 @@ export class VotingService {
                 }
               }
             } else {
-              setTimeout(() => {
-                this.improveMeta(prod, idx);
-              }, 100 + idx * 10);
+              // setTimeout(() => {
+              //   this.improveMeta(prod, idx);
+              // }, 100 + idx * 10);
+              requestQueue.push({producer: prod, index: idx});
             }
           });
+          this.processReqQueue(requestQueue);
         });
       });
     }
+  }
+
+  processReqQueue(queue) {
+    const filteredBatch = [];
+    console.log('Processing ' + queue.length + ' bp.json requests');
+    queue.forEach((item) => {
+      if (item.producer.url !== '') {
+        const url = item.producer.url.endsWith('.json') ? item.producer.url : item.producer.url + '/bp.json';
+        if (url !== '') {
+          filteredBatch.push(item);
+        }
+      }
+    });
+    this.http.post('http://proxy.eosrio.io:4200/batchRequest', filteredBatch).subscribe((data: any[]) => {
+      data.forEach((item) => {
+        if (item && JSON.stringify(item) !== null) {
+          if (item['org']) {
+            const org = item['org'];
+            let loc = ' - ';
+            let geo = [];
+            if (org['location']) {
+              loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
+              geo = [org.location.latitude, org.location.longitude];
+            }
+            const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
+            const idx = this.bps.findIndex((el) => {
+              return el.account === item['producer_account_name'];
+            });
+            if (idx !== -1) {
+              this.bps[idx].name = org['candidate_name'];
+              this.bps[idx].account = item['producer_account_name'];
+              this.bps[idx].location = loc;
+              this.bps[idx].geo = geo;
+              this.bps[idx].social = org['social'] || {};
+              this.bps[idx].email = org['email'];
+              this.bps[idx].website = org['website'];
+              this.bps[idx].logo_256 = logo_256;
+              this.bps[idx].code = org['code_of_conduct'];
+              if (idx < 50) {
+                this.addPin(this.bps[idx]);
+              }
+              // Add to cache
+              const payload = {
+                lastUpdate: new Date(),
+                meta: this.bps[idx],
+                source: item.url
+              };
+              localStorage.setItem(item['producer_account_name'], JSON.stringify(payload));
+            }
+          }
+        }
+      });
+    });
   }
 
   improveMeta(prod, idx) {
