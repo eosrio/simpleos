@@ -28,7 +28,7 @@ import {
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {TableModule} from 'primeng/table';
 import {LottieAnimationViewModule} from 'ng-lottie';
-import {ConfigComponent} from './dashboard/config/config.component';
+import {ConfigComponent} from './dashboard/settings/config.component';
 import {HttpClientModule} from '@angular/common/http';
 import {AccordionModule, TooltipModule} from 'primeng/primeng';
 import {AboutComponent} from './dashboard/about/about.component';
@@ -39,9 +39,10 @@ import {NetworkService} from './network.service';
 import {CryptoService} from './services/crypto.service';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {LockscreenComponent} from './lockscreen/lockscreen.component';
-import {RamMarketComponent} from './dashboard/ram-market/ram-market.component';
+import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 import {NgxEchartsModule} from 'ngx-echarts';
 import {RamService} from './services/ram.service';
+import {LedgerHWService} from './services/ledger-h-w.service';
 
 library.add(far, fas, fab, fal);
 
@@ -57,7 +58,7 @@ library.add(far, fas, fab, fal);
     ConfigComponent,
     AboutComponent,
     LockscreenComponent,
-    RamMarketComponent
+    ResourcesComponent
   ],
   imports: [
     AccordionModule,
@@ -76,15 +77,15 @@ library.add(far, fas, fab, fal);
     MatSelectModule,
     MatSliderModule,
     MatTabsModule,
-    NgxEchartsModule,
     ReactiveFormsModule,
     TableModule,
     TextMaskModule,
+    NgxEchartsModule,
     ToasterModule.forRoot(),
     TooltipModule,
     AppRoutingModule
   ],
-  providers: [EOSJSService, AccountsService, NetworkService, CryptoService, RamService],
+  providers: [EOSJSService, AccountsService, NetworkService, CryptoService, RamService, LedgerHWService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

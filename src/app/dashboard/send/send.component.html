@@ -1,4 +1,4 @@
-<!--<toaster-container [toasterconfig]="config"></toaster-container>-->
+<!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
 <div class="container-fluid" style="overflow:hidden;">
   <div class="row flex-items-xs-between send-row">
     <div class="col-md-6 text-center animate" style="align-self: center;">
@@ -14,7 +14,7 @@
         </div>
         <ng-container *ngIf="sendForm.value.token === 'EOS'">
           <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
-          <div *ngIf="unstaking > 0">
+          <div *ngIf="unstaking > 0" style="color: white">
             <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
             '1.2-4'}} EOS {{unstakeTime}}
           </div>

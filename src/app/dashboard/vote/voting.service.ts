@@ -237,6 +237,7 @@ export class VotingService {
               }
             }
           }
+          console.log(this.data);
         }, () => {
           // console.log(url, err);
         });

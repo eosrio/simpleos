@@ -10,6 +10,7 @@ import * as moment from 'moment';
 import {CryptoService} from '../services/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
+import {EOSAccount} from '../interfaces/account';
 
 @Component({
   selector: 'app-dashboard',
@@ -45,6 +46,9 @@ export class DashboardComponent implements OnInit {
   accountname_valid = false;
   accountname_err = '';
   amounterror = '';
+  amounterror2 = '';
+  amounterror3 = '';
+  unstaked:number;
   passmatch = false;
 
   pvtform: FormGroup;
@@ -338,7 +342,6 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.accounts = [];
-    this.ram.reload();
     this.eos.status.asObservable().subscribe((status) => {
       if (status) {
         this.loadStoredAccounts();
@@ -444,22 +447,54 @@ export class DashboardComponent implements OnInit {
       this.accountname_valid = false;
     }
   }
+  initNewAcc(){
+    this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
+       if (sel) {
+          this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+          //this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
+      }
+    });
+  }
+  checkAmount(field) {
 
-  // checkAmount() {
-  //     if (parseFloat(this.sendForm.value.amount) === 0 || this.sendForm.value.amount === '') {
-  //         this.sendForm.controls['amount'].setErrors({'incorrect': true});
-  //         this.amounterror = 'invalid amount';
-  //     } else {
-  //         const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;
-  //         if (parseFloat(this.sendForm.value.amount) > max) {
-  //             this.sendForm.controls['amount'].setErrors({'incorrect': true});
-  //             this.amounterror = 'invalid amount';
-  //         } else {
-  //             this.sendForm.controls['amount'].setErrors(null);
-  //             this.amounterror = '';
-  //         }
-  //     }
-  // }
+      if(field === "gift_amount" && (this.delegateForm.get(field).value!=="" || this.delegateForm.get(field).value > 0)){
+          if (parseFloat(this.delegateForm.get(field).value ) > this.unstaked ) {
+              this.delegateForm.controls[field].setErrors({'incorrect': true});
+              this.amounterror3 = 'invalid amount';
+          } else {
+              this.delegateForm.controls['delegate_amount'].setErrors(null);
+              this.amounterror3= '';
+          }
+      }else{
+          if (parseFloat(this.delegateForm.get(field).value) === 0 || this.delegateForm.get(field).value  === '') {
+             this.delegateForm.controls[field].setErrors({'incorrect': true});
+              this.amounterror = 'invalid amount';
+          } else {
+              if (parseFloat(this.delegateForm.get(field).value ) > this.unstaked ) {
+                 this.delegateForm.controls[field].setErrors({'incorrect': true});
+                  this.amounterror = 'invalid amount';
+              } else {
+                  this.delegateForm.controls['delegate_amount'].setErrors(null);
+                  this.amounterror = '';
+            }
+        }
+      }
+  }
+  checkAmountBytes() {
+      const price = (this.ram.ramPriceEOS * (this.delegateForm.get('ram_amount').value/1024));
+      if (parseFloat(this.delegateForm.get('ram_amount').value) === 0 || this.delegateForm.get('ram_amount').value  === '') {
+          this.delegateForm.controls['ram_amount'].setErrors({'incorrect': true});
+          this.amounterror2 = 'invalid amount';
+      } else {
+          if (price > this.unstaked ) {
+              this.delegateForm.controls['ram_amount'].setErrors({'incorrect': true});
+              this.amounterror2 = 'invalid amount';
+          } else {
+              this.delegateForm.controls['ram_amount'].setErrors(null);
+              this.amounterror2 = '';
+          }
+      }
+  }
 
   passCompare() {
     const pForm = this.passform.value.matchingPassword;

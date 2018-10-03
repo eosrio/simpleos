@@ -1,4 +1,4 @@
-import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild, ElementRef} from '@angular/core';
 import {EOSJSService} from '../eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../accounts.service';
@@ -7,6 +7,8 @@ import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../network.service';
 import {CryptoService} from '../services/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {forEach} from '@angular/router/src/utils/collection';
+import {RamService} from '../services/ram.service';
 
 @Component({
   selector: 'app-landing',
@@ -18,21 +20,28 @@ export class LandingComponent implements OnInit {
   @ViewChild('wizardexists') exisitswizard: ClrWizard;
   @ViewChild('wizardnew') wizardnew: ClrWizard;
   @ViewChild('wizardexodus') wizard: ClrWizard;
+  @ViewChild('wizardkeys') wizardkeys: ClrWizard;
+  @ViewChild('customImportBK') customImportBK: ElementRef;
   lottieConfig: Object;
   anim: any;
   busy: boolean;
   existingWallet: boolean;
   exodusWallet: boolean;
   newWallet: boolean;
+  newKeys: boolean;
+  importBKP: boolean;
   accountname = '';
   accountname_err = '';
   accountname_valid = false;
   ownerpk = '';
+  ownerpk2 = '';
   ownerpub = '';
+  ownerpub2 = '';
   activepk = '';
   activepub = '';
   newAccountPayload = '';
   agreeKeys = false;
+  agreeKeys2 = false;
   check: boolean;
   publicEOS: string;
   checkerr: string;
@@ -44,9 +53,11 @@ export class LandingComponent implements OnInit {
   agree: boolean;
   agree2: boolean;
   generating = false;
+  generating2 = false;
   passform: FormGroup;
   passformexodus: FormGroup;
   pvtform: FormGroup;
+  importForm: FormGroup;
   pk: string;
   publickey: string;
   pin: string;
@@ -55,11 +66,20 @@ export class LandingComponent implements OnInit {
   lockscreen2: boolean;
   importedAccounts: any[];
   exodusValid = false;
-  endpoint = 'https://api.eosrio.io';
+  endpoint = 'http://api.eosrio.io';
   payloadValid = false;
   generated = false;
+  generated2 = false;
   config: ToasterConfig;
   verifyPanel = false;
+  choosedFil: string;
+  disableIm: boolean;
+  infile: any;
+  total_amount: number;
+  memo: string;
+  openTX = LandingComponent.openTXID;
+  openGit = LandingComponent.openGithub;
+  busy2 = false;
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -69,6 +89,14 @@ export class LandingComponent implements OnInit {
     }
   }
 
+  static openTXID(value) {
+    window['shell']['openExternal']('https://www.bloks.io/account/' + value);
+  }
+
+  static openGithub() {
+    window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
+  }
+
   constructor(public eos: EOSJSService,
               private crypto: CryptoService,
               private fb: FormBuilder,
@@ -76,7 +104,8 @@ export class LandingComponent implements OnInit {
               private toaster: ToasterService,
               public network: NetworkService,
               private router: Router,
-              private zone: NgZone) {
+              private zone: NgZone,
+              public ram: RamService) {
     this.busy = true;
     this.existingWallet = false;
     this.exodusWallet = false;
@@ -89,10 +118,14 @@ export class LandingComponent implements OnInit {
     this.agree2 = false;
     this.lockscreen = false;
     this.lockscreen2 = false;
+    this.importBKP = false;
+    this.disableIm = false;
     this.accounts = [];
     this.importedAccounts = [];
     this.checkerr = '';
     this.errormsg = '';
+    this.total_amount = 1;
+    this.memo = '';
     this.lottieConfig = {
       path: 'assets/logoanim.json',
       autoplay: true,
@@ -120,11 +153,20 @@ export class LandingComponent implements OnInit {
         pass2: ['', [Validators.required, Validators.minLength(10)]]
       })
     });
+    this.importForm = this.fb.group({
+      pass: ['', Validators.required],
+      customImportBK: ['', Validators.required],
+    });
   }
 
-  cc(text) {
-    this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+  cc(text, title, body) {
+    this.showToast('success', title + ' copied to clipboard!', body);
     window['clipboard']['writeText'](text);
+  }
+
+  static resetApp() {
+    window['remote']['app']['relaunch']();
+    window['remote']['app'].exit(0);
   }
 
   resetAndClose() {
@@ -224,6 +266,22 @@ export class LandingComponent implements OnInit {
     }, 100);
   }
 
+
+  generateNKeys() {
+    this.generating2 = true;
+    setTimeout(() => {
+      this.eos.ecc.initialize().then(() => {
+        this.eos.ecc['randomKey'](128).then((privateKey) => {
+          this.ownerpk2 = privateKey;
+          this.ownerpub2 = this.eos.ecc['privateToPublic'](this.ownerpk2);
+          this.generating2 = false;
+          this.generated2 = true;
+          console.log(this.ownerpk2, this.ownerpub2);
+        });
+      });
+    }, 100);
+  }
+
   makePayload() {
     if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
       console.log('Generating account payload');
@@ -240,6 +298,10 @@ export class LandingComponent implements OnInit {
       this.payloadValid = false;
       this.wizardnew.navService.previous();
     }
+  }
+
+  makeMemo() {
+    this.memo = this.accountname + '-' + this.ownerpub + '-' + this.activepub;
   }
 
   retryConn() {
@@ -439,9 +501,65 @@ export class LandingComponent implements OnInit {
         });
         this.checkerr = '';
       }).catch((err) => {
-        console.log(err);
+        //console.log(err);
         this.checkerr = err;
       });
+    }
+  }
+
+  inputIMClick() {
+    this.customImportBK.nativeElement.click();
+    // let el: HTMLElement = this.customExportBK.nativeElement as HTMLElement;
+    // el.click();
+  }
+
+  importCheckBK(a) {
+
+    this.infile = a.target.files[0];
+
+    const name = this.infile.name;
+
+    if (name != 'simpleos.bkp') {
+      this.showToast('error', 'Wrong file!', '');
+      this.infile = '';
+      return false;
+    }
+    this.choosedFil = name;
+  }
+
+  importBK() {
+    this.disableIm = true;
+    this.busy2 = true;
+    if (this.infile != ''&&this.importForm.value.pass!='') {
+      window['filesystem']['readFile'](this.infile.path, 'utf-8', (err, data) => {
+        if (!err) {
+          let pass = this.importForm.value.pass;
+          let decrypt = this.crypto.decryptBKP(data, pass);
+          try {
+            let arrLS = JSON.parse(decrypt);
+            this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
+            arrLS.forEach(function (d) {
+              localStorage.setItem(d['key'], d['value']);
+            });
+            this.choosedFil = '';
+            this.disableIm = false;
+            this.busy2 = false;
+            this.importBKP = false;
+            LandingComponent.resetApp();
+
+          } catch (e) {
+            this.showToast('error', 'Wrong password, please try again!', '');
+          }
+
+        } else {
+          this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
+        }
+      });
+    }else{
+      this.showToast('error', 'Choose your backup file and fill the password field!', '');
+      this.choosedFil = '';
+      this.disableIm = false;
+      this.busy2 = false;
     }
   }
 

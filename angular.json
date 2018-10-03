@@ -39,7 +39,6 @@
               "node_modules/moment/min/moment.min.js",
               "node_modules/@webcomponents/custom-elements/custom-elements.min.js",
               "node_modules/echarts/dist/echarts.min.js",
-              "node_modules/echarts/map/js/world.js",
               "native.js"
             ]
           },

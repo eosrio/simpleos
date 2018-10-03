@@ -408,15 +408,11 @@ export class SendComponent implements OnInit {
             const idx = this.aService.tokens.findIndex((val) => {
               return val.name === tk_name;
             });
-            // console.log(idx);
             contract = this.aService.tokens[idx].contract;
-            const balance = this.aService.tokens[idx].balance.toString();
-            if (balance.indexOf('.') !== -1) {
-              precision = balance.split('.')[1].toString().length;
-            }
+            precision = this.aService.tokens[idx].precision;
           }
-          // console.log(precision);
-          // console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
+          console.log(precision);
+          console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
           this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo).then((result) => {
             if (result === true) {
               this.wrongpass = '';

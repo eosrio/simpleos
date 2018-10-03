@@ -6,11 +6,11 @@ import {WalletComponent} from './dashboard/wallet/wallet.component';
 import {HistoryComponent} from './dashboard/history/history.component';
 import {VoteComponent} from './dashboard/vote/vote.component';
 import {SendComponent} from './dashboard/send/send.component';
-import {ConfigComponent} from './dashboard/config/config.component';
+import {ConfigComponent} from './dashboard/settings/config.component';
 import {AboutComponent} from './dashboard/about/about.component';
 import {LockscreenComponent} from './lockscreen/lockscreen.component';
 import {LockGuard} from './lock.guard';
-import {RamMarketComponent} from './dashboard/ram-market/ram-market.component';
+import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 
 const routes: Routes = [
   {
@@ -49,7 +49,7 @@ const routes: Routes = [
       },
       {
         path: 'ram',
-        component: RamMarketComponent,
+        component: ResourcesComponent,
       },
       {
         path: 'about',

@@ -45,14 +45,25 @@ export class EOSJSService {
   reloadInstance() {
     this.auth = true;
     this.eos = EOSJS(this.baseConfig);
-    setTimeout(() => {
-      this.baseConfig.keyProvider = [];
-    }, 1000);
   }
 
   clearInstance() {
     this.baseConfig.keyProvider = [];
     this.eos = EOSJS(this.baseConfig);
+  }
+
+  clearSigner() {
+    console.log(this.eos);
+  }
+
+  loadNewConfig(signer) {
+    this.eos = EOSJS({
+      httpEndpoint: this.baseConfig.httpEndpoint,
+      signProvider: signer,
+      chainId: this.chainID,
+      sign: true,
+      broadcast: true
+    });
   }
 
   init(url, chain) {
@@ -127,6 +138,20 @@ export class EOSJSService {
     });
   }
 
+  listDelegations(account): Promise<any> {
+    return this.eos['getTableRows']({
+      json: true,
+      code: 'eosio',
+      scope: account,
+      table: 'delband'
+    });
+  }
+
+  unDelegate(from: string, receiver: string, net: string, cpu: string) {
+    //console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
+    return this.eos.undelegatebw(from, receiver, (net + ' EOS'), (cpu + ' EOS'));
+  }
+
   claimRefunds(account, k): Promise<any> {
     this.baseConfig.keyProvider = [k];
     const tempEos = EOSJS(this.baseConfig);
@@ -148,20 +173,22 @@ export class EOSJSService {
           if (data['account_names'].length > 0) {
             const promiseQueue = [];
             data['account_names'].forEach((acc) => {
+              console.log(acc);
               const tempPromise = new Promise((resolve1, reject1) => {
                 this.getAccountInfo(acc).then((acc_data) => {
-                  if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
-                    this.getTokens(acc_data['account_name']).then((tokens) => {
-                      acc_data['tokens'] = tokens;
-                      this.accounts[acc] = acc_data;
-                      resolve1(acc_data);
-                    }).catch((err) => {
-                      console.log(err);
-                      reject1();
-                    });
-                  } else {
+                  console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
+                  // if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
+                  this.getTokens(acc_data['account_name']).then((tokens) => {
+                    acc_data['tokens'] = tokens;
+                    this.accounts[acc] = acc_data;
+                    resolve1(acc_data);
+                  }).catch((err) => {
+                    console.log(err);
                     reject1();
-                  }
+                  });
+                  // } else {
+                  //   reject1();
+                  // }
                 });
               });
               promiseQueue.push(tempPromise);
@@ -215,8 +242,8 @@ export class EOSJSService {
   }
 
   getConstitution() {
-    this.eos['getCode']('eosio').then((code) => {
-      const temp = code['abi']['ricardian_clauses'][0]['body'];
+    this.eos['getAbi']('eosio').then((data) => {
+      const temp = data['abi']['ricardian_clauses'][0]['body'];
       this.constitution = temp.replace(/(?:\r\n|\r|\n)/g, '<br>');
     });
   }
@@ -248,7 +275,8 @@ export class EOSJSService {
           this.eos['contract'](contract, (err, tokenContract) => {
             if (!err) {
               if (tokenContract['transfer']) {
-                tokenContract['transfer'](from, to, amount, memo, (err2, trx) => {
+                const options = {authorization: from + '@active'};
+                tokenContract['transfer'](from, to, amount, memo, options, (err2, trx) => {
                   console.log(err, trx);
                   if (err2) {
                     reject(JSON.parse(err2));
@@ -280,12 +308,16 @@ export class EOSJSService {
     }
   }
 
-  ramBuy() {
-
+  ramBuyBytes(payer: string, receiver: string, bytes: string): Promise<any> {
+    return this.eos.buyrambytes(payer, receiver, parseInt(bytes));
   }
 
-  ramSell() {
+  ramBuyEOS(payer: string, receiver: string, quant: number): Promise<any> {
+    return this.eos.buyram(payer, receiver, quant.toFixed(4) + ' EOS');
+  }
 
+  ramSellBytes(account: string, bytes: string): Promise<any> {
+    return this.eos.sellram(account, parseInt(bytes));
   }
 
   async createAccount(creator: string, name: string, owner: string,
@@ -357,28 +389,30 @@ export class EOSJSService {
     if (list.length <= 30) {
       const currentVotes = list;
       currentVotes.sort();
-      const info = await this.eos['getInfo']({}).then(result => {
-        return result;
-      });
-      const broadcast_lib = info['last_irreversible_block_num'];
-      return new Promise((resolve, reject) => {
-        const cb = (err, res) => {
-          if (err) {
-            reject(JSON.parse(err));
-          } else {
-            console.log(res);
-            setTimeout(() => {
-              this.txCheckQueue.push({
-                block: broadcast_lib,
-                id: res['transaction_id']
-              });
-              this.startMonitoringLoop();
-            }, 1000);
-            resolve(res);
-          }
-        };
-        this.eosio['voteproducer'](voter, '', currentVotes, cb);
-      });
+      // const info = await this.eos['getInfo']({}).then(result => {
+      //   return result;
+      // });
+      // const broadcast_lib = info['last_irreversible_block_num'];
+      console.log(this.eos);
+      return this.eosio['voteproducer'](voter, '', currentVotes);
+      // return new Promise((resolve, reject) => {
+      //   const cb = (err, res) => {
+      //     if (err) {
+      //       reject(JSON.parse(err));
+      //     } else {
+      //       console.log(res);
+      //       // setTimeout(() => {
+      //       //   this.txCheckQueue.push({
+      //       //     block: broadcast_lib,
+      //       //     id: res['transaction_id']
+      //       //   });
+      //       //   this.startMonitoringLoop();
+      //       // }, 1000);
+      //       resolve(res);
+      //     }
+      //   };
+      //
+      // });
     } else {
       return new Error('Cannot cast more than 30 votes!');
     }

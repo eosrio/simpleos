@@ -6,6 +6,10 @@ import {environment} from './environments/environment';
 
 import 'hammerjs';
 
+import 'echarts/theme/macarons.js';
+import 'echarts/map/js/world.js';
+import 'echarts/dist/extension/bmap.min.js';
+
 if (environment.production) {
   enableProdMode();
 }

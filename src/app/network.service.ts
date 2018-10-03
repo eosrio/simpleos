@@ -5,6 +5,7 @@ import {Router} from '@angular/router';
 
 import * as Eos from '../assets/eos.js';
 import {BehaviorSubject} from 'rxjs';
+import {LedgerHWService} from './services/ledger-h-w.service';
 
 export interface Endpoint {
   url: string;
@@ -39,12 +40,17 @@ export class NetworkService {
   selectedEndpoint = new BehaviorSubject<Endpoint>(null);
   networkingReady = new BehaviorSubject<boolean>(false);
 
-  constructor(private eosjs: EOSJSService, private router: Router, public aService: AccountsService) {
+  connected = false;
+
+  constructor(private eosjs: EOSJSService, private router: Router, public aService: AccountsService, private ledger: LedgerHWService) {
     this.publicEndpoints = [
       {url: 'https://api.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
       {url: 'https://hapi.eosrio.io', owner: 'EOS Rio', latency: 0, filters: []},
       {url: 'https://eu.eosdac.io', owner: 'eosDAC', latency: 0, filters: []},
-      {url: 'http://api.eosnewyork.io', owner: 'EOS NY', latency: 0, filters: []}
+      {url: 'https://api.dpos.africa/', owner: 'EOS Africa', latency: 0, filters: []},
+      {url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0, filters: []},
+      {url: 'https://api.eoslaomao.com', owner: 'EOS Asia', latency: 0, filters: []},
+      {url: 'https://mainnet.genereos.io', owner: 'EOS Asia', latency: 0, filters: []}
     ];
     this.validEndpoints = [];
     this.status = '';
@@ -54,10 +60,16 @@ export class NetworkService {
   connect() {
     this.status = '';
     this.networkingReady.next(false);
-    this.scanNodes().then(() => {
-      this.verifyFilters().then(() => {
-        this.extractValidNode();
-      });
+
+    const pQueue = [];
+    this.connected = false;
+
+    this.publicEndpoints.forEach((apiNode) => {
+      pQueue.push(this.apiCheck(apiNode));
+    });
+
+    Promise.all(pQueue).then(() => {
+      this.extractValidNode();
     });
     console.log('Starting timer...');
     this.startTimeout();
@@ -83,9 +95,10 @@ export class NetworkService {
 
   extractValidNode() {
     for (const node of this.publicEndpoints) {
-      if (node.filters.length === 2) {
-        this.validEndpoints.push(node);
-      }
+      this.validEndpoints.push(node);
+      // if (node.filters.length === 2) {
+      //   this.validEndpoints.push(node);
+      // }
     }
     this.selectEndpoint();
   }
@@ -93,7 +106,7 @@ export class NetworkService {
   selectEndpoint() {
     let latency = 2000;
     this.validEndpoints.forEach((node) => {
-      if (node.latency < latency) {
+      if (node.latency < latency && node.latency > 1) {
         latency = node.latency;
         this.selectedEndpoint.next(node);
       }
@@ -175,6 +188,14 @@ export class NetworkService {
             console.log(server.url, server.latency);
           }
           clearTimeout(tempTimer);
+          if (server.latency > 1 && server.latency < 200) {
+            // force quick connection
+            if (this.connected === false) {
+              this.connected = true;
+              this.selectedEndpoint.next(server);
+              this.startup(null);
+            }
+          }
           resolve();
         });
       } catch (e) {
@@ -193,7 +214,13 @@ export class NetworkService {
       this.networkingReady.next(false);
       this.startTimeout();
     }
+
     this.eosjs.init(endpoint, this.mainnetId).then((savedAccounts: any) => {
+      if (this.ledger.isElectron()) {
+        this.aService.checkLedgerAccounts().then(() => {
+          this.ledger.initListener();
+        });
+      }
       if (this.connectionTimeout) {
         clearTimeout(this.connectionTimeout);
         this.networkingReady.next(true);
@@ -204,7 +231,7 @@ export class NetworkService {
           this.aService.loadLocalAccounts(savedAccounts);
           this.aService.initFirst();
           this.networkingReady.next(true);
-          this.router['navigate'](['dashboard', 'wallet']);
+          this.router['navigate'](['dashboard', 'vote']);
         } else {
           console.log('No saved accounts!');
         }

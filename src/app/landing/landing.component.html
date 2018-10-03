@@ -1,6 +1,6 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="wrap">
-  <div class="container-fluid">
+<div class="wrap" style="height: 100%; overflow-x: hidden;">
+  <div class="container-fluid" style="width: 466px;">
     <div class="row animate fadeInDown">
 
       <div class="col-md-12 text-center">
@@ -64,23 +64,39 @@
         <ng-container *ngIf="!busy">
           <div style="margin-top: 30px">
             <div class="row" style="justify-content: center;">
-              <div class="col-md-9">
+              <div class="col-md-6">
                 <button class="btn btn-inverse btn-block" (click)="existingWallet = true">
                   Import existing key
                 </button>
+                <button class="btn btn-inverse btn-block" (click)="importBKP = true">
+                  Import Backup
+                </button>
               </div>
-            </div>
-            <div class="row" style="justify-content: center;">
-              <div class="col-md-9">
+              <!--</div>-->
+              <!--<div class="row" style="justify-content: center;">-->
+              <div class="col-md-6">
                 <button class="btn btn-inverse btn-block" (click)="newWallet = true">
                   Request New Account
                 </button>
-              </div>
-            </div>
-            <div class="row" style="justify-content: center;">
-              <div class="col-md-9">
                 <button class="btn btn-inverse btn-block" (click)="verifyPanel = true">
                   Verify Account
+                </button>
+              </div>
+              <!--</div>-->
+              <!--<div class="row" style="justify-content: center;">-->
+              <!--<div class="col-md-9">-->
+
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="row" style="justify-content: center;">-->
+              <!--<div class="col-md-9">-->
+
+              <!--</div>-->
+            </div>
+            <div class="row" style="justify-content: center;">
+              <div class="col-md-6">
+                <button class="btn btn-inverse btn-block" (click)="newKeys = true">
+                  Generate Keys
                 </button>
               </div>
             </div>
@@ -320,7 +336,7 @@
 </clr-wizard>
 <!--IMPORT EXODUS WALLET END-->
 
-
+<!--CREATE NEW WALLET START-->
 <clr-wizard #wizardnew [(clrWizardOpen)]="newWallet" clrWizardSize="lg">
   <clr-wizard-title>Create new wallet</clr-wizard-title>
   <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -329,14 +345,21 @@
   <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
   <clr-wizard-page>
     <ng-template clrPageTitle>Intro</ng-template>
-    <h5 class="mt-0">In eos, creation of new accounts costs a little of eos, because the account must have an
-      initial stake do perform actions.</h5>
-    <h5>Block producers are working on a solution for this, but until then, we don't want to deprive
-      users of creating new accounts. So we thought on an organic approach to this :)</h5>
-    <h5>At the end of this process, a code will be generated. You will have to send this code to a friend that has eos
-      on the mainnet, so he can create your account using SimplEOS.</h5>
-    <h5><strong>This code DOES NOT contain your private keys</strong>, only your public keys and the desired account
-      name.</h5>
+    <h5 class="mt-0" style="color: #ffffff;"><strong>Recommended if you don't have any EOS account yet.</strong></h5>
+    <h5 style="color: #a7a7a7;">Create your eos account via a smart contract.</h5>
+    <h5 style="color: #ffffff;"><strong>How does it work?</strong></h5>
+    <h5 style="color: #a7a7a7;"><span class="blue">1.</span> Send EOS from an exchange to our smart contract <a
+      class="blue" (click)="openGit()" style="cursor: pointer;">eosriosignup</a>. This smart contract
+      is open source and anyone can verify its contents.</h5>
+    <h5 style="color: #a7a7a7;"><span class="blue">2.</span> Our smart contract will create the account for you. No
+      fees.</h5>
+    <h5 style="color: #a7a7a7;"><span class="blue">3.</span> After that, you can login in SimplEOS on the 'Import
+      Existing Key' button!</h5>
+    <h5 style="color: #ffffff;"><strong>Frequently Asked Questions</strong></h5>
+    <h5 style="color: #a7a7a7;"><strong><span class="blue">-</span> If the transfer fails, will my tokens be
+      lost?</strong> No! If this fails the transaction won't happen and your tokens will stay on the exchange</h5>
+    <h5 style="color: #a7a7a7;"><strong><span class="blue">-</span> How much does it cost to create an eos
+      account?</strong> The price varies because it depends on the current RAM price</h5>
   </clr-wizard-page>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="!accountname_valid"
@@ -344,7 +367,7 @@
                    (clrWizardPageOnCommit)="verifyAccountName(true)"
                    (clrWizardPagePrevious)="wizardnew.previous()"
                    (clrWizardPageOnCancel)="resetAndClose()">
-    <ng-template clrPageTitle>Step 1</ng-template>
+    <ng-template clrPageTitle>Account Name</ng-template>
     <h5 style="color: #a9a9a9">Choose your EOS account name</h5>
     <h5 class="mt-0">12 characters. Allows all letters and numbers 1-5</h5>
     <mat-form-field class="mt-1" style="display: block; width: 180px">
@@ -363,7 +386,7 @@
   </clr-wizard-page>
 
   <clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
-    <ng-template clrPageTitle>Step 2</ng-template>
+    <ng-template clrPageTitle>Define Keys</ng-template>
     <h5 class="bold">At this point, we recommend you <span class="error">disconnet from the internet</span></h5>
     <h5>Selected account: <span class="blue">{{accountname}}</span></h5>
     <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
@@ -372,12 +395,12 @@
       button.</h5>
     <mat-form-field class="mt-1" style="width: 470px">
       <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
-      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub, 'Key', 'Please save it on a safe place.')"></fa-icon>
       <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
     </mat-form-field>
     <mat-form-field class="mt-1" style="width: 470px">
       <input matInput placeholder="Active Public key" [(ngModel)]="activepub">
-      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub, 'Key', 'Please save it on a safe place.')"></fa-icon>
     </mat-form-field>
 
     <button class="btn btn-primary" (click)="generateKeys()">Generate Key Pairs</button>
@@ -389,29 +412,140 @@
     <ng-container *ngIf="generated">
       <mat-form-field class="mt-1" style="width: 470px">
         <input matInput placeholder="Owner Private key" [(ngModel)]="ownerpk">
-        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpk)"></fa-icon>
+        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpk, 'Key', 'Please save it on a safe place.')"></fa-icon>
       </mat-form-field>
       <mat-form-field class="mt-1" style="width: 470px">
         <input matInput placeholder="Active Private key" [(ngModel)]="activepk">
-        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepk)"></fa-icon>
+        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepk, 'Key', 'Please save it on a safe place.')"></fa-icon>
       </mat-form-field>
       <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys on a safe place</mat-checkbox>
     </ng-container>
   </clr-wizard-page>
-  <clr-wizard-page [clrWizardPageNextDisabled]="!payloadValid" (clrWizardPageOnLoad)="makePayload()">
-    <ng-template clrPageTitle>Step 3</ng-template>
-    <h5 style="color: #ABABAB;">Send the account creation code to a friend to create your account for you on simplEOS.
-      <strong>This
-        code does not
-        contain your private key</strong> :)
-      <br>After your account is created please import the active key only on your wallet!</h5>
-    <div class="form-group mt-1">
-      <label for="textarea">Account creation code</label>
-      <textarea id="textarea" rows="5" [(ngModel)]="newAccountPayload" readonly></textarea>
-      <mat-hint>ctrl c to copy or &nbsp;
-        <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(newAccountPayload)"></fa-icon>
-      </mat-hint>
+  <clr-wizard-page>
+    <ng-template clrPageTitle>Account Resources</ng-template>
+
+    <h5 style="color: #a9a9a9">In eos, creation of new accounts costs a small amount of eos to allocate the necessary resources to the account.</h5>
+    <h5 style="color: #a9a9a9">The amount you will need to transfer will be as shown below:</h5>
+    <div style="color: white; margin-top: 15px"><strong>Amount to CPU:</strong><span class="blue"> 0.75 EOS</span></div>
+    <div style="color: white;"><strong>Amount to NET:</strong><span class="blue"> 0.25 EOS</span></div>
+    <div style="color: white;"><strong>Amount of RAM:</strong><span style="color: #a9a9a9"> 4096 bytes</span>
+      <span style="margin: 0 12px;">=</span>
+      <span class="blue">{{(ram.ramPriceEOS * (4096/1024))*1.05 | number: '1.0-4'}} EOS</span>
     </div>
+    <div style="border-bottom: 1px solid #0079b8; margin: 10px 0px;"></div>
+    <div style="color: white;"><strong>Total Amount:</strong><span class="blue"> {{1 + (ram.ramPriceEOS * (4096/1024))*1.05 | number: '1.0-4'}} EOS</span></div>
+    <div style="margin-top: 5px; color: #a9a9a9;">*If you transfer more than this amount the difference will remain as liquid tokens in your new account</div>
+  </clr-wizard-page>
+  <clr-wizard-page (clrWizardPageOnLoad)="makePayload(); makeMemo();">
+    <ng-template clrPageTitle>Payment</ng-template>
+    <h5 style="color: #ffffff;">Great! Now follow the steps:</h5>
+    <h5 style="color: #a7a7a7;"><span class="blue">1.</span> Log in to your exchange.</h5>
+    <h5 style="color: #a7a7a7;"><span class="blue">2.</span> Make an EOS transfer/withdrawal with the following
+      settings:</h5>
+    <div class="card settings-card">
+      <div class="card-block settings-section">
+        <div style="color: #a7a7a7;"><strong>AMOUNT:</strong>
+          <mat-form-field class="mt-8" style="width: 142px;">
+            <input matInput style="padding-top: 8px;" type="text" value="{{(1 + (ram.ramPriceEOS * (4096/1024))*1.05).toFixed(4)}} EOS" readonly>
+            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc((1 + (ram.ramPriceEOS * (4096/1024))*1.05).toFixed(4), 'Amount', '')"></fa-icon>
+          </mat-form-field>
+        </div>
+
+        <div style="color:#a7a7a7;"><strong>RECIPIENT:</strong>
+          <mat-form-field class="mt-8" style="width: 132px;">
+            <input matInput style="padding-top: 8px;" type="text" value="eosriosignup" readonly>
+            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc('eosriosignup', 'eosriosignup', '')"></fa-icon>
+          </mat-form-field>
+        </div>
+        <div style="color: #a7a7a7;"><strong>MEMO:</strong>
+        <mat-form-field class="mt-8" style="width: 383px; margin-left: 8px;">
+          <textarea  matInput type="text" rows="3" style="color: white; font-size: 12px;" value="{{memo}}"
+                 readonly></textarea>
+          <mat-hint>ctrl c to copy or &nbsp;
+            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+                     (click)="cc(memo, 'memo', '')"></fa-icon>
+          </mat-hint>
+        </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <h5 style="color: #a7a7a7;"><span class="blue">3.</span> After you make the transfer, check <a class="blue" (click)="openTX(accountname)" style="cursor: pointer">{{accountname}}</a> on a blockexplorer. After that, you can login in SimplEOS on the <strong>'IMPORT EXISTING KEY'</strong> button</h5>
   </clr-wizard-page>
 </clr-wizard>
+<!--CREATE NEW WALLET END-->
+
+<clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
+  <clr-wizard-title>Generate new keys</clr-wizard-title>
+  <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+  <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+  <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+  <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+
+
+  <clr-wizard-page [clrWizardPageNextDisabled]="ownerpub2 === '' || ownerpk2 === '' || !agreeKeys2">
+    <ng-template clrPageTitle>New Keys</ng-template>
+    <h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
+    <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
+    <h5>Please enter your desired public key or click the <span style="cursor:pointer;"
+                                                                class="blue"
+                                                                (click)="generateKeys()"> Generate Key Pair </span>
+      button.</h5>
+    <mat-form-field class="mt-1" style="width: 470px">
+      <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub2,'Key', 'Please save it on a safe place.')"></fa-icon>
+      <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field class="mt-1" style="width: 470px">
+      <input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
+      <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpk2, 'Key', 'Please save it on a safe place.')"></fa-icon>
+      <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+    </mat-form-field>
+
+    <button class="btn btn-primary" style="margin-top:20px;" (click)="generateNKeys()">Generate Key Pair</button>
+
+    <fa-layers *ngIf="generating2" class="blue fa-fw">
+      <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
+    </fa-layers>
+    <br/>
+    <ng-container *ngIf="generated2" style="clear:both;">
+      <mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys on a safe place</mat-checkbox>
+    </ng-container>
+  </clr-wizard-page>
+</clr-wizard>
+
+<clr-modal [(clrModalOpen)]="importBKP" [clrModalSize]="'md'" >
+  <h3 class="modal-title text-white">
+    Select your backup file:
+  </h3>
+  <div class="modal-body">
+    <form [formGroup]="importForm" (keyup.enter)="importBK()">
+      <button type="button" class="btn btn-info-outline" (click)="inputIMClick()" style="margin-left:10px;">
+        Select file
+      </button>
+      <mat-form-field class="mt-8">
+        <input matInput #passbackup type="password" placeholder="Password" formControlName="pass" [disabled]="customImportBK">
+        <fa-icon matSuffix *ngIf="passbackup.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                 (click)="passbackup.type = 'text'"></fa-icon>
+        <fa-icon matSuffix *ngIf="passbackup.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                 (click)="passbackup.type = 'password'"></fa-icon>
+        <mat-hint align="start">
+          Password that was used to encrypt your file
+        </mat-hint>
+      </mat-form-field>
+      <br/>
+      <br/>
+      <br/>
+      {{choosedFil}}
+      <input style="visibility:hidden;" type="file" placeholder="Backup file" (change)="importCheckBK($event)"
+             formControlName="customImportBK" #customImportBK>
+    </form>
+  </div>
+  <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+    <button type="button" class="btn btn-info-outline" (click)="importBK()"  [disabled]="!importForm.valid" [disabled]="busy2">
+      Import
+      <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy2" ></fa-icon>
+    </button>
+  </div>
+</clr-modal>
 

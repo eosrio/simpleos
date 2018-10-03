@@ -132,7 +132,12 @@ export class CryptoService {
 
   async authenticate(pass, publickey): Promise<boolean> {
     this.eosjs.auth = false;
-    await this.initKeys(publickey, pass);
+    console.log('Submitted key:', publickey);
+    // Identify ledger key
+    const storedData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
+    if (storedData[publickey].private !== 'ledger') {
+      await this.initKeys(publickey, pass);
+    }
     return await this.decryptKeys(publickey);
   }
 
@@ -141,6 +146,9 @@ export class CryptoService {
     if (store) {
       const payload = store[publickey]['private'];
       if (payload) {
+        if (payload === 'ledger') {
+          return true;
+        }
         const encryptedData = this.base64ToBuffer(payload);
         const iv = encryptedData.slice(0, this.ivLen);
         const data = encryptedData.slice(this.ivLen);
@@ -190,6 +198,19 @@ export class CryptoService {
     }
   }
 
+  async storeLedgerAccount(pbk: string, slotNumber: number): Promise<void> {
+    let store = {};
+    const oldData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
+    if (oldData) {
+      store = oldData;
+    }
+    store[pbk] = {
+      private: 'ledger',
+      slot: slotNumber
+    };
+    localStorage.setItem('eos_keys.' + this.eosjs.chainID, JSON.stringify(store));
+  }
+
   lock() {
     this.locked = true;
     this.router.navigate(['']).catch(() => {
@@ -209,6 +230,20 @@ export class CryptoService {
     localStorage.removeItem('simpleos-salt');
     localStorage.removeItem('simpleos-hash');
     this.locked = false;
+  }
+
+  encryptBKP(val: string, pass: string) {
+    return CryptoJS.AES.encrypt(val, pass);
+  }
+
+  decryptBKP(enval: string, pass: string) {
+    try {
+      let dek = CryptoJS.AES.decrypt(enval, pass);
+      return dek.toString(CryptoJS.enc.Utf8);
+    } catch (e) {
+      return 'error not json';
+    }
+
   }
 
 }

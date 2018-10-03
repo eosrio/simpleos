@@ -1,4 +1,4 @@
-<!--<toaster-container [toasterconfig]="config"></toaster-container>-->
+<!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
 <div class="container" style="height: 100%; overflow-x: hidden;">
   <div class="row animate" style="padding-top: 15px;">
     <div class="col-lg-6">
@@ -16,6 +16,10 @@
           <div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
             number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} EOS
           </div>
+          <!--<div *ngIf="unstaking > 0" style="color: white">-->
+          <!--<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(stakedBalance - unstaking) | number :-->
+          <!--'1.2-4'}} EOS {{unstakeTime}}-->
+          <!--</div>-->
         </div>
       </div>
     </div>
@@ -75,9 +79,11 @@
               </a>
             </div>
             <div class="col-lg-6 text-right" style="align-self: flex-end;">
-              <span *ngIf="valuetoStake !== ''">{{(getValuetoStake / 2) | number: '1.0-4'}} </span>
+              <!--<span *ngIf="valuetoStake !== ''">{{(getValuetoStake / 2) | number: '1.0-4'}} </span>-->
+              <span *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
               <span *ngIf="valuetoStake === ''">50% </span>CPU /
-              <span *ngIf="valuetoStake !== ''">{{ (getValuetoStake / 2) | number: '1.0-4'}} </span>
+              <!--<span *ngIf="valuetoStake !== ''">{{ (getValuetoStake / 2) | number: '1.0-4'}} </span>-->
+              <span *ngIf="valuetoStake !== ''">{{ net_weight }} </span>
               <span *ngIf="valuetoStake === ''">50% </span>NET
             </div>
           </div>
@@ -91,11 +97,10 @@
         <div class="card-block" style="padding: 0;">
           <p-accordion class="map">
             <p-accordionTab header="Block Producers Map (Organization Location)">
-              <echarts [options]="options" [merge]="voteService.updateOptions"
-                       [autoResize]="true" [initOpts]="initOptions"
-                       class="bp-map"
-                       (chartInit)="onChartInit($event)">
-              </echarts>
+              <div echarts [options]="options" [merge]="voteService.updateOptions"
+                   [autoResize]="true" [initOpts]="initOptions"
+                   class="bp-map">
+              </div>
             </p-accordionTab>
           </p-accordion>
         </div>
@@ -392,17 +397,28 @@
     </p-accordion>
   </div>
   <form [formGroup]="passForm" class="modal-footer">
-    <mat-form-field>
-      <input matInput #pass type="password" formControlName="pass" (keyup.enter)="modalVote(pass.value)"
-             placeholder="Password">
-      <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-        {{wrongpass}}
-      </mat-hint>
-    </mat-form-field>
-    <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
-            (click)="modalVote(pass.value);" [disabled]="busy">
-      Confirm
-      <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-    </button>
+    <ng-container *ngIf="!aService.isLedger">
+      <mat-form-field>
+        <input matInput #pass type="password" formControlName="pass" (keyup.enter)="modalVote(pass.value)"
+               placeholder="Password">
+        <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+          {{wrongpass}}
+        </mat-hint>
+      </mat-form-field>
+      <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+              (click)="modalVote(pass.value);" [disabled]="busy">
+        Confirm
+        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="aService.isLedger">
+      <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+              (click)="modalVote('');" [disabled]="busy">
+        Confirm (Ledger)
+        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+      </button>
+    </ng-container>
+
   </form>
 </clr-modal>

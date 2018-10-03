@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {VotingService} from './voting.service';
 import {AccountsService} from '../../accounts.service';
 import {EOSJSService} from '../../eosjs.service';
@@ -7,6 +7,8 @@ import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toa
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto.service';
 import {HttpClient} from '@angular/common/http';
+import {LedgerHWService} from '../../services/ledger-h-w.service';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-vote',
@@ -20,6 +22,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
   valuetoStake: string;
   percenttoStake: string;
   minToStake = 0.01;
+  unstaking: number;
+  unstakeTime: string;
   stakeModal: boolean;
   voteModal: boolean;
   nVotes: number;
@@ -57,13 +61,15 @@ export class VoteComponent implements OnInit, AfterViewInit {
   country: string[];
   graphMerge: any;
   options: any;
-  nodeList = [];
-  links = [];
+
   initOptions = {
     renderer: 'z',
     width: 1000,
     height: 400
   };
+
+  net_weight = '';
+  cpu_weight = '';
 
   constructor(public voteService: VotingService,
               private http: HttpClient,
@@ -71,7 +77,9 @@ export class VoteComponent implements OnInit, AfterViewInit {
               public eos: EOSJSService,
               public crypto: CryptoService,
               private fb: FormBuilder,
-              private toaster: ToasterService) {
+              private toaster: ToasterService,
+              private cdr: ChangeDetectorRef,
+              private ledger: LedgerHWService) {
     if (this.voteService.bps) {
       this.nbps = this.voteService.bps.length;
     } else {
@@ -82,6 +90,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
     this.minstake = false;
     this.valuetoStake = '';
     this.percenttoStake = '';
+    this.unstaking = 0;
+    this.unstakeTime = '';
     this.stakeModal = false;
     this.voteModal = false;
     this.busy = false;
@@ -102,13 +112,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
       pass: ['', [Validators.required, Validators.minLength(10)]]
     });
 
-    this.graphMerge = {
-      series: {
-        data: this.nodeList,
-        links: this.links,
-      }
-    };
-
     this.options = {
       geo: {
         map: 'world',
@@ -124,11 +127,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
           }
         }
       },
+      tooltip: {},
       animationDuration: 1500,
       animationEasingUpdate: 'quinticInOut',
       series: [
         {
-          name: 'EOS',
           type: 'graph',
           coordinateSystem: 'geo',
           symbol: 'pin',
@@ -218,16 +221,20 @@ export class VoteComponent implements OnInit, AfterViewInit {
           this.busy = false;
           this.wrongpass = '';
           this.stakeModal = false;
+          this.cdr.detectChanges();
           this.showToast('success', 'Action broadcasted', 'Check your history for confirmation.');
           setTimeout(() => {
             this.aService.refreshFromChain();
           }, 500);
         }).catch((error) => {
-          console.log(JSON.parse(error));
-          if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
-            this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
+          if (typeof error === 'object') {
+            this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
           } else {
-            this.wrongpass = JSON.parse(error).error['what'];
+            if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
+              this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
+            } else {
+              this.wrongpass = JSON.parse(error).error['what'];
+            }
           }
           this.busy = false;
         });
@@ -260,6 +267,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
         this.fromAccount = selected.name;
         this.totalBalance = selected.full_balance;
         this.stakedBalance = selected.staked;
+        this.unstaking =  selected.unstaking;
+        this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
         if (this.totalBalance > 0) {
           this.minToStake = 100 / this.totalBalance;
           this.valuetoStake = this.stakedBalance.toString();
@@ -270,6 +279,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
         }
         this.updateStakePercent();
         this.loadPlacedVotes(selected);
+        this.cpu_weight = selected.details.total_resources.cpu_weight;
+        this.net_weight = selected.details.total_resources.net_weight;
       }
     });
     this.voteService.listReady.asObservable().subscribe((state) => {
@@ -298,7 +309,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // this.voteService.listProducers();
+    //this.voteService.listProducers();
   }
 
   getCurrentStake() {
@@ -386,23 +397,32 @@ export class VoteComponent implements OnInit, AfterViewInit {
     const voter = this.aService.selected.getValue();
     const publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
     this.crypto.authenticate(pass, publicKey).then((data) => {
+      console.log('Auth output:', data);
       if (data === true) {
-        this.eos.voteProducer(voter.name, this.selectedBPs).then(() => {
+
+        this.aService.injectLedgerSigner();
+
+        this.eos.voteProducer(voter.name, this.selectedBPs).then((result) => {
+
+          console.log(result);
           this.wrongpass = '';
           this.voteModal = false;
           this.busy = false;
           this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
           this.passForm.reset();
           this.aService.refreshFromChain();
+
           setTimeout(() => {
             this.loadPlacedVotes(this.aService.selected.getValue());
           }, 500);
+
         }).catch((err2) => {
-          if (err2.error.code === 3081001) {
-            this.wrongpass = 'Not enough stake to perform this action.';
-          } else {
-            this.wrongpass = err2.error['what'];
-          }
+          console.dir(err2);
+          // if (err2.error.code === 3081001) {
+          //   this.wrongpass = 'Not enough stake to perform this action.';
+          // } else {
+          //   this.wrongpass = err2.error['what'];
+          // }
           this.busy = false;
         });
       } else {

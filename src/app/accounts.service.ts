@@ -3,7 +3,9 @@ import {BehaviorSubject, Subject} from 'rxjs';
 import {EOSJSService} from './eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
-import {split} from 'ts-node';
+import {LedgerHWService} from './services/ledger-h-w.service';
+
+import * as socketIo from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root'
@@ -17,10 +19,17 @@ export class AccountsService {
   cmcListings = [];
   tokens = [];
   actions = [];
+  totalActions: number;
   sessionTokens = {};
   allowed_actions = [];
   totalAssetsSum = 0;
   loading = true;
+  private readonly socket: any;
+
+  isLedger = false;
+  hasAnyLedgerAccount = false;
+
+  actionStore = {};
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -53,12 +62,44 @@ export class AccountsService {
     };
   }
 
-  constructor(private http: HttpClient, private eos: EOSJSService, private toaster: ToasterService) {
+  constructor(private http: HttpClient, private eos: EOSJSService, private toaster: ToasterService, private ledger: LedgerHWService) {
     this.accounts = [];
     this.usd_rate = 10.00;
     this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
     // this.fetchListings();
     this.fetchEOSprice();
+
+    this.socket = socketIo('https://api.eosrio.io/');
+    this.socket.on('data', (data) => {
+      console.log(data);
+    });
+
+    this.eos.online.asObservable().subscribe(value => {
+      if (value) {
+        const store = localStorage.getItem('actionStore.' + this.eos.chainID);
+        if (store) {
+          this.actionStore = JSON.parse(store);
+        }
+      }
+    });
+
+    this.socket.on('action', (data) => {
+      if (!this.actionStore[data.account]) {
+        this.actionStore[data.account] = {
+          last_gs: 0,
+          actions: []
+        };
+      }
+
+      this.actionStore[data.account]['last_gs'] = data.data.receipt.global_sequence;
+      const idx = this.actionStore[data.account]['actions'].findIndex((v) => {
+        return v.receipt.act_digest === data.data.receipt.act_digest;
+      });
+      if (idx === -1) {
+        this.actionStore[data.account]['actions'].push(data.data);
+        this.totalActions = this.actionStore[data.account]['actions'].length;
+      }
+    });
   }
 
   registerSymbol(data, contract) {
@@ -76,6 +117,7 @@ export class AccountsService {
         name: data['symbol'],
         contract: contract,
         balance: data['balance'],
+        precision: data['precision'],
         price: price,
         usd_value: usd_value
       };
@@ -95,24 +137,20 @@ export class AccountsService {
   }
 
   fetchTokens(account) {
-    // if (!this.sessionTokens[this.selectedIdx]) {
-      this.sessionTokens[this.selectedIdx] = [];
-      this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
-        const contracts = Object.keys(data);
-        this.loading = false;
-        contracts.forEach((contract) => {
-          if (data[contract]['symbol'] !== 'EOS') {
-            this.registerSymbol(data[contract], contract);
-          }
-        });
-        this.tokens.sort((a: any, b: any) => {
-          return a.usd_value < b.usd_value ? 1 : -1;
-        });
-        this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+    this.sessionTokens[this.selectedIdx] = [];
+    this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
+      const contracts = Object.keys(data);
+      this.loading = false;
+      contracts.forEach((contract) => {
+        if (data[contract]['symbol'] !== 'EOS') {
+          this.registerSymbol(data[contract], contract);
+        }
       });
-    // } else {
-    //   this.loading = false;
-    // }
+      this.tokens.sort((a: any, b: any) => {
+        return a.usd_value < b.usd_value ? 1 : -1;
+      });
+      this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+    });
   }
 
   getTokenBalances() {
@@ -125,20 +163,7 @@ export class AccountsService {
     });
   }
 
-  appendRecentActions(account) {
-    this.eos['eos']['getActions']({
-      account_name: account,
-      offset: -2,
-      pos: -1
-    }).then((data) => {
-      data.actions.forEach((action) => {
-        this.processAction(action.action_trace.act, action.action_trace.trx_id, action.block_num, action.block_time, true);
-      });
-      this.accounts[this.selectedIdx]['actions'] = this.actions;
-    });
-  }
-
-  processAction(act, id, block_num, date, append) {
+  processAction(act, id, block_num, date) {
     const contract = act['account'];
     const action_name = act['name'];
     let symbol = '', user = '', type = '', memo = '';
@@ -194,53 +219,95 @@ export class AccountsService {
         valid = false;
       }
     }
-    if (this.allowed_actions.includes(action_name) && valid) {
-      const idx = this.actions.findIndex((val) => {
-        return val.id === id;
-      });
-      if (idx === -1) {
-        const obj = {
-          id: id, type: type, action_name: action_name,
-          contract: contract, user: user, block: block_num,
-          date: date, amount: amount, symbol: symbol,
-          memo: memo, votedProducers: votedProducers,
-          proxy: proxy, voter: voter
-        };
-        if (append) {
-          this.actions.unshift(obj);
-        } else {
-          this.actions.push(obj);
-        }
-      }
-    }
+    const obj = {
+      id: id,
+      type: type,
+      action_name: action_name,
+      contract: contract,
+      user: user,
+      block: block_num,
+      date: date,
+      amount: amount,
+      symbol: symbol,
+      memo: memo,
+      votedProducers: votedProducers,
+      proxy: proxy,
+      voter: voter
+    };
+    this.actions.unshift(obj);
   }
 
-  reloadActions(account) {
-    this.http.get('https://hapi.eosrio.io/data/actions_limited/' + account).subscribe((actions: any[]) => {
-      this.actions = [];
-      actions.forEach((item) => {
-        const act = item['transaction']['trx']['transaction']['action'];
-        const id = item['transaction']['trx']['id'];
-        const block_num = item['block_num'];
-        const date = item['@timestamp'];
-        this.processAction(act, id, block_num, date, false);
-      });
-      this.accounts[this.selectedIdx]['actions'] = this.actions;
-      this.appendRecentActions(account);
-      this.calcTotalAssets();
+  getAccActions(account, reload) {
+    if (account === null) {
+      account = this.selected.getValue().name;
+    }
+    this.actions = [];
+    let last_gs = -1;
+    if (this.actionStore[account]) {
+      last_gs = this.actionStore[account]['last_gs'];
+    }
+
+    let limited = true;
+    if (!this.actionStore[account]) {
+      limited = false;
+    } else {
+      if (!this.actionStore[account]['last_gs']) {
+        limited = false;
+      }
+    }
+
+    if (reload) {
+      last_gs = 0;
+    }
+
+    this.socket.emit('get_actions', {
+      account: account,
+      limited: limited,
+      last_gs: last_gs
+    }, (results) => {
+      console.log('Stream output: ', results);
+
+      if (results === 'end') {
+
+        this.actionStore[account]['actions'].sort((a: any, b: any) => {
+          const dB = new Date(b.block_time).getTime();
+          const dA = new Date(a.block_time).getTime();
+          return dA - dB;
+        });
+
+        const payload = JSON.stringify(this.actionStore);
+        localStorage.setItem('actionStore.' + this.eos.chainID, payload);
+
+        this.actionStore[account]['actions'].forEach((action) => {
+          this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
+        });
+
+        this.totalActions = this.actionStore[account]['actions'].length;
+        this.accounts[this.selectedIdx]['actions'] = this.actions;
+        this.calcTotalAssets();
+      }
     });
+  }
+
+  reloadActions(account, reload) {
+    console.log('reloading: ' + reload);
+    if (account) {
+      this.socket.emit('close_actions_cursor', {
+        account: account
+      }, () => {
+        this.socket.emit('open_actions_cursor', {
+          account: account
+        }, (result2) => {
+          console.log(result2);
+          this.getAccActions(account, reload);
+        });
+      });
+    }
   }
 
   select(index) {
     const sel = this.accounts[index];
     this.loading = true;
-    // if (sel['tokens']) {
-    //   if (sel.tokens.length > 0) {
-    //     this.tokens = sel.tokens;
-    //   }
-    // } else {
-    //   this.tokens = [];
-    // }
     this.tokens = [];
     if (sel['actions']) {
       if (sel.actions.length > 0) {
@@ -251,14 +318,23 @@ export class AccountsService {
     }
     this.selectedIdx = index;
     this.selected.next(sel);
-    // if (this.tokens.length === 0) {
+
+    const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
+    const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
+    this.isLedger = stored_data[pbk]['private'] === 'ledger';
+
+    this.socket.emit('open_actions_cursor', {
+      account: this.selected.getValue().name
+    }, (result) => {
+      console.log(result);
+    });
     this.fetchTokens(this.selected.getValue().name);
-    // }
   }
 
   initFirst() {
-    this.selectedIdx = 0;
-    this.selected.next(this.accounts[0]);
+    // this.selectedIdx = 0;
+    // this.selected.next(this.accounts[0]);
+    this.select(0);
   }
 
   importAccounts(accounts) {
@@ -274,9 +350,16 @@ export class AccountsService {
 
   appendNewAccount(account) {
     const chain_id = this.eos.chainID;
-    const payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
-    payload.accounts.push(account);
-    payload.updatedOn = new Date();
+    let payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
+    if (!payload) {
+      payload = {
+        accounts: [account],
+        updatedOn: new Date()
+      };
+    } else {
+      payload.accounts.push(account);
+      payload['updatedOn'] = new Date();
+    }
     localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
     this.loadLocalAccounts(payload.accounts);
   }
@@ -411,5 +494,37 @@ export class AccountsService {
     this.http.get('https://api.coinmarketcap.com/v2/ticker/1765/').subscribe((result: any) => {
       this.usd_rate = parseFloat(result.data.quotes.USD['price']);
     });
+  }
+
+  checkLedgerAccounts() {
+    let hasLedger = false;
+    const stored_data = localStorage.getItem('eos_keys.' + this.eos.chainID);
+    return new Promise(resolve => {
+      this.accounts.forEach((acc) => {
+        const pbk = acc.details.permissions[0].required_auth.keys[0];
+        if (stored_data[pbk]['private'] === 'ledger') {
+          hasLedger = true;
+        }
+      });
+      this.hasAnyLedgerAccount = hasLedger;
+      resolve(hasLedger);
+    });
+  }
+
+  injectLedgerSigner() {
+    console.log('Ledger mode: ' + this.isLedger);
+    if (this.isLedger) {
+      const store = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
+      const pbk = this.selected.getValue().details['permissions'][0]['required_auth'].keys[0].key;
+      console.log('Publickey:', pbk);
+      console.log(store);
+      if (store[pbk]['private'] === 'ledger') {
+        this.ledger.enableLedgerEOS(store[pbk]['slot']);
+      } else {
+        this.eos.clearSigner();
+      }
+    } else {
+      this.eos.clearSigner();
+    }
   }
 }

@@ -25,7 +25,7 @@
                         <ng-template mat-tab-label>
                             <div style="font-size: 17px;">ALL</div>
                         </ng-template>
-                        <p-table [value]="history" [responsive]="true" dataKey="id" class="history-table">
+                        <p-table [value]="history" [responsive]="true" dataKey="id" loading="loading" class="history-table">
                             <ng-template pTemplate="header">
                                 <tr>
                                     <th style="width: 70px;">
@@ -49,7 +49,7 @@
                                     </th>
                                 </tr>
                             </ng-template>
-                            <ng-template pTemplate="body" let-item let-expanded="expanded">
+                            <ng-template pTemplate="body" let-item let-expanded="expanded"  >
                                 <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item">
                                     <td class="text-center">
                                         <i *ngIf="item.type === 'received'"

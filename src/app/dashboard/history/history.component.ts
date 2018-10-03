@@ -25,6 +25,7 @@ export class HistoryComponent implements OnInit {
   }
 
   ngOnInit() {
+
   }
 
 }

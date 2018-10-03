@@ -20,6 +20,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
   LIB: number;
   blockTracker: any;
   tokens: any[];
+  loading: boolean;
 
   static openTXID(value) {
     window['shell']['openExternal']('https://www.bloks.io/transaction/' + value);
@@ -44,7 +45,9 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+
   ngOnInit() {
+    console.log('here', this.aService.totalActions);
     this.aService.lastUpdate.asObservable().subscribe(value => {
       if (value.account === this.aService.selected.getValue().name) {
         this.updateBalances();
@@ -55,7 +58,10 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
       this.blockTracker = setInterval(() => {
         this.getInfo();
       }, 5000);
+
     }
+
+    this.loading = true;
   }
 
   ngOnDestroy() {
@@ -68,17 +74,30 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.aService.selected.asObservable().subscribe((sel) => {
       if (sel['name']) {
-        setImmediate(() => {
+        setTimeout(() => {
           this.fullBalance = sel.full_balance;
           this.staked = sel.staked;
           this.unstaked = sel.full_balance - sel.staked;
           this.tokens = [];
-          this.aService.reloadActions(sel.name);
+          this.aService.reloadActions(sel.name, false);
           this.aService.refreshFromChain();
-        });
+        }, 50);
       }
     });
   }
+
+  // loadHistoryLazy(LazyLoadEvent) {
+  //   console.log(LazyLoadEvent);
+  //   let order = 'desc';
+  //   if (LazyLoadEvent.sortField === 'date') {
+  //     if (LazyLoadEvent.sortOrder === 1) {
+  //       order = 'asc';
+  //     }
+  //   }
+  //
+  //   this.aService.getAccActions(null, LazyLoadEvent.first, LazyLoadEvent.rows, order);
+  //   this.loading = false;
+  // }
 
   updateBalances() {
     const sel = this.aService.selected.getValue();
@@ -88,8 +107,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   refresh() {
-    this.aService.reloadActions(this.aService.selected.getValue().name);
-    this.aService.refreshFromChain();
+    this.aService.reloadActions(this.aService.selected.getValue().name, true);
+    // this.aService.refreshFromChain();
   }
 
 }

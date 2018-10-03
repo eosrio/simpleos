@@ -5,7 +5,7 @@
       <div class="row" style="margin-right: 0;">
         <div class="col-xs col-md max-width" style="padding-right: 0">
           <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)" [selectedIndex]="selectedTab">
-            <mat-tab *ngFor="let account of aService.accounts; let i = index">
+            <mat-tab *ngFor="let account of aService.accounts; let i = index" >
               <ng-template mat-tab-label>
                 <div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon *ngIf="aService.accounts.length > 1"
                                                                                     [icon]="['fas', 'times-circle']"
@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="col-xs-auto col-md-auto" style="padding-left: 0; padding-right: 0"
-             (click)="newAccountModal = true">
+             (click)="newAccountModal = true;initNewAcc();">
           <div class="text-center navbar-btn newaccount">
             <div style="padding-top: 16px">
               <fa-icon [icon]="['fal', 'user-edit']" size="lg"></fa-icon>
@@ -67,19 +67,19 @@
         <!--<a href="..." class="nav-link" routerLinkActive="active" [routerLink]="['history']">-->
         <!--<fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY-->
         <!--</a>-->
+        <a class="nav-link" routerLinkActive="active" [routerLink]="['ram']">
+          <fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RESOURCES
+        </a>
         <a class="nav-link" routerLinkActive="active" [routerLink]="['vote']">
           <fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
         </a>
-        <!--<a class="nav-link" routerLinkActive="active" [routerLink]="['ram']">-->
-        <!--<fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RAM MARKET-->
-        <!--</a>-->
       </section>
       <section class="placeholder border-r">
         <div class="credits">Made with
           <fa-icon [icon]="['fas', 'heart']"></fa-icon>
           by <a style="color: #d7d7d7;" [routerLink]="['about']">EOS Rio</a>
         </div>
-        <div class="version">v0.6.4</div>
+        <div class="version">v0.6.9</div>
       </section>
     </nav>
   </div>
@@ -202,7 +202,7 @@
       <mat-form-field class="mt-1" style="width: 273px">
         <input matInput type="text" placeholder="Amount to delegate (min = 1.0000 EOS)"
                [textMask]="{mask: numberMask}"
-               formControlName="delegate_amount">
+               formControlName="delegate_amount" (blur)="checkAmount('delegate_amount')">
         <mat-error align="start" *ngIf="amounterror !== ''">
           {{amounterror}}
         </mat-error>
@@ -216,20 +216,25 @@
       </mat-checkbox>
 
       <!-- Ram to buy-->
-      <mat-form-field class="mt-1" style="width: 273px;">
+      <mat-form-field class="mt-1" style="width: 273px; display: inline-block !important;">
         <input matInput #ramAmount type="text"
                placeholder="How much ram to buy for this account (min = 4096 bytes)"
-               formControlName="ram_amount" [textMask]="{mask: intMask}">
+               formControlName="ram_amount" [textMask]="{mask: intMask}" (blur)="checkAmountBytes()">
+        <mat-error align="start" *ngIf="amounterror2 !== ''">
+          {{amounterror2}}
+        </mat-error>
       </mat-form-field>
       <span style="margin: 0 12px;">=</span>
-      <mat-form-field style="width: 100px">
-        <input matInput placeholder="Price in eos" disabled readonly
-               value="{{ram.ramPriceEOS * (ramAmount.value/1024) | number: '1.0-4'}} EOS">
+      <mat-form-field style="width: 100px; display: inline-block !important;">
+        <input matInput placeholder="Price in eos" disabled readonly value="{{ram.ramPriceEOS * (ramAmount.value/1024) | number: '1.0-4'}} EOS">
       </mat-form-field>
       <!--Amount to Gift-->
       <mat-form-field class="mt-1" style="width: 273px">
         <input matInput placeholder="EOS Amount to gift (optional)" [textMask]="{mask: numberMask}"
-               formControlName="gift_amount" type="text">
+               formControlName="gift_amount" (blur)="checkAmount('gift_amount')" type="text">
+        <mat-error align="start" *ngIf="amounterror3 !== ''">
+          {{amounterror3}}
+        </mat-error>
       </mat-form-field>
     </form>
   </clr-wizard-page>
