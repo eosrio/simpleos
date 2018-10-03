@@ -82,6 +82,12 @@
       "icon": "src/favicon.ico"
     }
   },
+  "files": [
+     "*.js",
+     "build",
+     "Ng-dist",	
+     "node_modules"
+  ],
   "devDependencies": {
     "@angular-devkit/build-angular": "^0.6.8",
     "@angular/cli": "^6.2.1",

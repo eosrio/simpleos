@@ -484,7 +484,7 @@ export class ResourcesComponent implements OnInit {
   checkSellBytes() {
     if (this.ramMarketFormSell.value.sellBytes > 0) {
       console.log(this.ram_quota);
-      if(this.ram_quota > (this.ramMarketFormSell.get('sellBytes').value) * 1024) {
+      if((this.ram_quota-this.ram_usage) > (this.ramMarketFormSell.get('sellBytes').value) * 1024) {
         this.ramMarketFormSell.controls['sellBytes'].setErrors(null);
         this.ramMarketFormSell.controls['sellEos'].setErrors(null);
         this.errormsgeos = '';

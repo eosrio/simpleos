@@ -23,6 +23,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    backgroundColor: '#222222',
     frame: true,
     icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
   });
@@ -35,7 +36,7 @@ function createWindow() {
     win.loadURL('http://localhost:7777');
   } else {
     win.loadURL(url.format({
-      pathname: path.join(__dirname, 'ng-dist', 'index.html'),
+      pathname: path.join(__dirname, 'ng-dist/index.html'),
       protocol: 'file:',
       slashes: true
     }));

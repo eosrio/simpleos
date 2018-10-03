@@ -59,14 +59,14 @@ Your private keys are stored locally only and are properly encrypted with a user
 Off-chain information (such as the Block Producer standard) are fetched via a proxy server provided by EOS Rio, to avoid malformed json data and third-party servers misconfigurations. 
 
 ## Download a pre-compiled build
-- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-setup-0.6.4.exe)
-  - `f8402bd807e0708ed28ceb554d146c7e3d72a64db3bc1837a907b3086fb4fb03  simpleos-setup-0.6.4.exe`
-- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-0.6.4.dmg)
-  - `82040b00b75d510650a29a078b1b94df471ec4bdec33092b557c9ef1b71cfce6  simpleos-0.6.4.dmg`
-- [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos-0.6.4-x86_64.AppImage)
-  - `f9a374cdbb5bcaa3ec23a7db28b8cd236c7d47db1679f39d524aea29a72031ac  simpleos-0.6.4-x86_64.AppImage`
-- [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.4/simpleos_0.6.4_amd64.deb)
-  - `137839622a94ce54f4b45a0de055db918102f76af22e736278c52dcbcdaf8e86  simpleos_0.6.4_amd64.deb`
+- [Windows](https://github.com/eosrio/simpleos/releases/download/v0.6.9/simpleos.Setup.0.6.9.exe)
+  - `e38306e9566d436d303a4b1ea98a76b946112df428bcba54f65820d1f02c7208  simpleos.Setup.0.6.9.exe`
+- [MacOS](https://github.com/eosrio/simpleos/releases/download/v0.6.9/simpleos-0.6.9.dmg)
+  - `253a12d6fc7e149922b4931faf2257d5025eedd9f5e8a7d9a42494b5e9750fb4  simpleos-0.6.9.dmg`
+- [Linux AppImage](https://github.com/eosrio/simpleos/releases/download/v0.6.9/simpleos-0.6.9-x86_64.AppImage)
+  - `ad0e0d74f92d43473f41d22b8d5448f45a8efb2eb6b4fec6e3a87610da79eeda  simpleos-0.6.9-x86_64.AppImage`
+- [Linux DEB](https://github.com/eosrio/simpleos/releases/download/v0.6.9/simpleos_0.6.9_amd64.deb)
+  - `10191d3752303487dbf41d5bdb34b696024647e520cbc20b197ba15693583b44  simpleos_0.6.9_amd64.deb`
 
 ## Legal Disclaimer
 
