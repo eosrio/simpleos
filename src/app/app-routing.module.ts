@@ -11,6 +11,7 @@ import {AboutComponent} from './dashboard/about/about.component';
 import {LockscreenComponent} from './lockscreen/lockscreen.component';
 import {LockGuard} from './lock.guard';
 import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
+import {DappComponent} from './dashboard/dapp/dapp.component';
 
 const routes: Routes = [
   {
@@ -50,6 +51,10 @@ const routes: Routes = [
       {
         path: 'ram',
         component: ResourcesComponent,
+      },
+      {
+        path: 'dapp',
+        component: DappComponent,
       },
       {
         path: 'about',

@@ -13,6 +13,9 @@ export class EOSJSService {
   status = new Subject<Boolean>();
   txh: any[];
   actionHistory: any[];
+  abiSmartContract = '';
+  abiSmartContractActions = [];
+  abiSmartContractStructs = [];
   baseConfig = {
     keyProvider: [],
     httpEndpoint: '',
@@ -22,6 +25,7 @@ export class EOSJSService {
     sign: true,
     chainId: ''
   };
+
   basePublicKey = '';
   auth = false;
   constitution = '';
@@ -99,6 +103,18 @@ export class EOSJSService {
     return this.eos['getAccount'](name);
   }
 
+  getAccountActions(name,last_ib):Promise<any> {
+    return new Promise((resolve,reject) => {
+      this.eos['getActions'](name,-1,0).then(data=>{
+        resolve(data);
+        // console.log(data);
+      }).catch(error=>{
+        reject(error);
+        // console.log(error);
+      });
+    });
+  }
+
   getChainInfo(): Promise<any> {
     if (this.eos) {
       return this.eos['getTableRows']({
@@ -106,6 +122,21 @@ export class EOSJSService {
         code: 'eosio',
         scope: 'eosio',
         table: 'global'
+      });
+    } else {
+      return new Promise(resolve => {
+        resolve();
+      });
+    }
+  }
+
+  getDappMetaData(dapp): Promise<any> {
+    if (this.eos) {
+      return this.eos['getTableRows']({
+        json: true,
+        code: 'dappmetadata',
+        scope: dapp,
+        table: 'dapps'
       });
     } else {
       return new Promise(resolve => {
@@ -147,9 +178,20 @@ export class EOSJSService {
     });
   }
 
-  unDelegate(from: string, receiver: string, net: string, cpu: string) {
+  unDelegate(from: string, receiver: string, net: string, cpu: string, symbol: string) {
     //console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
-    return this.eos.undelegatebw(from, receiver, (net + ' EOS'), (cpu + ' EOS'));
+    return this.eos.undelegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol));
+  }
+
+  delegateBW(from: string, receiver: string, net: string, cpu: string, symbol: string) {
+    // console.log(from, receiver, (net +' EOS'), (cpu +' EOS'));
+    return new Promise((resolve, reject) => {
+      this.eos.delegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol), 0).then(data=>{
+        resolve(data);
+      }).catch(err2 => {
+        reject(err2);
+      });
+    });
   }
 
   claimRefunds(account, k): Promise<any> {
@@ -170,12 +212,15 @@ export class EOSJSService {
     return new Promise((resolve, reject) => {
       if (this.ecc['isValidPublic'](pubkey)) {
         this.getKeyAccounts(pubkey).then((data) => {
-          if (data['account_names'].length > 0) {
+          console.log('load',data);
+          // if (data['account_names'].length > 0) {
+          if (data.length > 0 ) {
             const promiseQueue = [];
-            data['account_names'].forEach((acc) => {
-              console.log(acc);
+            // data['account_names'].forEach((acc) => {
+            data.forEach((acc) => {
               const tempPromise = new Promise((resolve1, reject1) => {
-                this.getAccountInfo(acc).then((acc_data) => {
+                // this.getAccountInfo(acc).then((acc_data) => {
+                this.getAccountInfo(acc.account).then((acc_data) => {
                   console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
                   // if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
                   this.getTokens(acc_data['account_name']).then((tokens) => {
@@ -189,6 +234,39 @@ export class EOSJSService {
                   // } else {
                   //   reject1();
                   // }
+                });
+              });
+              promiseQueue.push(tempPromise);
+            });
+            Promise.all(promiseQueue).then((results) => {
+              resolve({
+                foundAccounts: results,
+                publicKey: pubkey
+              });
+            }).catch(() => {
+              reject({message: 'non_active'});
+            });
+          } else if(data['account_names'].length > 0 ){
+
+            const promiseQueue = [];
+            data['account_names'].forEach((acc) => {
+            // data.forEach((acc) => {
+              const tempPromise = new Promise((resolve1, reject1) => {
+                this.getAccountInfo(acc).then((acc_data) => {
+                // this.getAccountInfo(acc.account).then((acc_data) => {
+                  console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
+                  if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
+                    this.getTokens(acc_data['account_name']).then((tokens) => {
+                      acc_data['tokens'] = tokens;
+                      this.accounts[acc] = acc_data;
+                      resolve1(acc_data);
+                    }).catch((err) => {
+                      console.log(err);
+                      reject1();
+                    });
+                  } else {
+                    reject1();
+                  }
                 });
               });
               promiseQueue.push(tempPromise);
@@ -245,6 +323,31 @@ export class EOSJSService {
     this.eos['getAbi']('eosio').then((data) => {
       const temp = data['abi']['ricardian_clauses'][0]['body'];
       this.constitution = temp.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    });
+  }
+
+  getSCAbi(contract) {
+    return this.eos['getAbi'](contract);
+  }
+
+  pushActionContract(contract, action, form, account) {
+    const options = {authorization: account + '@active'};
+    console.log(form);
+    return new Promise((resolve, reject) => {
+      this.eos['contract'](contract).then((tc) => {
+        console.log('tem contract',tc);
+
+        if (tc[action]) {
+            tc[action](form, options).then( dt => {
+              resolve(dt);
+            }).catch(err=>{
+              reject(err);
+            });
+        }
+      }).catch(err2 => {
+        console.log('tem erro contract',err2);
+        reject(err2);
+      });
     });
   }
 
@@ -312,8 +415,8 @@ export class EOSJSService {
     return this.eos.buyrambytes(payer, receiver, parseInt(bytes));
   }
 
-  ramBuyEOS(payer: string, receiver: string, quant: number): Promise<any> {
-    return this.eos.buyram(payer, receiver, quant.toFixed(4) + ' EOS');
+  ramBuyEOS(payer: string, receiver: string, quant: number, symbol:string): Promise<any> {
+    return this.eos.buyram(payer, receiver, quant.toFixed(4) + ' ' + symbol);
   }
 
   ramSellBytes(account: string, bytes: string): Promise<any> {
@@ -323,22 +426,22 @@ export class EOSJSService {
   async createAccount(creator: string, name: string, owner: string,
                       active: string, delegateAmount: number,
                       rambytes: number, transfer: boolean,
-                      giftAmount: number, giftMemo: string): Promise<any> {
+                      giftAmount: number, giftMemo: string, symbol: string): Promise<any> {
     if (this.auth) {
       return this.eos.transaction(tr => {
         tr['newaccount']({creator: creator, name: name, owner: owner, active: active});
         tr['buyrambytes']({payer: creator, receiver: name, bytes: rambytes});
         tr['delegatebw']({
           from: creator, receiver: name,
-          stake_net_quantity: (delegateAmount * 0.3).toFixed(4) + ' EOS',
-          stake_cpu_quantity: (delegateAmount * 0.7).toFixed(4) + ' EOS',
+          stake_net_quantity: (delegateAmount * 0.3).toFixed(4) + ' ' + symbol,
+          stake_cpu_quantity: (delegateAmount * 0.7).toFixed(4)+ ' ' + symbol,
           transfer: transfer ? 1 : 0
         });
         if (giftAmount > 0) {
           tr['transfer']({
             from: creator,
             to: name,
-            quantity: giftAmount.toFixed(4) + ' EOS',
+            quantity: giftAmount.toFixed(4) + ' ' + symbol,
             memo: giftMemo
           });
         }
@@ -394,7 +497,11 @@ export class EOSJSService {
       // });
       // const broadcast_lib = info['last_irreversible_block_num'];
       console.log(this.eos);
-      return this.eosio['voteproducer'](voter, '', currentVotes);
+      return this.eosio['voteproducer'](voter, '', currentVotes).then(data =>{
+        return JSON.stringify(data);
+      }).catch(err=>{
+        return err;
+      });
       // return new Promise((resolve, reject) => {
       //   const cb = (err, res) => {
       //     if (err) {
@@ -418,7 +525,7 @@ export class EOSJSService {
     }
   }
 
-  stake(account, amount) {
+  stake(account, amount, symbol) {
     return new Promise((resolve, reject) => {
       if (amount > 2) {
         const split = ((amount / 2) / 10000).toFixed(4);
@@ -426,8 +533,8 @@ export class EOSJSService {
         this.eos['delegatebw']({
           from: account,
           receiver: account,
-          stake_net_quantity: split + ' EOS',
-          stake_cpu_quantity: split + ' EOS',
+          stake_net_quantity: split + ' ' + symbol,
+          stake_cpu_quantity: split + ' ' + symbol,
           transfer: 0
         }, (err, result) => {
           if (err) {
@@ -444,7 +551,7 @@ export class EOSJSService {
     });
   }
 
-  unstake(account, amount) {
+  unstake(account, amount, symbol) {
     return new Promise((resolve, reject) => {
       this.eos['getAccount'](account).then((accountInfo) => {
         const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
@@ -453,8 +560,8 @@ export class EOSJSService {
           this.eos['undelegatebw']({
             from: account,
             receiver: account,
-            unstake_net_quantity: split + ' EOS',
-            unstake_cpu_quantity: split + ' EOS'
+            unstake_net_quantity: split + ' ' + symbol,
+            unstake_cpu_quantity: split + ' ' + symbol
           }, (err, result) => {
             if (err) {
               console.log(err);

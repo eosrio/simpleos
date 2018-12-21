@@ -19,6 +19,7 @@ export class ResourcesComponent implements OnInit {
   passBuyModal: boolean;
   passSellModal: boolean;
   passUnDelegateModal: boolean;
+  passDelegateModal: boolean;
 
   myRamAlloc = 0;
   totalRamAlloc = 0;
@@ -53,6 +54,8 @@ export class ResourcesComponent implements OnInit {
   passBuyForm: FormGroup;
   passSellForm: FormGroup;
   passUnDelegateForm: FormGroup;
+  delegateForm: FormGroup;
+  passDelegateForm: FormGroup;
 
   currentSelAccountName: string;
 
@@ -71,6 +74,13 @@ export class ResourcesComponent implements OnInit {
   cpuUD: string;
   accNow: string;
 
+  cpuD = '';
+  netD = '';
+  accTo: string;
+  errormsgD = '';
+  errormsgD2 = '';
+  errormsgD3 = '';
+
   info: any[];
 
   busy = false;
@@ -78,6 +88,7 @@ export class ResourcesComponent implements OnInit {
   wrongpassbuy = '';
   wrongpasssell = '';
   wrongpassundelegate = '';
+  wrongpassdelegate = '';
   errormsg = '';
   errormsg2 = '';
   errormsgeos = '';
@@ -90,7 +101,7 @@ export class ResourcesComponent implements OnInit {
     prefix: '',
     allowDecimal: true,
     includeThousandsSeparator: false,
-    decimalLimit: 4,
+    decimalLimit: 4
   });
 
   constructor(
@@ -105,11 +116,26 @@ export class ResourcesComponent implements OnInit {
     this.dataDT = [];
     this.dataVAL = [];
     this.ram_chartMerge = [];
+    this.wrongpassbuy = '';
+    this.wrongpasssell = '';
+    this.wrongpassundelegate = '';
+    this.wrongpassdelegate = '';
+    this.errormsg = '';
+    this.errormsg2 = '';
+    this.errormsgeos = '';
+    this.errormsgD = '';
+    this.errormsgD2 = '';
+    this.errormsgD3 = '';
     this.ramMarketFormBuy = this.fb.group({
       buyBytes: [0, Validators.required],
       buyEos: [0],
       accountBuy: ['to this account', Validators.required],
       anotherAcc: ['']
+    });
+    this.delegateForm = this.fb.group({
+      netEos: [0,Validators.compose([ Validators.required,Validators.pattern('^(0*[1-9][0-9]*(\.[0-9]+)?|0+\.[0-9]*[1-9][0-9]*)$')])],
+      cpuEos: [0,Validators.compose([ Validators.required,Validators.pattern('^(0*[1-9][0-9]*(\.[0-9]+)?|0+\.[0-9]*[1-9][0-9]*)$')])],
+      receiverAcc: ['', Validators.required]
     });
     this.ramMarketFormSell = this.fb.group({
       sellEos: [0],
@@ -122,6 +148,9 @@ export class ResourcesComponent implements OnInit {
       pass: ''
     });
     this.passUnDelegateForm = this.fb.group({
+      pass: ''
+    });
+    this.passDelegateForm = this.fb.group({
       pass: ''
     });
     this.ram_chart = {
@@ -266,7 +295,6 @@ export class ResourcesComponent implements OnInit {
         this.listbw(selected.name);
       }
     });
-
   }
 
   private showToast(type: string, title: string, body: string) {
@@ -321,6 +349,10 @@ export class ResourcesComponent implements OnInit {
             this.delegations.push(entry);
           }
         });
+      }else{
+        this.delegations = [];
+        this.delegated_net = 0;
+        this.delegated_cpu = 0;
       }
     });
   }
@@ -399,13 +431,6 @@ export class ResourcesComponent implements OnInit {
       const arr = data;
       arr.reverse();
       data.forEach((val) => {
-        const dt = new Date(val.time);
-        let hh_mm = '';
-        if (i === 0) {
-          hh_mm = dt.getFullYear() + '-' + (('0' + (dt.getMonth() + 1)).slice(-2)) + '-' + (('0' + dt.getDate()).slice(-2)) + ' ' + (('0' + dt.getHours()).slice(-2)) + ':' + (('0' + dt.getMinutes()).slice(-2));
-        } else {
-          hh_mm = (('0' + dt.getHours()).slice(-2)) + ':' + (('0' + dt.getMinutes()).slice(-2));
-        }
         this.dataDT.push(val.time);
         this.dataVAL.push(val.price);
         i++;
@@ -416,13 +441,6 @@ export class ResourcesComponent implements OnInit {
         if (ramdata) {
           if (ramdata.price) {
             const dt = new Date(ramdata.time);
-            let hh_mm = '';
-            if (j === 0) {
-              hh_mm = dt.getFullYear() + '-' + (('0' + (dt.getMonth() + 1)).slice(-2)) + '-' + (('0' + dt.getDate()).slice(-2)) + ' ' + (('0' + dt.getHours()).slice(-2)) + ':' + (('0' + dt.getMinutes()).slice(-2));
-            } else {
-              hh_mm = (('0' + dt.getHours()).slice(-2)) + ':' + (('0' + dt.getMinutes()).slice(-2));
-            }
-            //const hh_mm = (("0"+dt.getHours()).slice(-2))+":"+(("0"+dt.getMinutes()).slice(-2));
             this.ramPriceEOS = ramdata.price;
             this.dataDT.push(dt.toISOString());
             this.dataVAL.push(ramdata.price);
@@ -450,6 +468,29 @@ export class ResourcesComponent implements OnInit {
       } catch (e) {
         this.ramMarketFormBuy.controls['anotherAcc'].setErrors({'incorrect': true});
         this.errormsg = e.message;
+      }
+    } else {
+      this.errormsg = '';
+    }
+  }
+
+  checkAccName() {
+    if (this.delegateForm.value.receiverAcc !== '') {
+      try {
+        this.eos.checkAccountName(this.delegateForm.value.receiverAcc.toLowerCase());
+        this.delegateForm.controls['receiverAcc'].setErrors(null);
+        this.errormsgD = '';
+        this.eos.getAccountInfo(this.delegateForm.value.receiverAcc.toLowerCase()).then(() => {
+          this.delegateForm.controls['receiverAcc'].setErrors(null);
+          this.errormsgD = '';
+
+        }).catch(() => {
+          this.delegateForm.controls['receiverAcc'].setErrors({'incorrect': true});
+          this.errormsgD = 'account does not exist';
+        });
+      } catch (e) {
+        this.delegateForm.controls['receiverAcc'].setErrors({'incorrect': true});
+        this.errormsgD = e.message;
       }
     } else {
       this.errormsg = '';
@@ -525,7 +566,6 @@ export class ResourcesComponent implements OnInit {
         }).catch((error) => {
           this.busy = false;
           this.wrongpasssell = 'Something went wrong!';
-          console.log('Error: ', error);
         });
       }
     }).catch(() => {
@@ -586,12 +626,13 @@ export class ResourcesComponent implements OnInit {
   }
 
   unDelegateRequest() {
+    this.busy = true;
     const account = this.aService.selected.getValue();
     const password = this.passUnDelegateForm.get('pass').value;
     const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
     this.crypto.authenticate(password, pubkey).then((data) => {
       if (data === true) {
-        this.eos.unDelegate( this.accNow,this.fromUD, this.netUD, this.cpuUD).then((e) => {
+        this.eos.unDelegate( this.accNow,this.fromUD, this.netUD, this.cpuUD, this.aService.mainnetActive['symbol']).then((e) => {
           this.fromUD = "";
           this.netUD = "";
           this.cpuUD = "";
@@ -610,6 +651,68 @@ export class ResourcesComponent implements OnInit {
     this.wrongpassundelegate = '';
     this.passUnDelegateForm.reset();
     this.busy = false;
+  }
+
+  checkEos(eosVal,val) {
+    if (eosVal > 0) {
+      this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
+        if (sel) {
+          if(val==='net') {
+            this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('cpuEos').value;
+          }else{
+            this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('netEos').value;
+          }
+        }
+      });
+      if(this.unstaked > eosVal) {
+         this.errormsgD3 = '';
+         return true;
+      }else{
+        this.errormsgD3 = 'not enough unstaked EOS!';
+        return false;
+      }
+    } else {
+       this.errormsgD3 = 'must fill NET and CPU amount';
+      return false;
+    }
+  }
+
+  fillDelegateRequest(){
+    this.accTo = this.delegateForm.get('receiverAcc').value;
+    this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(4);
+    this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(4);
+    this.accNow = this.aService.selected.getValue().name;
+
+  }
+
+  delegateRequest() {
+    this.wrongpassdelegate = '';
+    this.busy = true;
+    const account = this.aService.selected.getValue();
+    const password = this.passDelegateForm.get('pass').value;
+    const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+    this.crypto.authenticate(password, pubkey).then((data) => {
+      if (data === true) {
+        this.eos.delegateBW( this.accNow, this.accTo, this.netD, this.cpuD, this.aService.mainnetActive['symbol']).then((e) => {
+          this.accTo ='';
+          this.netD = '';
+          this.cpuD = '';
+          this.accNow = '';
+          this.passDelegateModal = false;
+          this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+        }).catch((error) => {
+          console.log(error);
+          this.busy = false;
+          this.wrongpassdelegate = 'Something went wrong!';
+        });
+      }
+    }).catch((q) => {
+      this.busy = false;
+      this.wrongpassundelegate = 'Wrong password!';
+    });
+    // this.wrongpassdelegate = '';
+    // this.passDelegateForm.reset();
+    // this.busy = false;
   }
 
 }

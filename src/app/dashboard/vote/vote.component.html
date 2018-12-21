@@ -6,7 +6,8 @@
         <div class="card-block text-center">
           <div class="total">TOTAL (${{(totalBalance * aService.usd_rate) | number: '1.2-2'}})</div>
           <div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
-            number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} EOS
+            number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.mainnetActive['symbol']}}
+            <!--number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} EOS&lt;!&ndash;CSTAM&ndash;&gt;-->
           </div>
         </div>
       </div>
@@ -14,7 +15,8 @@
         <div class="card-block text-center">
           <div class="total">STAKED (${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}})</div>
           <div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-            number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} EOS
+            number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.mainnetActive['symbol']}}
+            <!--number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} EOS &lt;!&ndash;CSTAM&ndash;&gt;-->
           </div>
           <!--<div *ngIf="unstaking > 0" style="color: white">-->
           <!--<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(stakedBalance - unstaking) | number :-->
@@ -26,10 +28,12 @@
     <div class="col-lg-6">
       <div class="card info-card">
         <div class="card-block">
-          <div class="instruction expandable">Stake your EOS&nbsp;&nbsp;
+          <div class="instruction expandable">Stake your {{aService.mainnetActive['symbol']}}&nbsp;&nbsp;
+          <!--<div class="instruction expandable">Stake your EOS&nbsp;&nbsp;&lt;!&ndash;CSTAM&ndash;&gt;-->
             <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
               <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
-              <span class="tooltip-content">Think of EOS as a farm. <br>
+              <!--<span class="tooltip-content">Think of EOS as a farm. <br> &lt;!&ndash;CSTAM&ndash;&gt;-->
+              <span class="tooltip-content">Think of {{aService.mainnetActive['symbol']}} as a farm. <br>
                 You need eos tokens to rent land on the farm and use its resources. <br>
                 In order to rent, you <strong>stake</strong> your tokens. <br>
                 When you stake, you also have power to vote, as a “resident” on the farm, but <strong>those tokens will be locked</strong> for use in transactions. <br>
@@ -49,10 +53,12 @@
             </div>
             <div class="col-lg-6">
               <mat-form-field class="input-width">
-                <input matInput type="text" min="1" placeholder="Value (EOS)"
+                <!--<input matInput type="text" min="1" placeholder="Value (EOS)" &lt;!&ndash;CSTAM&ndash;&gt;-->
+                <input matInput type="text" min="1" placeholder="Value ({{aService.mainnetActive['symbol']}})"
                        [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
                        [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
-                <span class="suffix" matSuffix>EOS</span>
+                <span class="suffix" matSuffix>{{aService.mainnetActive['symbol']}}</span>
+                <!--<span class="suffix" matSuffix>EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
               </mat-form-field>
             </div>
           </div>

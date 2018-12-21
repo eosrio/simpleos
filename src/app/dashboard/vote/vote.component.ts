@@ -212,10 +212,10 @@ export class VoteComponent implements OnInit, AfterViewInit {
         let call;
         if (this.stakingDiff < 0) {
           console.log('Unstaking: ' + Math.abs(this.stakingDiff));
-          call = this.eos.unstake(account.name, Math.abs(this.stakingDiff));
+          call = this.eos.unstake(account.name, Math.abs(this.stakingDiff),this.aService.mainnetActive['symbol']);
         } else {
           console.log('Staking: ' + Math.abs(this.stakingDiff));
-          call = this.eos.stake(account.name, Math.abs(this.stakingDiff));
+          call = this.eos.stake(account.name, Math.abs(this.stakingDiff),this.aService.mainnetActive['symbol']);
         }
         call.then(() => {
           this.busy = false;
@@ -283,28 +283,31 @@ export class VoteComponent implements OnInit, AfterViewInit {
         this.net_weight = selected.details.total_resources.net_weight;
       }
     });
-    this.voteService.listReady.asObservable().subscribe((state) => {
-      if (state) {
-        this.updateCounter();
-        this.nbps = this.voteService.bps.length;
-      }
-    });
-    this.aService.accounts.forEach((a) => {
-      if (a) {
-        if (a.name === selectedAcc.name) {
-          if (a.details['voter_info']) {
-            const currentVotes = a.details['voter_info']['producers'];
-            this.voteService.bps.forEach((elem) => {
-              elem.checked = currentVotes.indexOf(elem.account) !== -1;
-            });
-          } else {
-            this.voteService.bps.forEach((elem) => {
-              elem.checked = false;
-            });
+    if(this.aService.mainnetActive['vote']){
+      this.voteService.listReady.asObservable().subscribe((state) => {
+        if (state) {
+          this.updateCounter();
+          this.nbps = this.voteService.bps.length;
+        }
+      });
+      this.aService.accounts.forEach((a) => {
+        if (a) {
+          if (a.name === selectedAcc.name) {
+            if (a.details['voter_info']) {
+              const currentVotes = a.details['voter_info']['producers'];
+              this.voteService.bps.forEach((elem) => {
+                elem.checked = currentVotes.indexOf(elem.account) !== -1;
+              });
+            } else {
+              this.voteService.bps.forEach((elem) => {
+                elem.checked = false;
+              });
+            }
           }
         }
-      }
-    });
+      });
+    }
+
     this.getCurrentStake();
   }
 
@@ -403,21 +406,29 @@ export class VoteComponent implements OnInit, AfterViewInit {
         this.aService.injectLedgerSigner();
 
         this.eos.voteProducer(voter.name, this.selectedBPs).then((result) => {
-
           console.log(result);
-          this.wrongpass = '';
-          this.voteModal = false;
-          this.busy = false;
-          this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
-          this.passForm.reset();
-          this.aService.refreshFromChain();
+          if(JSON.parse(result).code){
+            // if (err2.error.code === 3081001) {
+              this.wrongpass = JSON.parse(result).error.details[0].message;
+            // } else {
+            //   this.wrongpass = err2.error['what'];
+            // }
+            this.busy = false;
+          } else {
+            this.wrongpass = '';
+            this.voteModal = false;
+            this.busy = false;
+            this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
+            this.passForm.reset();
+            this.aService.refreshFromChain();
 
-          setTimeout(() => {
-            this.loadPlacedVotes(this.aService.selected.getValue());
-          }, 500);
+            setTimeout(() => {
+              this.loadPlacedVotes(this.aService.selected.getValue());
+            }, 500);
+          }
 
         }).catch((err2) => {
-          console.dir(err2);
+          console.log(err2);
           // if (err2.error.code === 3081001) {
           //   this.wrongpass = 'Not enough stake to perform this action.';
           // } else {

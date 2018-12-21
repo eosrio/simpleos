@@ -23,7 +23,8 @@ import {
   MatFormFieldModule,
   MatInputModule, MatRadioModule, MatSelectModule,
   MatSliderModule,
-  MatTabsModule
+  MatTabsModule,
+  MatButtonToggleModule
 } from '@angular/material';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {TableModule} from 'primeng/table';
@@ -43,10 +44,14 @@ import {ResourcesComponent} from './dashboard/acc_resources/resources.component'
 import {NgxEchartsModule} from 'ngx-echarts';
 import {RamService} from './services/ram.service';
 import {LedgerHWService} from './services/ledger-h-w.service';
+import {DappComponent} from './dashboard/dapp/dapp.component';
+import {FormComponent} from './dashboard/dapp/dapp.component';
+import {DynamicFormBuilderModule } from './dynamic-form-builder/dynamic-form-builder.module';
 
 library.add(far, fas, fab, fal);
 
 @NgModule({
+  entryComponents: [FormComponent],
   declarations: [
     AppComponent,
     LandingComponent,
@@ -58,7 +63,9 @@ library.add(far, fas, fab, fal);
     ConfigComponent,
     AboutComponent,
     LockscreenComponent,
-    ResourcesComponent
+    ResourcesComponent,
+    DappComponent,
+    FormComponent
   ],
   imports: [
     AccordionModule,
@@ -77,13 +84,15 @@ library.add(far, fas, fab, fal);
     MatSelectModule,
     MatSliderModule,
     MatTabsModule,
+    MatButtonToggleModule,
     ReactiveFormsModule,
     TableModule,
     TextMaskModule,
     NgxEchartsModule,
     ToasterModule.forRoot(),
     TooltipModule,
-    AppRoutingModule
+    AppRoutingModule,
+    DynamicFormBuilderModule
   ],
   providers: [EOSJSService, AccountsService, NetworkService, CryptoService, RamService, LedgerHWService],
   bootstrap: [AppComponent]

@@ -171,20 +171,20 @@ export class CryptoService {
     }
   }
 
-  createPIN(pin: string) {
+  createPIN(pin: string,chain: string) {
     if (pin !== '') {
       this.locked = false;
       const salt = CryptoJS.lib.WordArray['random'](128 / 8);
       const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
-      localStorage.setItem('simpleos-salt', JSON.stringify(salt));
-      localStorage.setItem('simpleos-hash', hash);
+      localStorage.setItem('simpleos-salt.'+ chain, JSON.stringify(salt));
+      localStorage.setItem('simpleos-hash.'+ chain, hash);
     }
     // this.lock();
   }
 
-  unlock(pin: string, target: string[]): boolean {
-    const saved_hash = localStorage.getItem('simpleos-hash');
-    const salt = JSON.parse(localStorage.getItem('simpleos-salt'));
+  unlock(pin: string, target: string[],chain: string): boolean {
+    const saved_hash = localStorage.getItem('simpleos-hash.'+ chain);
+    const salt = JSON.parse(localStorage.getItem('simpleos-salt.'+ chain));
     const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
     if (hash === saved_hash) {
       this.locked = false;
@@ -218,17 +218,17 @@ export class CryptoService {
     });
   }
 
-  updatePIN(newPIN: string) {
+  updatePIN(newPIN: string,chain: string) {
     if (this.locked === false) {
-      this.createPIN(newPIN);
+      this.createPIN(newPIN,chain);
     } else {
       alert('please unlock before updating!');
     }
   }
 
-  removePIN() {
-    localStorage.removeItem('simpleos-salt');
-    localStorage.removeItem('simpleos-hash');
+  removePIN(chain:string) {
+    localStorage.removeItem('simpleos-salt.'+ chain);
+    localStorage.removeItem('simpleos-hash.'+ chain);
     this.locked = false;
   }
 

@@ -5,7 +5,8 @@
       <div class="card info-card">
         <div class="card-block">
           <div class="title">RAM price</div>
-          <div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>
+          <!--<div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+          <div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} {{aService.mainnetActive['symbol']}}/KB</div>
         </div>
       </div>
       <div echarts [options]="ram_chart"  [merge]="ram_chartMerge" class="demo-chart"></div>
@@ -42,7 +43,8 @@
             <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
               <input matInput type="text" #buyAmountEos placeholder="Price" [textMask]="{mask: numberMask}" formControlName="buyEos" (keyup)="(errormsg2='');convertToBytes()" />
             </mat-form-field>
-            <span style="margin: 0 12px;">EOS</span>
+            <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+            <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
             <mat-error align="start" *ngIf="errormsg2 !== ''">
               {{errormsg2}}
             </mat-error>
@@ -77,7 +79,8 @@
             <mat-form-field  lass="mt-1" style="width: 80px; display: inline-block !important;">
               <input matInput #sellEos type="text" [textMask]="{mask: numberMask}" placeholder="Price in eos" formControlName="sellEos" (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()" />
             </mat-form-field>
-            <span style="margin: 0 12px;">EOS</span>
+            <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+            <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
             <mat-error align="start" *ngIf="errormsgeos !== ''">
               {{errormsgeos}}
             </mat-error>
@@ -126,7 +129,45 @@
               </span>
             </a>
           </div>
-          <div class="card-text"><span class="blue">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>
+          <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+          <div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} {{aService.mainnetActive['symbol']}}</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.mainnetActive['symbol']}}</span></div>
+
+
+          <div style="height: auto; margin-bottom: 0px !important;" >
+            <form [formGroup]="delegateForm">
+              <!--div class="title" style="color: white;">Delegate to</div-->
+
+              <mat-form-field style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
+                <input matInput #receiverAcc placeholder="Delegate to (account name)" formControlName="receiverAcc" (blur)="checkAccName()"  maxlength="12" class="text-lowercase"/>
+                <mat-error align="start" *ngIf="errormsgD !== ''">
+                  {{errormsgD}}
+                </mat-error>
+                <mat-hint align="end">{{receiverAcc.value.length}} / 12</mat-hint>
+              </mat-form-field>
+              <br />
+
+              <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                <input matInput type="text" #netAmountEos placeholder="NET" [textMask]="{mask: numberMask}" formControlName="netEos" (keyup)="checkEos(netAmountEos.value,'net');" />
+              </mat-form-field>
+              <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+              <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+
+              <span style="margin: 0 12px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+
+              <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                <input matInput type="text" #cpuAmountEos placeholder="CPU" [textMask]="{mask: numberMask}" formControlName="cpuEos" (keyup)="checkEos(cpuAmountEos.value,'cpu');" />
+              </mat-form-field>
+              <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+              <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+              <mat-error align="start" *ngIf="errormsgD3 !== ''">
+                {{errormsgD3}}
+              </mat-error>
+
+              <button class="btn btn-outline btn-info-outline"  [disabled]="(!delegateForm.valid)&&(netAmountEos.value!==0)&&(cpuAmountEos.value!==0)" (click)="passDelegateModal=true;fillDelegateRequest();" >DELEGATE</button>
+
+            </form>
+          </div>
+
           <div *ngIf="delegations.length === 0" style="color: #ececec;"> You have no external delegated resources</div>
         </div>
         <div class="card-block" style="padding: 0">
@@ -180,7 +221,8 @@
   <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
 
   <div class="modal-body">
-    <span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} EOS </span>
+    <!--<span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+    <span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} {{aService.mainnetActive['symbol']}} </span>
   </div>
   <div class="modal-body">
     <p-accordion>
@@ -225,7 +267,8 @@
     <span style="color:#bdbdbd;">* 1KB = 1024 bytes </span>
   </div>
   <div class="modal-body">
-    <span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} EOS </span>
+    <!--<span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
+    <span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} {{aService.mainnetActive['symbol']}} </span>
   </div>
   <div class="modal-body">
     <p-accordion>
@@ -244,6 +287,36 @@
       </mat-hint>
     </mat-form-field>
     <button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="sell()" [disabled]="busy">
+      Confirm
+      <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy" ></fa-icon>
+    </button>
+  </form>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="passDelegateModal">
+  <h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span class="blue"> CPU</span> to <span class="blue">{{ accTo}}</span></h3>
+
+  <div class="modal-body">
+    <p-accordion>
+      <p-accordionTab header="By submiting this transaction, you agree to the delegatebw Terms & Conditions">
+        The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer ownership.
+        <br><br>
+        As an authorized party I {{ accNow }} wish to stake {{ cpuD }} EOS for CPU and {{ netD }} EOS for
+        bandwidth from the liquid tokens of {{ accNow }} for the use of delegatee {{ accTo }}.
+        <br><br>
+        As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve been authorized to
+        take this action by their beneficial owner(s).
+      </p-accordionTab>
+    </p-accordion>
+  </div>
+  <form [formGroup]="passDelegateForm" class="modal-footer">
+    <mat-form-field>
+      <input matInput #pass type="password" formControlName="pass" placeholder="Password">
+      <mat-hint class="error" align="start" *ngIf="wrongpassdelegate !== ''">
+        {{wrongpassdelegate}}
+      </mat-hint>
+    </mat-form-field>
+    <button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="delegateRequest()" [disabled]="busy">
       Confirm
       <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy" ></fa-icon>
     </button>

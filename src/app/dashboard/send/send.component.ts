@@ -10,6 +10,7 @@ import {CryptoService} from '../../services/crypto.service';
 import {EOSAccount} from '../../interfaces/account';
 
 import * as moment from 'moment';
+import {NetworkService} from '../../network.service';
 
 export interface Contact {
   name: string;
@@ -58,11 +59,9 @@ export class SendComponent implements OnInit {
   config: ToasterConfig;
   fromAccount: string;
   token_balance = 0.0000;
-  selectedToken = {
-    name: 'EOS',
-    price: 1.0000
-  };
+  selectedToken = {};
   selectedEditContact = null;
+  selectedDeleteContactName = '';
 
   knownExchanges = [
     'bitfinexdep1', 'krakenkraken', 'chainceoneos',
@@ -81,7 +80,8 @@ export class SendComponent implements OnInit {
     this.fromAccount = '';
     this.busy = false;
     this.sendForm = this.fb.group({
-      token: ['EOS', Validators.required],
+      token: [aService.mainnetActive['symbol'], Validators.required],
+      // token: ['EOS', Validators.required],// CSTAM
       to: ['', Validators.required],
       amount: ['', Validators.required],
       memo: [''],
@@ -108,6 +108,14 @@ export class SendComponent implements OnInit {
     this.accountvalid = false;
     this.unstaking = 0;
     this.unstakeTime = '';
+
+    this.selectedToken = {
+      name: this.aService.mainnetActive['symbol'],
+      price: 1.0000
+    };
+    console.log(this.selectedToken);
+    // name: 'EOS', //CSTAM
+
   }
 
   filter(val: string, indexed): Contact[] {
@@ -139,6 +147,7 @@ export class SendComponent implements OnInit {
   }
 
   ngOnInit() {
+
     this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
       if (sel) {
         this.fullBalance = sel.full_balance;
@@ -152,14 +161,16 @@ export class SendComponent implements OnInit {
       this.sendForm.patchValue({
         amount: ''
       });
-      if (symbol !== 'EOS') {
+      // if (symbol !== 'EOS') {// CSTAM
+      if (symbol !== this.aService.mainnetActive['symbol']) {
         const tk_idx = this.aService.tokens.findIndex((val) => {
           return val.name === symbol;
         });
         this.selectedToken = this.aService.tokens[tk_idx];
         this.token_balance = this.selectedToken['balance'];
       } else {
-        this.selectedToken = {name: 'EOS', price: 1.0000};
+        // this.selectedToken = {name: 'EOS', price: 1.0000}; // CSTAM
+        this.selectedToken = {name: this.aService.mainnetActive['symbol'], price: 1.0000};
       }
     });
     this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
@@ -183,7 +194,8 @@ export class SendComponent implements OnInit {
 
   setMax() {
     this.sendForm.patchValue({
-      amount: this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance
+      // amount: this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance // CSTAM
+      amount: this.sendForm.get('token').value === this.aService.mainnetActive['symbol'] ? this.unstaked : this.token_balance
     });
   }
 
@@ -192,7 +204,8 @@ export class SendComponent implements OnInit {
       this.sendForm.controls['amount'].setErrors({'incorrect': true});
       this.amounterror = 'invalid amount';
     } else {
-      const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;
+      // const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;// CSTAM
+      const max = this.sendForm.get('token').value === this.aService.mainnetActive['symbol'] ? this.unstaked : this.token_balance;
       if (parseFloat(this.sendForm.value.amount) > max) {
         this.sendForm.controls['amount'].setErrors({'incorrect': true});
         this.amounterror = 'invalid amount';
@@ -368,11 +381,13 @@ export class SendComponent implements OnInit {
   }
 
   storeContacts() {
-    localStorage.setItem('simpleos.contacts', JSON.stringify(this.contacts));
+    localStorage.setItem('simpleos.contacts.'+this.aService.mainnetActive['id'], JSON.stringify(this.contacts));
+    // localStorage.setItem('simpleos.contacts', JSON.stringify(this.contacts)); // CSTAM
   }
 
   loadContacts() {
-    const contacts = localStorage.getItem('simpleos.contacts');
+    // const contacts = localStorage.getItem('simpleos.contacts');// CSTAM
+    const contacts = localStorage.getItem('simpleos.contacts.'+this.aService.mainnetActive['id']);
     if (contacts) {
       this.contacts = JSON.parse(contacts);
     } else {
@@ -389,6 +404,7 @@ export class SendComponent implements OnInit {
   transfer() {
     this.checkExchangeAccount();
     this.busy = true;
+    this.wrongpass = '';
     const selAcc = this.aService.selected.getValue();
     const from = selAcc.name;
     const to = this.sendForm.get('to').value.toLowerCase();
@@ -404,7 +420,8 @@ export class SendComponent implements OnInit {
           // console.log(tk_name);
           // console.log(this.aService.tokens);
           let precision = 4;
-          if (tk_name !== 'EOS') {
+          // if (tk_name !== 'EOS') { // CSTAM
+          if (tk_name !== this.aService.mainnetActive['symbol']) { // CSTAM
             const idx = this.aService.tokens.findIndex((val) => {
               return val.name === tk_name;
             });
@@ -438,7 +455,7 @@ export class SendComponent implements OnInit {
             if (error.error.code === 3081001) {
               this.wrongpass = 'Not enough stake to perform this action.';
             } else {
-              this.wrongpass = error.error['what'];
+              this.wrongpass = error.error.details[0].message;
             }
             this.busy = false;
           });
@@ -478,7 +495,8 @@ export class SendComponent implements OnInit {
   openEditContactModal(contact) {
     console.log(contact);
     this.contactForm.patchValue({
-      account: contact.account
+      account: contact.account,
+      name: contact.name
     });
     this.editContactModal = true;
     this.selectedEditContact = contact;
@@ -498,7 +516,7 @@ export class SendComponent implements OnInit {
 
   openDeleteContactModal(contact) {
     this.deleteContactModal = true;
-    this.selectedEditContact = contact;
+    this.selectedDeleteContactName = contact.name;
   }
 
   doDeleteContact() {

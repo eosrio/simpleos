@@ -15,7 +15,7 @@ import {RamService} from '../services/ram.service';
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.css']
 })
-export class LandingComponent implements OnInit {
+export class LandingComponent implements OnInit{
 
   @ViewChild('wizardexists') exisitswizard: ClrWizard;
   @ViewChild('wizardnew') wizardnew: ClrWizard;
@@ -30,6 +30,8 @@ export class LandingComponent implements OnInit {
   newWallet: boolean;
   newKeys: boolean;
   importBKP: boolean;
+  endpointModal: boolean;
+  // endPoint = 'http://api.eosrio.io';
   accountname = '';
   accountname_err = '';
   accountname_valid = false;
@@ -66,7 +68,8 @@ export class LandingComponent implements OnInit {
   lockscreen2: boolean;
   importedAccounts: any[];
   exodusValid = false;
-  endpoint = 'http://api.eosrio.io';
+  // endpoint = 'http://api.eosrio.io';
+  endpoint:string;
   payloadValid = false;
   generated = false;
   generated2 = false;
@@ -79,7 +82,10 @@ export class LandingComponent implements OnInit {
   memo: string;
   openTX = LandingComponent.openTXID;
   openGit = LandingComponent.openGithub;
+  openFaq = LandingComponent.openFAQ;
   busy2 = false;
+  busyActivekey = false;
+  chainConnected = [];
 
   static parseEOS(tk_string) {
     if (tk_string.split(' ')[1] === 'EOS') {
@@ -97,10 +103,14 @@ export class LandingComponent implements OnInit {
     window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
   }
 
+  static openFAQ() {
+    window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
+  }
+
   constructor(public eos: EOSJSService,
               private crypto: CryptoService,
               private fb: FormBuilder,
-              private aService: AccountsService,
+              public aService: AccountsService,
               private toaster: ToasterService,
               public network: NetworkService,
               private router: Router,
@@ -119,13 +129,16 @@ export class LandingComponent implements OnInit {
     this.lockscreen = false;
     this.lockscreen2 = false;
     this.importBKP = false;
+    this.endpointModal = false;
     this.disableIm = false;
     this.accounts = [];
     this.importedAccounts = [];
     this.checkerr = '';
     this.errormsg = '';
+    this.endpoint = '';
     this.total_amount = 1;
     this.memo = '';
+    this.busyActivekey = false;
     this.lottieConfig = {
       path: 'assets/logoanim.json',
       autoplay: true,
@@ -157,17 +170,23 @@ export class LandingComponent implements OnInit {
       pass: ['', Validators.required],
       customImportBK: ['', Validators.required],
     });
+
   }
 
   cc(text, title, body) {
-    this.showToast('success', title + ' copied to clipboard!', body);
-    window['clipboard']['writeText'](text);
+    window['navigator']['clipboard']['writeText'](text).then(()=>{
+      this.showToast('success', title + ' copied to clipboard!', body);
+    }).catch(()=>{
+      this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+    });
   }
 
   static resetApp() {
     window['remote']['app']['relaunch']();
     window['remote']['app'].exit(0);
   }
+
+
 
   resetAndClose() {
     this.wizardnew.reset();
@@ -196,6 +215,9 @@ export class LandingComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.chainConnected = [];
+    this.chainConnected = this.getChainConnected();
+    this.endpoint = this.chainConnected['firstApi'];
     setTimeout(() => {
       this.anim.pause();
     }, 10);
@@ -203,14 +225,47 @@ export class LandingComponent implements OnInit {
     setTimeout(() => {
       this.anim.play();
     }, 900);
+
+  }
+
+
+  parseSYMBOL(tk_string) {
+    if (tk_string.split(' ')[1] === this.aService.mainnetActive['symbol']) {
+      return parseFloat(tk_string.split(' ')[0]);
+    } else {
+      return 0;
+    }
+  }
+
+  getChainConnected(){
+    const storeChain = localStorage.getItem('simplEOS.storeChain');
+    let storeChainA = [];
+    for (let chain in JSON.parse(storeChain)) {
+      let idx =
+      storeChainA.push(JSON.parse(storeChain)[chain[0]]);
+    }
+    return (storeChainA.find(chain=> chain.active ));
+    //return
+  }
+
+  setChangeMainnet(chainID) {
+    this.network.mainnetId = this.network.mainNet.find(chain=> chain.id === chainID ).id;
+    this.aService.activeChain(this.network.mainNet.find(chain => chain.id === this.network.mainnetId).name);
+    LandingComponent.resetApp();
+  }
+
+  setEndPoint(ep){
+    this.endpoint = ep;
+    this.customConnect();
+    this.endpointModal = false;
   }
 
   setPin(exodus) {
     setTimeout(() => {
       if (exodus) {
-        this.crypto.createPIN(this.pinexodus);
+        this.crypto.createPIN(this.pinexodus,'exodus');
       } else {
-        this.crypto.createPIN(this.pin);
+        this.crypto.createPIN(this.pin,this.aService.mainnetActive['id']);
       }
     }, 4000);
   }
@@ -219,22 +274,19 @@ export class LandingComponent implements OnInit {
     try {
       this.accountname_valid = false;
       const res = this.eos.checkAccountName(this.accountname);
-      console.log(res);
+      let regexName = new RegExp('^([a-z]|[1-5])+$');
       if (res !== 0) {
-        if (this.accountname.length === 12) {
-          this.eos.eos['getAccount'](this.accountname, (err, data) => {
-            console.log(err, data);
-            if (err) {
-              this.accountname_valid = true;
-              this.accountname_err = '';
-              if (next) {
-                this.wizardnew.next();
-              }
-            } else {
-              if (data) {
-                this.accountname_err = 'This account name is not available. Please try another.';
-                this.accountname_valid = false;
-              }
+        if (this.accountname.length === 12 && regexName.test(this.accountname)) {
+          this.eos.getAccountInfo(this.accountname).then(() => {
+            // this.eos['getAccount'](this.accountname, (err, data) => {
+            //   console.log(err, data);
+              this.accountname_err = 'This account name is not available. Please try another.';
+              this.accountname_valid = false;
+          }).catch(()=>{
+            this.accountname_valid = true;
+            this.accountname_err = '';
+            if (next) {
+              this.wizardnew.next();
             }
           });
         } else {
@@ -422,6 +474,7 @@ export class LandingComponent implements OnInit {
 
   verifyPrivateKey(input, exodus, path) {
     if (input !== '') {
+      this.busyActivekey = true;
       this.eos.checkPvtKey(input).then((results) => {
         this.publicEOS = results.publicKey;
         this.importedAccounts = [];
@@ -480,19 +533,28 @@ export class LandingComponent implements OnInit {
   }
 
   checkAccount() {
+    const _self = this;
     if (this.eos.ready) {
       this.check = true;
       this.accounts = [];
+      console.log('HERE',this.publicEOS);
       this.eos.loadPublicKey(this.publicEOS).then((account_data: any) => {
+        console.log('account',account_data);
         account_data.foundAccounts.forEach((acc) => {
           let balance = 0;
+          console.log('account2',acc);
           // Parse tokens and calculate balance
           acc['tokens'].forEach((tk) => {
-            balance += LandingComponent.parseEOS(tk);
+
+            balance += _self.parseSYMBOL(tk);
+            // balance += LandingComponent.parseEOS(tk);
           });
           // Add stake balance
-          balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-          balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+          // balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+          // balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+          balance += _self.parseSYMBOL(acc['total_resources']['cpu_weight']);
+          balance += _self.parseSYMBOL(acc['total_resources']['net_weight']);
+          console.log('account2',balance);
           const accData = {
             name: acc['account_name'],
             full_balance: Math.round((balance) * 10000) / 10000
@@ -501,7 +563,7 @@ export class LandingComponent implements OnInit {
         });
         this.checkerr = '';
       }).catch((err) => {
-        //console.log(err);
+        console.log('ERROR',err);
         this.checkerr = err;
       });
     }

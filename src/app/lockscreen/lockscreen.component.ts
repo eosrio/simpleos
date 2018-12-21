@@ -51,7 +51,7 @@ export class LockscreenComponent implements OnInit {
         if (this.network.networkingReady.getValue()) {
             target = ['dashboard', 'wallet'];
         }
-        if (!this.crypto.unlock(this.pin, target)) {
+        if (!this.crypto.unlock(this.pin, target,this.network.mainnetActive['id'])) {
             this.wrongpass = true;
             this.nAttempts--;
             if (this.nAttempts === 0) {
@@ -67,7 +67,7 @@ export class LockscreenComponent implements OnInit {
         } else {
             const arr = [];
             for (let i = 0; i < localStorage.length; i++) {
-                if (localStorage.key(i) !== 'simpleos.contacts') {
+                if (localStorage.key(i) !== 'simpleos.contacts.'+this.network.mainnetActive['id']) {
                     arr.push(localStorage.key(i));
                 }
             }

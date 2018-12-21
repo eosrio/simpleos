@@ -7,22 +7,26 @@ import {VotingService} from '../vote/voting.service';
 import {NetworkService} from '../../network.service';
 import {CryptoService} from '../../services/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {EOSAccount} from '../../interfaces/account';
+import {_switch} from 'rxjs-compat/operator/switch';
 
 @Component({
   selector: 'app-config',
   templateUrl: './config.component.html',
   styleUrls: ['./config.component.css']
 })
-export class ConfigComponent implements OnInit {
+export class ConfigComponent implements OnInit{
   endpointModal: boolean;
   logoutModal: boolean;
   confirmModal: boolean;
+  chainModal: boolean;
   pinModal: boolean;
   clearPinModal: boolean;
   changePassModal: boolean;
   importBKModal: boolean;
   exportBKModal: boolean;
   passForm: FormGroup;
+  chainForm: FormGroup;
   pinForm: FormGroup;
   exportForm: FormGroup;
   importForm: FormGroup;
@@ -35,6 +39,7 @@ export class ConfigComponent implements OnInit {
   choosedFil:string;
   disableEx:boolean;
   disableIm:boolean;
+  chainConnected : any;
   busy = false;
   @ViewChild('customExportBK') customExportBK:ElementRef;
   @ViewChild('customImportBK') customImportBK:ElementRef;
@@ -57,6 +62,7 @@ export class ConfigComponent implements OnInit {
               private toaster: ToasterService) {
     this.endpointModal = false;
     this.logoutModal = false;
+    this.chainModal = false;
     this.confirmModal = false;
     this.pinModal = false;
     this.clearPinModal = false;
@@ -82,8 +88,12 @@ export class ConfigComponent implements OnInit {
       pass: ['', Validators.required],
       customImportBK: ['', Validators.required],
     });
+    this.chainForm = this.fb.group({
+      pass: ['', Validators.required]
+    });
     this.disableEx = false;
     this.disableIm = false;
+    this.chainConnected = [];
   }
 
   private showToast(type: string, title: string, body: string) {
@@ -108,6 +118,7 @@ export class ConfigComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.chainConnected = this.getChainConnected();
   }
 
   logout() {
@@ -116,7 +127,7 @@ export class ConfigComponent implements OnInit {
     } else {
       const arr = [];
       for (let i = 0; i < localStorage.length; i++) {
-        if (localStorage.key(i) !== 'simpleos.contacts') {
+        if (localStorage.key(i) !== 'simpleos.contacts.'+this.aService.mainnetActive['id']) {
           arr.push(localStorage.key(i));
         }
       }
@@ -125,6 +136,20 @@ export class ConfigComponent implements OnInit {
       });
     }
     ConfigComponent.resetApp();
+  }
+
+  getChainConnected(){
+    this.chainConnected = [];
+    return (this.network.mainNet.find(chain=> chain.id === this.network.mainnetId ));
+  }
+
+  setChangeMainnet(chainID) {
+    this.network.mainnetId = chainID;
+  }
+
+  changeChain(){
+      this.aService.activeChain(this.network.mainNet.find(chain => chain.id === this.network.mainnetId).name);
+      ConfigComponent.resetApp();
   }
 
   selectEndpoint(data) {
@@ -140,7 +165,7 @@ export class ConfigComponent implements OnInit {
   }
 
   connectCustom(url) {
-    this.network.selectedEndpoint.next({url: url, owner: 'Other', latency: 0, filters: []});
+    this.network.selectedEndpoint.next({url: url, owner: 'Other', latency: 0, filters: [], chain:''});
     this.network.networkingReady.next(false);
     this.network.startup(url);
     this.endpointModal = false;
@@ -171,7 +196,7 @@ export class ConfigComponent implements OnInit {
   }
 
   clearPin() {
-    this.crypto.removePIN();
+    this.crypto.removePIN(this.aService.mainnetActive['id']);
     this.clearPinModal = false;
     this.showToast('success', 'Lockscreen PIN removed!', '');
   }
@@ -179,9 +204,9 @@ export class ConfigComponent implements OnInit {
   setPIN() {
     if (this.pinForm.value.pin !== '') {
       if (localStorage.getItem('simpleos-hash')) {
-        this.crypto.updatePIN(this.pinForm.value.pin);
+        this.crypto.updatePIN(this.pinForm.value.pin,this.aService.mainnetActive['id']);
       } else {
-        this.crypto.createPIN(this.pinForm.value.pin);
+        this.crypto.createPIN(this.pinForm.value.pin,this.aService.mainnetActive['id']);
       }
       this.showToast('success', 'New Lockscreen PIN defined!', '');
     }

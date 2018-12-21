@@ -1,31 +1,23 @@
 <div class="container-fluid" style="height: 100%; overflow:hidden;">
 
-  <div class="row" style="height: 100%; opacity: 0.85" *ngIf="aService.loading">
-    <div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
-      <ng-container>
 
-        <fa-layers class="mt-2 mb-1">
-          <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
-        </fa-layers>
-        <br>
-
-        <div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
-      </ng-container>
-    </div>
-  </div>
 
   <div class="row flex-items-xs-between" style="height: 100%;">
     <div class="col-md-10 text-center flex-column animate" *ngIf="aService.selected !== undefined"
          style="padding: 39px;">
-      <div class="balance">EOS BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
-      <div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>
+      <div class="balance">{{aService.mainnetActive['symbol']}} BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>
+      <!--<div class="balance">EOS BALANCE (${{(fullBalance * aService.usd_rate) | number: '1.2-2'}})</div>--><!--CSTAM-->
+      <div class="eos">{{fullBalance | number: '1.2-4'}} {{aService.mainnetActive['symbol']}}</div>
+      <!--<div class="eos">{{fullBalance | number: '1.2-4'}} EOS</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
       <div class="infos">
         <span style="padding-right: 15px">
-          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS
+          <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} {{aService.mainnetActive['symbol']}}
+          <!--<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} EOS&lt;!&ndash;CSTAM&ndash;&gt;-->
         </span>
         |
         <span style="padding-left: 15px">
-          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS
+          <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} {{aService.mainnetActive['symbol']}}
+          <!--<fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} EOS &lt;!&ndash;CSTAM&ndash;&gt;-->
         </span>
       </div>
       <div class="text-right" (click)="refresh()">
@@ -72,17 +64,19 @@
           </ng-container>
         </ng-template>
         <ng-template pTemplate="body" let-item let-expanded="expanded">
-          <tr [pSelectableRow]="item" class="tr-canexpand" [pRowToggler]="item" *ngIf="!item.dup">
+          <tr [pSelectableRow]="item" class="tr-canexpand {{expanded?' expandRow ':''}}" [pRowToggler]="item" *ngIf="!item.dup">
 
             <td class="text-center" style="width: 50px;">
-              <fa-icon *ngIf="item.type === 'received' && item.user !== item.contract"
-                       [icon]="['fal', 'arrow-alt-to-bottom']" size="lg" class="blue"></fa-icon>
-              <fa-icon *ngIf="item.type === 'received' && item.user === item.contract" [icon]="['far', 'parachute-box']"
-                       size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'received' && item.user !== item.contract" [icon]="['fal', 'arrow-alt-to-bottom']" size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'received' && item.user === item.contract " [icon]="['far', 'parachute-box']"size="lg" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'buyram' || item.type === 'sellram'" [icon]="['fal', 'memory']" class="blue"></fa-icon>
               <fa-icon *ngIf="item.type === 'sent'" [icon]="['fal', 'paper-plane']" class="blue"></fa-icon>
-              <fa-icon *ngIf="item.type === 'unstaked'" [icon]="['fal', 'lock-open']" class="blue"></fa-icon>
-              <fa-icon *ngIf="item.type === 'staked'" [icon]="['fal', 'lock']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'bytes_in' || item.type === 'bytes_out' || item.type === 'bytes_s'" [icon]="['fas', 'th']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'unstaked_in' || item.type === 'unstaked_out'" [icon]="['fal', 'lock-open']" class="blue"></fa-icon>
+              <fa-icon *ngIf="item.type === 'staked_in' || item.type === 'staked_out'" [icon]="['fal', 'lock']" class="blue"></fa-icon>
               <fa-icon *ngIf="item.type === 'vote'" class="blue" [icon]="['far', 'edit']"></fa-icon>
+              <fa-icon *ngIf="item.type === 'other'" class="blue" [icon]="['far', 'receipt']"></fa-icon>
+              <fa-icon *ngIf="item.type === 'new'" class="blue" [icon]="['far', 'user']"></fa-icon>
             </td>
 
             <td class="text-center">
@@ -90,21 +84,43 @@
                 <span class="white">
                   <span *ngIf="item.type === 'received'">+</span>
                   <span *ngIf="item.type === 'sent'">-</span>
+                  <span *ngIf="item.type === 'sellram'">+</span>
+                  <span *ngIf="item.type === 'buyram'">-</span>
                   {{item.amount}} <span class="blue">{{item.symbol}}</span>
                 </span>
-                <ng-container *ngIf="item.symbol === 'EOS'">
+                <!--<ng-container *ngIf="item.symbol === 'EOS'">&lt;!&ndash;CSTAM&ndash;&gt;-->
+                <ng-container *ngIf="item.symbol === aService.mainnetActive['symbol']">
                   (${{item.amount * aService.usd_rate | number}})
                 </ng-container>
+              </ng-container>
+              <ng-container *ngIf="item.action_name === 'buyrambytes'">
+                <span class="white">
+                  <span>+</span>
+                  {{item.amount}} <span class="blue">{{item.symbol}}</span>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="item.action_name === 'sellram'">
+                <span class="white">
+                  <span>-</span>
+
+                  {{item.amount}} <span class="blue">{{item.symbol}}</span>
+                </span>
               </ng-container>
               <ng-container *ngIf="item.action_name === 'voteproducer'">
                 Voted on {{item.votedProducers.length}} BPs
               </ng-container>
               <ng-container *ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
                 <span class="white">
-                  <span *ngIf="item.type === 'staked'">+</span>
+                  <span *ngIf="item.type === 'staked_in'">-</span>
+                  <span *ngIf="item.type === 'staked_out'">-</span>
+                  <span *ngIf="item.type === 'unstaked_in'">+</span>
+                  <span *ngIf="item.type === 'unstaked_out'">+</span>
                   {{item.amount}}
-                </span> EOS (${{item.amount * aService.usd_rate | number}})
+                </span>
+                <span class="blue">{{aService.mainnetActive['symbol']}}</span> (${{item.amount * aService.usd_rate | number}})
+                <!--<span class="blue">EOS</span> (${{item.amount * aService.usd_rate | number}})&lt;!&ndash;CSTAM&ndash;&gt;-->
               </ng-container>
+
             </td>
 
             <td class="text-center">
@@ -114,11 +130,24 @@
               <ng-container *ngIf="item.action_name === 'transfer'">
                 <span *ngIf="item.type === 'received'">from <span class="blue">{{item.user}}</span></span>
                 <span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
+                <span *ngIf="item.type === 'buyram'" class="blue">BUYED RAM</span>
+                <span *ngIf="item.type === 'sellram'" class="blue">SELLED RAM</span>
               </ng-container>
-              <span *ngIf="item.type === 'unstaked'" class="blue">UNSTAKED</span>
-              <span *ngIf="item.type === 'staked'" class="blue">STAKED</span>
+              <span *ngIf="item.type === 'unstaked_in'" class="blue">UNSTAKED</span>
+              <span *ngIf="item.type === 'unstaked_out'"><span class="blue">UNSTAKED</span> from <span class="blue">{{item.user}}</span></span>
+
+              <span *ngIf="item.type === 'staked_in'" class="blue">STAKED</span>
+              <span *ngIf="item.type === 'staked_out'"><span class="blue">STAKED</span> to <span class="blue">{{item.user}}</span></span>
+
+              <span *ngIf="item.type === 'bytes_in'"><span class="blue">BUYED BYTES</span> to <span class="blue">this account</span></span>
+              <span *ngIf="item.type === 'bytes_out'"><span class="blue">BUYED BYTES</span> to <span class="blue">{{item.user}}</span></span>
+
+              <span *ngIf="item.type === 'bytes_s'"><span class="blue">SELLED BYTES</span> from <span class="blue">this account</span></span>
+              <span *ngIf="item.type === 'new'"><span class="blue">CREATED ACCOUNT</span>&nbsp;<span class="blue">{{item.user}}</span></span>
+              <span *ngIf="item.type === 'other'||item.type === 'other2'"><span class="blue">{{item.contract}}</span>-{{item.action_name}}</span>
             </td>
 
+            <!--td class="text-center"><time am-time-ago="item.date"></time> </td-->
             <td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
 
             <td class="text-center" style="width: 90px;">
@@ -136,9 +165,9 @@
 
           </tr>
         </ng-template>
-        <ng-template pTemplate="rowexpansion" let-item>
+        <ng-template pTemplate="rowexpansion" let-item >
           <tr class="tr-expanded">
-            <td colspan="6">
+            <td colspan="6" style="background-color: #1c1c1c !important;">
               <div class="row row-expanded">
                 <div class="col-xs-1">
                   <div class="vertical-line"></div>
@@ -150,16 +179,24 @@
                       {{item.id}}
                     </a>
                   </div>
-                  <div>
+                  <div lass="col-xs-8 text-left" style="overflow-x: auto;">
                     <ng-container *ngIf="item.action_name === 'voteproducer'">
                       <span class="blue">Producers: </span>{{item.votedProducers.join(", ")}}
                     </ng-container>
-                    <ng-container *ngIf="item.action_name === 'transfer'">
+                    <ng-container *ngIf="item.action_name === 'transfer'||item.type === 'other2'">
                       <span class="blue">Memo: </span>{{item.memo}}
+                    </ng-container>
+                    <ng-container *ngIf="item.type === 'other'">
+                      <span class="blue">Info: </span>{{item.memo}}
+                    </ng-container>
+                    <ng-container *ngIf="item.type === 'new'">
+                      {{memoNewAcc(item.memo)}}
+                      <span class="blue"><b>Owner: </b></span>{{this.memoAccOwner}}<br><br>
+                      <span class="blue"><b>Active: </b></span>{{this.memoAccActive}}
                     </ng-container>
                   </div>
                   <div>
-                    <span class="blue">Date: </span>{{moment(item.date).format('DD/MM/YYYY H:mm:ss')}} (UTC)
+                    <span class="blue">Date: </span>{{moment.utc(item.date).format('DD/MM/YYYY H:mm:ss')}} (UTC)
                   </div>
                 </div>
               </div>
@@ -169,19 +206,34 @@
       </p-table>
     </div>
     <div class="col-md-2 tokens-panel">
+
       <div class="row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
         <div class="col-xs-12"><h3 class="gray">All tokens</h3>
           <ng-container *ngIf="aService.totalAssetsSum !== 0">
-            <div style="font-size: 16px;">${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
+            <div style="font-size: 16px;">Total: ${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
               '1.2-2'}}
             </div>
+          </ng-container>
+        </div>
+      </div>
+      <div class="row" style="height: 100%; opacity: 0.85" *ngIf="aService.loading">
+        <div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+          <ng-container>
+
+            <fa-layers class="mt-2 mb-1">
+              <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
+            </fa-layers>
+            <br>
+
+            <div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
           </ng-container>
         </div>
       </div>
       <div class="tokens-panel-body">
         <ul>
           <li class="tokens-pad">
-            <h5 class="gray mt-0">EOS</h5>
+            <!--<h5 class="gray mt-0">EOS</h5>&lt;!&ndash;CSTAM&ndash;&gt;-->
+            <h5 class="gray mt-0">{{aService.mainnetActive['symbol']}}</h5>
             <div style="color: #2e7db2;">{{fullBalance}}</div>
             <span *ngIf="aService.usd_rate !== null" style="color: #696969">
                 ${{(fullBalance * aService.usd_rate) | number:'1.2-2'}} @{{aService.usd_rate | number: '1.2-2'}}

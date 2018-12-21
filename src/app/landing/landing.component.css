@@ -10,6 +10,71 @@
   background-size: cover;
 }
 
+.clicked:hover{
+  border-bottom:1px solid #0079b8 !important;
+}
+
+.clicked{
+  text-decoration: none;
+  cursor: pointer !important;
+}
+
+.boxOption{
+  border-bottom: 1px solid #5a5a5a !important;
+  color: #fff !important;
+}
+
+.boxOption:hover{
+  background-color: #1f1f1f !important;
+  color: #0079b8 !important;
+  cursor: pointer !important;
+}
+
+.info-card {
+  background-color: #333333;
+  border-radius: 5px;
+  border: 0;
+  box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+}
+
+.title {
+  color: #a4a4a4;
+  font-size: 21px;
+  border-bottom: 1px solid #4e4e4e;
+  margin-bottom: 10px;
+  padding-bottom: 17px;
+}
+
+.info {
+  color: #a4a4a4;
+  margin-bottom: 20px;
+}
+
+.info2 {
+  font-size: 17px;
+  color: #a4a4a4;
+}
+
+.chains-card {
+  background-color: transparent;
+  border: 1px solid #565656;
+  box-shadow: none;
+  color: #848484;
+}
+
+.chain-section {
+  border-bottom: 1px solid #444444;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-property: background-color;
+  transition-property: background-color;
+}
+
+.chain-section:not(.selected):hover {
+  background-color: #2b2b2b;
+  cursor: pointer;
+}
+
 .container-fluid {
   flex-grow: 1;
   margin-bottom: 40px;
@@ -18,6 +83,11 @@
 .anim-logo {
   /*margin-top: 80px;*/
   margin-top: 41px;
+}
+
+.selected {
+  background-color: #0077b7;
+  color: white;
 }
 
 .slogan {
@@ -201,3 +271,5 @@
   box-shadow: none;
   color: #ffffff;
 }
+
+.mt-OTHER{margin-top: 0px!important;margin-bottom: 1rem !important;}

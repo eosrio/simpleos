@@ -266,7 +266,7 @@ export class DashboardComponent implements OnInit {
         this.eos.createAccount(
           this.final_creator, this.final_name, this.final_owner,
           this.final_active, delegate_amount, ram_amount,
-          delegate_transfer, gift_amount, 'created with simpleos').then((txdata) => {
+          delegate_transfer, gift_amount, 'created with simpleos', this.aService.mainnetActive['symbol']).then((txdata) => {
           console.log(txdata);
           if (this.newAccOptions === 'newpk') {
             setTimeout(() => {
@@ -408,20 +408,32 @@ export class DashboardComponent implements OnInit {
   }
 
   cc(text) {
-    this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
-    window['clipboard']['writeText'](text);
+    window['navigator']['clipboard']['writeText'](text).then(()=>{
+      this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+      //console.log(dt);
+    }).catch(()=>{
+      this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+    });
   }
 
   verifyAccountName(next) {
+    console.log(next);
     try {
       this.accountname_valid = false;
       const res = this.eos.checkAccountName(this.accountname);
-      console.log(res);
+      let regexName = new RegExp('^([a-z]|[1-5])+$');
+
       if (res !== 0) {
-        if (this.accountname.length === 12) {
-          this.eos.eos['getAccount'](this.accountname, (err, data) => {
-            console.log(err, data);
-            if (err) {
+        if (this.accountname.length === 12 && regexName.test(this.accountname)) {
+          this.eos.getAccountInfo(this.accountname).then(data => {
+          // this.eos['getAccount'](this.accountname, (err, data) => { // CSTAM
+          //   if (data) {
+              this.accountname_err = 'This account name is not available. Please try another.';
+              this.accountname_valid = false;
+            // }
+          }).catch(err=>{
+            // console.log(err);
+            // if (err) {
               this.accountname_valid = true;
               this.newAccountData.n = this.accountname;
               this.final_name = this.accountname;
@@ -430,12 +442,9 @@ export class DashboardComponent implements OnInit {
               if (next) {
                 this.wizardaccount.next();
               }
-            } else {
-              if (data) {
-                this.accountname_err = 'This account name is not available. Please try another.';
-                this.accountname_valid = false;
-              }
-            }
+            // } else {
+            //
+            // }
           });
         } else {
           this.accountname_err = 'The account name must have exactly 12 characters. a-z, 1-5';
@@ -447,6 +456,7 @@ export class DashboardComponent implements OnInit {
       this.accountname_valid = false;
     }
   }
+
   initNewAcc(){
     this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
        if (sel) {

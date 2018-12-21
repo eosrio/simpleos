@@ -12,9 +12,11 @@ import * as socketIo from 'socket.io-client';
 })
 export class AccountsService {
   public accounts: any[];
+  public mainnetActive = [];
   public selected = new BehaviorSubject<any>({});
   public selectedIdx = 0;
   public lastUpdate = new Subject<any>();
+  public versionSys:string;
   usd_rate: number;
   cmcListings = [];
   tokens = [];
@@ -30,37 +32,6 @@ export class AccountsService {
   hasAnyLedgerAccount = false;
 
   actionStore = {};
-
-  static parseEOS(tk_string) {
-    if (tk_string.split(' ')[1] === 'EOS') {
-      return parseFloat(tk_string.split(' ')[0]);
-    } else {
-      return 0;
-    }
-  }
-
-  static extendAccount(acc) {
-    let balance = 0;
-    if (acc.tokens) {
-      acc.tokens.forEach((tk) => {
-        balance += AccountsService.parseEOS(tk);
-      });
-    }
-    let net = 0;
-    let cpu = 0;
-    if (acc['self_delegated_bandwidth']) {
-      net = AccountsService.parseEOS(acc['self_delegated_bandwidth']['net_weight']);
-      cpu = AccountsService.parseEOS(acc['self_delegated_bandwidth']['cpu_weight']);
-      balance += net;
-      balance += cpu;
-    }
-    return {
-      name: acc['account_name'],
-      full_balance: Math.round((balance) * 10000) / 10000,
-      staked: net + cpu,
-      details: acc
-    };
-  }
 
   constructor(private http: HttpClient, private eos: EOSJSService, private toaster: ToasterService, private ledger: LedgerHWService) {
     this.accounts = [];
@@ -79,28 +50,147 @@ export class AccountsService {
         const store = localStorage.getItem('actionStore.' + this.eos.chainID);
         if (store) {
           this.actionStore = JSON.parse(store);
+        } else {
+          this.actionStore[this.selected.getValue().name] = {
+            last_gs: 0,
+            actions: []
+          };
         }
       }
     });
 
-    this.socket.on('action', (data) => {
-      if (!this.actionStore[data.account]) {
-        this.actionStore[data.account] = {
-          last_gs: 0,
-          actions: []
-        };
-      }
-
-      this.actionStore[data.account]['last_gs'] = data.data.receipt.global_sequence;
-      const idx = this.actionStore[data.account]['actions'].findIndex((v) => {
-        return v.receipt.act_digest === data.data.receipt.act_digest;
-      });
-      if (idx === -1) {
-        this.actionStore[data.account]['actions'].push(data.data);
-        this.totalActions = this.actionStore[data.account]['actions'].length;
-      }
-    });
+    // if(this.mainnetActive['name']==='EOS MAINNET') {
+    //   this.socket.on('action', (data) => {
+    //     if (!this.actionStore[data.account]) {
+    //       this.actionStore[data.account] = {
+    //         last_gs: 0,
+    //         actions: []
+    //       };
+    //     }
+    //
+    //     this.actionStore[data.account]['last_gs'] = data.data.receipt.global_sequence;
+    //     const idx = this.actionStore[data.account]['actions'].findIndex((v) => {
+    //       return v.receipt.act_digest === data.data.receipt.act_digest;
+    //     });
+    //     if (idx === -1) {
+    //       this.actionStore[data.account]['actions'].push(data.data);
+    //       this.totalActions = this.actionStore[data.account]['actions'].length;
+    //     }
+    //   });
+    // }
   }
+
+  activeChain(chainName){
+    let eos = true;
+    let wbi = false;
+    let jng = false;
+    let tls = false;
+    let CNval= chainName;
+
+    if(localStorage.getItem('simplEOS.storeChain') && chainName === 'START'){
+      let ssC = JSON.parse(localStorage.getItem('simplEOS.storeChain'));
+      eos = ssC[0]['active'];
+      wbi = ssC[1]['active'];
+      tls = ssC[2]['active'];
+      jng = ssC[3]['active'];
+    }else{
+      switch (chainName) {
+        case 'EOS MAINNET':{ eos=true; wbi=false; jng=false; tls=false; break; }
+        case 'WORBLI MAINNET':{ wbi=true; eos=false; jng=false; tls=false; break; }
+        case 'JUNGLE TESTNET':{ jng=true; eos=false; wbi= false; tls=false; break; }
+        case 'TELOS TESTNET':{ tls=true; eos=false; wbi=false; jng=false;  break; }
+        default:{ eos=true; wbi=false; jng=false; tls=false; break; }
+      }
+    }
+
+
+    const mainNet  =  [{
+      id:'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+      symbol: 'EOS',
+      name:'EOS MAINNET',
+      active:eos,
+      firstApi:'https://api.eosrio.io',
+      history:true,
+      send:true,
+      resource:true,
+      vote:true,
+      dapps:true,
+      addAcc:true,
+      newAcc:true
+    },{
+      id:'73647cde120091e0a4b85bced2f3cfdb3041e266cbbe95cee59b73235a1b3b6f',
+      symbol:'WBI',
+      name:'WORBLI MAINNET',
+      active:wbi,
+      firstApi:'https://api.worbli.eosrio.io',
+      history:true,
+      send:true,
+      resource:false,
+      vote:false,
+      dapps:true,
+      addAcc:true,
+      newAcc:false
+    },{
+      id:'335e60379729c982a6f04adeaad166234f7bf5bf1191252b8941783559aec33e',
+      symbol:'TLOS',
+      name:'TELOS TESTNET',
+      active:tls,
+      firstApi:'https://api.eos.miami:17441',
+      history:true,
+      send:true,
+      resource:false,
+      vote:true,
+      dapps:true,
+      addAcc:true,
+      newAcc:true
+    },{
+      id:'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
+      symbol:'EOS',
+      name:'JUNGLE TESTNET',
+      active:jng,
+      firstApi:'https://jungle2.cryptolions.io:443',
+      history:true,
+      send:true,
+      resource:true,
+      vote:true,
+      dapps:true,
+      addAcc:true,
+      newAcc:true
+    }];
+    localStorage.setItem('simplEOS.storeChain', JSON.stringify(mainNet));
+  }
+
+  parseEOS(tk_string) {
+    if (tk_string.split(' ')[1] === this.mainnetActive['symbol']) {
+      return parseFloat(tk_string.split(' ')[0]);
+    } else {
+      return 0;
+    }
+  }
+
+  extendAccount(acc) {
+    let balance = 0;
+    if (acc.tokens) {
+      acc.tokens.forEach((tk) => {
+        balance += this.parseEOS(tk);
+      });
+    }
+    let net = 0;
+    let cpu = 0;
+    if (acc['self_delegated_bandwidth']) {
+      net = this.parseEOS(acc['self_delegated_bandwidth']['net_weight']);
+      cpu = this.parseEOS(acc['self_delegated_bandwidth']['cpu_weight']);
+      balance += net;
+      balance += cpu;
+    }
+    return {
+      name: acc['account_name'],
+      full_balance: Math.round((balance) * 10000) / 10000,
+      staked: net + cpu,
+      details: acc
+    };
+  }
+
 
   registerSymbol(data, contract) {
     const idx = this.tokens.findIndex((val) => {
@@ -130,7 +220,8 @@ export class AccountsService {
     let totalSum = 0;
     this.tokens.forEach(tk => {
       if (tk.price) {
-        totalSum = totalSum + (tk.balance * tk.price);
+        //console.log(tk.price);
+        totalSum += (tk.balance * tk.price);
       }
     });
     this.totalAssetsSum = totalSum;
@@ -142,7 +233,7 @@ export class AccountsService {
       const contracts = Object.keys(data);
       this.loading = false;
       contracts.forEach((contract) => {
-        if (data[contract]['symbol'] !== 'EOS') {
+        if (data[contract]['symbol'] !== this.mainnetActive['symbol']) {
           this.registerSymbol(data[contract], contract);
         }
       });
@@ -163,18 +254,19 @@ export class AccountsService {
     });
   }
 
+
   processAction(act, id, block_num, date) {
     const contract = act['account'];
     const action_name = act['name'];
     let symbol = '', user = '', type = '', memo = '';
     let votedProducers = null, proxy = null, voter = null;
     let cpu = 0, net = 0, amount = 0;
-
+    // console.log(act,date);
     if (action_name === 'transfer') {
       if (contract === 'eosio.token') {
         // NATIVE TOKEN
         amount = act['data']['quantity']['split'](' ')[0];
-        symbol = 'EOS';
+        symbol = this.mainnetActive['symbol'];
       } else {
         // CUSTOM TOKEN
         amount = act['data']['quantity']['split'](' ')[0];
@@ -190,6 +282,26 @@ export class AccountsService {
       }
     }
 
+    if (action_name === 'buyrambytes') {
+      amount = act['data']['bytes'];
+      symbol = 'bytes';
+      if (act['data']['receiver'] === this.selected.getValue().name) {
+        user = act['data']['payer'];
+        type = 'bytes_in';
+      } else {
+        user = act['data']['receiver'];
+        type = 'bytes_out';
+      }
+    }
+
+
+    if (action_name === 'sellram') {
+      amount = act['data']['bytes'];
+      symbol = 'bytes';
+      user = act['data']['account'];
+      type = 'bytes_s';
+    }
+
     if (contract === 'eosio' && action_name === 'voteproducer') {
       votedProducers = act['data']['producers'];
       proxy = act['data']['proxy'];
@@ -201,24 +313,69 @@ export class AccountsService {
       cpu = parseFloat(act['data']['unstake_cpu_quantity'].split(' ')[0]);
       net = parseFloat(act['data']['unstake_net_quantity'].split(' ')[0]);
       amount = cpu + net;
-      user = act['data']['from'];
-      type = 'unstaked';
+      if(act['data']['from']===act['data']['receiver']){
+        user = act['data']['from'];
+        type = 'unstaked_in';
+      }else{
+        user = act['data']['receiver'];
+        type = 'unstaked_out';
+      }
+      // user = act['data']['from'];
+      // type = 'unstaked';
     }
 
     if (contract === 'eosio' && action_name === 'delegatebw') {
       cpu = parseFloat(act['data']['stake_cpu_quantity'].split(' ')[0]);
       net = parseFloat(act['data']['stake_net_quantity'].split(' ')[0]);
       amount = cpu + net;
-      user = act['data']['from'];
-      type = 'staked';
+      if(act['data']['from']===act['data']['receiver']){
+        user = act['data']['from'];
+        type = 'staked_in';
+      }else{
+        user = act['data']['receiver'];
+        type = 'staked_out';
+      }
     }
 
     let valid = true;
+
     if (action_name === 'transfer') {
       if (act['data']['to'] === 'eosio.stake') {
         valid = false;
       }
     }
+
+    if (act['data']['to'] === 'eosio.ram') {
+      type = 'buyram';
+    }
+    if (act['data']['from'] === 'eosio.ram') {
+      type = 'sellram';
+    }
+
+    if((contract!=='eosio' && contract!=='eosio.token' && action_name!=='transfer')){
+      if(!act['data']['to'] && !act['data']['from']) {
+        type = 'other';
+        let dataInfo = act['data'];
+        for (let dt in  dataInfo) {
+          memo += dt + ': ' + dataInfo[dt] + '; ';
+        }
+      } else {
+        type = 'other2';
+        // user = act['data']['from'];
+        let dataInfo = act['data'];
+        for (let dt in  dataInfo) {
+          memo += dt + ': ' + dataInfo[dt] + '; ';
+        }
+      }
+
+    }
+
+    if((contract==='eosio' && action_name==='newaccount')){
+      type = 'new';
+      user = act['data']['name'];
+      memo = JSON.stringify(act['data']);
+    }
+
     const obj = {
       id: id,
       type: type,
@@ -234,10 +391,12 @@ export class AccountsService {
       proxy: proxy,
       voter: voter
     };
-    this.actions.unshift(obj);
+    // this.actions.unshift(obj);
+    this.actions.push(obj);
   }
 
   getAccActions(account, reload) {
+
     if (account === null) {
       account = this.selected.getValue().name;
     }
@@ -260,49 +419,110 @@ export class AccountsService {
       last_gs = 0;
     }
 
-    this.socket.emit('get_actions', {
-      account: account,
-      limited: limited,
-      last_gs: last_gs
-    }, (results) => {
-      console.log('Stream output: ', results);
+    const store = localStorage.getItem('actionStore.' + this.mainnetActive['id']);
+    if (store) {
+      this.actionStore = JSON.parse(store.toString());
+    }
 
-      if (results === 'end') {
+    if(!this.actionStore[this.selected.getValue().name]) {
+      this.actionStore[this.selected.getValue().name] = {
+        last_gs: 0,
+        actions: []
+      };
+    }
 
-        this.actionStore[account]['actions'].sort((a: any, b: any) => {
-          const dB = new Date(b.block_time).getTime();
-          const dA = new Date(a.block_time).getTime();
-          return dA - dB;
+    // if(this.mainnetActive['name']==='EOS MAINNET') {
+    //   this.socket.emit('get_actions', {
+    //     account: account,
+    //     limited: limited,
+    //     last_gs: last_gs
+    //   }, (results) => {
+    //     console.log('Stream output: ', results);
+    //
+    //     if (results === 'end') {
+    //       // console.log("socket", this.actionStore[account]['actions']);
+    //       this.actionStore[account]['actions'].sort((a: any, b: any) => {
+    //         const dB = new Date(b.block_time).getTime();
+    //         const dA = new Date(a.block_time).getTime();
+    //         return dA - dB;
+    //       });
+    //
+    //       const payload = JSON.stringify(this.actionStore);
+    //       localStorage.setItem('actionStore.' + this.eos.chainID, payload);
+    //
+    //       this.actionStore[account]['actions'].forEach((action) => {
+    //         this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
+    //       });
+    //       // this.actionStore[account]['actions'].forEach((action) => {
+    //       //   this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
+    //       // });
+    //
+    //       this.totalActions = this.actionStore[account]['actions'].length;
+    //       this.accounts[this.selectedIdx]['actions'] = this.actions;
+    //       this.calcTotalAssets();
+    //     }
+    //   });
+    // } else {
+    //
+    // }
+
+    this.eos.getAccountActions(account,0).then(val=>{
+
+      const actions = val['actions'];
+      // console.log(val);
+      let actions2 = [];
+      let ls_gs = 0;
+      if(actions.length>0) {
+        if (parseInt(val['actions'][0]['receipt']['global_sequence']) > parseInt(this.actionStore[account]['last_gs'])) {
+          ls_gs = val['actions'][0]['receipt']['global_sequence'];
+        } else {
+          ls_gs = this.actionStore[account]['last_gs'];
+        }
+
+        actions.forEach(data => {
+          if (data['act']['account'] === data['receipt']['receiver']) {
+            // if( data['act']['data']['to'] !==  data['receipt']['receiver']){
+            // console.log(data);
+			actions2.push(data);
+            // }
+          }
         });
+      }
 
-        const payload = JSON.stringify(this.actionStore);
-        localStorage.setItem('actionStore.' + this.eos.chainID, payload);
+      this.actionStore[account]['last_gs'] = ls_gs;
+      this.actionStore[account]['actions'] = actions2;
+      const payload = JSON.stringify(this.actionStore);
+      localStorage.setItem('actionStore.' + this.mainnetActive['id'], payload);
 
-        this.actionStore[account]['actions'].forEach((action) => {
-          this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
-        });
+    });
 
-        this.totalActions = this.actionStore[account]['actions'].length;
-        this.accounts[this.selectedIdx]['actions'] = this.actions;
-        this.calcTotalAssets();
+    this.actionStore[account]['actions'].forEach((action) => {
+      if(action['block_time']===undefined||action['block_time']===''){
+        this.processAction(action['act'], action['trx_id'], action['recv_sequence'], action['createdAt']);
+      } else {
+        this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
       }
     });
+
+    this.totalActions = this.actionStore[account]['actions'].length;
+    this.accounts[this.selectedIdx]['actions'] = this.actions;
+    this.calcTotalAssets();
   }
 
   reloadActions(account, reload) {
     console.log('reloading: ' + reload);
-    if (account) {
-      this.socket.emit('close_actions_cursor', {
-        account: account
-      }, () => {
-        this.socket.emit('open_actions_cursor', {
-          account: account
-        }, (result2) => {
-          console.log(result2);
+    // if (account) {
+    //   this.socket.emit('close_actions_cursor', {
+    //     account: account
+    //   }, () => {
+    //     this.socket.emit('open_actions_cursor', {
+    //       account: account
+    //     }, (result2) => {
+    //       console.log(result2);
           this.getAccActions(account, reload);
-        });
-      });
-    }
+    //     });
+    //   });
+    // }
   }
 
   select(index) {
@@ -321,7 +541,9 @@ export class AccountsService {
 
     const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
     const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-    this.isLedger = stored_data[pbk]['private'] === 'ledger';
+    // if(this.isLedger){
+    //   this.isLedger = stored_data[pbk]['private'] === 'ledger';
+    // }
 
     this.socket.emit('open_actions_cursor', {
       account: this.selected.getValue().name
@@ -396,7 +618,7 @@ export class AccountsService {
       data.forEach((acc_data) => {
         acc_data.tokens = [];
         if (!acc_data.details) {
-          this.accounts.push(AccountsService.extendAccount(acc_data));
+          this.accounts.push(this.extendAccount(acc_data));
         } else {
           this.accounts.push(acc_data);
         }
@@ -417,21 +639,21 @@ export class AccountsService {
               let ref_net = 0;
               let ref_cpu = 0;
               if (refunds.rows.length > 0) {
-                ref_net = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
-                ref_cpu = AccountsService.parseEOS(refunds.rows[0]['cpu_amount']);
+                ref_net = this.parseEOS(refunds.rows[0]['cpu_amount']);
+                ref_cpu = this.parseEOS(refunds.rows[0]['cpu_amount']);
                 balance += ref_net;
                 balance += ref_cpu;
                 const tempDate = refunds.rows[0]['request_time'] + '.000Z';
                 ref_time = new Date(tempDate);
               }
               tokens.forEach((tk) => {
-                balance += AccountsService.parseEOS(tk);
+                balance += this.parseEOS(tk);
               });
               let net = 0;
               let cpu = 0;
               if (newdata['self_delegated_bandwidth']) {
-                net = AccountsService.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
-                cpu = AccountsService.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+                net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
+                cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
                 balance += net;
                 balance += cpu;
               }
@@ -475,6 +697,7 @@ export class AccountsService {
       let id = null;
       for (let i = 0; i < this.cmcListings.length; i++) {
         if (this.cmcListings[i].symbol === symbol) {
+          console.log('------->',this.cmcListings[i]);
           id = this.cmcListings[i].id;
         }
       }
@@ -502,9 +725,9 @@ export class AccountsService {
     return new Promise(resolve => {
       this.accounts.forEach((acc) => {
         const pbk = acc.details.permissions[0].required_auth.keys[0];
-        if (stored_data[pbk]['private'] === 'ledger') {
-          hasLedger = true;
-        }
+        // if (stored_data[pbk]['private'] === 'ledger') {
+        //   hasLedger = true;
+        // }
       });
       this.hasAnyLedgerAccount = hasLedger;
       resolve(hasLedger);
@@ -518,11 +741,11 @@ export class AccountsService {
       const pbk = this.selected.getValue().details['permissions'][0]['required_auth'].keys[0].key;
       console.log('Publickey:', pbk);
       console.log(store);
-      if (store[pbk]['private'] === 'ledger') {
-        this.ledger.enableLedgerEOS(store[pbk]['slot']);
-      } else {
-        this.eos.clearSigner();
-      }
+      // if (store[pbk]['private'] === 'ledger') {
+      //   this.ledger.enableLedgerEOS(store[pbk]['slot']);
+      // } else {
+      //   this.eos.clearSigner();
+      // }
     } else {
       this.eos.clearSigner();
     }

@@ -7,6 +7,7 @@ import {AccountsService} from './accounts.service';
 import {EOSJSService} from './eosjs.service';
 import {CryptoService} from './services/crypto.service';
 import {Router} from '@angular/router';
+import {environment} from '../environments/environment';
 
 export interface LedgerSlot {
   publicKey: string;
@@ -31,6 +32,7 @@ export class AppComponent implements AfterViewInit {
   selectedSlotIndex: number;
   showAll = false;
   agreeConstitution = false;
+  public version = environment.VERSION;
 
   constructor(
     public network: NetworkService,
@@ -44,6 +46,7 @@ export class AppComponent implements AfterViewInit {
     this.selectedSlot = null;
     this.selectedSlotIndex = null;
     this.update = false;
+    this.aService.versionSys = this.version;
 
     this.ledgerOpen = false;
     // this.ledger.ledgerStatus.asObservable().subscribe((status) => {
@@ -57,6 +60,7 @@ export class AppComponent implements AfterViewInit {
       }
     });
 
+    this.aService.activeChain('START');
     this.busy = false;
   }
 

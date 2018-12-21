@@ -4,22 +4,22 @@
     <div class="col-md-6 text-center animate" style="align-self: center;">
       <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
         <div class="balance">
-          <ng-container *ngIf="sendForm.value.token === 'EOS'">
+          <ng-container *ngIf="sendForm.value.token === aService.mainnetActive['symbol']">
             <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
             '1.2-2'}})
           </ng-container>
-          <ng-container *ngIf="sendForm.value.token !== 'EOS' && selectedToken.price !== null">
-            ${{token_balance * selectedToken.price | number :'1.2-2'}}
+          <ng-container *ngIf="sendForm.value.token !== aService.mainnetActive['symbol'] && selectedToken['price'] !== null">
+            ${{token_balance * selectedToken['price'] | number :'1.2-2'}}
           </ng-container>
         </div>
-        <ng-container *ngIf="sendForm.value.token === 'EOS'">
-          <div class="eos">{{unstaked | number : '1.2-4'}} EOS</div>
+        <ng-container *ngIf="sendForm.value.token === aService.mainnetActive['symbol']">
+          <div class="eos">{{unstaked | number : '1.2-4'}} {{aService.mainnetActive['symbol']}}</div>
           <div *ngIf="unstaking > 0" style="color: white">
             <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
             '1.2-4'}} EOS {{unstakeTime}}
           </div>
         </ng-container>
-        <ng-container *ngIf="sendForm.value.token !== 'EOS'">
+        <ng-container *ngIf="sendForm.value.token !== aService.mainnetActive['symbol']">
           <div class="eos">{{token_balance | number : '1.2-4'}} {{sendForm.value.token}}</div>
         </ng-container>
         <form [formGroup]="sendForm">
@@ -28,8 +28,8 @@
               <input type="text" placeholder="Token" matInput formControlName="token" [matAutocomplete]="auto1">
               <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
               <mat-autocomplete #auto1="matAutocomplete">
-                <mat-option value="EOS">
-                  EOS
+                <mat-option value="{{aService.mainnetActive['symbol']}}">
+                  {{ aService.mainnetActive['symbol'] }}
                 </mat-option>
                 <mat-option *ngFor="let token of aService.tokens" [value]="token.name">
                   {{ token.name }}
@@ -54,7 +54,7 @@
             </mat-form-field>
             <mat-form-field class="field-width">
               <input matInput formControlName="amount" [textMask]="{mask: numberMask}" type="text"
-                     placeholder="Amount ({{selectedToken.name}})" (blur)="checkAmount();">
+                     placeholder="Amount ({{selectedToken['name']}})" (blur)="checkAmount();">
               <button mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
                       (click)="setMax()">
                 MAX
@@ -166,7 +166,7 @@
     <form [formGroup]="confirmForm" class="confirmForm">
       <mat-form-field>
         <input matInput #pass type="password" (keyup.enter)="transfer()" placeholder="Password" formControlName="pass">
-        <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+        <mat-hint class="error" align="start" *ngIf="wrongpass !== ''" >
           {{wrongpass}}
         </mat-hint>
         <br clear="all"/>
@@ -176,10 +176,10 @@
         Confirm
         <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
       </button>
+
     </form>
   </div>
 </clr-modal>
-
 
 <clr-modal [(clrModalOpen)]="newContactModal" [clrModalSize]="'sm'">
   <h3 class="modal-title text-white">
@@ -234,7 +234,7 @@
     <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="blue">Delete</span> contact?
   </h3>
   <div class="modal-body">
-    <p style="margin-bottom: 20px;">Are you sure you want do delete the contact X?</p>
+    <p style="margin-bottom: 20px;">Are you sure you want do delete the contact <span class="blue">{{selectedDeleteContactName}}</span>?</p>
   </div>
   <div class="modal-footer">
     <button class="btn btn-danger-outline" (click)="deleteContactModal = false">Cancel</button>

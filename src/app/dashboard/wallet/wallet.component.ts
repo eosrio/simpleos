@@ -21,12 +21,14 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
   blockTracker: any;
   tokens: any[];
   loading: boolean;
+  memoAccOwner = '';
+  memoAccActive = '';
 
   static openTXID(value) {
     window['shell']['openExternal']('https://www.bloks.io/transaction/' + value);
   }
 
-  constructor(public aService: AccountsService, public eos: EOSJSService) {
+  constructor(public aService: AccountsService, public eos: EOSJSService, ) {
     this.moment = moment;
     this.actions = [];
     this.tokens = [];
@@ -42,12 +44,15 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     this.eos['eos']['getInfo']({}).then((info) => {
       this.headBlock = info['head_block_num'];
       this.LIB = info['last_irreversible_block_num'];
+    }).catch(err=>{
+      console.log("Error",err);
     });
   }
 
 
   ngOnInit() {
-    console.log('here', this.aService.totalActions);
+    // console.log('here', this.aService.totalActions);
+    // console.log('Action', this.aService.actions);
     this.aService.lastUpdate.asObservable().subscribe(value => {
       if (value.account === this.aService.selected.getValue().name) {
         this.updateBalances();
@@ -84,6 +89,17 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         }, 50);
       }
     });
+  }
+
+  dateSort(ev){
+    ev.field.forEach(data=>{
+      console.log(data);
+    })
+  }
+
+  memoNewAcc(info){
+    this.memoAccOwner = JSON.stringify(JSON.parse(info)['owner']);
+    this.memoAccActive = JSON.stringify(JSON.parse(info)['active']);
   }
 
   // loadHistoryLazy(LazyLoadEvent) {

@@ -5,18 +5,33 @@
       <!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
       <div class="card info-card">
         <div class="card-header title">
+          Connected To <span class="blue" style="text-transform: uppercase !important;"><b>{{network.mainnetActive['name']}}</b></span>
+        </div>
+        <div class="card-block">
+          <div class="info2">Connect to another chain.</div>
+          <div class="row" style="margin-left: 0;">
+            <div class="col-xs-auto">
+              <button *ngFor="let chain of network.mainNet" class="btn btn-info-outline mt-1 {{!chain.active?'':'selected'}}" (click)="chainModal= true; setChangeMainnet(chain.id);">{{chain.name}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card info-card">
+        <div class="card-header title">
           Network Options
         </div>
         <div class="card-block">
           <div class="info2">Connect to another endpoint.</div>
           <div class="card chains-card">
-            <ng-container *ngFor="let endpoint of network.publicEndpoints">
-              <div class="card-block chain-section"
-                   [ngClass]="{selected: network.selectedEndpoint.getValue().url === endpoint.url}"
-                   (click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
-                {{endpoint.url}}
-                <span style="float:right">latency: {{endpoint.latency}} ms</span>
-              </div>
+            <ng-container *ngFor="let endpoint of network.validEndpoints" >
+              <ng-container *ngIf="endpoint.chain===network.mainnetActive['name']" >
+                <div class="card-block chain-section {{network.selectedEP() === endpoint.url?'selected':''}}"
+                     (click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
+                  {{endpoint.url}}
+                  <span style="float:right">latency: {{endpoint.latency}} ms</span>
+                </div>
+              </ng-container>
             </ng-container>
           </div>
           <div class="row" style="margin-left: 0;">
@@ -118,6 +133,29 @@
   </div>
 </clr-modal>
 
+<clr-modal [(clrModalOpen)]="chainModal" [clrModalSize]="'md'">
+  <h3 class="modal-title text-white">
+    Are you <span class="blue"><b>sure</b></span> want to change the main chain ?
+  </h3>
+  <div class="modal-body">
+    <!--p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your
+      private key again.</p-->
+    <form [formGroup]="chainForm"  (keyup.enter)="changeChain()">
+
+    </form>
+  </div>
+  <div class="modal-footer">
+
+    <button class="btn btn-danger-outline" (click)="chainModal = false">Cancel</button>
+    <div>
+      <button type="button" class="btn btn-info-outline" (click)="changeChain()">
+        Yes
+      </button>
+      <div class="text-center">*SimplEOS will <br> be restarted</div>
+    </div>
+  </div>
+</clr-modal>
+
 <clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'md'">
   <h3 class="modal-title text-white">
     Connect to another endpoint, enter url below:
@@ -194,7 +232,7 @@
   <h3 class="modal-title text-white">
     Set lockscreen pin
   </h3>
-  <div class="modal-body" style="overflow-y: -webkit-paged-x !important;">
+  <div class="modal-body" style="overflow-y: paged-x !important;">
     <form [formGroup]="pinForm">
       <mat-form-field class="mt-1">
         <input matInput #pin type="password" placeholder="New pin" formControlName="pin">
