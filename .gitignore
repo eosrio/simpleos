@@ -43,5 +43,12 @@ Thumbs.db
 .npmrc
 
 *.bkp
+*.exe
+*.AppImage
+*.deb
+*.dmg
+
 .idea
 node_modules
+dist
+ng-dist

@@ -544,7 +544,7 @@ export class NetworkService {
 							this.voting.forceReload();
 							this.networkingReady.next(true);
 							if (this.activeChain.features.forum) {
-								this.router['navigate'](['dashboard', 'referendum']);
+								this.router['navigate'](['dashboard', 'vote']);
 							} else {
 								this.router['navigate'](['dashboard', 'wallet']);
 							}
