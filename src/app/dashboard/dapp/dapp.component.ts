@@ -244,7 +244,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 	getForm(actionType) {
 		this.actionDesc = '';
 		this.busy = false;
-		if (this.abiSmartContractStructs.find(action => action.name == actionType).fields.length > 0) {
+		if (this.abiSmartContractStructs.find(action => action.name === actionType).fields.length > 0) {
 			this.fields = [];
 			this.action = actionType;
 			if (this.actionInfo) {
@@ -253,7 +253,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 				}
 			}
 			this.removeComponent(this.componentClass);
-			this.abiSmartContractStructs.find(action => action.name == actionType).fields.forEach(field => {
+			this.abiSmartContractStructs.find(action => action.name === actionType).fields.forEach(field => {
 				console.log(field.type.indexOf('[]'));
 				const line = (field.type.indexOf('[]') > 0);
 

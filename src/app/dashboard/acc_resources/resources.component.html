@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container" style="overflow-x: hidden">
   <div class="clr-row animate" style="padding-top: 15px;">
 
     <div class="clr-col-lg-4">
@@ -112,7 +112,12 @@
           <div class="progress bottom" [ngClass]="{'danger': (cpu_limit.used/cpu_limit.max) > 0.85}">
             <progress [value]="cpu_limit.used" [max]="cpu_limit.max"></progress>
           </div>
-          <span class="title">CPU Bandwidth</span>
+          <span class="title">CPU Bandwidth
+			  <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+              	<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+              	<span class="tooltip-content">Used in every transaction you make. Regenerates over time.<br></span>
+			  </a>
+		  </span>
           <span class="resource" style="float:right; font-size: 14px;">{{cpu_weight}}</span>
           <div class="blue resource"><span class="blue">Used {{cpu_limit.used / (1024) | number: '1.2-2'}} ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
             | number: '1.2-2'}} ms</span>

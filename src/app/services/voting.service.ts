@@ -51,7 +51,7 @@ export class VotingService {
 			this.isOnline = value;
 			if (value !== this.lastState) {
 				this.lastState = value;
-				console.log('ONLINE VALUE:', value);
+				// console.log('ONLINE VALUE:', value);
 				if (value) {
 					if (!this.accountSubscriber) {
 						this.accountSubscriber = this.aService.selected.asObservable().subscribe((sA) => {
@@ -61,7 +61,7 @@ export class VotingService {
 									if (this.lastChain !== this.aService.activeChain.name || this.lastAcc !== sA['name']) {
 										this.lastChain = this.aService.activeChain.name;
 										this.lastAcc = sA['name'];
-										console.log('Voting service - selected account: ', sA['name'], this.aService.activeChain.name);
+										// console.log('Voting service - selected account: ', sA['name'], this.aService.activeChain.name);
 										this.listProducers();
 									}
 
@@ -92,7 +92,7 @@ export class VotingService {
 	}
 
 	forceReload() {
-		console.log('force reload');
+		// console.log('force reload');
 		this.bps = [];
 		this.initList = false;
 	}
@@ -104,7 +104,7 @@ export class VotingService {
 	listProducers() {
 		if (!this.initList && !this.loadingProds) {
 			this.initList = true;
-			console.log('listProds');
+			// console.log('listProds');
 			this.aService.initFirst();
 			this.loadingProds = true;
 			this.eos.listProducers().then((producers) => {
@@ -269,7 +269,7 @@ export class VotingService {
 							}
 						}
 					}
-					console.log(this.data);
+					// console.log(this.data);
 				}, () => {
 					// console.log(url, err);
 				});

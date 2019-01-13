@@ -237,7 +237,7 @@ export class EOSJSService {
 				const tempAccData = [];
 
 				this.getKeyAccounts(pubkey).then((data) => {
-					console.log('load', data);
+					// console.log('load', data);
 					// if (data['account_names'].length > 0) {
 					if (data.length > 0) {
 						const promiseQueue = [];
@@ -366,20 +366,16 @@ export class EOSJSService {
 
 	pushActionContract(contract, action, form, account) {
 		const options = {authorization: account + '@active'};
-		console.log(form);
 		return new Promise((resolve, reject2) => {
 			this.eos['contract'](contract).then((tc) => {
-				console.log('tem contract', tc);
-
 				if (tc[action]) {
 					tc[action](form, options).then(dt => {
 						resolve(dt);
 					}).catch(err => {
-						reject(err);
+						reject2(err);
 					});
 				}
 			}).catch(err2 => {
-				console.log('tem erro contract', err2);
 				reject2(err2);
 			});
 		});

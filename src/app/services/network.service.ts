@@ -269,39 +269,6 @@ export class NetworkService {
 					tx_url: 'https://telos.eosx.io/tx/'
 				}
 			]
-		},
-		{
-			id: '335e60379729c982a6f04adeaad166234f7bf5bf1191252b8941783559aec33e',
-			symbol: 'TLOS',
-			name: 'TELOS TESTNET',
-			firstApi: 'https://api.eos.miami:17441',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: true,
-				staking: true,
-				dapps: true,
-				addAcc: true,
-				newAcc: true,
-				forum: false
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig'
-			],
-			endpoints: [
-				{url: 'https://api.eos.miami:17441', owner: 'Telos', latency: 0}
-			],
-			explorers: [
-				{
-					name: 'EOSX',
-					account_url: 'https://telos-test.eosx.io/account/',
-					tx_url: 'https://telos-test.eosx.io/tx/'
-				}
-			]
 		}
 	];
 

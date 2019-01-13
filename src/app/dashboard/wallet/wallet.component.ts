@@ -47,6 +47,10 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
 	}
 
+	openAccount() {
+		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + this.aService.selected.getValue().name);
+	}
+
 	openExplorer(accountName, explorer) {
 		window['shell']['openExternal'](explorer.account_url + accountName);
 	}
@@ -98,13 +102,13 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.aService.selected.asObservable().subscribe((sel) => {
 			if (sel['name']) {
 				if (this.selectedAccountName !== sel['name']) {
-					console.log('account selected:' + sel['name']);
+					// console.log('account selected:' + sel['name']);
 					this.selectedAccountName = sel['name'];
 					this.fullBalance = sel.full_balance;
 					this.staked = sel.staked;
 					this.unstaked = sel.full_balance - sel.staked;
 					this.tokens = [];
-					this.aService.reloadActions(sel.name, false);
+					this.aService.reloadActions(sel.name);
 					this.aService.refreshFromChain();
 				}
 			}
@@ -143,8 +147,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	refresh() {
-		this.aService.reloadActions(this.aService.selected.getValue().name, true);
-		// this.aService.refreshFromChain();
+		this.aService.reloadActions(this.aService.selected.getValue().name);
 	}
 
 }

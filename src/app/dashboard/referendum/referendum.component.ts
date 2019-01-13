@@ -1,4 +1,4 @@
-import {Component, ComponentFactoryResolver} from '@angular/core';
+import {Component, ComponentFactoryResolver, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosjs.service';
@@ -15,7 +15,7 @@ import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 	styleUrls: ['./referendum.component.css']
 })
 
-export class ReferendumComponent {
+export class ReferendumComponent implements OnInit {
 
 	loading = true;
 	voteModal = false;
@@ -23,31 +23,22 @@ export class ReferendumComponent {
 	expired = false;
 	busy = false;
 	searchForm: FormGroup;
-	confirmForm: FormGroup;
-
+	confirmvoteForm: FormGroup;
+	confirmunvoteForm: FormGroup;
 	wrongpass: string;
-
 	optionsV1: string;
-
 	errormsg = '';
-
 	selProposal: Proposal;
 	vtProposal: number;
-
 	page = 1;
-	proposals: Proposal[];
+	proposals: Proposal[] = [];
 	allProposals: Proposal[];
-
 	config: ToasterConfig;
-
 	searchTimer = null;
-
 	searchString = '';
-
 	sortExpression: string;
 	sortReverse: boolean;
 	comparatorMethod: any;
-
 	numberMask = createNumberMask({
 		prefix: '',
 		allowDecimal: true,
@@ -68,7 +59,10 @@ export class ReferendumComponent {
 			search: ['', [Validators.maxLength(12)]]
 		});
 
-		this.confirmForm = this.fb.group({
+		this.confirmvoteForm = this.fb.group({
+			pass: ['', [Validators.required, Validators.minLength(10)]]
+		});
+		this.confirmunvoteForm = this.fb.group({
 			pass: ['', [Validators.required, Validators.minLength(10)]]
 		});
 
@@ -77,7 +71,12 @@ export class ReferendumComponent {
 		this.sortExpression = 'stats.staked.total';
 		this.sortReverse = true;
 		this.comparatorMethod = null;
-		this.loadVoteTally();
+	}
+
+	ngOnInit(): void {
+		setTimeout(() => {
+			this.loadVoteTally();
+		}, 200);
 	}
 
 	filterProposals(term) {
@@ -94,32 +93,32 @@ export class ReferendumComponent {
 		const mode = event.value;
 		switch (mode) {
 			case 'mosteos':
-				console.log('SORT BY MOST EOS VOTED');
+				// console.log('SORT BY MOST EOS VOTED');
 				this.sortExpression = 'stats.staked.total';
 				this.sortReverse = true;
 				break;
 			case 'mostvoted':
-				console.log('SORT BY MOST VOTED');
+				// console.log('SORT BY MOST VOTED');
 				this.sortExpression = 'stats.votes.total';
 				this.sortReverse = true;
 				break;
 			case 'newest':
-				console.log('SORT BY NEWER PROPOSALS');
+				// console.log('SORT BY NEWER PROPOSALS');
 				this.sortExpression = 'proposal.created_at';
 				this.sortReverse = true;
 				break;
 			case 'oldest':
-				console.log('SORT BY OLDER');
+				// console.log('SORT BY OLDER');
 				this.sortExpression = 'proposal.created_at';
 				this.sortReverse = false;
 				break;
 			case 'expiresfirst':
-				console.log('Expires First');
+				// console.log('Expires First');
 				this.sortExpression = 'proposal.expires_at';
 				this.sortReverse = false;
 				break;
 			case 'expireslast':
-				console.log('Expires Last');
+				// console.log('Expires Last');
 				this.sortExpression = 'proposal.expires_at';
 				this.sortReverse = true;
 				break;
@@ -138,7 +137,7 @@ export class ReferendumComponent {
 		if (localStorage.getItem('simplEOS.lastProposalFetch') !== null) {
 			lastFecth = parseInt(localStorage.getItem('simplEOS.lastProposalFetch'), 10);
 			now = new Date().getTime();
-			console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
+			// console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
 		}
 
 		if ((now - lastFecth > 10 * 60 * 1000) || localStorage.getItem('simplEOS.lastProposalFetch') === null) {
@@ -149,7 +148,7 @@ export class ReferendumComponent {
 				this.loading = false;
 			});
 		} else {
-			console.log('Loading proposals from local cache');
+			// console.log('Loading proposals from local cache');
 			this.proposals = JSON.parse(localStorage.getItem('simplEOS.proposals'));
 			this.allProposals = this.proposals;
 			this.loading = false;
@@ -157,6 +156,7 @@ export class ReferendumComponent {
 	}
 
 	processProposalData(data) {
+		const proposals = [];
 		Object.keys(data).forEach((prop: string) => {
 			const temp_obj = data[prop];
 			let temp_json = null;
@@ -172,13 +172,13 @@ export class ReferendumComponent {
 				}
 				temp_obj['proposal']['json_data'] = temp_json;
 			}
-
-			this.proposals.push(temp_obj);
+			proposals.push(temp_obj);
 		});
 		this.loading = false;
-		localStorage.setItem('simplEOS.proposals', JSON.stringify(this.proposals));
+		localStorage.setItem('simplEOS.proposals', JSON.stringify(proposals));
 		localStorage.setItem('simplEOS.lastProposalFetch', new Date().getTime().toString());
-		this.allProposals = this.proposals;
+		this.allProposals = proposals;
+		this.proposals = proposals;
 	}
 
 
@@ -215,11 +215,9 @@ export class ReferendumComponent {
 
 
 	searchProposal(event) {
-
 		this.proposals = [];
 		this.loading = true;
 		this.loadProposals(event);
-
 	}
 
 	getExpiretime(date) {
@@ -271,13 +269,22 @@ export class ReferendumComponent {
 		this.voteModal = true;
 	}
 
+	multiSelect(p: Proposal, value: number[]) {
+		const binArr = ['0', '0', '0', '0', '0', '0', '0', '0'];
+		value.forEach((v) => {
+			binArr[v] = '1';
+		});
+		binArr.reverse();
+		this.vtProposal = parseInt(binArr.join(''), 2);
+	}
+
 	voteProposal() {
+		this.busy = true;
 		const account = this.aService.selected.getValue();
 		const accountName = this.aService.selected.getValue().name;
-		const password = this.confirmForm.get('pass').value;
+		const password = this.confirmvoteForm.get('pass').value;
 		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
 		this.wrongpass = '';
-
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name, vote: this.vtProposal, vote_json: ''};
@@ -286,26 +293,29 @@ export class ReferendumComponent {
 					this.busy = false;
 					console.log(info);
 					this.showToast('success', 'Transation broadcasted', 'Check a block explorer for confirmation.');
-					this.confirmForm.reset();
+					this.confirmvoteForm.reset();
 				}).catch(error => {
+					console.log(error);
 					this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+					this.busy = false;
+					this.confirmvoteForm.reset();
 				});
-				this.busy = false;
 			}
-		}).catch(error2 => {
+		}).catch((err) => {
+			console.log(err);
 			this.wrongpass = 'Wrong password!';
 			this.busy = false;
+			this.confirmvoteForm.reset();
 		});
-
 	}
 
 	unvoteProposal() {
+		this.busy = true;
 		const account = this.aService.selected.getValue();
 		const accountName = this.aService.selected.getValue().name;
-		const password = this.confirmForm.get('pass').value;
+		const password = this.confirmunvoteForm.get('pass').value;
 		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
 		this.wrongpass = '';
-
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name};
@@ -314,16 +324,22 @@ export class ReferendumComponent {
 					this.busy = false;
 					console.log(info);
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
-					this.confirmForm.reset();
+					this.confirmunvoteForm.reset();
 				}).catch(error => {
+					console.log(error);
 					this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (this.wrongpass.includes('no vote exists')) {
+						this.wrongpass = 'you never voted for this proposal!';
+					}
+					this.busy = false;
+					this.confirmunvoteForm.reset();
 				});
-				this.busy = false;
 			}
-		}).catch(error2 => {
+		}).catch((err) => {
+			console.log(err);
 			this.wrongpass = 'Wrong password!';
 			this.busy = false;
-			this.confirmForm.reset();
+			this.confirmunvoteForm.reset();
 		});
 
 	}

@@ -65,7 +65,7 @@ export class DynamicFormBuilderComponent implements OnInit, AfterViewInit {
 		this.dapp.formVal = [];
 		this.dapp.formVal2 = [];
 		const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128'];
-		const strArr = ['name', 'asset', 'string'];
+		const strArr = ['name', 'asset', 'string', 'account_name'];
 		const bolArr = ['bool'];
 		Object.keys(form['controls']).forEach((k) => {
 			const value: string = form['controls'][k]['value'];

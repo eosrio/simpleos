@@ -18,7 +18,7 @@
 		"build:prod": "ng build --prod",
 		"pack": "electron-builder --dir",
 		"dist": "electron-builder --ia32 --x64",
-		"release": "npm build:prod && electron-builder",
+		"release": "npm run build:prod && electron-builder",
 		"electron:serve-tsc": "tsc -p tsconfig-serve.json",
 		"electron:serve": "wait-on http-get://localhost:7777/ && electron index.js --serve --devtools",
 		"start:electron-dev": "electron index.js --devtools",

@@ -95,14 +95,14 @@
 						</div>
 
 						<button
-							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='poll-yn-v1') || (p.proposal.json_data.type==='poll-yna-v1') || (p.proposal.json_data.type==='referendum-v1') || (p.proposal.json_data.type==='simple'))"
+							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
 							(click)="startVote(p,0)"
 							style="margin-top: 15px; padding:0px 17px !important;">
 							0 - No
 						</button>
 						<button
-							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='poll-yn-v1') || (p.proposal.json_data.type==='poll-yna-v1') || (p.proposal.json_data.type==='referendum-v1') || (p.proposal.json_data.type==='simple'))"
+							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
 							(click)="startVote(p,1);"
 							style="margin-top: 15px; padding:0px 17px !important;">
@@ -121,9 +121,10 @@
 							style="float:left;">
 							<mat-form-field class="example-full-width"
 											style=" margin-right:10px;width: 207px;">
-								<mat-select placeholder="Select an option" (selectionChange)="vtProposal=$event.value;"
+								<mat-select placeholder="Select an option"
+											(selectionChange)="multiSelect(p,$event.value)"
 											[multiple]="p.proposal.json_data.type==='multi-select-v1'">
-									<mat-option *ngFor="let  option of p.proposal.json_data['options']"
+									<mat-option *ngFor="let option of p.proposal.json_data['options']"
 												[value]="p.proposal.json_data['options'].indexOf(option)">
 										{{p.proposal.json_data['options'].indexOf(option)}} - {{ option }}
 									</mat-option>
@@ -146,24 +147,18 @@
 					</div>
 					<div class="card-footer proposal-footer">
 
-						<mat-progress-bar *ngIf="
-					((p.proposal.json_data.type==='poll-yn-v1') ||
-					(p.proposal.json_data.type==='poll-yna-v1') ||
-					(p.proposal.json_data.type==='referendum-v1') ||
-					(p.proposal.json_data.type==='simple'))"
-										  class="proposal-progress"
-										  color="warn"
-										  mode="determinate"
-										  [value]="(p.stats.staked['1'] / p.stats.staked['total']) * 100">
+						<mat-progress-bar
+							*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
+							class="proposal-progress"
+							color="warn"
+							mode="determinate"
+							[value]="(p.stats.staked['1'] / p.stats.staked['total']) * 100">
 						</mat-progress-bar>
 
 						<div style="padding: 10px 19px; font-weight: 600;">
 
-							<ng-container *ngIf="
-					((p.proposal.json_data.type==='poll-yn-v1') ||
-					(p.proposal.json_data.type==='poll-yna-v1') ||
-					(p.proposal.json_data.type==='referendum-v1') ||
-					(p.proposal.json_data.type==='simple'))">
+							<ng-container
+								*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))">
 							<span class="green" pTooltip="Voters: {{p.stats.votes['1']}}">
 								{{((p.stats.staked['1'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
 							</span>
@@ -233,9 +228,9 @@
 	</div>
 
 	<div class="modal-footer">
-		<form [formGroup]="confirmForm" class="confirmForm">
+		<form [formGroup]="confirmvoteForm" class="confirmForm">
 			<mat-form-field>
-				<input matInput #pass type="password" (keyup.enter)="voteProposal()" placeholder="Password"
+				<input matInput type="password" (keyup.enter)="voteProposal()" placeholder="Password"
 					   formControlName="pass">
 				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
 					{{wrongpass}}
@@ -244,7 +239,7 @@
 			</mat-form-field>
 			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
 					(click)="voteProposal()"
-					[disabled]="!confirmForm.valid || busy">
+					[disabled]="!confirmvoteForm.valid || busy">
 				Confirm
 				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
 			</button>
@@ -255,13 +250,14 @@
 
 <clr-modal [(clrModalOpen)]="unvoteModal">
 	<h3 *ngIf="selProposal" class="modal-title text-white">Confirm unvote to <span
-		class="blue"><b>{{selProposal.proposal.proposal_name}}</b></span> proposal by {{selProposal.proposal.proposer}}
+		class="blue"><b>{{selProposal.proposal.proposal_name}}</b></span> proposal by <span
+		class="blue">{{selProposal.proposal.proposer}}</span>
 	</h3>
 
 	<div class="modal-footer">
-		<form [formGroup]="confirmForm" class="confirmForm">
+		<form [formGroup]="confirmunvoteForm" class="confirmForm">
 			<mat-form-field>
-				<input matInput #pass type="password" (keyup.enter)="unvoteProposal()" placeholder="Password"
+				<input matInput type="password" (keyup.enter)="unvoteProposal()" placeholder="Password"
 					   formControlName="pass">
 				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
 					{{wrongpass}}
@@ -269,8 +265,8 @@
 				<br clear="all"/>
 			</mat-form-field>
 			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
-					(click)="voteProposal()"
-					[disabled]="!confirmForm.valid || busy">
+					(click)="unvoteProposal()"
+					[disabled]="!confirmunvoteForm.valid || busy">
 				Confirm
 				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
 			</button>

@@ -136,7 +136,7 @@
 </div>
 
 
-<clr-modal [(clrModalOpen)]="sendModal">
+<clr-modal [(clrModalOpen)]="sendModal" (clrModalOpenChange)="confirmForm.reset();">
   <h3 class="modal-title text-white"><span class="blue">{{ fromAccount }}</span> sends <span class="blue">{{ sendForm.value.amount | number : '1.2-4' }} {{sendForm.value.token}}</span>
     to
   </h3>

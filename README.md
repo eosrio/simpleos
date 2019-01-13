@@ -28,8 +28,11 @@ Distribution or copy of this software or any of its parts and associated documen
 SimplEOS doesn't keep any of your information. All information is kept locally only, not in any cloud services or databases.
 
 ## Main Features
-As of 12/06/2018, SimplEOS main features include:
+As of 13/01/2018, SimplEOS main features include:
 
+- Multiple chain support
+- EOS Referendum system at `eosio.forum`
+- Direct contract interaction
 - Local Storage: private keys are encrypted and stored locally only.
 - Multiple accounts support
 - Token transfer
@@ -45,7 +48,7 @@ As of 12/06/2018, SimplEOS main features include:
 ## Roadmap
 
 Next features to be implemented:
-- Testnets support
+- Browser library & universal integration
 - Delegate Permissions
 - Setup Delayed Transactions
 - Mobile Version
@@ -77,58 +80,18 @@ By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/te
 [Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
 
 ### Dependencies Setup
-
-#### Windows
-- [Node.js](https://nodejs.org/en/download/current/)
-- [Yarn](https://yarnpkg.com/en/docs/install#windows-stable)
-
-#### Ubuntu
-```
-# Install Node.js 10
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-sudo apt-get install -y nodejs
-sudo apt-get install -y build-essential
-
-# Install Yarn
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt-get update && sudo apt-get install yarn
-```
-
-#### Fedora / Red Hat®
-```
-# Install Node.js 10
-curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo bash -
-sudo yum -y install nodejs
-sudo yum install gcc-c++ make
-
-# Install Yarn
-curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
-sudo yum install yarn
-```
-
-#### MacOS
-```
-# Install brew
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-# Install Node.js 10
-brew install node
-
-# Install Yarn
-brew install yarn
-```
+- [Node.js 11.6.0](https://nodejs.org/en/download/current/)
 
 ## Setup sources:
 ```console
 git clone https://github.com/eosrio/simpleos.git
 cd simpleos
-yarn install
-yarn run build:prod
+npm install
+npm run build:prod
 ```
-Create installer:
+Package the installer:
 ```
-yarn dist
+npm run dist
 ```
 The packages will be available on the `/dist` folder.
 

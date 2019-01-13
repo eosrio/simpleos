@@ -4,8 +4,6 @@ import {EOSJSService} from './eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 
-import * as socketIo from 'socket.io-client';
-
 @Injectable({
 	providedIn: 'root'
 })
@@ -13,11 +11,11 @@ export class AccountsService {
 
 	public accounts: any[];
 	public activeChain: any;
-
 	public selected = new BehaviorSubject<any>({});
 	public selectedIdx = 0;
 	public lastUpdate = new Subject<any>();
 	public versionSys: string;
+
 	usd_rate: number;
 	cmcListings = [];
 	tokens = [];
@@ -27,11 +25,8 @@ export class AccountsService {
 	allowed_actions = [];
 	totalAssetsSum = 0;
 	loading = true;
-	private readonly socket: any;
-
 	isLedger = false;
 	hasAnyLedgerAccount = false;
-
 	actionStore = {};
 
 	constructor(
@@ -45,19 +40,13 @@ export class AccountsService {
 		this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
 		// this.fetchListings();
 		this.fetchEOSprice();
-
-		this.socket = socketIo('https://api.eosrio.io/');
-		this.socket.on('data', (data) => {
-			console.log(data);
-		});
-
 		this.eos.online.asObservable().subscribe(value => {
 			if (value) {
 				const store = localStorage.getItem('actionStore.' + this.eos.chainID);
 				if (store) {
 					this.actionStore = JSON.parse(store);
 				} else {
-					console.log('creating new actionStore');
+					// console.log('creating new actionStore');
 					this.actionStore[this.selected.getValue().name] = {
 						last_gs: 0,
 						actions: []
@@ -191,7 +180,6 @@ export class AccountsService {
 		let symbol = '', user = '', type = '', memo = '';
 		let votedProducers = null, proxy = null, voter = null;
 		let cpu = 0, net = 0, amount = 0;
-		// console.log(act,date);
 		if (action_name === 'transfer') {
 			if (contract === 'eosio.token') {
 				// NATIVE TOKEN
@@ -250,8 +238,6 @@ export class AccountsService {
 				user = act['data']['receiver'];
 				type = 'unstaked_out';
 			}
-			// user = act['data']['from'];
-			// type = 'unstaked';
 		}
 
 		if (contract === 'eosio' && action_name === 'delegatebw') {
@@ -267,14 +253,6 @@ export class AccountsService {
 			}
 		}
 
-		let valid = true;
-
-		if (action_name === 'transfer') {
-			if (act['data']['to'] === 'eosio.stake') {
-				valid = false;
-			}
-		}
-
 		if (act['data']['to'] === 'eosio.ram') {
 			type = 'buyram';
 		}
@@ -286,16 +264,15 @@ export class AccountsService {
 			if (!act['data']['to'] && !act['data']['from']) {
 				type = 'other';
 				const dataInfo = act['data'];
-				for (let dt in  dataInfo) {
+				Object.keys(dataInfo).forEach((dt) => {
 					memo += dt + ': ' + dataInfo[dt] + '; ';
-				}
+				});
 			} else {
 				type = 'other2';
-				// user = act['data']['from'];
 				const dataInfo = act['data'];
-				for (let dt in  dataInfo) {
+				Object.keys(dataInfo).forEach((dt) => {
 					memo += dt + ': ' + dataInfo[dt] + '; ';
-				}
+				});
 			}
 
 		}
@@ -336,11 +313,16 @@ export class AccountsService {
 			json_data: act['data']
 		};
 		// this.actions.unshift(obj);
-		this.actions.push(obj);
+
+		if (this.actions.findIndex((a) => {
+			return obj.seq === a.seq;
+		}) === -1) {
+			this.actions.push(obj);
+		}
 	}
 
-	getAccActions(account, reload) {
-
+	getAccActions(account) {
+		const nActions = 100;
 		if (this.activeChain.name === 'EOS MAINNET') {
 			this.actions = [];
 		} else {
@@ -348,79 +330,19 @@ export class AccountsService {
 			if (account === null) {
 				account = this.selected.getValue().name;
 			}
-
-			let last_gs = -1;
-			if (this.actionStore[account]) {
-				last_gs = this.actionStore[account]['last_gs'];
-			}
-
-			let limited = true;
-			if (!this.actionStore[account]) {
-				limited = false;
-			} else {
-				if (!this.actionStore[account]['last_gs']) {
-					limited = false;
-				}
-			}
-
-			if (reload) {
-				last_gs = 0;
-			}
-
 			const store = localStorage.getItem('actionStore.' + this.activeChain['id']);
 			if (store) {
 				this.actionStore = JSON.parse(store.toString());
 			}
-
 			if (!this.actionStore[this.selected.getValue().name]) {
 				this.actionStore[this.selected.getValue().name] = {
 					last_gs: 0,
 					actions: []
 				};
 			}
-
-			// if(this.mainnetActive['name']==='EOS MAINNET') {
-			//   this.socket.emit('get_actions', {
-			//     account: account,
-			//     limited: limited,
-			//     last_gs: last_gs
-			//   }, (results) => {
-			//     console.log('Stream output: ', results);
-			//
-			//     if (results === 'end') {
-			//       // console.log("socket", this.actionStore[account]['actions']);
-			//       this.actionStore[account]['actions'].sort((a: any, b: any) => {
-			//         const dB = new Date(b.block_time).getTime();
-			//         const dA = new Date(a.block_time).getTime();
-			//         return dA - dB;
-			//       });
-			//
-			//       const payload = JSON.stringify(this.actionStore);
-			//       localStorage.setItem('actionStore.' + this.eos.chainID, payload);
-			//
-			//       this.actionStore[account]['actions'].forEach((action) => {
-			//         this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
-			//       });
-			//       // this.actionStore[account]['actions'].forEach((action) => {
-			//       //   this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time']);
-			//       // });
-			//
-			//       this.totalActions = this.actionStore[account]['actions'].length;
-			//       this.accounts[this.selectedIdx]['actions'] = this.actions;
-			//       this.calcTotalAssets();
-			//     }
-			//   });
-			// } else {
-			//
-			// }
-
-			const nActions = 100;
-
 			// Test if mongo is available
 			const currentEndpoint = this.activeChain.endpoints.find((e) => e.url === this.eos.baseConfig.httpEndpoint);
-
 			if (currentEndpoint['version']) {
-				// console.log(currentEndpoint['version']);
 				if (currentEndpoint['version'] === 'mongo') {
 					this.getActions(account, nActions, 0);
 				} else {
@@ -430,7 +352,6 @@ export class AccountsService {
 				// Test API
 				console.log('Starting history api test');
 				this.http.get(currentEndpoint['url'] + '/v1/history/get_actions/eosio/1').subscribe((result) => {
-					// console.log(result);
 					if (result['actions']) {
 						if (result['actions'].length === 0) {
 							console.log('API RESULT - MONGODB');
@@ -442,8 +363,7 @@ export class AccountsService {
 						currentEndpoint['version'] = 'native';
 						this.getActions(account, -(nActions), -1);
 					}
-				}, (error1) => {
-					// console.log(error1);
+				}, () => {
 					console.log('API RESULT - NATIVE');
 					currentEndpoint['version'] = 'native';
 					this.getActions(account, -(nActions), -1);
@@ -465,14 +385,13 @@ export class AccountsService {
 			this.actionStore[account]['actions'].forEach((action) => {
 				if (action['action_trace']) {
 					// native history api
-					// console.log(action);
-					if (action['action_trace']['act']['account'] === action['action_trace']['receipt']['receiver']) {
+					if (action['action_trace']['receipt']['receiver'] === this.selected.getValue().name) {
+						console.log(action);
 						this.processAction(action['action_trace']['act'], action['action_trace']['trx_id'], action['block_num'], action['block_time'], action['account_action_seq']);
 					}
 				} else {
 					// mongo history api
-					// console.log(action);
-					if (action['act']['account'] === action['receipt']['receiver']) {
+					if (action['receipt']['receiver'] === this.selected.getValue().name) {
 						this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time'], action['receipt']['global_sequence']);
 					}
 				}
@@ -486,20 +405,8 @@ export class AccountsService {
 		});
 	}
 
-	reloadActions(account, reload) {
-		// console.log('reloading: ' + reload);
-		// if (account) {
-		//   this.socket.emit('close_actions_cursor', {
-		//     account: account
-		//   }, () => {
-		//     this.socket.emit('open_actions_cursor', {
-		//       account: account
-		//     }, (result2) => {
-		//       console.log(result2);
-		this.getAccActions(account, reload);
-		//     });
-		//   });
-		// }
+	reloadActions(account) {
+		this.getAccActions(account);
 	}
 
 	select(index) {
@@ -515,18 +422,16 @@ export class AccountsService {
 		}
 		this.selectedIdx = index;
 		this.selected.next(sel);
-
-		const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
-		const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
+		// const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
+		// const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
 		// if(this.isLedger){
 		//   this.isLedger = stored_data[pbk]['private'] === 'ledger';
 		// }
-
-		this.socket.emit('open_actions_cursor', {
-			account: this.selected.getValue().name
-		}, (result) => {
-			console.log(result);
-		});
+		// this.socket.emit('open_actions_cursor', {
+		// 	account: this.selected.getValue().name
+		// }, (result) => {
+		// 	console.log(result);
+		// });
 		this.fetchTokens(this.selected.getValue().name);
 	}
 
@@ -720,20 +625,20 @@ export class AccountsService {
 		});
 	}
 
-	checkLedgerAccounts() {
-		let hasLedger = false;
-		const stored_data = localStorage.getItem('eos_keys.' + this.eos.chainID);
-		return new Promise(resolve => {
-			this.accounts.forEach((acc) => {
-				const pbk = acc.details.permissions[0].required_auth.keys[0];
-				// if (stored_data[pbk]['private'] === 'ledger') {
-				//   hasLedger = true;
-				// }
-			});
-			this.hasAnyLedgerAccount = hasLedger;
-			resolve(hasLedger);
-		});
-	}
+	// checkLedgerAccounts() {
+	// 	let hasLedger = false;
+	// 	const stored_data = localStorage.getItem('eos_keys.' + this.eos.chainID);
+	// 	return new Promise(resolve => {
+	// 		this.accounts.forEach((acc) => {
+	// 			const pbk = acc.details.permissions[0].required_auth.keys[0];
+	// 			// if (stored_data[pbk]['private'] === 'ledger') {
+	// 			//   hasLedger = true;
+	// 			// }
+	// 		});
+	// 		this.hasAnyLedgerAccount = hasLedger;
+	// 		resolve(hasLedger);
+	// 	});
+	// }
 
 	injectLedgerSigner() {
 		console.log('Ledger mode: ' + this.isLedger);

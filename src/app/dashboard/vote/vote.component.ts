@@ -402,7 +402,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		const voter = this.aService.selected.getValue();
 		const publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
 		this.crypto.authenticate(pass, publicKey).then((data) => {
-			console.log('Auth output:', data);
+			// console.log('Auth output:', data);
 			if (data === true) {
 
 				this.aService.injectLedgerSigner();

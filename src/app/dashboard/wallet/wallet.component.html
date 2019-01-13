@@ -58,12 +58,25 @@
 
 			<!--HISTORY TABLE-->
 			<ng-container *ngIf="aService.actions.length > 0 && aService.activeChain.name !== 'EOS MAINNET'">
-				<div class="text-right" (click)="refresh()">
-					<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
-						<fa-icon [icon]="['far', 'undo']"></fa-icon>
-						Refresh
-					</a>
+				<div class="row flex-items-xs-between" style="margin-top: 10px; margin-bottom: 10px;">
+					<div class="col-6">
+						<span class="text-left" (click)="openAccount()" style="width: 212px;">
+							<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="openAccount()">
+								Open on a block explorer
+							</a>
+						</span>
+					</div>
+					<div class="col-6">
+						<span (click)="refresh()" style="width: 100px; float: right">
+							<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
+								<fa-icon [icon]="['far', 'undo']"></fa-icon>
+								Refresh
+							</a>
+						</span>
+					</div>
 				</div>
+
+
 				<p-table [value]="aService.actions"
 						 [responsive]="true"
 						 [totalRecords]="aService.totalActions"
@@ -194,8 +207,8 @@
 								<ng-container *ngIf="item.action_name === 'transfer'">
 									<span *ngIf="item.type === 'received'">from <span class="blue">{{item.user}}</span></span>
 									<span *ngIf="item.type === 'sent'">to <span class="blue">{{item.user}}</span></span>
-									<span *ngIf="item.type === 'buyram'" class="blue">BUYED RAM</span>
-									<span *ngIf="item.type === 'sellram'" class="blue">SELLED RAM</span>
+									<span *ngIf="item.type === 'buyram'" class="blue">bought RAM</span>
+									<span *ngIf="item.type === 'sellram'" class="blue">sold RAM</span>
 								</ng-container>
 
 								<span *ngIf="item.type === 'unstaked_in'" class="blue">UNSTAKED</span>
@@ -206,12 +219,12 @@
 								<span *ngIf="item.type === 'staked_out'"><span class="blue">STAKED</span> to <span
 									class="blue">{{item.user}}</span></span>
 
-								<span *ngIf="item.type === 'bytes_in'"><span class="blue">BUYED BYTES</span> to <span
+								<span *ngIf="item.type === 'bytes_in'"><span class="blue">bought bytes</span> to <span
 									class="blue">this account</span></span>
-								<span *ngIf="item.type === 'bytes_out'"><span class="blue">BUYED BYTES</span> to <span
+								<span *ngIf="item.type === 'bytes_out'"><span class="blue">bought bytes</span> to <span
 									class="blue">{{item.user}}</span></span>
 
-								<span *ngIf="item.type === 'bytes_s'"><span class="blue">SELLED BYTES</span> from <span
+								<span *ngIf="item.type === 'bytes_s'"><span class="blue">sold bytes</span> from <span
 									class="blue">this account</span></span>
 								<span *ngIf="item.type === 'new'"><span class="blue">CREATED ACCOUNT</span>&nbsp;<span
 									class="blue">{{item.user}}</span></span>
