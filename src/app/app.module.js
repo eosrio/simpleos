@@ -42,13 +42,18 @@ var lockscreen_component_1 = require("./lockscreen/lockscreen.component");
 var resources_component_1 = require("./dashboard/acc_resources/resources.component");
 var ngx_echarts_1 = require("ngx-echarts");
 var ram_service_1 = require("./services/ram.service");
-var ledger_service_1 = require("./services/ledger.service");
+var ledger_h_w_service_1 = require("./services/ledger-h-w.service");
+var dapp_component_1 = require("./dashboard/dapp/dapp.component");
+var dapp_component_2 = require("./dashboard/dapp/dapp.component");
+var dynamic_form_builder_module_1 = require("./dynamic-form-builder/dynamic-form-builder.module");
+var connect_service_1 = require("./services/connect.service");
 fontawesome_svg_core_1.library.add(pro_regular_svg_icons_1.far, pro_solid_svg_icons_1.fas, free_brands_svg_icons_1.fab, pro_light_svg_icons_1.fal);
 var AppModule = /** @class */ (function () {
     function AppModule() {
     }
     AppModule = __decorate([
         core_1.NgModule({
+            entryComponents: [dapp_component_2.FormComponent],
             declarations: [
                 app_component_1.AppComponent,
                 landing_component_1.LandingComponent,
@@ -60,7 +65,9 @@ var AppModule = /** @class */ (function () {
                 config_component_1.ConfigComponent,
                 about_component_1.AboutComponent,
                 lockscreen_component_1.LockscreenComponent,
-                resources_component_1.ResourcesComponent
+                resources_component_1.ResourcesComponent,
+                dapp_component_1.DappComponent,
+                dapp_component_2.FormComponent
             ],
             imports: [
                 primeng_1.AccordionModule,
@@ -79,15 +86,17 @@ var AppModule = /** @class */ (function () {
                 material_1.MatSelectModule,
                 material_1.MatSliderModule,
                 material_1.MatTabsModule,
-                ngx_echarts_1.NgxEchartsModule,
+                material_1.MatButtonToggleModule,
                 forms_1.ReactiveFormsModule,
                 table_1.TableModule,
                 angular2_text_mask_1.TextMaskModule,
+                ngx_echarts_1.NgxEchartsModule,
                 angular2_toaster_1.ToasterModule.forRoot(),
                 primeng_1.TooltipModule,
-                app_routing_module_1.AppRoutingModule
+                app_routing_module_1.AppRoutingModule,
+                dynamic_form_builder_module_1.DynamicFormBuilderModule
             ],
-            providers: [eosjs_service_1.EOSJSService, accounts_service_1.AccountsService, network_service_1.NetworkService, crypto_service_1.CryptoService, ram_service_1.RamService, ledger_service_1.LedgerService],
+            providers: [eosjs_service_1.EOSJSService, accounts_service_1.AccountsService, network_service_1.NetworkService, crypto_service_1.CryptoService, ram_service_1.RamService, ledger_h_w_service_1.LedgerHWService, connect_service_1.ConnectService],
             bootstrap: [app_component_1.AppComponent]
         })
     ], AppModule);

@@ -208,15 +208,20 @@ var CryptoService = /** @class */ (function () {
     };
     CryptoService.prototype.authenticate = function (pass, publickey) {
         return __awaiter(this, void 0, void 0, function () {
+            var storedData;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         this.eosjs.auth = false;
+                        console.log('Submitted key:', publickey);
+                        storedData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
+                        if (!(storedData[publickey].private !== 'ledger')) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.initKeys(publickey, pass)];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, this.decryptKeys(publickey)];
-                    case 2: return [2 /*return*/, _a.sent()];
+                        _a.label = 2;
+                    case 2: return [4 /*yield*/, this.decryptKeys(publickey)];
+                    case 3: return [2 /*return*/, _a.sent()];
                 }
             });
         });
@@ -232,6 +237,9 @@ var CryptoService = /** @class */ (function () {
                         if (!store) return [3 /*break*/, 4];
                         payload = store[publickey]['private'];
                         if (!payload) return [3 /*break*/, 2];
+                        if (payload === 'ledger') {
+                            return [2 /*return*/, true];
+                        }
                         encryptedData = this.base64ToBuffer(payload);
                         iv = encryptedData.slice(0, this.ivLen);
                         data = encryptedData.slice(this.ivLen);
@@ -282,6 +290,24 @@ var CryptoService = /** @class */ (function () {
             return false;
         }
     };
+    CryptoService.prototype.storeLedgerAccount = function (pbk, slotNumber) {
+        return __awaiter(this, void 0, void 0, function () {
+            var store, oldData;
+            return __generator(this, function (_a) {
+                store = {};
+                oldData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
+                if (oldData) {
+                    store = oldData;
+                }
+                store[pbk] = {
+                    private: 'ledger',
+                    slot: slotNumber
+                };
+                localStorage.setItem('eos_keys.' + this.eosjs.chainID, JSON.stringify(store));
+                return [2 /*return*/];
+            });
+        });
+    };
     CryptoService.prototype.lock = function () {
         this.locked = true;
         this.router.navigate(['']).catch(function () {
@@ -301,16 +327,16 @@ var CryptoService = /** @class */ (function () {
         localStorage.removeItem('simpleos-hash');
         this.locked = false;
     };
-    CryptoService.prototype.encryptTestBKP = function (val, pass) {
+    CryptoService.prototype.encryptBKP = function (val, pass) {
         return CryptoJS.AES.encrypt(val, pass);
     };
-    CryptoService.prototype.decryptTestBKP = function (enval, pass) {
+    CryptoService.prototype.decryptBKP = function (enval, pass) {
         try {
             var dek = CryptoJS.AES.decrypt(enval, pass);
             return dek.toString(CryptoJS.enc.Utf8);
         }
         catch (e) {
-            return "error not json";
+            return 'error not json';
         }
     };
     var CryptoService_1;

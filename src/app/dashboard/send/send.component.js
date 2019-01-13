@@ -32,11 +32,9 @@ var SendComponent = /** @class */ (function () {
             decimalLimit: 4,
         });
         this.token_balance = 0.0000;
-        this.selectedToken = {
-            name: 'EOS',
-            price: 1.0000
-        };
+        this.selectedToken = {};
         this.selectedEditContact = null;
+        this.selectedDeleteContactName = '';
         this.knownExchanges = [
             'bitfinexdep1', 'krakenkraken', 'chainceoneos',
             'huobideposit', 'zbeoscharge1', 'okbtothemoon',
@@ -49,7 +47,8 @@ var SendComponent = /** @class */ (function () {
         this.fromAccount = '';
         this.busy = false;
         this.sendForm = this.fb.group({
-            token: ['EOS', forms_1.Validators.required],
+            token: [aService.mainnetActive['symbol'], forms_1.Validators.required],
+            // token: ['EOS', Validators.required],// CSTAM
             to: ['', forms_1.Validators.required],
             amount: ['', forms_1.Validators.required],
             memo: [''],
@@ -76,6 +75,12 @@ var SendComponent = /** @class */ (function () {
         this.accountvalid = false;
         this.unstaking = 0;
         this.unstakeTime = '';
+        this.selectedToken = {
+            name: this.aService.mainnetActive['symbol'],
+            price: 1.0000
+        };
+        console.log(this.selectedToken);
+        // name: 'EOS', //CSTAM
     }
     SendComponent.prototype.filter = function (val, indexed) {
         return this.contacts.filter(function (contact) {
@@ -121,7 +126,8 @@ var SendComponent = /** @class */ (function () {
             _this.sendForm.patchValue({
                 amount: ''
             });
-            if (symbol !== 'EOS') {
+            // if (symbol !== 'EOS') {// CSTAM
+            if (symbol !== _this.aService.mainnetActive['symbol']) {
                 var tk_idx = _this.aService.tokens.findIndex(function (val) {
                     return val.name === symbol;
                 });
@@ -129,7 +135,8 @@ var SendComponent = /** @class */ (function () {
                 _this.token_balance = _this.selectedToken['balance'];
             }
             else {
-                _this.selectedToken = { name: 'EOS', price: 1.0000 };
+                // this.selectedToken = {name: 'EOS', price: 1.0000}; // CSTAM
+                _this.selectedToken = { name: _this.aService.mainnetActive['symbol'], price: 1.0000 };
             }
         });
         this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(operators_1.startWith(''), operators_1.map(function (value) { return _this.filter(value, false); }));
@@ -151,7 +158,8 @@ var SendComponent = /** @class */ (function () {
     };
     SendComponent.prototype.setMax = function () {
         this.sendForm.patchValue({
-            amount: this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance
+            // amount: this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance // CSTAM
+            amount: this.sendForm.get('token').value === this.aService.mainnetActive['symbol'] ? this.unstaked : this.token_balance
         });
     };
     SendComponent.prototype.checkAmount = function () {
@@ -160,7 +168,8 @@ var SendComponent = /** @class */ (function () {
             this.amounterror = 'invalid amount';
         }
         else {
-            var max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;
+            // const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;// CSTAM
+            var max = this.sendForm.get('token').value === this.aService.mainnetActive['symbol'] ? this.unstaked : this.token_balance;
             if (parseFloat(this.sendForm.value.amount) > max) {
                 this.sendForm.controls['amount'].setErrors({ 'incorrect': true });
                 this.amounterror = 'invalid amount';
@@ -340,10 +349,12 @@ var SendComponent = /** @class */ (function () {
         });
     };
     SendComponent.prototype.storeContacts = function () {
-        localStorage.setItem('simpleos.contacts', JSON.stringify(this.contacts));
+        localStorage.setItem('simpleos.contacts.' + this.aService.mainnetActive['id'], JSON.stringify(this.contacts));
+        // localStorage.setItem('simpleos.contacts', JSON.stringify(this.contacts)); // CSTAM
     };
     SendComponent.prototype.loadContacts = function () {
-        var contacts = localStorage.getItem('simpleos.contacts');
+        // const contacts = localStorage.getItem('simpleos.contacts');// CSTAM
+        var contacts = localStorage.getItem('simpleos.contacts.' + this.aService.mainnetActive['id']);
         if (contacts) {
             this.contacts = JSON.parse(contacts);
         }
@@ -360,6 +371,7 @@ var SendComponent = /** @class */ (function () {
         var _this = this;
         this.checkExchangeAccount();
         this.busy = true;
+        this.wrongpass = '';
         var selAcc = this.aService.selected.getValue();
         var from = selAcc.name;
         var to = this.sendForm.get('to').value.toLowerCase();
@@ -375,19 +387,16 @@ var SendComponent = /** @class */ (function () {
                     // console.log(tk_name);
                     // console.log(this.aService.tokens);
                     var precision = 4;
-                    if (tk_name_1 !== 'EOS') {
+                    // if (tk_name !== 'EOS') { // CSTAM
+                    if (tk_name_1 !== _this.aService.mainnetActive['symbol']) { // CSTAM
                         var idx = _this.aService.tokens.findIndex(function (val) {
                             return val.name === tk_name_1;
                         });
-                        // console.log(idx);
                         contract = _this.aService.tokens[idx].contract;
-                        var balance = _this.aService.tokens[idx].balance.toString();
-                        if (balance.indexOf('.') !== -1) {
-                            precision = balance.split('.')[1].toString().length;
-                        }
+                        precision = _this.aService.tokens[idx].precision;
                     }
-                    // console.log(precision);
-                    // console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
+                    console.log(precision);
+                    console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name_1, memo);
                     _this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name_1, memo).then(function (result) {
                         if (result === true) {
                             _this.wrongpass = '';
@@ -414,7 +423,7 @@ var SendComponent = /** @class */ (function () {
                             _this.wrongpass = 'Not enough stake to perform this action.';
                         }
                         else {
-                            _this.wrongpass = error.error['what'];
+                            _this.wrongpass = error.error.details[0].message;
                         }
                         _this.busy = false;
                     });
@@ -453,7 +462,8 @@ var SendComponent = /** @class */ (function () {
     SendComponent.prototype.openEditContactModal = function (contact) {
         console.log(contact);
         this.contactForm.patchValue({
-            account: contact.account
+            account: contact.account,
+            name: contact.name
         });
         this.editContactModal = true;
         this.selectedEditContact = contact;
@@ -472,7 +482,7 @@ var SendComponent = /** @class */ (function () {
     };
     SendComponent.prototype.openDeleteContactModal = function (contact) {
         this.deleteContactModal = true;
-        this.selectedEditContact = contact;
+        this.selectedDeleteContactName = contact.name;
     };
     SendComponent.prototype.doDeleteContact = function () {
         var _this = this;

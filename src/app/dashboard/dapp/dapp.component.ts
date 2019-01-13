@@ -1,7 +1,7 @@
 import {Component, OnInit, AfterViewInit, Type, ComponentFactoryResolver, ViewChild, ViewContainerRef} from '@angular/core';
 import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
-import {AccountsService} from '../../accounts.service';
-import {EOSJSService} from '../../eosjs.service';
+import {AccountsService} from '../../services/accounts.service';
+import {EOSJSService} from '../../services/eosjs.service';
 import {EOSAccount} from '../../interfaces/account';
 import {CryptoService} from '../../services/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
@@ -66,7 +66,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 			fields: new FormControl(JSON.stringify(this.fields))
 		});
 		this.searchForm = this.fb.group({
-			search: ['', [Validators.maxLength(12)]]//Validators.minLength(12),
+			search: ['', [Validators.maxLength(12)]]
 		});
 		this.confirmForm = this.fb.group({
 			pass: ['', [Validators.required, Validators.minLength(10)]]
@@ -127,8 +127,15 @@ export class DappComponent implements OnInit, AfterViewInit {
 			this.aService.tokens.forEach(token => {
 				this.tokens.push(token);
 			});
+			this.addSystemContracts();
 			this.loading = false;
-		}, 1500);
+		}, 1000);
+	}
+
+	addSystemContracts() {
+		this.aService.activeChain['system'].forEach((sc) => {
+			this.tokens.push({contract: sc});
+		});
 	}
 
 	private showToast(type: string, title: string, body: string) {
@@ -171,7 +178,6 @@ export class DappComponent implements OnInit, AfterViewInit {
 		this.loading = true;
 		if (sc !== '') {
 			this.eos.getSCAbi(sc).then(data => {
-				console.log(data);
 				this.setActions(data['abi']);
 				this.setStructs(data['abi']);
 				this.tokens.push({contract: sc});
@@ -308,8 +314,8 @@ export class DappComponent implements OnInit, AfterViewInit {
 
 // Example component (can be any component e.g. app-header app-section)
 @Component({
-	selector: 'my-form',
-	template: '<dynamic-form-builder [fields]="getFields()" [description]="getActionDescription()"></dynamic-form-builder>'
+	selector: 'app-dyn-form',
+	template: '<app-dynamic-form-builder [fields]="getFields()" [description]="getActionDescription()"></app-dynamic-form-builder>'
 })
 
 export class FormComponent {

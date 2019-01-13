@@ -18,8 +18,10 @@ var angular2_toaster_1 = require("angular2-toaster");
 var textMaskAddons_1 = require("text-mask-addons/dist/textMaskAddons");
 var crypto_service_1 = require("../../services/crypto.service");
 var http_1 = require("@angular/common/http");
+var ledger_h_w_service_1 = require("../../services/ledger-h-w.service");
+var moment = require("moment");
 var VoteComponent = /** @class */ (function () {
-    function VoteComponent(voteService, http, aService, eos, crypto, fb, toaster, cdr) {
+    function VoteComponent(voteService, http, aService, eos, crypto, fb, toaster, cdr, ledger) {
         this.voteService = voteService;
         this.http = http;
         this.aService = aService;
@@ -28,6 +30,7 @@ var VoteComponent = /** @class */ (function () {
         this.fb = fb;
         this.toaster = toaster;
         this.cdr = cdr;
+        this.ledger = ledger;
         this.minToStake = 0.01;
         this.numberMask = textMaskAddons_1.createNumberMask({
             prefix: '',
@@ -42,13 +45,13 @@ var VoteComponent = /** @class */ (function () {
             decimalLimit: 1,
             integerLimit: 3,
         });
-        this.nodeList = [];
-        this.links = [];
         this.initOptions = {
             renderer: 'z',
             width: 1000,
             height: 400
         };
+        this.net_weight = '';
+        this.cpu_weight = '';
         if (this.voteService.bps) {
             this.nbps = this.voteService.bps.length;
         }
@@ -60,6 +63,8 @@ var VoteComponent = /** @class */ (function () {
         this.minstake = false;
         this.valuetoStake = '';
         this.percenttoStake = '';
+        this.unstaking = 0;
+        this.unstakeTime = '';
         this.stakeModal = false;
         this.voteModal = false;
         this.busy = false;
@@ -79,12 +84,6 @@ var VoteComponent = /** @class */ (function () {
         this.passFormStake = this.fb.group({
             pass: ['', [forms_1.Validators.required, forms_1.Validators.minLength(10)]]
         });
-        this.graphMerge = {
-            series: {
-                data: this.nodeList,
-                links: this.links,
-            }
-        };
         this.options = {
             geo: {
                 map: 'world',
@@ -100,11 +99,11 @@ var VoteComponent = /** @class */ (function () {
                     }
                 }
             },
+            tooltip: {},
             animationDuration: 1500,
             animationEasingUpdate: 'quinticInOut',
             series: [
                 {
-                    name: 'EOS',
                     type: 'graph',
                     coordinateSystem: 'geo',
                     symbol: 'pin',
@@ -185,11 +184,11 @@ var VoteComponent = /** @class */ (function () {
                 var call = void 0;
                 if (_this.stakingDiff < 0) {
                     console.log('Unstaking: ' + Math.abs(_this.stakingDiff));
-                    call = _this.eos.unstake(account.name, Math.abs(_this.stakingDiff));
+                    call = _this.eos.unstake(account.name, Math.abs(_this.stakingDiff), _this.aService.mainnetActive['symbol']);
                 }
                 else {
                     console.log('Staking: ' + Math.abs(_this.stakingDiff));
-                    call = _this.eos.stake(account.name, Math.abs(_this.stakingDiff));
+                    call = _this.eos.stake(account.name, Math.abs(_this.stakingDiff), _this.aService.mainnetActive['symbol']);
                 }
                 call.then(function () {
                     _this.busy = false;
@@ -243,6 +242,8 @@ var VoteComponent = /** @class */ (function () {
                 _this.fromAccount = selected.name;
                 _this.totalBalance = selected.full_balance;
                 _this.stakedBalance = selected.staked;
+                _this.unstaking = selected.unstaking;
+                _this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
                 if (_this.totalBalance > 0) {
                     _this.minToStake = 100 / _this.totalBalance;
                     _this.valuetoStake = _this.stakedBalance.toString();
@@ -254,35 +255,39 @@ var VoteComponent = /** @class */ (function () {
                 }
                 _this.updateStakePercent();
                 _this.loadPlacedVotes(selected);
+                _this.cpu_weight = selected.details.total_resources.cpu_weight;
+                _this.net_weight = selected.details.total_resources.net_weight;
             }
         });
-        this.voteService.listReady.asObservable().subscribe(function (state) {
-            if (state) {
-                _this.updateCounter();
-                _this.nbps = _this.voteService.bps.length;
-            }
-        });
-        this.aService.accounts.forEach(function (a) {
-            if (a) {
-                if (a.name === selectedAcc.name) {
-                    if (a.details['voter_info']) {
-                        var currentVotes_1 = a.details['voter_info']['producers'];
-                        _this.voteService.bps.forEach(function (elem) {
-                            elem.checked = currentVotes_1.indexOf(elem.account) !== -1;
-                        });
-                    }
-                    else {
-                        _this.voteService.bps.forEach(function (elem) {
-                            elem.checked = false;
-                        });
+        if (this.aService.mainnetActive['vote']) {
+            this.voteService.listReady.asObservable().subscribe(function (state) {
+                if (state) {
+                    _this.updateCounter();
+                    _this.nbps = _this.voteService.bps.length;
+                }
+            });
+            this.aService.accounts.forEach(function (a) {
+                if (a) {
+                    if (a.name === selectedAcc.name) {
+                        if (a.details['voter_info']) {
+                            var currentVotes_1 = a.details['voter_info']['producers'];
+                            _this.voteService.bps.forEach(function (elem) {
+                                elem.checked = currentVotes_1.indexOf(elem.account) !== -1;
+                            });
+                        }
+                        else {
+                            _this.voteService.bps.forEach(function (elem) {
+                                elem.checked = false;
+                            });
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         this.getCurrentStake();
     };
     VoteComponent.prototype.ngAfterViewInit = function () {
-        // this.voteService.listProducers();
+        //this.voteService.listProducers();
     };
     VoteComponent.prototype.getCurrentStake = function () {
         if (this.totalBalance > 0) {
@@ -364,24 +369,37 @@ var VoteComponent = /** @class */ (function () {
         var voter = this.aService.selected.getValue();
         var publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(pass, publicKey).then(function (data) {
+            console.log('Auth output:', data);
             if (data === true) {
-                _this.eos.voteProducer(voter.name, _this.selectedBPs).then(function () {
-                    _this.wrongpass = '';
-                    _this.voteModal = false;
-                    _this.busy = false;
-                    _this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
-                    _this.passForm.reset();
-                    _this.aService.refreshFromChain();
-                    setTimeout(function () {
-                        _this.loadPlacedVotes(_this.aService.selected.getValue());
-                    }, 500);
-                }).catch(function (err2) {
-                    if (err2.error.code === 3081001) {
-                        _this.wrongpass = 'Not enough stake to perform this action.';
+                _this.aService.injectLedgerSigner();
+                _this.eos.voteProducer(voter.name, _this.selectedBPs).then(function (result) {
+                    console.log(result);
+                    if (JSON.parse(result).code) {
+                        // if (err2.error.code === 3081001) {
+                        _this.wrongpass = JSON.parse(result).error.details[0].message;
+                        // } else {
+                        //   this.wrongpass = err2.error['what'];
+                        // }
+                        _this.busy = false;
                     }
                     else {
-                        _this.wrongpass = err2.error['what'];
+                        _this.wrongpass = '';
+                        _this.voteModal = false;
+                        _this.busy = false;
+                        _this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
+                        _this.passForm.reset();
+                        _this.aService.refreshFromChain();
+                        setTimeout(function () {
+                            _this.loadPlacedVotes(_this.aService.selected.getValue());
+                        }, 500);
                     }
+                }).catch(function (err2) {
+                    console.log(err2);
+                    // if (err2.error.code === 3081001) {
+                    //   this.wrongpass = 'Not enough stake to perform this action.';
+                    // } else {
+                    //   this.wrongpass = err2.error['what'];
+                    // }
                     _this.busy = false;
                 });
             }
@@ -445,7 +463,8 @@ var VoteComponent = /** @class */ (function () {
             crypto_service_1.CryptoService,
             forms_1.FormBuilder,
             angular2_toaster_1.ToasterService,
-            core_1.ChangeDetectorRef])
+            core_1.ChangeDetectorRef,
+            ledger_h_w_service_1.LedgerHWService])
     ], VoteComponent);
     return VoteComponent;
 }());

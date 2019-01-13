@@ -4,22 +4,22 @@
     <div class="col-md-6 text-center animate" style="align-self: center;">
       <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
         <div class="balance">
-          <ng-container *ngIf="sendForm.value.token === aService.mainnetActive['symbol']">
+          <ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
             <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE (${{unstaked * aService.usd_rate | number :
             '1.2-2'}})
           </ng-container>
-          <ng-container *ngIf="sendForm.value.token !== aService.mainnetActive['symbol'] && selectedToken['price'] !== null">
+          <ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol'] && selectedToken['price'] !== null">
             ${{token_balance * selectedToken['price'] | number :'1.2-2'}}
           </ng-container>
         </div>
-        <ng-container *ngIf="sendForm.value.token === aService.mainnetActive['symbol']">
-          <div class="eos">{{unstaked | number : '1.2-4'}} {{aService.mainnetActive['symbol']}}</div>
+        <ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
+          <div class="eos">{{unstaked | number : '1.2-4'}} {{aService.activeChain['symbol']}}</div>
           <div *ngIf="unstaking > 0" style="color: white">
             <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
-            '1.2-4'}} EOS {{unstakeTime}}
+            '1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}
           </div>
         </ng-container>
-        <ng-container *ngIf="sendForm.value.token !== aService.mainnetActive['symbol']">
+        <ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
           <div class="eos">{{token_balance | number : '1.2-4'}} {{sendForm.value.token}}</div>
         </ng-container>
         <form [formGroup]="sendForm">
@@ -28,8 +28,8 @@
               <input type="text" placeholder="Token" matInput formControlName="token" [matAutocomplete]="auto1">
               <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
               <mat-autocomplete #auto1="matAutocomplete">
-                <mat-option value="{{aService.mainnetActive['symbol']}}">
-                  {{ aService.mainnetActive['symbol'] }}
+                <mat-option value="{{aService.activeChain['symbol']}}">
+                  {{ aService.activeChain['symbol'] }}
                 </mat-option>
                 <mat-option *ngFor="let token of aService.tokens" [value]="token.name">
                   {{ token.name }}
@@ -143,7 +143,7 @@
   <div class="modal-body">
     <h3 class="blue">{{ sendForm.value.to }}</h3>
     <h5 class="mt-0" *ngIf="sendForm.value.alias !== ''">{{ sendForm.value.alias }}</h5>
-    <p-accordion *ngIf="sendForm.value.token === 'EOS'">
+    <p-accordion *ngIf="sendForm.value.token === 'EOS' && aService.activeChain.name === 'EOS MAINNET'">
       <p-accordionTab header="By submiting this transaction, you agree to the EOS Transfer Terms & Conditions">
         I, {{fromAccount}}, certify the following to be true to the best of my knowledge:
         <br><br>
@@ -188,7 +188,7 @@
   <div class="modal-body">
     <form [formGroup]="contactForm">
       <mat-form-field>
-        <input matInput #addAccount type="text" formControlName="account" placeholder="EOS Account name"
+        <input matInput #addAccount type="text" formControlName="account" placeholder="{{aService.activeChain['symbol']}} Account name"
                class="text-lowercase" maxlength="12" (blur)="checkAccountModal()">
         <mat-error align="start" *ngIf="adderrormsg !== ''">
           {{adderrormsg}}
@@ -214,7 +214,7 @@
   <div class="modal-body">
     <form [formGroup]="contactForm">
       <mat-form-field>
-        <input matInput type="text" formControlName="account" placeholder="EOS Account name"
+        <input matInput type="text" formControlName="account" placeholder="{{aService.activeChain['symbol']}} Account name"
                class="text-lowercase" maxlength="12" readonly>
       </mat-form-field>
       <mat-form-field>

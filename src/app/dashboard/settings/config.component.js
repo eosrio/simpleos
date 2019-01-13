@@ -28,9 +28,11 @@ var ConfigComponent = /** @class */ (function () {
         this.crypto = crypto;
         this.aService = aService;
         this.toaster = toaster;
+        this.busy = false;
         this.selectedEndpoint = null;
         this.endpointModal = false;
         this.logoutModal = false;
+        this.chainModal = false;
         this.confirmModal = false;
         this.pinModal = false;
         this.clearPinModal = false;
@@ -56,8 +58,12 @@ var ConfigComponent = /** @class */ (function () {
             pass: ['', forms_1.Validators.required],
             customImportBK: ['', forms_1.Validators.required],
         });
+        this.chainForm = this.fb.group({
+            pass: ['', forms_1.Validators.required]
+        });
         this.disableEx = false;
         this.disableIm = false;
+        this.chainConnected = [];
     }
     ConfigComponent_1 = ConfigComponent;
     ConfigComponent.resetApp = function () {
@@ -85,6 +91,7 @@ var ConfigComponent = /** @class */ (function () {
         this.toaster.popAsync(toast);
     };
     ConfigComponent.prototype.ngOnInit = function () {
+        this.chainConnected = this.getChainConnected();
     };
     ConfigComponent.prototype.logout = function () {
         if (this.clearContacts) {
@@ -93,7 +100,7 @@ var ConfigComponent = /** @class */ (function () {
         else {
             var arr = [];
             for (var i = 0; i < localStorage.length; i++) {
-                if (localStorage.key(i) !== 'simpleos.contacts') {
+                if (localStorage.key(i) !== 'simpleos.contacts.' + this.aService.mainnetActive['id']) {
                     arr.push(localStorage.key(i));
                 }
             }
@@ -101,6 +108,19 @@ var ConfigComponent = /** @class */ (function () {
                 localStorage.removeItem(k);
             });
         }
+        ConfigComponent_1.resetApp();
+    };
+    ConfigComponent.prototype.getChainConnected = function () {
+        var _this = this;
+        this.chainConnected = [];
+        return (this.network.networks.find(function (chain) { return chain.id === _this.network.mainnetId; }));
+    };
+    ConfigComponent.prototype.setChangeMainnet = function (chainID) {
+        this.network.mainnetId = chainID;
+    };
+    ConfigComponent.prototype.changeChain = function () {
+        var _this = this;
+        this.aService.activeChain(this.network.networks.find(function (chain) { return chain.id === _this.network.mainnetId; }).name);
         ConfigComponent_1.resetApp();
     };
     ConfigComponent.prototype.selectEndpoint = function (data) {
@@ -114,7 +134,7 @@ var ConfigComponent = /** @class */ (function () {
         this.confirmModal = false;
     };
     ConfigComponent.prototype.connectCustom = function (url) {
-        this.network.selectedEndpoint.next({ url: url, owner: 'Other', latency: 0, filters: [] });
+        this.network.selectedEndpoint.next({ url: url, owner: 'Other', latency: 0, filters: [], chain: '' });
         this.network.networkingReady.next(false);
         this.network.startup(url);
         this.endpointModal = false;
@@ -162,16 +182,13 @@ var ConfigComponent = /** @class */ (function () {
     };
     ConfigComponent.prototype.inputEXClick = function () {
         this.customExportBK.nativeElement.click();
-        // let el: HTMLElement = this.customExportBK.nativeElement as HTMLElement;
-        // el.click();
     };
     ConfigComponent.prototype.exportCheckBK = function (a) {
         this.exfile = a.target.files[0];
-        console.log(this.exfile);
         var path = this.exfile.path;
-        if (path == "") {
+        if (path === '') {
             this.showToast('error', 'Went some wrong, try again!', '');
-            this.exfile = "";
+            this.exfile = '';
             return false;
         }
         this.choosedDir = path;
@@ -179,7 +196,8 @@ var ConfigComponent = /** @class */ (function () {
     ConfigComponent.prototype.exportBK = function () {
         var _this = this;
         this.disableEx = true;
-        if (this.exfile != "") {
+        this.busy = true;
+        if (this.exfile !== '' && this.exportForm.value.pass !== '') {
             var bkpArr = [];
             for (var i = 0; i < localStorage.length; i++) {
                 if (localStorage.key(i).length > 12) {
@@ -188,67 +206,76 @@ var ConfigComponent = /** @class */ (function () {
                     bkpArr.push({ key: keyLS, value: valueLS });
                 }
             }
-            console.log(JSON.stringify(bkpArr));
             var pass = this.exportForm.value.pass;
-            console.log(pass);
-            var rp = this.crypto.encryptTestBKP(JSON.stringify(bkpArr), pass);
-            var path = this.exfile.path + "/simpleos.bkp";
+            var rp = this.crypto.encryptBKP(JSON.stringify(bkpArr), pass);
+            var path = this.exfile.path + '/simpleos.bkp';
             window['filesystem']['writeFile'](path, rp, 'utf-8', function (err, data) {
                 if (!err) {
                     _this.showToast('success', 'Backup exported!', '');
                     _this.choosedDir = '';
                     _this.disableEx = false;
+                    _this.busy = false;
                     _this.exportBKModal = false;
                 }
             });
         }
+        else {
+            this.showToast('error', 'Choose your backup directory and fill the password field!', '');
+            this.choosedDir = '';
+            this.disableEx = false;
+            this.busy = false;
+        }
     };
     ConfigComponent.prototype.inputIMClick = function () {
         this.customImportBK.nativeElement.click();
-        // let el: HTMLElement = this.customExportBK.nativeElement as HTMLElement;
-        // el.click();
     };
     ConfigComponent.prototype.importCheckBK = function (a) {
         this.infile = a.target.files[0];
         var name = this.infile.name;
-        if (name != "simpleos.bkp") {
+        if (name !== 'simpleos.bkp') {
             this.showToast('error', 'Wrong file!', '');
-            this.infile = "";
+            this.infile = '';
             return false;
         }
         this.choosedFil = name;
-        console.log(this.infile);
     };
     ConfigComponent.prototype.importBK = function () {
         var _this = this;
         this.disableIm = true;
-        if (this.infile != "") {
-            var bk = window['filesystem']['readFile'](this.infile.path, 'utf-8', function (err, data) {
+        this.busy = true;
+        if (this.infile !== '' && this.importForm.value.pass !== '') {
+            window['filesystem']['readFile'](this.infile.path, 'utf-8', function (err, data) {
                 if (!err) {
                     var pass = _this.importForm.value.pass;
-                    var decrypt = _this.crypto.decryptTestBKP(data, pass);
+                    var decrypt = _this.crypto.decryptBKP(data, pass);
                     try {
                         var arrLS = JSON.parse(decrypt);
                         _this.showToast('success', 'Imported with success!', '');
                         arrLS.forEach(function (d) {
-                            localStorage.setItem(d["key"], d["value"]);
+                            localStorage.setItem(d['key'], d['value']);
                         });
                         _this.choosedFil = '';
                         _this.disableIm = false;
+                        _this.busy = false;
                         _this.importBKModal = false;
                     }
                     catch (e) {
-                        console.log("wrong file");
-                        _this.showToast('error', 'Wrong backup file, please try again!', '');
+                        _this.showToast('error', 'Wrong password, please try again!', '');
+                        console.log('wrong file');
                     }
                 }
                 else {
-                    console.log("wrong entry");
                     _this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
+                    console.log('wrong entry');
                 }
             });
         }
-        console.log(this.infile);
+        else {
+            this.showToast('error', 'Choose your backup file and fill the password field!', '');
+            this.choosedFil = '';
+            this.disableIm = false;
+            this.busy = false;
+        }
     };
     var ConfigComponent_1;
     __decorate([

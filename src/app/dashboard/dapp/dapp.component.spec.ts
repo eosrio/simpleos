@@ -2,7 +2,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DappComponent } from './dapp.component';
 
-describe('RamMarketComponent', () => {
+describe('DappComponent', () => {
   let component: DappComponent;
   let fixture: ComponentFixture<DappComponent>;
 

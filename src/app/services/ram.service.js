@@ -10,14 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var eosjs_service_1 = require("../eosjs.service");
 var socketIo = require("socket.io-client");
 var rxjs_1 = require("rxjs");
 var RamService = /** @class */ (function () {
-    function RamService(eos) {
+    function RamService() {
         var _this = this;
-        this.eos = eos;
-        this.ramTicker = new rxjs_1.BehaviorSubject(0);
+        this.ramTicker = new rxjs_1.BehaviorSubject(null);
         this.ramPriceEOS = 0;
         this.total_ram_bytes_reserved = 0;
         this.total_ram_stake = 0;
@@ -26,12 +24,11 @@ var RamService = /** @class */ (function () {
         this.rm_quote = 0;
         this.rm_supply = 0;
         this.reloaderInterval = null;
-        this.socket = socketIo('http://192.168.100.65:3000');
-        console.log(this.socket);
+        this.socket = socketIo('https://hapi.eosrio.io/');
         this.socket.on('ticker', function (data) {
-            console.log(data);
             if (data.price) {
-                _this.ramTicker.next(data.price);
+                _this.ramTicker.next(data);
+                _this.ramPriceEOS = data.price;
             }
         });
     }
@@ -39,7 +36,7 @@ var RamService = /** @class */ (function () {
         core_1.Injectable({
             providedIn: 'root'
         }),
-        __metadata("design:paramtypes", [eosjs_service_1.EOSJSService])
+        __metadata("design:paramtypes", [])
     ], RamService);
     return RamService;
 }());

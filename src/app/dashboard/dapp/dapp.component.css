@@ -39,13 +39,13 @@ li:hover {
   color: white !important;
 }
 
-/deep/ .modal-header {
+.modal-header {
   border-bottom: none;
-  padding: 0 0 0rem !important;
+  padding: 0 0 0 !important;
 }
 
 
-/deep/ .modal-dialog {
+/deep/ .tokenModal .modal-dialog {
   width: auto!important;
   min-width: 24rem!important;
   max-width: 65rem!important;

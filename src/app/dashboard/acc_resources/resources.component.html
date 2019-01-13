@@ -1,18 +1,18 @@
 <div class="container">
-  <div class="row animate" style="padding-top: 15px;">
+  <div class="clr-row animate" style="padding-top: 15px;">
 
-    <div class="col-lg-4">
+    <div class="clr-col-lg-4">
       <div class="card info-card">
         <div class="card-block">
           <div class="title">RAM price</div>
           <!--<div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-          <div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} {{aService.mainnetActive['symbol']}}/KB</div>
+          <div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}/KB</div>
         </div>
       </div>
-      <div echarts [options]="ram_chart"  [merge]="ram_chartMerge" class="demo-chart"></div>
+      <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" echarts [options]="ram_chart"  [merge]="ram_chartMerge" class="demo-chart"></div>
     </div>
 
-    <div class="col-lg-4">
+    <div class="clr-col-lg-4">
 
       <div class="card info-card">
         <div class="card-block">
@@ -44,7 +44,7 @@
               <input matInput type="text" #buyAmountEos placeholder="Price" [textMask]="{mask: numberMask}" formControlName="buyEos" (keyup)="(errormsg2='');convertToBytes()" />
             </mat-form-field>
             <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-            <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+            <span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>
             <mat-error align="start" *ngIf="errormsg2 !== ''">
               {{errormsg2}}
             </mat-error>
@@ -80,7 +80,7 @@
               <input matInput #sellEos type="text" [textMask]="{mask: numberMask}" placeholder="Price in eos" formControlName="sellEos" (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()" />
             </mat-form-field>
             <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-            <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+            <span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>
             <mat-error align="start" *ngIf="errormsgeos !== ''">
               {{errormsgeos}}
             </mat-error>
@@ -92,7 +92,7 @@
 
     </div>
 
-    <div class="col-lg-4">
+    <div class="clr-col-lg-4">
 
       <div class="card info-card">
         <div class="card-block">
@@ -130,7 +130,7 @@
             </a>
           </div>
           <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-          <div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} {{aService.mainnetActive['symbol']}}</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.mainnetActive['symbol']}}</span></div>
+          <div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span></div>
 
 
           <div style="height: auto; margin-bottom: 0px !important;" >
@@ -150,15 +150,15 @@
                 <input matInput type="text" #netAmountEos placeholder="NET" [textMask]="{mask: numberMask}" formControlName="netEos" (keyup)="checkEos(netAmountEos.value,'net');" />
               </mat-form-field>
               <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-              <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+              <span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>
 
-              <span style="margin: 0 12px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
 
               <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
                 <input matInput type="text" #cpuAmountEos placeholder="CPU" [textMask]="{mask: numberMask}" formControlName="cpuEos" (keyup)="checkEos(cpuAmountEos.value,'cpu');" />
               </mat-form-field>
               <!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-              <span style="margin: 0 12px;">{{aService.mainnetActive['symbol']}}</span>
+              <span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>
               <mat-error align="start" *ngIf="errormsgD3 !== ''">
                 {{errormsgD3}}
               </mat-error>
@@ -222,10 +222,10 @@
 
   <div class="modal-body">
     <!--<span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-    <span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} {{aService.mainnetActive['symbol']}} </span>
+    <span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} {{aService.activeChain['symbol']}} </span>
   </div>
   <div class="modal-body">
-    <p-accordion>
+    <p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
       <p-accordionTab header="By submiting this transaction, you agree to the buyrambytes Terms & Conditions">
         This action will attempt to reserve about {{bytesbuy}} bytes of RAM on behalf of {{receiver}}.
         <br><br>
@@ -268,10 +268,10 @@
   </div>
   <div class="modal-body">
     <!--<span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-    <span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} {{aService.mainnetActive['symbol']}} </span>
+    <span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} {{aService.activeChain['symbol']}} </span>
   </div>
   <div class="modal-body">
-    <p-accordion>
+    <p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
       <p-accordionTab header="By submiting this transaction, you agree to the sellram Terms & Conditions">
         The sellram action sells unused RAM for tokens.
         <br><br>
@@ -297,7 +297,7 @@
   <h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span class="blue"> CPU</span> to <span class="blue">{{ accTo}}</span></h3>
 
   <div class="modal-body">
-    <p-accordion>
+    <p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
       <p-accordionTab header="By submiting this transaction, you agree to the delegatebw Terms & Conditions">
         The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer ownership.
         <br><br>
@@ -329,7 +329,7 @@
   <div class="modal-body">
     <div>This resources will be removed from {{ fromUD }} and will return to you. </div>
     <div>Please make sure the account {{ fromUD }} has some eos staked, otherwise the account may lose all its resources </div>
-    <p-accordion>
+    <p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
       <p-accordionTab header="By submiting this transaction, you agree to the undelegatebw  Terms & Conditions">
         The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
         <br><br>

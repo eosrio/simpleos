@@ -35,6 +35,7 @@ var LockscreenComponent = /** @class */ (function () {
         window['remote']['app'].exit(0);
     };
     LockscreenComponent.prototype.ngOnInit = function () {
+        console.log('--------------------------->', localStorage.getItem('simpleos-hash'));
         if (localStorage.getItem('simpleos-hash') === null) {
             this.router.navigate(['landing']).catch(function () {
                 alert('cannot navigate :(');
@@ -47,9 +48,9 @@ var LockscreenComponent = /** @class */ (function () {
     };
     LockscreenComponent.prototype.unlock = function () {
         var target = ['landing'];
-        if (this.network.networkingReady.getValue()) {
-            target = ['dashboard', 'wallet'];
-        }
+        // if (this.network.networkingReady.getValue()) {
+        //     target = ['dashboard', 'wallet'];
+        // }
         if (!this.crypto.unlock(this.pin, target)) {
             this.wrongpass = true;
             this.nAttempts--;
@@ -66,7 +67,7 @@ var LockscreenComponent = /** @class */ (function () {
         else {
             var arr = [];
             for (var i = 0; i < localStorage.length; i++) {
-                if (localStorage.key(i) !== 'simpleos.contacts') {
+                if (localStorage.key(i) !== 'simpleos.contacts.' + this.network.mainnetActive['id']) {
                     arr.push(localStorage.key(i));
                 }
             }

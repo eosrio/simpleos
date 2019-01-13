@@ -18,6 +18,8 @@ var WalletComponent = /** @class */ (function () {
         this.aService = aService;
         this.eos = eos;
         this.openTX = WalletComponent_1.openTXID;
+        this.memoAccOwner = '';
+        this.memoAccActive = '';
         this.moment = moment;
         this.actions = [];
         this.tokens = [];
@@ -37,10 +39,14 @@ var WalletComponent = /** @class */ (function () {
         this.eos['eos']['getInfo']({}).then(function (info) {
             _this.headBlock = info['head_block_num'];
             _this.LIB = info['last_irreversible_block_num'];
+        }).catch(function (err) {
+            console.log("Error", err);
         });
     };
     WalletComponent.prototype.ngOnInit = function () {
         var _this = this;
+        // console.log('here', this.aService.totalActions);
+        // console.log('Action', this.aService.actions);
         this.aService.lastUpdate.asObservable().subscribe(function (value) {
             if (value.account === _this.aService.selected.getValue().name) {
                 _this.updateBalances();
@@ -52,6 +58,7 @@ var WalletComponent = /** @class */ (function () {
                 _this.getInfo();
             }, 5000);
         }
+        this.loading = true;
     };
     WalletComponent.prototype.ngOnDestroy = function () {
         if (this.blockTracker) {
@@ -63,17 +70,38 @@ var WalletComponent = /** @class */ (function () {
         var _this = this;
         this.aService.selected.asObservable().subscribe(function (sel) {
             if (sel['name']) {
-                setImmediate(function () {
+                setTimeout(function () {
                     _this.fullBalance = sel.full_balance;
                     _this.staked = sel.staked;
                     _this.unstaked = sel.full_balance - sel.staked;
                     _this.tokens = [];
-                    _this.aService.reloadActions(sel.name);
+                    _this.aService.reloadActions(sel.name, false);
                     _this.aService.refreshFromChain();
-                });
+                }, 50);
             }
         });
     };
+    WalletComponent.prototype.dateSort = function (ev) {
+        ev.field.forEach(function (data) {
+            console.log(data);
+        });
+    };
+    WalletComponent.prototype.memoNewAcc = function (info) {
+        this.memoAccOwner = JSON.stringify(JSON.parse(info)['owner']);
+        this.memoAccActive = JSON.stringify(JSON.parse(info)['active']);
+    };
+    // loadHistoryLazy(LazyLoadEvent) {
+    //   console.log(LazyLoadEvent);
+    //   let order = 'desc';
+    //   if (LazyLoadEvent.sortField === 'date') {
+    //     if (LazyLoadEvent.sortOrder === 1) {
+    //       order = 'asc';
+    //     }
+    //   }
+    //
+    //   this.aService.getAccActions(null, LazyLoadEvent.first, LazyLoadEvent.rows, order);
+    //   this.loading = false;
+    // }
     WalletComponent.prototype.updateBalances = function () {
         var sel = this.aService.selected.getValue();
         this.fullBalance = sel.full_balance;
@@ -81,8 +109,8 @@ var WalletComponent = /** @class */ (function () {
         this.unstaked = sel.full_balance - sel.staked;
     };
     WalletComponent.prototype.refresh = function () {
-        this.aService.reloadActions(this.aService.selected.getValue().name);
-        this.aService.refreshFromChain();
+        this.aService.reloadActions(this.aService.selected.getValue().name, true);
+        // this.aService.refreshFromChain();
     };
     var WalletComponent_1;
     WalletComponent = WalletComponent_1 = __decorate([

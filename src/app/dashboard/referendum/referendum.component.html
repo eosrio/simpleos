@@ -1,0 +1,280 @@
+<div class="container" style="height: 100%;">
+	<div class="card header-card animate">
+		<div class="row flex-items-xs-around">
+			<div class="col-lg-4 col-md-5 text-left">
+				<h4 class="title">Referendum &nbsp;
+					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+						<span class="tooltip-content">For a proposal to pass, it needs to have 15% of tokens (around 150MM EOS) voted on it and 10% more YES than NO need to be sustained for 30 days within a 120 day period.</span>
+					</a>
+				</h4>
+				<h5 class="subtitle mt-0">vote for proposals on the EOS Mainnet</h5>
+			</div>
+			<div class="col-lg-3 col-md-6 text-right offset-lg-1">
+				<mat-form-field class="searchbar">
+					<input type="text" matInput placeholder="Search..."
+						   (input)="filterProposals($event.target.value)">
+					<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
+				</mat-form-field>
+			</div>
+			<div class="col-lg text-right">
+				Filter by
+				<mat-form-field class="example-full-width" style="width: 207px;">
+					<mat-select value="mosteos" (selectionChange)="sortingChange($event)">
+						<mat-option value="mosteos">Most EOS voted</mat-option>
+						<mat-option value="mostvoted">Most voters</mat-option>
+						<mat-option value="newest">Newest First</mat-option>
+						<mat-option value="oldest">Oldest First</mat-option>
+						<mat-option value="expiresfirst">Expires First</mat-option>
+						<mat-option value="expireslast">Expires Last</mat-option>
+					</mat-select>
+				</mat-form-field>
+			</div>
+		</div>
+	</div>
+	<div class="row" style="height: 100%; opacity: 0.85" *ngIf="loading">
+		<div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+			<ng-container>
+
+				<fa-layers class="mt-2 mb-1">
+					<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
+				</fa-layers>
+				<br>
+
+				<div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
+			</ng-container>
+		</div>
+	</div>
+
+	<div class="row animate">
+		<ng-container *ngFor="let p of (proposals
+		| fusejs: searchString :{
+					 threshold: 0.1,
+					 distance: 300,
+					 tokenize: false,
+					 minMatchCharLength: 1,
+					 shouldSort: true,
+					 keys: [
+						 {
+							name:'proposal.proposal_name',
+							weight:0.8
+						 },
+						 {
+							name:'proposal.title',
+							weight:0.7
+						 },
+						 {
+							name:'proposal.json_data.content',
+							weight:0.4
+						 }
+					 ]
+				}
+		| orderBy: sortExpression : sortReverse : true : comparatorMethod
+		) | paginate: {itemsPerPage: 16,currentPage: page}">
+
+			<div class="col-lg-6" *ngIf="p.stats.staked['total'] > 0 || isExpired(p.proposal.expires_at)">
+				<div class="card proposal-card">
+					<div class="proposal-body">
+					<span class="blue" style="font-weight: 500;"
+						  [innerHTML]="'#' + p['fuseJsHighlighted'].proposal.proposal_name"></span>
+
+						<span class="boxExpires {{ isExpired(p.proposal.expires_at) ? 'expired' : 'expires'}}">
+					{{ getExpiretime(p.proposal.expires_at) }}!
+				</span>
+						<div style="clear: both;">
+							<h4 class="white mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
+								<div style="height: 70px" [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
+							</h4>
+
+							<!--div style="color: #2e7db2;">created: {{proposal.created_at}}</div>
+                            <div style="color: #2e7db2;">expires: {{proposal.expires_at}}</div-->
+							<ng-container *ngIf="p.proposal.json_data">
+								<div class="gray text-justify proposal-content"
+									 [innerHTML]="p['fuseJsHighlighted'].proposal.json_data.content"></div>
+							</ng-container>
+						</div>
+
+						<button
+							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='poll-yn-v1') || (p.proposal.json_data.type==='poll-yna-v1') || (p.proposal.json_data.type==='referendum-v1') || (p.proposal.json_data.type==='simple'))"
+							type="button" class="btn btn-outline btn-info-outline"
+							(click)="startVote(p,0)"
+							style="margin-top: 15px; padding:0px 17px !important;">
+							0 - No
+						</button>
+						<button
+							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='poll-yn-v1') || (p.proposal.json_data.type==='poll-yna-v1') || (p.proposal.json_data.type==='referendum-v1') || (p.proposal.json_data.type==='simple'))"
+							type="button" class="btn btn-outline btn-info-outline"
+							(click)="startVote(p,1);"
+							style="margin-top: 15px; padding:0px 17px !important;">
+							1 - Yes
+						</button>
+						<button
+							*ngIf="(!isExpired(p.proposal.expires_at)) && (p.proposal.json_data.type==='poll-yna-v1')"
+							type="button" class="btn btn-outline btn-info-outline"
+							(click)="startVote(p,2);"
+							style="margin-top: 15px; padding:0px 17px !important;">
+							2 - Abstain
+						</button>
+
+						<div
+							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='options-v1') || (p.proposal.json_data.type==='multi-select-v1'))"
+							style="float:left;">
+							<mat-form-field class="example-full-width"
+											style=" margin-right:10px;width: 207px;">
+								<mat-select placeholder="Select an option" (selectionChange)="vtProposal=$event.value;"
+											[multiple]="p.proposal.json_data.type==='multi-select-v1'">
+									<mat-option *ngFor="let  option of p.proposal.json_data['options']"
+												[value]="p.proposal.json_data['options'].indexOf(option)">
+										{{p.proposal.json_data['options'].indexOf(option)}} - {{ option }}
+									</mat-option>
+								</mat-select>
+							</mat-form-field>
+
+							<button type="button" class="btn btn-outline btn-info-outline"
+									(click)="startMultiVote(p)"
+									style="margin-top: 9px;  padding:0px 17px !important;">
+								Vote
+							</button>
+						</div>
+
+						<button *ngIf="!isExpired(p.proposal.expires_at)" type="button"
+								class="btn btn-outline btn-info-outline"
+								(click)="startUnvote(p)"
+								style="margin-top: 15px; padding:0px 17px !important;">
+							Unvote
+						</button>
+					</div>
+					<div class="card-footer proposal-footer">
+
+						<mat-progress-bar *ngIf="
+					((p.proposal.json_data.type==='poll-yn-v1') ||
+					(p.proposal.json_data.type==='poll-yna-v1') ||
+					(p.proposal.json_data.type==='referendum-v1') ||
+					(p.proposal.json_data.type==='simple'))"
+										  class="proposal-progress"
+										  color="warn"
+										  mode="determinate"
+										  [value]="(p.stats.staked['1'] / p.stats.staked['total']) * 100">
+						</mat-progress-bar>
+
+						<div style="padding: 10px 19px; font-weight: 600;">
+
+							<ng-container *ngIf="
+					((p.proposal.json_data.type==='poll-yn-v1') ||
+					(p.proposal.json_data.type==='poll-yna-v1') ||
+					(p.proposal.json_data.type==='referendum-v1') ||
+					(p.proposal.json_data.type==='simple'))">
+							<span class="green" pTooltip="Voters: {{p.stats.votes['1']}}">
+								{{((p.stats.staked['1'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
+							</span>
+								<span class="red" pTooltip="Voters: {{p.stats.votes['0']}}" style="float: right">
+								{{((p.stats.staked['0'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
+							</span>
+							</ng-container>
+
+							<div class="text-white" [textMask]="{mask: numberMask}">
+								{{(p.stats.staked['total'] / 10000) | number : '1.2-4' }} EOS voted
+								<span style="color: #989898;">
+								({{p.stats.votes['total']}} voters)
+							</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</ng-container>
+	</div>
+	<br>
+	<div class="row ">
+		<div class="col-xs-12 pagination-row text-center">
+			<pagination-controls (pageChange)="page = $event"></pagination-controls>
+		</div>
+	</div>
+	<br>
+</div>
+
+<clr-modal [(clrModalOpen)]="voteModal">
+
+	<h3 *ngIf="selProposal" class="modal-title text-white">
+		Confirm vote
+		<span class="blue">
+			{{vtProposal}}
+		</span>
+		<ng-container *ngIf="(
+		(selProposal.proposal.json_data.type==='poll-yn-v1') ||
+		(selProposal.proposal.json_data.type==='poll-yna-v1') ||
+		(selProposal.proposal.json_data.type==='referendum-v1') ||
+		(selProposal.proposal.json_data.type==='simple')
+		)">
+			<span class="blue" *ngIf="vtProposal === 0">
+				 - NO
+			</span>
+			<span class="blue" *ngIf="vtProposal === 1">
+				 - YES
+			</span>
+		</ng-container>
+		to
+		<span class="blue">
+			<b>
+				{{selProposal.proposal.proposal_name}}
+			</b>
+		</span>
+		proposed by
+		<span class="blue">
+			{{selProposal.proposal.proposer}}
+		</span>
+	</h3>
+
+	<div *ngIf="selProposal" class="modal-body">
+		Proposal Title
+		<h4 style="color: whitesmoke">
+			{{selProposal.proposal.title}}
+		</h4>
+	</div>
+
+	<div class="modal-footer">
+		<form [formGroup]="confirmForm" class="confirmForm">
+			<mat-form-field>
+				<input matInput #pass type="password" (keyup.enter)="voteProposal()" placeholder="Password"
+					   formControlName="pass">
+				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+					{{wrongpass}}
+				</mat-hint>
+				<br clear="all"/>
+			</mat-form-field>
+			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
+					(click)="voteProposal()"
+					[disabled]="!confirmForm.valid || busy">
+				Confirm
+				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+			</button>
+
+		</form>
+	</div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="unvoteModal">
+	<h3 *ngIf="selProposal" class="modal-title text-white">Confirm unvote to <span
+		class="blue"><b>{{selProposal.proposal.proposal_name}}</b></span> proposal by {{selProposal.proposal.proposer}}
+	</h3>
+
+	<div class="modal-footer">
+		<form [formGroup]="confirmForm" class="confirmForm">
+			<mat-form-field>
+				<input matInput #pass type="password" (keyup.enter)="unvoteProposal()" placeholder="Password"
+					   formControlName="pass">
+				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+					{{wrongpass}}
+				</mat-hint>
+				<br clear="all"/>
+			</mat-form-field>
+			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
+					(click)="voteProposal()"
+					[disabled]="!confirmForm.valid || busy">
+				Confirm
+				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+			</button>
+
+		</form>
+	</div>
+</clr-modal>

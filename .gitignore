@@ -42,5 +42,6 @@ Thumbs.db
 /archive
 .npmrc
 
+*.bkp
 .idea
 node_modules

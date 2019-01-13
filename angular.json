@@ -28,6 +28,7 @@
               },
               "src/styles.css",
               "node_modules/@clr/ui/clr-ui.min.css",
+              "node_modules/@clr/ui/clr-grid-deprecated.css",
               "node_modules/@clr/icons/clr-icons.min.css",
               "node_modules/primeng/resources/themes/darkness/theme.css",
               "node_modules/angular2-toaster/toaster.css",

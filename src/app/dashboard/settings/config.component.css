@@ -8,9 +8,9 @@
 .title {
     color: #a4a4a4;
     font-size: 21px;
-    border-bottom: 1px solid #4e4e4e;
+    border-bottom: 0;
     margin-bottom: 10px;
-    padding-bottom: 17px;
+    padding-bottom: 0px;
 }
 
 .info {
@@ -60,10 +60,42 @@
     padding-left: .5rem;
 }
 
-/deep/ .modal-body {
+/deep/ .modal-pin {
     overflow-y: hidden !important;
+}
+
+/deep/ .modal-pin>:last-child {
+	 margin-bottom: 16px;
 }
 
 .pass-input {
     display: block;
+}
+
+/deep/ .mat-select-value {
+	color: #0094d2;
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+	font-size: 21px;
+}
+
+/deep/ .mat-option {
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+	font-size: 17px !important;
+	/*background-color: #333333;*/
+}
+
+/deep/ .mat-select-panel {
+	background: #333333;
+}
+
+/deep/ .mat-primary .mat-option.mat-selected:not(.mat-option-disabled) {
+	color: #0094d2;
+}
+
+/deep/ .mat-select-arrow {
+	color: rgb(177, 177, 177);
+}
+
+/deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
+	color: #0094d2 !important;
 }

@@ -43,6 +43,8 @@ var DashboardComponent = /** @class */ (function () {
         this.accountname_valid = false;
         this.accountname_err = '';
         this.amounterror = '';
+        this.amounterror2 = '';
+        this.amounterror3 = '';
         this.passmatch = false;
         this.passmatch2 = false;
         this.ownerpk = '';
@@ -223,7 +225,7 @@ var DashboardComponent = /** @class */ (function () {
         var publicKey = account.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(this.submitTXForm.get('pass').value, publicKey).then(function (data) {
             if (data === true) {
-                _this.eos.createAccount(_this.final_creator, _this.final_name, _this.final_owner, _this.final_active, delegate_amount, ram_amount, delegate_transfer, gift_amount, 'created with simpleos').then(function (txdata) {
+                _this.eos.createAccount(_this.final_creator, _this.final_name, _this.final_owner, _this.final_active, delegate_amount, ram_amount, delegate_transfer, gift_amount, 'created with simpleos', _this.aService.mainnetActive['symbol']).then(function (txdata) {
                     console.log(txdata);
                     if (_this.newAccOptions === 'newpk') {
                         setTimeout(function () {
@@ -368,35 +370,43 @@ var DashboardComponent = /** @class */ (function () {
         this.aService.initFirst();
     };
     DashboardComponent.prototype.cc = function (text) {
-        this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
-        window['clipboard']['writeText'](text);
+        var _this = this;
+        window['navigator']['clipboard']['writeText'](text).then(function () {
+            _this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+            //console.log(dt);
+        }).catch(function () {
+            _this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+        });
     };
     DashboardComponent.prototype.verifyAccountName = function (next) {
         var _this = this;
+        console.log(next);
         try {
             this.accountname_valid = false;
             var res = this.eos.checkAccountName(this.accountname);
-            console.log(res);
+            var regexName = new RegExp('^([a-z]|[1-5])+$');
             if (res !== 0) {
-                if (this.accountname.length === 12) {
-                    this.eos.eos['getAccount'](this.accountname, function (err, data) {
-                        console.log(err, data);
-                        if (err) {
-                            _this.accountname_valid = true;
-                            _this.newAccountData.n = _this.accountname;
-                            _this.final_name = _this.accountname;
-                            _this.final_creator = _this.aService.selected.getValue().name;
-                            _this.accountname_err = '';
-                            if (next) {
-                                _this.wizardaccount.next();
-                            }
+                if (this.accountname.length === 12 && regexName.test(this.accountname)) {
+                    this.eos.getAccountInfo(this.accountname).then(function (data) {
+                        // this.eos['getAccount'](this.accountname, (err, data) => { // CSTAM
+                        //   if (data) {
+                        _this.accountname_err = 'This account name is not available. Please try another.';
+                        _this.accountname_valid = false;
+                        // }
+                    }).catch(function (err) {
+                        // console.log(err);
+                        // if (err) {
+                        _this.accountname_valid = true;
+                        _this.newAccountData.n = _this.accountname;
+                        _this.final_name = _this.accountname;
+                        _this.final_creator = _this.aService.selected.getValue().name;
+                        _this.accountname_err = '';
+                        if (next) {
+                            _this.wizardaccount.next();
                         }
-                        else {
-                            if (data) {
-                                _this.accountname_err = 'This account name is not available. Please try another.';
-                                _this.accountname_valid = false;
-                            }
-                        }
+                        // } else {
+                        //
+                        // }
                     });
                 }
                 else {
@@ -410,21 +420,60 @@ var DashboardComponent = /** @class */ (function () {
             this.accountname_valid = false;
         }
     };
-    // checkAmount() {
-    //     if (parseFloat(this.sendForm.value.amount) === 0 || this.sendForm.value.amount === '') {
-    //         this.sendForm.controls['amount'].setErrors({'incorrect': true});
-    //         this.amounterror = 'invalid amount';
-    //     } else {
-    //         const max = this.sendForm.get('token').value === 'EOS' ? this.unstaked : this.token_balance;
-    //         if (parseFloat(this.sendForm.value.amount) > max) {
-    //             this.sendForm.controls['amount'].setErrors({'incorrect': true});
-    //             this.amounterror = 'invalid amount';
-    //         } else {
-    //             this.sendForm.controls['amount'].setErrors(null);
-    //             this.amounterror = '';
-    //         }
-    //     }
-    // }
+    DashboardComponent.prototype.initNewAcc = function () {
+        var _this = this;
+        this.aService.selected.asObservable().subscribe(function (sel) {
+            if (sel) {
+                _this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                //this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
+            }
+        });
+    };
+    DashboardComponent.prototype.checkAmount = function (field) {
+        if (field === "gift_amount" && (this.delegateForm.get(field).value !== "" || this.delegateForm.get(field).value > 0)) {
+            if (parseFloat(this.delegateForm.get(field).value) > this.unstaked) {
+                this.delegateForm.controls[field].setErrors({ 'incorrect': true });
+                this.amounterror3 = 'invalid amount';
+            }
+            else {
+                this.delegateForm.controls['delegate_amount'].setErrors(null);
+                this.amounterror3 = '';
+            }
+        }
+        else {
+            if (parseFloat(this.delegateForm.get(field).value) === 0 || this.delegateForm.get(field).value === '') {
+                this.delegateForm.controls[field].setErrors({ 'incorrect': true });
+                this.amounterror = 'invalid amount';
+            }
+            else {
+                if (parseFloat(this.delegateForm.get(field).value) > this.unstaked) {
+                    this.delegateForm.controls[field].setErrors({ 'incorrect': true });
+                    this.amounterror = 'invalid amount';
+                }
+                else {
+                    this.delegateForm.controls['delegate_amount'].setErrors(null);
+                    this.amounterror = '';
+                }
+            }
+        }
+    };
+    DashboardComponent.prototype.checkAmountBytes = function () {
+        var price = (this.ram.ramPriceEOS * (this.delegateForm.get('ram_amount').value / 1024));
+        if (parseFloat(this.delegateForm.get('ram_amount').value) === 0 || this.delegateForm.get('ram_amount').value === '') {
+            this.delegateForm.controls['ram_amount'].setErrors({ 'incorrect': true });
+            this.amounterror2 = 'invalid amount';
+        }
+        else {
+            if (price > this.unstaked) {
+                this.delegateForm.controls['ram_amount'].setErrors({ 'incorrect': true });
+                this.amounterror2 = 'invalid amount';
+            }
+            else {
+                this.delegateForm.controls['ram_amount'].setErrors(null);
+                this.amounterror2 = '';
+            }
+        }
+    };
     DashboardComponent.prototype.passCompare = function () {
         var pForm = this.passform.value.matchingPassword;
         if (pForm.pass1 && pForm.pass2) {

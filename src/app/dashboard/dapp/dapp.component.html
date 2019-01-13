@@ -7,13 +7,14 @@
 				<mat-form-field class="searchbar col-lg-7">
 					<input type="text" #search formControlName="search" matInput placeholder="Search..."
 						   (keyup.enter)="searchDapp($event.target.value)">
-					<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
+					<fa-icon matSuffix [icon]="['far', 'search']" size="lg"
+							 (click)="searchDapp(searchForm.value.search)"></fa-icon>
 					<mat-error align="start" *ngIf="errormsg !== ''">
 						{{errormsg}}
 					</mat-error>
 				</mat-form-field>
 			</form>
-			<div class="tokens-pad"> Search by <b>Smart Contract</b> names here!</div>
+			<div class="tokens-pad"> Search for <b>Smart Contracts</b> here and interact whith them!</div>
 			<!--</div>-->
 		</div>
 	</div>
@@ -60,7 +61,7 @@
 	</div>
 </div>
 
-<clr-modal [(clrModalOpen)]="tokenModal" [clrModalSize]="'md'">
+<clr-modal [(clrModalOpen)]="tokenModal" [clrModalSize]="'md'" class="tokenModal">
 
 	<!--h3 class="modal-title text-white">Contract: <span class="blue">{{contract}}</span></h3-->
 	<div class="modal-body" style="overflow-y: auto!important;">
@@ -81,18 +82,21 @@
 		</div>
 
 		<!--hr style="border:0px !important;border-bottom:1px solid #0094d2 !important;" /-->
-		<h4><span class="blue">Actions for the SmartContract:</span></h4>
+		<h4><span class="blue">Contract Actions:</span></h4>
 		<!--h4 class="text-white mt-0">Voting power will be: <span class="blue">{{21212 | number}}%</span></h4-->
 		<br/>
-		<mat-button-toggle-group name="alignment">
-			<mat-button-toggle value="left" *ngFor="let action of abiSmartContractActions" class="btn btn-info-outline"
+		<!--mat-button-toggle-group name="alignment">
+			<mat-button-toggle value="left" *ngFor="let action of abiSmartContractActions" class="btn btn-outline btn-info-outline"
 							   (click)="getForm(action.type);">
 				<div style="text-transform: uppercase !important;">{{action.name}}</div>
 			</mat-button-toggle>
-		</mat-button-toggle-group>
-		<!--button *ngFor="let action of eos.abiSmartContractActions" type="button" class="btn btn-info-outline" (click)="getForm(action.type);"  >
-            {{action.name}}
-        </button-->
+		</mat-button-toggle-group-->
+
+		<button *ngFor="let action of abiSmartContractActions" type="button" class="btn btn-outline btn-info-outline"
+				(click)="getForm(action.type);" style="margin-top: 15px; padding:0px 17px !important;">
+			{{action.name}}
+		</button>
+
 		<br/>
 		<ng-container #dForm style="overflow-y: auto !important;"></ng-container>
 		<span class="error" align="start" *ngIf="errormsg2 !== ''">
@@ -103,6 +107,7 @@
 
 <clr-modal [(clrModalOpen)]="sendModal">
 	<h3 class="modal-title text-white"><span class="blue">Confirm Action</span></h3>
+	<h4 class="modal-title text-white"><span class="blue">{{contract}}::{{action}}</span></h4>
 	<div class="modal-body">
 		<h5 class="modal-title text-white"><span class="blue">Form</span></h5>
 		<span class="white" *ngFor="let idx of formVal2">

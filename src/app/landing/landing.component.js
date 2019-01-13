@@ -18,8 +18,9 @@ var angular_1 = require("@clr/angular");
 var network_service_1 = require("../network.service");
 var crypto_service_1 = require("../services/crypto.service");
 var angular2_toaster_1 = require("angular2-toaster");
+var ram_service_1 = require("../services/ram.service");
 var LandingComponent = /** @class */ (function () {
-    function LandingComponent(eos, crypto, fb, aService, toaster, network, router, zone) {
+    function LandingComponent(eos, crypto, fb, aService, toaster, network, router, zone, ram) {
         var _this = this;
         this.eos = eos;
         this.crypto = crypto;
@@ -29,6 +30,8 @@ var LandingComponent = /** @class */ (function () {
         this.network = network;
         this.router = router;
         this.zone = zone;
+        this.ram = ram;
+        // endPoint = 'http://api.eosrio.io';
         this.accountname = '';
         this.accountname_err = '';
         this.accountname_valid = false;
@@ -44,11 +47,16 @@ var LandingComponent = /** @class */ (function () {
         this.generating = false;
         this.generating2 = false;
         this.exodusValid = false;
-        this.endpoint = 'https://api.eosrio.io';
         this.payloadValid = false;
         this.generated = false;
         this.generated2 = false;
         this.verifyPanel = false;
+        this.openTX = LandingComponent_1.openTXID;
+        this.openGit = LandingComponent_1.openGithub;
+        this.openFaq = LandingComponent_1.openFAQ;
+        this.busy2 = false;
+        this.busyActivekey = false;
+        this.chainConnected = [];
         this.busy = true;
         this.existingWallet = false;
         this.exodusWallet = false;
@@ -62,11 +70,16 @@ var LandingComponent = /** @class */ (function () {
         this.lockscreen = false;
         this.lockscreen2 = false;
         this.importBKP = false;
+        this.endpointModal = false;
         this.disableIm = false;
         this.accounts = [];
         this.importedAccounts = [];
         this.checkerr = '';
         this.errormsg = '';
+        this.endpoint = '';
+        this.total_amount = 1;
+        this.memo = '';
+        this.busyActivekey = false;
         this.lottieConfig = {
             path: 'assets/logoanim.json',
             autoplay: true,
@@ -105,13 +118,28 @@ var LandingComponent = /** @class */ (function () {
             return 0;
         }
     };
-    LandingComponent.prototype.cc = function (text) {
-        this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
-        window['clipboard']['writeText'](text);
+    LandingComponent.openTXID = function (value) {
+        window['shell']['openExternal']('https://www.bloks.io/account/' + value);
+    };
+    LandingComponent.openGithub = function () {
+        window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
+    };
+    LandingComponent.openFAQ = function () {
+        window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
     };
     LandingComponent.resetApp = function () {
-        window['remote']['app']['relaunch']();
-        window['remote']['app'].exit(0);
+        if (window['remote']) {
+            window['remote']['app']['relaunch']();
+            window['remote']['app'].exit(0);
+        }
+    };
+    LandingComponent.prototype.cc = function (text, title, body) {
+        var _this = this;
+        window['navigator']['clipboard']['writeText'](text).then(function () {
+            _this.showToast('success', title + ' copied to clipboard!', body);
+        }).catch(function () {
+            _this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+        });
     };
     LandingComponent.prototype.resetAndClose = function () {
         this.wizardnew.reset();
@@ -139,46 +167,62 @@ var LandingComponent = /** @class */ (function () {
     };
     LandingComponent.prototype.ngOnInit = function () {
         var _this = this;
+        this.chainConnected = [];
+        this.chainConnected = this.getChainConnected();
+        this.endpoint = this.chainConnected['firstApi'];
         setTimeout(function () {
             _this.anim.pause();
         }, 10);
         setTimeout(function () {
             _this.anim.play();
         }, 900);
+        console.log('Started landing -------->');
     };
-    LandingComponent.prototype.setPin = function (exodus) {
+    LandingComponent.prototype.parseSYMBOL = function (tk_string) {
+        if (tk_string.split(' ')[1] === this.aService.mainnetActive['symbol']) {
+            return parseFloat(tk_string.split(' ')[0]);
+        }
+        else {
+            return 0;
+        }
+    };
+    LandingComponent.prototype.getChainConnected = function () {
+        var storeChain = localStorage.getItem('simplEOS.storeChain');
+        var storeChainA = JSON.parse(storeChain);
+        return (storeChainA.find(function (chain) { return chain.active; }));
+    };
+    LandingComponent.prototype.setChangeMainnet = function (chainID) {
         var _this = this;
-        setTimeout(function () {
-            if (exodus) {
-                _this.crypto.createPIN(_this.pinexodus);
-            }
-            else {
-                _this.crypto.createPIN(_this.pin);
-            }
-        }, 4000);
+        this.network.mainnetId = this.network.networks.find(function (chain) { return chain.id === chainID; }).id;
+        this.aService.activeChain(this.network.networks.find(function (chain) { return chain.id === _this.network.mainnetId; }).name);
+        LandingComponent_1.resetApp();
+    };
+    LandingComponent.prototype.setEndPoint = function (ep) {
+        this.endpoint = ep;
+        this.customConnect();
+        this.endpointModal = false;
+    };
+    LandingComponent.prototype.setPin = function () {
+        this.crypto.createPIN(this.pin);
     };
     LandingComponent.prototype.verifyAccountName = function (next) {
         var _this = this;
         try {
             this.accountname_valid = false;
             var res = this.eos.checkAccountName(this.accountname);
-            console.log(res);
+            var regexName = new RegExp('^([a-z]|[1-5])+$');
             if (res !== 0) {
-                if (this.accountname.length === 12) {
-                    this.eos.eos['getAccount'](this.accountname, function (err, data) {
-                        console.log(err, data);
-                        if (err) {
-                            _this.accountname_valid = true;
-                            _this.accountname_err = '';
-                            if (next) {
-                                _this.wizardnew.next();
-                            }
-                        }
-                        else {
-                            if (data) {
-                                _this.accountname_err = 'This account name is not available. Please try another.';
-                                _this.accountname_valid = false;
-                            }
+                if (this.accountname.length === 12 && regexName.test(this.accountname)) {
+                    this.eos.getAccountInfo(this.accountname).then(function () {
+                        // this.eos['getAccount'](this.accountname, (err, data) => {
+                        //   console.log(err, data);
+                        _this.accountname_err = 'This account name is not available. Please try another.';
+                        _this.accountname_valid = false;
+                    }).catch(function () {
+                        _this.accountname_valid = true;
+                        _this.accountname_err = '';
+                        if (next) {
+                            _this.wizardnew.next();
                         }
                     });
                 }
@@ -199,7 +243,6 @@ var LandingComponent = /** @class */ (function () {
                 _this.eos.ecc['randomKey'](128).then(function (privateKey) {
                     _this.ownerpk = privateKey;
                     _this.ownerpub = _this.eos.ecc['privateToPublic'](_this.ownerpk);
-                    console.log(_this.ownerpk, _this.ownerpub);
                     _this.eos.ecc['randomKey'](128).then(function (privateKey2) {
                         _this.activepk = privateKey2;
                         _this.activepub = _this.eos.ecc['privateToPublic'](_this.activepk);
@@ -221,7 +264,6 @@ var LandingComponent = /** @class */ (function () {
                     _this.ownerpub2 = _this.eos.ecc['privateToPublic'](_this.ownerpk2);
                     _this.generating2 = false;
                     _this.generated2 = true;
-                    console.log(_this.ownerpk2, _this.ownerpub2);
                 });
             });
         }, 100);
@@ -244,50 +286,14 @@ var LandingComponent = /** @class */ (function () {
             this.wizardnew.navService.previous();
         }
     };
+    LandingComponent.prototype.makeMemo = function () {
+        this.memo = this.accountname + '-' + this.ownerpub + '-' + this.activepub;
+    };
     LandingComponent.prototype.retryConn = function () {
         this.network.connect();
     };
     LandingComponent.prototype.customConnect = function () {
         this.network.startup(this.endpoint);
-    };
-    LandingComponent.prototype.importFromExodus = function () {
-        var _this = this;
-        this.wizard.reset();
-        this.exodusValid = false;
-        this.exodusWallet = true;
-        this.dropReady = true;
-        this.errormsg = '';
-        var handleDragOver = function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        };
-        var handleDrop = function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (_this.dropReady === true) {
-                var _loop_1 = function (f) {
-                    var path = f['path'];
-                    _this.dropReady = false;
-                    _this.exodusValid = false;
-                    window['filesystem']['readFile'](path, 'utf-8', function (err, data) {
-                        if (!err) {
-                            var csvdata = data.split(',');
-                            _this.pk = csvdata[csvdata.length - 1];
-                            _this.pk = _this.pk.trim();
-                            document.removeEventListener('drop', handleDrop, true);
-                            document.removeEventListener('dragover', handleDragOver, true);
-                            _this.verifyPrivateKey(_this.pk, true, path);
-                        }
-                    });
-                };
-                for (var _i = 0, _a = e.dataTransfer.files; _i < _a.length; _i++) {
-                    var f = _a[_i];
-                    _loop_1(f);
-                }
-            }
-        };
-        document.addEventListener('drop', handleDrop);
-        document.addEventListener('dragover', handleDragOver);
     };
     LandingComponent.prototype.handleAnimation = function (anim) {
         this.anim = anim;
@@ -328,7 +334,7 @@ var LandingComponent = /** @class */ (function () {
                             console.log(err);
                         });
                         if (_this.lockscreen) {
-                            _this.setPin(false);
+                            _this.setPin();
                         }
                     }).catch(function (error) {
                         console.log('Error', error);
@@ -339,31 +345,10 @@ var LandingComponent = /** @class */ (function () {
             });
         }
     };
-    LandingComponent.prototype.importCredentialsExodus = function () {
-        var _this = this;
-        if (this.passformexodus.value.matchingPassword.pass1 === this.passformexodus.value.matchingPassword.pass2) {
-            this.crypto.initKeys(this.publicEOS, this.passformexodus.value.matchingPassword.pass1).then(function () {
-                _this.crypto.encryptAndStore(_this.pk, _this.publicEOS).then(function () {
-                    _this.aService.importAccounts(_this.importedAccounts);
-                    _this.crypto.decryptKeys(_this.publicEOS).then(function () {
-                        _this.router.navigate(['dashboard', 'vote']).catch(function (err) {
-                            console.log(err);
-                        });
-                        if (_this.lockscreen2) {
-                            _this.setPin(true);
-                        }
-                    }).catch(function (error) {
-                        console.log('Error', error);
-                    });
-                }).catch(function (err) {
-                    console.log(err);
-                });
-            });
-        }
-    };
-    LandingComponent.prototype.verifyPrivateKey = function (input, exodus, path) {
+    LandingComponent.prototype.verifyPrivateKey = function (input) {
         var _this = this;
         if (input !== '') {
+            this.busyActivekey = true;
             this.eos.checkPvtKey(input).then(function (results) {
                 _this.publicEOS = results.publicKey;
                 _this.importedAccounts = [];
@@ -385,18 +370,7 @@ var LandingComponent = /** @class */ (function () {
                 });
                 _this.pvtform.controls['private_key'].setErrors(null);
                 _this.zone.run(function () {
-                    if (exodus) {
-                        _this.exodusValid = true;
-                        _this.dropReady = false;
-                        window['filesystem']['unlink'](path, function (err2) {
-                            if (err2) {
-                                console.log(err2);
-                            }
-                        });
-                    }
-                    else {
-                        _this.exisitswizard.forceNext();
-                    }
+                    _this.exisitswizard.forceNext();
                     _this.errormsg = '';
                 });
             }).catch(function (e) {
@@ -423,19 +397,27 @@ var LandingComponent = /** @class */ (function () {
     };
     LandingComponent.prototype.checkAccount = function () {
         var _this = this;
+        var _self = this;
         if (this.eos.ready) {
             this.check = true;
             this.accounts = [];
+            console.log('HERE', this.publicEOS);
             this.eos.loadPublicKey(this.publicEOS).then(function (account_data) {
+                console.log('account', account_data);
                 account_data.foundAccounts.forEach(function (acc) {
                     var balance = 0;
+                    console.log('account2', acc);
                     // Parse tokens and calculate balance
                     acc['tokens'].forEach(function (tk) {
-                        balance += LandingComponent_1.parseEOS(tk);
+                        balance += _self.parseSYMBOL(tk);
+                        // balance += LandingComponent.parseEOS(tk);
                     });
                     // Add stake balance
-                    balance += LandingComponent_1.parseEOS(acc['total_resources']['cpu_weight']);
-                    balance += LandingComponent_1.parseEOS(acc['total_resources']['net_weight']);
+                    // balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+                    // balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+                    balance += _self.parseSYMBOL(acc['total_resources']['cpu_weight']);
+                    balance += _self.parseSYMBOL(acc['total_resources']['net_weight']);
+                    console.log('account2', balance);
                     var accData = {
                         name: acc['account_name'],
                         full_balance: Math.round((balance) * 10000) / 10000
@@ -444,57 +426,59 @@ var LandingComponent = /** @class */ (function () {
                 });
                 _this.checkerr = '';
             }).catch(function (err) {
-                console.log(err);
+                console.log('ERROR', err);
                 _this.checkerr = err;
             });
         }
     };
     LandingComponent.prototype.inputIMClick = function () {
         this.customImportBK.nativeElement.click();
-        // let el: HTMLElement = this.customExportBK.nativeElement as HTMLElement;
-        // el.click();
     };
     LandingComponent.prototype.importCheckBK = function (a) {
         this.infile = a.target.files[0];
         var name = this.infile.name;
-        if (name != "simpleos.bkp") {
+        if (name !== 'simpleos.bkp') {
             this.showToast('error', 'Wrong file!', '');
-            this.infile = "";
+            this.infile = '';
             return false;
         }
         this.choosedFil = name;
-        console.log(this.infile);
     };
     LandingComponent.prototype.importBK = function () {
         var _this = this;
         this.disableIm = true;
-        if (this.infile != "") {
-            var bk = window['filesystem']['readFile'](this.infile.path, 'utf-8', function (err, data) {
+        this.busy2 = true;
+        if (this.infile !== '' && this.importForm.value.pass !== '') {
+            window['filesystem']['readFile'](this.infile.path, 'utf-8', function (err, data) {
                 if (!err) {
-                    console.log(_this.crypto.base64ToBuffer(data));
                     var pass = _this.importForm.value.pass;
-                    var decrypt = _this.crypto.decryptTestBKP(data, pass);
+                    var decrypt = _this.crypto.decryptBKP(data, pass);
                     try {
                         var arrLS = JSON.parse(decrypt);
                         _this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
                         arrLS.forEach(function (d) {
-                            localStorage.setItem(d["key"], d["value"]);
+                            localStorage.setItem(d['key'], d['value']);
                         });
                         _this.choosedFil = '';
                         _this.disableIm = false;
+                        _this.busy2 = false;
                         _this.importBKP = false;
                         LandingComponent_1.resetApp();
                     }
                     catch (e) {
-                        console.log("wrong file");
-                        _this.showToast('error', 'Wrong backup file, please try again!', '');
+                        _this.showToast('error', 'Wrong password, please try again!', '');
                     }
                 }
                 else {
-                    console.log("wrong entry");
                     _this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
                 }
             });
+        }
+        else {
+            this.showToast('error', 'Choose your backup file and fill the password field!', '');
+            this.choosedFil = '';
+            this.disableIm = false;
+            this.busy2 = false;
         }
     };
     var LandingComponent_1;
@@ -531,7 +515,8 @@ var LandingComponent = /** @class */ (function () {
             angular2_toaster_1.ToasterService,
             network_service_1.NetworkService,
             router_1.Router,
-            core_1.NgZone])
+            core_1.NgZone,
+            ram_service_1.RamService])
     ], LandingComponent);
     return LandingComponent;
 }());

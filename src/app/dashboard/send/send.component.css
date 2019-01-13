@@ -17,7 +17,7 @@
     font-size: 26px;
 }
 
-/deep/ .mat-form-field {
+.mat-form-field {
     display: block !important;
 }
 

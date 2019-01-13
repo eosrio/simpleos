@@ -19,6 +19,7 @@ var about_component_1 = require("./dashboard/about/about.component");
 var lockscreen_component_1 = require("./lockscreen/lockscreen.component");
 var lock_guard_1 = require("./lock.guard");
 var resources_component_1 = require("./dashboard/acc_resources/resources.component");
+var dapp_component_1 = require("./dashboard/dapp/dapp.component");
 var routes = [
     {
         path: '',
@@ -57,6 +58,10 @@ var routes = [
             {
                 path: 'ram',
                 component: resources_component_1.ResourcesComponent,
+            },
+            {
+                path: 'dapp',
+                component: dapp_component_1.DappComponent,
             },
             {
                 path: 'about',

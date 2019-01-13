@@ -4,7 +4,8 @@
 // The list of file replacements can be found in `angular.json`.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.environment = {
-    production: false
+    production: false,
+    VERSION: require('../../package.json').version
 };
 /*
  * In development mode, to ignore zone related error stack frames such as
