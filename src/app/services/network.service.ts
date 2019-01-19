@@ -8,6 +8,8 @@ import {BehaviorSubject} from 'rxjs';
 import {CryptoService} from './crypto.service';
 import {VotingService} from './voting.service';
 
+import {defaultChainsJSON} from '../chains';
+
 export interface Endpoint {
 	url: string;
 	owner: string;
@@ -48,229 +50,10 @@ export class NetworkService {
 
 	connected = false;
 	lastEndpoint = '';
+	autoMode = false;
 
 	public activeChain = null;
-
-	defaultChains = [
-		{
-			id: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
-			symbol: 'EOS',
-			name: 'EOS MAINNET',
-			firstApi: 'https://hapi.eosrio.io',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: true,
-				staking: true,
-				dapps: true,
-				addAcc: true,
-				newAcc: true,
-				forum: true
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig',
-				'eosio.forum'
-			],
-			endpoints: [
-				// {url: 'https://api.eosrio.io', owner: 'EOS Rio', latency: 0},
-				{url: 'https://hapi.eosrio.io', owner: 'EOS Rio', latency: 0},
-				{url: 'https://eu.eosdac.io', owner: 'eosDAC', latency: 0},
-				{url: 'https://mainnet.eoscalgary.io', owner: 'eoscalgary', latency: 0},
-				// {url: 'https://api.dpos.africa/', owner: 'EOS Africa', latency: 0},
-				{url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0},
-				{url: 'https://api.eoslaomao.com', owner: 'EOS Asia', latency: 0},
-				{url: 'https://mainnet.genereos.io', owner: 'EOS Asia', latency: 0},
-				{url: 'https://node1.eosphere.io', owner: 'EOS Asia', latency: 0},
-				{url: 'https://proxy.eosnode.tools', owner: 'Proxy Node', latency: 0},
-				{url: 'https://history.cryptolions.io', owner: 'EOS Cryptolions', latency: 0, version: 'mongo'}
-			],
-			explorers: [
-				{
-					name: 'Bloks.io',
-					account_url: 'https://bloks.io/account/',
-					tx_url: 'https://bloks.io/transaction/'
-				},
-				{
-					name: 'EOSX',
-					account_url: 'https://www.eosx.io/account/',
-					tx_url: 'https://www.eosx.io/tx/'
-				},
-				{
-					name: 'eosq',
-					account_url: 'https://eosq.app/account/',
-					tx_url: 'https://eosq.app/tx/'
-				},
-				{
-					name: 'EOS FLARE',
-					account_url: 'https://eosflare.io/account/',
-					tx_url: 'https://eosflare.io/tx/'
-				},
-				{
-					name: 'EOSPark',
-					account_url: 'https://eospark.com/account/',
-					tx_url: 'https://eospark.com/tx/'
-				}
-			],
-			exchanges: {
-				bitfinexdep1: {
-					memo_size: 28,
-					pattern: /^[a-f0-9]+$/gm
-				},
-				krakenkraken: {
-					pattern: /^[0-9]+$/gm
-				},
-				binancecleos: {
-					memo_size: 9,
-					pattern: /^[0-9]+$/gm
-				},
-				huobideposit: {
-					pattern: /^[0-9]+$/gm
-				},
-				poloniexeos1: {
-					memo_size: 16,
-					pattern: /^[a-f0-9]+$/gm
-				},
-			}
-		},
-		{
-			id: '73647cde120091e0a4b85bced2f3cfdb3041e266cbbe95cee59b73235a1b3b6f',
-			symbol: 'WBI',
-			name: 'WORBLI MAINNET',
-			firstApi: 'https://api.worbli.eosrio.io',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: false,
-				staking: true,
-				dapps: true,
-				addAcc: true,
-				newAcc: false,
-				forum: false
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig'
-			],
-			endpoints: [
-				{url: 'https://api.worbli.eosrio.io', owner: 'EOS Rio - Worbli', latency: 0, version: 'native'},
-				{url: 'https://api.worblisweden.org', owner: 'EOS Sweden - Worbli', latency: 0},
-				{url: 'https://api.worbli.eostribe.io', owner: 'EOS Tribe - Worbli', latency: 0, version: 'elastic'}
-			],
-			explorers: [
-				{
-					name: 'EOSX',
-					account_url: 'https://worbli.eosx.io/account/',
-					tx_url: 'https://worbli.eosx.io/tx/'
-				}
-			]
-		},
-		{
-			id: '33cc2426f1b258ef8c798c34c0360b31732ea27a2d7e35a65797850a86d1ba85',
-			symbol: 'BOS',
-			name: 'BOS TESTNET',
-			firstApi: 'https://boscore.eosrio.io',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: true,
-				staking: true,
-				dapps: true,
-				addAcc: true,
-				newAcc: true,
-				forum: false
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig'
-			],
-			endpoints: [
-				{url: 'https://boscore.eosrio.io', owner: 'BOS Rio', latency: 0, version: 'mongo'},
-			],
-			explorers: [
-				{
-					name: 'EOSX',
-					account_url: 'https://bos-test.eosx.io/account/',
-					tx_url: 'https://bos-test.eosx.io/tx/'
-				}
-			]
-		},
-		{
-			id: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
-			symbol: 'EOS',
-			name: 'JUNGLE TESTNET',
-			firstApi: 'https://jungle2.cryptolions.io:443',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: true,
-				staking: true,
-				dapps: false,
-				addAcc: true,
-				newAcc: true,
-				forum: false
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig'
-			],
-			endpoints: [
-				{url: 'https://junglehistory.cryptolions.io:4433', owner: 'Jungle 2', latency: 0},
-			],
-			explorers: [
-				{
-					name: 'EOSX',
-					account_url: 'https://jungle.eosx.io/account/',
-					tx_url: 'https://jungle.eosx.io/tx/'
-				}
-			]
-		},
-		{
-			id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
-			symbol: 'TLOS',
-			name: 'TELOS MAINNET',
-			firstApi: 'https://api.eos.miami',
-			lastNode: '',
-			features: {
-				history: true,
-				send: true,
-				resource: true,
-				vote: true,
-				staking: true,
-				dapps: true,
-				addAcc: true,
-				newAcc: true,
-				forum: false
-			},
-			system: [
-				'eosio',
-				'eosio.token',
-				'eosio.msig'
-			],
-			endpoints: [
-				{url: 'https://api.eos.miami', owner: 'Telos', latency: 0}
-			],
-			explorers: [
-				{
-					name: 'EOSX',
-					account_url: 'https://telos.eosx.io/account/',
-					tx_url: 'https://telos.eosx.io/tx/'
-				}
-			]
-		}
-	];
+	defaultChains: any[];
 
 	constructor(
 		private eosjs: EOSJSService,
@@ -281,6 +64,7 @@ export class NetworkService {
 		// private ledger: LedgerHWService
 	) {
 
+		this.defaultChains = defaultChainsJSON;
 		const savedChainId = localStorage.getItem('simplEOS.activeChainID');
 		if (savedChainId) {
 			this.activeChain = this.defaultChains.find((chain) => chain.id === savedChainId);
@@ -290,31 +74,27 @@ export class NetworkService {
 			localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
 		}
 		this.aService.activeChain = this.activeChain;
-
 		this.validEndpoints = [];
 		this.status = '';
 		this.connectionTimeout = null;
 	}
 
-	connect() {
+	connect(automatic: boolean) {
+		console.log('analyzing endpoints...');
+		this.autoMode = automatic;
 		this.status = '';
 		this.mainnetId = '';
 		this.aService.activeChain = this.activeChain;
-
 		this.mainnetId = this.activeChain['id'];
 		this.networkingReady.next(false);
-
 		const pQueue = [];
 		this.connected = false;
-
 		this.activeChain['endpoints'].forEach((apiNode) => {
 			pQueue.push(this.apiCheck(apiNode));
 		});
-
 		Promise.all(pQueue).then(() => {
 			this.extractValidNode();
 		});
-		// console.log('Starting timer...');
 		this.startTimeout();
 	}
 
@@ -323,22 +103,27 @@ export class NetworkService {
 		if (this.activeChain) {
 			this.aService.activeChain = this.activeChain;
 			this.aService.accounts = [];
+			this.voting.clearMap();
+			this.voting.initList = false;
+			this.aService.lastAccount = null;
 			localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
-			this.connect();
+			this.connect(false);
 			console.log('Network switched to: ' + this.activeChain['name']);
 		}
 	}
 
 	startTimeout() {
-		this.connectionTimeout = setTimeout(() => {
-			console.log('Timeout!');
-			if (!this.networkingReady.getValue()) {
-				this.status = 'timeout';
-				clearTimeout(this.connectionTimeout);
-				this.networkingReady.next(false);
-				this.connectionTimeout = null;
-			}
-		}, 10000);
+		if (!this.connectionTimeout) {
+			this.connectionTimeout = setTimeout(() => {
+				console.log('Timeout!');
+				if (!this.networkingReady.getValue()) {
+					this.status = 'timeout';
+					clearTimeout(this.connectionTimeout);
+					this.networkingReady.next(false);
+					this.connectionTimeout = null;
+				}
+			}, 10000);
+		}
 	}
 
 	extractValidNode() {
@@ -353,17 +138,19 @@ export class NetworkService {
 
 	selectEndpoint() {
 		let latency = 2000;
-		this.validEndpoints.forEach((node) => {
-			if (node.latency < latency && node.latency > 1) {
-				latency = node.latency;
-				this.selectedEndpoint.next(node);
+		if (this.connected === false) {
+			this.validEndpoints.forEach((node) => {
+				if (node.latency < latency && node.latency > 1) {
+					latency = node.latency;
+					this.selectedEndpoint.next(node);
+				}
+			});
+			if (this.selectedEndpoint.getValue() === null) {
+				this.networkingReady.next(false);
+			} else {
+				console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
+				this.startup(null);
 			}
-		});
-		if (this.selectedEndpoint.getValue() === null) {
-			this.networkingReady.next(false);
-		} else {
-			console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-			this.startup(null);
 		}
 	}
 
@@ -391,52 +178,6 @@ export class NetworkService {
 			return false;
 		});
 		pq.push(getkeyAcc);
-
-		// 	if (err) {
-		// 		console.log(err);
-		// 		return err;
-		// 	} else {
-		// 		// return txInfo;
-		// 		// if (txInfo.length > 0 || txInfo['account_names'] > 0 ) {
-		// 		// 	this.publicEndpoints.find(ep => ep.url === server.url).filters.push({eosio:'history'});
-		// 		// } else {
-		// 		// 	console.log('eosio:history filter is disabled on ' + server.url);
-		// 		// }
-		// 	}
-		// });
-		// });
-
-		// console.log(getAccKey);
-		// pq.push(new Promise((resolve1) => {
-		// 	eosCK['getTransaction'](this.genesistx, (err, txInfo) => {
-		//     if (err) {
-		//       console.log(err);
-		//       resolve1();
-		//     } else {
-		//       if (txInfo['block_num'] === this.txrefBlock) {
-		// 		  this.publicEndpoints.find(ep => ep.url === server.url).filters.push('eosio.token:transfer');
-		//       } else {
-		//         console.log('eosio.token:transfer filter is disabled on ' + server.url);
-		//       }
-		//       resolve1();
-		//     }
-		//   });
-		// }));
-		// pq.push(new Promise((resolve1) => {
-		//   eos['getTransaction'](this.voteref, (err, txInfo) => {
-		//     if (err) {
-		//       console.log(err);
-		//       resolve1();
-		//     } else {
-		//       if (txInfo['block_num'] === this.voterefBlock) {
-		//         server.filters.push('eosio:voteproducer');
-		//       } else {
-		//         console.log('eosio:voteproducer filter is disabled on ' + server.url);
-		//       }
-		//       resolve1();
-		//     }
-		//   });
-		// }));
 		return Promise.all(pq);
 	}
 
@@ -465,8 +206,7 @@ export class NetworkService {
 						// force quick connection
 						if (this.connected === false) {
 							this.connected = true;
-							this.selectedEndpoint.next(server);
-							this.startup(null);
+							this.callStartupConn(server);
 						}
 					}
 					resolve();
@@ -478,19 +218,28 @@ export class NetworkService {
 		});
 	}
 
+	callStartupConn(server) {
+		if (this.connected === true) {
+			console.log('fast api detected, connecting to:', server.url);
+			this.selectedEndpoint.next(server);
+			this.startup(null);
+		}
+	}
+
 	startup(url) {
-		// console.log('startup called - url: ', url);
 		let endpoint = url;
 		if (!url) {
 			endpoint = this.selectedEndpoint.getValue().url;
+			console.log('switcing to saved endpoint:', endpoint);
 		} else {
 			this.status = '';
-			this.networkingReady.next(false);
-			this.startTimeout();
+			console.log('startup called - url: ', url);
 		}
-
+		this.networkingReady.next(false);
+		this.eosjs.online.next(false);
+		this.startTimeout();
 		// prevent double load after quick connection mode
-		if (endpoint !== this.lastEndpoint) {
+		if (endpoint !== this.lastEndpoint || this.autoMode === true) {
 			this.eosjs.init(endpoint, this.activeChain.id).then((savedAccounts: any) => {
 				// if (this.ledger.isElectron()) {
 				//   this.aService.checkLedgerAccounts().then(() => {
@@ -498,6 +247,7 @@ export class NetworkService {
 				//   });
 				// }
 				this.lastEndpoint = endpoint;
+				this.autoMode = false;
 				this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
 				if (this.connectionTimeout) {
 					clearTimeout(this.connectionTimeout);
@@ -506,18 +256,21 @@ export class NetworkService {
 				}
 				if (savedAccounts) {
 					if (savedAccounts.length > 0) {
+						console.log('Locading local accounts');
 						this.aService.loadLocalAccounts(savedAccounts).then(() => {
-							this.aService.initFirst();
-							this.voting.forceReload();
-							this.networkingReady.next(true);
-							if (this.activeChain.features.forum) {
-								this.router['navigate'](['dashboard', 'vote']);
+							if (this.aService.lastAccount) {
+								this.aService.select(this.aService.accounts.findIndex((a) => {
+									return a.name === this.aService.lastAccount;
+								}));
 							} else {
-								this.router['navigate'](['dashboard', 'wallet']);
+								this.aService.initFirst();
 							}
+							// this.voting.forceReload();
+							this.networkingReady.next(true);
+							this.router['navigate'](['dashboard', 'wallet']);
 						});
 					} else {
-						this.voting.forceReload();
+						this.networkingReady.next(true);
 						if (this.crypto.locked) {
 							console.log('No saved accounts!');
 							this.router['navigate'](['']);
@@ -531,6 +284,13 @@ export class NetworkService {
 				console.log('>>> EOSJS_ERROR: ', err);
 				this.networkingReady.next(false);
 			});
+		} else {
+			if (this.connectionTimeout) {
+				clearTimeout(this.connectionTimeout);
+				this.networkingReady.next(true);
+				this.connectionTimeout = null;
+			}
+			this.networkingReady.next(true);
 		}
 	}
 

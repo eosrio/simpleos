@@ -1,6 +1,6 @@
 {
 	"name": "simpleos",
-	"version": "0.7.1",
+	"version": "0.7.2",
 	"productName": "simpleos",
 	"description": "EOSIO Blockchain Interface & Wallet",
 	"author": {
@@ -172,6 +172,7 @@
 		"@ledgerhq/hw-transport": "latest",
 		"@types/crypto-js": "^3.1.43",
 		"@webcomponents/custom-elements": "^1.0.0",
+		"animate.css": "^3.7.0",
 		"asn1-ber": "^1.0.9",
 		"bip32-path": "^0.4.2",
 		"crypto-js": "^3.1.9-1",

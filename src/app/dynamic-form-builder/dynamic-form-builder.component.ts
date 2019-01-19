@@ -83,11 +83,11 @@ export class DynamicFormBuilderComponent implements OnInit, AfterViewInit {
 			// Boolear parsing
 			if (bolArr.includes(type)) {
 				if (value === 'true' || value === '1') {
-					req[k] = true;
+					req[k] = 1;
 				} else if (value === 'false' || value === '0') {
-					req[k] = false;
+					req[k] = 0;
 				} else {
-					req[k] = false;
+					req[k] = 0;
 				}
 				this.dapp.formVal2.push(k + ': ' + value + ' (' + type + ')');
 			}

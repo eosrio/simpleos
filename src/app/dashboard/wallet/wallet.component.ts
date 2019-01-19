@@ -10,7 +10,7 @@ import * as moment from 'moment';
 	styleUrls: ['./wallet.component.css']
 })
 export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
-	fullBalance: number;
+	fullBalance = 0;
 	staked: number;
 	unstaked: number;
 	moment: any;
@@ -31,7 +31,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.actions = [];
 		this.tokens = [];
 		this.headBlock = 0;
-		this.fullBalance = 0;
 		this.staked = 0;
 		this.unstaked = 0;
 		this.LIB = 0;
@@ -47,8 +46,12 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
 	}
 
-	openAccount() {
-		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + this.aService.selected.getValue().name);
+	openAccount(acct?: string) {
+		if (acct) {
+			window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + acct);
+		} else {
+			window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + this.aService.selected.getValue().name);
+		}
 	}
 
 	openExplorer(accountName, explorer) {

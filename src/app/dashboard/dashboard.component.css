@@ -134,6 +134,11 @@
     max-width: calc(100% - 257px);
 }
 
+.max-width2 {
+    max-width: calc(100% - 160px);
+}
+
+
 /deep/ .mat-radio-button {
     display: block !important;
 }

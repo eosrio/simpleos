@@ -300,7 +300,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 					console.log(info);
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch(error => {
-					this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 				this.busy = false;
 			}

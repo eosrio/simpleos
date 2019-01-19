@@ -4,45 +4,38 @@
 		<div class="col-lg-6">
 			<div class="card info-card">
 				<div class="card-block text-center">
-					<div class="total">TOTAL (${{(totalBalance * aService.usd_rate) | number: '1.2-2'}})</div>
+					<div class="total" style="color: #b0b0b7">TOTAL
+						<ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
+							| ${{(totalBalance * aService.usd_rate) | number: '1.2-2'}}
+						</ng-container>
+					</div>
 					<div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
 						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
-						<!--number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} EOS&lt;!&ndash;CSTAM&ndash;&gt;-->
 					</div>
 				</div>
 			</div>
 			<div class="card info-card">
 				<div class="card-block text-center">
-					<div class="total">STAKED (${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}})</div>
+					<div class="total" style="color: #b0b0b7">STAKED
+						<ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
+							| ${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}}
+						</ng-container>
+					</div>
 					<div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
 						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
-						<!--number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} EOS &lt;!&ndash;CSTAM&ndash;&gt;-->
 					</div>
-					<!--<div *ngIf="unstaking > 0" style="color: white">-->
-					<!--<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(stakedBalance - unstaking) | number :-->
-					<!--'1.2-4'}} EOS {{unstakeTime}}-->
-					<!--</div>-->
 				</div>
 			</div>
 		</div>
 		<div class="col-lg-6">
 			<div class="card info-card">
 				<div class="card-block">
-
-					<div class="instruction expandable">Stake your {{aService.activeChain['symbol']}}&nbsp;&nbsp;
-						<!--<div class="instruction expandable">Stake your EOS&nbsp;&nbsp;&lt;!&ndash;CSTAM&ndash;&gt;-->
-						<!--<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">-->
-							<!--<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>-->
-							<!--&lt;!&ndash;<span class="tooltip-content">Think of EOS as a farm. <br> &lt;!&ndash;CSTAM&ndash;&gt;&ndash;&gt;-->
-							<!--<span class="tooltip-content">Think of {{aService.activeChain['symbol']}} as a farm. <br>-->
-                <!--You need {{aService.activeChain['symbol']}} tokens to rent land on the farm and use its resources. <br>-->
-                <!--In order to rent, you <strong>stake</strong> your tokens. <br>-->
-                <!--When you stake, you also have power to vote, as a “resident” on the farm, but <strong>those tokens will be locked</strong> for use in transactions. <br>-->
-                <!--When you unstake, your tokens will only be free for transfers after 3 days.-->
-              <!--</span>-->
-						<!--</a>-->
+					<div class="instruction expandable">Stake your {{aService.activeChain['symbol']}}
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+							<span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+						</a>
 					</div>
-
 					<div class="row">
 						<div class="col-lg-6">
 							<mat-form-field class="input-width">
@@ -55,28 +48,71 @@
 						</div>
 						<div class="col-lg-6">
 							<mat-form-field class="input-width">
-								<!--<input matInput type="text" min="1" placeholder="Value (EOS)" &lt;!&ndash;CSTAM&ndash;&gt;-->
 								<input matInput type="text" min="1"
 									   placeholder="Value ({{aService.activeChain['symbol']}})"
 									   [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
 									   [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
 								<span class="suffix" matSuffix>{{aService.activeChain['symbol']}}</span>
-								<!--<span class="suffix" matSuffix>EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
 							</mat-form-field>
 						</div>
 					</div>
 					<div>
-						<mat-slider class="stake-slider" [min]="minToStake" [max]="max" [thumbLabel]="true"
+						<mat-slider class="stake-slider"
+									[min]="minToStake"
+									[max]="max"
+									[thumbLabel]="true"
 									(change)="updateStakeValue()"
-									[tickInterval]="25" [displayWith]="sliderLabel"
-									[(ngModel)]="percenttoStake"></mat-slider>
+									[tickInterval]="25"
+									[displayWith]="sliderLabel"
+									[(ngModel)]="percenttoStake">
+						</mat-slider>
+					</div>
+					<small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option: Change Staking Ratio</small>
+					<div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}" style="margin-top: 12px;">
+						<div>
+							<div class="row justify-content-center" style="color: #b0b0b7">
+								<div class="col-lg-4"></div>
+								<div class="col-lg-2 text-center">
+									BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
+								</div>
+								<div class="col-lg-2" style="text-align: center">
+									<span style="margin-left: 20px;">RECOMMENDED
+									<br><span style="position: absolute; margin-left: 41px;">|</span>
+									</span>
+								</div>
+							</div>
+							<div class="row" style="color: #b0b0b7">
+								<div class="col-lg-2 text-right">
+									NET FOCUS
+								</div>
+								<div class="col-lg-8">
+									<mat-slider class="stake-slider"
+												[min]="20"
+												[max]="90"
+												[step]="1"
+												[thumbLabel]="true"
+												(change)="updateRatio()"
+												[tickInterval]="20"
+												[displayWith]="sliderLabel"
+												[(ngModel)]="stakingRatio">
+									</mat-slider>
+								</div>
+								<div class="col-lg-2 text-left">
+									CPU FOCUS
+								</div>
+							</div>
+							<span style="color: #b0b0b7">
+								<span class="font-weight-bold">Attention:</span> If you have an unstaking in progress, your staking ratio might be limited by your unstaking balance. SimplEOS will attemp to use the selected ratio.
+							If that is not possible, SimplEOS will try to get close as possible to the desired ratio.
+						</span>
+						</div>
 					</div>
 					<div class="row">
-						<div class="col-lg-6">
+						<div class="col-lg-5">
 							<button (click)="setStake()" class="btn btn-outline btn-info-outline"
 									style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
 							</button>
-							<span class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</span>
+							<div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
 							<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
 							   *ngIf="minstake">
 								<fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
@@ -87,13 +123,14 @@
                 </span>
 							</a>
 						</div>
-						<div class="col-lg-6 text-right" style="align-self: flex-end;">
-							<!--<span *ngIf="valuetoStake !== ''">{{(getValuetoStake / 2) | number: '1.0-4'}} </span>-->
+						<div class="col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
+
+							<span class="text-white" style="font-weight: 600">CPU: </span>
 							<span *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
-							<span *ngIf="valuetoStake === ''">50% </span>CPU /
-							<!--<span *ngIf="valuetoStake !== ''">{{ (getValuetoStake / 2) | number: '1.0-4'}} </span>-->
+							<span *ngIf="valuetoStake === ''">50% </span> /
+							<span class="text-white" style="font-weight: 600">NET: </span>
 							<span *ngIf="valuetoStake !== ''">{{ net_weight }} </span>
-							<span *ngIf="valuetoStake === ''">50% </span>NET
+							<span *ngIf="valuetoStake === ''">50%</span>
 						</div>
 					</div>
 				</div>
@@ -101,22 +138,22 @@
 		</div>
 	</div>
 
-	<!--<div class="row animate">-->
-	<!--<div class="col-lg-12">-->
-	<!--<div class="card info-card">-->
-	<!--<div class="card-block" style="padding: 0;">-->
-	<!--<p-accordion class="map">-->
-	<!--<p-accordionTab header="Block Producers Map (Organization Location)">-->
-	<!--<div echarts [options]="options" [merge]="voteService.updateOptions"-->
-	<!--[autoResize]="true" [initOpts]="initOptions"-->
-	<!--class="bp-map">-->
-	<!--</div>-->
-	<!--</p-accordionTab>-->
-	<!--</p-accordion>-->
-	<!--</div>-->
-	<!--</div>-->
-	<!--</div>-->
-	<!--</div>-->
+	<div class="row animate">
+		<div class="col-lg-12">
+			<div class="card info-card">
+				<div class="card-block" style="padding: 0;">
+					<p-accordion class="map">
+						<p-accordionTab header="Block Producers Map (Organization Location)">
+							<div echarts [options]="options" [merge]="voteService.updateOptions"
+								 [autoResize]="true" [initOpts]="initOptions"
+								 class="bp-map">
+							</div>
+						</p-accordionTab>
+					</p-accordion>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<div class="row animate" *ngIf="aService.activeChain.features.vote">
 		<div class="col-lg-12" *ngIf="voteService">
@@ -135,12 +172,6 @@
 									   (input)="dt.filterGlobal($event.target.value, 'contains')">
 								<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
 							</mat-form-field>
-						</div>
-						<div class="col-lg text-right">
-							<button (click)="shuffleBps()" class="btn btn-info-outline"
-									style="margin-top: 12px; margin-right: 25px">
-								SHUFFLE
-							</button>
 						</div>
 						<div class="col-lg text-right">
 							<button (click)="processVotes()" class="btn btn-info-outline"
@@ -209,7 +240,7 @@
 								</li>
 								<li class="social-icon" *ngIf="item.social['steemit']">
 									<a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
-										<img src="assets/steemit.png" class="steemit" style="">
+										<img src="/assets/steemit.png" class="steemit" style="">
 									</a>
 								</li>
 								<li class="social-icon" *ngIf="item.social['telegram']">
@@ -261,7 +292,7 @@
 										<ul>
 											<li class="social-icon" *ngIf="item.social['steemit']">
 												<a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
-													<img src="assets/steemit.png" class="steemit" style="">
+													<img src="/assets/steemit.png" class="steemit" style="">
 												</a>
 											</li>
 											<li class="social-icon" *ngIf="item.social['telegram']">
@@ -328,8 +359,6 @@
 			</p-table>
 		</div>
 	</div>
-
-
 </div>
 
 <clr-modal [(clrModalOpen)]="stakeModal">
@@ -340,39 +369,6 @@
 		<h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
 		<h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
 		<h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
-		<p-accordion *ngIf="stakingDiff > 0 && aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this action, you agree to the delegatebw Terms & Conditions">
-				The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer
-				ownership.
-				<br><br>
-				As an authorized party I {{ fromAccount }} wish to stake {{ (getValuetoStake / 2) | number: '1.0-4' }}
-				for CPU
-				and {{ (getValuetoStake / 2) | number: '1.0-4' }} for bandwidth from the liquid tokens
-				of {{ fromAccount }} for
-				the use of delegatee {{ fromAccount }}.
-				<br><br>
-				It is true that I wish these tokens to become immediately owned by the delegatee.
-				<br><br>
-				As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve
-				been
-				authorized to take this action by their beneficial owner(s).
-			</p-accordionTab>
-		</p-accordion>
-		<p-accordion *ngIf="stakingDiff < 0 && aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this action, you agree to the undelegatebw Terms & Conditions">
-				The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
-				<br><br>
-				As an authorized party I {{ fromAccount }} wish to unstake {{ (getValuetoStake / 2) | number: '1.0-4' }}
-				from
-				CPU and {{ (getValuetoStake / 2) | number: '1.0-4' }} from bandwidth from the tokens owned
-				by {{ fromAccount }}
-				previously delegated for the use of delegatee {{ fromAccount }}.
-				<br><br>
-				If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been
-				authorized to
-				take this action by their beneficial owner(s).
-			</p-accordionTab>
-		</p-accordion>
 	</div>
 	<div class="modal-footer">
 		<form [formGroup]="passFormStake" class="modal-footer">

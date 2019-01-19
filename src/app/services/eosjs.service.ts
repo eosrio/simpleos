@@ -231,11 +231,9 @@ export class EOSJSService {
 	}
 
 	loadPublicKey(pubkey) {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve, reject2) => {
 			if (this.ecc['isValidPublic'](pubkey)) {
-
 				const tempAccData = [];
-
 				this.getKeyAccounts(pubkey).then((data) => {
 					// console.log('load', data);
 					// if (data['account_names'].length > 0) {
@@ -271,7 +269,7 @@ export class EOSJSService {
 							});
 						}).catch(() => {
 							console.log(data);
-							reject({
+							reject2({
 								message: 'non_active',
 								accounts: data
 							});
@@ -308,22 +306,25 @@ export class EOSJSService {
 							});
 						}).catch(() => {
 							console.log(data);
-							reject({
+							reject2({
 								message: 'non_active',
 								accounts: tempAccData
 							});
 						});
 					} else {
-						reject({message: 'no_account'});
+						reject2({message: 'no_account'});
 					}
+				}).catch((api_error) => {
+					console.log(api_error);
+					reject2({message: 'api_error'});
 				});
 			} else {
-				reject({message: 'invalid'});
+				reject2({message: 'invalid'});
 			}
 		});
 	}
 
-	storeAccountData(accounts) {
+	async storeAccountData(accounts) {
 		if (accounts) {
 			if (accounts.length > 0) {
 				this.accounts.next(accounts);
@@ -331,12 +332,17 @@ export class EOSJSService {
 				payload.updatedOn = new Date();
 				payload.accounts = accounts;
 				localStorage.setItem('simpleos.accounts.' + this.chainID, JSON.stringify(payload));
+				return true;
+			} else {
+				return false;
 			}
+		} else {
+			return null;
 		}
 	}
 
 	listProducers() {
-		return this.eos['getProducers']({json: true, limit: 200});
+		return this.eos['getProducers']({json: true, limit: 100});
 	}
 
 	getTokens(name) {
@@ -432,6 +438,7 @@ export class EOSJSService {
 	checkPvtKey(k): Promise<any> {
 		try {
 			const pubkey = this.ecc['privateToPublic'](k);
+			console.log(pubkey);
 			return this.loadPublicKey(pubkey);
 		} catch (e) {
 			console.log(e);
@@ -556,57 +563,157 @@ export class EOSJSService {
 		}
 	}
 
-	stake(account, amount, symbol) {
-		return new Promise((resolve, reject) => {
-			if (amount > 2) {
-				const split = ((amount / 2) / 10000).toFixed(4);
-				// console.log(split);
-				this.eos['delegatebw']({
+	async changebw(account, amount, symbol, ratio) {
+		let cpu_v, net_v;
+		const accountInfo = await this.eos['getAccount'](account);
+		const refund = accountInfo['refund_request'];
+		const liquid_bal = accountInfo['core_liquid_balance'];
+		let ref_cpu = 0;
+		let ref_net = 0;
+		let liquid = 0;
+
+		if (liquid_bal) {
+			liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
+		}
+
+		if (refund) {
+			ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
+			ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
+		}
+		const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+		const new_total = current_stake + amount;
+		const new_cpu = new_total * ratio;
+		const new_net = new_total * (1 - ratio);
+		let cpu_diff = new_cpu - accountInfo['cpu_weight'];
+		let net_diff = new_net - accountInfo['net_weight'];
+
+		if (cpu_diff > (ref_cpu + liquid)) {
+			net_diff += (cpu_diff - (ref_cpu + liquid));
+			cpu_diff = (ref_cpu + liquid);
+		}
+
+		if (net_diff > (ref_net + liquid)) {
+			cpu_diff += (cpu_diff - (ref_cpu + liquid));
+			net_diff = (ref_net + liquid);
+		}
+		console.log('CPU DIFF: ', cpu_diff, 'NET DIFF: ', net_diff);
+		return this.eos.transaction((tr) => {
+			if (cpu_diff < 0 && net_diff >= 0) {
+				// Action 1 - Unstake CPU only
+				net_v = '0.0000';
+				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
+				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				tr['undelegatebw']({
 					from: account,
 					receiver: account,
-					stake_net_quantity: split + ' ' + symbol,
-					stake_cpu_quantity: split + ' ' + symbol,
-					transfer: 0
-				}, (err, result) => {
-					if (err) {
-						console.log(err);
-						reject(err);
-					} else {
-						console.log(result);
-						resolve();
-					}
+					unstake_net_quantity: net_v + ' ' + symbol,
+					unstake_cpu_quantity: cpu_v + ' ' + symbol
+				});
+				if (net_diff > 0) {
+					// Action 2 - Stake NET only
+					cpu_v = '0.0000';
+					net_v = (net_diff / 10000).toFixed(4);
+					console.log('NET: ', net_v, 'CPU: ', cpu_v);
+					tr['delegatebw']({
+						from: account,
+						receiver: account,
+						stake_net_quantity: net_v + ' ' + symbol,
+						stake_cpu_quantity: cpu_v + ' ' + symbol,
+						transfer: 0
+					});
+				}
+			} else if (net_diff < 0 && cpu_diff >= 0) {
+				// Action 1 - Unstake NET only
+				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+				cpu_v = '0.0000';
+				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				tr['undelegatebw']({
+					from: account,
+					receiver: account,
+					unstake_net_quantity: net_v + ' ' + symbol,
+					unstake_cpu_quantity: cpu_v + ' ' + symbol
+				});
+				// Action 2 - Stake CPU only
+				if (cpu_diff > 0) {
+					net_v = '0.0000';
+					cpu_v = (cpu_diff / 10000).toFixed(4);
+					console.log('NET: ', net_v, 'CPU: ', cpu_v);
+					tr['delegatebw']({
+						from: account,
+						receiver: account,
+						stake_net_quantity: net_v + ' ' + symbol,
+						stake_cpu_quantity: cpu_v + ' ' + symbol,
+						transfer: 0
+					});
+				}
+			} else if (net_diff < 0 && cpu_diff < 0) {
+				// Action 1 - Unstake Both
+				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
+				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				tr['undelegatebw']({
+					from: account,
+					receiver: account,
+					unstake_net_quantity: net_v + ' ' + symbol,
+					unstake_cpu_quantity: cpu_v + ' ' + symbol
 				});
 			} else {
-				reject();
+				// Action 1 - Stake both
+				cpu_v = (cpu_diff / 10000).toFixed(4);
+				net_v = (net_diff / 10000).toFixed(4);
+				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				tr['delegatebw']({
+					from: account,
+					receiver: account,
+					stake_net_quantity: net_v + ' ' + symbol,
+					stake_cpu_quantity: cpu_v + ' ' + symbol,
+					transfer: 0
+				});
 			}
 		});
 	}
 
-	unstake(account, amount, symbol) {
-		return new Promise((resolve, reject) => {
-			this.eos['getAccount'](account).then((accountInfo) => {
-				const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
-				if (current_stake - amount >= 10000) {
-					const split = ((amount / 2) / 10000).toFixed(4);
-					this.eos['undelegatebw']({
-						from: account,
-						receiver: account,
-						unstake_net_quantity: split + ' ' + symbol,
-						unstake_cpu_quantity: split + ' ' + symbol
-					}, (err, result) => {
-						if (err) {
-							console.log(err);
-							reject(err);
-						} else {
-							console.log(result);
-							resolve();
-						}
-					});
-				} else {
-					reject();
-				}
-			});
-		});
-	}
+	// async stake(account, amount, symbol) {
+	// 	const accountInfo = await this.eos['getAccount'](account);
+	// 	const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+	// 	const new_total = current_stake + amount;
+	// 	const new_cpu = new_total * 0.75;
+	// 	const new_net = new_total * 0.25;
+	// 	const cpu_diff = new_cpu - accountInfo['cpu_weight'];
+	// 	const net_diff = new_net - accountInfo['net_weight'];
+	// 	if (amount > 2) {
+	// 		return this.changebw(account, cpu_diff, net_diff, symbol);
+	// 	} else {
+	// 		return null;
+	// 	}
+	// }
+
+	// async unstake(account, amount, symbol) {
+	// 	const accountInfo = await this.eos['getAccount'](account);
+	//
+	// 	const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+	//
+	// 	console.log(accountInfo);
+	// 	console.log(current_stake);
+	// 	console.log(amount);
+	// 	console.log(current_stake - amount);
+	//
+	// 	if (current_stake - amount >= 10000) {
+	// 		const n_ratio = accountInfo['net_weight'] / current_stake;
+	// 		const c_ratio = accountInfo['cpu_weight'] / current_stake;
+	// 		const net = ((amount * n_ratio) / 10000).toFixed(4);
+	// 		const cpu = ((amount * c_ratio) / 10000).toFixed(4);
+	// 		console.log('CPU: ', cpu + ' ' + symbol);
+	// 		console.log('NET: ', net + ' ' + symbol);
+	// 		return this.eos['undelegatebw']({
+	// 			from: account,
+	// 			receiver: account,
+	// 			unstake_net_quantity: net + ' ' + symbol,
+	// 			unstake_cpu_quantity: cpu + ' ' + symbol
+	// 		});
+	// 	} else {
+	// 		return null;
+	// 	}
+	// }
 
 }

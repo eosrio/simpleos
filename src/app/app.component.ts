@@ -119,8 +119,8 @@ export class AppComponent implements AfterViewInit {
 
 	ngAfterViewInit() {
 		setTimeout(() => {
-			this.network.connect();
-		}, 1000);
+			this.network.connect(false);
+		}, 888);
 	}
 
 	// ngOnInit() {

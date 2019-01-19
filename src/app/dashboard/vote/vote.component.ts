@@ -55,6 +55,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	stakedisabled: boolean;
 	fromAccount: string;
 	nbps: number;
+	showAdvancedRatio = false;
 
 	echartsInstance: any;
 	location: string[];
@@ -71,6 +72,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	net_weight = '';
 	cpu_weight = '';
 
+	stakingRatio = 75;
+
 	constructor(public voteService: VotingService,
 				private http: HttpClient,
 				public aService: AccountsService,
@@ -81,6 +84,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 				private cdr: ChangeDetectorRef,
 				// private ledger: LedgerHWService
 	) {
+		this.voteService.bpsByChain(this.aService.activeChain.id);
 		if (this.voteService.bps) {
 			this.nbps = this.voteService.bps.length;
 		} else {
@@ -128,7 +132,9 @@ export class VoteComponent implements OnInit, AfterViewInit {
 					}
 				}
 			},
-			tooltip: {},
+			tooltip: {
+				formatter: (params) => '<strong>' + params['data']['location'] + '</strong><br> Rank: ' + params['data']['position'] + '<br> Status:  ' + params['data']['status']
+			},
 			animationDuration: 1500,
 			animationEasingUpdate: 'quinticInOut',
 			series: [
@@ -185,6 +191,10 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		return val.toString();
 	}
 
+	updateRatio() {
+		console.log(this.stakingRatio);
+	}
+
 	get getValuetoStake(): number {
 		return parseFloat(this.valuetoStake);
 	}
@@ -195,7 +205,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		const nextStakeInt = Math.round(nextStakeFloat * 10000);
 		const diff = nextStakeInt - prevStake;
 		this.stakingDiff = diff;
-		this.stakingHRV = (Math.abs(this.stakingDiff) / 10000) + ' EOS';
+		this.stakingHRV = (Math.abs(this.stakingDiff) / 10000) + ' ' + this.aService.activeChain['symbol'];
 		if (diff === 0) {
 			this.stakerr = 'Value has not changed';
 		} else {
@@ -210,35 +220,34 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				let call;
-				if (this.stakingDiff < 0) {
-					console.log('Unstaking: ' + Math.abs(this.stakingDiff));
-					call = this.eos.unstake(account.name, Math.abs(this.stakingDiff), this.aService.activeChain['symbol']);
-				} else {
-					console.log('Staking: ' + Math.abs(this.stakingDiff));
-					call = this.eos.stake(account.name, Math.abs(this.stakingDiff), this.aService.activeChain['symbol']);
-				}
-				call.then(() => {
-					this.busy = false;
-					this.wrongpass = '';
-					this.stakeModal = false;
-					this.cdr.detectChanges();
-					this.showToast('success', 'Action broadcasted', 'Check your history for confirmation.');
-					setTimeout(() => {
-						this.aService.refreshFromChain();
-					}, 500);
-				}).catch((error) => {
-					if (typeof error === 'object') {
-						this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
-					} else {
-						if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
-							this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
+				this.eos.changebw(account.name, this.stakingDiff, this.aService.activeChain['symbol'], this.stakingRatio / 100)
+					.then((trx) => {
+						console.log(trx);
+						this.busy = false;
+						this.wrongpass = '';
+						this.stakeModal = false;
+						this.cdr.detectChanges();
+						this.showToast('success', 'Tramsaction broadcasted', 'Check your history for confirmation.');
+						setTimeout(() => {
+							this.aService.refreshFromChain().then(() => {
+								this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+								this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+							});
+						}, 1500);
+					})
+					.catch((error) => {
+						console.log(error);
+						if (typeof error === 'object') {
+							this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
 						} else {
-							this.wrongpass = JSON.parse(error).error['what'];
+							if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
+								this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
+							} else {
+								this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
+							}
 						}
-					}
-					this.busy = false;
-				});
+						this.busy = false;
+					});
 			} else {
 				console.dir(data);
 				this.wrongpass = 'Wrong password!';
@@ -257,10 +266,16 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	}
 
 	ngOnInit() {
+
+		setTimeout(() => {
+			this.voteService.callLoader();
+		}, 1000);
+
 		const selectedAcc = this.aService.selected.getValue();
 		this.aService.lastUpdate.asObservable().subscribe(value => {
 			if (value.account === this.aService.selected.getValue().name) {
 				this.updateBalances();
+				this.stakingRatio = 75;
 			}
 		});
 		this.aService.selected.asObservable().subscribe((selected: any) => {
@@ -314,7 +329,9 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	}
 
 	ngAfterViewInit() {
-
+		this.voteService.listProducers().catch((err) => {
+			console.log(err);
+		});
 	}
 
 	getCurrentStake() {
@@ -372,10 +389,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		}
 	}
 
-	shuffleBps() {
-		this.voteService.randomizeList();
-	}
-
 	processVotes() {
 		this.selectedBPs = [];
 		this.voteService.bps.forEach((bp) => {
@@ -423,7 +436,6 @@ export class VoteComponent implements OnInit, AfterViewInit {
 						this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
 						this.passForm.reset();
 						this.aService.refreshFromChain();
-
 						setTimeout(() => {
 							this.loadPlacedVotes(this.aService.selected.getValue());
 						}, 1500);

@@ -236,3 +236,21 @@ a:visited {
 /deep/ .map .ui-accordion-header>a {
     padding: .5rem .75rem !important;
 }
+
+.warning-text {
+	color: orange;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.warning-text:hover {
+	text-decoration: underline;
+}
+
+.show {
+	display: block;
+}
+
+.hidden {
+	display: none;
+}

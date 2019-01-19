@@ -248,6 +248,9 @@
 				<mat-error *ngIf="!pvtform.valid">
 					{{errormsg}}
 				</mat-error>
+				<mat-error>
+					{{apierror}}
+				</mat-error>
 			</mat-form-field>
 		</form>
 
@@ -679,7 +682,7 @@
 				</div>
 				<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 					<button
-						class="btn btn-info-outline mt-1" (click)="network.connect(); endpointModal=false;">Auto
+						class="btn btn-info-outline mt-1" (click)="network.connect(true); endpointModal=false;">Auto
 					</button>
 					<span class="tooltip-content">Automatically connects on the<br> fastest endpoint for you</span>
 				</a>

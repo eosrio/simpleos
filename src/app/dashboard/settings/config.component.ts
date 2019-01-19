@@ -198,6 +198,7 @@ export class ConfigComponent implements OnInit {
 	connectEndpoint() {
 		this.network.selectedEndpoint.next(this.selectedEndpoint);
 		this.network.networkingReady.next(false);
+		this.aService.lastAccount = this.aService.selected.getValue().name;
 		this.network.startup(null);
 		this.confirmModal = false;
 	}
@@ -205,6 +206,7 @@ export class ConfigComponent implements OnInit {
 	connectCustom(url) {
 		this.network.selectedEndpoint.next({url: url, owner: 'Other', latency: 0, filters: [], chain: ''});
 		this.network.networkingReady.next(false);
+		this.aService.lastAccount = this.aService.selected.getValue().name;
 		this.network.startup(url);
 		this.endpointModal = false;
 	}

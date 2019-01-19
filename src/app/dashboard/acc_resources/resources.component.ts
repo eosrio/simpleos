@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
@@ -106,13 +106,16 @@ export class ResourcesComponent implements OnInit {
 		decimalLimit: 4
 	});
 
+	ramLoaderInterval: any;
+
+
 	constructor(
 		private eos: EOSJSService,
 		public aService: AccountsService,
 		private crypto: CryptoService,
 		private toaster: ToasterService,
 		private fb: FormBuilder,
-		private ramService: RamService,
+		public ramService: RamService,
 		private http: HttpClient
 	) {
 		this.dataDT = [];
@@ -290,7 +293,6 @@ export class ResourcesComponent implements OnInit {
 	}
 
 	ngOnInit() {
-		this.reload();
 		this.loadHistory();
 
 		this.aService.selected.asObservable().subscribe((selected: any) => {
@@ -327,22 +329,6 @@ export class ResourcesComponent implements OnInit {
 			bodyOutputType: BodyOutputType.TrustedHtml,
 		};
 		this.toaster.popAsync(toast);
-	}
-
-	reload() {
-		this.eos.getChainInfo().then((global) => {
-			if (global) {
-				this.max_ram_size = global.rows[0]['max_ram_size'];
-				this.total_ram_bytes_reserved = global.rows[0]['total_ram_bytes_reserved'];
-				this.total_ram_stake = global.rows[0]['total_ram_stake'];
-				this.eos.getRamMarketInfo().then((rammarket) => {
-					this.rm_base = rammarket.rows[0]['base']['balance'].split(' ')[0];
-					this.rm_quote = rammarket.rows[0]['quote']['balance'].split(' ')[0];
-					this.rm_supply = rammarket.rows[0]['supply'].split(' ')[0];
-					this.updatePrice();
-				});
-			}
-		});
 	}
 
 	listbw(account_name) {
@@ -416,10 +402,6 @@ export class ResourcesComponent implements OnInit {
 
 	feeCalculator(eosprice: number) {
 		return eosprice * .005;
-	}
-
-	updatePrice() {
-		this.ramPriceEOS = ((this.rm_quote) / this.rm_base) * 1024;
 	}
 
 	openRamModal() {
@@ -524,7 +506,7 @@ export class ResourcesComponent implements OnInit {
 				return true;
 			} else {
 				this.ramMarketFormBuy.controls['buyEos'].setErrors({'incorrect': true});
-				this.errormsg2 = 'not enough unstaked EOS!';
+				this.errormsg2 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
 				return false;
 			}
 		} else {
@@ -577,7 +559,7 @@ export class ResourcesComponent implements OnInit {
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
 					this.busy = false;
-					this.wrongpasssell = 'Something went wrong!';
+					this.wrongpasssell = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 			}
 		}).catch(() => {
@@ -617,7 +599,7 @@ export class ResourcesComponent implements OnInit {
 				}).catch((error) => {
 					console.log(error);
 					this.busy = false;
-					this.wrongpassbuy = 'Something went wrong!';
+					this.wrongpassbuy = JSON.stringify(JSON.parse(error).error.details[0].message);
 					console.log('Error: ', error);
 				});
 			}
@@ -653,7 +635,7 @@ export class ResourcesComponent implements OnInit {
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
 					this.busy = false;
-					this.wrongpassundelegate = 'Something went wrong!';
+					this.wrongpassundelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 			}
 		}).catch((q) => {
@@ -680,7 +662,7 @@ export class ResourcesComponent implements OnInit {
 				this.errormsgD3 = '';
 				return true;
 			} else {
-				this.errormsgD3 = 'not enough unstaked EOS!';
+				this.errormsgD3 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
 				return false;
 			}
 		} else {
@@ -715,7 +697,7 @@ export class ResourcesComponent implements OnInit {
 				}).catch((error) => {
 					console.log(error);
 					this.busy = false;
-					this.wrongpassdelegate = 'Something went wrong!';
+					this.wrongpassdelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 			}
 		}).catch((q) => {

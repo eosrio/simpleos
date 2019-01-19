@@ -94,6 +94,7 @@ export class LandingComponent implements OnInit {
 	requestId = '';
 	requestError = '';
 	noPIN = true;
+	apierror = '';
 
 	static parseEOS(tk_string) {
 		if (tk_string.split(' ')[1] === 'EOS') {
@@ -416,7 +417,7 @@ export class LandingComponent implements OnInit {
 	}
 
 	retryConn() {
-		this.network.connect();
+		this.network.connect(true);
 	}
 
 	customConnect() {
@@ -471,14 +472,27 @@ export class LandingComponent implements OnInit {
 	}
 
 	importCredentials() {
-		if (this.passform.value.matchingPassword.pass1 === this.passform.value.matchingPassword.pass2) {
-			this.crypto.initKeys(this.publicEOS, this.passform.value.matchingPassword.pass1).then(() => {
-				this.crypto.encryptAndStore(this.pvtform.value.private_key, this.publicEOS).then(() => {
+		const pubk = this.publicEOS;
+		const pass1 = this.passform.value.matchingPassword.pass1;
+		const pass2 = this.passform.value.matchingPassword.pass2;
+
+		if (pass1 === pass2) {
+			this.crypto.initKeys(pubk, pass1).then(() => {
+
+				let pvk = this.pvtform.value.private_key;
+
+				this.crypto.encryptAndStore(pvk, pubk).then(() => {
+
+					pvk = '';
+
 					this.aService.importAccounts(this.importedAccounts).then((data: any[]) => {
+
 						if (data.length > 0) {
-							this.crypto.decryptKeys(this.publicEOS).then(() => {
+
+							this.crypto.decryptKeys(pubk).then(() => {
+
 								this.router.navigate(['dashboard', 'vote']).then(() => {
-									this.voting.listProducers();
+
 								}).catch((err) => {
 									console.log(err);
 								});
@@ -522,6 +536,7 @@ export class LandingComponent implements OnInit {
 				this.zone.run(() => {
 					this.exisitswizard.forceNext();
 					this.errormsg = '';
+					this.apierror = '';
 				});
 			}).catch((e) => {
 				this.zone.run(() => {
@@ -537,6 +552,9 @@ export class LandingComponent implements OnInit {
 					}
 					if (e.message === 'non_active') {
 						this.errormsg = 'This is not the active key. Please import the active key.';
+					}
+					if (e.message === 'api_arror') {
+						this.apierror = 'API Unavailable, please try again with another endpoint.';
 					}
 				});
 			});

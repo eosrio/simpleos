@@ -28,7 +28,7 @@ export class LockscreenComponent implements OnInit {
 		private crypto: CryptoService,
 		private router: Router,
 		private network: NetworkService,
-		private aService: AccountsService
+		public aService: AccountsService
 	) {
 		this.logoutModal = false;
 		this.clearContacts = false;

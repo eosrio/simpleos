@@ -187,9 +187,11 @@ export class DashboardComponent implements OnInit {
 					this.errormsg = '';
 				});
 			}).catch((e) => {
+				console.log(e);
 				this.zone.run(() => {
 					this.pvtform.controls['private_key'].setErrors({'incorrect': true});
 					this.importedAccounts = [];
+
 					if (e.message.includes('Invalid checksum')) {
 						this.errormsg = 'invalid private key';
 					}

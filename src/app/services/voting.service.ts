@@ -47,35 +47,31 @@ export class VotingService {
 		this.lastChain = '';
 		this.lastAcc = '';
 
+
+		// EOSJS Status watcher
 		this.eos.online.asObservable().subscribe(value => {
 			this.isOnline = value;
 			if (value !== this.lastState) {
 				this.lastState = value;
-				// console.log('ONLINE VALUE:', value);
+				console.log('ONLINE VALUE:', value);
 				if (value) {
-					if (!this.accountSubscriber) {
-						this.accountSubscriber = this.aService.selected.asObservable().subscribe((sA) => {
-							if (sA['name']) {
-								this.selectedAccount = sA;
-								if (this.bps.length === 0 && !this.initList) {
-									if (this.lastChain !== this.aService.activeChain.name || this.lastAcc !== sA['name']) {
-										this.lastChain = this.aService.activeChain.name;
-										this.lastAcc = sA['name'];
-										// console.log('Voting service - selected account: ', sA['name'], this.aService.activeChain.name);
-										this.listProducers();
-									}
+					this.callLoader();
+				}
+			}
+		});
 
-								}
-							}
-						});
-					}
-				} else {
-					if (this.accountSubscriber) {
-						this.accountSubscriber.unsubscribe();
+		// Account status watcher
+		this.aService.selected.asObservable().subscribe((sA) => {
+			if (sA['name']) {
+				this.selectedAccount = sA;
+				if (this.bps.length === 0 && !this.initList) {
+					if (this.lastAcc !== sA['name'] || this.lastChain !== this.aService.activeChain.name) {
+						this.lastAcc = sA['name'];
+						this.lastChain = this.aService.activeChain.name;
+						this.callLoader();
 					}
 				}
 			}
-
 		});
 	}
 
@@ -91,101 +87,154 @@ export class VotingService {
 		return array;
 	}
 
+	callLoader() {
+		console.log('attempt to load BPs', this.aService.selected.getValue().name, this.isOnline);
+		if (this.aService.selected.getValue().name && this.isOnline) {
+			this.listProducers();
+		}
+	}
+
 	forceReload() {
-		// console.log('force reload');
+		console.log('Voting Service: Force reload!');
 		this.bps = [];
 		this.initList = false;
+		// this.listProducers();
+	}
+
+	clearMap() {
+		this.data = [];
+		this.updateOptions = {
+			series: [{
+				data: this.data
+			}]
+		};
 	}
 
 	randomizeList() {
 		this.bps = VotingService.shuffle(this.bps);
 	}
 
-	listProducers() {
-		if (!this.initList && !this.loadingProds) {
-			this.initList = true;
-			// console.log('listProds');
-			this.aService.initFirst();
+	bpsByChain(id) {
+		this.bps = this.bps.filter(bp => bp.chainId === id);
+	}
+
+	async listProducers() {
+		console.log(this.aService.selected.getValue().name, this.initList, this.loadingProds);
+		if (!this.initList && !this.loadingProds && this.aService.selected.getValue().name) {
 			this.loadingProds = true;
-			this.eos.listProducers().then((producers) => {
-				this.eos.getChainInfo().then((global) => {
-					this.totalProducerVoteWeight = parseFloat(global.rows[0]['total_producer_vote_weight']);
-					const total_votes = this.totalProducerVoteWeight;
-					// Pass 1 - Add accounts
-					const myAccount = this.aService.selected.getValue();
-					// console.log(myAccount);
-					producers.rows.forEach((prod: any, idx) => {
-						const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
-						let voted;
-						if (myAccount.details['voter_info']) {
-							voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
-						} else {
-							voted = false;
-						}
-						const producerMetadata = {
-							name: prod['owner'],
-							account: prod['owner'],
-							key: prod['producer_key'],
-							location: '',
-							geo: [],
-							position: idx + 1,
-							status: (idx < 21 && this.chainActive) ? 'producing' : 'standby',
-							total_votes: vote_pct + '%',
-							social: '',
-							email: '',
-							website: prod.url,
-							logo_256: '',
-							code: '',
-							checked: voted
-						};
-						this.bps.push(producerMetadata);
-					});
-					this.listReady.next(true);
-					this.loadingProds = false;
-					// Pass 2 - Enhance metadata
-					this.activeCounter = 50;
-					const expiration = (1000 * 60 * 60 * 6);
-					// const expiration = 1000;
-					const requestQueue = [];
-					producers.rows.forEach((prod: any, idx) => {
-						const cachedPayload = JSON.parse(localStorage.getItem(prod['owner']));
-						if (cachedPayload) {
-							if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
-								// setTimeout(() => {
-								//   this.improveMeta(prod, idx);
-								// }, 100 + idx * 10);
-								requestQueue.push({producer: prod, index: idx});
-							} else {
-								this.bps[idx] = cachedPayload['meta'];
-								if (idx < 50) {
-									this.addPin(this.bps[idx]);
-								}
-							}
-						} else {
-							// setTimeout(() => {
-							//   this.improveMeta(prod, idx);
-							// }, 100 + idx * 10);
-							requestQueue.push({producer: prod, index: idx});
-						}
-					});
-					this.processReqQueue(requestQueue);
-				});
+
+			const producers = await this.eos.listProducers();
+			console.log('ListProducers returned ' + producers.rows.length + ' producers');
+			const global_data = await this.eos.getChainInfo();
+
+			this.totalProducerVoteWeight = parseFloat(global_data.rows[0]['total_producer_vote_weight']);
+			const total_votes = this.totalProducerVoteWeight;
+
+			// Pass 1 - Add accounts
+			const myAccount = this.aService.selected.getValue();
+			this.bps = [];
+
+			producers.rows.forEach((prod: any, idx) => {
+				const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
+				let voted;
+				if (myAccount.details['voter_info']) {
+					voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
+				} else {
+					voted = false;
+				}
+				const producerMetadata = {
+					name: prod['owner'],
+					account: prod['owner'],
+					key: prod['producer_key'],
+					location: '',
+					geo: [],
+					position: idx + 1,
+					status: '',
+					total_votes: vote_pct + '%',
+					social: '',
+					email: '',
+					website: prod.url,
+					logo_256: '',
+					code: '',
+					checked: voted,
+					chainId: this.aService.activeChain.id
+				};
+				this.bps.push(producerMetadata);
 			});
+
+			this.initList = true;
+			this.listReady.next(true);
+			this.loadingProds = false;
+
+			// Pass 2 - Enhance metadata
+
+			this.activeCounter = 50;
+
+			// Cache expires in 6 hours
+			const expiration = (1000 * 60 * 60 * 6);
+
+			const requestQueue = [];
+			let fullCache = {};
+			// Load cached data, single entry per chain
+			const path = 'simplEOS.producers.' + this.aService.activeChain.id;
+			const stored_data = localStorage.getItem(path);
+			if (stored_data) {
+				fullCache = JSON.parse(stored_data);
+			}
+			producers.rows.forEach((prod: any, idx) => {
+				let cachedPayload = null;
+				if (stored_data) {
+					cachedPayload = fullCache[prod['owner']];
+					if (cachedPayload) {
+						if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
+							// Expired
+							requestQueue.push({producer: prod, index: idx});
+						} else {
+							// Load from cache
+							this.bps[idx] = cachedPayload['meta'];
+							if (idx < 21) {
+								this.bps[idx]['status'] = 'producing';
+							} else {
+								this.bps[idx]['status'] = 'standby';
+							}
+							if (idx < 50) {
+								this.addPin(this.bps[idx]);
+							}
+						}
+					} else {
+						// New entry
+						requestQueue.push({producer: prod, index: idx});
+					}
+				} else {
+					// New entry
+					requestQueue.push({producer: prod, index: idx});
+				}
+			});
+			this.processReqQueue(requestQueue);
 		}
 	}
 
 	processReqQueue(queue) {
 		const filteredBatch = [];
-		// console.log('Processing ' + queue.length + ' bp.json requests');
+		console.log('Processing ' + queue.length + ' bp.json requests');
+		const filename = '/bp.json';
 		queue.forEach((item) => {
 			if (item.producer.url !== '') {
-				const url = item.producer.url.endsWith('.json') ? item.producer.url : item.producer.url + '/bp.json';
+				const url = item.producer.url.endsWith('.json') ? item.producer.url : item.producer.url + filename;
 				if (url !== '') {
 					filteredBatch.push(item);
 				}
 			}
 		});
+		console.log('Fecthing BP.JSON data...');
 		this.http.post('http://proxy.eosrio.io:4200/batchRequest', filteredBatch).subscribe((data: any[]) => {
+			// Load cache
+			let fullCache = JSON.parse(localStorage.getItem('simplEOS.producers.' + this.aService.activeChain.id));
+			if (!fullCache) {
+				fullCache = {};
+			}
+
+			console.log(data.length);
 			data.forEach((item) => {
 				if (item && JSON.stringify(item) !== null) {
 					if (item['org']) {
@@ -201,6 +250,12 @@ export class VotingService {
 							return el.account === item['producer_account_name'];
 						});
 						if (idx !== -1) {
+							if (idx < 21) {
+								this.bps[idx]['status'] = 'producing';
+							} else {
+								this.bps[idx]['status'] = 'standby';
+							}
+							// console.log('POS: ' + this.bps[idx].position + ' | ' + this.bps[idx].name);
 							this.bps[idx].name = org['candidate_name'];
 							this.bps[idx].account = item['producer_account_name'];
 							this.bps[idx].location = loc;
@@ -210,6 +265,7 @@ export class VotingService {
 							this.bps[idx].website = org['website'];
 							this.bps[idx].logo_256 = logo_256;
 							this.bps[idx].code = org['code_of_conduct'];
+							this.bps[idx].chainId = this.aService.activeChain.id;
 							if (idx < 50) {
 								this.addPin(this.bps[idx]);
 							}
@@ -219,96 +275,38 @@ export class VotingService {
 								meta: this.bps[idx],
 								source: item.url
 							};
-							localStorage.setItem(item['producer_account_name'], JSON.stringify(payload));
+							fullCache[item['producer_account_name']] = payload;
 						}
 					}
 				}
 			});
+			// Save cache
+			localStorage.setItem('simplEOS.producers.' + this.aService.activeChain.id, JSON.stringify(fullCache));
 		});
-	}
-
-	improveMeta(prod, idx) {
-		if (prod.url !== '') {
-			const url = prod.url.endsWith('.json') ? prod.url : prod.url + '/bp.json';
-			if (url !== '') {
-				this.http.post('http://proxy.eosrio.io:4200', {
-					url: url
-				}).subscribe((data) => {
-					if (data) {
-						if (data['org']) {
-							const org = data['org'];
-							let loc = ' - ';
-							let geo = [];
-							if (org['location']) {
-								loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
-								geo = [org.location.latitude, org.location.longitude];
-							}
-							const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
-							if (data['producer_account_name'] === prod['owner']) {
-								this.bps[idx].name = org['candidate_name'];
-								this.bps[idx].account = data['producer_account_name'];
-								this.bps[idx].location = loc;
-								this.bps[idx].geo = geo;
-								this.bps[idx].social = org['social'] || {};
-								this.bps[idx].email = org['email'];
-								this.bps[idx].website = org['website'];
-								this.bps[idx].logo_256 = logo_256;
-								this.bps[idx].code = org['code_of_conduct'];
-
-								if (idx < 50) {
-									this.addPin(this.bps[idx]);
-								}
-
-								// Add to cache
-								const payload = {
-									lastUpdate: new Date(),
-									meta: this.bps[idx],
-									source: url
-								};
-								localStorage.setItem(prod['owner'], JSON.stringify(payload));
-							}
-						}
-					}
-					// console.log(this.data);
-				}, () => {
-					// console.log(url, err);
-				});
-			}
-		} else {
-			// console.log(prod['owner'] + ' provided no bp.json');
-		}
 	}
 
 	addPin(bp) {
 		if (bp.geo.length === 2) {
 			const name = bp['name'];
+			const account = bp['account'];
 			const lat = bp['geo'][0];
 			const lon = bp['geo'][1];
 			if ((lon < 180 && lon > -180) && (lat < 90 && lat > -90)) {
 				if (this.data.length < 50) {
-					if (bp['status'] === 'standby') {
+					if (this.data.findIndex(o => o.owner === account) === -1) {
 						this.data.push({
 							name: name,
-							symbol: 'circle',
-							symbolSize: 8,
+							owner: account,
+							symbol: (bp['status'] === 'standby') ? 'circle' : 'diamond',
+							symbolSize: (bp['status'] === 'standby') ? 8 : 10,
 							itemStyle: {
-								color: '#feff4b',
+								color: (bp['status'] === 'standby') ? '#feff4b' : '#6cff46',
 								borderWidth: 0
 							},
 							value: [lon, lat],
-							location: bp['location']
-						});
-					} else {
-						this.data.push({
-							name: name,
-							symbol: 'diamond',
-							symbolSize: 10,
-							itemStyle: {
-								color: '#6cff46',
-								borderWidth: 0
-							},
-							value: [lon, lat],
-							location: bp['location']
+							location: bp['location'],
+							position: bp['position'],
+							status: bp['status']
 						});
 					}
 					this.updateOptions = {

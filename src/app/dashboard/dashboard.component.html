@@ -3,7 +3,7 @@
 	<div class="content-container">
 		<div class="content-area">
 			<div class="row" style="margin-right: 0;">
-				<div class="col-xs col-md max-width" style="padding-right: 0">
+				<div class="col-xs col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}" style="padding-right: 0; ">
 					<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 								   [selectedIndex]="selectedTab">
 						<mat-tab *ngFor="let account of aService.accounts; let i = index">
@@ -89,7 +89,7 @@
 				</a>
 				<a *ngIf="network.activeChain.features['dapps']" class="nav-link" routerLinkActive="active"
 				   [routerLink]="['dapp']">
-					<fa-icon [icon]="['far', 'puzzle-piece']"></fa-icon>&nbsp;&nbsp;DAPPS (beta)
+					<fa-icon [icon]="['far', 'puzzle-piece']"></fa-icon>&nbsp;&nbsp;CONTRACTS (beta)
 				</a>
 				<a *ngIf="network.activeChain.features['forum']" class="nav-link" routerLinkActive="active"
 				   [routerLink]="['referendum']">

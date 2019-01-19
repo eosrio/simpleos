@@ -12,11 +12,12 @@ export class AccountsService {
 	public accounts: any[];
 	public activeChain: any;
 	public selected = new BehaviorSubject<any>({});
+	public lastAccount: any = null;
 	public selectedIdx = 0;
 	public lastUpdate = new Subject<any>();
 	public versionSys: string;
 
-	usd_rate: number;
+	usd_rate = 1;
 	cmcListings = [];
 	tokens = [];
 	actions = [];
@@ -38,7 +39,6 @@ export class AccountsService {
 		this.accounts = [];
 		this.usd_rate = 10.00;
 		this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
-		// this.fetchListings();
 		this.fetchEOSprice();
 		this.eos.online.asObservable().subscribe(value => {
 			if (value) {
@@ -142,24 +142,25 @@ export class AccountsService {
 		this.totalAssetsSum = totalSum;
 	}
 
-	fetchTokens(account) {
+	async fetchTokens(account) {
 		this.sessionTokens[this.selectedIdx] = [];
 		if (this.activeChain['name'] === 'EOS MAINNET') {
-			this.http.get('https://hapi.eosrio.io/data/tokens/' + account).subscribe((data) => {
-				const contracts = Object.keys(data);
-				this.loading = false;
-				contracts.forEach((contract) => {
-					if (data[contract]['symbol'] !== this.activeChain['symbol']) {
-						this.registerSymbol(data[contract], contract);
-					}
-				});
-				this.tokens.sort((a: any, b: any) => {
-					return a.usd_value < b.usd_value ? 1 : -1;
-				});
-				this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+			const data = await this.http.get('https://hapi.eosrio.io/data/tokens/' + account).toPromise();
+			const contracts = Object.keys(data);
+			this.loading = false;
+			contracts.forEach((contract) => {
+				if (data[contract]['symbol'] !== this.activeChain['symbol']) {
+					this.registerSymbol(data[contract], contract);
+				}
 			});
+			this.tokens.sort((a: any, b: any) => {
+				return a.usd_value < b.usd_value ? 1 : -1;
+			});
+			this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+			return this.accounts;
 		} else {
 			this.loading = false;
+			return null;
 		}
 	}
 
@@ -383,17 +384,37 @@ export class AccountsService {
 				localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
 			}
 			this.actionStore[account]['actions'].forEach((action) => {
+
+				let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
 				if (action['action_trace']) {
 					// native history api
-					if (action['action_trace']['receipt']['receiver'] === this.selected.getValue().name) {
-						console.log(action);
-						this.processAction(action['action_trace']['act'], action['action_trace']['trx_id'], action['block_num'], action['block_time'], action['account_action_seq']);
-					}
+					a_name = action['action_trace']['act']['name'];
+					a_acct = action['action_trace']['act']['account'];
+					a_recv = action['action_trace']['receipt']['receiver'];
+					selAcc = this.selected.getValue().name;
+
+					act = action['action_trace']['act'];
+					tx_id = action['action_trace']['trx_id'];
+					blk_num = action['block_num'];
+					blk_time = action['block_time'];
+					seq = action['account_action_seq'];
+
 				} else {
 					// mongo history api
-					if (action['receipt']['receiver'] === this.selected.getValue().name) {
-						this.processAction(action['act'], action['trx_id'], action['block_num'], action['block_time'], action['receipt']['global_sequence']);
-					}
+					a_name = action['act']['name'];
+					a_acct = action['act']['account'];
+					a_recv = action['receipt']['receiver'];
+					selAcc = this.selected.getValue().name;
+
+					act = action['act'];
+					tx_id = action['trx_id'];
+					blk_num = action['block_num'];
+					blk_time = action['block_time'];
+					seq = action['receipt']['global_sequence'];
+				}
+
+				if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
+					this.processAction(act, tx_id, blk_num, blk_time, seq);
 				}
 			});
 
@@ -432,33 +453,27 @@ export class AccountsService {
 		// }, (result) => {
 		// 	console.log(result);
 		// });
-		this.fetchTokens(this.selected.getValue().name);
-	}
-
-	initFirst() {
-		this.select(0);
-	}
-
-	importAccounts(accounts) {
-		return new Promise((resolve, reject) => {
-			const chain_id = this.eos.chainID;
-			const payload = {
-				importedOn: new Date(),
-				updatedOn: new Date(),
-				accounts: accounts
-			};
-			localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
-			localStorage.setItem('simplEOS.init', 'true');
-			this.loadLocalAccounts(accounts).then((data) => {
-				resolve(data);
-			}).catch(() => {
-				reject();
-			});
+		this.fetchTokens(this.selected.getValue().name).then(() => {
+			// console.log(data);
 		});
 	}
 
+	initFirst() {
+		console.log('Account Service: selecting default account - ', this.selected.getValue().name);
+		this.select(0);
+	}
+
+	async importAccounts(accounts): Promise<any[]> {
+		const chain_id = this.eos.chainID;
+		const payload = {importedOn: new Date(), updatedOn: new Date(), accounts: accounts};
+		localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
+		localStorage.setItem('simplEOS.init', 'true');
+		await this.loadLocalAccounts(accounts);
+		return accounts;
+	}
+
 	appendNewAccount(account) {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve, reject2) => {
 			const chain_id = this.eos.chainID;
 			let payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
 			if (!payload) {
@@ -475,120 +490,104 @@ export class AccountsService {
 			this.loadLocalAccounts(payload.accounts).then((data) => {
 				resolve(data);
 			}).catch(() => {
-				reject();
+				reject2();
 			});
 		});
 	}
 
-	appendAccounts(accounts) {
-		return new Promise((resolve, reject) => {
-			const chain_id = this.eos.chainID;
-			const payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
-			accounts.forEach((account) => {
-				const idx = payload.accounts.findIndex((elem) => {
-					return elem.name === account.account_name || elem.account_name === account.account_name;
-				});
-				if (idx === -1) {
-					payload.accounts.push(account);
-				} else {
-					const toast: Toast = {
-						type: 'info',
-						title: 'Import',
-						body: 'The account ' + account.account_name + ' was already imported! Skipping...',
-						timeout: 10000,
-						showCloseButton: true,
-						bodyOutputType: BodyOutputType.TrustedHtml,
-					};
-					this.toaster.popAsync(toast);
-				}
+	async appendAccounts(accounts) {
+		const chain_id = this.eos.chainID;
+		const payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
+		accounts.forEach((account) => {
+			const idx = payload.accounts.findIndex((elem) => {
+				return elem.name === account.account_name || elem.account_name === account.account_name;
 			});
-			payload.updatedOn = new Date();
-			localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
-			localStorage.setItem('simplEOS.init', 'true');
-			this.loadLocalAccounts(payload.accounts).then((data) => {
-				resolve(data);
-			}).catch(() => {
-				reject();
-			});
-		});
-	}
-
-	loadLocalAccounts(data) {
-		return new Promise((resolve, reject) => {
-			if (data.length > 0) {
-				this.accounts = [];
-				data.forEach((acc_data) => {
-					acc_data.tokens = [];
-					if (!acc_data.details) {
-						this.accounts.push(this.extendAccount(acc_data));
-					} else {
-						this.accounts.push(acc_data);
-					}
-				});
-				this.refreshFromChain();
-				resolve(this.accounts);
+			if (idx === -1) {
+				payload.accounts.push(account);
 			} else {
-				reject();
+				const toast: Toast = {
+					type: 'info',
+					title: 'Import',
+					body: 'The account ' + account.account_name + ' was already imported! Skipping...',
+					timeout: 10000,
+					showCloseButton: true,
+					bodyOutputType: BodyOutputType.TrustedHtml,
+				};
+				this.toaster.popAsync(toast);
 			}
 		});
+		payload.updatedOn = new Date();
+		localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
+		localStorage.setItem('simplEOS.init', 'true');
+		return await this.loadLocalAccounts(payload.accounts);
 	}
 
-	refreshFromChain(): void {
+	async loadLocalAccounts(data) {
+		console.log('Loading accounts', data);
+		if (data.length > 0) {
+			this.accounts = [];
+			data.forEach((acc_data) => {
+				acc_data.tokens = [];
+				if (!acc_data.details) {
+					this.accounts.push(this.extendAccount(acc_data));
+				} else {
+					this.accounts.push(acc_data);
+				}
+			});
+			this.select(0);
+			return await this.refreshFromChain();
+		} else {
+			return null;
+		}
+	}
+
+	async refreshFromChain() {
 		const PQ = [];
 		this.accounts.forEach((account, idx) => {
-			const tempPromise = new Promise((resolve, reject) => {
-				this.eos.getAccountInfo(account['name']).then((newdata) => {
-					this.eos.getTokens(account['name']).then((tokens) => {
-						this.eos.getRefunds(account['name']).then((refunds) => {
-							let ref_time = null;
-							let balance = 0;
-							let ref_net = 0;
-							let ref_cpu = 0;
-							if (refunds.rows.length > 0) {
-								ref_net = this.parseEOS(refunds.rows[0]['cpu_amount']);
-								ref_cpu = this.parseEOS(refunds.rows[0]['cpu_amount']);
-								balance += ref_net;
-								balance += ref_cpu;
-								const tempDate = refunds.rows[0]['request_time'] + '.000Z';
-								ref_time = new Date(tempDate);
-							}
-							tokens.forEach((tk) => {
-								balance += this.parseEOS(tk);
-							});
-							let net = 0;
-							let cpu = 0;
-							if (newdata['self_delegated_bandwidth']) {
-								net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
-								cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
-								balance += net;
-								balance += cpu;
-							}
-							this.accounts[idx].name = account['name'];
-							this.accounts[idx].full_balance = Math.round((balance) * 10000) / 10000;
-							this.accounts[idx].staked = net + cpu;
-							this.accounts[idx].unstaking = ref_net + ref_cpu;
-							this.accounts[idx].unstakeTime = ref_time;
-							this.accounts[idx].details = newdata;
-							this.lastUpdate.next({
-								account: account['name'],
-								timestamp: new Date()
-							});
-							resolve();
-						});
-					}).catch((error2) => {
-						console.log('Error on getTokens', error2);
-						reject();
-					});
-				}).catch((error1) => {
-					console.log('Error on getAccountInfo', error1);
-					reject();
+			const tempPromise = new Promise(async (resolve, reject2) => {
+				const newdata = await this.eos.getAccountInfo(account['name']);
+				const tokens = await this.eos.getTokens(account['name']);
+				let balance = 0;
+				let ref_time = null;
+				let ref_cpu = 0;
+				let ref_net = 0;
+				const refund = newdata['refund_request'];
+				if (refund) {
+					ref_cpu = this.parseEOS(refund['cpu_amount']);
+					ref_net = this.parseEOS(refund['net_amount']);
+					balance += ref_net;
+					balance += ref_cpu;
+					const tempDate = refund['request_time'] + '.000Z';
+					ref_time = new Date(tempDate);
+				}
+				tokens.forEach((tk) => {
+					balance += this.parseEOS(tk);
 				});
+				let net = 0;
+				let cpu = 0;
+				if (newdata['self_delegated_bandwidth']) {
+					net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
+					cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+					balance += net;
+					balance += cpu;
+				}
+				this.accounts[idx].name = account['name'];
+				this.accounts[idx].full_balance = Math.round((balance) * 10000) / 10000;
+				this.accounts[idx].staked = net + cpu;
+				this.accounts[idx].unstaking = ref_net + ref_cpu;
+				this.accounts[idx].unstakeTime = ref_time;
+				this.accounts[idx].details = newdata;
+				this.lastUpdate.next({
+					account: account['name'],
+					timestamp: new Date()
+				});
+				resolve();
 			});
 			PQ.push(tempPromise);
 		});
-		Promise.all(PQ).then(() => {
-			this.fetchTokens(this.selected.getValue().name);
-			this.eos.storeAccountData(this.accounts);
+		return await Promise.all(PQ).then(async () => {
+			await this.fetchTokens(this.selected.getValue().name);
+			return await this.eos.storeAccountData(this.accounts);
 		});
 	}
 
@@ -598,31 +597,25 @@ export class AccountsService {
 		});
 	}
 
-	fetchTokenPrice(symbol) {
-		return new Promise((resolve, reject) => {
-			let id = null;
-			for (let i = 0; i < this.cmcListings.length; i++) {
-				if (this.cmcListings[i].symbol === symbol) {
-					console.log('------->', this.cmcListings[i]);
-					id = this.cmcListings[i].id;
-				}
+	async fetchTokenPrice(symbol) {
+		let id = null;
+		for (let i = 0; i < this.cmcListings.length; i++) {
+			if (this.cmcListings[i].symbol === symbol) {
+				id = this.cmcListings[i].id;
 			}
-			if (id && symbol === 'EOSDAC') {
-				this.http.get('https://api.coinmarketcap.com/v2/ticker/' + id + '/').subscribe((result: any) => {
-					resolve(parseFloat(result.data.quotes.USD['price']));
-				}, (err) => {
-					reject(err);
-				});
-			} else {
-				resolve(null);
-			}
-		});
+		}
+		if (id && symbol === 'EOSDAC') {
+			const result: any = await this.http.get('https://api.coinmarketcap.com/v2/ticker/' + id + '/').toPromise();
+			return parseFloat(result.data.quotes.USD['price']);
+		} else {
+			return null;
+		}
 	}
 
-	fetchEOSprice() {
-		this.http.get('https://api.coinmarketcap.com/v2/ticker/1765/').subscribe((result: any) => {
-			this.usd_rate = parseFloat(result.data.quotes.USD['price']);
-		});
+	async fetchEOSprice() {
+		const result: any = await this.http.get('https://api.coinmarketcap.com/v2/ticker/1765/').toPromise();
+		this.usd_rate = parseFloat(result.data.quotes.USD['price']);
+		return null;
 	}
 
 	// checkLedgerAccounts() {
