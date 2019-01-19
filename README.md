@@ -63,15 +63,15 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 
 ## Download a pre-compiled build
 
-- Windows (32/64-bit): [**simpleos.setup.0.7.1.exe**](https://github.com/eosrio/simpleos/releases/download/v0.7.1/simpleos.setup.0.7.1.exe)
-  - `0c1adb9d2c43c233bee7746486555f3ee3c033cad377df44cfdba904a5637acf`
+- Windows (32/64-bit): [**simpleos.setup.0.7.2.exe**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos.setup.0.7.2.exe)
+  - `801c6def69f715e6126a0d09668180823daa31de896bb112c370394636d10629`
 - Linux
-  - [**simpleos.0.7.1.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.7.1/simpleos.0.7.1.AppImage)
-  `3d542787c723bd0116e9f493d50ece47ee18160a3a577c71c0b3a98c69be4c49`
-  - [**simpleos_0.7.1_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.7.1/simpleos_0.7.1_amd64.deb)
-  `0771fc0876c00981b4bb710b03638d1c25dedef1c757197451fb7f9b2394ddd7`  
-- MacOS: [**simpleos-0.7.1.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.7.1/simpleos-0.7.1.dmg)
-  - `39f0627a72d13387daf4f1042738416849d03cb2cd2111f19a7b8ff22de461d6`
+  - [**simpleos.0.7.2.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos.0.7.2.AppImage)
+  `77b5648057d460ad6135880d2d7c950059c7afc0f495bdee5dbea1437078b330`
+  - [**simpleos_0.7.2_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos_0.7.2_amd64.deb)
+  `e9c6863c79ae3fbd50ee07232da17a1b2218528a4068db8e8d9cd213ae7d1f4a`  
+- MacOS: [**simpleos-0.7.1.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos-0.7.2.dmg)
+  - `4506020d9b1c3be06a51bc23da21d5cb9cda16737f8e5aad0bd29ee1348cba4b`
 
 ## Legal Disclaimer
 
