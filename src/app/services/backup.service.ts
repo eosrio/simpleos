@@ -8,7 +8,7 @@ export class BackupService {
 	running = false;
 	past_backups = [];
 	numberOfBackups = 5;
-	bkp_folder = './autosave';
+	bkp_folder = '';
 	automatic: string;
 
 	constructor() {
@@ -19,6 +19,7 @@ export class BackupService {
 		}
 		if (this.automatic === 'true') {
 			if (window['remote']) {
+				this.bkp_folder = window['remote']['app'].getPath('appData') + '/simpleosAutosave';
 				this.initDir();
 				this.listBackups();
 			}
