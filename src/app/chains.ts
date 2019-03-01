@@ -168,6 +168,42 @@ export const defaultChainsJSON = [
 		]
 	},
 	{
+		id: 'cfe6486a83bad4962f232d48003b1824ab5665c36778141034d75e57b956e422',
+		symbol: 'MEETONE',
+		name: 'MEET.ONE MAINNET',
+		firstApi: 'https://fullnode.meet.one',
+		lastNode: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: true,
+			addAcc: true,
+			newAcc: true,
+			forum: false
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'https://fullnode.meet.one', owner: 'MEET.ONE', latency: 0},
+			{url: 'https://api.meetsweden.org', owner: 'Meet sw/eden', latency: 0},
+			{url: 'https://api.meetone.eostribe.io', owner: 'EOS Tribe', latency: 0},
+			{url: 'https://api.meetone.alohaeos.com', owner: 'Aloha EOS', latency: 0}
+		],
+		explorers: [
+			{
+				name: 'EOSX',
+				account_url: 'https://meetone.eosx.io/account/',
+				tx_url: 'https://meetone.eosx.io/tx/'
+			}
+		]
+	},
+	{
 		id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
 		symbol: 'TLOS',
 		name: 'TELOS MAINNET',
@@ -305,5 +341,40 @@ export const defaultChainsJSON = [
 				tx_url: 'https://kylin.bloks.io/tx/'
 			}
 		]
-	}
+	},
+	{
+		id: '7136e3e32a458bb99cf6973ab5055869d25830607b9e78593769e1be52fb6f20',
+		symbol: 'MEETONE',
+		name: 'MEET.ONE TESTNET',
+		firstApi: 'http://sidechain-test.meet.one:8888',
+		lastNode: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: true,
+			addAcc: true,
+			newAcc: true,
+			forum: false
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'http://sidechain-test.meet.one:8888', owner: 'MEET.ONE', latency: 0},
+			{url: 'http://sidechain-test2.meet.one:8888', owner: 'MEET.ONE', latency: 0},
+			{url: 'https://meetone-testnet.eosphere.io', owner: 'EOSSphere', latency: 0},
+		],
+		explorers: [
+			{
+				name: 'EOSX',
+				account_url: 'https://meetone-test.eosx.io/account/',
+				tx_url: 'https://meetone-test.eosx.io/tx/'
+			}
+		]
+	},
 ];
