@@ -96,11 +96,11 @@ export class EOSJSService {
 		});
 	}
 
-	getKeyAccounts(pubkey) {
+	getKeyAccounts(pubkey: string) {
 		return this.eos.getKeyAccounts(pubkey);
 	}
 
-	getAccountInfo(name) {
+	getAccountInfo(name: string) {
 		return this.eos['getAccount'](name);
 	}
 
@@ -431,7 +431,7 @@ export class EOSJSService {
 		if (this.auth) {
 			if (contract === 'eosio.token') {
 				return new Promise((resolve, reject) => {
-					this.eos['transfer'](from, to, amount, memo, (err, trx) => {
+					this.eos['transfer'](from, to, amount, memo, (err) => {
 						// console.log(err, trx);
 						if (err) {
 							reject(JSON.parse(err));
@@ -446,7 +446,7 @@ export class EOSJSService {
 						if (!err) {
 							if (tokenContract['transfer']) {
 								const options = {authorization: from + '@active'};
-								tokenContract['transfer'](from, to, amount, memo, options, (err2, trx) => {
+								tokenContract['transfer'](from, to, amount, memo, options, (err2) => {
 									// console.log(err, trx);
 									if (err2) {
 										reject(JSON.parse(err2));
@@ -480,7 +480,7 @@ export class EOSJSService {
 	}
 
 	ramBuyBytes(payer: string, receiver: string, bytes: string): Promise<any> {
-		return this.eos.buyrambytes(payer, receiver, parseInt(bytes));
+		return this.eos.buyrambytes(payer, receiver, parseInt(bytes, 10));
 	}
 
 	ramBuyEOS(payer: string, receiver: string, quant: number, symbol: string): Promise<any> {
@@ -488,7 +488,7 @@ export class EOSJSService {
 	}
 
 	ramSellBytes(account: string, bytes: string): Promise<any> {
-		return this.eos.sellram(account, parseInt(bytes));
+		return this.eos.sellram(account, parseInt(bytes, 10));
 	}
 
 	async createAccount(creator: string, name: string, owner: string,
@@ -624,11 +624,9 @@ export class EOSJSService {
 		let ref_cpu = 0;
 		let ref_net = 0;
 		let liquid = 0;
-
 		if (liquid_bal) {
 			liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
 		}
-
 		if (refund) {
 			ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
 			ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
@@ -649,13 +647,12 @@ export class EOSJSService {
 			cpu_diff += (cpu_diff - (ref_cpu + liquid));
 			net_diff = (ref_net + liquid);
 		}
-		console.log('CPU DIFF: ', cpu_diff, 'NET DIFF: ', net_diff);
 		return this.eos.transaction((tr) => {
 			if (cpu_diff < 0 && net_diff >= 0) {
 				// Action 1 - Unstake CPU only
 				net_v = '0.0000';
 				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
-				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				// console.log('Unstake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
 					from: account,
 					receiver: account,
@@ -666,7 +663,7 @@ export class EOSJSService {
 					// Action 2 - Stake NET only
 					cpu_v = '0.0000';
 					net_v = (net_diff / 10000).toFixed(4);
-					console.log('NET: ', net_v, 'CPU: ', cpu_v);
+					// console.log('Stake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
 					tr['delegatebw']({
 						from: account,
 						receiver: account,
@@ -679,7 +676,7 @@ export class EOSJSService {
 				// Action 1 - Unstake NET only
 				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
 				cpu_v = '0.0000';
-				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				// console.log('Unstake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
 					from: account,
 					receiver: account,
@@ -690,7 +687,7 @@ export class EOSJSService {
 				if (cpu_diff > 0) {
 					net_v = '0.0000';
 					cpu_v = (cpu_diff / 10000).toFixed(4);
-					console.log('NET: ', net_v, 'CPU: ', cpu_v);
+					// console.log('Stake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
 					tr['delegatebw']({
 						from: account,
 						receiver: account,
@@ -703,7 +700,7 @@ export class EOSJSService {
 				// Action 1 - Unstake Both
 				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
 				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
-				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				// console.log('Unstake Both', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
 					from: account,
 					receiver: account,
@@ -714,7 +711,7 @@ export class EOSJSService {
 				// Action 1 - Stake both
 				cpu_v = (cpu_diff / 10000).toFixed(4);
 				net_v = (net_diff / 10000).toFixed(4);
-				console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				// console.log('NET: ', net_v, 'CPU: ', cpu_v);
 				tr['delegatebw']({
 					from: account,
 					receiver: account,

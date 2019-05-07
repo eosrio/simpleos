@@ -10,6 +10,7 @@ import {HttpClient} from '@angular/common/http';
 
 import * as moment from 'moment';
 import {Subscription} from 'rxjs';
+import {RexComponent} from '../rex/rex.component';
 
 @Component({
 	selector: 'app-vote',
@@ -32,6 +33,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	voteModal: boolean;
 	isValidAccount: boolean;
 	nVotes: number;
+	nVotesProxy: number;
 	busy: boolean;
 	totalBalance: number;
 	stakedBalance: number;
@@ -130,7 +132,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.subscriptions.push(this.aService.lastUpdate.asObservable().subscribe(value => {
 			if (value.account === this.aService.selected.getValue().name) {
 				this.updateBalances();
-				this.stakingRatio = 75;
 			}
 		}));
 
@@ -153,6 +154,9 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.loadPlacedVotes(selected);
 				this.cpu_weight = selected.details.total_resources.cpu_weight;
 				this.net_weight = selected.details.total_resources.net_weight;
+				const _cpu = RexComponent.asset2Float(this.cpu_weight);
+				const _net = RexComponent.asset2Float(this.net_weight);
+				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
 			}
 		}));
 
@@ -284,7 +288,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			if (data === true) {
 				this.eos.changebw(account.name, this.stakingDiff, this.aService.activeChain['symbol'], this.stakingRatio / 100)
 					.then((trx) => {
-						console.log(trx);
 						this.busy = false;
 						this.wrongpass = '';
 						this.stakeModal = false;
@@ -361,14 +364,21 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			if (a) {
 				if (a.name === selAcc) {
 					if (a.details['voter_info']) {
-						const currentVotes = a.details['voter_info']['producers'];
-						this.voteService.bps.forEach((elem) => {
-							elem.checked = currentVotes.indexOf(elem.account) !== -1;
-						});
+						if (!this.voteService.voteType) {
+							const currentVotes = a.details['voter_info']['producers'];
+							this.voteService.bps.forEach((elem) => {
+								elem.checked = currentVotes.indexOf(elem.account) !== -1;
+							});
+						} else {
+							const currentVotes = a.details['voter_info']['proxy'];
+							this.voteService.proxies.forEach((elem) => {
+								elem.checked = currentVotes.indexOf(elem.account) !== -1;
+							});
+						}
 					} else {
-						this.voteService.proxies.forEach((elem) => {
-							elem.checked = false;
-						});
+						// this.voteService.proxies.forEach((elem) => {
+						// 	elem.checked = false;
+						// });
 					}
 				}
 			}
@@ -472,8 +482,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	updateCounterProxy(proxy) {
-		this.voteService.proxies.forEach((px,idx) => {
-			this.voteService.proxies[idx].checked = px.account === proxy;
+		this.voteService.proxies.forEach((px) => {
+			px.checked = px.account === proxy;
 		});
 		this.nVotes = 1;
 	}
@@ -483,14 +493,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.busy = true;
 		const voter = this.aService.selected.getValue();
 		const publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
-
 		this.crypto.authenticate(pass, publicKey).then((data) => {
-			// console.log('Auth output:', data);
 			if (data === true) {
-
 				// this.aService.injectLedgerSigner();
 				this.eos.voteAction(voter.name, this.selectedVotes, this.voteService.voteType).then((result) => {
-					// console.log(result);
 					if (JSON.parse(result).code) {
 						// if (err2.error.code === 3081001) {
 						this.wrongpass = JSON.parse(result).error.details[0].message;
@@ -514,13 +520,9 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 								console.log('Refresh From Chain Error:', err);
 							});
 							// this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
-
 						}, 1500);
-
 						// this.passForm.reset();
-
 					}
-
 				}).catch((err2) => {
 					console.log(err2);
 					// if (err2.error.code === 3081001) {
@@ -544,17 +546,20 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	loadPlacedVotes(selectedAccount) {
 		if (selectedAccount.details['voter_info']) {
-			const currentVotes = !selectedAccount.details['voter_info']['producers'] ? selectedAccount.details['voter_info']['proxies'] : selectedAccount.details['voter_info']['producers'];
-			this.nVotes = currentVotes.length;
-			this.voteService.bps.forEach((elem) => {
-				elem.checked = currentVotes.indexOf(elem.account) !== -1;
-			});
-			this.updateCounter();
-		} else {
-			this.voteService.proxies.forEach((elem) => {
-				elem.checked = false;
-				this.updateCounterProxy(elem.account);
-			});
+			if (!this.voteService.voteType) {
+				const currentVotes = selectedAccount.details['voter_info']['producers'];
+				this.nVotes = currentVotes.length;
+				this.voteService.bps.forEach((elem) => {
+					elem.checked = currentVotes.indexOf(elem.account) !== -1;
+				});
+				this.updateCounter();
+			} else {
+				const currentVotes = selectedAccount.details['voter_info']['proxy'];
+				this.nVotesProxy = currentVotes !== '' ? 1 : 0;
+				this.voteService.proxies.forEach((elem) => {
+					elem.checked = currentVotes.indexOf(elem.account) !== -1;
+				});
+			}
 		}
 	}
 
@@ -595,6 +600,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			this.voteService.listProducers().then(() => {
 				this.busyList = false;
 				this.setCheckListVote(acc.name);
+				this.loadPlacedVotes(acc);
 			}).catch(err => {
 				console.log('Load Account List Producers Error:', err);
 			});
@@ -602,6 +608,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			this.voteService.listProxies().then(() => {
 				this.busyList = false;
 				this.setCheckListVote(acc.name);
+				this.loadPlacedVotes(acc);
 			}).catch(err => {
 				console.log('Load Account List Proxies Error:', err);
 			});

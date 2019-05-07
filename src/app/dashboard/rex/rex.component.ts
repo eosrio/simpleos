@@ -1022,7 +1022,10 @@ export class RexComponent implements OnDestroy {
 				if (event === 'done') {
 					this.updateREXData(auth.actor);
 					this.updateGlobalRexData();
-					this.sellForm.reset();
+					this.sellForm.patchValue({
+						REXamount: '',
+						auto: true
+					});
 					subs.unsubscribe();
 				}
 				if (event === 'modal_closed') {

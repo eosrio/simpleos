@@ -393,9 +393,10 @@ export class VotingService {
 								reg: false
 							};
 							this.proxies.push(proxiesMetadata);
+							resolve(this.proxies[idx]);
 						});
 					});
-					resolve(this.proxies);
+
 				});
 			} else {
 				await this.eosjs.getProxies(this.aService.activeChain['proxyRegistry']).then(proxy => {

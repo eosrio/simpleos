@@ -43,7 +43,7 @@
 												<span
 													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button type="button" class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
 															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>
@@ -598,7 +598,7 @@
 												<span
 													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button type="button" class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
 															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>

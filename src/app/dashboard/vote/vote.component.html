@@ -262,7 +262,7 @@
 							<p-sortIcon [field]="'total_votes'"></p-sortIcon>
 						</th>
 						<th style="width: 100px;">
-							{{nVotes}}/{{voteService.voteType === 1 ? '1' : '30'}}
+							{{voteService.voteType === 1 ? nVotesProxy+'/1' : nVotes+'/30'}}
 						</th>
 					</tr>
 					<tr class="tr-canexpand" *ngIf="busyList && voteService.hasList">
