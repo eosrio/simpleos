@@ -52,3 +52,10 @@ Thumbs.db
 node_modules
 dist
 ng-dist
+ng-dist/vendor.js
+ng-dist/styles.css
+ng-dist/scripts.js
+ng-dist/polyfills.js
+ng-dist/main.js
+ng-dist/index.html
+ng-dist/3rdpartylicenses.txt
