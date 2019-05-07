@@ -1,5 +1,5 @@
-<div class="container" style="height: 100%;">
-	<div class="card header-card animate">
+<div class="container" style="height: 100%;overflow-x: hidden;">
+	<div #topRef class="card header-card animate">
 		<div class="clr-row flex-items-xs-around">
 			<div class="clr-col-lg-4 clr-col-md-5 text-left">
 				<h4 class="title">Referendum &nbsp;
@@ -86,11 +86,9 @@
 								<div style="height: 70px" [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
 							</h4>
 
-							<!--div style="color: #2e7db2;">created: {{proposal.created_at}}</div>
-                            <div style="color: #2e7db2;">expires: {{proposal.expires_at}}</div-->
 							<ng-container *ngIf="p.proposal.json_data">
 								<div class="gray text-justify proposal-content"
-									 [innerHTML]="contentStyle(p['fuseJsHighlighted'].proposal.json_data.content,'text-muted')"></div>
+									 [innerHTML]="sanitizer.bypassSecurityTrustHtml (contentStyle(p['fuseJsHighlighted'].proposal.json_data.content,'text-muted'))"></div>
 							</ng-container>
 						</div>
 
@@ -182,7 +180,7 @@
 	<br>
 	<div class="clr-row ">
 		<div class="clr-col-12 pagination-row text-center">
-			<pagination-controls (pageChange)="page = $event"></pagination-controls>
+			<pagination-controls (pageChange)="page = $event;onPage(topRef)" ></pagination-controls>
 		</div>
 	</div>
 	<br>

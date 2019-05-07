@@ -89,6 +89,11 @@ export class ReferendumComponent implements OnInit {
 		this.sMType = '';
 	}
 
+	onPage($element) {
+		$element.scrollIntoView({behavior: "smooth", block: "start", inline: "nearest"});
+		window.scrollTo(0,-107);
+	}
+
 	ngOnInit(): void {
 		setTimeout(() => {
 			this.loadVoteTally();
