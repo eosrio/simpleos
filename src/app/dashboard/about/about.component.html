@@ -1,21 +1,21 @@
 <div class="container" style="height: 100%">
-  <div class="row animate" style="padding-top: 15px;">
-    <div class="col-lg-6">
+  <div class="clr-row animate" style="padding-top: 15px;">
+    <div class="clr-col-lg-6">
       <h1><span class="white">About </span><span class="blue">EOS Rio</span></h1>
-      <h5 style="margin-top: 10px;">Producer name: <span class="blue">eosriobrazil</span></h5>
+      <h5 *ngIf="aService.activeChain.features.vote" style="margin-top: 10px;">Producer name: <span class="blue">{{aService.activeChain.eosrioBP}}</span></h5>
       <p class="paragraph">EOS Rio is a Block Producer based in Rio de Janeiro.</p>
       <p class="paragraph">Located in Brazil, EOS Rio contributes to the geographical and cultural distribution of the
         EOS network,
         which is an important feature of a reliable and robust Delegated Proof of Stake (DPoS) network.</p>
       <p class="paragraph">We are a team of crypto-enthusiasts and EOS supporters who have been following EOS.IO
-        development since
-        its first release, contributing with discussion, tests, and offering open-source tools for the
-        community, such as a control panel for other Block Producers, a sandbox environment for developers, a
-        tool to map and optimize network topology and now, SimplEOS :)</p>
-      <p class="paragraph">For more information on our projects, visit <a (click)="extOpen('https://eosrio.io')"
+        development since its first release, contributing with discussion, tests, and offering open-source tools for the
+        community, such as Hyperion, a scalable Full History API for EOSIO based blockchains, and SimplEOS :)</p>
+      <p class="paragraph">For more information, visit <a (click)="extOpen('https://eosrio.io')"
                                                                           class="website blue" style="cursor: pointer">eosrio.io</a></p>
-      <p class="paragraph"><strong class="text-white">Help us continue funding this projects by voting for us as Block Producers
+      <p class="paragraph"><strong class="text-white">Help us continue funding these projects by voting on us
         :)</strong></p>
+      <p>
+		<p class="paragraph"><strong class="text-white">Go to SimplEOS FAQ for any <span class="blue" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>. <br> Our beloved Telegram BOT can also help you: <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
       <p>
         <a (click)="extOpen('https://steemit.com/@eosrio')" class="social-icon">
           <img src="assets/steemit.png" class="steemit">
@@ -31,7 +31,7 @@
         </a>
       </p>
     </div>
-    <div class="col-lg-6">
+    <div class="clr-col-lg-6">
       <img src="assets/about_eosrio2.png" style="border-radius: 5px; width: 100%;">
     </div>
   </div>

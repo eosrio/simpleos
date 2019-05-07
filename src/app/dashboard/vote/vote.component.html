@@ -1,7 +1,7 @@
 <!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
 <div class="container" style="height: 100%; overflow-x: hidden;">
-	<div class="row animate" style="padding-top: 15px;">
-		<div class="col-lg-6">
+	<div class="clr-row animate" style="padding-top: 15px;">
+		<div class="clr-col-lg-6">
 			<div class="card info-card">
 				<div class="card-block text-center">
 					<div class="total" style="color: #b0b0b7">TOTAL
@@ -12,6 +12,10 @@
 					<div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
 						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
+					<!--					<div *ngIf="unstaking > 0" style="color: white">-->
+					<!--						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(totalBalance) | number :-->
+					<!--						'1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}-->
+					<!--					</div>-->
 				</div>
 			</div>
 			<div class="card info-card">
@@ -27,7 +31,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-lg-6">
+		<div class="clr-col-lg-6">
 			<div class="card info-card">
 				<div class="card-block">
 					<div class="instruction expandable">Stake your {{aService.activeChain['symbol']}}
@@ -36,8 +40,8 @@
 							<span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
 						</a>
 					</div>
-					<div class="row">
-						<div class="col-lg-6">
+					<div class="clr-row">
+						<div class="clr-col-lg-6">
 							<mat-form-field class="input-width">
 								<input matInput type="text" placeholder="Value (%)"
 									   (blur)="updateStakeValue(); checkPercent();"
@@ -46,7 +50,7 @@
 								<span class="suffix" matSuffix>%</span>
 							</mat-form-field>
 						</div>
-						<div class="col-lg-6">
+						<div class="clr-col-lg-6">
 							<mat-form-field class="input-width">
 								<input matInput type="text" min="1"
 									   placeholder="Value ({{aService.activeChain['symbol']}})"
@@ -67,25 +71,27 @@
 									[(ngModel)]="percenttoStake">
 						</mat-slider>
 					</div>
-					<small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option: Change Staking Ratio</small>
+					<small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option: Change
+						Staking Ratio
+					</small>
 					<div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}" style="margin-top: 12px;">
 						<div>
-							<div class="row justify-content-center" style="color: #b0b0b7">
-								<div class="col-lg-4"></div>
-								<div class="col-lg-2 text-center">
+							<div class="clr-row" style="color: #b0b0b7">
+								<div class="clr-col-lg-4"></div>
+								<div class="clr-col-lg-2 text-center">
 									BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
 								</div>
-								<div class="col-lg-2" style="text-align: center">
+								<div class="clr-col-lg-2" style="text-align: center">
 									<span style="margin-left: 20px;">RECOMMENDED
 									<br><span style="position: absolute; margin-left: 41px;">|</span>
 									</span>
 								</div>
 							</div>
-							<div class="row" style="color: #b0b0b7">
-								<div class="col-lg-2 text-right">
+							<div class="clr-row" style="color: #b0b0b7">
+								<div class="clr-col-lg-2 text-right">
 									NET FOCUS
 								</div>
-								<div class="col-lg-8">
+								<div class="clr-col-lg-8">
 									<mat-slider class="stake-slider"
 												[min]="20"
 												[max]="90"
@@ -97,7 +103,7 @@
 												[(ngModel)]="stakingRatio">
 									</mat-slider>
 								</div>
-								<div class="col-lg-2 text-left">
+								<div class="clr-col-lg-2 text-left">
 									CPU FOCUS
 								</div>
 							</div>
@@ -107,8 +113,8 @@
 						</span>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-lg-5">
+					<div class="clr-row">
+						<div class="clr-col-lg-5">
 							<button (click)="setStake()" class="btn btn-outline btn-info-outline"
 									style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
 							</button>
@@ -117,13 +123,13 @@
 							   *ngIf="minstake">
 								<fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
 								<span class="tooltip-content">
-                  Please, be careful when staking the minimum. <br>
-                  This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
-                  However, if you just want to remove the tokens to an exchange, that is fine.
-                </span>
+									Please, be careful when staking the minimum. <br>
+									This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
+									However, if you just want to remove the tokens to an exchange, that is fine.
+								</span>
 							</a>
 						</div>
-						<div class="col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
+						<div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
 
 							<span class="text-white" style="font-weight: 600">CPU: </span>
 							<span *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
@@ -138,8 +144,8 @@
 		</div>
 	</div>
 
-	<div class="row animate">
-		<div class="col-lg-12">
+	<div class="clr-row animate">
+		<div class="clr-col-lg-12">
 			<div class="card info-card">
 				<div class="card-block" style="padding: 0;">
 					<p-accordion class="map">
@@ -155,38 +161,86 @@
 		</div>
 	</div>
 
-	<div class="row animate" *ngIf="aService.activeChain.features.vote">
-		<div class="col-lg-12" *ngIf="voteService">
-			<p-table #dt [value]="voteService.bps" [globalFilterFields]="['name','account','location']"
+	<div class="clr-row animate" *ngIf="aService.activeChain.features.vote">
+		<div class="clr-col-lg-12" *ngIf="voteService">
+			<p-table #dt [value]="voteService.voteType ? voteService.proxies : voteService.bps"
+					 [globalFilterFields]="['reg','name','account','location']"
 					 [responsive]="true" dataKey="account" [totalRecords]="nbps" [alwaysShowPaginator]="false"
-					 class="bps-table" [paginator]="true" [rows]="50">
+					 class="bps-table" [paginator]="true" sortField="position" [rows]="50"
+					 rowExpandMode="single">
 				<ng-template pTemplate="caption">
-					<div class="row flex-items-xs-between">
-						<div class="col-lg-5 col-md-5 text-left">
+
+					<mat-tab-group id="vote-tabs" (selectedIndexChange)="voteOption($event)"
+								   [selectedIndex]="voteService.voteType">
+						<mat-tab label="Vote for Block Producers"></mat-tab>
+						<mat-tab label="Vote through a Proxy"></mat-tab>
+					</mat-tab-group>
+
+					<div class="clr-row flex-items-xs-between vote-sub-header">
+
+						<div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="!voteService.voteType">
 							<h4 class="title">Vote for Block Producers! </h4>
 							<h5 class="subtitle mt-0">You can vote for up to 30</h5>
 						</div>
-						<div class="col-lg-3 col-md-6 text-right">
+						<div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="voteService.voteType">
+							<h4 class="title">Vote through a Proxy! </h4>
+							<h5 class="subtitle mt-0">Choose a proxy that will vote in the block producers for you</h5>
+						</div>
+						<div class="clr-col-lg-3 clr-col-md-6  text-right mt-3" *ngIf="voteService.hasList">
 							<mat-form-field class="searchbar">
 								<input type="text" matInput placeholder="Search..."
-									   (input)="dt.filterGlobal($event.target.value, 'contains')">
+									   (input)="dt.filterGlobal($event.target['value'], 'contains')">
 								<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
 							</mat-form-field>
 						</div>
-						<div class="col-lg text-right">
+						<div class="clr-col-lg{{!voteService.hasList ? '' : '-3 clr-col-md-6'}} text-center mt-3"
+							 *ngIf="!voteService.hasList">
+							<form [formGroup]="frmForProxy">
+								<mat-form-field class="searchbar" class="input">
+									<input matInput #proxyName type="text" formControlName="proxyName"
+										   placeholder="Vote for {{voteService.voteType?'Proxy':'Producer(s)'}}"
+										   (keyup.enter)="validateProxy(proxyName.value)">
+									<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
+									<mat-hint class="{{!isValidAccount?'error':'hint'}}" style="font-size: 12px;">
+										<ng-container
+											*ngIf="isValidAccount && (aService.selected.getValue().details['voter_info']&&aService.selected.getValue().details['voter_info']['proxy']!=='')">
+											Current vote <span
+											class="blue">{{aService.selected.getValue().details['voter_info']['proxy']}}</span>
+										</ng-container>
+										<ng-container *ngIf="!isValidAccount">
+											Input a valid proxy account name
+										</ng-container>
+
+									</mat-hint>
+								</mat-form-field>
+
+								<button (click)="validateProxy(proxyName.value)" class="btn btn-info-outline"
+										style="margin-top: 12px; margin-right: 25px; float:right;"
+										[disabled]="nVotes > 30">
+									CONFIRM VOTE{{voteService.voteType ? '' : '(S)'}}
+								</button>
+							</form>
+						</div>
+						<div class="clr-col-lg text-right mt-3" *ngIf="voteService.hasList">
 							<button (click)="processVotes()" class="btn btn-info-outline"
 									style="margin-top: 12px; margin-right: 25px" [disabled]="nVotes > 30">
-								CONFIRM VOTES
+								CONFIRM VOTE{{voteService.voteType ? '' : '(S)'}}
 							</button>
 						</div>
+
 					</div>
 				</ng-template>
 				<ng-template pTemplate="header">
-					<tr>
+					<tr *ngIf="voteService.hasList">
 						<th style="width: 50px;">
 						</th>
-						<th style="width: 50px; padding-left: 20px">
+						<th [pSortableColumn]="'position'" style="width: 55px; padding-left: 15px">
 							#
+							<p-sortIcon [field]="'position'"></p-sortIcon>
+						</th>
+						<th *ngIf="voteService.voteType" [pSortableColumn]="'reg'">
+							registered
+							<p-sortIcon [field]="'reg'"></p-sortIcon>
 						</th>
 						<th [pSortableColumn]="'name'">
 							name
@@ -196,7 +250,7 @@
 							account
 							<p-sortIcon [field]="'account'"></p-sortIcon>
 						</th>
-						<th [pSortableColumn]="'location'">
+						<th [pSortableColumn]="'location'" *ngIf="!voteService.voteType">
 							location
 							<p-sortIcon [field]="'location'"></p-sortIcon>
 						</th>
@@ -208,12 +262,23 @@
 							<p-sortIcon [field]="'total_votes'"></p-sortIcon>
 						</th>
 						<th style="width: 100px;">
-							{{nVotes}}/30
+							{{nVotes}}/{{voteService.voteType === 1 ? '1' : '30'}}
 						</th>
+					</tr>
+					<tr class="tr-canexpand" *ngIf="busyList && voteService.hasList">
+						<td class="text-right" colspan="8">
+							<div class="clr-col-auto" style="margin: 0 auto; text-align: center;">
+								<fa-layers class="mt-2 mb-1">
+									<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+											 style="color:#0094d2;"></fa-icon>
+								</fa-layers>
+							</div>
+						</td>
 					</tr>
 				</ng-template>
 				<ng-template pTemplate="body" let-item let-expanded="expanded" let-index="rowIndex">
-					<tr [pSelectableRow]="item" class="tr-canexpand">
+					<tr [pSelectableRow]="item" class="tr-canexpand" (click)="getProxyVotes(item.account)"
+						*ngIf="!busyList && voteService.hasList">
 						<td class="text-right expandable" [pRowToggler]="item">
 							<fa-icon [icon]="['fal', expanded ? 'search-minus' : 'search-plus']"
 									 size="lg" class="blue">
@@ -222,13 +287,17 @@
 						<td class="text-center" [pRowToggler]="item" style="padding-left: 20px">
 							{{item.position}}
 						</td>
+						<td *ngIf="voteService.voteType" class="text-center" [pRowToggler]="item">
+							<fa-icon *ngIf="item.reg === true || item.reg === 'Registered'" [icon]="['far', 'check']"
+									 size="lg" class="blue"></fa-icon>
+						</td>
 						<td class="text-center" [pRowToggler]="item">
 							{{item.name}}
 						</td>
 						<td class="text-center" [pRowToggler]="item">
 							{{item.account}}
 						</td>
-						<td class="text-center" [pRowToggler]="item">
+						<td class="text-center" [pRowToggler]="item" *ngIf="!voteService.voteType">
 							{{item.location}}
 						</td>
 						<td class="text-center">
@@ -256,27 +325,72 @@
 							</ul>
 						</td>
 						<td class="text-center" [pRowToggler]="item">
-							{{item.total_votes}}
+							<span *ngIf="voteService.voteType">
+								{{item.total_votes}}
+							</span>
+							<span *ngIf="!voteService.voteType">
+								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left"
+								>
+								{{item.total_votes}}
+									<span class="tooltip-content" style="width:3rem!important;">
+									{{item.total_votes_eos}}
+								</span>
+							</a>
+
+							</span>
 						</td>
 						<td>
-							<mat-checkbox [(ngModel)]="item.checked" (change)="updateCounter()">Vote</mat-checkbox>
+							<mat-checkbox *ngIf="!voteService.voteType" [(ngModel)]="item.checked"
+										  (change)="updateCounter()" ngDefaultControl>Vote
+							</mat-checkbox>
+
+							<mat-radio-button *ngIf="voteService.voteType" [checked]="item.checked"
+											  [value]="item.account" (change)="updateCounterProxy(item.account)"
+											  ngDefaultControl>Vote
+							</mat-radio-button>
 						</td>
 					</tr>
 				</ng-template>
 				<ng-template pTemplate="rowexpansion" let-item>
-					<tr class="tr-expanded">
+					<tr class="tr-expanded" *ngIf="voteService.hasList">
 						<td colspan="7">
-							<div class="row row-expanded flex-items-xs-between">
-								<div class="col-xs-auto">
+							<div class="clr-row row-expanded flex-items-xs-between">
+								<div class="clr-col-auto">
 									<div>
 										<img src="{{item.logo_256}}" style="width: 150px; border-radius: 5px">
 									</div>
 								</div>
-								<div class="col-xs-6">
+								<div class="clr-col-{{voteService.voteType ? '9' : '6'}}">
 									<div *ngIf="item.code">
-                    <span class="blue">
-                        <a (click)="extOpen(item.code)" style="cursor: pointer;">Code of conduct</a>
-                    </span>
+										<span class="blue">
+											<a (click)="extOpen(item.code)" style="cursor: pointer;">Code of conduct</a>
+										</span>
+									</div>
+									<div *ngIf="item.slogan" style="margin-top: 10px;">
+										<span class="blue" style="font-size: 32px;">
+											{{item.slogan}}
+										</span>
+									</div>
+									<div *ngIf="voteService.voteType && listProxyVote" class="text-left">
+										<h3 class="blue">Voting For ({{listProxyVote.length}})
+											Producer{{listProxyVote.length === 1 ? '' : 's'}}:</h3>
+										<span *ngFor="let producer of listProxyVote"
+											  class="{{producer === 'eosriobrazil' ? 'blue text-bold' : 'white'}}"
+											  style="clear:both; margin:0 5px;">
+											{{producer}}
+										</span>
+									</div>
+									<div *ngIf="item.philosophy">
+										<h3 class="blue">Philosophy:</h3>
+										<span>
+											{{item.philosophy}}
+										</span>
+									</div>
+									<div *ngIf="item.background">
+										<h3 class="blue">Background:</h3>
+										<span>
+											{{item.background}}
+										</span>
 									</div>
 									<div *ngIf="item.website">
 										<span class="blue">Website: </span>
@@ -285,7 +399,7 @@
 									<div *ngIf="item.email">
 										<span class="blue">Email:</span> {{item.email}}
 									</div>
-									<div>
+									<div style="margin-top: 10px">
 										<span class="blue" *ngIf="item.social">All social media:</span>
 									</div>
 									<div style="margin-top: 5px;">
@@ -320,7 +434,7 @@
 													<fa-icon [icon]="['fab', 'github']" size="lg"></fa-icon>
 												</a>
 											</li>
-											<li class="social-icon" *ngIf="">
+											<li class="social-icon" *ngIf="item.social['reddit']">
 												<a (click)="extOpen('https://www.reddit.com/user/' + item.social['reddit'])">
 													<fa-icon [icon]="['fab', 'reddit']" size="lg"></fa-icon>
 												</a>
@@ -338,27 +452,29 @@
 										</ul>
 									</div>
 								</div>
-								<div class="col-xs-3 text-right">
+								<div *ngIf="!voteService.voteType" class="clr-col-3 text-right">
 									<span *ngIf="item.status === 'producing'"
 										  class="label label-success">producing</span>
 									<span *ngIf="item.status === 'standby'" class="label label-warning">stand-by</span>
 								</div>
+
 							</div>
 						</td>
 					</tr>
 				</ng-template>
 				<ng-template pTemplate="summary">
-					<div class="ui-helper-clearfix">
+					<div class="ui-helper-clearfix" *ngIf="voteService.hasList">
 						<button (click)="processVotes()" class="btn btn-info-outline"
 								style="margin-top: 10px; margin-right: 25px; float:right;" [disabled]="nVotes > 30"
 								pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
-							CONFIRM VOTES
+							CONFIRM VOTE{{voteService.voteType ? '' : '(S)'}}
 						</button>
 					</div>
 				</ng-template>
 			</p-table>
 		</div>
 	</div>
+
 </div>
 
 <clr-modal [(clrModalOpen)]="stakeModal">
@@ -391,15 +507,16 @@
 <clr-modal [(clrModalOpen)]="voteModal" [clrModalStaticBackdrop]="true">
 	<h3 class="modal-title text-white">Confirm <span class="blue">vote</span></h3>
 	<div class="modal-body">
-		<h4 class="text-white">Do you confirm voting on the following BPs?</h4>
-		<h5 class="mt-0">{{selectedBPs.join(', ')}}</h5>
+		<h4 class="text-white">Do you confirm voting on the following {{voteService.voteType ? 'Proxy' : 'BPs'}}?</h4>
+		<h5 class="mt-0">{{selectedVotes.join(', ')}}</h5>
 		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
 			<p-accordionTab header="By submiting this action, you agree to the voteproducer Terms & Conditions">
 				The intent of the voteproducer action is to cast a valid vote for up to 30 BP candidates.
 				<br><br>
 				As an authorized party I, {{ fromAccount }}, wish to vote on behalf of {{ fromAccount }} in favor of the
 				block
-				producer candidates {{selectedBPs.join(', ')}} with a voting weight equal to all tokens currently owned
+				producer candidates {{!voteService.voteType ? selectedVotes.join(', ') : listProxyVote.join(', ')}} with
+				a voting weight equal to all tokens currently owned
 				by {{
 				fromAccount }} and staked for CPU or bandwidth.
 				<br><br>

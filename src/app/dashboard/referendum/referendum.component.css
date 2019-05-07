@@ -39,7 +39,30 @@ li:hover {
 	background-color: #0079b8 !important;
 	color: white !important;
 }
+/deep/.vote-info.ui-tooltip{
+	min-width:200px!important;
+}
+/deep/.text-muted {
+	color: #b1b1b1!important;
+}
+/deep/h4.text-muted2 {
+	color:#dedede !important;
+}
 
+/deep/span.link-ref {
+	color: #0079b8 !important;
+	cursor: pointer;
+}
+
+/deep/span.link-ref:hover {
+	text-decoration: underline #0079b8;
+}
+
+/deep/hr.lineHR{
+	border: 0;
+	border-bottom: 1px solid #0094d2;
+	margin-top: 15px;
+}
 /*.modal-header {*/
 /*border-bottom: none;*/
 /*padding: 0 0 0rem !important;*/
@@ -77,13 +100,13 @@ li:hover {
 }
 
 
-/deep/ .mat-select-value {
+/deep/ .filter-selector .mat-select-value {
 	color: #0094d2;
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
-/deep/ .mat-option {
+/deep/ .filter-option.mat-option {
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;
 	/*background-color: #333333;*/
@@ -93,7 +116,7 @@ li:hover {
 	background: #333333;
 }
 
-/deep/ .mat-primary .mat-option.mat-selected:not(.mat-option-disabled) {
+/deep/ .mat-primary .filter-option.mat-option.mat-selected:not(.mat-option-disabled) {
 	color: #0094d2;
 }
 
@@ -159,7 +182,7 @@ li:hover {
 
 .proposal-content {
 	overflow-y: auto;
-	height: 106px;
+	height: 160px;
 	padding: 5px;
 	overflow-x: hidden;
 }
@@ -202,4 +225,9 @@ li:hover {
 
 /deep/ .pagination-row .ngx-pagination .disabled {
 	color: #737373;
+}
+
+.proposal-card:hover {
+	cursor: pointer;
+	background-color: #3b3b3b;
 }

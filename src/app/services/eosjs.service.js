@@ -114,6 +114,7 @@ var EOSJSService = /** @class */ (function () {
                 }
                 _this.eos['contract']('eosio').then(function (contract) {
                     _this.eosio = contract;
+                    // console.log(savedAcc);
                     resolve(savedAcc);
                 });
             }).catch(function (err) {
@@ -127,14 +128,18 @@ var EOSJSService = /** @class */ (function () {
     EOSJSService.prototype.getAccountInfo = function (name) {
         return this.eos['getAccount'](name);
     };
-    EOSJSService.prototype.getAccountActions = function (name, last_ib) {
+    EOSJSService.prototype.getAccountActions = function (account, offset, position) {
         var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this.eos['getActions'](name, -1, 0).then(function (data) {
-                resolve(data);
+        return new Promise(function (resolve2, reject2) {
+            _this.eos['getActions']({
+                account_name: account,
+                offset: offset,
+                pos: position
+            }).then(function (data) {
+                resolve2(data);
                 // console.log(data);
             }).catch(function (error) {
-                reject(error);
+                reject2(error);
                 // console.log(error);
             });
         });
@@ -192,6 +197,22 @@ var EOSJSService = /** @class */ (function () {
             table: 'refunds'
         });
     };
+    EOSJSService.prototype.getProposals = function (contract, limmit) {
+        if (this.eos) {
+            return this.eos['getTableRows']({
+                json: true,
+                code: contract,
+                scope: contract,
+                table: 'proposal',
+                limit: limmit
+            });
+        }
+        else {
+            return new Promise(function (resolve) {
+                resolve([]);
+            });
+        }
+    };
     EOSJSService.prototype.listDelegations = function (account) {
         return this.eos['getTableRows']({
             json: true,
@@ -201,7 +222,7 @@ var EOSJSService = /** @class */ (function () {
         });
     };
     EOSJSService.prototype.unDelegate = function (from, receiver, net, cpu, symbol) {
-        //console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
+        // console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
         return this.eos.undelegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol));
     };
     EOSJSService.prototype.delegateBW = function (from, receiver, net, cpu, symbol) {
@@ -229,10 +250,11 @@ var EOSJSService = /** @class */ (function () {
     };
     EOSJSService.prototype.loadPublicKey = function (pubkey) {
         var _this = this;
-        return new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject2) {
             if (_this.ecc['isValidPublic'](pubkey)) {
+                var tempAccData_1 = [];
                 _this.getKeyAccounts(pubkey).then(function (data) {
-                    console.log('load', data);
+                    // console.log('load', data);
                     // if (data['account_names'].length > 0) {
                     if (data.length > 0) {
                         var promiseQueue_1 = [];
@@ -241,11 +263,12 @@ var EOSJSService = /** @class */ (function () {
                             var tempPromise = new Promise(function (resolve1, reject1) {
                                 // this.getAccountInfo(acc).then((acc_data) => {
                                 _this.getAccountInfo(acc.account).then(function (acc_data) {
-                                    console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
+                                    tempAccData_1.push(acc_data);
                                     // if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
                                     _this.getTokens(acc_data['account_name']).then(function (tokens) {
                                         acc_data['tokens'] = tokens;
                                         _this.accounts[acc] = acc_data;
+                                        tempAccData_1.push(acc_data);
                                         resolve1(acc_data);
                                     }).catch(function (err) {
                                         console.log(err);
@@ -264,7 +287,11 @@ var EOSJSService = /** @class */ (function () {
                                 publicKey: pubkey
                             });
                         }).catch(function () {
-                            reject({ message: 'non_active' });
+                            console.log(data);
+                            reject2({
+                                message: 'non_active',
+                                accounts: data
+                            });
                         });
                     }
                     else if (data['account_names'].length > 0) {
@@ -273,8 +300,8 @@ var EOSJSService = /** @class */ (function () {
                             // data.forEach((acc) => {
                             var tempPromise = new Promise(function (resolve1, reject1) {
                                 _this.getAccountInfo(acc).then(function (acc_data) {
-                                    // this.getAccountInfo(acc.account).then((acc_data) => {
-                                    console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
+                                    tempAccData_1.push(acc_data);
+                                    // console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
                                     if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
                                         _this.getTokens(acc_data['account_name']).then(function (tokens) {
                                             acc_data['tokens'] = tokens;
@@ -298,32 +325,52 @@ var EOSJSService = /** @class */ (function () {
                                 publicKey: pubkey
                             });
                         }).catch(function () {
-                            reject({ message: 'non_active' });
+                            console.log(data);
+                            reject2({
+                                message: 'non_active',
+                                accounts: tempAccData_1
+                            });
                         });
                     }
                     else {
-                        reject({ message: 'no_account' });
+                        reject2({ message: 'no_account' });
                     }
+                }).catch(function (api_error) {
+                    console.log(api_error);
+                    reject2({ message: 'api_error' });
                 });
             }
             else {
-                reject({ message: 'invalid' });
+                reject2({ message: 'invalid' });
             }
         });
     };
     EOSJSService.prototype.storeAccountData = function (accounts) {
-        if (accounts) {
-            if (accounts.length > 0) {
-                this.accounts.next(accounts);
-                var payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + this.chainID));
-                payload.updatedOn = new Date();
-                payload.accounts = accounts;
-                localStorage.setItem('simpleos.accounts.' + this.chainID, JSON.stringify(payload));
-            }
-        }
+        return __awaiter(this, void 0, void 0, function () {
+            var payload;
+            return __generator(this, function (_a) {
+                if (accounts) {
+                    if (accounts.length > 0) {
+                        this.accounts.next(accounts);
+                        payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + this.chainID));
+                        payload.updatedOn = new Date();
+                        payload.accounts = accounts;
+                        localStorage.setItem('simpleos.accounts.' + this.chainID, JSON.stringify(payload));
+                        return [2 /*return*/, true];
+                    }
+                    else {
+                        return [2 /*return*/, false];
+                    }
+                }
+                else {
+                    return [2 /*return*/, null];
+                }
+                return [2 /*return*/];
+            });
+        });
     };
     EOSJSService.prototype.listProducers = function () {
-        return this.eos['getProducers']({ json: true, limit: 200 });
+        return this.eos['getProducers']({ json: true, limit: 100 });
     };
     EOSJSService.prototype.getTokens = function (name) {
         return this.eos['getCurrencyBalance']('eosio.token', name);
@@ -351,20 +398,17 @@ var EOSJSService = /** @class */ (function () {
     EOSJSService.prototype.pushActionContract = function (contract, action, form, account) {
         var _this = this;
         var options = { authorization: account + '@active' };
-        console.log(form);
-        return new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject2) {
             _this.eos['contract'](contract).then(function (tc) {
-                console.log('tem contract', tc);
                 if (tc[action]) {
                     tc[action](form, options).then(function (dt) {
                         resolve(dt);
                     }).catch(function (err) {
-                        reject(err);
+                        reject2(err);
                     });
                 }
             }).catch(function (err2) {
-                console.log('tem erro contract', err2);
-                reject(err2);
+                reject2(err2);
             });
         });
     };
@@ -383,7 +427,7 @@ var EOSJSService = /** @class */ (function () {
                     if (contract === 'eosio.token') {
                         return [2 /*return*/, new Promise(function (resolve, reject) {
                                 _this.eos['transfer'](from, to, amount, memo, function (err, trx) {
-                                    console.log(err, trx);
+                                    // console.log(err, trx);
                                     if (err) {
                                         reject(JSON.parse(err));
                                     }
@@ -400,7 +444,7 @@ var EOSJSService = /** @class */ (function () {
                                         if (tokenContract['transfer']) {
                                             var options = { authorization: from + '@active' };
                                             tokenContract['transfer'](from, to, amount, memo, options, function (err2, trx) {
-                                                console.log(err, trx);
+                                                // console.log(err, trx);
                                                 if (err2) {
                                                     reject(JSON.parse(err2));
                                                 }
@@ -427,6 +471,7 @@ var EOSJSService = /** @class */ (function () {
     EOSJSService.prototype.checkPvtKey = function (k) {
         try {
             var pubkey = this.ecc['privateToPublic'](k);
+            console.log(pubkey);
             return this.loadPublicKey(pubkey);
         }
         catch (e) {
@@ -478,7 +523,7 @@ var EOSJSService = /** @class */ (function () {
     EOSJSService.prototype.startMonitoringLoop = function () {
         var _this = this;
         if (!this.txMonitorInterval) {
-            console.log('Starting monitoring loop!');
+            // console.log('Starting monitoring loop!');
             this.txMonitorInterval = setInterval(function () {
                 _this.eos['getInfo']({}).then(function (info) {
                     var lib = info['last_irreversible_block_num'];
@@ -516,17 +561,13 @@ var EOSJSService = /** @class */ (function () {
     };
     EOSJSService.prototype.voteProducer = function (voter, list) {
         return __awaiter(this, void 0, void 0, function () {
-            var currentVotes;
+            var currentVotes, options;
             return __generator(this, function (_a) {
                 if (list.length <= 30) {
                     currentVotes = list;
                     currentVotes.sort();
-                    // const info = await this.eos['getInfo']({}).then(result => {
-                    //   return result;
-                    // });
-                    // const broadcast_lib = info['last_irreversible_block_num'];
-                    console.log(this.eos);
-                    return [2 /*return*/, this.eosio['voteproducer'](voter, '', currentVotes).then(function (data) {
+                    options = { authorization: voter + '@active' };
+                    return [2 /*return*/, this.eosio['voteproducer'](voter, '', currentVotes, options).then(function (data) {
                             return JSON.stringify(data);
                         }).catch(function (err) {
                             return err;
@@ -557,59 +598,118 @@ var EOSJSService = /** @class */ (function () {
             });
         });
     };
-    EOSJSService.prototype.stake = function (account, amount, symbol) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (amount > 2) {
-                var split = ((amount / 2) / 10000).toFixed(4);
-                console.log(split);
-                _this.eos['delegatebw']({
-                    from: account,
-                    receiver: account,
-                    stake_net_quantity: split + ' ' + symbol,
-                    stake_cpu_quantity: split + ' ' + symbol,
-                    transfer: 0
-                }, function (err, result) {
-                    if (err) {
-                        console.log(err);
-                        reject(err);
-                    }
-                    else {
-                        console.log(result);
-                        resolve();
-                    }
-                });
-            }
-            else {
-                reject();
-            }
-        });
-    };
-    EOSJSService.prototype.unstake = function (account, amount, symbol) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this.eos['getAccount'](account).then(function (accountInfo) {
-                var current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
-                if (current_stake - amount >= 10000) {
-                    var split = ((amount / 2) / 10000).toFixed(4);
-                    _this.eos['undelegatebw']({
-                        from: account,
-                        receiver: account,
-                        unstake_net_quantity: split + ' ' + symbol,
-                        unstake_cpu_quantity: split + ' ' + symbol
-                    }, function (err, result) {
-                        if (err) {
-                            console.log(err);
-                            reject(err);
+    EOSJSService.prototype.changebw = function (account, amount, symbol, ratio) {
+        return __awaiter(this, void 0, void 0, function () {
+            var cpu_v, net_v, accountInfo, refund, liquid_bal, ref_cpu, ref_net, liquid, current_stake, new_total, new_cpu, new_net, cpu_diff, net_diff;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.eos['getAccount'](account)];
+                    case 1:
+                        accountInfo = _a.sent();
+                        refund = accountInfo['refund_request'];
+                        liquid_bal = accountInfo['core_liquid_balance'];
+                        ref_cpu = 0;
+                        ref_net = 0;
+                        liquid = 0;
+                        if (liquid_bal) {
+                            liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
                         }
-                        else {
-                            console.log(result);
-                            resolve();
+                        if (refund) {
+                            ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
+                            ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
                         }
-                    });
-                }
-                else {
-                    reject();
+                        current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+                        new_total = current_stake + amount;
+                        new_cpu = new_total * ratio;
+                        new_net = new_total * (1 - ratio);
+                        cpu_diff = new_cpu - accountInfo['cpu_weight'];
+                        net_diff = new_net - accountInfo['net_weight'];
+                        if (cpu_diff > (ref_cpu + liquid)) {
+                            net_diff += (cpu_diff - (ref_cpu + liquid));
+                            cpu_diff = (ref_cpu + liquid);
+                        }
+                        if (net_diff > (ref_net + liquid)) {
+                            cpu_diff += (cpu_diff - (ref_cpu + liquid));
+                            net_diff = (ref_net + liquid);
+                        }
+                        console.log('CPU DIFF: ', cpu_diff, 'NET DIFF: ', net_diff);
+                        return [2 /*return*/, this.eos.transaction(function (tr) {
+                                if (cpu_diff < 0 && net_diff >= 0) {
+                                    // Action 1 - Unstake CPU only
+                                    net_v = '0.0000';
+                                    cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
+                                    console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                    tr['undelegatebw']({
+                                        from: account,
+                                        receiver: account,
+                                        unstake_net_quantity: net_v + ' ' + symbol,
+                                        unstake_cpu_quantity: cpu_v + ' ' + symbol
+                                    });
+                                    if (net_diff > 0) {
+                                        // Action 2 - Stake NET only
+                                        cpu_v = '0.0000';
+                                        net_v = (net_diff / 10000).toFixed(4);
+                                        console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                        tr['delegatebw']({
+                                            from: account,
+                                            receiver: account,
+                                            stake_net_quantity: net_v + ' ' + symbol,
+                                            stake_cpu_quantity: cpu_v + ' ' + symbol,
+                                            transfer: 0
+                                        });
+                                    }
+                                }
+                                else if (net_diff < 0 && cpu_diff >= 0) {
+                                    // Action 1 - Unstake NET only
+                                    net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+                                    cpu_v = '0.0000';
+                                    console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                    tr['undelegatebw']({
+                                        from: account,
+                                        receiver: account,
+                                        unstake_net_quantity: net_v + ' ' + symbol,
+                                        unstake_cpu_quantity: cpu_v + ' ' + symbol
+                                    });
+                                    // Action 2 - Stake CPU only
+                                    if (cpu_diff > 0) {
+                                        net_v = '0.0000';
+                                        cpu_v = (cpu_diff / 10000).toFixed(4);
+                                        console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                        tr['delegatebw']({
+                                            from: account,
+                                            receiver: account,
+                                            stake_net_quantity: net_v + ' ' + symbol,
+                                            stake_cpu_quantity: cpu_v + ' ' + symbol,
+                                            transfer: 0
+                                        });
+                                    }
+                                }
+                                else if (net_diff < 0 && cpu_diff < 0) {
+                                    // Action 1 - Unstake Both
+                                    cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
+                                    net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+                                    console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                    tr['undelegatebw']({
+                                        from: account,
+                                        receiver: account,
+                                        unstake_net_quantity: net_v + ' ' + symbol,
+                                        unstake_cpu_quantity: cpu_v + ' ' + symbol
+                                    });
+                                }
+                                else {
+                                    // Action 1 - Stake both
+                                    cpu_v = (cpu_diff / 10000).toFixed(4);
+                                    net_v = (net_diff / 10000).toFixed(4);
+                                    console.log('NET: ', net_v, 'CPU: ', cpu_v);
+                                    tr['delegatebw']({
+                                        from: account,
+                                        receiver: account,
+                                        stake_net_quantity: net_v + ' ' + symbol,
+                                        stake_cpu_quantity: cpu_v + ' ' + symbol,
+                                        transfer: 0
+                                    });
+                                }
+                            })];
                 }
             });
         });

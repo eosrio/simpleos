@@ -1,4 +1,4 @@
-<div class="container" style="overflow-x: hidden">
+<div class="container" style="overflow-x: hidden; height: 100%">
 	<div class="clr-row animate" style="padding-top: 15px;">
 
 		<div class="clr-col-lg-4">
@@ -28,7 +28,7 @@
 							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
 							<span
 								class="tooltip-content">RAM is a resource used to store information on your account<br>
-              </span>
+              				</span>
 						</a>
 					</div>
 					<div class="resource"><span class="blue">Used {{ram_usage / (1024) | number: '1.2-2'}}
@@ -112,18 +112,33 @@
 				</div>
 			</div>
 
+			<div class="card info-card">
+				<div class="card-block">
+					<div class="title">Refund Stake
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+							<span
+								class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
+              				</span>
+						</a>
+						<button class="btn btn-outline btn-info-outline" style="margin-left: 10px;" (click)="requestRefundModal=true">Request</button>
+					</div>
+
+				</div>
+			</div>
+
 		</div>
 
 		<div class="clr-col-lg-4">
 
 			<div class="card info-card">
 				<div class="card-block">
-					<div class="progress bottom" [ngClass]="{'danger': (net_limit.used/net_limit.max) > 0.85}">
-						<progress [value]="net_limit.used" [max]="net_limit.max"></progress>
+					<div class="progress bottom" [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
+						<progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
 					</div>
 					<span class="title">NET Bandwidth</span>
 					<span class="resource" style="float:right; font-size: 14px;">{{net_weight}}</span>
-					<div class="resource"><span class="blue">Used {{net_limit.used / (1024) | number: '1.2-2'}}
+					<div class="resource"><span class="blue">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
 						KB </span><span style="color: #8d8d8d">/ {{net_limit.max / (1024)
 						| number: '1.2-2'}} KB</span>
 					</div>
@@ -132,8 +147,8 @@
 
 			<div class="card info-card">
 				<div class="card-block">
-					<div class="progress bottom" [ngClass]="{'danger': (cpu_limit.used/cpu_limit.max) > 0.85}">
-						<progress [value]="cpu_limit.used" [max]="cpu_limit.max"></progress>
+					<div class="progress bottom" [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
+						<progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
 					</div>
 					<span class="title">CPU Bandwidth
 			  <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
@@ -142,7 +157,7 @@
 			  </a>
 		  </span>
 					<span class="resource" style="float:right; font-size: 14px;">{{cpu_weight}}</span>
-					<div class="blue resource"><span class="blue">Used {{cpu_limit.used / (1024) | number: '1.2-2'}}
+					<div class="blue resource"><span class="blue">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
 						ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
 						| number: '1.2-2'}} ms</span>
 					</div>
@@ -206,7 +221,7 @@
 							</mat-error>
 
 							<button class="btn btn-outline btn-info-outline"
-									[disabled]="(!delegateForm.valid)&&(netAmountEos.value!==0)&&(cpuAmountEos.value!==0)"
+									[disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
 									(click)="passDelegateModal=true;fillDelegateRequest();">DELEGATE
 							</button>
 
@@ -418,6 +433,34 @@
 			</mat-hint>
 		</mat-form-field>
 		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="unDelegateRequest()"
+				[disabled]="busy">
+			Confirm
+			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+		</button>
+	</form>
+</clr-modal>
+
+
+<clr-modal [(clrModalOpen)]="requestRefundModal">
+	<h3 class="modal-title text-white">Request Refund to <span class="blue">{{aService.selected.getValue().name}}</span></h3>
+
+	<div class="modal-body">
+		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
+			<p-accordionTab header="By submiting this transaction, you agree to the refund Terms & Conditions">
+				The intent of the <span class="blue">refund</span> action is to return previously
+				unstaked tokens to an account after the unstaking period has elapsed.
+				<br><br>As an authorized party I <span class="blue">{{aService.selected.getValue().name}}</span> wish to have the unstaked tokens of <span class="blue">{{aService.selected.getValue().name}}</span> returned.
+			</p-accordionTab>
+		</p-accordion>
+	</div>
+	<form [formGroup]="passRefundForm" (keyup.enter)="unDelegateRequest()" class="modal-footer">
+		<mat-form-field>
+			<input matInput #pass type="password" formControlName="pass" placeholder="Password">
+			<mat-hint class="error" align="start" *ngIf="wrongpassrefund !== ''">
+				{{wrongpassrefund}}
+			</mat-hint>
+		</mat-form-field>
+		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="rtRefund()"
 				[disabled]="busy">
 			Confirm
 			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>

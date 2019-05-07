@@ -60,6 +60,7 @@ export class ConfigComponent implements OnInit {
 	selectedEndpoint = null;
 	autoBackup = false;
 	lastBackupTime: string;
+	selectedAccount = '';
 
 	static resetApp() {
 		window['remote']['app']['relaunch']();
@@ -396,6 +397,11 @@ export class ConfigComponent implements OnInit {
 			this.disableIm = false;
 			this.busy = false;
 		}
+	}
+
+	openPKModal() {
+		this.selectedAccount = this.aService.selected.getValue().name;
+		this.viewPKModal = true;
 	}
 
 	closePkModal() {

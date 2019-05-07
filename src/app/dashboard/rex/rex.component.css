@@ -1,0 +1,206 @@
+.info-card {
+	background-color: #333333;
+	border-radius: 5px;
+	border: 0;
+	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+}
+
+.rex-chart {
+	height: 200px !important;
+	margin-right: 53px;
+}
+
+.req-title {
+	margin-bottom: 4px;
+	color: #b0b0b7;
+	margin-top: 10px;
+}
+
+.req {
+	color: white;
+	background-color: #2f2f2f;
+	margin-top: 4px;
+	padding: 10px 0 8px 12px;
+	border-bottom: 1px solid #616161;
+	border-top: 1px solid #616161;
+}
+
+.line {
+	height: 35px;
+	width: 1px;
+	border: 1px dashed;
+	margin-left: 50%;
+}
+
+.explain {
+	margin-top: 10px;
+	color: #b0b0b7;
+	margin-left: 24px;
+}
+
+.input-width {
+	width: 150px;
+	margin-top: 20px;
+}
+
+.upper-buycard {
+	border-bottom: 1px solid #1d1d1d !important;
+}
+
+.card-block {
+	border-bottom: none;
+}
+
+.rex-balances-top {
+	background-color: #2f2f2f;
+	padding: 5px 0 5px 12px;
+	border-bottom: 1px solid #4c4c4c;
+	border-top: 1px solid #4c4c4c;
+	margin-top: 10px;
+}
+
+.rex-balances {
+	background-color: #2f2f2f;
+	padding: 5px 0 5px 12px;
+	border-bottom: 1px solid #4c4c4c;
+}
+
+.warning-text {
+	color: orange;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/*prime's table*/
+/deep/ .maturing-table .ui-table-caption {
+	padding: 10px;
+}
+
+/deep/ .maturing-table .ui-table {
+	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+	font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+	margin-top: 20px;
+}
+
+/deep/ .last-table .ui-table {
+	margin-bottom: 40px;
+}
+
+/deep/ .maturing-table .ui-table-tbody {
+	background: #2c2c2c;
+	transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+	border-radius: 5px;
+	border: 0;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tbody > tr {
+	color: #b1b1b1;
+	background: transparent;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tbody > tr > td {
+	border: none;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tbody > tr {
+	border-bottom: 1px solid #3f3f3f;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tbody > tr:last-child {
+	border-bottom: 0;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tbody>tr>td {
+	padding: 0.7em .5em;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-thead>tr>th {
+	padding: 0.7em .5em;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-caption {
+	border-bottom: 1px solid #262626;
+}
+
+/deep/ .maturing-table .ui-table-tfoot {
+	background: #2c2c2c;
+	border: 0;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tfoot > tr {
+	color: #b1b1b1;
+	background: transparent;
+}
+
+/deep/ .maturing-table .ui-table .ui-table-tfoot > tr > td {
+	background: transparent;
+	padding: 10px;
+}
+
+/*prime's table*/
+
+/deep/ .howto {
+	font-family: metropolis;
+}
+
+/deep/ .howto .ui-accordion-content {
+	background: none;
+	padding-left: 21px;
+}
+
+/deep/ .howto .ui-accordion .ui-accordion-header {
+	padding-left: .75rem;
+}
+
+.howto-item {
+	padding: 0 8px 8px 0;
+}
+
+.first-card {
+	margin-top: 0 !important;
+	border-radius: 0 0 5px 5px;
+}
+
+#rex-tabs {
+	margin-top: 1rem;
+}
+
+/deep/ #rex-tabs .mat-tab-header {
+	background-color: #3b3b3b;
+	border-radius: 5px 5px 0 0;
+}
+
+/deep/ #rex-tabs .mat-tab-label .mat-tab-label-content {
+	font-size: 17px !important
+}
+
+/deep/  #rex-tabs .mat-tab-label-active {
+	background-color: #333333;
+}
+
+/deep/ .time-selector .mat-select-value {
+	color: #0094d2;
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+
+/deep/ .time-selector-option.mat-option {
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+	font-size: 15px !important;
+	/*background-color: #333333;*/
+}
+
+/deep/ .mat-select-panel {
+	background: #333333;
+}
+
+/deep/ .mat-primary .time-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
+	color: #0094d2;
+}
+
+/deep/ .time-selector .mat-select-arrow {
+	color: rgb(177, 177, 177);
+}
+
+/deep/ .time-selector.mat-form-field.mat-focused.mat-primary .mat-select-arrow {
+	color: #0094d2 !important;
+}

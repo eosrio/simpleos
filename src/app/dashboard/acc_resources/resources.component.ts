@@ -22,6 +22,7 @@ export class ResourcesComponent implements OnInit {
 	passSellModal: boolean;
 	passUnDelegateModal: boolean;
 	passDelegateModal: boolean;
+	requestRefundModal: boolean;
 
 	myRamAlloc = 0;
 	totalRamAlloc = 0;
@@ -58,6 +59,7 @@ export class ResourcesComponent implements OnInit {
 	passUnDelegateForm: FormGroup;
 	delegateForm: FormGroup;
 	passDelegateForm: FormGroup;
+	passRefundForm: FormGroup;
 
 	currentSelAccountName: string;
 
@@ -85,12 +87,13 @@ export class ResourcesComponent implements OnInit {
 
 	info: any[];
 
-	busy = false;
+	busy: boolean;
 	ramActionModal = false;
 	wrongpassbuy = '';
 	wrongpasssell = '';
 	wrongpassundelegate = '';
 	wrongpassdelegate = '';
+	wrongpassrefund = '';
 	errormsg = '';
 	errormsg2 = '';
 	errormsgeos = '';
@@ -118,6 +121,7 @@ export class ResourcesComponent implements OnInit {
 		public ramService: RamService,
 		private http: HttpClient
 	) {
+		this.busy = false;
 		this.dataDT = [];
 		this.dataVAL = [];
 		this.ram_chartMerge = [];
@@ -140,8 +144,8 @@ export class ResourcesComponent implements OnInit {
 		});
 
 		this.delegateForm = this.fb.group({
-			netEos: [0, Validators.compose([Validators.required, Validators.pattern('^(0*[1-9][0-9]*(\.[0-9]+)?|0+\.[0-9]*[1-9][0-9]*)$')])],
-			cpuEos: [0, Validators.compose([Validators.required, Validators.pattern('^(0*[1-9][0-9]*(\.[0-9]+)?|0+\.[0-9]*[1-9][0-9]*)$')])],
+			netEos: [0, Validators.min(0)],
+			cpuEos: [0, Validators.min(0)],
 			receiverAcc: ['', Validators.required]
 		});
 
@@ -163,6 +167,10 @@ export class ResourcesComponent implements OnInit {
 		});
 
 		this.passDelegateForm = this.fb.group({
+			pass: ''
+		});
+
+		this.passRefundForm = this.fb.group({
 			pass: ''
 		});
 
@@ -496,7 +504,7 @@ export class ResourcesComponent implements OnInit {
 			this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
 				if (sel) {
 					this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-					//this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
+					// this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
 				}
 			});
 			if (this.unstaked > this.ramMarketFormBuy.get('buyEos').value) {
@@ -545,8 +553,35 @@ export class ResourcesComponent implements OnInit {
 		}
 	}
 
+	rtRefund() {
+		this.busy = true;
+		console.log(this.busy);
+		this.wrongpassrefund = '';
+		const account = this.aService.selected.getValue();
+		const namesel = this.aService.selected.getValue().name;
+		const password = this.passRefundForm.get('pass').value;
+		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+
+		this.crypto.authenticate(password, pubkey).then((data) => {
+			if (data === true) {
+				this.eos.requestRefund(namesel).then((e) => {
+					this.requestRefundModal = false;
+					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+				}).catch((error) => {
+					this.wrongpassrefund = JSON.stringify(JSON.parse(error).error.details[0].message);
+					this.busy = false;
+				});
+			}
+		}).catch(() => {
+			this.wrongpassrefund = 'Wrong password!';
+			this.busy = false;
+		});
+
+	}
+
 	sell() {
 		this.busy = true;
+		console.log(this.busy);
 		this.wrongpasssell = '';
 		const account = this.aService.selected.getValue();
 		const password = this.passSellForm.get('pass').value;
@@ -558,16 +593,14 @@ export class ResourcesComponent implements OnInit {
 					this.passSellModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
-					this.busy = false;
 					this.wrongpasssell = JSON.stringify(JSON.parse(error).error.details[0].message);
+					this.busy = false;
 				});
 			}
 		}).catch(() => {
-			this.busy = false;
 			this.wrongpasssell = 'Wrong password!';
+			this.busy = false;
 		});
-		this.passSellForm.reset();
-		this.busy = false;
 
 	}
 
@@ -597,18 +630,14 @@ export class ResourcesComponent implements OnInit {
 					this.passBuyModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
-					console.log(error);
-					this.busy = false;
 					this.wrongpassbuy = JSON.stringify(JSON.parse(error).error.details[0].message);
-					console.log('Error: ', error);
+					this.busy = false;
 				});
 			}
 		}).catch(() => {
-			this.busy = false;
 			this.wrongpassbuy = 'Wrong password!';
+			this.busy = false;
 		});
-		this.passBuyForm.reset();
-		this.busy = false;
 	}
 
 	fillUnDelegateRequest(from: string, net: string, cpu: string) {
@@ -634,8 +663,8 @@ export class ResourcesComponent implements OnInit {
 					this.passUnDelegateModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
-					this.busy = false;
 					this.wrongpassundelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
+					this.busy = false;
 				});
 			}
 		}).catch((q) => {
@@ -643,21 +672,18 @@ export class ResourcesComponent implements OnInit {
 			this.wrongpassundelegate = 'Wrong password!';
 		});
 		this.wrongpassundelegate = '';
-		this.passUnDelegateForm.reset();
-		this.busy = false;
 	}
 
 	checkEos(eosVal, val) {
 		if (eosVal > 0) {
-			this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
-				if (sel) {
-					if (val === 'net') {
-						this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('cpuEos').value;
-					} else {
-						this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('netEos').value;
-					}
+			const sel = this.aService.selected.getValue();
+			if(sel) {
+				if (val === 'net') {
+					this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('cpuEos').value;
+				} else {
+					this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('netEos').value;
 				}
-			});
+			}
 			if (this.unstaked > eosVal) {
 				this.errormsgD3 = '';
 				return true;

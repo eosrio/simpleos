@@ -2,13 +2,12 @@
 <div class="wrap" style="height: 100%; overflow-x: hidden;">
 	<!--<div class="container-fluid" style="width: 466px;">-->
 	<div class="container">
-		<div class="row animate fadeInDown">
-			<div class="col-md-6 text-center" style="width: 466px; margin: 0 auto;">
+		<div class="clr-row animate fadeInDown">
+			<div class="clr-col-md-6 text-center" style="width: 466px; margin: 0 auto;">
 				<div class="anim-logo">
 					<lottie-animation-view
 						[options]="lottieConfig"
 						[width]="300"
-						[height]="'auto'"
 						(animCreated)="handleAnimation($event)">
 					</lottie-animation-view>
 				</div>
@@ -50,15 +49,16 @@
 						</div>
 					</div>
 
-					<div class="col-md-12">
+					<div class="clr-col-md-12">
 						<div class="card info-card">
 							<div class="card-header title">
 								Connected to
-								<mat-form-field class="example-full-width select-father" style="width: 207px;">
+								<mat-form-field class="chain-selector example-full-width select-father"
+												style="width: 207px;">
 									<mat-select [value]="network.activeChain['id']"
 												(selectionChange)="changeChain($event)">
 										<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-										<mat-option *ngFor="let chain of network.defaultChains"
+										<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 													[value]="chain.id">
 											{{ chain.name }}
 										</mat-option>
@@ -66,7 +66,7 @@
 								</mat-form-field>
 							</div>
 							<div class="card-block">
-								<div class="row" style="margin-left: 0;">
+								<div class="clr-row" style="margin-left: 0;">
 									<div class="text-left advanced"><span class="error">Advanced Option:</span> you can
 										also try
 										to connect to
@@ -89,8 +89,8 @@
 				<ng-container *ngIf="!busy">
 
 					<div style="margin-top: 30px">
-						<div class="row" style="justify-content: center;">
-							<div class="col-md-12 col-lg-6">
+						<div class="clr-row" style="justify-content: center;">
+							<div class="clr-col-md-12 clr-col-lg-6">
 								<button class="btn btn-inverse btn-block" (click)="existingWallet = true">
 									Import existing key
 								</button>
@@ -99,8 +99,8 @@
 								</button>
 							</div>
 							<!--</div>-->
-							<!--<div class="row" style="justify-content: center;">-->
-							<div class="col-md-12 col-lg-6">
+							<!--<div class="clr-row" style="justify-content: center;">-->
+							<div class="clr-col-md-12 clr-col-lg-6">
 								<button class="btn btn-inverse btn-block"
 										*ngIf="network.activeChain['name']==='EOS MAINNET'"
 										(click)="newWallet = true">
@@ -115,18 +115,18 @@
 								</button>
 							</div>
 							<!--</div>-->
-							<!--<div class="row" style="justify-content: center;">-->
-							<!--<div class="col-md-9">-->
+							<!--<div class="clr-row" style="justify-content: center;">-->
+							<!--<div class="clr-col-md-9">-->
 
 							<!--</div>-->
 							<!--</div>-->
-							<!--<div class="row" style="justify-content: center;">-->
-							<!--<div class="col-md-9">-->
+							<!--<div class="clr-row" style="justify-content: center;">-->
+							<!--<div class="clr-col-md-9">-->
 
 							<!--</div>-->
 						</div>
-						<div class="row" style="justify-content: center;">
-							<div class="col-md-12 col-lg-6">
+						<div class="clr-row" style="justify-content: center;">
+							<div class="clr-col-md-12 clr-col-lg-6">
 								<button class="btn btn-inverse btn-block"
 										*ngIf="network.activeChain['name']==='EOS MAINNET'" (click)="newKeys = true">
 									Generate Keys
@@ -165,16 +165,17 @@
 							<span class="red">No account found :(</span>
 						</div>
 					</div>
-					<div class="row" style="justify-content: center;">
-						<div class="col-md-12">
+					<div class="clr-row" style="justify-content: center;">
+						<div class="clr-col-md-12">
 							<div class="card info-card">
 								<div class="card-header title">
 									Connected to
-									<mat-form-field class="example-full-width select-father" style="width: 207px;">
+									<mat-form-field class="chain-selector example-full-width select-father"
+													style="width: 207px;">
 										<mat-select [value]="network.activeChain['id']"
 													(selectionChange)="changeChain($event)">
 											<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-											<mat-option *ngFor="let chain of network.defaultChains"
+											<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 														[value]="chain.id">
 												{{ chain.name }}
 											</mat-option>
@@ -182,19 +183,19 @@
 									</mat-form-field>
 								</div>
 								<div class="card-block">
-									<div class="row" style="margin-left: 0;">
+									<div class="clr-row" style="margin-left: 0;">
 										<div class="text-left advanced"><span class="warn">Advanced Option:</span> you
 											can also try
 											to connect to
 											another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
 										</div>
-										<div class="col-xs-auto" *ngIf="!network.networkingReady.getValue()">
+										<div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
 											<fa-layers class="mt-2 mb-1">
 												<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
 														 style="color:#0094d2;"></fa-icon>
 											</fa-layers>
 										</div>
-										<div class="col-xs my-auto" *ngIf="!network.networkingReady.getValue()"
+										<div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
 											 style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
 											<span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
 										</div>
@@ -303,12 +304,9 @@
 		[clrWizardPageNextDisabled]="!agree"
 		*ngIf="network.activeChain.name === 'EOS MAINNET'"
 		(clrWizardPageOnCommit)="preImportCredentials(true)">
-
-		<ng-template clrPageTitle>EOS Constitution</ng-template>
-
-		<h5 style="color: #bebebe;">EOS Constitution</h5>
-		<div class="constitution" [innerHTML]="eos.constitution"></div>
-		<mat-checkbox [(ngModel)]="agree">I abide by the constitution</mat-checkbox>
+		<ng-template clrPageTitle>EOS User Agreement</ng-template>
+		<div class="constitution" [innerHTML]="contentStyle(eos.constitution,'text-muted')"></div>
+		<mat-checkbox [(ngModel)]="agree">I agree</mat-checkbox>
 	</clr-wizard-page>
 
 	<clr-wizard-page *ngIf="noPIN" (clrWizardPageOnCommit)="importCredentials()">
@@ -442,7 +440,7 @@
 		</div>
 		<div style="color: white;"><strong>Safety margin:</strong><span class="blue"> 0.25 EOS (in case RAM price changes)</span>
 		</div>
-		<div style="border-bottom: 1px solid #0079b8; margin: 10px 0px;"></div>
+		<div style="border-bottom: 1px solid #0079b8; margin: 10px 0;"></div>
 		<div style="color: white;"><strong>Total Amount:</strong><span
 			class="blue"> {{1.25 + (ram.ramPriceEOS * (4096 / 1024)) * 1.05 | number: '1.0-4'}} EOS</span></div>
 		<div style="margin-top: 5px; color: #a9a9a9;">*If you transfer more than this amount the difference will remain
@@ -680,7 +678,7 @@
 						</div>
 					</ng-container>
 				</div>
-				<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+				<a aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 					<button
 						class="btn btn-info-outline mt-1" (click)="network.connect(true); endpointModal=false;">Auto
 					</button>

@@ -1,55 +1,17 @@
-const {app, BrowserWindow, Menu, protocol} = require('electron');
+const {app, BrowserWindow, Menu, protocol, ipcMain} = require('electron');
 const path = require('path');
 const url = require('url');
 const {version} = require('./package.json');
 app.getVersion = () => version;
 const PROTOCOL_PREFIX = 'simpleos';
-app.setAsDefaultProtocolClient(PROTOCOL_PREFIX);
-
-// const ipcMain = require('electron').ipcMain;
-
-// local server
+const args = process.argv.slice(1);// local server
+const cors = require('cors');
+const bodyParser = require('body-parser');
 const express = require('express')();
+const PORT = 48777;
 const http = require('http').Server(express);
-const io = require('socket.io')(http);
-
-express.get('/', function (req, res) {
-	res.send('simpleos-connect');
-});
-
-let internalSocket = null;
-io.on('connection', function (socket) {
-	console.log('a user connected');
-	socket.emit('handshake', "Hello!");
-	socket.on('id', (mode) => {
-		// console.log('new id', mode);
-		if (mode === 'SENDER') {
-			if (internalSocket) {
-				internalSocket.emit('data', "new client has connected!");
-			} else {
-				console.log('internal socket failure');
-			}
-		} else if (mode === 'LISTENER') {
-			internalSocket = socket;
-		}
-	});
-
-	socket.on('data', (data) => {
-		if (internalSocket) {
-			internalSocket.emit('new_data', data);
-		} else {
-			console.log('socket failure!');
-		}
-	});
-});
-
-http.listen(3000, function () {
-	console.log('listening on *:3000');
-});
-
 
 let win, devtools, serve;
-const args = process.argv.slice(1);
 devtools = args.some(val => val === '--devtools');
 serve = args.some(val => val === '--serve');
 
@@ -57,39 +19,91 @@ require('electron-context-menu')({
 	showInspectElement: false
 });
 
+express.use(cors());
 
+express.get('/ping', (req, res) => {
+	res.end('OK');
+});
 
-function createWindow() {
+express.get('/accounts', (req, res) => {
+	win.webContents.send('request', 'accounts');
+	ipcMain.once('accountsResponse', (event, data) => {
+		console.log(data);
+		res.setHeader('Content-Type', 'application/json');
+		res.end(JSON.stringify(data));
+	});
+});
 
+express.get('/getPublicKeys', (req, res) => {
+	win.webContents.send('request', {
+		message: 'publicKeys'
+	});
+	ipcMain.once('publicKeyResponse', (event, data) => {
+		console.log(data);
+		res.setHeader('Content-Type', 'application/json');
+		res.end(JSON.stringify(data));
+	});
+});
+
+express.post('/sign', bodyParser.json(), (req, res) => {
+	win.webContents.send('request', {
+		message: 'sign',
+		content: req.body
+	});
+	ipcMain.once('signResponse', (event, data) => {
+		console.log(data);
+		res.setHeader('Content-Type', 'application/json');
+		res.end(JSON.stringify(data));
+	});
+});
+
+express.get('/connect', (req, res) => {
+	console.log('CONNECT REQUEST');
+	win.webContents.send('request', {
+		message: 'connect',
+		content: {
+			dappName: req.query.dapp
+		}
+	});
+	ipcMain.once('connectResponse', (event, data) => {
+		console.log(data);
+		res.setHeader('Content-Type', 'application/json');
+		res.end(JSON.stringify(data));
+	});
+});
+
+async function createWindow() {
+	app.setAsDefaultProtocolClient(PROTOCOL_PREFIX);
 	protocol.registerHttpProtocol(PROTOCOL_PREFIX, (req, callback) => {
-		console.log(req);
+		win.webContents.send('request', {
+			message: 'launch',
+			content: req.url
+		});
 		callback();
 	});
-
 	win = new BrowserWindow({
 		title: 'simplEOS',
 		webPreferences: {
-			nodeIntegration: true
+			nodeIntegration: true,
+			webSecurity: !serve
 		},
 		darkTheme: true,
 		width: 1440,
-		height: 800,
+		height: 920,
 		minWidth: 800,
 		minHeight: 600,
 		backgroundColor: '#222222',
 		frame: true,
 		icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
 	});
-	win.setMenu(null);
-
 	if (serve) {
 		require('electron-reload')(__dirname, {
 			electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
 			hardResetMethod: 'exit'
 		});
-		win.loadURL('http://localhost:7777');
+		await win.loadURL('http://localhost:7777');
 	} else {
-		win.loadURL(url.format({
+		await win.loadURL(url.format({
 			pathname: path.join(__dirname, 'ng-dist/index.html'),
 			protocol: 'file:',
 			slashes: true
@@ -129,17 +143,41 @@ function createWindow() {
 		]
 	}];
 	Menu['setApplicationMenu'](Menu['buildFromTemplate'](template));
+	// win.removeMenu();
 }
 
-app.on('ready', createWindow);
-app.on('window-all-closed', () => {
-	if (process.platform !== 'darwin') {
-		app.quit();
-	}
-});
-app.on('activate', () => {
-	if (win === null) {
-		createWindow();
-	}
-});
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+	app.quit()
+} else {
+	http.listen(PORT, "127.0.0.1", () => {
+		console.log('listening on lcoalhost:' + PORT);
+	});
+	app.on('second-instance', () => {
+		if (win) {
+			if (win.isMinimized()) {
+				win.restore();
+			}
+			win.focus();
+		}
+	});
+
+	app.on('ready', createWindow);
+
+	app.on('window-all-closed', () => {
+		if (process.platform !== 'darwin') {
+			app.quit();
+		}
+	});
+
+	app.on('activate', async () => {
+		if (win === null) {
+			await createWindow();
+		}
+	});
+}
+
+
+
 

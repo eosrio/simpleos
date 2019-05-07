@@ -1,29 +1,21 @@
 import {Injectable} from '@angular/core';
-
-import * as socketIo from 'socket.io-client';
+import {IpcRenderer} from 'electron';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class ConnectService {
-	private readonly socket: any;
+	public ipc: IpcRenderer;
 
 	constructor() {
-		// console.log('Loading simpleos-connect service');
-
-		if (window['remote']) {
-			this.socket = socketIo('http://localhost:3000/');
-			this.socket.on('handshake', (message) => {
-				// console.log(message);
-				this.sendID();
-			});
-			this.socket.on('new_data', function (data) {
-				console.log(data);
-			});
+		if ((<any>window).require) {
+			try {
+				this.ipc = (<any>window).require('electron').ipcRenderer;
+			} catch (error) {
+				throw error;
+			}
+		} else {
+			console.warn('Electron IPC could not be loaded!');
 		}
-	}
-
-	sendID() {
-		this.socket.emit('id', 'LISTENER');
 	}
 }

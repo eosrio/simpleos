@@ -3,7 +3,7 @@ import * as assert from 'assert';
 
 import * as Transport from '@ledgerhq/hw-transport';
 import {EOSJSService} from './eosjs.service';
-import * as EOSJS from 'eosjs';
+import * as EOSJS from '../../assets/eos.js';
 import {BehaviorSubject} from 'rxjs';
 
 declare let window: any;

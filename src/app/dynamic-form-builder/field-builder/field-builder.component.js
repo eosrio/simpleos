@@ -14,12 +14,16 @@ var FieldBuilderComponent = /** @class */ (function () {
     function FieldBuilderComponent() {
     }
     Object.defineProperty(FieldBuilderComponent.prototype, "isValid", {
-        get: function () { return this.form.controls[this.field.name].valid; },
+        get: function () {
+            return this.form.controls[this.field.name].valid;
+        },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(FieldBuilderComponent.prototype, "isDirty", {
-        get: function () { return this.form.controls[this.field.name].dirty; },
+        get: function () {
+            return this.form.controls[this.field.name].dirty;
+        },
         enumerable: true,
         configurable: true
     });
@@ -35,13 +39,13 @@ var FieldBuilderComponent = /** @class */ (function () {
     ], FieldBuilderComponent.prototype, "form", void 0);
     FieldBuilderComponent = __decorate([
         core_1.Component({
-            selector: 'field-builder',
+            selector: 'app-field-builder',
             template: '<div class="form-row" [formGroup]="form">' +
-                //'    <div class="col-md-9" [ngSwitch]="field.type">' +
+                // '    <div class="col-md-9" [ngSwitch]="field.type">' +
                 '       <textbox [field]="field" [form]="form"></textbox>' +
-                //'       <textbox *ngSwitchCase="\'text\'" class="float:left;width:70%;" [field]="field" [form]="form"></textbox>' +
+                // '       <textbox *ngSwitchCase="\'text\'" class="float:left;width:70%;" [field]="field" [form]="form"></textbox>' +
                 '       <div class="text-danger fadeInDown animated" style="margin-bottom: 10px!important;" *ngIf="!isValid"><b>* is required</b></div>' +
-                //'    </div>'+
+                // '    </div>'+
                 '  </div>'
         }),
         __metadata("design:paramtypes", [])

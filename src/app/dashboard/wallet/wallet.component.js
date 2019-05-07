@@ -10,29 +10,48 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var accounts_service_1 = require("../../accounts.service");
-var eosjs_service_1 = require("../../eosjs.service");
+var accounts_service_1 = require("../../services/accounts.service");
+var eosjs_service_1 = require("../../services/eosjs.service");
 var moment = require("moment");
 var WalletComponent = /** @class */ (function () {
     function WalletComponent(aService, eos) {
         this.aService = aService;
         this.eos = eos;
-        this.openTX = WalletComponent_1.openTXID;
+        this.fullBalance = 0;
         this.memoAccOwner = '';
         this.memoAccActive = '';
+        this.selectedAccountName = '';
         this.moment = moment;
         this.actions = [];
         this.tokens = [];
         this.headBlock = 0;
-        this.fullBalance = 0;
         this.staked = 0;
         this.unstaked = 0;
         this.LIB = 0;
         this.blockTracker = null;
+        this.lottieConfig = {
+            path: 'assets/maintenance_anim2.json',
+            autoplay: true,
+            loop: true
+        };
     }
-    WalletComponent_1 = WalletComponent;
-    WalletComponent.openTXID = function (value) {
-        window['shell']['openExternal']('https://www.bloks.io/transaction/' + value);
+    WalletComponent.prototype.openTX = function (value) {
+        window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
+    };
+    WalletComponent.prototype.openAccount = function (acct) {
+        if (acct) {
+            window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + acct);
+        }
+        else {
+            window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + this.aService.selected.getValue().name);
+        }
+    };
+    WalletComponent.prototype.openExplorer = function (accountName, explorer) {
+        window['shell']['openExternal'](explorer.account_url + accountName);
+    };
+    WalletComponent.prototype.handleAnimation = function (anim) {
+        this.anim = anim;
+        this.anim['setSpeed'](0.8);
     };
     WalletComponent.prototype.getInfo = function () {
         var _this = this;
@@ -40,7 +59,7 @@ var WalletComponent = /** @class */ (function () {
             _this.headBlock = info['head_block_num'];
             _this.LIB = info['last_irreversible_block_num'];
         }).catch(function (err) {
-            console.log("Error", err);
+            console.log('Error', err);
         });
     };
     WalletComponent.prototype.ngOnInit = function () {
@@ -52,7 +71,9 @@ var WalletComponent = /** @class */ (function () {
                 _this.updateBalances();
             }
         });
-        this.getInfo();
+        setTimeout(function () {
+            _this.getInfo();
+        }, 5000);
         if (!this.blockTracker) {
             this.blockTracker = setInterval(function () {
                 _this.getInfo();
@@ -70,14 +91,16 @@ var WalletComponent = /** @class */ (function () {
         var _this = this;
         this.aService.selected.asObservable().subscribe(function (sel) {
             if (sel['name']) {
-                setTimeout(function () {
+                if (_this.selectedAccountName !== sel['name']) {
+                    // console.log('account selected:' + sel['name']);
+                    _this.selectedAccountName = sel['name'];
                     _this.fullBalance = sel.full_balance;
                     _this.staked = sel.staked;
                     _this.unstaked = sel.full_balance - sel.staked;
                     _this.tokens = [];
-                    _this.aService.reloadActions(sel.name, false);
+                    _this.aService.reloadActions(sel.name);
                     _this.aService.refreshFromChain();
-                }, 50);
+                }
             }
         });
     };
@@ -109,11 +132,9 @@ var WalletComponent = /** @class */ (function () {
         this.unstaked = sel.full_balance - sel.staked;
     };
     WalletComponent.prototype.refresh = function () {
-        this.aService.reloadActions(this.aService.selected.getValue().name, true);
-        // this.aService.refreshFromChain();
+        this.aService.reloadActions(this.aService.selected.getValue().name);
     };
-    var WalletComponent_1;
-    WalletComponent = WalletComponent_1 = __decorate([
+    WalletComponent = __decorate([
         core_1.Component({
             selector: 'app-wallet',
             templateUrl: './wallet.component.html',

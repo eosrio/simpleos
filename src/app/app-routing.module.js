@@ -11,15 +11,15 @@ var router_1 = require("@angular/router");
 var landing_component_1 = require("./landing/landing.component");
 var dashboard_component_1 = require("./dashboard/dashboard.component");
 var wallet_component_1 = require("./dashboard/wallet/wallet.component");
-var history_component_1 = require("./dashboard/history/history.component");
 var vote_component_1 = require("./dashboard/vote/vote.component");
 var send_component_1 = require("./dashboard/send/send.component");
 var config_component_1 = require("./dashboard/settings/config.component");
 var about_component_1 = require("./dashboard/about/about.component");
 var lockscreen_component_1 = require("./lockscreen/lockscreen.component");
-var lock_guard_1 = require("./lock.guard");
+var lock_guard_1 = require("./services/lock.guard");
 var resources_component_1 = require("./dashboard/acc_resources/resources.component");
 var dapp_component_1 = require("./dashboard/dapp/dapp.component");
+var referendum_component_1 = require("./dashboard/referendum/referendum.component");
 var routes = [
     {
         path: '',
@@ -44,10 +44,6 @@ var routes = [
                 component: send_component_1.SendComponent,
             },
             {
-                path: 'history',
-                component: history_component_1.HistoryComponent,
-            },
-            {
                 path: 'vote',
                 component: vote_component_1.VoteComponent,
             },
@@ -66,6 +62,10 @@ var routes = [
             {
                 path: 'about',
                 component: about_component_1.AboutComponent,
+            },
+            {
+                path: 'referendum',
+                component: referendum_component_1.ReferendumComponent,
             }
         ]
     }

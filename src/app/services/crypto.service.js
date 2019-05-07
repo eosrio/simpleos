@@ -46,7 +46,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var text_encoding_shim_1 = require("text-encoding-shim");
-var eosjs_service_1 = require("../eosjs.service");
+var eosjs_service_1 = require("./eosjs.service");
 var CryptoJS = require("crypto-js");
 var router_1 = require("@angular/router");
 var CryptoService = /** @class */ (function () {
@@ -213,7 +213,6 @@ var CryptoService = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.eosjs.auth = false;
-                        console.log('Submitted key:', publickey);
                         storedData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
                         if (!(storedData[publickey].private !== 'ledger')) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.initKeys(publickey, pass)];

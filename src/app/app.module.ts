@@ -22,7 +22,8 @@ import {
 	MatInputModule, MatRadioModule, MatSelectModule,
 	MatSliderModule,
 	MatTabsModule,
-	MatButtonToggleModule, MatProgressBarModule
+	MatButtonToggleModule, MatProgressBarModule,
+	MatDatepickerModule
 } from '@angular/material';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {TableModule} from 'primeng/table';
@@ -42,7 +43,7 @@ import {ResourcesComponent} from './dashboard/acc_resources/resources.component'
 import {NgxEchartsModule} from 'ngx-echarts';
 import {RamService} from './services/ram.service';
 import {DappComponent} from './dashboard/dapp/dapp.component';
-import {FormComponent} from './dashboard/dapp/dapp.component';
+// import {FormComponent} from './dashboard/dapp/dapp.component';
 import {ReferendumComponent} from './dashboard/referendum/referendum.component';
 import {DynamicFormBuilderModule} from './dynamic-form-builder/dynamic-form-builder.module';
 import {ConnectService} from './services/connect.service';
@@ -51,11 +52,17 @@ import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
 import {FuseJsModule} from './modules/fusejs/fusejs.module';
+import {MaterialDesignFrameworkModule} from 'angular7-json-schema-form';
+import {RexComponent} from './dashboard/rex/rex.component';
+import {Eosjs2Service} from './services/eosjs2.service';
+import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
+import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
+import { InputModalComponent } from './input-modal/input-modal.component';
 
 library.add(far, fas, fab, fal);
 
 @NgModule({
-	entryComponents: [FormComponent],
+	// entryComponents: [FormComponent],
 	declarations: [
 		AppComponent,
 		LandingComponent,
@@ -68,8 +75,11 @@ library.add(far, fas, fab, fal);
 		LockscreenComponent,
 		ResourcesComponent,
 		DappComponent,
-		FormComponent,
-		ReferendumComponent
+		ReferendumComponent,
+		RexComponent,
+		ThousandSuffixesPipe,
+		ConfirmModalComponent,
+		InputModalComponent
 	],
 	imports: [
 		AccordionModule,
@@ -90,6 +100,7 @@ library.add(far, fas, fab, fal);
 		MatProgressBarModule,
 		MatTabsModule,
 		MatButtonToggleModule,
+		MatDatepickerModule,
 		ReactiveFormsModule,
 		TableModule,
 		TextMaskModule,
@@ -101,10 +112,12 @@ library.add(far, fas, fab, fal);
 		NgxJsonViewerModule,
 		FuseJsModule,
 		OrderModule,
-		NgxPaginationModule
+		NgxPaginationModule,
+		MaterialDesignFrameworkModule
 	],
 	providers: [
 		EOSJSService,
+		Eosjs2Service,
 		AccountsService,
 		NetworkService,
 		CryptoService,

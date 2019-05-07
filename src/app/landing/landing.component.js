@@ -10,19 +10,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var eosjs_service_1 = require("../eosjs.service");
+var eosjs_service_1 = require("../services/eosjs.service");
 var forms_1 = require("@angular/forms");
-var accounts_service_1 = require("../accounts.service");
+var accounts_service_1 = require("../services/accounts.service");
 var router_1 = require("@angular/router");
 var angular_1 = require("@clr/angular");
-var network_service_1 = require("../network.service");
+var network_service_1 = require("../services/network.service");
 var crypto_service_1 = require("../services/crypto.service");
 var angular2_toaster_1 = require("angular2-toaster");
 var ram_service_1 = require("../services/ram.service");
+var http_1 = require("@angular/common/http");
+var voting_service_1 = require("../services/voting.service");
 var LandingComponent = /** @class */ (function () {
-    function LandingComponent(eos, crypto, fb, aService, toaster, network, router, zone, ram) {
+    function LandingComponent(eos, voting, crypto, fb, aService, toaster, network, router, zone, ram, http) {
         var _this = this;
         this.eos = eos;
+        this.voting = voting;
         this.crypto = crypto;
         this.fb = fb;
         this.aService = aService;
@@ -31,6 +34,7 @@ var LandingComponent = /** @class */ (function () {
         this.router = router;
         this.zone = zone;
         this.ram = ram;
+        this.http = http;
         // endPoint = 'http://api.eosrio.io';
         this.accountname = '';
         this.accountname_err = '';
@@ -56,7 +60,12 @@ var LandingComponent = /** @class */ (function () {
         this.openFaq = LandingComponent_1.openFAQ;
         this.busy2 = false;
         this.busyActivekey = false;
-        this.chainConnected = [];
+        this.relayMethod = false;
+        this.requestValid = false;
+        this.requestId = '';
+        this.requestError = '';
+        this.noPIN = true;
+        this.apierror = '';
         this.busy = true;
         this.existingWallet = false;
         this.exodusWallet = false;
@@ -82,7 +91,7 @@ var LandingComponent = /** @class */ (function () {
         this.busyActivekey = false;
         this.lottieConfig = {
             path: 'assets/logoanim.json',
-            autoplay: true,
+            autoplay: false,
             loop: false
         };
         this.network.networkingReady.asObservable().subscribe(function (status) {
@@ -105,8 +114,12 @@ var LandingComponent = /** @class */ (function () {
             })
         });
         this.importForm = this.fb.group({
-            pass: ['', forms_1.Validators.required],
+            pass: [''],
             customImportBK: ['', forms_1.Validators.required],
+        });
+        this.refundForm = this.fb.group({
+            account: ['', forms_1.Validators.required],
+            memo: ['', forms_1.Validators.required]
         });
     }
     LandingComponent_1 = LandingComponent;
@@ -141,6 +154,9 @@ var LandingComponent = /** @class */ (function () {
             _this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
         });
     };
+    LandingComponent.prototype.checkPIN = function () {
+        this.noPIN = localStorage.getItem('simpleos-hash') === null;
+    };
     LandingComponent.prototype.resetAndClose = function () {
         this.wizardnew.reset();
         this.wizardnew.close();
@@ -167,53 +183,80 @@ var LandingComponent = /** @class */ (function () {
     };
     LandingComponent.prototype.ngOnInit = function () {
         var _this = this;
-        this.chainConnected = [];
-        this.chainConnected = this.getChainConnected();
-        this.endpoint = this.chainConnected['firstApi'];
+        this.getCurrentEndpoint();
         setTimeout(function () {
             _this.anim.pause();
         }, 10);
         setTimeout(function () {
             _this.anim.play();
         }, 900);
-        console.log('Started landing -------->');
+        this.checkPIN();
+    };
+    LandingComponent.prototype.getCurrentEndpoint = function () {
+        if (this.network.activeChain.lastNode !== '') {
+            this.endpoint = this.network.activeChain.lastNode;
+        }
+        else {
+            this.endpoint = this.network.activeChain['firstApi'];
+        }
     };
     LandingComponent.prototype.parseSYMBOL = function (tk_string) {
-        if (tk_string.split(' ')[1] === this.aService.mainnetActive['symbol']) {
+        if (tk_string.split(' ')[1] === this.network.activeChain['symbol']) {
             return parseFloat(tk_string.split(' ')[0]);
         }
         else {
             return 0;
         }
     };
-    LandingComponent.prototype.getChainConnected = function () {
-        var storeChain = localStorage.getItem('simplEOS.storeChain');
-        var storeChainA = JSON.parse(storeChain);
-        return (storeChainA.find(function (chain) { return chain.active; }));
-    };
-    LandingComponent.prototype.setChangeMainnet = function (chainID) {
-        var _this = this;
-        this.network.mainnetId = this.network.networks.find(function (chain) { return chain.id === chainID; }).id;
-        this.aService.activeChain(this.network.networks.find(function (chain) { return chain.id === _this.network.mainnetId; }).name);
-        LandingComponent_1.resetApp();
+    LandingComponent.prototype.changeChain = function (event) {
+        this.exisitswizard.reset();
+        this.network.changeChain(event);
+        this.getCurrentEndpoint();
     };
     LandingComponent.prototype.setEndPoint = function (ep) {
-        this.endpoint = ep;
-        this.customConnect();
-        this.endpointModal = false;
+        if (ep !== this.endpoint) {
+            this.endpoint = ep;
+            this.customConnect();
+            this.endpointModal = false;
+        }
     };
     LandingComponent.prototype.setPin = function () {
         this.crypto.createPIN(this.pin);
+    };
+    LandingComponent.prototype.validateExchangeMemo = function (account, memo) {
+        if (this.network.activeChain['exchanges']) {
+            if (this.network.activeChain['exchanges'][account]) {
+                var ex = this.network.activeChain['exchanges'][account];
+                // check memo size
+                if (ex['memo_size']) {
+                    if (memo.length !== ex['memo_size']) {
+                        return false;
+                    }
+                }
+                // check memo pattern
+                if (ex['pattern']) {
+                    var regex = new RegExp(ex['pattern']);
+                    return regex.test(memo);
+                }
+                return true;
+            }
+            else {
+                return true;
+            }
+        }
+        else {
+            return true;
+        }
     };
     LandingComponent.prototype.verifyAccountName = function (next) {
         var _this = this;
         try {
             this.accountname_valid = false;
-            var res = this.eos.checkAccountName(this.accountname);
+            var res = this.eos.checkAccountName(this.accountname.toLowerCase());
             var regexName = new RegExp('^([a-z]|[1-5])+$');
             if (res !== 0) {
-                if (this.accountname.length === 12 && regexName.test(this.accountname)) {
-                    this.eos.getAccountInfo(this.accountname).then(function () {
+                if (this.accountname.length === 12 && regexName.test(this.accountname.toLowerCase())) {
+                    this.eos.getAccountInfo(this.accountname.toLowerCase()).then(function () {
                         // this.eos['getAccount'](this.accountname, (err, data) => {
                         //   console.log(err, data);
                         _this.accountname_err = 'This account name is not available. Please try another.';
@@ -240,15 +283,14 @@ var LandingComponent = /** @class */ (function () {
         this.generating = true;
         setTimeout(function () {
             _this.eos.ecc.initialize().then(function () {
-                _this.eos.ecc['randomKey'](128).then(function (privateKey) {
+                _this.eos.ecc['randomKey'](64).then(function (privateKey) {
                     _this.ownerpk = privateKey;
                     _this.ownerpub = _this.eos.ecc['privateToPublic'](_this.ownerpk);
-                    _this.eos.ecc['randomKey'](128).then(function (privateKey2) {
+                    _this.eos.ecc['randomKey'](64).then(function (privateKey2) {
                         _this.activepk = privateKey2;
                         _this.activepub = _this.eos.ecc['privateToPublic'](_this.activepk);
                         _this.generating = false;
                         _this.generated = true;
-                        console.log(_this.activepk, _this.activepub);
                     });
                 });
             });
@@ -259,7 +301,7 @@ var LandingComponent = /** @class */ (function () {
         this.generating2 = true;
         setTimeout(function () {
             _this.eos.ecc.initialize().then(function () {
-                _this.eos.ecc['randomKey'](128).then(function (privateKey) {
+                _this.eos.ecc['randomKey'](64).then(function (privateKey) {
                     _this.ownerpk2 = privateKey;
                     _this.ownerpub2 = _this.eos.ecc['privateToPublic'](_this.ownerpk2);
                     _this.generating2 = false;
@@ -272,7 +314,7 @@ var LandingComponent = /** @class */ (function () {
         if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
             console.log('Generating account payload');
             this.newAccountPayload = btoa(JSON.stringify({
-                n: this.accountname,
+                n: this.accountname.toLowerCase(),
                 o: this.ownerpub,
                 a: this.activepub,
                 t: new Date().getTime()
@@ -286,14 +328,47 @@ var LandingComponent = /** @class */ (function () {
             this.wizardnew.navService.previous();
         }
     };
+    LandingComponent.prototype.makeRelayRequest = function () {
+        var _this = this;
+        var reqData = {
+            name: this.accountname.toLowerCase(),
+            active: this.activepub,
+            owner: this.ownerpub,
+            refund_account: this.refundForm.get('account').value,
+            refund_memo: this.refundForm.get('memo').value
+        };
+        if (this.validateExchangeMemo(reqData.refund_account, reqData.refund_memo)) {
+            this.http.post('https://hapi.eosrio.io/account_creation_api/request_account', reqData).subscribe(function (data) {
+                console.log(data);
+                if (data['status'] === 'OK') {
+                    _this.requestId = data['requestId'];
+                    _this.requestError = '';
+                    _this.requestValid = true;
+                }
+                else {
+                    _this.requestValid = false;
+                    _this.requestError = data['msg'];
+                }
+            });
+        }
+        else {
+            this.requestError = 'Invalid memo format';
+            this.requestValid = false;
+        }
+    };
     LandingComponent.prototype.makeMemo = function () {
-        this.memo = this.accountname + '-' + this.ownerpub + '-' + this.activepub;
+        this.memo = this.accountname.toLowerCase() + '-' + this.ownerpub + '-' + this.activepub;
     };
     LandingComponent.prototype.retryConn = function () {
-        this.network.connect();
+        this.network.connect(true);
     };
     LandingComponent.prototype.customConnect = function () {
         this.network.startup(this.endpoint);
+    };
+    LandingComponent.prototype.getConstitution = function () {
+        if (this.network.activeChain['name'] === 'EOS MAINNET') {
+            this.eos.getConstitution();
+        }
     };
     LandingComponent.prototype.handleAnimation = function (anim) {
         this.anim = anim;
@@ -323,21 +398,42 @@ var LandingComponent = /** @class */ (function () {
             }
         }
     };
+    LandingComponent.prototype.preImportCredentials = function (EOS) {
+        if (EOS) {
+            if (!this.noPIN) {
+                this.importCredentials();
+            }
+        }
+        else {
+            if (!this.noPIN && this.aService.activeChain.name !== 'EOS MAINNET') {
+                this.importCredentials();
+            }
+        }
+    };
     LandingComponent.prototype.importCredentials = function () {
         var _this = this;
-        if (this.passform.value.matchingPassword.pass1 === this.passform.value.matchingPassword.pass2) {
-            this.crypto.initKeys(this.publicEOS, this.passform.value.matchingPassword.pass1).then(function () {
-                _this.crypto.encryptAndStore(_this.pvtform.value.private_key, _this.publicEOS).then(function () {
-                    _this.aService.importAccounts(_this.importedAccounts);
-                    _this.crypto.decryptKeys(_this.publicEOS).then(function () {
-                        _this.router.navigate(['dashboard', 'vote']).catch(function (err) {
-                            console.log(err);
-                        });
-                        if (_this.lockscreen) {
-                            _this.setPin();
+        var pubk = this.publicEOS;
+        var pass1 = this.passform.value.matchingPassword.pass1;
+        var pass2 = this.passform.value.matchingPassword.pass2;
+        if (pass1 === pass2) {
+            this.crypto.initKeys(pubk, pass1).then(function () {
+                var pvk = _this.pvtform.value.private_key;
+                _this.crypto.encryptAndStore(pvk, pubk).then(function () {
+                    pvk = '';
+                    _this.aService.importAccounts(_this.importedAccounts).then(function (data) {
+                        if (data.length > 0) {
+                            _this.crypto.decryptKeys(pubk).then(function () {
+                                _this.router.navigate(['dashboard', 'vote']).then(function () {
+                                }).catch(function (err) {
+                                    console.log(err);
+                                });
+                                if (_this.lockscreen) {
+                                    _this.setPin();
+                                }
+                            }).catch(function (error) {
+                                console.log('Error', error);
+                            });
                         }
-                    }).catch(function (error) {
-                        console.log('Error', error);
                     });
                 }).catch(function (err) {
                     console.log(err);
@@ -372,6 +468,7 @@ var LandingComponent = /** @class */ (function () {
                 _this.zone.run(function () {
                     _this.exisitswizard.forceNext();
                     _this.errormsg = '';
+                    _this.apierror = '';
                 });
             }).catch(function (e) {
                 _this.zone.run(function () {
@@ -388,6 +485,9 @@ var LandingComponent = /** @class */ (function () {
                     if (e.message === 'non_active') {
                         _this.errormsg = 'This is not the active key. Please import the active key.';
                     }
+                    if (e.message === 'api_arror') {
+                        _this.apierror = 'API Unavailable, please try again with another endpoint.';
+                    }
                 });
             });
         }
@@ -395,87 +495,128 @@ var LandingComponent = /** @class */ (function () {
     LandingComponent.prototype.doCancel = function () {
         this.exisitswizard.close();
     };
+    // Verify public key - step 1
     LandingComponent.prototype.checkAccount = function () {
         var _this = this;
-        var _self = this;
         if (this.eos.ready) {
             this.check = true;
             this.accounts = [];
-            console.log('HERE', this.publicEOS);
-            this.eos.loadPublicKey(this.publicEOS).then(function (account_data) {
-                console.log('account', account_data);
-                account_data.foundAccounts.forEach(function (acc) {
-                    var balance = 0;
-                    console.log('account2', acc);
-                    // Parse tokens and calculate balance
-                    acc['tokens'].forEach(function (tk) {
-                        balance += _self.parseSYMBOL(tk);
-                        // balance += LandingComponent.parseEOS(tk);
-                    });
-                    // Add stake balance
-                    // balance += LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-                    // balance += LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-                    balance += _self.parseSYMBOL(acc['total_resources']['cpu_weight']);
-                    balance += _self.parseSYMBOL(acc['total_resources']['net_weight']);
-                    console.log('account2', balance);
-                    var accData = {
-                        name: acc['account_name'],
-                        full_balance: Math.round((balance) * 10000) / 10000
-                    };
-                    _this.accounts.push(accData);
-                });
-                _this.checkerr = '';
+            this.eos.loadPublicKey(this.publicEOS.trim()).then(function (account_data) {
+                console.log(account_data);
+                _this.processCheckAccount(account_data.foundAccounts);
             }).catch(function (err) {
-                console.log('ERROR', err);
+                console.log('ERROR', err.message);
+                console.log('ACCOUNTS', err.accounts);
                 _this.checkerr = err;
+                _this.processCheckAccount(err.accounts);
             });
         }
+    };
+    // Verify public key - step 2
+    LandingComponent.prototype.processCheckAccount = function (foundAccounts) {
+        var _this = this;
+        foundAccounts.forEach(function (acc) {
+            // Parse tokens and calculate balance with system token
+            if (acc['tokens']) {
+                _this.processTokens(acc);
+            }
+            else {
+                _this.eos.getTokens(acc['account_name']).then(function (tokens) {
+                    acc['tokens'] = tokens;
+                    _this.processTokens(acc);
+                }).catch(function (err) {
+                    console.log(err);
+                });
+            }
+        });
+        this.checkerr = '';
+    };
+    // Verify public key - step 3
+    LandingComponent.prototype.processTokens = function (acc) {
+        var _this = this;
+        var balance = 0;
+        acc['tokens'].forEach(function (tk) {
+            balance += _this.parseSYMBOL(tk);
+        });
+        // Add stake balance
+        balance += this.parseSYMBOL(acc['total_resources']['cpu_weight']);
+        balance += this.parseSYMBOL(acc['total_resources']['net_weight']);
+        var accData = {
+            name: acc['account_name'],
+            full_balance: Math.round((balance) * 10000) / 10000
+        };
+        this.accounts.push(accData);
     };
     LandingComponent.prototype.inputIMClick = function () {
         this.customImportBK.nativeElement.click();
     };
     LandingComponent.prototype.importCheckBK = function (a) {
         this.infile = a.target.files[0];
+        console.log(this.infile);
         var name = this.infile.name;
-        if (name !== 'simpleos.bkp') {
+        if (name.split('.')[1] !== 'bkp') {
             this.showToast('error', 'Wrong file!', '');
             this.infile = '';
             return false;
         }
         this.choosedFil = name;
+        console.log(this.choosedFil);
     };
     LandingComponent.prototype.importBK = function () {
         var _this = this;
         this.disableIm = true;
         this.busy2 = true;
-        if (this.infile !== '' && this.importForm.value.pass !== '') {
+        if (this.infile && this.infile !== '') {
             window['filesystem']['readFile'](this.infile.path, 'utf-8', function (err, data) {
                 if (!err) {
                     var pass = _this.importForm.value.pass;
-                    var decrypt = _this.crypto.decryptBKP(data, pass);
+                    var arrLS = null;
+                    var decrypt = null;
                     try {
-                        var arrLS = JSON.parse(decrypt);
-                        _this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
+                        console.log('trying to parse json...');
+                        arrLS = JSON.parse(data);
+                    }
+                    catch (e) {
+                        // backup encrypted, password required
+                        if (pass !== '') {
+                            decrypt = _this.crypto.decryptBKP(data, pass);
+                            try {
+                                arrLS = JSON.parse(decrypt);
+                            }
+                            catch (e) {
+                                _this.showToast('error', 'Wrong password, please try again!', '');
+                                console.log('wrong file');
+                            }
+                        }
+                        else {
+                            _this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
+                        }
+                    }
+                    if (arrLS) {
                         arrLS.forEach(function (d) {
                             localStorage.setItem(d['key'], d['value']);
                         });
+                        _this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
+                        LandingComponent_1.resetApp();
                         _this.choosedFil = '';
                         _this.disableIm = false;
                         _this.busy2 = false;
                         _this.importBKP = false;
-                        LandingComponent_1.resetApp();
                     }
-                    catch (e) {
-                        _this.showToast('error', 'Wrong password, please try again!', '');
+                    else {
+                        _this.choosedFil = '';
+                        _this.disableIm = false;
+                        _this.busy2 = false;
                     }
                 }
                 else {
                     _this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
+                    console.log('wrong entry');
                 }
             });
         }
         else {
-            this.showToast('error', 'Choose your backup file and fill the password field!', '');
+            this.showToast('error', 'Choose your backup file', '');
             this.choosedFil = '';
             this.disableIm = false;
             this.busy2 = false;
@@ -491,10 +632,6 @@ var LandingComponent = /** @class */ (function () {
         __metadata("design:type", angular_1.ClrWizard)
     ], LandingComponent.prototype, "wizardnew", void 0);
     __decorate([
-        core_1.ViewChild('wizardexodus'),
-        __metadata("design:type", angular_1.ClrWizard)
-    ], LandingComponent.prototype, "wizard", void 0);
-    __decorate([
         core_1.ViewChild('wizardkeys'),
         __metadata("design:type", angular_1.ClrWizard)
     ], LandingComponent.prototype, "wizardkeys", void 0);
@@ -509,6 +646,7 @@ var LandingComponent = /** @class */ (function () {
             styleUrls: ['./landing.component.css']
         }),
         __metadata("design:paramtypes", [eosjs_service_1.EOSJSService,
+            voting_service_1.VotingService,
             crypto_service_1.CryptoService,
             forms_1.FormBuilder,
             accounts_service_1.AccountsService,
@@ -516,7 +654,8 @@ var LandingComponent = /** @class */ (function () {
             network_service_1.NetworkService,
             router_1.Router,
             core_1.NgZone,
-            ram_service_1.RamService])
+            ram_service_1.RamService,
+            http_1.HttpClient])
     ], LandingComponent);
     return LandingComponent;
 }());

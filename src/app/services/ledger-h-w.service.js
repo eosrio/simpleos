@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var assert = require("assert");
-var eosjs_service_1 = require("../eosjs.service");
+var eosjs_service_1 = require("./eosjs.service");
 var rxjs_1 = require("rxjs");
 var LedgerHWService = /** @class */ (function () {
     function LedgerHWService(eosService) {

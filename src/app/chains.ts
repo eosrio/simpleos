@@ -4,6 +4,9 @@ export const defaultChainsJSON = [
 		symbol: 'EOS',
 		name: 'EOS MAINNET',
 		firstApi: 'https://hapi.eosrio.io',
+		historyApi: 'https://eos.hyperion.eosrio.io/v2',
+		eosrioBP: 'eosriobrazil',
+		proxyRegistry: 'regproxyinfo',
 		lastNode: '',
 		features: {
 			history: true,
@@ -14,7 +17,8 @@ export const defaultChainsJSON = [
 			dapps: true,
 			addAcc: true,
 			newAcc: true,
-			forum: true
+			forum: true,
+			rex: true,
 		},
 		system: [
 			'eosio',
@@ -26,11 +30,11 @@ export const defaultChainsJSON = [
 			// {url: 'https://api.eosrio.io', owner: 'EOS Rio', latency: 0},
 			{url: 'https://hapi.eosrio.io', owner: 'EOS Rio', latency: 0},
 			{url: 'https://eu.eosdac.io', owner: 'eosDAC', latency: 0},
-			{url: 'https://mainnet.eoscalgary.io', owner: 'eoscalgary', latency: 0},
+			// {url: 'https://mainnet.eoscalgary.io', owner: 'eoscalgary', latency: 0},
 			// {url: 'https://api.dpos.africa/', owner: 'EOS Africa', latency: 0},
-			{url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0},
+			// {url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0},
 			{url: 'https://api.eoslaomao.com', owner: 'EOS Asia', latency: 0},
-			{url: 'https://mainnet.genereos.io', owner: 'EOS Asia', latency: 0},
+			// {url: 'https://mainnet.genereos.io', owner: 'EOS Asia', latency: 0},
 			{url: 'https://node1.eosphere.io', owner: 'EOS Asia', latency: 0},
 			{url: 'https://proxy.eosnode.tools', owner: 'Proxy Node', latency: 0},
 			{url: 'https://history.cryptolions.io', owner: 'EOS Cryptolions', latency: 0, version: 'mongo'}
@@ -88,7 +92,10 @@ export const defaultChainsJSON = [
 		symbol: 'BOS',
 		name: 'BOS MAINNET',
 		firstApi: 'https://api.bos.eosrio.io',
+		historyApi: 'https://bos.hyperion.eosrio.io/v2',
 		lastNode: '',
+		eosrioBP: 'bosriobrasil',
+		proxyRegistry: 'regproxyinfo',
 		features: {
 			history: true,
 			send: true,
@@ -98,7 +105,8 @@ export const defaultChainsJSON = [
 			dapps: true,
 			addAcc: true,
 			newAcc: true,
-			forum: false
+			forum: false,
+			rex: true,
 		},
 		system: [
 			'eosio',
@@ -106,7 +114,6 @@ export const defaultChainsJSON = [
 			'eosio.msig'
 		],
 		endpoints: [
-			{url: 'https://api.bos.eosrio.io', owner: 'BOS Rio', latency: 0, version: 'native'},
 			{url: 'https://hapi.bos.eosrio.io', owner: 'BOS Rio', latency: 0, version: 'native'},
 			{url: 'https://bos.eosargentina.io', owner: 'EOS Argentina', latency: 0},
 			{url: 'https://api.bossweden.org', owner: 'BOS Sweden', latency: 0, version: 'native'},
@@ -128,11 +135,97 @@ export const defaultChainsJSON = [
 		]
 	},
 	{
+		id: 'cfe6486a83bad4962f232d48003b1824ab5665c36778141034d75e57b956e422',
+		symbol: 'MEETONE',
+		name: 'MEET.ONE MAINNET',
+		firstApi: 'https://fullnode.meet.one',
+		historyApi: 'https://meetone.hyperion.eosrio.io/v2',
+		eosrioBP: '',
+		lastNode: '',
+		proxyRegistry: 'proxies.m',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: true,
+			addAcc: true,
+			newAcc: true,
+			forum: false,
+			rex: false,
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'https://fullnode.meet.one', owner: 'MEET.ONE', latency: 0},
+			{url: 'https://api.meetone.eostribe.io', owner: 'EOS TRIBE', latency: 0},
+			{url: 'https://api.meetone.alohaeos.com', owner: 'AlohaEOS', latency: 0},
+			{url: 'https://meetone.eossweden.eu', owner: 'EOS Sweden', latency: 0},
+			// {url: 'http://api-meetone.eossf.net:8888', owner: 'eossf', latency: 0},
+			// {url: 'https://meetone.eosphere.io', owner: 'Eosphere', latency: 0},
+			// {url: 'https://meetone.eosn.io', owner: 'eosn', latency: 0},
+			// {url: 'https://meetone.eosargentina.io', owner: 'Eos Argentina', latency: 0}
+		],
+		explorers: [
+			{
+				name: 'EOSX',
+				account_url: 'https://meetone.eosx.io/account/',
+				tx_url: 'https://meetone.eosx.io/tx/'
+			}
+		]
+	},
+	{
+		id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
+		symbol: 'TLOS',
+		name: 'TELOS MAINNET',
+		firstApi: 'https://api.tlos.goodblock.io',
+		historyApi: '',
+		eosrioBP: '',
+		lastNode: '',
+		proxyRegistry: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: false,
+			addAcc: true,
+			newAcc: true,
+			forum: false,
+			rex: false,
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'https://api.eos.miami', owner: 'Telos Miami', latency: 0},
+			{url: 'https://api.tlos.goodblock.io', owner: 'Telos Goodblock', latency: 0},
+			{url: 'https://telos.caleos.io', owner: 'Telos Caleos', latency: 0}
+		],
+		explorers: [
+			{
+				name: 'EOSX',
+				account_url: 'https://telos.eosx.io/account/',
+				tx_url: 'https://telos.eosx.io/tx/'
+			}
+		]
+	},
+	{
 		id: '73647cde120091e0a4b85bced2f3cfdb3041e266cbbe95cee59b73235a1b3b6f',
 		symbol: 'WBI',
 		name: 'WORBLI MAINNET',
 		firstApi: 'https://api.worbli.eosrio.io',
+		historyApi: '',
 		lastNode: '',
+		eosrioBP: 'eosrio',
+		proxyRegistry: '',
 		features: {
 			history: true,
 			send: true,
@@ -142,7 +235,8 @@ export const defaultChainsJSON = [
 			dapps: true,
 			addAcc: true,
 			newAcc: false,
-			forum: false
+			forum: false,
+			rex: false,
 		},
 		system: [
 			'eosio',
@@ -168,11 +262,14 @@ export const defaultChainsJSON = [
 		]
 	},
 	{
-		id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
-		symbol: 'TLOS',
-		name: 'TELOS MAINNET',
-		firstApi: 'https://api.eos.miami',
+		id: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
+		symbol: 'EOS',
+		name: 'EOS JUNGLE TESTNET',
+		firstApi: 'https://jungle2.cryptolions.io:443',
+		historyApi: 'https://jungle.hyperion.eosrio.io/v2',
+		eosrioBP: '',
 		lastNode: '',
+		proxyRegistry: '',
 		features: {
 			history: true,
 			send: true,
@@ -182,7 +279,8 @@ export const defaultChainsJSON = [
 			dapps: true,
 			addAcc: true,
 			newAcc: true,
-			forum: false
+			forum: false,
+			rex: true,
 		},
 		system: [
 			'eosio',
@@ -190,13 +288,13 @@ export const defaultChainsJSON = [
 			'eosio.msig'
 		],
 		endpoints: [
-			{url: 'https://api.eos.miami', owner: 'Telos', latency: 0}
+			{url: 'https://junglehistory.cryptolions.io:4433', owner: 'Jungle 2', latency: 0},
 		],
 		explorers: [
 			{
 				name: 'EOSX',
-				account_url: 'https://telos.eosx.io/account/',
-				tx_url: 'https://telos.eosx.io/tx/'
+				account_url: 'https://jungle.eosx.io/account/',
+				tx_url: 'https://jungle.eosx.io/tx/'
 			}
 		]
 	},
@@ -205,17 +303,21 @@ export const defaultChainsJSON = [
 		symbol: 'BOS',
 		name: 'BOS TESTNET',
 		firstApi: 'https://boscore.eosrio.io',
+		historyApi: '',
+		eosrioBP: 'bosriobrazil',
 		lastNode: '',
+		proxyRegistry: '',
 		features: {
 			history: true,
 			send: true,
 			resource: true,
 			vote: true,
 			staking: true,
-			dapps: true,
+			dapps: false,
 			addAcc: true,
 			newAcc: true,
-			forum: false
+			forum: false,
+			rex: true,
 		},
 		system: [
 			'eosio',
@@ -235,54 +337,25 @@ export const defaultChainsJSON = [
 		]
 	},
 	{
-		id: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
-		symbol: 'EOS',
-		name: 'EOS JUNGLE TESTNET',
-		firstApi: 'https://jungle2.cryptolions.io:443',
-		lastNode: '',
-		features: {
-			history: true,
-			send: true,
-			resource: true,
-			vote: true,
-			staking: true,
-			dapps: true,
-			addAcc: true,
-			newAcc: true,
-			forum: false
-		},
-		system: [
-			'eosio',
-			'eosio.token',
-			'eosio.msig'
-		],
-		endpoints: [
-			{url: 'https://junglehistory.cryptolions.io:4433', owner: 'Jungle 2', latency: 0},
-		],
-		explorers: [
-			{
-				name: 'EOSX',
-				account_url: 'https://jungle.eosx.io/account/',
-				tx_url: 'https://jungle.eosx.io/tx/'
-			}
-		]
-	},
-	{
 		id: '5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191',
 		symbol: 'EOS',
 		name: 'EOS KYLIN TESTNET',
 		firstApi: 'https://api-kylin.eoslaomao.com',
+		historyApi: '',
+		eosrioBP: 'eosriobrazil',
 		lastNode: '',
+		proxyRegistry: '',
 		features: {
 			history: true,
 			send: true,
 			resource: true,
 			vote: true,
 			staking: true,
-			dapps: true,
+			dapps: false,
 			addAcc: true,
 			newAcc: true,
-			forum: false
+			forum: false,
+			rex: true,
 		},
 		system: [
 			'eosio',
@@ -305,5 +378,68 @@ export const defaultChainsJSON = [
 				tx_url: 'https://kylin.bloks.io/tx/'
 			}
 		]
+	},
+	{
+		id: '246cbad5405bf2d8e8888adab0a9bd2ea49693edbd69ee4cd0316c64a9f68d60',
+		symbol: 'LLM',
+		name: 'LIBERLAND TESTNET',
+		firstApi: 'https://liberland.eossweden.org',
+		historyApi: 'https://liberland.hyperion.eosrio.io/v2',
+		eosrioBP: '',
+		lastNode: '',
+		proxyRegistry: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: false,
+			staking: true,
+			dapps: false,
+			addAcc: true,
+			newAcc: false,
+			forum: false,
+			rex: false,
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			// {url: 'http://alpha.ll.eosrio.io:6001', owner: 'EOS Rio Brazil', latency: 0},
+			{url: 'https://liberland.eossweden.org', owner: 'EOS Sweden', latency: 0}
+		],
+		explorers: []
+	},
+	{
+		id: '7136e3e32a458bb99cf6973ab5055869d25830607b9e78593769e1be52fb6f20',
+		symbol: 'MEETONE',
+		name: 'MEET.ONE TESTNET',
+		firstApi: 'https://sidechain-test-history.meet.one',
+		historyApi: '',
+		eosrioBP: '',
+		proxyRegistry: 'proxies.m',
+		lastNode: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: true,
+			addAcc: true,
+			newAcc: true,
+			forum: false,
+			rex: false,
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'https://sidechain-test-history.meet.one', owner: 'MEET.ONE', latency: 0}
+		],
+		explorers: []
 	}
 ];

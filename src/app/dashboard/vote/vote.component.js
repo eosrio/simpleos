@@ -10,18 +10,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var voting_service_1 = require("./voting.service");
-var accounts_service_1 = require("../../accounts.service");
-var eosjs_service_1 = require("../../eosjs.service");
+var voting_service_1 = require("../../services/voting.service");
+var accounts_service_1 = require("../../services/accounts.service");
+var eosjs_service_1 = require("../../services/eosjs.service");
 var forms_1 = require("@angular/forms");
 var angular2_toaster_1 = require("angular2-toaster");
 var textMaskAddons_1 = require("text-mask-addons/dist/textMaskAddons");
 var crypto_service_1 = require("../../services/crypto.service");
 var http_1 = require("@angular/common/http");
-var ledger_h_w_service_1 = require("../../services/ledger-h-w.service");
 var moment = require("moment");
 var VoteComponent = /** @class */ (function () {
-    function VoteComponent(voteService, http, aService, eos, crypto, fb, toaster, cdr, ledger) {
+    function VoteComponent(voteService, http, aService, eos, crypto, fb, toaster, cdr) {
         this.voteService = voteService;
         this.http = http;
         this.aService = aService;
@@ -30,7 +29,6 @@ var VoteComponent = /** @class */ (function () {
         this.fb = fb;
         this.toaster = toaster;
         this.cdr = cdr;
-        this.ledger = ledger;
         this.minToStake = 0.01;
         this.numberMask = textMaskAddons_1.createNumberMask({
             prefix: '',
@@ -45,6 +43,7 @@ var VoteComponent = /** @class */ (function () {
             decimalLimit: 1,
             integerLimit: 3,
         });
+        this.showAdvancedRatio = false;
         this.initOptions = {
             renderer: 'z',
             width: 1000,
@@ -52,6 +51,8 @@ var VoteComponent = /** @class */ (function () {
         };
         this.net_weight = '';
         this.cpu_weight = '';
+        this.stakingRatio = 75;
+        this.voteService.bpsByChain(this.aService.activeChain.id);
         if (this.voteService.bps) {
             this.nbps = this.voteService.bps.length;
         }
@@ -99,7 +100,9 @@ var VoteComponent = /** @class */ (function () {
                     }
                 }
             },
-            tooltip: {},
+            tooltip: {
+                formatter: function (params) { return '<strong>' + params['data']['location'] + '</strong><br> Rank: ' + params['data']['position'] + '<br> Status:  ' + params['data']['status']; }
+            },
             animationDuration: 1500,
             animationEasingUpdate: 'quinticInOut',
             series: [
@@ -153,6 +156,9 @@ var VoteComponent = /** @class */ (function () {
         var val = parseInt(value.toString(), 10);
         return val.toString();
     };
+    VoteComponent.prototype.updateRatio = function () {
+        console.log(this.stakingRatio);
+    };
     Object.defineProperty(VoteComponent.prototype, "getValuetoStake", {
         get: function () {
             return parseFloat(this.valuetoStake);
@@ -166,7 +172,7 @@ var VoteComponent = /** @class */ (function () {
         var nextStakeInt = Math.round(nextStakeFloat * 10000);
         var diff = nextStakeInt - prevStake;
         this.stakingDiff = diff;
-        this.stakingHRV = (Math.abs(this.stakingDiff) / 10000) + ' EOS';
+        this.stakingHRV = (Math.abs(this.stakingDiff) / 10000) + ' ' + this.aService.activeChain['symbol'];
         if (diff === 0) {
             this.stakerr = 'Value has not changed';
         }
@@ -181,25 +187,23 @@ var VoteComponent = /** @class */ (function () {
         var pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(password, pubkey).then(function (data) {
             if (data === true) {
-                var call = void 0;
-                if (_this.stakingDiff < 0) {
-                    console.log('Unstaking: ' + Math.abs(_this.stakingDiff));
-                    call = _this.eos.unstake(account.name, Math.abs(_this.stakingDiff), _this.aService.mainnetActive['symbol']);
-                }
-                else {
-                    console.log('Staking: ' + Math.abs(_this.stakingDiff));
-                    call = _this.eos.stake(account.name, Math.abs(_this.stakingDiff), _this.aService.mainnetActive['symbol']);
-                }
-                call.then(function () {
+                _this.eos.changebw(account.name, _this.stakingDiff, _this.aService.activeChain['symbol'], _this.stakingRatio / 100)
+                    .then(function (trx) {
+                    console.log(trx);
                     _this.busy = false;
                     _this.wrongpass = '';
                     _this.stakeModal = false;
                     _this.cdr.detectChanges();
-                    _this.showToast('success', 'Action broadcasted', 'Check your history for confirmation.');
+                    _this.showToast('success', 'Tramsaction broadcasted', 'Check your history for confirmation.');
                     setTimeout(function () {
-                        _this.aService.refreshFromChain();
-                    }, 500);
-                }).catch(function (error) {
+                        _this.aService.refreshFromChain().then(function () {
+                            _this.cpu_weight = _this.aService.selected.getValue().details.total_resources.cpu_weight;
+                            _this.net_weight = _this.aService.selected.getValue().details.total_resources.net_weight;
+                        });
+                    }, 1500);
+                })
+                    .catch(function (error) {
+                    console.log(error);
                     if (typeof error === 'object') {
                         _this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
                     }
@@ -208,7 +212,7 @@ var VoteComponent = /** @class */ (function () {
                             _this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
                         }
                         else {
-                            _this.wrongpass = JSON.parse(error).error['what'];
+                            _this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
                         }
                     }
                     _this.busy = false;
@@ -231,14 +235,18 @@ var VoteComponent = /** @class */ (function () {
     };
     VoteComponent.prototype.ngOnInit = function () {
         var _this = this;
+        setTimeout(function () {
+            _this.voteService.callLoader();
+        }, 1000);
         var selectedAcc = this.aService.selected.getValue();
         this.aService.lastUpdate.asObservable().subscribe(function (value) {
             if (value.account === _this.aService.selected.getValue().name) {
                 _this.updateBalances();
+                _this.stakingRatio = 75;
             }
         });
         this.aService.selected.asObservable().subscribe(function (selected) {
-            if (selected) {
+            if (selected && selected['name']) {
                 _this.fromAccount = selected.name;
                 _this.totalBalance = selected.full_balance;
                 _this.stakedBalance = selected.staked;
@@ -259,7 +267,7 @@ var VoteComponent = /** @class */ (function () {
                 _this.net_weight = selected.details.total_resources.net_weight;
             }
         });
-        if (this.aService.mainnetActive['vote']) {
+        if (this.aService.activeChain.features['vote']) {
             this.voteService.listReady.asObservable().subscribe(function (state) {
                 if (state) {
                     _this.updateCounter();
@@ -287,7 +295,9 @@ var VoteComponent = /** @class */ (function () {
         this.getCurrentStake();
     };
     VoteComponent.prototype.ngAfterViewInit = function () {
-        //this.voteService.listProducers();
+        this.voteService.listProducers().catch(function (err) {
+            console.log(err);
+        });
     };
     VoteComponent.prototype.getCurrentStake = function () {
         if (this.totalBalance > 0) {
@@ -340,9 +350,6 @@ var VoteComponent = /** @class */ (function () {
             this.updateStakePercent();
         }
     };
-    VoteComponent.prototype.shuffleBps = function () {
-        this.voteService.randomizeList();
-    };
     VoteComponent.prototype.processVotes = function () {
         var _this = this;
         this.selectedBPs = [];
@@ -369,11 +376,11 @@ var VoteComponent = /** @class */ (function () {
         var voter = this.aService.selected.getValue();
         var publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(pass, publicKey).then(function (data) {
-            console.log('Auth output:', data);
+            // console.log('Auth output:', data);
             if (data === true) {
                 _this.aService.injectLedgerSigner();
                 _this.eos.voteProducer(voter.name, _this.selectedBPs).then(function (result) {
-                    console.log(result);
+                    // console.log(result);
                     if (JSON.parse(result).code) {
                         // if (err2.error.code === 3081001) {
                         _this.wrongpass = JSON.parse(result).error.details[0].message;
@@ -391,7 +398,7 @@ var VoteComponent = /** @class */ (function () {
                         _this.aService.refreshFromChain();
                         setTimeout(function () {
                             _this.loadPlacedVotes(_this.aService.selected.getValue());
-                        }, 500);
+                        }, 1500);
                     }
                 }).catch(function (err2) {
                     console.log(err2);
@@ -463,8 +470,7 @@ var VoteComponent = /** @class */ (function () {
             crypto_service_1.CryptoService,
             forms_1.FormBuilder,
             angular2_toaster_1.ToasterService,
-            core_1.ChangeDetectorRef,
-            ledger_h_w_service_1.LedgerHWService])
+            core_1.ChangeDetectorRef])
     ], VoteComponent);
     return VoteComponent;
 }());

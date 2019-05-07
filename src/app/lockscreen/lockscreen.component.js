@@ -12,12 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var crypto_service_1 = require("../services/crypto.service");
 var router_1 = require("@angular/router");
-var network_service_1 = require("../network.service");
+var network_service_1 = require("../services/network.service");
+var accounts_service_1 = require("../services/accounts.service");
 var LockscreenComponent = /** @class */ (function () {
-    function LockscreenComponent(crypto, router, network) {
+    function LockscreenComponent(crypto, router, network, aService) {
         this.crypto = crypto;
         this.router = router;
         this.network = network;
+        this.aService = aService;
         this.pin = '';
         this.nAttempts = 5;
         this.wrongpass = false;
@@ -35,10 +37,9 @@ var LockscreenComponent = /** @class */ (function () {
         window['remote']['app'].exit(0);
     };
     LockscreenComponent.prototype.ngOnInit = function () {
-        console.log('--------------------------->', localStorage.getItem('simpleos-hash'));
         if (localStorage.getItem('simpleos-hash') === null) {
             this.router.navigate(['landing']).catch(function () {
-                alert('cannot navigate :(');
+                alert('cannot navigate out');
             });
         }
     };
@@ -48,9 +49,9 @@ var LockscreenComponent = /** @class */ (function () {
     };
     LockscreenComponent.prototype.unlock = function () {
         var target = ['landing'];
-        // if (this.network.networkingReady.getValue()) {
-        //     target = ['dashboard', 'wallet'];
-        // }
+        if (this.network.networkingReady.getValue() && this.aService.accounts.length > 0) {
+            target = ['dashboard', 'wallet'];
+        }
         if (!this.crypto.unlock(this.pin, target)) {
             this.wrongpass = true;
             this.nAttempts--;
@@ -67,7 +68,7 @@ var LockscreenComponent = /** @class */ (function () {
         else {
             var arr = [];
             for (var i = 0; i < localStorage.length; i++) {
-                if (localStorage.key(i) !== 'simpleos.contacts.' + this.network.mainnetActive['id']) {
+                if (localStorage.key(i) !== 'simpleos.contacts.' + this.network.activeChain['id']) {
                     arr.push(localStorage.key(i));
                 }
             }
@@ -84,7 +85,10 @@ var LockscreenComponent = /** @class */ (function () {
             templateUrl: './lockscreen.component.html',
             styleUrls: ['./lockscreen.component.css']
         }),
-        __metadata("design:paramtypes", [crypto_service_1.CryptoService, router_1.Router, network_service_1.NetworkService])
+        __metadata("design:paramtypes", [crypto_service_1.CryptoService,
+            router_1.Router,
+            network_service_1.NetworkService,
+            accounts_service_1.AccountsService])
     ], LockscreenComponent);
     return LockscreenComponent;
 }());

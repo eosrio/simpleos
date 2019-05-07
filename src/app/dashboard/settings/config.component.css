@@ -72,13 +72,13 @@
     display: block;
 }
 
-/deep/ .mat-select-value {
+/deep/ .chain-selector .mat-select-value {
 	color: #0094d2;
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
-/deep/ .mat-option {
+/deep/ .chain-option.mat-option {
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;
 	/*background-color: #333333;*/
@@ -88,7 +88,7 @@
 	background: #333333;
 }
 
-/deep/ .mat-primary .mat-option.mat-selected:not(.mat-option-disabled) {
+/deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
 	color: #0094d2;
 }
 

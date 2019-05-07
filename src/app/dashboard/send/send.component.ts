@@ -60,7 +60,8 @@ export class SendComponent implements OnInit {
 	token_balance = 0.0000;
 	selectedToken = {};
 	selectedEditContact = null;
-	selectedDeleteContactName = '';
+	selectedDeleteContact = null;
+	displayAddToContacts = false;
 
 	knownExchanges = [
 		'bitfinexdep1', 'krakenkraken', 'chainceoneos',
@@ -112,8 +113,7 @@ export class SendComponent implements OnInit {
 			name: this.aService.activeChain['symbol'],
 			price: 1.0000
 		};
-		console.log(this.selectedToken);
-		// name: 'EOS', //CSTAM
+		this.selectedDeleteContact = [];
 
 	}
 
@@ -134,9 +134,15 @@ export class SendComponent implements OnInit {
 	checkExchangeAccount() {
 		const memo = this.sendForm.get('memo');
 		const acc = this.sendForm.get('to').value;
+
 		if (this.knownExchanges.includes(acc)) {
+			if (this.aService.activeChain.exchanges[acc]) {
+				memo.setValidators([Validators.required, Validators.pattern(this.aService.activeChain.exchanges[acc].pattern), Validators.maxLength(this.aService.activeChain.exchanges[acc].memo_size)]);
+			} else {
+				memo.setValidators([Validators.required]);
+			}
 			this.memoMsg = 'required';
-			memo.setValidators([Validators.required]);
+
 			memo.updateValueAndValidity();
 		} else {
 			this.memoMsg = 'optional';
@@ -185,10 +191,10 @@ export class SendComponent implements OnInit {
 
 	checkContact(value) {
 		this.checkExchangeAccount();
-		const found = this.contacts.findIndex((el) => {
+		const found = this.contacts.find((el) => {
 			return el.account === value;
 		});
-		this.contactExist = found === -1;
+		this.contactExist = !!found;
 	}
 
 	setMax() {
@@ -401,7 +407,7 @@ export class SendComponent implements OnInit {
 	}
 
 	transfer() {
-		this.checkExchangeAccount();
+
 		this.busy = true;
 		this.wrongpass = '';
 		const selAcc = this.aService.selected.getValue();
@@ -515,17 +521,16 @@ export class SendComponent implements OnInit {
 
 	openDeleteContactModal(contact) {
 		this.deleteContactModal = true;
-		this.selectedDeleteContactName = contact.name;
+		this.selectedDeleteContact = contact;
 	}
 
 	doDeleteContact() {
 		const index = this.contacts.findIndex((el) => {
-			return el.account === this.selectedEditContact.account;
+			return el.account === this.selectedDeleteContact.account;
 		});
 		this.contacts.splice(index, 1);
 		this.deleteContactModal = false;
 		this.addDividers();
 		this.storeContacts();
 	}
-
 }

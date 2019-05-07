@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component , OnInit } from '@angular/core';
 import {CryptoService} from '../services/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../services/network.service';

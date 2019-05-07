@@ -151,6 +151,10 @@ export class DashboardComponent implements OnInit {
 		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
 	}
 
+	extOpen(value) {
+		window['shell'].openExternal(value);
+	}
+
 	// verifyPrivateKey(input) {
 	//   if (input !== '') {
 	//     this.eos.checkPvtKey(input).then((results) => {

@@ -3,7 +3,7 @@ import {Component, Input, OnInit} from '@angular/core';
 @Component({
 	selector: 'app-field-builder',
 	template: '<div class="form-row" [formGroup]="form">' +
-		// '    <div class="col-md-9" [ngSwitch]="field.type">' +
+		// '    <div class="clr-col-md-9" [ngSwitch]="field.type">' +
 		'       <textbox [field]="field" [form]="form"></textbox>' +
 		// '       <textbox *ngSwitchCase="\'text\'" class="float:left;width:70%;" [field]="field" [form]="form"></textbox>' +
 		'       <div class="text-danger fadeInDown animated" style="margin-bottom: 10px!important;" *ngIf="!isValid"><b>* is required</b></div>' +
@@ -15,17 +15,21 @@ export class FieldBuilderComponent implements OnInit {
 	@Input() form: any;
 
 	get isValid() {
-		return this.form.controls[this.field.name].valid;
+
+			return this.form.controls[this.field.nameField].valid;
+
 	}
 
 	get isDirty() {
-		return this.form.controls[this.field.name].dirty;
+
+			return this.form.controls[this.field.nameField].dirty;
 	}
 
 	constructor() {
 	}
 
 	ngOnInit() {
+		//console.log('---->',this.field);
 	}
 
 }

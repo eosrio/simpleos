@@ -1,39 +1,39 @@
 <div class="container" style="height: 100%;">
 	<div class="card header-card animate">
-		<div class="row flex-items-xs-around">
-			<div class="col-lg-4 col-md-5 text-left">
+		<div class="clr-row flex-items-xs-around">
+			<div class="clr-col-lg-4 clr-col-md-5 text-left">
 				<h4 class="title">Referendum &nbsp;
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+					<a role="doc-noteref" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
 						<span class="tooltip-content">For a proposal to pass, it needs to have 15% of tokens (around 150MM EOS) voted on it and 10% more YES than NO need to be sustained for 30 days within a 120 day period.</span>
 					</a>
 				</h4>
 				<h5 class="subtitle mt-0">vote for proposals on the EOS Mainnet</h5>
 			</div>
-			<div class="col-lg-3 col-md-6 text-right offset-lg-1">
+			<div class="clr-col-lg-3 clr-col-md-6 text-right offset-lg-1">
 				<mat-form-field class="searchbar">
 					<input type="text" matInput placeholder="Search..."
-						   (input)="filterProposals($event.target.value)">
+						   (input)="filterProposals($event.target['value'])">
 					<fa-icon matSuffix [icon]="['far', 'search']" size="lg"></fa-icon>
 				</mat-form-field>
 			</div>
-			<div class="col-lg text-right">
+			<div class="clr-col-lg text-right">
 				Filter by
-				<mat-form-field class="example-full-width" style="width: 207px;">
+				<mat-form-field class="filter-selector example-full-width" style="width: 207px;">
 					<mat-select value="mosteos" (selectionChange)="sortingChange($event)">
-						<mat-option value="mosteos">Most EOS voted</mat-option>
-						<mat-option value="mostvoted">Most voters</mat-option>
-						<mat-option value="newest">Newest First</mat-option>
-						<mat-option value="oldest">Oldest First</mat-option>
-						<mat-option value="expiresfirst">Expires First</mat-option>
-						<mat-option value="expireslast">Expires Last</mat-option>
+						<mat-option value="mosteos" class="filter-option">Most EOS voted</mat-option>
+						<mat-option value="mostvoted" class="filter-option">Most voters</mat-option>
+						<mat-option value="newest" class="filter-option">Newest First</mat-option>
+						<mat-option value="oldest" class="filter-option">Oldest First</mat-option>
+						<mat-option value="expiresfirst" class="filter-option">Expires First</mat-option>
+						<mat-option value="expireslast" class="filter-option">Expires Last</mat-option>
 					</mat-select>
 				</mat-form-field>
 			</div>
 		</div>
 	</div>
-	<div class="row" style="height: 100%; opacity: 0.85" *ngIf="loading">
-		<div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+	<div class="clr-row" style="height: 100%; opacity: 0.85" *ngIf="loading">
+		<div class="clr-col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
 			<ng-container>
 
 				<fa-layers class="mt-2 mb-1">
@@ -46,37 +46,37 @@
 		</div>
 	</div>
 
-	<div class="row animate">
-		<ng-container *ngFor="let p of (proposals
+	<div class="clr-row animate">
+		<ng-container *ngFor='let p of (proposals
 		| fusejs: searchString :{
-					 threshold: 0.1,
-					 distance: 300,
-					 tokenize: false,
-					 minMatchCharLength: 1,
-					 shouldSort: true,
-					 keys: [
-						 {
-							name:'proposal.proposal_name',
-							weight:0.8
-						 },
-						 {
-							name:'proposal.title',
-							weight:0.7
-						 },
-						 {
-							name:'proposal.json_data.content',
-							weight:0.4
-						 }
-					 ]
-				}
+				"threshold": 0.1,
+				"distance": 300,
+				"tokenize": false,
+				"minMatchCharLength": 1,
+				"shouldSort": true,
+				"keys": [
+					{
+						"name": "proposal.proposal_name",
+						"weight": 0.8
+					},
+					{
+						"name": "proposal.title",
+						"weight": 0.7
+					},
+					{
+						"name":"proposal.json_data.content",
+						"weight": 0.4
+					}
+				]
+			}
 		| orderBy: sortExpression : sortReverse : true : comparatorMethod
-		) | paginate: {itemsPerPage: 16,currentPage: page}">
+		) | paginate: {itemsPerPage: 16,currentPage: page}'>
 
-			<div class="col-lg-6" *ngIf="p.stats.staked['total'] > 0 || isExpired(p.proposal.expires_at)">
-				<div class="card proposal-card">
+			<div class="clr-col-lg-6" *ngIf="p['stats']['staked']['total'] > 0 || isExpired(p['proposal']['expires_at'])">
+				<div class="card proposal-card" (click)="openSeeMore(p)">
 					<div class="proposal-body">
 					<span class="blue" style="font-weight: 500;"
-						  [innerHTML]="'#' + p['fuseJsHighlighted'].proposal.proposal_name"></span>
+						  [innerHTML]="'#' + p['fuseJsHighlighted']['proposal']['proposal_name']"></span>
 
 						<span class="boxExpires {{ isExpired(p.proposal.expires_at) ? 'expired' : 'expires'}}">
 					{{ getExpiretime(p.proposal.expires_at) }}!
@@ -90,28 +90,28 @@
                             <div style="color: #2e7db2;">expires: {{proposal.expires_at}}</div-->
 							<ng-container *ngIf="p.proposal.json_data">
 								<div class="gray text-justify proposal-content"
-									 [innerHTML]="p['fuseJsHighlighted'].proposal.json_data.content"></div>
+									 [innerHTML]="contentStyle(p['fuseJsHighlighted'].proposal.json_data.content,'text-muted')"></div>
 							</ng-container>
 						</div>
 
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,0)"
+							(click)="startVote(p,0, $event);"
 							style="margin-top: 15px; padding:0px 17px !important;">
 							0 - No
 						</button>
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,1);"
+							(click)="startVote(p,1, $event);"
 							style="margin-top: 15px; padding:0px 17px !important;">
 							1 - Yes
 						</button>
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && (p.proposal.json_data.type==='poll-yna-v1')"
 							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,2);"
+							(click)="startVote(p,2, $event);"
 							style="margin-top: 15px; padding:0px 17px !important;">
 							2 - Abstain
 						</button>
@@ -122,7 +122,7 @@
 							<mat-form-field class="example-full-width"
 											style=" margin-right:10px;width: 207px;">
 								<mat-select placeholder="Select an option"
-											(selectionChange)="multiSelect(p,$event.value)"
+											(selectionChange)="multiSelect(p,$event.value, $event)"
 											[multiple]="p.proposal.json_data.type==='multi-select-v1'">
 									<mat-option *ngFor="let option of p.proposal.json_data['options']"
 												[value]="p.proposal.json_data['options'].indexOf(option)">
@@ -132,7 +132,7 @@
 							</mat-form-field>
 
 							<button type="button" class="btn btn-outline btn-info-outline"
-									(click)="startMultiVote(p)"
+									(click)="startMultiVote(p, $event)"
 									style="margin-top: 9px;  padding:0px 17px !important;">
 								Vote
 							</button>
@@ -140,7 +140,7 @@
 
 						<button *ngIf="!isExpired(p.proposal.expires_at)" type="button"
 								class="btn btn-outline btn-info-outline"
-								(click)="startUnvote(p)"
+								(click)="startUnvote(p, $event)"
 								style="margin-top: 15px; padding:0px 17px !important;">
 							Unvote
 						</button>
@@ -159,10 +159,10 @@
 
 							<ng-container
 								*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))">
-							<span class="green" pTooltip="Voters: {{p.stats.votes['1']}}">
+							<span class="green" tooltipStyleClass="vote-info" pTooltip="Voters: {{p.stats.votes['1']}}&#13;Total: {{(p.stats.staked['1'] / 10000) | number : '1.2-4'}} EOS">
 								{{((p.stats.staked['1'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
 							</span>
-								<span class="red" pTooltip="Voters: {{p.stats.votes['0']}}" style="float: right">
+								<span class="red" tooltipStyleClass="vote-info" pTooltip="Voters: {{p.stats.votes['0']}}&#13;Total: {{(p.stats.staked['0'] / 10000) | number : '1.2-4'}} EOS" style="float: right">
 								{{((p.stats.staked['0'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
 							</span>
 							</ng-container>
@@ -180,13 +180,87 @@
 		</ng-container>
 	</div>
 	<br>
-	<div class="row ">
-		<div class="col-xs-12 pagination-row text-center">
+	<div class="clr-row ">
+		<div class="clr-col-12 pagination-row text-center">
 			<pagination-controls (pageChange)="page = $event"></pagination-controls>
 		</div>
 	</div>
 	<br>
 </div>
+
+
+<clr-modal [(clrModalOpen)]="seeMore" [clrModalStaticBackdrop]="false">
+
+	<h3 class="modal-title text-white">
+		{{sMTitle}}<br/>
+		<span class="blue">
+			<b>
+				#{{sMProposer_name}}
+			</b>
+		</span>
+		proposed by
+		<span class="blue" >
+			{{sMProposer}}
+		</span>
+	</h3>
+
+	<div class="modal-body">
+		<div class="gray text-justify " (click)="clickEv($event)" [innerHTML]="newContent"></div>
+	</div>
+
+	<div class="modal-footer">
+		<button
+			*ngIf="(!isExpired(sMexpires_at)) && ((sMType !== 'options-v1') && (sMType !== 'multi-select-v1'))"
+			type="button" class="btn btn-outline btn-info-outline"
+			(click)="startVote(selProposal,0, $event);"
+			style="margin-top: 15px; padding:0px 17px !important;">
+			0 - No
+		</button>
+		<button
+			*ngIf="(!isExpired(sMexpires_at)) && ((sMType !== 'options-v1') && (sMType !== 'multi-select-v1'))"
+			type="button" class="btn btn-outline btn-info-outline"
+			(click)="startVote(selProposal,1, $event);"
+			style="margin-top: 15px; padding:0px 17px !important;">
+			1 - Yes
+		</button>
+		<button
+			*ngIf="(!isExpired(sMexpires_at)) && (sMType==='poll-yna-v1')"
+			type="button" class="btn btn-outline btn-info-outline"
+			(click)="startVote(selProposal,2, $event);"
+			style="margin-top: 15px; padding:0px 17px !important;">
+			2 - Abstain
+		</button>
+
+		<div
+			*ngIf="(!isExpired(sMexpires_at)) && ((sMType==='options-v1') || (sMType==='multi-select-v1'))"
+			style="float:left;">
+			<mat-form-field class="example-full-width"
+							style=" margin-right:10px;width: 207px;">
+				<mat-select placeholder="Select an option"
+							(selectionChange)="multiSelect(selProposal,$event.value, $event)"
+							[multiple]="sMType==='multi-select-v1'">
+					<mat-option *ngFor="let option of sMOption"
+								[value]="sMOption.indexOf(option)">
+						{{sMOption.indexOf(option)}} - {{ option }}
+					</mat-option>
+				</mat-select>
+			</mat-form-field>
+
+			<button type="button" class="btn btn-outline btn-info-outline"
+					(click)="startMultiVote(selProposal, $event)"
+					style="margin-top: 9px;  padding:0px 17px !important;">
+				Vote
+			</button>
+		</div>
+
+		<button *ngIf="!isExpired(sMexpires_at)" type="button"
+				class="btn btn-outline btn-info-outline"
+				(click)="startUnvote(selProposal, $event)"
+				style="margin-top: 15px; padding:0px 17px !important;">
+			Unvote
+		</button>
+	</div>
+</clr-modal>
 
 <clr-modal [(clrModalOpen)]="voteModal">
 
@@ -206,6 +280,9 @@
 			</span>
 			<span class="blue" *ngIf="vtProposal === 1">
 				 - YES
+			</span>
+			<span class="blue" *ngIf="vtProposal === 2">
+				 - ABSTAIN
 			</span>
 		</ng-container>
 		to

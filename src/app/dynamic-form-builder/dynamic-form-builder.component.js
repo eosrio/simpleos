@@ -12,12 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var forms_1 = require("@angular/forms");
 var dapp_component_1 = require("../dashboard/dapp/dapp.component");
-var eosjs_service_1 = require("../eosjs.service");
+var eosjs_service_1 = require("../services/eosjs.service");
 var DynamicFormBuilderComponent = /** @class */ (function () {
     function DynamicFormBuilderComponent(dapp, eos) {
         this.dapp = dapp;
         this.eos = eos;
-        this.onSubmit = new core_1.EventEmitter();
+        this.submit = new core_1.EventEmitter();
         this.fields = [];
         this.description = '';
     }
@@ -29,14 +29,15 @@ var DynamicFormBuilderComponent = /** @class */ (function () {
             if (f.type === 'text') {
                 if (f.typeDef === 'name' || f.typeDef === 'account_name') {
                     var unamePattern = '^([a-z]|[1-5])+$';
-                    fieldsCtrls[f.name] = new forms_1.FormControl(f.value || '', [forms_1.Validators.required, forms_1.Validators.pattern(unamePattern), forms_1.Validators.maxLength(12)]);
+                    fieldsCtrls[f.name] = new forms_1.FormControl(f.value || '', [forms_1.Validators.pattern(unamePattern), forms_1.Validators.maxLength(12)]);
                 }
                 else {
-                    fieldsCtrls[f.name] = new forms_1.FormControl(f.value || '', forms_1.Validators.required);
+                    fieldsCtrls[f.name] = new forms_1.FormControl(f.value || '');
                 }
             }
             else {
                 var opts = {};
+                console.log(f.options);
                 for (var _b = 0, _c = f.options; _b < _c.length; _b++) {
                     var opt = _c[_b];
                     opts[opt.key] = new forms_1.FormControl(opt.value);
@@ -50,68 +51,78 @@ var DynamicFormBuilderComponent = /** @class */ (function () {
         this.errormsg = this.dapp.errormsg2;
     };
     DynamicFormBuilderComponent.prototype.pushFormAction = function (form) {
-        console.log(form['controls']);
+        var _this = this;
         this.busySend = this.dapp.busy2;
         this.errormsg = this.dapp.errormsg2;
-        var other2 = form['value'];
+        var req = {};
         this.dapp.formVal = [];
         this.dapp.formVal2 = [];
         var intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128'];
-        var strArr = ['name', 'asset', 'string'];
+        var strArr = ['name', 'asset', 'string', 'account_name'];
         var bolArr = ['bool'];
-        var _loop_1 = function (val2) {
-            if (intArr.indexOf(this_1.fields.find(function (f) { return f.name === val2; }).typeDef) > 0) {
-                other2[val2] = parseInt(form['controls'][val2]['value']);
+        Object.keys(form['controls']).forEach(function (k) {
+            var value = form['controls'][k]['value'];
+            var field = _this.fields.find(function (f) { return f.name === k; });
+            var type = field.typeDef;
+            console.log(k, value, type, field);
+            // Integer parsing
+            if (intArr.includes(type)) {
+                req[k] = parseInt(value, 10);
+                _this.dapp.formVal2.push(k + ': ' + value + ' (' + type + ')');
             }
-            if (bolArr.indexOf(this_1.fields.find(function (f) { return f.name === val2; }).typeDef) > 0) {
-                if (form['controls'][val2]['value'] === 'true' || form['controls'][val2]['value'] === '1') {
-                    other2[val2] = true;
+            // Boolear parsing
+            if (bolArr.includes(type)) {
+                if (value === 'true' || value === '1') {
+                    req[k] = 1;
                 }
-                else if (form['controls'][val2]['value'] === 'false' || form['controls'][val2]['value'] === '0') {
-                    other2[val2] = false;
+                else if (value === 'false' || value === '0') {
+                    req[k] = 0;
                 }
                 else {
-                    other2[val2] = false;
+                    req[k] = 0;
+                }
+                _this.dapp.formVal2.push(k + ': ' + value + ' (' + type + ')');
+            }
+            // Multiline string
+            if (field.multiline) {
+                if (value !== '') {
+                    req[k] = value.split(',');
+                    _this.dapp.formVal2.push(k + ': ' + value + ' (' + type + ')');
+                }
+                else {
+                    req[k] = [];
+                    _this.dapp.formVal2.push(k + ': ' + '[]');
                 }
             }
-            if (this_1.fields.find(function (f) { return f.name === val2; }).multiline) {
-                other2[val2] = (form['controls'][val2]['value']).split(',');
+            // String parsing
+            if (strArr.includes(type)) {
+                req[k] = value.trim();
+                _this.dapp.formVal2.push(k + ': ' + value + ' (' + type + ')');
             }
-            this_1.dapp.formVal2.push(val2 + ': ' + form['controls'][val2]['value']);
-        };
-        var this_1 = this;
-        for (var val2 in form['controls']) {
-            _loop_1(val2);
-        }
-        // for (let val in form['value']){
-        //   if(this.fields.find(f=> f.name === val).multiline){
-        //     other2[val]=JSON.parse(form['value'][val]);
-        //   }
-        //
-        // }
-        console.log(other2);
-        this.dapp.formVal = other2;
+        });
+        console.log(req);
+        this.dapp.formVal = req;
         this.dapp.sendModal = true;
     };
     __decorate([
         core_1.Output(),
         __metadata("design:type", Object)
-    ], DynamicFormBuilderComponent.prototype, "onSubmit", void 0);
+    ], DynamicFormBuilderComponent.prototype, "submit", void 0);
     __decorate([
         core_1.Input(),
         __metadata("design:type", Array)
     ], DynamicFormBuilderComponent.prototype, "fields", void 0);
     __decorate([
         core_1.Input(),
-        __metadata("design:type", String)
+        __metadata("design:type", Object)
     ], DynamicFormBuilderComponent.prototype, "description", void 0);
     DynamicFormBuilderComponent = __decorate([
         core_1.Component({
-            selector: 'dynamic-form-builder',
+            selector: 'app-dynamic-form-builder',
             template: '<form [formGroup]="form" >' +
                 '      <span *ngIf="description!==\'\'" class="text-white" style="border:0.5px solid #0094d2; padding:8px; -webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px; margin-bottom: 20px;" >{{description}}</span>' +
                 '      <div *ngFor="let field of fields">' +
-                '          <field-builder [field]="field" [form]="form"></field-builder>' +
+                '          <app-field-builder [field]="field" [form]="form"></app-field-builder>' +
                 '      </div>' +
                 '      <div></div>' +
                 '      <div>' +

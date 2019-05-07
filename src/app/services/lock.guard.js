@@ -12,15 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var router_1 = require("@angular/router");
 var crypto_service_1 = require("./crypto.service");
-var accounts_service_1 = require("./accounts.service");
 var LockGuard = /** @class */ (function () {
-    function LockGuard(crypto, router, aService) {
+    function LockGuard(crypto, router) {
         this.crypto = crypto;
         this.router = router;
-        this.aService = aService;
     }
     LockGuard.prototype.canActivate = function (next, state) {
-        if (localStorage.getItem('simpleos-hash.' + this.aService.mainnetActive['id'])) {
+        if (localStorage.getItem('simpleos-hash')) {
             if (this.crypto.locked) {
                 this.router.navigate(['']).then(function () {
                     console.log('Navigation failed');
@@ -39,7 +37,7 @@ var LockGuard = /** @class */ (function () {
         core_1.Injectable({
             providedIn: 'root'
         }),
-        __metadata("design:paramtypes", [crypto_service_1.CryptoService, router_1.Router, accounts_service_1.AccountsService])
+        __metadata("design:paramtypes", [crypto_service_1.CryptoService, router_1.Router])
     ], LockGuard);
     return LockGuard;
 }());

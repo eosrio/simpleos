@@ -85,24 +85,51 @@ body {
 /*material's autocomplete end*/
 
 /*material's input*/
+.mat-my-class .mat-form-field-wrapper .mat-form-field-label {
+  color: #b1b1b1 !important;
+}
+
 .mat-form-field-appearance-legacy .mat-form-field-label {
   color: #b1b1b1;
+}
+
+.mat-my-class .mat-form-field-wrapper .mat-focused .mat-form-field-label {
+  color: #0094d2 !important;
 }
 
 .mat-form-field.mat-focused .mat-form-field-label {
   color: #0094d2;
 }
 
+.mat-my-class .mat-form-field-wrapper .mat-form-field-underline {
+  background-color: #b1b1b1 !important;
+}
+
 .mat-form-field-appearance-legacy .mat-form-field-underline {
   background-color: #b1b1b1;
+}
+
+.mat-my-class .mat-form-field-wrapper .mat-form-field-ripple {
+  background-color: #0094d2 !important;
 }
 
 .mat-form-field.mat-focused .mat-form-field-ripple {
   background-color: #0094d2;
 }
 
+.mat-my-class .mat-form-field-wrapper .mat-input-element {
+  caret-color: #0094d2 !important;
+}
 .mat-input-element {
   caret-color: #0094d2;
+}
+
+.mat-my-class .mat-form-field-wrapper .mat-form-field-autofill-control{
+  color: #0094d2;
+}
+
+.mat-form-field-autofill-control{
+  color: #0094d2;
 }
 /*material's input end*/
 
@@ -112,6 +139,7 @@ body {
   transition-duration: 0.3s;
   -webkit-transition-property: color, background-color;
   transition-property: color, background-color;
+	cursor: pointer;
 }
 
 .btn-info-outline:hover {
@@ -130,9 +158,19 @@ body {
 /*clarity's button end*/
 
 /*clarity's toggle*/
-.toggle-switch input[type=checkbox]:checked+label:before {
-  border-color: #0094d2 !important;
-  background-color: #0094d2 !important;
+.clr-toggle-wrapper input[type=checkbox]:checked+label::before {
+	border-color: #0094d2 !important;
+	background-color: #0094d2 !important;
+}
+
+.clr-toggle-wrapper .clr-control-label {
+	font-weight: 500;
+	font-size: 15px;
+	color: #b1b1b1;
+}
+
+.clr-toggle-wrapper>input:focus {
+	outline: none !important;
 }
 /*clarity's toggle end*/
 
@@ -152,6 +190,10 @@ body {
 
 .white {
     color: white;
+}
+
+.text-white {
+	color: white;
 }
 
 .gray {
@@ -224,6 +266,10 @@ input:not([readonly]) {
 /*clarity's input end*/
 
 /*clarity's wizard*/
+.clr-wizard .modal-body {
+	color: #858585 !important;
+}
+
 .clr-wizard .clr-wizard-stepnav-wrapper {
     border-right: 1px solid #535353 !important;
     background-color: #272727 !important;
@@ -304,6 +350,14 @@ input:not([readonly]) {
 }
 
 /*Prime's accordion*/
+.ui-accordion-header:focus {
+	outline: none;
+}
+
+.ui-accordion-header a:focus {
+	outline: none;
+}
+
 .ui-accordion .ui-accordion-header a {
     padding: 0.5em 0 0.5em 0 !important;
 }
@@ -324,3 +378,16 @@ input:not([readonly]) {
     color: #ffffff;
 }
 /*Prime's accordion end*/
+
+.modal-title {
+	color: #ffffff !important;
+}
+
+.ui-table .ui-sortable-column.ui-state-highlight {
+	background-color: transparent !important;
+	color: #0094d2 !important;
+}
+
+.ui-table .ui-sortable-column.ui-state-highlight:focus {
+	outline: none;
+}

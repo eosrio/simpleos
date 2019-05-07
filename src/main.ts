@@ -11,9 +11,9 @@ import 'echarts/map/js/world.js';
 import 'echarts/dist/extension/bmap.min.js';
 
 if (environment.production) {
-  enableProdMode();
+	enableProdMode();
 }
 
 platformBrowserDynamic().bootstrapModule(AppModule, {
-  preserveWhitespaces: false
+	preserveWhitespaces: false
 }).catch(err => console.log(err));

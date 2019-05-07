@@ -131,11 +131,11 @@
 }
 
 .max-width {
-    max-width: calc(100% - 257px);
+    max-width: calc(100% - 320px);
 }
 
 .max-width2 {
-    max-width: calc(100% - 160px);
+    max-width: calc(100% - 224px);
 }
 
 
@@ -168,4 +168,10 @@
 .deleteteacc:hover {
   color: white;
   cursor: pointer;
+}
+
+/*START TAB SELECTED ACTIVE */
+/deep/ .mat-tab-label-active{
+	background-color: #3b3b3b ;
+	opacity: 1 !important;
 }

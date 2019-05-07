@@ -1,0 +1,899 @@
+<div class="container" style="overflow-x: hidden; height: 100%">
+	<div class="clr-row animate justify-content-center" style="padding-top: 15px;">
+		<div class="clr-col-lg-12">
+
+
+			<mat-tab-group id="rex-tabs" dynamicHeight selectedIndex="0">
+				<mat-tab label="Buy/Sell REX">
+
+					<div class="clr-row justify-content-center">
+						<div class="clr-col-lg-12">
+							<div class="card info-card first-card">
+								<div class="card-block">
+									<div class="clr-row animate">
+										<div class="clr-col-lg-5">
+											<div class="white">REX balance:</div>
+											<div class="rex-balances-top white"><span
+												class="gray">Liquid:</span> {{rexLiquid  | number:'1.0-2'}} REX
+											</div>
+											<div class="rex-balances white" style="background-color: #333333;"><span
+												class="gray">Staked (savings):</span> {{rexSavings | number:'1.0-2'}}
+												REX
+											</div>
+											<div class="rex-balances white"><span
+												class="gray">Unstaking (maturing):</span> {{rexMaturing | number:'1.0-2'}}
+												REX
+											</div>
+											<div class="rex-balances white" style="background-color: #333333;"><span
+												class="gray">Total:</span> {{totalRexBalance | number:'1.0-2'}} REX (
+												<span
+													class="blue">{{totalRexBalance * rexPrice  | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+												)
+											</div>
+											<div class="rex-balances white">
+												<a role="tooltip" aria-haspopup="true"
+												   class="tooltip tooltip-lg tooltip-right">
+													<fa-icon [icon]="['far','question-circle']" class="blue"
+															 style="font-size: 16px;"></fa-icon>
+													<span
+														class="tooltip-content">After selling your REX, the {{aService.activeChain['symbol']}}
+														goes to the REX fund. To have your {{aService.activeChain['symbol']}}
+														back, please withdraw it to your account. </span>
+												</a>
+												<span
+													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+												<div>
+													<button type="button" class="btn btn-info-outline btn-sm"
+															style="margin: 6px 0;" (click)="withdraw()">
+														withdraw to my account
+													</button>
+												</div>
+											</div>
+										</div>
+										<div class="clr-col-lg-7 text-center">
+											<span *ngIf="rexPrice > 0" class="white"
+												  style="margin-right: 65px; font-size: 15px;">
+												1 {{aService.activeChain['symbol']}}
+												= {{(1 / rexPrice) | number: '0.0-2'}} REX
+											</span>
+											<mat-form-field class="time-selector example-full-width"
+															style="width: 93px;">
+												<mat-select [value]="selectedInterval.range"
+															(selectionChange)="selectInterval($event)"
+															class="time-selector-panel">
+													<mat-option *ngFor="let item of intervalOptions"
+																class="time-selector-option"
+																[value]="item.range">
+														{{ item.label }}
+													</mat-option>
+												</mat-select>
+											</mat-form-field>
+											<div echarts [options]="rex_price_chart" [merge]="rexPriceChartMerge"
+												 class="rex-chart"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="card info-card" style="margin-bottom: 5px;">
+								<div class="card-block" style="padding: 0;">
+									<p-accordion class="howto">
+										<p-accordionTab
+											header="How to earn with REX - {{aService.activeChain['symbol']}} Resource Exchange?">
+											<div class="howto-item"><span class="blue">1.</span> Lend
+												your {{aService.activeChain['symbol']}} to a pool
+												(buy REX)
+												to earn a share of this pool's
+												income.
+											</div>
+											<div class="howto-item"><span class="blue">2.</span> Dapps and Developers
+												can borrow
+												resources from this pool by
+												paying {{aService.activeChain['symbol']}}.
+											</div>
+											<div class="howto-item"><span class="blue">3.</span> When you buy REX, you
+												have to wait
+												4 to 5 days to sell the REX.
+												(midnight UTC 4 days after you bought, so it may take a little more than
+												4 days!)
+											</div>
+											<div class="howto-item"><span class="blue">4.</span> Sell the REX when you
+												are ready to
+												get your {{aService.activeChain['symbol']}} back. You will
+												receive original amount + interest.
+											</div>
+											<div class="howto-item" style="margin-top: 15px">You are guaranteed at least
+												100% of
+												your original
+												amount back, as your REX represents the share
+												of {{aService.activeChain['symbol']}} you lent to the pool.
+											</div>
+										</p-accordionTab>
+									</p-accordion>
+								</div>
+							</div>
+
+							<div class="card info-card buyrex" style="margin-bottom: 5px;">
+								<div class="clr-row">
+									<div class="clr-col-lg-8"
+										 style="border-right: 5px solid #272727; padding-right: 0;">
+										<div class="card-block upper-buycard">
+											<div class="clr-row">
+
+												<div class="clr-col-lg-12 white" style="font-size: 17px;">
+													Buy REX
+												</div>
+
+
+												<div class="clr-col-lg-11 white" *ngIf="!canbuyREX">
+													<div class="req-title">Requirements for buying REX</div>
+													<div class="req white">
+														<fa-icon [icon]="['far', 'times-circle']" class="error"
+																 size="lg"></fa-icon>&nbsp;
+														Vote for at least 21 block producers or a proxy.
+														<button *ngIf="aService.activeChain.name === 'EOS MAINNET'"
+																type="button" class="btn btn-info-outline btn-sm"
+																style="float: right; margin-right: 0"
+																(click)="voteOnProxy()">
+															VOTE REXCOREPROXY
+														</button>
+														<div style="margin-top: 12px;">
+										<span class="explain">You're currently voting for <span
+											class="blue">{{nVoters}}/21</span> producers.</span>
+															<button type="button" class="btn btn-info-outline btn-sm"
+																	style="float: right; margin-right: 0"
+																	(click)="gotoVote()">
+																OR GO TO VOTE PAGE
+															</button>
+														</div>
+													</div>
+												</div>
+
+												<ng-container *ngIf="canbuyREX">
+													<div class="clr-col-lg-6 gray mt-2"
+														 style="border-right: 1px solid #1d1d1d">
+														<div style="font-size: 15px;">from
+															Staked {{aService.activeChain['symbol']}}
+															to
+															REX
+														</div>
+														<div *ngIf="!showAdvancedRatio" (click)="setMaxConvert()"
+															 style="cursor: pointer"><span
+															class="blue">Available:</span> {{staked | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
+														</div>
+														<div *ngIf="showAdvancedRatio"><span
+															class="blue">Available:</span> {{cpu_weight  | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
+															on CPU <br>
+															{{net_weight  | number : '0.0-4'}} {{aService.activeChain['symbol']}}
+															on NET
+														</div>
+
+														<form [formGroup]="convertForm" style="margin-bottom: 10px;"
+															  *ngIf="!showAdvancedRatio">
+															<mat-form-field class="input-width"
+																			style="display: inline-block !important; width: 105px;">
+																<input matInput type="text" placeholder="Amount"
+																	   formControlName="EOSamount"
+																	   (blur)="checkStakeAmount();"
+																	   [textMask]="{mask: numberMask}">
+																<span class="suffix"
+																	  matSuffix>{{aService.activeChain['symbol']}}</span>
+																<mat-error align="start"
+																		   *ngIf="convertAmountError !== ''">
+																	{{convertAmountError}}
+																</mat-error>
+															</mat-form-field>
+															<a *ngIf="staked - convertForm.value.EOSamount < 1"
+															   role="tooltip" aria-haspopup="true"
+															   class="tooltip tooltip-lg tooltip-right"
+															   style="margin-left: 5px">
+																<fa-icon [icon]="['far','exclamation-circle']"
+																		 class="error"></fa-icon>
+																<span class="tooltip-content">
+																		Please, be careful when converting all your staked amount.
+																		You may end up without resources to perform actions on the blockchain.
+																	</span>
+															</a>
+															<ng-container *ngIf="REXfromStake !== 0">
+																<span style="margin: 0 20px;">≅</span>
+
+																<span>{{REXfromStake   | number : '1.0-2'}} REX</span>
+															</ng-container>
+														</form>
+														<form [formGroup]="advancedConvertForm"
+															  style="margin-bottom: 10px;"
+															  *ngIf="showAdvancedRatio">
+															<div>
+																<mat-form-field class="input-width"
+																				style="display: inline-block !important; width: 115px;">
+																	<input matInput type="text"
+																		   placeholder="Amount from CPU"
+																		   formControlName="cpu"
+																		   [textMask]="{mask: numberMask}">
+																	<span class="suffix"
+																		  matSuffix>{{aService.activeChain['symbol']}}</span>
+																	<mat-error align="start"
+																			   *ngIf="advCpuConvertError !== ''">
+																		{{advCpuConvertError}}
+																	</mat-error>
+																</mat-form-field>
+																<a *ngIf="cpu_weight - advancedConvertForm.value.cpu < 0.75"
+																   role="tooltip" aria-haspopup="true"
+																   class="tooltip tooltip-lg tooltip-right"
+																   style="margin-left: 5px">
+																	<fa-icon [icon]="['far','exclamation-circle']"
+																			 class="error"></fa-icon>
+																	<span class="tooltip-content">
+																		Please, be careful when converting all your cpu amount.
+																		You may end up without resources to perform actions on the blockchain.
+																	</span>
+																</a>
+																<ng-container *ngIf="REXfromCPU !== 0">
+																	<span style="margin: 0 20px;">≅</span>
+
+																	<span>{{REXfromCPU   | number : '1.0-2'}} REX</span>
+																</ng-container>
+															</div>
+															<div>
+																<mat-form-field class="input-width"
+																				style="display: inline-block !important; width: 115px;">
+																	<input matInput type="text"
+																		   placeholder="Amount from NET"
+																		   formControlName="net"
+																		   [textMask]="{mask: numberMask}">
+																	<span class="suffix"
+																		  matSuffix>{{aService.activeChain['symbol']}}</span>
+																	<mat-error align="start"
+																			   *ngIf="advNetConvertError !== ''">
+																		{{advNetConvertError}}
+																	</mat-error>
+																</mat-form-field>
+																<a *ngIf="net_weight - advancedConvertForm.value.net < 0.25"
+																   role="tooltip" aria-haspopup="true"
+																   class="tooltip tooltip-lg tooltip-right"
+																   style="margin-left: 5px">
+																	<fa-icon [icon]="['far','exclamation-circle']"
+																			 class="error"></fa-icon>
+																	<span class="tooltip-content">
+																		Please, be careful when converting all your net amount.
+																		You may end up without resources to perform actions on the blockchain.
+																	</span>
+																</a>
+																<ng-container *ngIf="REXfromNET !== 0">
+																	<span style="margin: 0 20px;">≅</span>
+
+																	<span>{{REXfromNET   | number : '1.0-2'}} REX</span>
+																</ng-container>
+															</div>
+														</form>
+														<small class="warning-text" *ngIf="!showAdvancedRatio"
+															   (click)="showAdvancedRatio = !showAdvancedRatio">Advanced
+															Option:
+															personalize CPU
+															& NET Ratio
+														</small>
+														<small class="warning-text" *ngIf="showAdvancedRatio"
+															   (click)="showAdvancedRatio = !showAdvancedRatio">Return
+															to basic mode
+														</small>
+													</div>
+
+													<div class="clr-col-lg-6 gray mt-2" style="padding-left: 23px;">
+														<div style="font-size: 15px;">from
+															Liquid {{aService.activeChain['symbol']}}
+															to
+															REX
+														</div>
+														<div style="cursor: pointer" (click)="setMaxLiquidToBuy()"><span
+															class="blue">Available:</span> {{totalEOSliquid  | number : '0.0-4'}}
+															{{aService.activeChain['symbol']}}
+														</div>
+														<form [formGroup]="buyForm">
+															<mat-form-field class="input-width"
+																			style="display: inline-block !important; width: 105px;">
+																<input matInput type="text" placeholder="Amount"
+																	   formControlName="EOSamount"
+																	   (blur)="checkAmount();"
+																	   [textMask]="{mask: numberMask}">
+																<span class="suffix"
+																	  matSuffix>{{aService.activeChain['symbol']}}</span>
+																<mat-error align="start" *ngIf="EOSamounterror !== ''">
+																	{{EOSamounterror}}
+																</mat-error>
+															</mat-form-field>
+															<ng-container *ngIf="REXtoBuy !== 0">
+																<span style="margin: 0 20px;">≅</span>
+
+																<span>{{REXtoBuy   | number : '1.0-2'}} REX</span>
+															</ng-container>
+														</form>
+													</div>
+												</ng-container>
+											</div>
+										</div>
+										<div class="card-block" *ngIf="canbuyREX">
+											<div class="clr-row">
+												<div class="clr-col-lg-12">
+													<div class="clr-row clr-justify-content-center">
+														<div class="clr-col-lg-6 gray align-self-center"
+															 *ngIf="(buyForm.valid && buyForm.get('EOSamount').value !== '' ) && (convertForm.valid && convertForm.get('EOSamount').value !== '' )">
+															<span
+																style="margin-top: 17px; margin-right: 14px">Total:</span>
+															<span style="margin-top: 18px;" class="text-center">
+												<span>{{EOStotaltoBuy | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+												<span style="margin: 0 15px;">≅</span>
+												<span>{{REXtotaltoBuy | number : '1.0-2'}} REX</span>
+											</span>
+														</div>
+														<div class="clr-col-lg-6 text-center">
+															<button type="button" class="btn btn-info-outline btn-block"
+																	style="float: left; margin-top: 10px;"
+																	(click)="buyRex()">
+																BUY REX
+															</button>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="clr-col-lg-4" style="padding-left: 0;">
+										<div class="card-block upper-buycard" *ngIf="canbuyREX"
+											 style="min-height: 220.5px;">
+
+											<div class="white" style="font-size: 17px;">
+												Sell REX
+											</div>
+											<div style="margin-top: 34px; cursor: pointer" class="gray"
+												 (click)="setMaxToSell()">
+												<span class="blue">Available:</span> {{rexLiquid  | number : '1.2-4'}}
+												REX
+											</div>
+											<form [formGroup]="sellForm" class="gray">
+												<mat-form-field class="input-width"
+																style="display: inline-block !important; width: 126px;">
+													<input matInput type="text" placeholder="Amount"
+														   formControlName="REXamount"
+														   (blur)="checkSellAmount();" [textMask]="{mask: numberMask}">
+													<span class="suffix" matSuffix>REX</span>
+													<mat-error align="start" *ngIf="REXamounterror !== ''">
+														{{REXamounterror}}
+													</mat-error>
+												</mat-form-field>
+												<ng-container *ngIf="salesResult !== 0">
+													<span style="margin: 0 20px;">≅</span>
+
+													<span>{{salesResult  | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+												</ng-container>
+												<div>
+													<mat-checkbox formControlName="auto">
+														withdraw to my account
+														<a role="tooltip" aria-haspopup="true"
+														   class="tooltip tooltip-lg tooltip-left">
+															<fa-icon [icon]="['far','question-circle']" class="blue"
+																	 style="font-size: 16px;"></fa-icon>
+															<span
+																class="tooltip-content">When you sell REX, the {{aService.activeChain['symbol']}}
+																go to your REX fund. Check this box if you want to automatically withdraw the {{aService.activeChain['symbol']}}
+																to your account after you sell.
+																</span>
+														</a>
+													</mat-checkbox>
+												</div>
+											</form>
+										</div>
+										<div class="card-block" *ngIf="canbuyREX">
+											<button type="button" class="btn btn-info-outline btn-block"
+													style="float: left; margin-top: 10px;" (click)="sellRex()">
+												SELL REX
+											</button>
+										</div>
+									</div>
+
+								</div>
+							</div>
+						</div>
+						<div class="clr-col-lg-7">
+
+							<p-table #dt [value]="rexBuckets"
+									 [globalFilterFields]="['amount','unstakesin','unstakedate']"
+									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
+									 class="maturing-table last-table" [paginator]="true" [rows]="50">
+								<ng-template pTemplate="caption">
+									<div>
+										<fa-icon matSuffix [icon]="['far', 'lock-open']"></fa-icon>&nbsp;&nbsp;Unstaking
+										REX
+										(maturing)&nbsp;
+										<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+											<fa-icon [icon]="['far','question-circle']" class="blue"
+													 style="font-size: 16px;"></fa-icon>
+											<span class="tooltip-content">After you buy REX, you have to wait at least 4 days for them to mature and become liquid so you can sell them back for {{aService.activeChain['symbol']}}
+												. </span>
+										</a>
+										<span style="float: right;">
+										<button type="button" class="btn btn-info-outline btn-sm"
+												style="margin: -4px 0 0 0;" (click)="createMoveToSavingModal()">
+											move to savings
+										</button>
+						</span>
+									</div>
+								</ng-template>
+								<ng-template pTemplate="header">
+									<tr *ngIf="rexBuckets.length > 0">
+										<th [pSortableColumn]="'amount'">
+											amount
+											<p-sortIcon [field]="'amount'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'unstakein'">
+											unstakes in
+											<p-sortIcon [field]="'unstakein'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'unstakedate'">
+											ustake date
+											<p-sortIcon [field]="'unstakedate'"></p-sortIcon>
+										</th>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="body" let-item let-index="rowIndex">
+									<tr *ngIf="rexBuckets.length > 0">
+										<td class="text-center" style="padding-left: 20px">
+											{{item.amount | thousandSuff : 2}} REX
+										</td>
+										<td class="text-center">
+											{{item.unstakein}}
+										</td>
+										<td class="text-center">
+											{{item.unstakedate}}
+										</td>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="footer">
+									<tr *ngIf="rexBuckets.length === 0">
+										<td colspan="4" class="text-center">
+											You don't have any unstaking REX
+										</td>
+									</tr>
+								</ng-template>
+							</p-table>
+						</div>
+						<div class="clr-col-lg-5">
+							<p-table #dt [value]="matBucket"
+									 [globalFilterFields]="['amount','unstakesin','unstakedate']"
+									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
+									 class="maturing-table last-table" [paginator]="true" [rows]="50">
+								<ng-template pTemplate="caption">
+									<div>
+										<fa-icon matSuffix [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;Staked REX
+										(savings)&nbsp;
+										<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left">
+											<fa-icon [icon]="['far','question-circle']" class="blue"
+													 style="font-size: 16px;"></fa-icon>
+											<span class="tooltip-content">You can't sell the REX in your savings account.<br> Your REX will stay staked until you request a unstake.</span>
+										</a>
+									</div>
+								</ng-template>
+								<ng-template pTemplate="header">
+									<tr *ngIf="matBucket.length > 0">
+										<th>
+											REX amount
+										</th>
+										<th>
+											request unstake
+										</th>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="body" let-item let-index="rowIndex">
+									<tr [pSelectableRow]="item" class="tr-canexpand" *ngIf="matBucket.length > 0">
+										<td class="text-center" style="padding-left: 20px">
+											{{item.amount | thousandSuff : 2}} REX
+										</td>
+										<td class="text-center">
+											<button type="button" class="btn btn-info-outline btn-sm"
+													(click)="createMoveFromSavingModal()">
+												unstake
+											</button>
+										</td>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="footer">
+									<tr *ngIf="matBucket.length === 0">
+										<td colspan="4" class="text-center">
+											You don't have any staked REX
+										</td>
+									</tr>
+								</ng-template>
+							</p-table>
+						</div>
+						<!--						<div class="clr-col-lg-12">-->
+						<!--							<p-table #dt [value]="matBucket"-->
+						<!--									 [globalFilterFields]="['amount','unstakesin','unstakedate']"-->
+						<!--									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"-->
+						<!--									 class="maturing-table last-table" [paginator]="true" [rows]="50">-->
+						<!--								<ng-template pTemplate="caption">-->
+						<!--									<div>REX profits</div>-->
+						<!--								</ng-template>-->
+						<!--								<ng-template pTemplate="header">-->
+						<!--									<tr>-->
+						<!--										<th [pSortableColumn]="'date'">-->
+						<!--											purchase date-->
+						<!--											<p-sortIcon [field]="'date'"></p-sortIcon>-->
+						<!--										</th>-->
+						<!--										<th [pSortableColumn]="'amount'">-->
+						<!--											REX amount-->
+						<!--											<p-sortIcon [field]="'amount'"></p-sortIcon>-->
+						<!--										</th>-->
+						<!--										<th>-->
+						<!--											EOS then-->
+						<!--										</th>-->
+						<!--										<th>-->
+						<!--											EOS now-->
+						<!--										</th>-->
+						<!--										<th [pSortableColumn]="'profit'">-->
+						<!--											profit (%)-->
+						<!--											<p-sortIcon [field]="'profit'"></p-sortIcon>-->
+						<!--										</th>-->
+						<!--									</tr>-->
+						<!--								</ng-template>-->
+						<!--								<ng-template pTemplate="body" let-item let-index="rowIndex">-->
+						<!--									<tr [pSelectableRow]="item" class="tr-canexpand">-->
+						<!--										<td class="text-center">-->
+						<!--											{{item.date }}-->
+						<!--										</td>-->
+						<!--										<td class="text-center">-->
+						<!--											{{item.amount | thousandSuff : 2}} REX-->
+						<!--										</td>-->
+						<!--										<td class="text-center">-->
+						<!--											{{item.eosthen | number:'1.0-2'}} {{aService.activeChain['symbol']}}-->
+						<!--										</td>-->
+						<!--										<td class="text-center">-->
+						<!--											{{item.eosnow | number:'1.0-2'}} {{aService.activeChain['symbol']}}-->
+						<!--										</td>-->
+						<!--										<td class="text-center">-->
+						<!--											{{item.profit }} %-->
+						<!--										</td>-->
+						<!--									</tr>-->
+						<!--								</ng-template>-->
+						<!--								<ng-template pTemplate="footer">-->
+						<!--									<tr>-->
+						<!--										<td colspan="5" class="text-center">-->
+						<!--											You don't have any REX-->
+						<!--										</td>-->
+						<!--									</tr>-->
+						<!--								</ng-template>-->
+						<!--							</p-table>-->
+						<!--						</div>-->
+					</div>
+
+				</mat-tab>
+				<mat-tab label="Borrow resources">
+
+					<div class="clr-row justify-content-center">
+						<div class="clr-col-lg-12">
+							<div class="card info-card first-card">
+								<div class="card-block">
+									<div class="clr-row clr-justify-content-between">
+										<div class="clr-col-lg-5">
+											<div class="white">Market stats:</div>
+											<div class="rex-balances-top white"><span
+												class="gray">Available {{aService.activeChain['symbol']}}
+												in the resource pool:</span> {{total_unlent  | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+											</div>
+											<div class="rex-balances white" style="background-color: #333333;"><span
+												class="gray">
+												Total lent now:</span> {{total_lent | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+											</div>
+											<div class="rex-balances white"><span
+												class="gray">Ative loans' payments:</span> {{total_rent | number:'1.0-2'}}
+												{{aService.activeChain['symbol']}}
+											</div>
+											<div class="rex-balances white">
+												<a role="tooltip" aria-haspopup="true"
+												   class="tooltip tooltip-lg tooltip-right">
+													<fa-icon [icon]="['far','question-circle']" class="blue"
+															 style="font-size: 16px;"></fa-icon>
+													<span
+														class="tooltip-content">When your loan ends, what is left on the renewal fund will be transfered to your REX fund.
+														To have your {{aService.activeChain['symbol']}} back, please withdraw it to your account. </span>
+												</a>
+												<span
+													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+												<div>
+													<button type="button" class="btn btn-info-outline btn-sm"
+															style="margin: 6px 0;" (click)="withdraw()">
+														withdraw to my account
+													</button>
+												</div>
+											</div>
+										</div>
+										<div class="clr-col-lg-7 text-center">
+											<span class="white" style="margin-right: 39px; font-size: 15px;">
+												1 {{aService.activeChain['symbol']}}
+												rents  <strong
+												class="blue">{{borrowingCost | number: '0.0-2'}} {{aService.activeChain['symbol']}}</strong> for 30 days
+											</span>
+											<mat-form-field class="time-selector example-full-width"
+															style="width: 93px;">
+												<mat-select [value]="selectedInterval.range"
+															(selectionChange)="selectInterval($event)"
+															class="time-selector-panel">
+													<mat-option *ngFor="let item of intervalOptions"
+																class="time-selector-option"
+																[value]="item.range">
+														{{ item.label }}
+													</mat-option>
+												</mat-select>
+											</mat-form-field>
+											<div echarts [options]="borrow_cost_chart" [merge]="borrowCostChartMerge"
+												 class="rex-chart"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="card info-card">
+								<div class="card-block upper-buycard">
+									<div class="white" style="font-size: 17px">Borrow CPU / NET</div>
+									<div class="gray"><span
+										class="blue">Available:</span> {{totalEOSliquid   | number : '1.0-4'}} {{aService.activeChain['symbol']}}
+									</div>
+									<div class="gray" style="margin-top: 7px; font-size: 15px">Enter the amount you want
+										to borrow for 30 days:
+									</div>
+									<div class="gray">
+										<form [formGroup]="borrowForm">
+											<mat-form-field class="input-width"
+															style="display: inline-block !important; width: 120px; margin-right: 40px;">
+												<input matInput type="text" placeholder="CPU"
+													   formControlName="CPUamount" (blur)="updateCpuCost();"
+													   [textMask]="{mask: numberMask}">
+												<span class="suffix"
+													  matSuffix>{{aService.activeChain['symbol']}}</span>
+												<mat-error align="start" *ngIf="borrowCpuError !== ''">
+													{{borrowCpuError}}
+												</mat-error>
+											</mat-form-field>
+											<mat-form-field class="input-width"
+															style="display: inline-block !important; width: 120px; margin-right: 40px;">
+												<input matInput type="text" placeholder="NET"
+													   formControlName="NETamount" (blur)="updateNetCost();"
+													   [textMask]="{mask: numberMask}">
+												<span class="suffix"
+													  matSuffix>{{aService.activeChain['symbol']}}</span>
+												<mat-error align="start" *ngIf="borrowNetError !== ''">
+													{{borrowNetError}}
+												</mat-error>
+											</mat-form-field>
+											<mat-form-field
+												style="width: 212px;  clear:both; display: inline-block !important; margin-top: 8px; margin-right: 40px;">
+												<input #accountReceiver type="text" placeholder="Account" matInput
+													   formControlName="accountReceiver" [matAutocomplete]="auto1">
+												<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
+												<mat-autocomplete #auto1="matAutocomplete">
+													<mat-option value="to this account">to this account</mat-option>
+													<mat-option value="to another account">to another account
+													</mat-option>
+												</mat-autocomplete>
+											</mat-form-field>
+											<mat-form-field
+												*ngIf="borrowForm.value.accountReceiver=='to another account'"
+												style="width: 212px; clear:both; display: inline-block !important;  margin-top: 8px;  margin-right: 40px;">
+												<input matInput #anotherAcc placeholder="Buy to (account name)"
+													   formControlName="account"
+													   (blur)="checkAccountName()" maxlength="12"
+													   class="text-lowercase"/>
+												<mat-error align="start" *ngIf="borrowAccErrorMsg !== ''">
+													{{borrowAccErrorMsg}}
+												</mat-error>
+												<mat-hint align="end">{{anotherAcc.value.length}} / 12</mat-hint>
+											</mat-form-field>
+											<mat-form-field class="input-width"
+															style="display: inline-block !important; width: 140px;">
+												<input matInput type="text" placeholder="Renewal Fund"
+													   formControlName="renewal" (blur)="checkBorrowAmount();"
+													   [textMask]="{mask: numberMask}">
+												<span class="suffix"
+													  matSuffix>{{aService.activeChain['symbol']}}</span>
+												<mat-error align="start" *ngIf="EOSamounterror !== ''">
+													{{borrowRenewalError}}
+												</mat-error>
+											</mat-form-field>&nbsp;&nbsp;
+											<a role="tooltip" aria-haspopup="true"
+											   class="tooltip tooltip-lg tooltip-top-left">
+												<fa-icon [icon]="['far','question-circle']" class="blue"
+														 style="font-size: 16px;"></fa-icon>
+												<span
+													class="tooltip-content" style="z-index: 1000">If you want your loan to be automatically renewed, you can deposit {{aService.activeChain['symbol']}} into this fund. When the 30 days expire, the renewal cost will be automatically debited from the fund.
+												</span>
+											</a>
+										</form>
+									</div>
+								</div>
+								<div class="card-block">
+									<div class="clr-row">
+										<div class="clr-col-lg-12">
+											<div class="clr-row">
+												<div class="clr-col-lg-3 gray align-self-center">
+													<div style="padding-bottom: 2px">CPU
+														Cost: {{cpuCost | number : '1.0-4'}}</div>
+													<div style="padding-bottom: 2px">NET
+														Cost: {{netCost | number : '1.0-4'}}</div>
+													<div>Total Cost: {{totalCost | number : '1.0-4'}}</div>
+												</div>
+												<div class="clr-col-lg-5 text-center">
+													<button type="button" class="btn btn-info-outline btn-block"
+															style="float: left; margin-top: 10px;"
+															(click)="borrowResources()">
+														BORROW
+													</button>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<p-table [value]="myLoans.cpu"
+									 [globalFilterFields]="['amount','unstakesin','unstakedate']"
+									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
+									 class="maturing-table" [paginator]="true" [rows]="50">
+								<ng-template pTemplate="caption">
+									<div>CPU loans</div>
+								</ng-template>
+								<ng-template pTemplate="header">
+									<tr *ngIf="myLoans.cpu.length > 0">
+										<th [pSortableColumn]="'created_on'">
+											Loan date
+											<p-sortIcon [field]="'created_on'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'total_staked'" style="width: 125px;">
+											CPU amount
+											<p-sortIcon [field]="'total_staked'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'receiver'">
+											to account
+											<p-sortIcon [field]="'receiver'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'payment'" style="width: 120px;">
+											Loan cost
+											<p-sortIcon [field]="'payment'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'expires_in'" style="width: 120px;">
+											Expires in
+											<p-sortIcon [field]="'expires_in'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'balance'">
+											auto renewal fund
+											<p-sortIcon [field]="'balance'"></p-sortIcon>
+										</th>
+										<th>
+										</th>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="body" let-item let-index="rowIndex">
+									<tr *ngIf="myLoans.cpu.length > 0" [pSelectableRow]="item" class="tr-canexpand">
+										<td class="text-center">
+											{{item['created_on']}}
+										</td>
+										<td class="text-center">
+											{{item['total_staked']}}
+										</td>
+										<td class="text-center">
+											{{item['receiver']}}
+										</td>
+										<td class="text-center">
+											{{item['payment']}}
+										</td>
+										<td class="text-center">
+											{{item['expires_in']}}
+										</td>
+										<td class="text-center">
+											{{item['balance']}}
+										</td>
+										<td class="text-center">
+											<button type="button" class="btn btn-info-outline btn-sm"
+													(click)="createAddToLoanFundModal(item, 'cpu')">
+												fund&nbsp;
+											</button>
+											<button type="button" class="btn btn-info-outline btn-sm"
+													(click)="createDefundModal(item, 'cpu')">
+												defund
+											</button>
+										</td>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="footer">
+									<tr *ngIf="myLoans.cpu.length === 0">
+										<td colspan="7" class="text-center">
+											You don't have any CPU loans
+										</td>
+									</tr>
+								</ng-template>
+							</p-table>
+
+							<p-table [value]="myLoans.net"
+									 [globalFilterFields]="['amount','unstakesin','unstakedate']"
+									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
+									 class="maturing-table last-table" [paginator]="true" [rows]="50">
+								<ng-template pTemplate="caption">
+									<div>NET loans</div>
+								</ng-template>
+								<ng-template pTemplate="header">
+									<tr *ngIf="myLoans.net.length > 0">
+										<th [pSortableColumn]="'created_on'">
+											Loan date
+											<p-sortIcon [field]="'created_on'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'total_staked'" style="width: 125px;">
+											NET amount
+											<p-sortIcon [field]="'total_staked'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'receiver'">
+											to account
+											<p-sortIcon [field]="'receiver'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'payment'" style="width: 120px;">
+											Loan cost
+											<p-sortIcon [field]="'payment'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'expires_in'" style="width: 120px;">
+											Expires in
+											<p-sortIcon [field]="'expires_in'"></p-sortIcon>
+										</th>
+										<th [pSortableColumn]="'balance'">
+											auto renewal fund
+											<p-sortIcon [field]="'balance'"></p-sortIcon>
+										</th>
+										<th>
+										</th>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="body" let-item let-index="rowIndex">
+									<tr *ngIf="myLoans.net.length > 0"
+										[pSelectableRow]="item" class="tr-canexpand">
+										<td class="text-center">
+											{{item['created_on']}}
+										</td>
+										<td class="text-center">
+											{{item['total_staked']}}
+										</td>
+										<td class="text-center">
+											{{item['receiver']}}
+										</td>
+										<td class="text-center">
+											{{item['payment']}}
+										</td>
+										<td class="text-center">
+											{{item['expires_in']}}
+										</td>
+										<td class="text-center">
+											{{item['balance']}}
+										</td>
+										<td class="text-center">
+											<button type="button" class="btn btn-info-outline btn-sm"
+													(click)="createAddToLoanFundModal(item, 'net')">
+												fund
+											</button>
+											<button type="button" class="btn btn-info-outline btn-sm"
+													(click)="createDefundModal(item, 'net')">
+												defund
+											</button>
+										</td>
+									</tr>
+								</ng-template>
+								<ng-template pTemplate="footer">
+									<tr *ngIf="myLoans.net.length === 0">
+										<td colspan="7" class="text-center">
+											You don't have any NET loans
+										</td>
+									</tr>
+								</ng-template>
+							</p-table>
+
+						</div>
+					</div>
+
+				</mat-tab>
+			</mat-tab-group>
+		</div>
+	</div>
+</div>

@@ -8,57 +8,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var accounts_service_1 = require("../accounts.service");
-var eosjs_service_1 = require("../eosjs.service");
+var accounts_service_1 = require("./accounts.service");
+var eosjs_service_1 = require("./eosjs.service");
 var router_1 = require("@angular/router");
 var Eos = require("../../assets/eos.js");
 var rxjs_1 = require("rxjs");
-var ledger_h_w_service_1 = require("./ledger-h-w.service");
+var crypto_service_1 = require("./crypto.service");
+var voting_service_1 = require("./voting.service");
+var chains_1 = require("../chains");
 var NetworkService = /** @class */ (function () {
-    function NetworkService(eosjs, router, aService, ledger) {
+    function NetworkService(eosjs, router, aService, voting, crypto
+    // private ledger: LedgerHWService
+    ) {
         this.eosjs = eosjs;
         this.router = router;
         this.aService = aService;
-        this.ledger = ledger;
-        this.networks = [];
-        this.mainnetActive = [];
+        this.voting = voting;
+        this.crypto = crypto;
         this.genesistx = 'ad77575a8b4f52e477682e712b1cbd884299468db6a94d909f90c6961cea9b02';
         this.voteref = 'b23f537e8ab29fbcec8b533081ef7e12b146899ca42a3fc9eb608258df9983d9';
         this.accountez = 'EOS7WdCcva3WtsJRckJWodnHLof5B7qwAyfJSaMZmfn7Dgn6TQDBu';
@@ -75,140 +43,101 @@ var NetworkService = /** @class */ (function () {
         this.selectedEndpoint = new rxjs_1.BehaviorSubject(null);
         this.networkingReady = new rxjs_1.BehaviorSubject(false);
         this.connected = false;
-        this.publicEndpoints = [
-            { url: 'https://api.eosrio.io', owner: 'EOS Rio', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://hapi.eosrio.io', owner: 'EOS Rio', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://eu.eosdac.io', owner: 'eosDAC', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://mainnet.eoscalgary.io', owner: 'eoscalgary', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            // {url: 'https://api.dpos.africa/', owner: 'EOS Africa', latency: 0, filters: [], chain: 'EOS MAINNET'},
-            { url: 'https://api1.eosasia.one', owner: 'EOS Asia', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://api.eoslaomao.com', owner: 'EOS Asia', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://mainnet.genereos.io', owner: 'EOS Asia', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://node1.eosphere.io', owner: 'EOS Asia', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://proxy.eosnode.tools', owner: 'Proxy Node', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://history.cryptolions.io', owner: 'EOS Cryptolions', latency: 0, filters: [], chain: 'EOS MAINNET' },
-            { url: 'https://api.worbli.eosrio.io', owner: 'EOSRIo - Worbli', latency: 0, filters: [], chain: 'WORBLI MAINNET' },
-            { url: 'https://api.worblisweden.org', owner: 'EOS Sweden - Worbli', latency: 0, filters: [], chain: 'WORBLI MAINNET' },
-            // {url: 'https://jungle2.cryptolions.io:443', owner: 'Jungle 2', latency: 0, filters: [], chain: 'JUNGLE TESTNET'},
-            { url: 'https://junglehistory.cryptolions.io:4433', owner: 'Jungle 2', latency: 0, filters: [], chain: 'JUNGLE TESTNET' },
-            // {url: 'https://jungle-node.mywish.io', owner: 'Jungle 2', latency: 0, filters: [], chain: 'JUNGLE TESTNET'},
-            { url: 'https://api.eos.miami:17441', owner: 'Telos', latency: 0, filters: [], chain: 'TELOS TESTNET' }
-        ];
+        this.lastEndpoint = '';
+        this.autoMode = false;
+        this.activeChain = null;
+        this.defaultChains = chains_1.defaultChainsJSON;
+        var savedChainId = localStorage.getItem('simplEOS.activeChainID');
+        if (savedChainId) {
+            this.activeChain = this.defaultChains.find(function (chain) { return chain.id === savedChainId; });
+        }
+        else {
+            var EOS_MAINNET_ID_1 = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
+            this.activeChain = this.defaultChains.find(function (chain) { return chain.id === EOS_MAINNET_ID_1; });
+            localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID_1);
+        }
+        this.aService.activeChain = this.activeChain;
         this.validEndpoints = [];
         this.status = '';
         this.connectionTimeout = null;
-        this.networks = [];
-        this.mainnetActive = [];
-        this.loadNetworks();
     }
-    NetworkService.prototype.connect = function () {
+    NetworkService.prototype.connect = function (automatic) {
         var _this = this;
+        console.log('analyzing endpoints...');
+        this.autoMode = automatic;
         this.status = '';
-        this.mainnetActive = [];
-        this.aService.mainnetActive = [];
         this.mainnetId = '';
-        this.mainnetActive = this.networks.find(function (chain) { return chain.active; });
-        console.log(this.mainnetActive);
-        this.aService.mainnetActive = this.mainnetActive;
-        this.mainnetId = this.networks.find(function (chain) { return chain.active; }).id;
+        this.aService.activeChain = this.activeChain;
+        this.mainnetId = this.activeChain['id'];
         this.networkingReady.next(false);
         var pQueue = [];
         this.connected = false;
-        this.publicEndpoints.forEach(function (apiNode) {
-            if (_this.mainnetActive['name'] === apiNode.chain) {
-                pQueue.push(_this.apiCheck(apiNode));
-            }
+        this.activeChain['endpoints'].forEach(function (apiNode) {
+            pQueue.push(_this.apiCheck(apiNode));
         });
         Promise.all(pQueue).then(function () {
             _this.extractValidNode();
         });
-        console.log('Starting timer...');
         this.startTimeout();
     };
-    NetworkService.prototype.loadNetworks = function () {
-        var storeChain = localStorage.getItem('simplEOS.storeChain');
-        if (storeChain) {
-            this.networks = JSON.parse(storeChain);
+    NetworkService.prototype.changeChain = function (event) {
+        this.activeChain = this.defaultChains.find(function (chain) { return chain.id === event.value; });
+        if (this.activeChain) {
+            this.aService.activeChain = this.activeChain;
+            this.aService.accounts = [];
+            this.voting.clearMap();
+            this.voting.initList = false;
+            this.aService.lastAccount = null;
+            localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
+            this.connect(false);
+            console.log('Network switched to: ' + this.activeChain['name']);
         }
-        console.log(this.networks);
     };
     NetworkService.prototype.startTimeout = function () {
         var _this = this;
-        this.connectionTimeout = setTimeout(function () {
-            console.log('Timeout!');
-            if (!_this.networkingReady.getValue()) {
-                _this.status = 'timeout';
-                clearTimeout(_this.connectionTimeout);
-                _this.networkingReady.next(false);
-                _this.connectionTimeout = null;
-            }
-        }, 10000);
-    };
-    NetworkService.prototype.scanNodes = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _i, _a, apiNode;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _i = 0, _a = this.publicEndpoints;
-                        _b.label = 1;
-                    case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 4];
-                        apiNode = _a[_i];
-                        if (!(this.mainnetActive['name'] === apiNode.chain)) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this.apiCheck(apiNode)];
-                    case 2:
-                        _b.sent();
-                        _b.label = 3;
-                    case 3:
-                        _i++;
-                        return [3 /*break*/, 1];
-                    case 4: return [2 /*return*/];
+        if (!this.connectionTimeout) {
+            this.connectionTimeout = setTimeout(function () {
+                console.log('Timeout!');
+                if (!_this.networkingReady.getValue()) {
+                    _this.status = 'timeout';
+                    clearTimeout(_this.connectionTimeout);
+                    _this.networkingReady.next(false);
+                    _this.connectionTimeout = null;
                 }
-            });
-        });
+            }, 10000);
+        }
     };
     NetworkService.prototype.extractValidNode = function () {
+        var _this = this;
         this.validEndpoints = [];
-        for (var _i = 0, _a = this.publicEndpoints; _i < _a.length; _i++) {
-            var apiNode = _a[_i];
-            if (this.mainnetActive['name'] === apiNode.chain) {
-                if (apiNode.latency > 0 && apiNode.latency < 1200) {
-                    // await this.filterCheck(apiNode).then(value => {
-                    // 	const node = this.publicEndpoints;
-                    // 	const nodeSel = node.find(ep => ep.url === apiNode.url);
-                    // 	if (nodeSel.filters.length === 1) {
-                    this.validEndpoints.push(apiNode);
-                    // 	}
-                    // });
-                }
+        this.activeChain.endpoints.forEach(function (apiNode) {
+            if (apiNode.latency > 0 && apiNode.latency < 1200) {
+                _this.validEndpoints.push(apiNode);
             }
-        }
+        });
         this.selectEndpoint();
     };
     NetworkService.prototype.selectEndpoint = function () {
         var _this = this;
         var latency = 2000;
-        this.validEndpoints.forEach(function (node) {
-            if (_this.mainnetActive['name'] === node.chain) {
+        if (this.connected === false) {
+            this.validEndpoints.forEach(function (node) {
                 if (node.latency < latency && node.latency > 1) {
                     latency = node.latency;
                     _this.selectedEndpoint.next(node);
                 }
+            });
+            if (this.selectedEndpoint.getValue() === null) {
+                this.networkingReady.next(false);
             }
-        });
-        if (this.selectedEndpoint.getValue() === null) {
-            this.networkingReady.next(false);
-        }
-        else {
-            console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-            this.startup(null);
+            else {
+                console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
+                this.startup(null);
+            }
         }
     };
     NetworkService.prototype.selectedEP = function () {
-        return this.selectedEndpoint.getValue().url;
-    };
-    NetworkService.prototype.verifyFilters = function () {
+        return this.eosjs.baseConfig.httpEndpoint;
     };
     NetworkService.prototype.filterCheck = function (server) {
         var _this = this;
@@ -231,55 +160,11 @@ var NetworkService = /** @class */ (function () {
             return false;
         });
         pq.push(getkeyAcc);
-        // 	if (err) {
-        // 		console.log(err);
-        // 		return err;
-        // 	} else {
-        // 		// return txInfo;
-        // 		// if (txInfo.length > 0 || txInfo['account_names'] > 0 ) {
-        // 		// 	this.publicEndpoints.find(ep => ep.url === server.url).filters.push({eosio:'history'});
-        // 		// } else {
-        // 		// 	console.log('eosio:history filter is disabled on ' + server.url);
-        // 		// }
-        // 	}
-        // });
-        // });
-        // console.log(getAccKey);
-        // pq.push(new Promise((resolve1) => {
-        // 	eosCK['getTransaction'](this.genesistx, (err, txInfo) => {
-        //     if (err) {
-        //       console.log(err);
-        //       resolve1();
-        //     } else {
-        //       if (txInfo['block_num'] === this.txrefBlock) {
-        // 		  this.publicEndpoints.find(ep => ep.url === server.url).filters.push('eosio.token:transfer');
-        //       } else {
-        //         console.log('eosio.token:transfer filter is disabled on ' + server.url);
-        //       }
-        //       resolve1();
-        //     }
-        //   });
-        // }));
-        // pq.push(new Promise((resolve1) => {
-        //   eos['getTransaction'](this.voteref, (err, txInfo) => {
-        //     if (err) {
-        //       console.log(err);
-        //       resolve1();
-        //     } else {
-        //       if (txInfo['block_num'] === this.voterefBlock) {
-        //         server.filters.push('eosio:voteproducer');
-        //       } else {
-        //         console.log('eosio:voteproducer filter is disabled on ' + server.url);
-        //       }
-        //       resolve1();
-        //     }
-        //   });
-        // }));
         return Promise.all(pq);
     };
     NetworkService.prototype.apiCheck = function (server) {
         var _this = this;
-        console.log('Starting latency check for ' + server.url);
+        // console.log('Starting latency check for ' + server.url);
         return new Promise(function (resolve) {
             var config = _this.baseConfig;
             config.httpEndpoint = server.url;
@@ -297,15 +182,14 @@ var NetworkService = /** @class */ (function () {
                     }
                     else {
                         server.latency = ((new Date().getTime()) - refTime);
-                        console.log(server.url, server.latency);
+                        // console.log(server.url, server.latency);
                     }
                     clearTimeout(tempTimer);
                     if (server.latency > 1 && server.latency < 200) {
                         // force quick connection
                         if (_this.connected === false) {
                             _this.connected = true;
-                            _this.selectedEndpoint.next(server);
-                            _this.startup(null);
+                            _this.callStartupConn(server);
                         }
                     }
                     resolve();
@@ -317,49 +201,97 @@ var NetworkService = /** @class */ (function () {
             }
         });
     };
+    NetworkService.prototype.callStartupConn = function (server) {
+        if (this.connected === true) {
+            console.log('fast api detected, connecting to:', server.url);
+            this.selectedEndpoint.next(server);
+            this.startup(null);
+        }
+    };
     NetworkService.prototype.startup = function (url) {
         var _this = this;
         var endpoint = url;
         if (!url) {
             endpoint = this.selectedEndpoint.getValue().url;
+            console.log('switcing to saved endpoint:', endpoint);
         }
         else {
             this.status = '';
-            this.networkingReady.next(false);
-            this.startTimeout();
+            console.log('startup called - url: ', url);
         }
-        this.eosjs.init(endpoint, this.mainnetId).then(function (savedAccounts) {
-            // if (this.ledger.isElectron()) {
-            //   this.aService.checkLedgerAccounts().then(() => {
-            //     this.ledger.initListener();
-            //   });
-            // }
-            if (_this.connectionTimeout) {
-                clearTimeout(_this.connectionTimeout);
-                _this.networkingReady.next(true);
-                _this.connectionTimeout = null;
-            }
-            if (savedAccounts) {
-                if (savedAccounts.length > 0) {
-                    _this.aService.loadLocalAccounts(savedAccounts);
-                    _this.aService.initFirst();
+        this.networkingReady.next(false);
+        this.eosjs.online.next(false);
+        this.startTimeout();
+        // prevent double load after quick connection mode
+        if (endpoint !== this.lastEndpoint || this.autoMode === true) {
+            this.eosjs.init(endpoint, this.activeChain.id).then(function (savedAccounts) {
+                // if (this.ledger.isElectron()) {
+                //   this.aService.checkLedgerAccounts().then(() => {
+                //     this.ledger.initListener();
+                //   });
+                // }
+                _this.lastEndpoint = endpoint;
+                _this.autoMode = false;
+                _this.defaultChains.find(function (c) { return c.id === _this.activeChain.id; }).lastNode = _this.lastEndpoint;
+                if (_this.connectionTimeout) {
+                    clearTimeout(_this.connectionTimeout);
                     _this.networkingReady.next(true);
-                    _this.router['navigate'](['dashboard', 'wallet']);
+                    _this.connectionTimeout = null;
                 }
-                else {
-                    console.log('No saved accounts!');
+                if (savedAccounts) {
+                    if (savedAccounts.length > 0) {
+                        console.log('Locading local accounts');
+                        _this.aService.loadLocalAccounts(savedAccounts).then(function () {
+                            if (_this.aService.lastAccount) {
+                                _this.aService.select(_this.aService.accounts.findIndex(function (a) {
+                                    return a.name === _this.aService.lastAccount;
+                                }));
+                            }
+                            else {
+                                _this.aService.initFirst();
+                            }
+                            // this.voting.forceReload();
+                            _this.networkingReady.next(true);
+                            _this.router['navigate'](['dashboard', 'wallet']);
+                        });
+                    }
+                    else {
+                        _this.networkingReady.next(true);
+                        if (_this.crypto.locked) {
+                            console.log('No saved accounts!');
+                            _this.router['navigate'](['']);
+                        }
+                        else {
+                            console.log('No saved accounts!');
+                            _this.router['navigate'](['landing']);
+                        }
+                    }
                 }
+            }).catch(function (err) {
+                console.log('>>> EOSJS_ERROR: ', err);
+                _this.networkingReady.next(false);
+            });
+        }
+        else {
+            if (this.connectionTimeout) {
+                clearTimeout(this.connectionTimeout);
+                this.networkingReady.next(true);
+                this.connectionTimeout = null;
             }
-        }).catch(function (err) {
-            console.log('-------EOSJS_ERRO-------->', err);
-            _this.networkingReady.next(false);
-        });
+            this.networkingReady.next(true);
+        }
     };
     NetworkService = __decorate([
         core_1.Injectable({
             providedIn: 'root'
         }),
-        __metadata("design:paramtypes", [eosjs_service_1.EOSJSService, router_1.Router, accounts_service_1.AccountsService, ledger_h_w_service_1.LedgerHWService])
+        __metadata("design:paramtypes", [eosjs_service_1.EOSJSService,
+            router_1.Router,
+            accounts_service_1.AccountsService,
+            voting_service_1.VotingService,
+            crypto_service_1.CryptoService
+            // private ledger: LedgerHWService
+        ])
     ], NetworkService);
     return NetworkService;
 }());

@@ -4,6 +4,7 @@ import {EOSJSService} from './eosjs.service';
 
 import * as CryptoJS from 'crypto-js';
 import {Router} from '@angular/router';
+import {Eosjs2Service} from './eosjs2.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -16,7 +17,11 @@ export class CryptoService {
 	private basePublicKey = '';
 	public locked = true;
 
-	constructor(private eosjs: EOSJSService, private router: Router) {
+	constructor(
+		private eosjs: EOSJSService,
+		private router: Router,
+		private eosjs2: Eosjs2Service
+	) {
 	}
 
 	static concatUint8Array(...arrays: Uint8Array[]): Uint8Array {
@@ -31,6 +36,16 @@ export class CryptoService {
 			offset += arr.length;
 		}
 		return result;
+	}
+
+	checkPublicKey(testKey) {
+		const savedData = localStorage.getItem('eos_keys.' + this.eosjs2.chainId);
+		if (savedData) {
+			const keys = Object.keys(JSON.parse(savedData));
+			return keys.indexOf(testKey) !== -1;
+		} else {
+			return false;
+		}
 	}
 
 	async initKeys(publickey, pass): Promise<void> {
@@ -161,6 +176,7 @@ export class CryptoService {
 				}, this.masterKey, data);
 				const decryptedKey = String.fromCharCode.apply(null, new Uint8Array(decrypted));
 				this.eosjs.baseConfig.keyProvider = decryptedKey.replace(/^"(.+(?="$))"$/, '$1');
+				this.eosjs2.initAPI(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
 				this.eosjs.reloadInstance();
 				return true;
 			} else {

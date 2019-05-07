@@ -1,8 +1,8 @@
 <div class="wrap">
     <div class="container-fluid">
-        <div class="row animate fadeInDown">
+        <div class="clr-row clr-justify-content-center animate fadeInDown">
 
-            <div class="col-md-12 text-center">
+            <div class="clr-col-md-12 text-center">
                 <div class="anim-logo">
                     <lottie-animation-view
                             [options]="lottieConfig"
@@ -12,13 +12,15 @@
                     </lottie-animation-view>
                 </div>
                 <div class="slogan">Your simple and secure EOS wallet</div>
+			</div>
+			<div class="clr-col-md-auto text-center">
                 <div class="card check-card">
                     <div class="card-block fit-content text-center">
                         <div class="text-center"> Enter your pin to unlock
                         </div>
                         <mat-form-field class="public-input">
                             <input matInput #pin2 type="password" autocomplete="off" placeholder="Pin"
-                                   (keyup.enter)="unlock()" [(ngModel)]="pin">
+                                   (keyup.enter)="unlock()" [(ngModel)]="pin" [autofocus]="true" >
                             <button mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
                                     (click)="unlock()" [disabled]="pin2.value.length === 0">
                                 Unlock
@@ -32,6 +34,8 @@
                         </mat-form-field>
                     </div>
                 </div>
+			</div>
+			<div class="clr-col-md-12 text-center">
                 <div>Forgot your pin?
                     <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="logoutModal = true">
                         Clear all data and logout

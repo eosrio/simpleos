@@ -1,4 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosjs.service';
@@ -9,16 +9,20 @@ import {CryptoService} from '../../services/crypto.service';
 import {HttpClient} from '@angular/common/http';
 
 import * as moment from 'moment';
+import {Subscription} from 'rxjs';
 
 @Component({
 	selector: 'app-vote',
 	templateUrl: './vote.component.html',
 	styleUrls: ['./vote.component.css']
 })
-export class VoteComponent implements OnInit, AfterViewInit {
+export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
+
 	max: number;
 	min: number;
 	minstake: boolean;
+	busyList: boolean;
+
 	valuetoStake: string;
 	percenttoStake: string;
 	minToStake = 0.01;
@@ -26,13 +30,15 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	unstakeTime: string;
 	stakeModal: boolean;
 	voteModal: boolean;
+	isValidAccount: boolean;
 	nVotes: number;
 	busy: boolean;
 	totalBalance: number;
 	stakedBalance: number;
 	singleSelectionBP: any;
-	selectedBPs: any[];
+	selectedVotes: any[];
 	wrongpass: string;
+	frmForProxy: FormGroup;
 	passForm: FormGroup;
 	passFormStake: FormGroup;
 	config: ToasterConfig;
@@ -60,7 +66,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	echartsInstance: any;
 	location: string[];
 	country: string[];
-	graphMerge: any;
+	// graphMerge: any;
 	options: any;
 
 	initOptions = {
@@ -74,6 +80,11 @@ export class VoteComponent implements OnInit, AfterViewInit {
 
 	stakingRatio = 75;
 
+	listProxyVote = [];
+
+	subscriptions: Subscription[] = [];
+	private selectedProxy = '';
+
 	constructor(public voteService: VotingService,
 				private http: HttpClient,
 				public aService: AccountsService,
@@ -81,18 +92,14 @@ export class VoteComponent implements OnInit, AfterViewInit {
 				public crypto: CryptoService,
 				private fb: FormBuilder,
 				private toaster: ToasterService,
-				private cdr: ChangeDetectorRef,
+				private cdr: ChangeDetectorRef
 				// private ledger: LedgerHWService
 	) {
-		this.voteService.bpsByChain(this.aService.activeChain.id);
-		if (this.voteService.bps) {
-			this.nbps = this.voteService.bps.length;
-		} else {
-			this.nbps = 100;
-		}
+		this.isValidAccount = true;
 		this.max = 100;
 		this.min = 0;
 		this.minstake = false;
+		this.busyList = false;
 		this.valuetoStake = '';
 		this.percenttoStake = '';
 		this.unstaking = 0;
@@ -109,13 +116,45 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		this.singleSelectionBP = {
 			name: ''
 		};
-		this.selectedBPs = [];
+		this.selectedVotes = [];
+		this.frmForProxy = this.fb.group({
+			proxyName: ['', [Validators.required]]
+		});
 		this.passForm = this.fb.group({
 			pass: ['', [Validators.required, Validators.minLength(10)]]
 		});
 		this.passFormStake = this.fb.group({
 			pass: ['', [Validators.required, Validators.minLength(10)]]
 		});
+
+		this.subscriptions.push(this.aService.lastUpdate.asObservable().subscribe(value => {
+			if (value.account === this.aService.selected.getValue().name) {
+				this.updateBalances();
+				this.stakingRatio = 75;
+			}
+		}));
+
+		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
+			if (selected && selected['name']) {
+				this.fromAccount = selected.name;
+				this.totalBalance = selected.full_balance;
+				this.stakedBalance = selected.staked;
+				this.unstaking = selected.unstaking;
+				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+				if (this.totalBalance > 0) {
+					this.minToStake = 100 / this.totalBalance;
+					this.valuetoStake = this.stakedBalance.toString();
+				} else {
+					this.minToStake = 0;
+					this.valuetoStake = '0';
+					this.percenttoStake = '0';
+				}
+				this.updateStakePercent();
+				this.loadPlacedVotes(selected);
+				this.cpu_weight = selected.details.total_resources.cpu_weight;
+				this.net_weight = selected.details.total_resources.net_weight;
+			}
+		}));
 
 		this.options = {
 			geo: {
@@ -182,8 +221,31 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		};
 	}
 
+	ngOnInit() {
+		const selectedAcc = this.aService.selected.getValue();
+		if (this.aService.activeChain.features['vote']) {
+			this.setCheckListVote(selectedAcc.name);
+		}
+		this.getCurrentStake();
+	}
+
+	ngAfterViewInit() {
+		this.subscriptions.push(
+			this.aService.selected.asObservable().subscribe((selected) => {
+				this.voteService.currentVoteType(selected);
+				this.voteOption(this.voteService.voteType);
+			})
+		);
+	}
+
+	ngOnDestroy(): void {
+		this.subscriptions.forEach(s => {
+			s.unsubscribe();
+		});
+	}
+
 	extOpen(value) {
-		window['shell'].openExternal(value);
+		window['shell']['openExternal'](value);
 	}
 
 	sliderLabel(value: number): string {
@@ -227,7 +289,7 @@ export class VoteComponent implements OnInit, AfterViewInit {
 						this.wrongpass = '';
 						this.stakeModal = false;
 						this.cdr.detectChanges();
-						this.showToast('success', 'Tramsaction broadcasted', 'Check your history for confirmation.');
+						this.showToast('success', 'Transaction broadcasted', 'Check your history for confirmation.');
 						setTimeout(() => {
 							this.aService.refreshFromChain().then(() => {
 								this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
@@ -265,74 +327,54 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		this.stakedBalance = selectedAcc.staked;
 	}
 
-	ngOnInit() {
 
-		setTimeout(() => {
-			this.voteService.callLoader();
-		}, 1000);
-
-		const selectedAcc = this.aService.selected.getValue();
-		this.aService.lastUpdate.asObservable().subscribe(value => {
-			if (value.account === this.aService.selected.getValue().name) {
-				this.updateBalances();
-				this.stakingRatio = 75;
-			}
+	//
+	// getMyVote(account){
+	// 	this.aService.selected.asObservable().subscribe((selected: any) => {
+	// 		// const myAccount = selected.selected.getValue();
+	// 		// return (myAccount.details['voter_info']['proxy'].indexOf(account) !== -1);
+	// 	});
+	//
+	// }
+	//
+	getProxyVotes(account) {
+		this.listProxyVote = [];
+		this.eos.getAccountInfo(account).then(v => {
+			this.listProxyVote = v['voter_info']['producers'];
 		});
-		this.aService.selected.asObservable().subscribe((selected: any) => {
-			if (selected && selected['name']) {
-				this.fromAccount = selected.name;
-				this.totalBalance = selected.full_balance;
-				this.stakedBalance = selected.staked;
-				this.unstaking = selected.unstaking;
-				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
-				if (this.totalBalance > 0) {
-					this.minToStake = 100 / this.totalBalance;
-					this.valuetoStake = this.stakedBalance.toString();
-				} else {
-					this.minToStake = 0;
-					this.valuetoStake = '0';
-					this.percenttoStake = '0';
-				}
-				this.updateStakePercent();
-				this.loadPlacedVotes(selected);
-				this.cpu_weight = selected.details.total_resources.cpu_weight;
-				this.net_weight = selected.details.total_resources.net_weight;
-			}
-		});
-		if (this.aService.activeChain.features['vote']) {
+	}
 
+	setCheckListVote(selAcc) {
+		this.subscriptions.push(
 			this.voteService.listReady.asObservable().subscribe((state) => {
 				if (state) {
 					this.updateCounter();
-					this.nbps = this.voteService.bps.length;
-				}
-			});
-			this.aService.accounts.forEach((a) => {
-				if (a) {
-					if (a.name === selectedAcc.name) {
-						if (a.details['voter_info']) {
-							const currentVotes = a.details['voter_info']['producers'];
-							this.voteService.bps.forEach((elem) => {
-								elem.checked = currentVotes.indexOf(elem.account) !== -1;
-							});
-						} else {
-							this.voteService.bps.forEach((elem) => {
-								elem.checked = false;
-							});
-						}
+					if (this.voteService.voteType) {
+						this.nbps = this.voteService.proxies.length;
+					} else {
+						this.nbps = this.voteService.bps.length;
 					}
 				}
-			});
-
-		}
-		this.getCurrentStake();
-	}
-
-	ngAfterViewInit() {
-		this.voteService.listProducers().catch((err) => {
-			console.log(err);
+			})
+		);
+		this.aService.accounts.forEach((a) => {
+			if (a) {
+				if (a.name === selAcc) {
+					if (a.details['voter_info']) {
+						const currentVotes = a.details['voter_info']['producers'];
+						this.voteService.bps.forEach((elem) => {
+							elem.checked = currentVotes.indexOf(elem.account) !== -1;
+						});
+					} else {
+						this.voteService.proxies.forEach((elem) => {
+							elem.checked = false;
+						});
+					}
+				}
+			}
 		});
 	}
+
 
 	getCurrentStake() {
 		if (this.totalBalance > 0) {
@@ -390,13 +432,32 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	}
 
 	processVotes() {
-		this.selectedBPs = [];
-		this.voteService.bps.forEach((bp) => {
-			if (bp.checked) {
-				this.selectedBPs.push(bp.account);
+		this.selectedVotes = [];
+		if (this.voteService.voteType && !this.voteService.hasList) {
+			this.selectedVotes = [this.selectedProxy];
+		} else {
+			if (this.voteService.voteType) {
+				// this.selectedPxs = [];
+				this.voteService.proxies.forEach((px) => {
+					if (px.checked) {
+						this.selectedVotes.push(px.account);
+					}
+					// this.selectedPxs.push(px.account);
+
+				});
+				this.getProxyVotes(this.selectedVotes[0]);
+			} else {
+				// this.selectedBPs = [];
+				this.voteService.bps.forEach((bp) => {
+					if (bp.checked) {
+						// this.selectedBPs.push(bp.account);
+						this.selectedVotes.push(bp.account);
+					}
+				});
 			}
-		});
+		}
 		this.passForm.reset();
+		this.wrongpass = '';
 		this.voteModal = true;
 	}
 
@@ -410,17 +471,25 @@ export class VoteComponent implements OnInit, AfterViewInit {
 		this.nVotes = val;
 	}
 
+	updateCounterProxy(proxy) {
+		this.voteService.proxies.forEach((px,idx) => {
+			this.voteService.proxies[idx].checked = px.account === proxy;
+		});
+		this.nVotes = 1;
+	}
+
+
 	modalVote(pass) {
 		this.busy = true;
 		const voter = this.aService.selected.getValue();
 		const publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
+
 		this.crypto.authenticate(pass, publicKey).then((data) => {
 			// console.log('Auth output:', data);
 			if (data === true) {
 
-				this.aService.injectLedgerSigner();
-
-				this.eos.voteProducer(voter.name, this.selectedBPs).then((result) => {
+				// this.aService.injectLedgerSigner();
+				this.eos.voteAction(voter.name, this.selectedVotes, this.voteService.voteType).then((result) => {
 					// console.log(result);
 					if (JSON.parse(result).code) {
 						// if (err2.error.code === 3081001) {
@@ -431,14 +500,25 @@ export class VoteComponent implements OnInit, AfterViewInit {
 						this.busy = false;
 					} else {
 						this.wrongpass = '';
-						this.voteModal = false;
-						this.busy = false;
-						this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
-						this.passForm.reset();
-						this.aService.refreshFromChain();
+						this.cdr.detectChanges();
 						setTimeout(() => {
-							this.loadPlacedVotes(this.aService.selected.getValue());
+							this.aService.refreshFromChain().then(() => {
+								this.voteOption(this.voteService.voteType);
+								this.voteService.currentVoteType(voter.name);
+								this.loadPlacedVotes(this.aService.selected.getValue());
+								this.setCheckListVote(this.aService.selected.getValue().name);
+								this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
+								this.voteModal = false;
+								this.busy = false;
+							}).catch(err => {
+								console.log('Refresh From Chain Error:', err);
+							});
+							// this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
+
 						}, 1500);
+
+						// this.passForm.reset();
+
 					}
 
 				}).catch((err2) => {
@@ -450,6 +530,8 @@ export class VoteComponent implements OnInit, AfterViewInit {
 					// }
 					this.busy = false;
 				});
+
+
 			} else {
 				this.wrongpass = 'Something went wrong!';
 				this.busy = false;
@@ -462,15 +544,16 @@ export class VoteComponent implements OnInit, AfterViewInit {
 
 	loadPlacedVotes(selectedAccount) {
 		if (selectedAccount.details['voter_info']) {
-			const currentVotes = selectedAccount.details['voter_info']['producers'];
+			const currentVotes = !selectedAccount.details['voter_info']['producers'] ? selectedAccount.details['voter_info']['proxies'] : selectedAccount.details['voter_info']['producers'];
 			this.nVotes = currentVotes.length;
 			this.voteService.bps.forEach((elem) => {
 				elem.checked = currentVotes.indexOf(elem.account) !== -1;
 			});
 			this.updateCounter();
 		} else {
-			this.voteService.bps.forEach((elem) => {
+			this.voteService.proxies.forEach((elem) => {
 				elem.checked = false;
+				this.updateCounterProxy(elem.account);
 			});
 		}
 	}
@@ -499,5 +582,43 @@ export class VoteComponent implements OnInit, AfterViewInit {
 	onChartInit(e: any) {
 		this.echartsInstance = e;
 	}
+
+	voteOption(ev) {
+		this.busyList = true;
+		this.voteService.voteType = ev;
+		const acc = this.aService.selected.getValue();
+		this.voteService.initList = false;
+		this.voteService.loadingProds = false;
+		this.voteService.initListProx = false;
+		this.voteService.loadingProxs = false;
+		if (this.voteService.voteType === 0) {
+			this.voteService.listProducers().then(() => {
+				this.busyList = false;
+				this.setCheckListVote(acc.name);
+			}).catch(err => {
+				console.log('Load Account List Producers Error:', err);
+			});
+		} else if (this.voteService.voteType === 1) {
+			this.voteService.listProxies().then(() => {
+				this.busyList = false;
+				this.setCheckListVote(acc.name);
+			}).catch(err => {
+				console.log('Load Account List Proxies Error:', err);
+			});
+		}
+		this.cdr.detectChanges();
+	}
+
+	validateProxy(account) {
+		this.eos.getAccountInfo(account).then(() => {
+			this.isValidAccount = true;
+			this.selectedProxy = account;
+			this.processVotes();
+		}).catch(() => {
+			console.log('error');
+			this.isValidAccount = false;
+		});
+	}
+
 
 }

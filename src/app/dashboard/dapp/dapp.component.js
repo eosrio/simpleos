@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var forms_1 = require("@angular/forms");
-var accounts_service_1 = require("../../accounts.service");
-var eosjs_service_1 = require("../../eosjs.service");
+var accounts_service_1 = require("../../services/accounts.service");
+var eosjs_service_1 = require("../../services/eosjs.service");
 var crypto_service_1 = require("../../services/crypto.service");
 var angular2_toaster_1 = require("angular2-toaster");
 var DappComponent = /** @class */ (function () {
@@ -36,7 +36,7 @@ var DappComponent = /** @class */ (function () {
             fields: new forms_1.FormControl(JSON.stringify(this.fields))
         });
         this.searchForm = this.fb.group({
-            search: ['', [forms_1.Validators.maxLength(12)]] //Validators.minLength(12),
+            search: ['', [forms_1.Validators.maxLength(12)]]
         });
         this.confirmForm = this.fb.group({
             pass: ['', [forms_1.Validators.required, forms_1.Validators.minLength(10)]]
@@ -90,8 +90,15 @@ var DappComponent = /** @class */ (function () {
             _this.aService.tokens.forEach(function (token) {
                 _this.tokens.push(token);
             });
+            _this.addSystemContracts();
             _this.loading = false;
-        }, 1500);
+        }, 1000);
+    };
+    DappComponent.prototype.addSystemContracts = function () {
+        var _this = this;
+        this.aService.activeChain['system'].forEach(function (sc) {
+            _this.tokens.push({ contract: sc });
+        });
     };
     DappComponent.prototype.showToast = function (type, title, body) {
         this.config = new angular2_toaster_1.ToasterConfig({
@@ -132,7 +139,6 @@ var DappComponent = /** @class */ (function () {
         this.loading = true;
         if (sc !== '') {
             this.eos.getSCAbi(sc).then(function (data) {
-                console.log(data);
                 _this.setActions(data['abi']);
                 _this.setStructs(data['abi']);
                 _this.tokens.push({ contract: sc });
@@ -198,7 +204,7 @@ var DappComponent = /** @class */ (function () {
         var _this = this;
         this.actionDesc = '';
         this.busy = false;
-        if (this.abiSmartContractStructs.find(function (action) { return action.name == actionType; }).fields.length > 0) {
+        if (this.abiSmartContractStructs.find(function (action) { return action.name === actionType; }).fields.length > 0) {
             this.fields = [];
             this.action = actionType;
             if (this.actionInfo) {
@@ -207,7 +213,7 @@ var DappComponent = /** @class */ (function () {
                 }
             }
             this.removeComponent(this.componentClass);
-            this.abiSmartContractStructs.find(function (action) { return action.name == actionType; }).fields.forEach(function (field) {
+            this.abiSmartContractStructs.find(function (action) { return action.name === actionType; }).fields.forEach(function (field) {
                 console.log(field.type.indexOf('[]'));
                 var line = (field.type.indexOf('[]') > 0);
                 _this.fields.push({
@@ -252,7 +258,7 @@ var DappComponent = /** @class */ (function () {
                     console.log(info);
                     _this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
                 }).catch(function (error) {
-                    _this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+                    _this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
                 });
                 _this.busy = false;
             }
@@ -296,8 +302,8 @@ var FormComponent = /** @class */ (function () {
     };
     FormComponent = __decorate([
         core_1.Component({
-            selector: 'my-form',
-            template: '<dynamic-form-builder [fields]="getFields()" [description]="getActionDescription()"></dynamic-form-builder>'
+            selector: 'app-dyn-form',
+            template: '<app-dynamic-form-builder [fields]="getFields()" [description]="getActionDescription()"></app-dynamic-form-builder>'
         }),
         __metadata("design:paramtypes", [DappComponent])
     ], FormComponent);

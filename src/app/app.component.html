@@ -1,76 +1,168 @@
 <router-outlet></router-outlet>
 
+<clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'">
+	<h3 class="modal-title text-white">
+		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->
+		Connect to
+		<div class="blue" style="margin-top: 8px;">{{dapp_name}}</div>
+	</h3>
+	<!--	<ng-container *ngIf="aService.loading">-->
+	<!--		<fa-layers class="mt-1 mb-1">-->
+	<!--			<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"-->
+	<!--					 style="color:#0094d2;"></fa-icon>-->
+	<!--		</fa-layers>-->
+	<!--		<br>-->
+
+	<!--		<div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...-->
+	<!--		</div>-->
+	<!--	</ng-container>-->
+	<div class="modal-body" *ngIf="aService.accounts.length > 0">
+		<p style="margin-bottom: 20px; color: #d4d4d4;">Choose the account you want to connect:</p>
+		<div class="card chains-card">
+			<ng-container *ngFor="let acc of aService.accounts; let i = index">
+				<div class="card-block chain-section" (click)="selectAccount(acc)">
+					{{acc.name}}
+					<span class="blue connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
+						[icon]="['far', 'angle-right']"></fa-icon></span>
+				</div>
+			</ng-container>
+		</div>
+		<div style="margin: 10px 0; color: #adadad">*This doesn't let the dapp do actions on your behalf</div>
+	</div>
+	<div class="modal-body" *ngIf="aService.accounts.length === 0">
+		<p style="margin-bottom: 20px; color: #adadad"><strong>No account found.</strong> Please, close this window and
+			import your account to continue.</p>
+	</div>
+</clr-modal>
+
+
+<clr-modal [(clrModalOpen)]="transitAction" [clrModalSize]="'md'">
+	<h3 class="modal-title">
+		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->
+		<span class="blue">Confirm transaction</span>
+	</h3>
+	<div class="modal-body">
+		<h5 class="gray mt-0">Account: {{transit_signer}}</h5>
+		<h4 class="text-white">Are you sure you want to perform the following actions ?</h4>
+		<div *ngIf="updateauthWarning" class="alert alert-danger" role="alert"
+			 style="margin-top: 10px; font-size: 15px">
+			<div class="alert-items">
+				<div class="alert-item static">
+					<div class="alert-icon-wrapper">
+						<clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
+					</div>
+					<span class="alert-text" style="color: #c92100;"><strong>CAUTION !</strong></span>
+				</div>
+				<div class="alert-item static">
+					<div class="alert-icon-wrapper">
+						<fa-icon [icon]="['far', 'skull-crossbones']" class="alert-icon skull-icon"></fa-icon>
+					</div>
+					<span class="alert-text"><strong>This action will modify your permissions.<br> Please be extra careful!</strong></span>
+				</div>
+			</div>
+		</div>
+		<p-accordion>
+			<p-accordionTab *ngFor="let act of action_json; let i = index" header="{{act.name}} on {{act.account}}"
+							[selected]="i === 0">
+				<ngx-json-viewer width="300" [json]="act.data" [expanded]="true"></ngx-json-viewer>
+			</p-accordionTab>
+		</p-accordion>
+	</div>
+	<div class="modal-footer">
+		<form [formGroup]="confirmForm" class="confirmForm">
+			<mat-form-field>
+				<input matInput #pass type="password" placeholder="Password"
+					   formControlName="pass" (keyup.enter)="signTransitAction()">
+				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+					{{wrongpass}}
+				</mat-hint>
+			</mat-form-field>
+			<button type="button" class="btn btn-info-outline"
+					style="margin-top: 12px;"
+					[disabled]="!confirmForm.valid || busy" (click)="signTransitAction()">
+				Confirm
+				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+			</button>
+
+		</form>
+	</div>
+</clr-modal>
+
+<app-confirm-modal></app-confirm-modal>
+<app-input-modal></app-input-modal>
+
 <!--LEDGER MODAL-->
 
 <!--<clr-wizard #ledgerwizard [(clrWizardOpen)]="ledgerOpen" [clrWizardSize]="'lg'">-->
-  <!--<clr-wizard-title>Ledger integration</clr-wizard-title>-->
+<!--<clr-wizard-title>Ledger integration</clr-wizard-title>-->
 
-  <!--<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
-  <!--<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
-  <!--<clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
-  <!--<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
+<!--<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
 
-  <!--<clr-wizard-page>-->
-    <!--<ng-template clrPageTitle>Step 1</ng-template>-->
-    <!--<h5 style="color: #a7a7a7;">Ledger indentified-->
-      <!--<fa-icon class="blue" [icon]="['fas', 'check']"></fa-icon>-->
-    <!--</h5>-->
-    <!--&lt;!&ndash;<button type="button" class="btn btn-info-outline" (click)="scanPublicKeys()" style="margin-top:20px;"&ndash;&gt;-->
-            <!--&lt;!&ndash;[disabled]="busy">&ndash;&gt;-->
-      <!--&lt;!&ndash;Scan for accounts&ndash;&gt;-->
-      <!--&lt;!&ndash;<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>&ndash;&gt;-->
-    <!--&lt;!&ndash;</button>&ndash;&gt;-->
-    <!--<h5 style="color: #a7a7a7;">Select the account you want to use:</h5>-->
-    <!--<div class="card accounts-card">-->
-      <!--<ng-container *ngFor="let slot of accSlots; let i = index">-->
-        <!--<div *ngIf="slot.account !== null || showAll" class="card-block accounts-section">-->
-          <!--<div class="blue">Slot {{i}}</div>-->
-          <!--<mat-form-field class="mt-8" style="width: 100%; margin-top: 5px">-->
-            <!--<input matInput type="text" placeholder="Public Key" [value]="slot.publicKey" readonly>-->
-          <!--</mat-form-field>-->
-          <!--<div>Account: <span class="blue">{{slot.account || 'No account associated'}}</span></div>-->
-          <!--<button *ngIf="slot.account !== null" (click)="selectSlot(slot,i)" class="btn btn-sm btn-info-outline"-->
-                  <!--style="margin: 5px;">Load-->
-          <!--</button>-->
-        <!--</div>-->
-      <!--</ng-container>-->
-      <!--<ng-container *ngIf="accSlots">-->
-        <!--<button *ngIf="accSlots.length > 0 && !showAll" type="button" class="btn btn-sm btn-info-outline"-->
-                <!--(click)="showAll = true;" style="margin-top:5px; margin-left: 5px;"-->
-                <!--[disabled]="busy">Show All-->
-        <!--</button>-->
-      <!--</ng-container>-->
-    <!--</div>-->
-  <!--</clr-wizard-page>-->
+<!--<clr-wizard-page>-->
+<!--<ng-template clrPageTitle>Step 1</ng-template>-->
+<!--<h5 style="color: #a7a7a7;">Ledger indentified-->
+<!--<fa-icon class="blue" [icon]="['fas', 'check']"></fa-icon>-->
+<!--</h5>-->
+<!--&lt;!&ndash;<button type="button" class="btn btn-info-outline" (click)="scanPublicKeys()" style="margin-top:20px;"&ndash;&gt;-->
+<!--&lt;!&ndash;[disabled]="busy">&ndash;&gt;-->
+<!--&lt;!&ndash;Scan for accounts&ndash;&gt;-->
+<!--&lt;!&ndash;<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>&ndash;&gt;-->
+<!--&lt;!&ndash;</button>&ndash;&gt;-->
+<!--<h5 style="color: #a7a7a7;">Select the account you want to use:</h5>-->
+<!--<div class="card accounts-card">-->
+<!--<ng-container *ngFor="let slot of accSlots; let i = index">-->
+<!--<div *ngIf="slot.account !== null || showAll" class="card-block accounts-section">-->
+<!--<div class="blue">Slot {{i}}</div>-->
+<!--<mat-form-field class="mt-8" style="width: 100%; margin-top: 5px">-->
+<!--<input matInput type="text" placeholder="Public Key" [value]="slot.publicKey" readonly>-->
+<!--</mat-form-field>-->
+<!--<div>Account: <span class="blue">{{slot.account || 'No account associated'}}</span></div>-->
+<!--<button *ngIf="slot.account !== null" (click)="selectSlot(slot,i)" class="btn btn-sm btn-info-outline"-->
+<!--style="margin: 5px;">Load-->
+<!--</button>-->
+<!--</div>-->
+<!--</ng-container>-->
+<!--<ng-container *ngIf="accSlots">-->
+<!--<button *ngIf="accSlots.length > 0 && !showAll" type="button" class="btn btn-sm btn-info-outline"-->
+<!--(click)="showAll = true;" style="margin-top:5px; margin-left: 5px;"-->
+<!--[disabled]="busy">Show All-->
+<!--</button>-->
+<!--</ng-container>-->
+<!--</div>-->
+<!--</clr-wizard-page>-->
 
-  <!--<clr-wizard-page *ngIf="selectedSlot === null">-->
-    <!--<ng-template clrPageTitle>Step 2</ng-template>-->
-    <!--<h5 style="color: #a7a7a7;">No account found-->
-      <!--<fa-icon [icon]="['far', 'frown']"></fa-icon>-->
-    <!--</h5>-->
-    <!--<button type="button" class="btn btn-info-outline" style="margin-top:20px;">-->
-      <!--Create new account on Ledger-->
-    <!--</button>-->
-    <!--<div style="color: #a7a7a7;">or</div>-->
-    <!--<button type="button" class="btn btn-info-outline" style="margin-top:10px;">-->
-      <!--Link my account to Ledger-->
-    <!--</button>-->
-  <!--</clr-wizard-page>-->
+<!--<clr-wizard-page *ngIf="selectedSlot === null">-->
+<!--<ng-template clrPageTitle>Step 2</ng-template>-->
+<!--<h5 style="color: #a7a7a7;">No account found-->
+<!--<fa-icon [icon]="['far', 'frown']"></fa-icon>-->
+<!--</h5>-->
+<!--<button type="button" class="btn btn-info-outline" style="margin-top:20px;">-->
+<!--Create new account on Ledger-->
+<!--</button>-->
+<!--<div style="color: #a7a7a7;">or</div>-->
+<!--<button type="button" class="btn btn-info-outline" style="margin-top:10px;">-->
+<!--Link my account to Ledger-->
+<!--</button>-->
+<!--</clr-wizard-page>-->
 
-  <!--<clr-wizard-page *ngIf="aService.accounts.length === 0" [clrWizardPageNextDisabled]="!agreeConstitution"-->
-                   <!--(clrWizardPageOnLoad)="eos.getConstitution()" (clrWizardPageOnCommit)="importLedgerAccount()">-->
-    <!--<ng-template clrPageTitle>Step 3</ng-template>-->
-    <!--<h5 style="color: #bebebe;">EOS Constitution</h5>-->
-    <!--<div class="constitution" [innerHTML]="eos.constitution"></div>-->
-    <!--<mat-checkbox [(ngModel)]="agreeConstitution">I abide by the constitution</mat-checkbox>-->
-  <!--</clr-wizard-page>-->
+<!--<clr-wizard-page *ngIf="aService.accounts.length === 0" [clrWizardPageNextDisabled]="!agreeConstitution"-->
+<!--(clrWizardPageOnLoad)="eos.getConstitution()" (clrWizardPageOnCommit)="importLedgerAccount()">-->
+<!--<ng-template clrPageTitle>Step 3</ng-template>-->
+<!--<h5 style="color: #bebebe;">EOS Constitution</h5>-->
+<!--<div class="constitution" [innerHTML]="eos.constitution"></div>-->
+<!--<mat-checkbox [(ngModel)]="agreeConstitution">I abide by the constitution</mat-checkbox>-->
+<!--</clr-wizard-page>-->
 <!--</clr-wizard>-->
 
 <!--LEDGER MODAL-->
 
-<!--<div id="update-box" [ngClass]="update ? 'show' : ''">-->
-<!--<div>There is a new version available</div>-->
-<!--<div>Update?</div>-->
-<!--<button class="btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>-->
-<!--<a class="btn btn-link btn-sm" (click)="openGithub()">View on Github</a>-->
-<!--</div>-->
+<div id="update-box" style="float:right;" [ngClass]="update ? 'show' : ''">
+	<div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
+	<div>There is a new version available!<br/> Want to update?</div>
+	<div></div>
+	<button class="btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>
+	<a class="btn btn-link btn-sm" (click)="openGithub()">View on Github</a>
+</div>

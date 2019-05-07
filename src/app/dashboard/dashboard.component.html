@@ -2,8 +2,8 @@
 <div class="main-container">
 	<div class="content-container">
 		<div class="content-area">
-			<div class="row" style="margin-right: 0;">
-				<div class="col-xs col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}" style="padding-right: 0; ">
+			<div class="clr-row" style="margin-right: 0;">
+				<div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}" style="padding-right: 0; ">
 					<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 								   [selectedIndex]="selectedTab">
 						<mat-tab *ngFor="let account of aService.accounts; let i = index">
@@ -21,7 +21,7 @@
 						</mat-tab>
 					</mat-tab-group>
 				</div>
-				<div *ngIf="network.activeChain.features['addAcc']" class="col-xs-auto col-md-auto"
+				<div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
 					 style="padding-left: 0; padding-right: 0"
 					 (click)="importKeyModal = true">
 					<div class="text-center navbar-btn newaccount">
@@ -32,7 +32,7 @@
 						<div style="font-size: 15px;">ACCOUNT</div>
 					</div>
 				</div>
-				<div *ngIf="network.activeChain.features['newAcc']" class="col-xs-auto col-md-auto"
+				<div *ngIf="network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
 					 style="padding-left: 0; padding-right: 0" (click)="newAccountModal = true;initNewAcc();">
 					<div class="text-center navbar-btn newaccount">
 						<div style="padding-top: 16px">
@@ -43,13 +43,20 @@
 					</div>
 				</div>
 				<!--For WORBLI-->
-				<div *ngIf="!network.activeChain.features['newAcc']" class="col-xs-auto col-md-auto"
-					 style="padding-left: 0; padding-right: 0">
+				<div *ngIf="!network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
+					 style="padding-left: 0; padding-right: 0;">
 				</div>
-				<div class="col-xs-auto" style="padding-left: 0; padding-right: 0">
+				<div class="clr-col-auto" style="padding-left: 0; padding-right: 0">
 					<div class="text-center navbar-btn cog" [routerLink]="['config']">
 						<div>
 							<fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
+						</div>
+					</div>
+				</div>
+				<div class="clr-col-auto clr-col-md-auto" style="padding-left: 0; padding-right: 0">
+					<div class="text-center navbar-btn cog" [routerLink]="['about']">
+						<div>
+							<fa-icon [icon]="['far','question-circle']" size="2x"></fa-icon>
 						</div>
 					</div>
 				</div>
@@ -86,6 +93,10 @@
 					<ng-container *ngIf="network.activeChain.features['staking'] && !network.activeChain.features['vote']">
 						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;STAKE
 					</ng-container>
+				</a>
+				<a *ngIf="network.activeChain.features['rex']" class="nav-link" routerLinkActive="active"
+				   [routerLink]="['rex']">
+					<fa-icon [icon]="['far', 'exchange-alt']"></fa-icon>&nbsp;&nbsp;REX
 				</a>
 				<a *ngIf="network.activeChain.features['dapps']" class="nav-link" routerLinkActive="active"
 				   [routerLink]="['dapp']">

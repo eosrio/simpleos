@@ -1,0 +1,40 @@
+<clr-modal [(clrModalOpen)]="mds.inputModal.visibility" (clrModalOpenChange)="onClose()" [clrModalSize]="'md'">
+	<h3 class="modal-title text-white">
+		{{mds.inputModal.modalTitle}}
+		<a role="tooltip" aria-haspopup="true"
+		   class="tooltip tooltip-lg tooltip-right">
+			<fa-icon [icon]="['far','question-circle']" class="blue"
+					 style="font-size: 16px;"></fa-icon>
+			<span
+				class="tooltip-content" style="z-index: 1000">{{mds.inputModal.modalTooltip}}
+			</span>
+		</a>
+	</h3>
+	<div class="modal-body">
+		<form [formGroup]="inputForm">
+
+			<mat-form-field class="mt-8" style="width: 220px">
+				<input matInput type="text" [placeholder]="mds.inputModal.inputPlaceholder" formControlName="amount"
+					   [textMask]="{mask: numberMask}" (keyup.enter)="submit()">
+				<button type="button" mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
+						(click)="setMaxAmount()">
+					MAX
+				</button>
+				<mat-hint align="start" [innerHTML]="mds.inputModal.hintHTML">
+				</mat-hint>
+				<mat-error align="start" *ngIf="errormsg !== ''">
+					{{errormsg}}
+				</mat-error>
+			</mat-form-field>
+			<br/>
+			<br/>
+			<br/>
+		</form>
+
+	</div>
+	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+		<button (click)="submit()" type="button" class="btn btn-info-outline" [disabled]="!valid">
+			{{mds.inputModal.buttonText}}
+		</button>
+	</div>
+</clr-modal>

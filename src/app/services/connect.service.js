@@ -13,15 +13,22 @@ var core_1 = require("@angular/core");
 var socketIo = require("socket.io-client");
 var ConnectService = /** @class */ (function () {
     function ConnectService() {
-        console.log('Loading simpleos-connect service');
-        this.socket = socketIo('http://localhost:5555/');
-        this.socket.on('connection', function (socket) {
-            socket.on('message', function () {
+        // console.log('Loading simpleos-connect service');
+        var _this = this;
+        if (window['remote']) {
+            this.socket = socketIo('http://localhost:3000/');
+            this.socket.on('handshake', function (message) {
+                // console.log(message);
+                _this.sendID();
             });
-            socket.on('disconnect', function () {
+            this.socket.on('new_data', function (data) {
+                console.log(data);
             });
-        });
+        }
     }
+    ConnectService.prototype.sendID = function () {
+        this.socket.emit('id', 'LISTENER');
+    };
     ConnectService = __decorate([
         core_1.Injectable({
             providedIn: 'root'

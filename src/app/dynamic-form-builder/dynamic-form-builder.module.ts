@@ -2,6 +2,8 @@ import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {ReactiveFormsModule, FormsModule} from '@angular/forms';
 
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
+
 
 import {
 	MatAutocompleteModule,
@@ -10,6 +12,7 @@ import {
 	MatInputModule, MatRadioModule, MatSelectModule,
 	MatSliderModule,
 	MatTabsModule,
+	MatExpansionModule,
 	MatButtonToggleModule
 } from '@angular/material';
 import {TextMaskModule} from 'angular2-text-mask';
@@ -33,8 +36,10 @@ import {TextBoxComponent} from './atoms/textbox';
 		MatSliderModule,
 		MatTabsModule,
 		MatButtonToggleModule,
+		MatExpansionModule,
 		ReactiveFormsModule,
-		TextMaskModule
+		TextMaskModule,
+		FontAwesomeModule
 	],
 	declarations: [
 		DynamicFormBuilderComponent,

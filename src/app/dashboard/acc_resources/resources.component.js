@@ -10,15 +10,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var eosjs_service_1 = require("../../eosjs.service");
-var accounts_service_1 = require("../../accounts.service");
-var crypto_service_1 = require("../../services/crypto.service");
 var angular2_toaster_1 = require("angular2-toaster");
 var forms_1 = require("@angular/forms");
-var ram_service_1 = require("../../services/ram.service");
 var http_1 = require("@angular/common/http");
-var moment = require("moment");
 var textMaskAddons_1 = require("text-mask-addons/dist/textMaskAddons");
+var accounts_service_1 = require("../../services/accounts.service");
+var crypto_service_1 = require("../../services/crypto.service");
+var ram_service_1 = require("../../services/ram.service");
+var eosjs_service_1 = require("../../services/eosjs.service");
+var moment = require("moment");
 var ResourcesComponent = /** @class */ (function () {
     function ResourcesComponent(eos, aService, crypto, toaster, fb, ramService, http) {
         this.eos = eos;
@@ -123,7 +123,7 @@ var ResourcesComponent = /** @class */ (function () {
             grid: {
                 height: '67%',
                 width: '70%',
-                right: '52',
+                right: '47',
             },
             tooltip: {
                 trigger: 'axis',
@@ -236,7 +236,6 @@ var ResourcesComponent = /** @class */ (function () {
     }
     ResourcesComponent.prototype.ngOnInit = function () {
         var _this = this;
-        this.reload();
         this.loadHistory();
         this.aService.selected.asObservable().subscribe(function (selected) {
             if (selected.details) {
@@ -270,22 +269,6 @@ var ResourcesComponent = /** @class */ (function () {
             bodyOutputType: angular2_toaster_1.BodyOutputType.TrustedHtml,
         };
         this.toaster.popAsync(toast);
-    };
-    ResourcesComponent.prototype.reload = function () {
-        var _this = this;
-        this.eos.getChainInfo().then(function (global) {
-            if (global) {
-                _this.max_ram_size = global.rows[0]['max_ram_size'];
-                _this.total_ram_bytes_reserved = global.rows[0]['total_ram_bytes_reserved'];
-                _this.total_ram_stake = global.rows[0]['total_ram_stake'];
-                _this.eos.getRamMarketInfo().then(function (rammarket) {
-                    _this.rm_base = rammarket.rows[0]['base']['balance'].split(' ')[0];
-                    _this.rm_quote = rammarket.rows[0]['quote']['balance'].split(' ')[0];
-                    _this.rm_supply = rammarket.rows[0]['supply'].split(' ')[0];
-                    _this.updatePrice();
-                });
-            }
-        });
     };
     ResourcesComponent.prototype.listbw = function (account_name) {
         var _this = this;
@@ -344,18 +327,14 @@ var ResourcesComponent = /** @class */ (function () {
         }
     };
     ResourcesComponent.prototype.bytesFilter = function (bytes, precision) {
-        if (isNaN(parseFloat(bytes)) || !isFinite(bytes))
+        if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) {
             return '-';
-        if (typeof precision === 'undefined')
-            precision = 1;
+        }
         var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'], number = Math.floor(Math.log(bytes) / Math.log(1024));
         return (bytes / Math.pow(1024, Math.floor(number))).toFixed(4) + ' ' + units[number];
     };
     ResourcesComponent.prototype.feeCalculator = function (eosprice) {
         return eosprice * .005;
-    };
-    ResourcesComponent.prototype.updatePrice = function () {
-        this.ramPriceEOS = ((this.rm_quote) / this.rm_base) * 1024;
     };
     ResourcesComponent.prototype.openRamModal = function () {
         this.ramActionModal = true;
@@ -462,7 +441,7 @@ var ResourcesComponent = /** @class */ (function () {
             }
             else {
                 this.ramMarketFormBuy.controls['buyEos'].setErrors({ 'incorrect': true });
-                this.errormsg2 = 'not enough unstaked EOS!';
+                this.errormsg2 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
                 return false;
             }
         }
@@ -498,7 +477,7 @@ var ResourcesComponent = /** @class */ (function () {
             this.passSellModal = true;
             this.wrongpassbuy = '';
             this.seller = this.aService.selected.getValue().name;
-            this.bytessell = "" + (this.ramMarketFormSell.get('sellBytes').value * 1024);
+            this.bytessell = '' + (this.ramMarketFormSell.get('sellBytes').value * 1024);
         }
     };
     ResourcesComponent.prototype.sell = function () {
@@ -515,7 +494,7 @@ var ResourcesComponent = /** @class */ (function () {
                     _this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
                 }).catch(function (error) {
                     _this.busy = false;
-                    _this.wrongpasssell = 'Something went wrong!';
+                    _this.wrongpasssell = JSON.stringify(JSON.parse(error).error.details[0].message);
                 });
             }
         }).catch(function () {
@@ -531,7 +510,7 @@ var ResourcesComponent = /** @class */ (function () {
             this.wrongpassbuy = '';
             this.receiver = this.aService.selected.getValue().name;
             this.payer = this.aService.selected.getValue().name;
-            this.bytesbuy = "" + (this.ramMarketFormBuy.get('buyBytes').value * 1024);
+            this.bytesbuy = '' + (this.ramMarketFormBuy.get('buyBytes').value * 1024);
             var accountBuy = this.ramMarketFormBuy.get('accountBuy').value;
             if (accountBuy === 'to another account') {
                 this.receiver = this.ramMarketFormBuy.get('anotherAcc').value;
@@ -553,7 +532,7 @@ var ResourcesComponent = /** @class */ (function () {
                 }).catch(function (error) {
                     console.log(error);
                     _this.busy = false;
-                    _this.wrongpassbuy = 'Something went wrong!';
+                    _this.wrongpassbuy = JSON.stringify(JSON.parse(error).error.details[0].message);
                     console.log('Error: ', error);
                 });
             }
@@ -579,16 +558,16 @@ var ResourcesComponent = /** @class */ (function () {
         var pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(password, pubkey).then(function (data) {
             if (data === true) {
-                _this.eos.unDelegate(_this.accNow, _this.fromUD, _this.netUD, _this.cpuUD, _this.aService.mainnetActive['symbol']).then(function (e) {
-                    _this.fromUD = "";
-                    _this.netUD = "";
-                    _this.cpuUD = "";
-                    _this.accNow = "";
+                _this.eos.unDelegate(_this.accNow, _this.fromUD, _this.netUD, _this.cpuUD, _this.aService.activeChain['symbol']).then(function (e) {
+                    _this.fromUD = '';
+                    _this.netUD = '';
+                    _this.cpuUD = '';
+                    _this.accNow = '';
                     _this.passUnDelegateModal = false;
                     _this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
                 }).catch(function (error) {
                     _this.busy = false;
-                    _this.wrongpassundelegate = 'Something went wrong!';
+                    _this.wrongpassundelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
                 });
             }
         }).catch(function (q) {
@@ -617,7 +596,7 @@ var ResourcesComponent = /** @class */ (function () {
                 return true;
             }
             else {
-                this.errormsgD3 = 'not enough unstaked EOS!';
+                this.errormsgD3 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
                 return false;
             }
         }
@@ -641,7 +620,7 @@ var ResourcesComponent = /** @class */ (function () {
         var pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(password, pubkey).then(function (data) {
             if (data === true) {
-                _this.eos.delegateBW(_this.accNow, _this.accTo, _this.netD, _this.cpuD, _this.aService.mainnetActive['symbol']).then(function (e) {
+                _this.eos.delegateBW(_this.accNow, _this.accTo, _this.netD, _this.cpuD, _this.aService.activeChain['symbol']).then(function (e) {
                     _this.accTo = '';
                     _this.netD = '';
                     _this.cpuD = '';
@@ -651,7 +630,7 @@ var ResourcesComponent = /** @class */ (function () {
                 }).catch(function (error) {
                     console.log(error);
                     _this.busy = false;
-                    _this.wrongpassdelegate = 'Something went wrong!';
+                    _this.wrongpassdelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
                 });
             }
         }).catch(function (q) {

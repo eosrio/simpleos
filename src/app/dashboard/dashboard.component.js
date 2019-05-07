@@ -10,8 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var eosjs_service_1 = require("../eosjs.service");
-var accounts_service_1 = require("../accounts.service");
+var eosjs_service_1 = require("../services/eosjs.service");
+var accounts_service_1 = require("../services/accounts.service");
 var landing_component_1 = require("../landing/landing.component");
 var angular_1 = require("@clr/angular");
 var forms_1 = require("@angular/forms");
@@ -20,13 +20,15 @@ var moment = require("moment");
 var crypto_service_1 = require("../services/crypto.service");
 var ram_service_1 = require("../services/ram.service");
 var textMaskAddons_1 = require("text-mask-addons/dist/textMaskAddons");
+var network_service_1 = require("../services/network.service");
 var DashboardComponent = /** @class */ (function () {
-    function DashboardComponent(eos, fb, aService, toaster, crypto, ram, zone) {
+    function DashboardComponent(eos, fb, aService, toaster, crypto, network, ram, zone) {
         this.eos = eos;
         this.fb = fb;
         this.aService = aService;
         this.toaster = toaster;
         this.crypto = crypto;
+        this.network = network;
         this.ram = ram;
         this.zone = zone;
         this.busy = false;
@@ -113,8 +115,8 @@ var DashboardComponent = /** @class */ (function () {
             loop: false
         };
     }
-    DashboardComponent.prototype.openTXID = function () {
-        window['shell']['openExternal']('https://www.bloks.io/transaction/' + this.confirmationID);
+    DashboardComponent.prototype.openTX = function (value) {
+        window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
     };
     // verifyPrivateKey(input) {
     //   if (input !== '') {
@@ -153,6 +155,7 @@ var DashboardComponent = /** @class */ (function () {
                     _this.errormsg = '';
                 });
             }).catch(function (e) {
+                console.log(e);
                 _this.zone.run(function () {
                     _this.pvtform.controls['private_key'].setErrors({ 'incorrect': true });
                     _this.importedAccounts = [];
@@ -225,7 +228,7 @@ var DashboardComponent = /** @class */ (function () {
         var publicKey = account.details['permissions'][0]['required_auth'].keys[0].key;
         this.crypto.authenticate(this.submitTXForm.get('pass').value, publicKey).then(function (data) {
             if (data === true) {
-                _this.eos.createAccount(_this.final_creator, _this.final_name, _this.final_owner, _this.final_active, delegate_amount, ram_amount, delegate_transfer, gift_amount, 'created with simpleos', _this.aService.mainnetActive['symbol']).then(function (txdata) {
+                _this.eos.createAccount(_this.final_creator, _this.final_name, _this.final_owner, _this.final_active, delegate_amount, ram_amount, delegate_transfer, gift_amount, 'created with simpleos', _this.aService.activeChain['symbol']).then(function (txdata) {
                     console.log(txdata);
                     if (_this.newAccOptions === 'newpk') {
                         setTimeout(function () {
@@ -373,7 +376,6 @@ var DashboardComponent = /** @class */ (function () {
         var _this = this;
         window['navigator']['clipboard']['writeText'](text).then(function () {
             _this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
-            //console.log(dt);
         }).catch(function () {
             _this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
         });
@@ -387,15 +389,10 @@ var DashboardComponent = /** @class */ (function () {
             var regexName = new RegExp('^([a-z]|[1-5])+$');
             if (res !== 0) {
                 if (this.accountname.length === 12 && regexName.test(this.accountname)) {
-                    this.eos.getAccountInfo(this.accountname).then(function (data) {
-                        // this.eos['getAccount'](this.accountname, (err, data) => { // CSTAM
-                        //   if (data) {
+                    this.eos.getAccountInfo(this.accountname).then(function () {
                         _this.accountname_err = 'This account name is not available. Please try another.';
                         _this.accountname_valid = false;
-                        // }
-                    }).catch(function (err) {
-                        // console.log(err);
-                        // if (err) {
+                    }).catch(function () {
                         _this.accountname_valid = true;
                         _this.newAccountData.n = _this.accountname;
                         _this.final_name = _this.accountname;
@@ -404,9 +401,6 @@ var DashboardComponent = /** @class */ (function () {
                         if (next) {
                             _this.wizardaccount.next();
                         }
-                        // } else {
-                        //
-                        // }
                     });
                 }
                 else {
@@ -425,15 +419,14 @@ var DashboardComponent = /** @class */ (function () {
         this.aService.selected.asObservable().subscribe(function (sel) {
             if (sel) {
                 _this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-                //this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
             }
         });
     };
     DashboardComponent.prototype.checkAmount = function (field) {
-        if (field === "gift_amount" && (this.delegateForm.get(field).value !== "" || this.delegateForm.get(field).value > 0)) {
+        if (field === 'gift_amount' && (this.delegateForm.get(field).value !== '' || this.delegateForm.get(field).value > 0)) {
             if (parseFloat(this.delegateForm.get(field).value) > this.unstaked) {
                 this.delegateForm.controls[field].setErrors({ 'incorrect': true });
-                this.amounterror3 = 'invalid amount';
+                this.amounterror3 = 'you don\'t have enought unstaked tokens on this account';
             }
             else {
                 this.delegateForm.controls['delegate_amount'].setErrors(null);
@@ -461,12 +454,12 @@ var DashboardComponent = /** @class */ (function () {
         var price = (this.ram.ramPriceEOS * (this.delegateForm.get('ram_amount').value / 1024));
         if (parseFloat(this.delegateForm.get('ram_amount').value) === 0 || this.delegateForm.get('ram_amount').value === '') {
             this.delegateForm.controls['ram_amount'].setErrors({ 'incorrect': true });
-            this.amounterror2 = 'invalid amount';
+            this.amounterror2 = 'invalid amount, you need to buy some ram in order to create an account';
         }
         else {
             if (price > this.unstaked) {
                 this.delegateForm.controls['ram_amount'].setErrors({ 'incorrect': true });
-                this.amounterror2 = 'invalid amount';
+                this.amounterror2 = 'you don\'t have enought unstaked tokens on this account';
             }
             else {
                 this.delegateForm.controls['ram_amount'].setErrors(null);
@@ -559,6 +552,7 @@ var DashboardComponent = /** @class */ (function () {
             accounts_service_1.AccountsService,
             angular2_toaster_1.ToasterService,
             crypto_service_1.CryptoService,
+            network_service_1.NetworkService,
             ram_service_1.RamService,
             core_1.NgZone])
     ], DashboardComponent);

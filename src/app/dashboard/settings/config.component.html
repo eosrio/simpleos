@@ -1,16 +1,16 @@
 <div class="container" style="height: 100%; overflow-x: hidden;">
 
-	<div class="row animate flex-items-xs-between" style="padding-top: 15px;">
-		<div class="col-lg-7">
+	<div class="clr-row animate flex-items-xs-between" style="padding-top: 15px;">
+		<div class="clr-col-lg-7">
 			<!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
 			<div class="card info-card">
 				<div class="card-header title">
 					Connected to
-					<mat-form-field class="example-full-width" style="width: 207px;">
+					<mat-form-field class="chain-selector example-full-width" style="width: 207px;">
 						<mat-select [value]="network.activeChain['id']"
 									(selectionChange)="changeChain($event)">
 							<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-							<mat-option *ngFor="let chain of network.defaultChains"
+							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 										[value]="chain.id">
 								{{ chain.name }}
 							</mat-option>
@@ -35,22 +35,22 @@
 							</div>
 						</ng-container>
 					</div>
-					<div class="row" style="margin-left: 0;">
-						<div class="col-xs-auto">
+					<div class="clr-row" style="margin-left: 0;">
+						<div class="clr-col-auto">
 							<button class="btn btn-info-outline mt-1" (click)="endpointModal = true">Other</button>
 						</div>
-						<div class="col-xs-auto">
+						<div class="clr-col-auto">
 							<button class="btn btn-info-outline mt-1" (click)="network.connect(true)"
 									pTooltip="Automatically connects on the fastest endpoint for you">Auto
 							</button>
 						</div>
-						<div class="col-xs-auto" *ngIf="!network.networkingReady.getValue()">
+						<div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
 							<fa-layers class="mt-2 mb-1">
 								<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
 										 style="color:#0094d2;"></fa-icon>
 							</fa-layers>
 						</div>
-						<div class="col-xs my-auto" *ngIf="!network.networkingReady.getValue()"
+						<div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
 							 style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
 							<span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
 						</div>
@@ -58,7 +58,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-lg-5">
+		<div class="clr-col-lg-5">
 			<div class="card info-card">
 				<div class="card-header title">
 					Logout Options
@@ -122,7 +122,7 @@
 					<button class="btn btn-info-outline" (click)="exportBKModal = true">EXPORT</button>
 					<button class="btn btn-info-outline" (click)="importBKModal = true">IMPORT</button>
 					<div style="margin-top: 20px;">
-						<button class="btn btn-info-outline" (click)="viewPKModal = true">VIEW PRIVATE KEY
+						<button class="btn btn-info-outline" (click)="openPKModal()">VIEW PRIVATE KEY
 							<fa-icon [icon]="['fas', 'skull-crossbones']" size="lg"></fa-icon>
 						</button>
 					</div>
@@ -279,9 +279,9 @@
 				<input matInput #passimport type="password" placeholder="Password" formControlName="pass"
 					   [disabled]="customImportBK">
 				<!--<fa-icon matSuffix *ngIf="passimport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"-->
-						 <!--(click)="passimport.type = 'text'"></fa-icon>-->
+				<!--(click)="passimport.type = 'text'"></fa-icon>-->
 				<!--<fa-icon matSuffix *ngIf="passimport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"-->
-						 <!--(click)="passimport.type = 'password'"></fa-icon>-->
+				<!--(click)="passimport.type = 'password'"></fa-icon>-->
 				<mat-hint align="start">
 					Password that was used to encrypt your file
 				</mat-hint>
@@ -314,7 +314,8 @@
 				<input matInput #passexport type="password" placeholder="Encrypt your file" formControlName="pass">
 				<fa-icon matSuffix *ngIf="passexport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
 						 (click)="passexport.type = 'text'"></fa-icon>
-				<fa-icon matSuffix *ngIf="passexport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+				<fa-icon matSuffix *ngIf="passexport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
+						 class="copy"
 						 (click)="passexport.type = 'password'"></fa-icon>
 				<mat-hint align="start">
 					This password can be anything you want
@@ -351,7 +352,7 @@
 	<div class="modal-body">
 		<div *ngIf="!showpk">
 			<h4 class="text-white">Are you <span class="blue">sure</span> you want to see the active private key of the
-				account <span class="blue">{{aService.selected.getValue().name}}</span>?</h4>
+				account <span class="blue">{{selectedAccount}}</span>?</h4>
 			<div style="color: #9A9A9A;">*Your private key is the only access to your account, so it should always be
 				kept in a safe place.
 			</div>

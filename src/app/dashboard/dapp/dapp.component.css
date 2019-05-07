@@ -24,7 +24,9 @@ li:hover {
   box-shadow: 3px 3px 3px 0 rgba(0,0,0,0.5);
   cursor: pointer;
 }
-
+.mat-error{
+	margin-top:5px;
+}
 .mat-button-toggle-group, .mat-button-toggle-standalone {
   display: contents !important;
   flex-direction: column !important;
@@ -44,9 +46,18 @@ li:hover {
   padding: 0 0 0 !important;
 }
 
-
+.active{
+	background-color: #2e7db2;
+	color:#ffffff;
+}
+div#formAction > mat-form-field > input {
+	color:#0079b8;
+}
 /deep/ .tokenModal .modal-dialog {
   width: auto!important;
   min-width: 24rem!important;
   max-width: 65rem!important;
 }
+/*mat-form-field-appearance-standard mat-form-field-can-float ng-valid ng-touched ng-dirty*/
+/*mat-form-field ng-tns-c6-12 mat-primary mat-form-field-type-mat-input mat-form-field-appearance-legacy mat-form-field-can-float mat-form-field-hide-placeholder ng-pristine ng-valid ng-touched*/
+/*mat-input-element mat-form-field-autofill-control cdk-text-field-autofill-monitored ng-pristine ng-valid ng-touched*/

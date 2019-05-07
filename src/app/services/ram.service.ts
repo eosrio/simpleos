@@ -36,7 +36,7 @@ export class RamService {
 		this.reload();
 		setInterval(() => {
 			this.reload();
-		}, 10000);
+		}, 60000);
 	}
 
 	reload() {

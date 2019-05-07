@@ -12,7 +12,7 @@ var app_component_1 = require("./app.component");
 var angular_1 = require("@clr/angular");
 var animations_1 = require("@angular/platform-browser/animations");
 var landing_component_1 = require("./landing/landing.component");
-var eosjs_service_1 = require("./eosjs.service");
+var eosjs_service_1 = require("./services/eosjs.service");
 var dashboard_component_1 = require("./dashboard/dashboard.component");
 var app_routing_module_1 = require("./app-routing.module");
 var fontawesome_svg_core_1 = require("@fortawesome/fontawesome-svg-core");
@@ -21,7 +21,6 @@ var pro_solid_svg_icons_1 = require("@fortawesome/pro-solid-svg-icons");
 var free_brands_svg_icons_1 = require("@fortawesome/free-brands-svg-icons");
 var pro_light_svg_icons_1 = require("@fortawesome/pro-light-svg-icons");
 var wallet_component_1 = require("./dashboard/wallet/wallet.component");
-var history_component_1 = require("./dashboard/history/history.component");
 var vote_component_1 = require("./dashboard/vote/vote.component");
 var send_component_1 = require("./dashboard/send/send.component");
 var material_1 = require("@angular/material");
@@ -34,19 +33,24 @@ var primeng_1 = require("primeng/primeng");
 var about_component_1 = require("./dashboard/about/about.component");
 var angular2_text_mask_1 = require("angular2-text-mask");
 var angular2_toaster_1 = require("angular2-toaster");
-var accounts_service_1 = require("./accounts.service");
-var network_service_1 = require("./network.service");
+var accounts_service_1 = require("./services/accounts.service");
+var network_service_1 = require("./services/network.service");
 var crypto_service_1 = require("./services/crypto.service");
 var angular_fontawesome_1 = require("@fortawesome/angular-fontawesome");
 var lockscreen_component_1 = require("./lockscreen/lockscreen.component");
 var resources_component_1 = require("./dashboard/acc_resources/resources.component");
 var ngx_echarts_1 = require("ngx-echarts");
 var ram_service_1 = require("./services/ram.service");
-var ledger_h_w_service_1 = require("./services/ledger-h-w.service");
 var dapp_component_1 = require("./dashboard/dapp/dapp.component");
 var dapp_component_2 = require("./dashboard/dapp/dapp.component");
+var referendum_component_1 = require("./dashboard/referendum/referendum.component");
 var dynamic_form_builder_module_1 = require("./dynamic-form-builder/dynamic-form-builder.module");
 var connect_service_1 = require("./services/connect.service");
+var backup_service_1 = require("./services/backup.service");
+var ngx_json_viewer_1 = require("ngx-json-viewer");
+var ngx_order_pipe_1 = require("ngx-order-pipe");
+var ngx_pagination_1 = require("ngx-pagination");
+var fusejs_module_1 = require("./modules/fusejs/fusejs.module");
 fontawesome_svg_core_1.library.add(pro_regular_svg_icons_1.far, pro_solid_svg_icons_1.fas, free_brands_svg_icons_1.fab, pro_light_svg_icons_1.fal);
 var AppModule = /** @class */ (function () {
     function AppModule() {
@@ -60,14 +64,14 @@ var AppModule = /** @class */ (function () {
                 dashboard_component_1.DashboardComponent,
                 send_component_1.SendComponent,
                 wallet_component_1.WalletComponent,
-                history_component_1.HistoryComponent,
                 vote_component_1.VoteComponent,
                 config_component_1.ConfigComponent,
                 about_component_1.AboutComponent,
                 lockscreen_component_1.LockscreenComponent,
                 resources_component_1.ResourcesComponent,
                 dapp_component_1.DappComponent,
-                dapp_component_2.FormComponent
+                dapp_component_2.FormComponent,
+                referendum_component_1.ReferendumComponent
             ],
             imports: [
                 primeng_1.AccordionModule,
@@ -85,6 +89,7 @@ var AppModule = /** @class */ (function () {
                 material_1.MatRadioModule,
                 material_1.MatSelectModule,
                 material_1.MatSliderModule,
+                material_1.MatProgressBarModule,
                 material_1.MatTabsModule,
                 material_1.MatButtonToggleModule,
                 forms_1.ReactiveFormsModule,
@@ -94,9 +99,22 @@ var AppModule = /** @class */ (function () {
                 angular2_toaster_1.ToasterModule.forRoot(),
                 primeng_1.TooltipModule,
                 app_routing_module_1.AppRoutingModule,
-                dynamic_form_builder_module_1.DynamicFormBuilderModule
+                dynamic_form_builder_module_1.DynamicFormBuilderModule,
+                ngx_json_viewer_1.NgxJsonViewerModule,
+                fusejs_module_1.FuseJsModule,
+                ngx_order_pipe_1.OrderModule,
+                ngx_pagination_1.NgxPaginationModule
             ],
-            providers: [eosjs_service_1.EOSJSService, accounts_service_1.AccountsService, network_service_1.NetworkService, crypto_service_1.CryptoService, ram_service_1.RamService, ledger_h_w_service_1.LedgerHWService, connect_service_1.ConnectService],
+            providers: [
+                eosjs_service_1.EOSJSService,
+                accounts_service_1.AccountsService,
+                network_service_1.NetworkService,
+                crypto_service_1.CryptoService,
+                ram_service_1.RamService,
+                // LedgerHWService,
+                connect_service_1.ConnectService,
+                backup_service_1.BackupService
+            ],
             bootstrap: [app_component_1.AppComponent]
         })
     ], AppModule);

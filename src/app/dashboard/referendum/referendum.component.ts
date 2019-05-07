@@ -7,7 +7,10 @@ import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toa
 import {Proposal} from '../../interfaces/proposal';
 import * as moment from 'moment';
 import {HttpClient} from '@angular/common/http';
+import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
+import {getMatIconFailedToSanitizeLiteralError} from '@angular/material';
+
 
 @Component({
 	selector: 'app-referendum',
@@ -20,6 +23,7 @@ export class ReferendumComponent implements OnInit {
 	loading = true;
 	voteModal = false;
 	unvoteModal = false;
+	seeMore = false;
 	expired = false;
 	busy = false;
 	searchForm: FormGroup;
@@ -45,6 +49,15 @@ export class ReferendumComponent implements OnInit {
 		includeThousandsSeparator: true,
 		decimalLimit: 4,
 	});
+	sMTitle: string;
+	sMContent: string;
+	newContent: SafeHtml;
+	sMProposer: string;
+	sMProposer_name: string;
+	sMexpires_at: string;
+	sMType: string;
+	sMOption = [];
+
 
 	constructor(public aService: AccountsService,
 				public eos: EOSJSService,
@@ -52,7 +65,8 @@ export class ReferendumComponent implements OnInit {
 				private fb: FormBuilder,
 				private componentFactoryResolver: ComponentFactoryResolver,
 				private toaster: ToasterService,
-				private crypto: CryptoService
+				private crypto: CryptoService,
+				public sanitizer: DomSanitizer
 	) {
 
 		this.searchForm = this.fb.group({
@@ -71,12 +85,18 @@ export class ReferendumComponent implements OnInit {
 		this.sortExpression = 'stats.staked.total';
 		this.sortReverse = true;
 		this.comparatorMethod = null;
+		this.sMexpires_at = '';
+		this.sMType = '';
 	}
 
 	ngOnInit(): void {
 		setTimeout(() => {
 			this.loadVoteTally();
 		}, 200);
+	}
+
+	extOpen(value) {
+		return window['shell']['openExternal'](value);
 	}
 
 	filterProposals(term) {
@@ -250,32 +270,134 @@ export class ReferendumComponent implements OnInit {
 		this.toaster.popAsync(toast);
 	}
 
-	startVote(prop, vote) {
+	startVote(prop, vote, ev) {
 		this.selProposal = prop;
 		this.wrongpass = '';
 		this.voteModal = true;
 		this.vtProposal = vote;
+		ev.stopPropagation();
 	}
 
-	startUnvote(prop) {
+	startUnvote(prop, ev) {
 		this.selProposal = prop;
 		this.wrongpass = '';
 		this.unvoteModal = true;
+		ev.stopPropagation();
 	}
 
-	startMultiVote(prop) {
+	startMultiVote(prop, ev) {
 		this.selProposal = prop;
 		this.wrongpass = '';
 		this.voteModal = true;
+		ev.stopPropagation();
 	}
 
-	multiSelect(p: Proposal, value: number[]) {
+	multiSelect(p: Proposal, value: number[], ev) {
 		const binArr = ['0', '0', '0', '0', '0', '0', '0', '0'];
 		value.forEach((v) => {
 			binArr[v] = '1';
 		});
 		binArr.reverse();
 		this.vtProposal = parseInt(binArr.join(''), 2);
+		ev.stopPropagation();
+	}
+
+	clickEv(ev){
+		if (ev.target.getAttribute('ref-link')) {
+			this.extOpen(ev.target.getAttribute('ref-link'));
+		}
+	}
+
+	contentStyle(txt, color?) {
+		const splitLines = txt.split('\n');
+		let newTxt = '';
+		// console.log(splitLines);
+		splitLines.forEach(line => {
+			// console.log(line.length);
+			if (line.length > 1) {
+				if (line.substr(0, 4) === '####') {
+					newTxt += '<h3 class="blue"><b>' + line.replace('####', '') + '</b></h3>';
+				} else if (line.substr(0, 3) === '###') {
+					newTxt += '<h5 class="text-muted2"><b>' + line.replace('###', '') + '</b></h5>';
+				} else if (line.substr(0, 2) === '##') {
+					newTxt += '<h4 class="blue"><b>' + line.replace('##', '') + '</b></h4>';
+				} else if (line.substr(0, 1) === '#' ) {
+					newTxt += '<h3 class="blue"><b>' + line.replace('#', '') + '</b></h3>';
+				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___' ) {
+					newTxt += '<hr class="lineHR"/>';
+				} else if (line.match(/\(http(\w\S(.)*?)\)+/g)){
+
+					const link = line.match(/\(http(\w\S(.)*?)\)+/g);
+					const linkName = line.match(/(\[.*?])+/g);
+					const linkImage = line.match(/(!\[.*?])+/g);
+
+					let newLine = line;
+					link.forEach ( (val , idx: number) => {
+						const newlink = val.replace ( '(' , '' ).replace ( ')' , '' );
+						let oldVal = val;
+						let newValName = newlink;
+						let repVal = '';
+
+						if (linkImage !== null) {
+							if (linkImage[ idx ] !== null && linkImage[ idx ] !== '![]') {
+								newValName = linkImage[ idx ].replace ( '![' , '' ).replace ( ']' , '' );
+								oldVal = linkImage[ idx ] + val;
+							} else if (linkImage[ idx ] !== null && linkImage[ idx ] === '![]') {
+								newValName = '';
+								oldVal = '![]' + val;
+							} else {
+								newValName = '';
+								oldVal = val;
+							}
+							repVal = '<img style="width:100%" src="' + newlink + '" alt=""/><i>' + newValName + '</i>';
+
+						} else {
+
+							if (linkName !== null && linkName[ idx ] !== '[]') {
+								newValName = linkName[ idx ].replace ( '[' , '' ).replace ( ']' , '' );
+								oldVal = linkName[ idx ] + val;
+							} else if (linkName !== null && linkName[ idx ] === '[]') {
+								oldVal = '[]' + val;
+							} else {
+								oldVal = val;
+							}
+
+							repVal = '<span class="link-ref" ref-link="' + newlink + '" ><i>' + newValName + '</i></span>';
+						}
+
+						newLine = newLine.replace ( oldVal , repVal );
+					} );
+
+					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + newLine + '</p>';
+
+				} else {
+					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
+				}
+			}
+		});
+		if (newTxt.match(/`(.*?)`+/g)) {
+			const strong = newTxt.match(/`(.*?)`+/g);
+			strong.forEach((val) => {
+				const newVal =  '<span class="white">' + val.replace( new RegExp(/`+/g, 'g') , '' ) + '</span> ';
+				newTxt = newTxt.replace(val, newVal);
+			});
+		}
+
+		return newTxt;
+	}
+
+	openSeeMore(p) {
+		this.selProposal = p;
+		this.seeMore = true;
+		// console.log(p);
+		this.sMTitle = p.proposal.title;
+		this.sMProposer = p.proposal.proposer;
+		this.sMProposer_name = p.proposal.proposal_name;
+		this.sMContent = p.proposal.json_data.content;
+		this.sMexpires_at = p.proposal.expires_at;
+		this.sMType = p.proposal.json_data.type;
+		this.sMOption = p.proposal.json_data[ 'options' ];
+		this.newContent = this.sanitizer.bypassSecurityTrustHtml ( this.contentStyle( this.sMContent , 'text-muted' ) );
 	}
 
 	voteProposal() {
@@ -290,6 +412,10 @@ export class ReferendumComponent implements OnInit {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name, vote: this.vtProposal, vote_json: ''};
 				this.eos.pushActionContract('eosio.forum', 'vote', form, accountName).then((info) => {
 					this.voteModal = false;
+					if (this.seeMore) {
+						this.seeMore = !this.seeMore;
+					}
+
 					this.busy = false;
 					console.log(info);
 					this.showToast('success', 'Transation broadcasted', 'Check a block explorer for confirmation.');
@@ -322,6 +448,9 @@ export class ReferendumComponent implements OnInit {
 				this.eos.pushActionContract('eosio.forum', 'unvote', form, accountName).then((info) => {
 					this.unvoteModal = false;
 					this.busy = false;
+					if (this.seeMore) {
+						this.seeMore = !this.seeMore;
+					}
 					console.log(info);
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 					this.confirmunvoteForm.reset();
@@ -345,3 +474,4 @@ export class ReferendumComponent implements OnInit {
 	}
 
 }
+

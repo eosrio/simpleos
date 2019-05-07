@@ -2,7 +2,6 @@ import {Injectable} from '@angular/core';
 
 import * as EOSJS from '../../assets/eos.js';
 import {BehaviorSubject, Subject} from 'rxjs';
-import {reject} from 'q';
 
 @Injectable()
 export class EOSJSService {
@@ -151,6 +150,22 @@ export class EOSJSService {
 		}
 	}
 
+	getProxies(): Promise<any> {
+		if (this.eos) {
+			return this.eos['getTableRows']({
+				json: true,
+				code: 'regproxyinfo',
+				scope: 'regproxyinfo',
+				table: 'proxies',
+				limit: 400
+			});
+		} else {
+			return new Promise(resolve => {
+				resolve();
+			});
+		}
+	}
+
 	getRamMarketInfo(): Promise<any> {
 		if (this.eos) {
 			return this.eos['getTableRows']({
@@ -198,6 +213,20 @@ export class EOSJSService {
 			scope: account,
 			table: 'delband'
 		});
+	}
+
+	getSymbolContract(contract): Promise<any> {
+		return this.eos['getTableRows']({
+			json: true,
+			code: contract,
+			scope: contract,
+			table: 'accounts'
+		});
+	}
+
+	requestRefund(from: string) {
+		// console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
+		return this.eos.refund(from);
 	}
 
 	unDelegate(from: string, receiver: string, net: string, cpu: string, symbol: string) {
@@ -342,7 +371,7 @@ export class EOSJSService {
 	}
 
 	listProducers() {
-		return this.eos['getProducers']({json: true, limit: 100});
+		return this.eos['getProducers']({json: true, limit: 200});
 	}
 
 	getTokens(name) {
@@ -372,6 +401,8 @@ export class EOSJSService {
 
 	pushActionContract(contract, action, form, account) {
 		const options = {authorization: account + '@active'};
+
+		console.log(JSON.stringify(form));
 		return new Promise((resolve, reject2) => {
 			this.eos['contract'](contract).then((tc) => {
 				if (tc[action]) {
@@ -561,6 +592,28 @@ export class EOSJSService {
 		} else {
 			return new Error('Cannot cast more than 30 votes!');
 		}
+	}
+
+	async voteAction(voter: string, list: string[], type: number): Promise<any> {
+		let proxy = '';
+		let currentVotes = [];
+		if (list.length <= 30) {
+			if (!type) {
+				currentVotes = list;
+				currentVotes.sort();
+			} else {
+				proxy = list[0];
+			}
+		} else {
+			return new Error('Cannot cast more than 30 votes!');
+		}
+		console.log(proxy);
+		const options = {authorization: voter + '@active'};
+		return this.eosio['voteproducer'](voter, type ? proxy : '', type ? '' : currentVotes, options).then(data => {
+			return JSON.stringify(data);
+		}).catch(err => {
+			return err;
+		});
 	}
 
 	async changebw(account, amount, symbol, ratio) {

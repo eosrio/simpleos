@@ -10,28 +10,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var network_service_1 = require("./network.service");
-var ledger_h_w_service_1 = require("./services/ledger-h-w.service");
 var angular_1 = require("@clr/angular");
-var accounts_service_1 = require("./accounts.service");
-var eosjs_service_1 = require("./eosjs.service");
-var crypto_service_1 = require("./services/crypto.service");
 var router_1 = require("@angular/router");
 var environment_1 = require("../environments/environment");
+var network_service_1 = require("./services/network.service");
+var accounts_service_1 = require("./services/accounts.service");
+var eosjs_service_1 = require("./services/eosjs.service");
+var crypto_service_1 = require("./services/crypto.service");
 var connect_service_1 = require("./services/connect.service");
+var backup_service_1 = require("./services/backup.service");
 var AppComponent = /** @class */ (function () {
-    function AppComponent(network, ledger, aService, eos, crypto, connect, router) {
-        var _this = this;
+    function AppComponent(network, 
+    // public ledger: LedgerHWService,
+    aService, eos, crypto, connect, router, autobackup) {
         this.network = network;
-        this.ledger = ledger;
         this.aService = aService;
         this.eos = eos;
         this.crypto = crypto;
         this.connect = connect;
         this.router = router;
+        this.autobackup = autobackup;
         this.showAll = false;
         this.agreeConstitution = false;
         this.version = environment_1.environment.VERSION;
+        // countdown 30 seconds to automatic backup
+        this.autobackup.startTimeout();
         this.accSlots = [];
         this.selectedSlot = null;
         this.selectedSlotIndex = null;
@@ -43,25 +46,23 @@ var AppComponent = /** @class */ (function () {
         //     this.ledgerOpen = status;
         //   }
         // });
-        this.ledger.openPanel.subscribe(function (event) {
-            if (event === 'open') {
-                _this.ledgerOpen = true;
-            }
-        });
-        this.aService.activeChain('START');
+        // this.ledger.openPanel.subscribe((event) => {
+        // 	if (event === 'open') {
+        // 		this.ledgerOpen = true;
+        // 	}
+        // });
         this.busy = false;
     }
-    AppComponent.prototype.scanPublicKeys = function () {
-        var _this = this;
-        if (this.ledgerOpen) {
-            this.busy = true;
-            this.ledger.readPublicKeys(8).then(function (ledger_slots) {
-                _this.accSlots = ledger_slots;
-                _this.busy = false;
-                console.log(_this.accSlots);
-            });
-        }
-    };
+    // scanPublicKeys() {
+    // 	if (this.ledgerOpen) {
+    // 		this.busy = true;
+    // 		this.ledger.readPublicKeys(8).then((ledger_slots: LedgerSlot[]) => {
+    // 			this.accSlots = ledger_slots;
+    // 			this.busy = false;
+    // 			console.log(this.accSlots);
+    // 		});
+    // 	}
+    // }
     AppComponent.prototype.selectSlot = function (slot, index) {
         this.selectedSlot = slot;
         this.selectedSlotIndex = index;
@@ -96,8 +97,8 @@ var AppComponent = /** @class */ (function () {
     AppComponent.prototype.ngAfterViewInit = function () {
         var _this = this;
         setTimeout(function () {
-            _this.network.connect();
-        }, 1000);
+            _this.network.connect(false);
+        }, 888);
     };
     __decorate([
         core_1.ViewChild('ledgerwizard'),
@@ -110,12 +111,12 @@ var AppComponent = /** @class */ (function () {
             styleUrls: ['./app.component.css']
         }),
         __metadata("design:paramtypes", [network_service_1.NetworkService,
-            ledger_h_w_service_1.LedgerHWService,
             accounts_service_1.AccountsService,
             eosjs_service_1.EOSJSService,
             crypto_service_1.CryptoService,
             connect_service_1.ConnectService,
-            router_1.Router])
+            router_1.Router,
+            backup_service_1.BackupService])
     ], AppComponent);
     return AppComponent;
 }());

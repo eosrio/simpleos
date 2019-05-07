@@ -9,6 +9,7 @@ import {CryptoService} from './crypto.service';
 import {VotingService} from './voting.service';
 
 import {defaultChainsJSON} from '../chains';
+import {Eosjs2Service} from './eosjs2.service';
 
 export interface Endpoint {
 	url: string;
@@ -57,6 +58,7 @@ export class NetworkService {
 
 	constructor(
 		private eosjs: EOSJSService,
+		private eosjs2: Eosjs2Service,
 		private router: Router,
 		private aService: AccountsService,
 		private voting: VotingService,
@@ -80,7 +82,7 @@ export class NetworkService {
 	}
 
 	connect(automatic: boolean) {
-		console.log('analyzing endpoints...');
+		// console.log('analyzing endpoints...');
 		this.autoMode = automatic;
 		this.status = '';
 		this.mainnetId = '';
@@ -220,7 +222,7 @@ export class NetworkService {
 
 	callStartupConn(server) {
 		if (this.connected === true) {
-			console.log('fast api detected, connecting to:', server.url);
+			// console.log('fast api detected, connecting to:', server.url);
 			this.selectedEndpoint.next(server);
 			this.startup(null);
 		}
@@ -230,7 +232,7 @@ export class NetworkService {
 		let endpoint = url;
 		if (!url) {
 			endpoint = this.selectedEndpoint.getValue().url;
-			console.log('switcing to saved endpoint:', endpoint);
+			// console.log('switcing to saved endpoint:', endpoint);
 		} else {
 			this.status = '';
 			console.log('startup called - url: ', url);
@@ -240,6 +242,7 @@ export class NetworkService {
 		this.startTimeout();
 		// prevent double load after quick connection mode
 		if (endpoint !== this.lastEndpoint || this.autoMode === true) {
+			this.eosjs2.initRPC(endpoint, this.activeChain.id);
 			this.eosjs.init(endpoint, this.activeChain.id).then((savedAccounts: any) => {
 				// if (this.ledger.isElectron()) {
 				//   this.aService.checkLedgerAccounts().then(() => {
@@ -256,7 +259,7 @@ export class NetworkService {
 				}
 				if (savedAccounts) {
 					if (savedAccounts.length > 0) {
-						console.log('Locading local accounts');
+						// console.log('Locading local accounts');
 						this.aService.loadLocalAccounts(savedAccounts).then(() => {
 							if (this.aService.lastAccount) {
 								this.aService.select(this.aService.accounts.findIndex((a) => {

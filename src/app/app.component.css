@@ -10,19 +10,20 @@
   padding: 16px;
   position: fixed;
   z-index: 1;
-  left: -1px;
+  right: -1px;
   bottom: 0;
+  margin:20px;
 }
 
 #update-box.show {
   visibility: visible;
-  -webkit-animation: fadein 0.5s;
-  animation: fadein 0.5s;
+  -webkit-animation: fadein 1.8s;
+  animation: fadein 1.8s;
 }
 
 @-webkit-keyframes fadein {
   from {
-    bottom: -10px;
+    bottom: -120px;
     opacity: 0;
   }
   to {
@@ -33,7 +34,7 @@
 
 @keyframes fadein {
   from {
-    bottom: -10px;
+    bottom: -120px;
     opacity: 0;
   }
   to {
@@ -71,3 +72,65 @@
   color: #808080;
   margin-bottom: 10px;
 }
+
+.chains-card {
+	background-color: transparent;
+	border: 1px solid #565656;
+	box-shadow: none;
+	color: #adadad;
+}
+
+.chain-section {
+	border-bottom: 1px solid #444444;
+	-webkit-transition-duration: 0.3s;
+	transition-duration: 0.3s;
+	-webkit-transition-property: background-color;
+	transition-property: background-color;
+}
+
+.chain-section:not(.selected):hover {
+	background-color: #2b2b2b;
+	cursor: pointer;
+}
+
+.connect-anim {
+	visibility: hidden;
+	position: fixed;
+}
+
+.chain-section:hover > .connect-anim {
+	visibility: visible;
+	-webkit-animation: fadeInRight 1s;
+	animation: fadeInRight 1s;
+}
+
+/*@-webkit-keyframes fadeInRight {*/
+	/*0% {*/
+		/*opacity: 0;*/
+		/*left: 120px;*/
+	/*}*/
+	/*100% {*/
+		/*opacity: 1;*/
+		/*left: 0;*/
+	/*}*/
+/*}*/
+
+@keyframes fadeInRight {
+	0% {
+		opacity: 0;
+		transform: translateX(-20px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+.skull-icon {
+	font-size: 22px;
+	margin-left: -1px;
+}
+
+/*.alert-text {*/
+	/*margin-left: 21px;*/
+/*}*/

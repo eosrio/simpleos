@@ -1,7 +1,7 @@
 <!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
 <div class="container-fluid" style="overflow:hidden;">
-	<div class="row flex-items-xs-between send-row">
-		<div class="col-md-6 text-center animate" style="align-self: center;">
+	<div class="clr-row flex-items-xs-between send-row">
+		<div class="clr-col-md-6 text-center animate" style="align-self: center;">
 			<div class="content-area" style="padding-top: 0; overflow-x: hidden;">
 				<div class="balance">
 					<ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
@@ -73,12 +73,13 @@
 							<mat-hint align="end">{{message.value.length}} / 256</mat-hint>
 						</mat-form-field>
 					</div>
-					<ng-container *ngIf="errormsg === '' && sendForm.value.to !== ''">
+					<ng-container
+						*ngIf="errormsg === '' && sendForm.value.to !== '' && !contactExist">
 						<div class="gray" style="margin-top: 6px">This account is not yet in your contacts</div>
-						<div class="toggle-switch text-left">
-							<input type="checkbox" id="addtoContacts" formControlName="add">
+						<clr-toggle-wrapper class="text-left">
+							<input clrToggle type="checkbox" id="addtoContacts" formControlName="add">
 							<label for="addtoContacts" class="gray">Add to contacts?</label>
-						</div>
+						</clr-toggle-wrapper>
 						<mat-form-field class="alias" *ngIf="add">
 							<input matInput formControlName="alias" type="text" placeholder="Contact name">
 						</mat-form-field>
@@ -90,10 +91,10 @@
 				</form>
 			</div>
 		</div>
-		<div class="col-md-6 contacts-panel flex-nowrap">
-			<div class="row flex-items-xs-between contacts-pad contacts-panel-header">
-				<div class="col-xs-6"><h1 class="gray mt-0">My Contacts</h1></div>
-				<div class="col-xs-6">
+		<div class="clr-col-md-6 contacts-panel flex-nowrap" style="height: 100%;">
+			<div class="clr-row flex-items-xs-between contacts-pad contacts-panel-header">
+				<div class="clr-col-6"><h1 class="gray mt-0">My Contacts</h1></div>
+				<div class="clr-col-6">
 					<form [formGroup]="searchForm" class="searchform">
 						<mat-form-field class="example-full-width">
 							<input type="text" matInput placeholder="Search..." formControlName="search">
@@ -107,17 +108,17 @@
 					You don't have any contacts yet :(
 				</div>
 				<ng-container *ngFor="let contact of searchedContacts | async; let last = last">
-					<div class="row letter-divider" *ngIf="contact.type === 'letter'">
-						<div class="col-xs-12"><h5 class="mt-0 letter">{{contact.name}}</h5></div>
+					<div class="clr-row letter-divider" *ngIf="contact.type === 'letter'">
+						<div class="clr-col-12"><h5 class="mt-0 letter">{{contact.name}}</h5></div>
 					</div>
 					<ul *ngIf="contact.type === 'contact'" (click)="selectContact(contact)">
 						<li class="contacts-pad" [class.last-item]="last">
-							<div class="row justify-content-between">
-								<div class="col-lg-8 col-sm-6 col-md-7">
+							<div class="clr-row justify-content-between">
+								<div class="clr-col-lg-8 clr-col-sm-6 clr-col-md-7">
 									<h5 class="gray mt-0">{{contact.name}}</h5>
 									<div>{{contact.account}}</div>
 								</div>
-								<div class="col-lg-4 col-sm-6 col-md-5" style="text-align: right">
+								<div class="clr-col-lg-4 clr-col-sm-6 clr-col-md-5" style="text-align: right">
 									<button class="btn btn-info-outline editBtn"
 											(click)="openEditContactModal(contact)">
 										<fa-icon [icon]="['far', 'pencil']"></fa-icon>
@@ -247,11 +248,11 @@
 
 <clr-modal [(clrModalOpen)]="deleteContactModal" [clrModalSize]="'sm'">
 	<h3 class="modal-title text-white">
-		<fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="blue">Delete</span> contact?
+		<fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="blue">Delete</span> contact
 	</h3>
 	<div class="modal-body">
 		<p style="margin-bottom: 20px;">Are you sure you want do delete the contact <span
-			class="blue">{{selectedDeleteContactName}}</span>?</p>
+			class="blue">{{selectedDeleteContact['name']}}</span>?</p>
 	</div>
 	<div class="modal-footer">
 		<button class="btn btn-danger-outline" (click)="deleteContactModal = false">Cancel</button>

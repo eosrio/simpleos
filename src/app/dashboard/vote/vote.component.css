@@ -254,3 +254,43 @@ a:visited {
 .hidden {
 	display: none;
 }
+
+/deep/ #vote-tabs .mat-tab-header {
+	background-color: #3b3b3b;
+}
+
+/deep/ #vote-tabs .mat-tab-label .mat-tab-label-content {
+	font-size:17px !important
+}
+
+/deep/  #vote-tabs .mat-tab-label-active {
+	background-color: #333333;
+}
+
+
+/deep/ .bps-table .ui-table-caption, .ui-table-summary {
+	padding: 0 0 .25em 0;
+}
+
+.vote-sub-header {
+	padding: 0.25em 1.1em 0.6em;
+}
+
+.mat-option {
+	line-height: 24px;
+	height: 54px;
+	padding: 30px 16px;
+}
+
+
+mat-option:not(.last) {
+	border-bottom: 1px solid #404040;
+}
+
+/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
+	background: #3a3a3a;
+}
+
+.text-bold {
+	font-weight: 700;
+}

@@ -12,6 +12,7 @@ import {LockGuard} from './services/lock.guard';
 import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 import {DappComponent} from './dashboard/dapp/dapp.component';
 import {ReferendumComponent} from './dashboard/referendum/referendum.component';
+import {RexComponent} from './dashboard/rex/rex.component';
 
 const routes: Routes = [
 	{
@@ -39,6 +40,10 @@ const routes: Routes = [
 			{
 				path: 'vote',
 				component: VoteComponent,
+			},
+			{
+				path: 'rex',
+				component: RexComponent,
 			},
 			{
 				path: 'config',
