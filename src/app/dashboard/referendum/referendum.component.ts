@@ -1,4 +1,4 @@
-import {Component, ComponentFactoryResolver, OnInit} from '@angular/core';
+import {Component, ComponentFactoryResolver, ChangeDetectorRef, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosjs.service';
@@ -66,7 +66,8 @@ export class ReferendumComponent implements OnInit {
 				private componentFactoryResolver: ComponentFactoryResolver,
 				private toaster: ToasterService,
 				private crypto: CryptoService,
-				public sanitizer: DomSanitizer
+				public sanitizer: DomSanitizer,
+				private cdr: ChangeDetectorRef
 	) {
 
 		this.searchForm = this.fb.group({
@@ -89,16 +90,12 @@ export class ReferendumComponent implements OnInit {
 		this.sMType = '';
 	}
 
-	onPage($element) {
-		$element.scrollIntoView({behavior: "smooth", block: "start", inline: "nearest"});
-		window.scrollTo(0,-107);
-	}
-
 	ngOnInit(): void {
 		setTimeout(() => {
 			this.loadVoteTally();
 		}, 200);
 	}
+
 
 	extOpen(value) {
 		return window['shell']['openExternal'](value);
@@ -178,6 +175,7 @@ export class ReferendumComponent implements OnInit {
 			this.allProposals = this.proposals;
 			this.loading = false;
 		}
+		this.cdr.detectChanges();
 	}
 
 	processProposalData(data) {
@@ -391,7 +389,7 @@ export class ReferendumComponent implements OnInit {
 		return newTxt;
 	}
 
-	openSeeMore(p) {
+	openLargeView(p) {
 		this.selProposal = p;
 		this.seeMore = true;
 		// console.log(p);

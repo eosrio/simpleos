@@ -1,7 +1,3 @@
-/deep/ body {
-    overflow-y: auto !important;
-}
-
 .wrap {
     display: flex;
     min-height: 100vh;

@@ -1,5 +1,6 @@
+
 <div class="container" style="height: 100%;overflow-x: hidden;">
-	<div #topRef class="card header-card animate">
+	<div class="card header-card animate">
 		<div class="clr-row flex-items-xs-around">
 			<div class="clr-col-lg-4 clr-col-md-5 text-left">
 				<h4 class="title">Referendum &nbsp;
@@ -47,140 +48,143 @@
 	</div>
 
 	<div class="clr-row animate">
-		<ng-container *ngFor='let p of (proposals
-		| fusejs: searchString :{
-				"threshold": 0.1,
-				"distance": 300,
-				"tokenize": false,
-				"minMatchCharLength": 1,
-				"shouldSort": true,
-				"keys": [
-					{
-						"name": "proposal.proposal_name",
-						"weight": 0.8
-					},
-					{
-						"name": "proposal.title",
-						"weight": 0.7
-					},
-					{
-						"name":"proposal.json_data.content",
-						"weight": 0.4
-					}
-				]
-			}
-		| orderBy: sortExpression : sortReverse : true : comparatorMethod
-		) | paginate: {itemsPerPage: 16,currentPage: page}'>
+			<ng-container *ngFor='let p of (proposals
+			| fusejs: searchString :{
+					"distance": 300,
+					"threshold": 0.1,
+					"tokenize": false,
+					"minMatchCharLength": 1,
+					"shouldSort": true,
+					"keys": [
+						{
+							"name": "proposal.proposal_name",
+							"weight": 0.8
+						},
+						{
+							"name": "proposal.title",
+							"weight": 0.7
+						},
+						{
+							"name":"proposal.json_data.content",
+							"weight": 0.4
+						}
+					]
+				}
+			| orderBy: sortExpression : sortReverse : true : comparatorMethod
+			) | paginate: {itemsPerPage: 16,currentPage: page}'>
 
-			<div class="clr-col-lg-6" *ngIf="p['stats']['staked']['total'] > 0 || isExpired(p['proposal']['expires_at'])">
-				<div class="card proposal-card" (click)="openSeeMore(p)">
-					<div class="proposal-body">
-					<span class="blue" style="font-weight: 500;"
-						  [innerHTML]="'#' + p['fuseJsHighlighted']['proposal']['proposal_name']"></span>
+				<div class="clr-col-lg-6" *ngIf="p['stats']['staked']['total'] > 0 || isExpired(p['proposal']['expires_at'])">
+					<div class="card proposal-card" (click)="openLargeView(p)">
+						<div class="proposal-body">
+							<span class="blue" style="font-weight: 500;"
+									  [innerHTML]="'#' + p['fuseJsHighlighted']['proposal']['proposal_name']"></span>
 
-						<span class="boxExpires {{ isExpired(p.proposal.expires_at) ? 'expired' : 'expires'}}">
-					{{ getExpiretime(p.proposal.expires_at) }}!
-				</span>
-						<div style="clear: both;">
-							<h4 class="white mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
-								<div style="height: 70px" [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
-							</h4>
+							<span class="boxExpires {{ isExpired(p.proposal.expires_at) ? 'expired' : 'expires'}}">
+										{{ getExpiretime(p.proposal.expires_at) }}!
+									</span>
+							<div style="clear: both;">
+								<h4 class="white mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
+									<div style="height: 70px" [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
+								</h4>
 
-							<ng-container *ngIf="p.proposal.json_data">
-								<div class="gray text-justify proposal-content"
-									 [innerHTML]="sanitizer.bypassSecurityTrustHtml (contentStyle(p['fuseJsHighlighted'].proposal.json_data.content,'text-muted'))"></div>
-							</ng-container>
-						</div>
+								<ng-container *ngIf="p.proposal.json_data">
+									<div class="gray text-justify proposal-content"
+										 [innerHTML]="sanitizer.bypassSecurityTrustHtml (contentStyle(p['fuseJsHighlighted'].proposal.json_data.content,'text-muted'))"></div>
+								</ng-container>
+							</div>
 
-						<button
-							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
-							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,0, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
-							0 - No
-						</button>
-						<button
-							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
-							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,1, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
-							1 - Yes
-						</button>
-						<button
-							*ngIf="(!isExpired(p.proposal.expires_at)) && (p.proposal.json_data.type==='poll-yna-v1')"
-							type="button" class="btn btn-outline btn-info-outline"
-							(click)="startVote(p,2, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
-							2 - Abstain
-						</button>
+							<button
+								*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
+								type="button" class="btn btn-outline btn-info-outline"
+								(click)="startVote(p,0, $event);"
+								style="margin-top: 15px; padding:0px 17px !important;">
+								0 - No
+							</button>
+							<button
+								*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
+								type="button" class="btn btn-outline btn-info-outline"
+								(click)="startVote(p,1, $event);"
+								style="margin-top: 15px; padding:0px 17px !important;">
+								1 - Yes
+							</button>
+							<button
+								*ngIf="(!isExpired(p.proposal.expires_at)) && (p.proposal.json_data.type==='poll-yna-v1')"
+								type="button" class="btn btn-outline btn-info-outline"
+								(click)="startVote(p,2, $event);"
+								style="margin-top: 15px; padding:0px 17px !important;">
+								2 - Abstain
+							</button>
 
-						<div
-							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='options-v1') || (p.proposal.json_data.type==='multi-select-v1'))"
-							style="float:left;">
-							<mat-form-field class="example-full-width"
-											style=" margin-right:10px;width: 207px;">
-								<mat-select placeholder="Select an option"
-											(selectionChange)="multiSelect(p,$event.value, $event)"
-											[multiple]="p.proposal.json_data.type==='multi-select-v1'">
-									<mat-option *ngFor="let option of p.proposal.json_data['options']"
-												[value]="p.proposal.json_data['options'].indexOf(option)">
-										{{p.proposal.json_data['options'].indexOf(option)}} - {{ option }}
-									</mat-option>
-								</mat-select>
-							</mat-form-field>
+							<div
+								*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type==='options-v1') || (p.proposal.json_data.type==='multi-select-v1'))"
+								style="float:left;">
+								<mat-form-field class="example-full-width"
+												style=" margin-right:10px;width: 207px;">
+									<mat-select placeholder="Select an option"
+												(selectionChange)="multiSelect(p,$event.value, $event)"
+												[multiple]="p.proposal.json_data.type==='multi-select-v1'">
+										<mat-option *ngFor="let option of p.proposal.json_data['options']"
+													[value]="p.proposal.json_data['options'].indexOf(option)">
+											{{p.proposal.json_data['options'].indexOf(option)}} - {{ option }}
+										</mat-option>
+									</mat-select>
+								</mat-form-field>
 
-							<button type="button" class="btn btn-outline btn-info-outline"
-									(click)="startMultiVote(p, $event)"
-									style="margin-top: 9px;  padding:0px 17px !important;">
-								Vote
+								<button type="button" class="btn btn-outline btn-info-outline"
+										(click)="startMultiVote(p, $event)"
+										style="margin-top: 9px;  padding:0px 17px !important;">
+									Vote
+								</button>
+							</div>
+
+							<button *ngIf="!isExpired(p.proposal.expires_at)" type="button"
+									class="btn btn-outline btn-info-outline"
+									(click)="startUnvote(p, $event)"
+									style="margin-top: 15px; padding:0px 17px !important;">
+								Unvote
 							</button>
 						</div>
+						<div class="card-footer proposal-footer">
 
-						<button *ngIf="!isExpired(p.proposal.expires_at)" type="button"
-								class="btn btn-outline btn-info-outline"
-								(click)="startUnvote(p, $event)"
-								style="margin-top: 15px; padding:0px 17px !important;">
-							Unvote
-						</button>
-					</div>
-					<div class="card-footer proposal-footer">
+							<mat-progress-bar
+								*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
+								class="proposal-progress"
+								color="warn"
+								mode="determinate"
+								[value]="(p.stats.staked['1'] / p.stats.staked['total']) * 100">
+							</mat-progress-bar>
 
-						<mat-progress-bar
-							*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
-							class="proposal-progress"
-							color="warn"
-							mode="determinate"
-							[value]="(p.stats.staked['1'] / p.stats.staked['total']) * 100">
-						</mat-progress-bar>
+							<div style="padding: 10px 19px; font-weight: 600;">
 
-						<div style="padding: 10px 19px; font-weight: 600;">
+								<ng-container
+									*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))">
+										<span class="green" tooltipStyleClass="vote-info"
+											  pTooltip="Voters: {{p.stats.votes['1']}}&#13;Total: {{(p.stats.staked['1'] / 10000) | number : '1.2-4'}} EOS">
+											{{((p.stats.staked['1'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
+										</span>
+									<span class="red" tooltipStyleClass="vote-info"
+										  pTooltip="Voters: {{p.stats.votes['0']}}&#13;Total: {{(p.stats.staked['0'] / 10000) | number : '1.2-4'}} EOS"
+										  style="float: right">
+											{{((p.stats.staked['0'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
+										</span>
+								</ng-container>
 
-							<ng-container
-								*ngIf="((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))">
-							<span class="green" tooltipStyleClass="vote-info" pTooltip="Voters: {{p.stats.votes['1']}}&#13;Total: {{(p.stats.staked['1'] / 10000) | number : '1.2-4'}} EOS">
-								{{((p.stats.staked['1'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
-							</span>
-								<span class="red" tooltipStyleClass="vote-info" pTooltip="Voters: {{p.stats.votes['0']}}&#13;Total: {{(p.stats.staked['0'] / 10000) | number : '1.2-4'}} EOS" style="float: right">
-								{{((p.stats.staked['0'] / p.stats.staked['total']) * 100) | number : '1.1-1'}}%
-							</span>
-							</ng-container>
-
-							<div class="text-white" [textMask]="{mask: numberMask}">
-								{{(p.stats.staked['total'] / 10000) | number : '1.2-4' }} EOS voted
-								<span style="color: #989898;">
-								({{p.stats.votes['total']}} voters)
-							</span>
+								<div class="text-white" [textMask]="{mask: numberMask}">
+									{{(p.stats.staked['total'] / 10000) | number : '1.2-4' }} EOS voted
+									<span style="color: #989898;">
+											({{p.stats.votes['total']}} voters)
+										</span>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		</ng-container>
+			</ng-container>
 	</div>
 	<br>
 	<div class="clr-row ">
 		<div class="clr-col-12 pagination-row text-center">
-			<pagination-controls (pageChange)="page = $event;onPage(topRef)" ></pagination-controls>
+			<pagination-controls (pageChange)="page = $event" ></pagination-controls>
 		</div>
 	</div>
 	<br>
@@ -197,7 +201,7 @@
 			</b>
 		</span>
 		proposed by
-		<span class="blue" >
+		<span class="blue">
 			{{sMProposer}}
 		</span>
 	</h3>

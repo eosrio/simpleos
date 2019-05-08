@@ -15,9 +15,8 @@ let win, devtools, serve;
 devtools = args.some(val => val === '--devtools');
 serve = args.some(val => val === '--serve');
 
-require('electron-context-menu')({
-	showInspectElement: false
-});
+const contextMenu = require('electron-context-menu');
+contextMenu();
 
 express.use(cors());
 
@@ -85,7 +84,8 @@ async function createWindow() {
 		title: 'simplEOS',
 		webPreferences: {
 			nodeIntegration: true,
-			webSecurity: !serve
+			webSecurity: !serve,
+			devTools: false
 		},
 		darkTheme: true,
 		width: 1440,
@@ -96,6 +96,7 @@ async function createWindow() {
 		frame: true,
 		icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
 	});
+	win.removeMenu();
 	if (serve) {
 		require('electron-reload')(__dirname, {
 			electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
@@ -117,33 +118,6 @@ async function createWindow() {
 	win.on('closed', () => {
 		win = null;
 	});
-
-	const template = [{
-		label: 'Application',
-		submenu: [
-			{type: 'separator'},
-			{
-				label: 'Quit',
-				accelerator: 'Command+Q',
-				click: function () {
-					app.quit();
-				}
-			}
-		]
-	}, {
-		label: 'Edit',
-		submenu: [
-			{label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
-			{label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
-			{type: 'separator'},
-			{label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
-			{label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
-			{label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
-			{label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
-		]
-	}];
-	Menu['setApplicationMenu'](Menu['buildFromTemplate'](template));
-	// win.removeMenu();
 }
 
 const gotTheLock = app.requestSingleInstanceLock();
