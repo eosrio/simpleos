@@ -96,6 +96,10 @@ export class ReferendumComponent implements OnInit {
 		}, 200);
 	}
 
+	onPageChange(page: number) {
+		this.page = page;
+		window.scrollTo(0, 0);
+	}
 
 	extOpen(value) {
 		return window['shell']['openExternal'](value);
