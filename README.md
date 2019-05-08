@@ -68,9 +68,9 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
   - `374c598ee58bda0966344d899b732a33add8b3d962c3aa0e635475244e6a5f58`
 - Linux
   - [**simpleos.0.8.0.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos.0.8.0.AppImage)
-  `9176f7cbd08e869da82f220633647d77e2bd23c976dea438814dc45245f2f99a`
+  `458fc09bc104f6b8fe9a7ca8f50e275a519e57018d7ffed0c4c3c4f9c422146b`
   - [**simpleos_0.8.0_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos_0.8.0_amd64.deb)
-  `dfe371b95b6664485dd24eec2ad3ef4c4e11770f3318c54a6f3863bbcd725327`  
+  `406047edaab1e4b6d516241934727ec0502c49bbd4af0e9af5c32d2d32969d6c`  
 - MacOS: [**simpleos-0.8.0.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos-0.8.0.dmg)
   - `fec8bf0ec532bb689bc2eb41c7d6ca04ce36351aef083796b7a6bd79fbadcb73`
 
