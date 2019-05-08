@@ -400,7 +400,7 @@ export class VotingService {
 				});
 			} else {
 				await this.eosjs.getProxies(this.aService.activeChain['proxyRegistry']).then(proxy => {
-					// this.hasList = proxies.rows.length > 0;
+					this.hasList = proxy.rows.length > 0;
 					console.log('ListProxies returned ' + proxy.rows.length + ' proxies');
 					proxy.rows.forEach((prox, idx) => {
 						let voted;
