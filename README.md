@@ -31,6 +31,7 @@ SimplEOS doesn't keep any of your information. All information is kept locally o
 As of 13/01/2018, SimplEOS main features include:
 
 - Multiple chain support
+- REX Support
 - EOS Referendum system at `eosio.forum`
 - Direct contract interaction
 - Local Storage: private keys are encrypted and stored locally only.
@@ -63,15 +64,15 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 
 ## Download a pre-compiled build
 
-- Windows (32/64-bit): [**simpleos.setup.0.7.2.exe**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos.setup.0.7.2.exe)
-  - `801c6def69f715e6126a0d09668180823daa31de896bb112c370394636d10629`
+- Windows (64-bit): [**simpleos.Setup.0.8.0.exe**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos.Setup.0.8.0.exe)
+  - `1a195a7459022a0cc9cdb1d5357f44aaf09222d8ee0fe197c127c6ca08019a18`
 - Linux
-  - [**simpleos.0.7.2.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos.0.7.2.AppImage)
-  `77b5648057d460ad6135880d2d7c950059c7afc0f495bdee5dbea1437078b330`
-  - [**simpleos_0.7.2_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos_0.7.2_amd64.deb)
-  `e9c6863c79ae3fbd50ee07232da17a1b2218528a4068db8e8d9cd213ae7d1f4a`  
-- MacOS: [**simpleos-0.7.1.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.7.2/simpleos-0.7.2.dmg)
-  - `b65ddbe61e863e0c8c8da8f1fcd7e659e338a1fe2d1be8ffe3cfece03b737469`
+  - [**simpleos.0.8.0.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos.0.8.0.AppImage)
+  `9176f7cbd08e869da82f220633647d77e2bd23c976dea438814dc45245f2f99a`
+  - [**simpleos_0.8.0_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos_0.8.0_amd64.deb)
+  `dfe371b95b6664485dd24eec2ad3ef4c4e11770f3318c54a6f3863bbcd725327`  
+- MacOS: [**simpleos-0.8.0.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos-0.8.0.dmg)
+  - `fec8bf0ec532bb689bc2eb41c7d6ca04ce36351aef083796b7a6bd79fbadcb73`
 
 ## Legal Disclaimer
 
@@ -79,10 +80,8 @@ By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/te
 
 ## Build it yourself
 
-[Yarn](http://yarnpkg.com/) is [strongly](https://github.com/electron-userland/electron-builder/issues/1147#issuecomment-276284477) recommended instead of npm.
-
 ### Dependencies Setup
-- [Node.js 11.6.0](https://nodejs.org/en/download/current/)
+- [Node.js 12.2.0](https://nodejs.org/en/download/current/)
 
 ## Setup sources:
 ```console
