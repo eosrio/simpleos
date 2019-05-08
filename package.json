@@ -23,7 +23,7 @@
 		"electron:serve": "wait-on http-get://localhost:7777/ && electron index.js --serve --devtools",
 		"start:electron-dev": "electron index.js --devtools",
 		"start:electron-prod": "electron index.js",
-		"publish:win": "electron-builder build --win --ia32 --x64 -p always",
+		"publish:win": "electron-builder build --win --ia32 --x64",
 		"publish:linux": "electron-builder build --linux -p always",
 		"publish:mac": "electron-builder build --mac -p always",
 		"test": "ng test",
