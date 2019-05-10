@@ -12,10 +12,6 @@
 					<div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
 						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
-					<!--					<div *ngIf="unstaking > 0" style="color: white">-->
-					<!--						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(totalBalance) | number :-->
-					<!--						'1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}-->
-					<!--					</div>-->
 				</div>
 			</div>
 			<div class="card info-card">
@@ -28,7 +24,22 @@
 					<div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
 						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
+					<div style="color: #b0b0b7;font-size: 16px;">
+						STAKED + REX: <span class="blue">{{(totalStaked) | number :
+						'1.2-4'}} {{aService.activeChain['symbol']}} </span>
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+							<span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
+						</a>
+					</div>
+					<div style="color: #b0b0b7;font-size: 16px;">
+						VOTE DECAY: <span [ngStyle]="{color:(votedDecay > 0.0000  ? '#e12200' : '#b0b0b7')}">
+							<fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']" ></fa-icon>
+							{{(votedDecay) | number : '1.2-4'}} %
+						</span>
+					</div>
 				</div>
+
 			</div>
 		</div>
 		<div class="clr-col-lg-6">
@@ -329,13 +340,12 @@
 								{{item.total_votes}}
 							</span>
 							<span *ngIf="!voteService.voteType">
-								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left"
-								>
-								{{item.total_votes}}
+								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left" style="text-decoration:none;">
+									{{item.total_votes}}
 									<span class="tooltip-content" style="width:3rem!important;">
-									{{item.total_votes_eos}}
-								</span>
-							</a>
+										{{item.total_votes_eos}}
+									</span>
+								</a>
 
 							</span>
 						</td>

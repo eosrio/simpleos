@@ -10,6 +10,8 @@ import {HttpClient} from '@angular/common/http';
 
 import * as moment from 'moment';
 import {Subscription} from 'rxjs';
+
+import {Eosjs2Service} from '../../services/eosjs2.service';
 import {RexComponent} from '../rex/rex.component';
 
 @Component({
@@ -37,6 +39,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	busy: boolean;
 	totalBalance: number;
 	stakedBalance: number;
+	totalStaked: number;
+	votedDecay: number;
 	singleSelectionBP: any;
 	selectedVotes: any[];
 	wrongpass: string;
@@ -91,6 +95,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				private http: HttpClient,
 				public aService: AccountsService,
 				public eos: EOSJSService,
+				public eosjs: Eosjs2Service,
 				public crypto: CryptoService,
 				private fb: FormBuilder,
 				private toaster: ToasterService,
@@ -111,6 +116,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.busy = false;
 		this.totalBalance = 0;
 		this.stakedBalance = 0;
+		this.totalStaked = 0;
+		this.votedDecay = 0;
 		this.wrongpass = '';
 		this.stakerr = '';
 		this.fromAccount = '';
@@ -140,6 +147,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.fromAccount = selected.name;
 				this.totalBalance = selected.full_balance;
 				this.stakedBalance = selected.staked;
+				this.totalStaked = (selected.details.voter_info.staked / 10000);
 				this.unstaking = selected.unstaking;
 				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
 				if (this.totalBalance > 0) {
@@ -150,6 +158,11 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 					this.valuetoStake = '0';
 					this.percenttoStake = '0';
 				}
+				const a = (moment().unix() - 946684800);
+				const b = parseInt('' + (a / 604800), 10) / 52;
+				const last_vote_weight_now = selected.details.voter_info.staked * Math.pow(2, b);
+				this.votedDecay = last_vote_weight_now / (selected.details.voter_info.last_vote_weight * 100 );
+
 				this.updateStakePercent();
 				this.loadPlacedVotes(selected);
 				this.cpu_weight = selected.details.total_resources.cpu_weight;
@@ -157,6 +170,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				const _cpu = RexComponent.asset2Float(this.cpu_weight);
 				const _net = RexComponent.asset2Float(this.net_weight);
 				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+
+				this.eosjs.getRexData(selected.name).then(async (rexdata) => {
+					console.log('REX DATA', rexdata);
+				});
 			}
 		}));
 

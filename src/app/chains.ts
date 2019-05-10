@@ -68,7 +68,7 @@ export const defaultChainsJSON = [
 		],
 		exchanges: {
 			bitfinexdep1: {
-				memo_size: 28,
+				memo_size: 32,
 				pattern: /^[a-f0-9]+$/gm
 			},
 			krakenkraken: {

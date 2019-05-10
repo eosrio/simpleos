@@ -336,7 +336,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 				if (arr) {
 					out[field.name] = JSON.parse('{"title": "' + field.name + '", "type": "array", "items": {"type": "object", "properties": ' + children + '}}');
 				} else {
-					out[field.name] = JSON.parse('{"title": "Obj_' + field.name + '", "type": "object", "properties": ' + children + '}');
+					out[field.name] = JSON.parse('{"title": "' + field.name + '", "type": "object", "properties": ' + children + '}');
 				}
 			} else {
 				const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128', 'bool'];

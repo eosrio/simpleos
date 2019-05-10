@@ -134,15 +134,9 @@ export class SendComponent implements OnInit {
 	checkExchangeAccount() {
 		const memo = this.sendForm.get('memo');
 		const acc = this.sendForm.get('to').value;
-
 		if (this.knownExchanges.includes(acc)) {
-			if (this.aService.activeChain.exchanges[acc]) {
-				memo.setValidators([Validators.required, Validators.pattern(this.aService.activeChain.exchanges[acc].pattern), Validators.maxLength(this.aService.activeChain.exchanges[acc].memo_size)]);
-			} else {
-				memo.setValidators([Validators.required]);
-			}
 			this.memoMsg = 'required';
-
+			memo.setValidators([Validators.required]);
 			memo.updateValueAndValidity();
 		} else {
 			this.memoMsg = 'optional';
@@ -150,6 +144,26 @@ export class SendComponent implements OnInit {
 			memo.updateValueAndValidity();
 		}
 	}
+
+	// checkExchangeAccount() {
+	// 	const memo = this.sendForm.get('memo');
+	// 	const acc = this.sendForm.get('to').value;
+	//
+	// 	if (this.knownExchanges.includes(acc)) {
+	// 		if (this.aService.activeChain.exchanges[acc]) {
+	// 			memo.setValidators([Validators.required, Validators.pattern(this.aService.activeChain.exchanges[acc].pattern), Validators.maxLength(this.aService.activeChain.exchanges[acc].memo_size)]);
+	// 		} else {
+	// 			memo.setValidators([Validators.required]);
+	// 		}
+	// 		this.memoMsg = 'required';
+	//
+	// 		memo.updateValueAndValidity();
+	// 	} else {
+	// 		this.memoMsg = 'optional';
+	// 		memo.setValidators(null);
+	// 		memo.updateValueAndValidity();
+	// 	}
+	// }
 
 	ngOnInit() {
 
