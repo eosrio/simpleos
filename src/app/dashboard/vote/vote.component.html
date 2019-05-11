@@ -24,7 +24,7 @@
 					<div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
 						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
-					<div style="color: #b0b0b7;font-size: 16px;">
+					<div *ngIf="aService.activeChain.features['rex']&&!hasRex" style="color: #b0b0b7;font-size: 16px;">
 						STAKED + REX: <span class="blue">{{(totalStaked) | number :
 						'1.2-4'}} {{aService.activeChain['symbol']}} </span>
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">

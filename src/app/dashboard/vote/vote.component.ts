@@ -25,6 +25,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	min: number;
 	minstake: boolean;
 	busyList: boolean;
+	hasRex: boolean;
 
 	valuetoStake: string;
 	percenttoStake: string;
@@ -147,7 +148,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.fromAccount = selected.name;
 				this.totalBalance = selected.full_balance;
 				this.stakedBalance = selected.staked;
-				this.totalStaked = (selected.details.voter_info.staked / 10000);
 				this.unstaking = selected.unstaking;
 				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
 				if (this.totalBalance > 0) {
@@ -158,10 +158,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 					this.valuetoStake = '0';
 					this.percenttoStake = '0';
 				}
-				const a = (moment().unix() - 946684800);
-				const b = parseInt('' + (a / 604800), 10) / 52;
-				const last_vote_weight_now = selected.details.voter_info.staked * Math.pow(2, b);
-				this.votedDecay = last_vote_weight_now / (selected.details.voter_info.last_vote_weight * 100 );
 
 				this.updateStakePercent();
 				this.loadPlacedVotes(selected);
@@ -171,8 +167,21 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				const _net = RexComponent.asset2Float(this.net_weight);
 				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
 
+				if (selected.details.voter_info) {
+					this.totalStaked = (selected.details.voter_info.staked / 10000);
+					const a = (moment().unix() - 946684800);
+					const b = parseInt('' + (a / 604800), 10) / 52;
+					const last_vote_weight_now = selected.details.voter_info.staked * Math.pow(2, b);
+					console.log(last_vote_weight_now,selected.details.voter_info.last_vote_weight);
+					this.votedDecay = last_vote_weight_now / (selected.details.voter_info.last_vote_weight * 100 );
+				} else {
+					this.totalStaked = 0 ;
+					this.votedDecay = 0 ;
+				}
+
 				this.eosjs.getRexData(selected.name).then(async (rexdata) => {
-					console.log('REX DATA', rexdata);
+					// console.log('REX DATA', rexdata.rexbal);
+					this.hasRex = !rexdata.rexbal;
 				});
 			}
 		}));
