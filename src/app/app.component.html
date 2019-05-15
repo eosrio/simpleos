@@ -25,8 +25,11 @@
 			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
 				<clr-icon size="18" shape="window-min"></clr-icon>
 			</a>
-			<a (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
 				<clr-icon size="18" shape="window-restore"></clr-icon>
+			</a>
+			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+				<clr-icon size="18" shape="window-max"></clr-icon>
 			</a>
 			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon close-icon">
 				<clr-icon size="18" shape="window-close"></clr-icon>

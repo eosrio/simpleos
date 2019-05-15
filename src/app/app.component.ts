@@ -55,6 +55,7 @@ export class AppComponent implements AfterViewInit {
 	private replyEvent: any;
 
 	public isMac: boolean;
+	private _maximized: boolean;
 
 	constructor(private fb: FormBuilder,
 				public network: NetworkService,
@@ -212,7 +213,12 @@ export class AppComponent implements AfterViewInit {
 		}
 	}
 
-	// scanPublicKeys() {
+
+	get maximized(): boolean {
+		return this._electronService.remote.getCurrentWindow().isMaximized();
+	}
+
+// scanPublicKeys() {
 	// 	if (this.ledgerOpen) {
 	// 		this.busy = true;
 	// 		this.ledger.readPublicKeys(8).then((ledger_slots: LedgerSlot[]) => {
