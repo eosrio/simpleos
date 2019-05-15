@@ -1,5 +1,42 @@
-<router-outlet></router-outlet>
+<!--<div style="background-color: #1f1f1f; height: 44px; width: 100%">-->
+<!--	-->
+<!--</div>-->
+<div class="main-container">
+	<header class="header-1" style="-webkit-app-region: drag; height: 2rem;">
+		<div class="branding">
 
+			<div *ngIf="isMac" class="focus" style="-webkit-app-region: no-drag;">
+				<div class="traffic-lights">
+					<button class="traffic-light traffic-light-close" style="margin-right: 10px;" id="close"
+							(click)="closeWindow()"></button>
+					<button class="traffic-light traffic-light-minimize" style="margin-right: 10px;" id="minimize"
+							(click)="minimizeWindow()"></button>
+					<button class="traffic-light traffic-light-maximize" id="maximize"
+							(click)="maximizeWindow()"></button>
+				</div>
+			</div>
+
+			<a class="nav-link">
+				<span class="title" style="color: #9a9a9a; font-size: 13px;">simplEOS Wallet {{version}}</span>
+			</a>
+
+		</div>
+		<div class="header-actions" *ngIf="!isMac">
+			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+				<clr-icon size="18" shape="window-min"></clr-icon>
+			</a>
+			<a (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+				<clr-icon size="18" shape="window-restore"></clr-icon>
+			</a>
+			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon close-icon">
+				<clr-icon size="18" shape="window-close"></clr-icon>
+			</a>
+		</div>
+	</header>
+	<div class="content-container">
+		<router-outlet></router-outlet>
+	</div>
+</div>
 <clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'">
 	<h3 class="modal-title text-white">
 		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->

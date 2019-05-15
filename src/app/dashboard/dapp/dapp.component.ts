@@ -1,4 +1,4 @@
-import {Component, OnInit, AfterViewInit, Type, ComponentFactoryResolver, ViewChild, ViewContainerRef} from '@angular/core';
+import {Component, OnInit, AfterViewInit, ChangeDetectorRef} from '@angular/core';
 import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosjs.service';
@@ -15,10 +15,6 @@ import {Subscription} from 'rxjs';
 
 export class DappComponent implements OnInit, AfterViewInit {
 
-	// @ViewChild('dForm', {read: ViewContainerRef}) dForm: ViewContainerRef;
-	//
-	// componentClass = FormComponent;
-
 	components = [];
 	fullBalance: number;
 	tokens = [];
@@ -26,9 +22,10 @@ export class DappComponent implements OnInit, AfterViewInit {
 	action: string;
 	abiSmartContractActions = [];
 	abiSmartContractStructs = [];
-	exampleJsonObject: any;
+	// exampleJsonObject: any;
 	schemaJSON: any;
-	formJSON: any;
+	modelJSON: any;
+	// formJSON: any;
 	loading: boolean;
 	errormsg: string;
 	errormsg2: string;
@@ -66,10 +63,14 @@ export class DappComponent implements OnInit, AfterViewInit {
 
 	selectedAccountSubscription: Subscription;
 
+	static isArray(what) {
+		return Object.prototype.toString.call(what) === '[object Array]';
+	}
+
 	constructor(public aService: AccountsService,
 				public eos: EOSJSService,
 				private fb: FormBuilder,
-				private componentFactoryResolver: ComponentFactoryResolver,
+				private cdr: ChangeDetectorRef,
 				private toaster: ToasterService,
 				private crypto: CryptoService) {
 		this.form = new FormGroup({
@@ -197,7 +198,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 				this.setStructs(data['abi']);
 				this.tokens.push({contract: sc});
 				this.loading = false;
-			}).catch(err => {
+			}).catch(() => {
 				this.errormsg = 'Invalid Contract!';
 				this.loading = false;
 			});
@@ -225,7 +226,9 @@ export class DappComponent implements OnInit, AfterViewInit {
 		this.price = token.price;
 		this.name = token.name;
 		this.symbol = '';
-		this.formJSON = {};
+		// this.formJSON = {};
+		this.schemaJSON = {};
+		this.modelJSON = {};
 		this.eos.getSymbolContract(this.contract).then(val => {
 			this.symbol = val.rows[0].balance.split(' ')[1];
 		}).catch(err => {
@@ -290,40 +293,22 @@ export class DappComponent implements OnInit, AfterViewInit {
 
 			this.aux = 0;
 
-			const ModelJson = this.modelJson(actionType);
 			const SchemaJSON = this.schemaJson(actionType);
-			const FormJSON = this.formJson(actionType, '');
-			FormJSON.push({'type': 'submit', 'style': 'btn btn-outline btn-info-outline', 'title': 'PUSH ACTION'});
-			// newFormJSON.push(
-			// 	{
-			// 		"type": "submit",
-			// 		"style": "btn-info",
-			// 		"title": "OK"
-			// 	});
-			// this.formJSON = ModelJson;
-			this.formJSON = {
+			this.schemaJSON = {
 				'schema': {
 					'type': 'object',
-					'title': actionType,
+					'title': 'ACTION - ' + actionType.toUpperCase(),
 					'properties': SchemaJSON
 				}
+
 			};
-			// this.formJSON ={
-			// 	"schema": {
-			// 		"type": "object",
-			// 		"title": actionType,
-			// 		"properties": SchemaJSON
-			// 	},
-			// 	"form": FormJSON
-			// };
-			// console.log("------>",JSON.stringify(SchemaJSON));
-			console.log('------>', this.formJSON);
-			// console.log("------>",JSON.stringify(ModelJson));
+			this.modelJSON = this.modelJson(actionType);
 
 			this.triggerAction = true;
 		} else {
 			this.triggerAction = false;
 		}
+		this.cdr.detectChanges();
 	}
 
 	schemaJson(type: string) {
@@ -334,24 +319,27 @@ export class DappComponent implements OnInit, AfterViewInit {
 			if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
 				const children = JSON.stringify(this.schemaJson(field_type));
 				if (arr) {
-					out[field.name] = JSON.parse('{"title": "' + field.name + '", "type": "array", "items": {"type": "object", "properties": ' + children + '}}');
+					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", "type": "array", "items": {"type": "object", "properties": ' + children + '}}');
 				} else {
-					out[field.name] = JSON.parse('{"title": "' + field.name + '", "type": "object", "properties": ' + children + '}');
+					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", "type": "object", "properties": ' + children + '}');
 				}
 			} else {
 				const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128', 'bool'];
 				let typeABI = '';
+				let typeArr = '';
 				if (intArr.includes(field.type)) {
-					// typeABI = "number";
-					typeABI = '"widget": "text", "type": "number"';
+					typeABI = '"type": "number", "widget": "text",  "value":0';
 				} else if (arr) {
-					// typeABI = "array";
-					typeABI = '"type": "array", "items": { "widget": "text", "type":"string", "title": "' + field.name + '" } ';
+					if (intArr.includes(field.type)) {
+						typeArr = '"type": "number", "widget": "text", "value":0 ,"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '"';
+					} else {
+						typeArr = '"type": "string", "widget": "text", "value": "", "title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '"';
+					}
+					typeABI = '"type": "array", "items": { "widget": "text", "type":"string", ' + typeArr + ' } ';
 				} else {
-					// typeABI = "string";
-					typeABI = '"widget": "text", "type": "string"';
+					typeABI = '"type": "string", "widget": "text", "value": ""';
 				}
-				const jsonTxt = '{ "title": "' + field.name + '", ' + typeABI + ' }';
+				const jsonTxt = '{ "title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", ' + typeABI + ' }';
 
 				out[field.name] = JSON.parse(jsonTxt);
 			}
@@ -362,43 +350,81 @@ export class DappComponent implements OnInit, AfterViewInit {
 	modelJson(type: string) {
 		let out = {};
 		this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
+			const arr = (field.type.indexOf('[]') > 0);
 			const field_type = field.type.replace('[]', '');
 			if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
 				const children = this.modelJson(field_type);
 				out[field.name] = [children];
 			} else {
-				out[field.name] = '';
+				const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128', 'bool'];
+				let typeABI: any;
+				if (intArr.includes(field.type)) {
+					// typeABI = "number";
+					typeABI = 0;
+				} else if (arr) {
+					// typeABI = "array";
+					typeABI = [];
+				} else {
+					// typeABI = "string";
+					typeABI = '';
+				}
+				out[field.name] = typeABI;
 			}
 		});
 		return out;
 	}
 
-	formJson(type: string, name: string) {
+	formJson(type: string, name?:string) {
 		let out = [];
 		this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
+			const arr = (field.type.indexOf('[]') > 0);
 			const field_type = field.type.replace('[]', '');
 
 			if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
-				const children = JSON.stringify(this.formJson(field_type, field.name));
-				if (name !== '') {
-					out.push(JSON.parse('{"key": "' + name + '[].' + field.name + '","add": "New","style": {"add": "btn-success"},"items":' + children + '}'));
+				const children = JSON.stringify(this.formJson(field_type,field.name));
+				if (name!==''&&name!==undefined) {
+					out.push(JSON.parse('{"key": "' + name + '[].' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"array","items":' + children + '}'));
 				} else {
-					out.push(JSON.parse('{"key": "' + field.name + '","add": "New","style": {"add": "btn-success"},"items":' + children + '}'));
+					out.push(JSON.parse('{"key": "' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"object","items":' + children + '}'));
 				}
 
 			} else {
-				if (name !== '') {
-					out.push(JSON.parse('{"key": "' + name + '[].' + field.name + '","placeholder": "' + field.name + '","widget": "text","type": "text","title": "' + field.name + '","htmlClass":"mat-my-class"}'));
+				const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128', 'bool'];
+				let typeABI = '';
+				if (intArr.includes(field.type)) {
+					// typeABI = "number";
+					typeABI = '"widget": "text", "type": "number","htmlClass":"mat-my-class"';
+				} else if (arr) {
+					// typeABI = "array";
+					typeABI = '"type": "array", "items": { "widget": "text", "type":"text", "title": "' + field.name.toUpperCase() + '","htmlClass":"mat-my-class" } ';
 				} else {
-					out.push(JSON.parse('{"key": "' + field.name + '","placeholder": "' + field.name + '","widget": "text","type": "text","title": "' + field.name + '","htmlClass":"mat-my-class"}'));
+					// typeABI = "string";
+					typeABI = '"widget": "text", "type": "text","htmlClass":"mat-my-class"';
+				}
+				if (name!==''&&name!==undefined) {
+					out.push(JSON.parse('{"title": "' + field.name + '","key": "' + name + '[].' + field.name + '",' + typeABI + '}'));
+				} else {
+					out.push(JSON.parse('{"title": "' + field.name + '","key": "' + field.name + '",' + typeABI + '}'));
 				}
 			}
 		});
 		return out;
 	}
 
+
 	formFilled(ev) {
-		this.formVal = ev;
+		if (ev) {
+			this.busy = false;
+			this.wrongpass = '';
+			this.sendModal=true;
+			const fullForm = Object.assign ( this.modelJson(this.action) , ev[ 'schema' ] );
+			for (let idx in fullForm) {
+				if (DappComponent.isArray ( fullForm[ idx ] )) {
+					fullForm[ idx ].sort ();
+				}
+			}
+			this.formVal = fullForm;
+		}
 	}
 
 	pushAction() {
@@ -415,7 +441,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.pushActionContract(this.contract, this.action, this.formVal, accountName).then((info) => {
+				const val = this.eos.pushActionContract(this.contract, this.action, this.formVal, accountName).then((info) => {
 					this.tokenModal = false;
 					this.busy2 = false;
 					this.sendModal = false;
@@ -423,9 +449,11 @@ export class DappComponent implements OnInit, AfterViewInit {
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch(error => {
 					console.log(error);
+					this.busy = false;
 					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
-				this.busy = false;
+				console.log(val['__zone_symbol__state']);
+				//this.busy = false;
 			}
 		}).catch(error2 => {
 			console.log(error2);

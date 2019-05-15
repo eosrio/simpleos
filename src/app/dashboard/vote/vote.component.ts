@@ -26,6 +26,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	minstake: boolean;
 	busyList: boolean;
 	hasRex: boolean;
+	hasVote: boolean;
 
 	valuetoStake: string;
 	percenttoStake: string;
@@ -41,6 +42,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	totalBalance: number;
 	stakedBalance: number;
 	totalStaked: number;
+	votedEOSDecay: number;
 	votedDecay: number;
 	singleSelectionBP: any;
 	selectedVotes: any[];
@@ -119,6 +121,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.stakedBalance = 0;
 		this.totalStaked = 0;
 		this.votedDecay = 0;
+		this.votedEOSDecay = 0;
 		this.wrongpass = '';
 		this.stakerr = '';
 		this.fromAccount = '';
@@ -144,6 +147,9 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		}));
 
 		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
+			this.totalStaked = 0 ;
+			this.votedDecay = 0 ;
+			this.votedEOSDecay = 0 ;
 			if (selected && selected['name']) {
 				this.fromAccount = selected.name;
 				this.totalBalance = selected.full_balance;
@@ -168,19 +174,20 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
 
 				if (selected.details.voter_info) {
+					this.hasVote = true;
 					this.totalStaked = (selected.details.voter_info.staked / 10000);
 					const a = (moment().unix() - 946684800);
 					const b = parseInt('' + (a / 604800), 10) / 52;
-					const last_vote_weight_now = selected.details.voter_info.staked * Math.pow(2, b);
-					console.log(last_vote_weight_now,selected.details.voter_info.last_vote_weight);
-					this.votedDecay = last_vote_weight_now / (selected.details.voter_info.last_vote_weight * 100 );
+					const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / 10000);
+					this.votedEOSDecay = this.totalStaked - decayEOS;
+					if (selected.details.voter_info.last_vote_weight > 0){
+						this.votedDecay = 100 - Math.round(((decayEOS * 100 ) / this.totalStaked ) * 1000) / 1000;
+					}
 				} else {
-					this.totalStaked = 0 ;
-					this.votedDecay = 0 ;
+					this.hasVote = false;
 				}
 
 				this.eosjs.getRexData(selected.name).then(async (rexdata) => {
-					// console.log('REX DATA', rexdata.rexbal);
 					this.hasRex = !rexdata.rexbal;
 				});
 			}
@@ -354,6 +361,24 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		const selectedAcc = this.aService.selected.getValue();
 		this.totalBalance = selectedAcc.full_balance;
 		this.stakedBalance = selectedAcc.staked;
+		if (selectedAcc.details.voter_info) {
+			this.hasVote = true;
+			this.totalStaked = (selectedAcc.details.voter_info.staked / 10000);
+			const a = (moment().unix() - 946684800);
+			const b = parseInt('' + (a / 604800), 10) / 52;
+			const decayEOS = (selectedAcc.details.voter_info.last_vote_weight / Math.pow(2, b) / 10000);
+			this.votedEOSDecay = this.totalStaked - decayEOS;
+			if (selectedAcc.details.voter_info.last_vote_weight > 0){
+				this.votedDecay = 100 - Math.round(((decayEOS * 100 ) / this.totalStaked ) * 1000) / 1000;
+			}
+		} else {
+			this.hasVote = false;
+		}
+
+		this.eosjs.getRexData(selectedAcc.name).then(async (rexdata) => {
+			// console.log('REX DATA', rexdata.rexbal);
+			this.hasRex = !rexdata.rexbal;
+		});
 	}
 
 

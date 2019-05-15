@@ -103,8 +103,10 @@
 			<json-schema-form
 				[loadExternalAssets]="true"
 				framework="material-design"
-				[form]="formJSON"
-				(onSubmit)="formFilled($event);sendModal=true">
+				[schema]="schemaJSON"
+				[model]="modelJSON"
+				(onSubmit)="formFilled($event);"
+				>
 			</json-schema-form>
 		</div>
 		<!--<ng-container #dForm style="overflow-y: auto !important;"></ng-container>-->

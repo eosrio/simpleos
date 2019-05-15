@@ -691,9 +691,7 @@ export class LandingComponent implements OnInit {
 	contentStyle(txt, color?) {
 		const splitLines = txt.split('<br>');
 		let newTxt = '';
-		console.log(txt);
 		splitLines.forEach(line => {
-			// console.log(line.length);
 			if (line.length > 1) {
 				if (line.substr(0, 4) === '####') {
 					newTxt += '<h3 class="blue"><b>' + line.replace('####', '') + '</b></h3>';

@@ -1,62 +1,80 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="main-container">
+
+<div class="main-container" style="height: calc(100vh - 2rem);">
 	<div class="content-container">
 		<div class="content-area">
-			<div class="clr-row" style="margin-right: 0;">
-				<div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}" style="padding-right: 0; ">
-					<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
-								   [selectedIndex]="selectedTab">
-						<mat-tab *ngFor="let account of aService.accounts; let i = index">
-							<ng-template mat-tab-label>
-								<div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
-									*ngIf="aService.accounts.length > 1"
-									[icon]="['fas', 'times-circle']"
-									class="deleteteacc"
-									(click)="openRemoveAccModal(i,account)"></fa-icon>
+			<div class="clr-row" style="margin-right: 0; background-color: #191919;">
+
+				<div class="clr-col-10" style="padding-right: 0">
+					<div class="clr-row" style="margin-right: 0;">
+						<div
+							class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
+							style="padding-right: 0; ">
+							<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
+										   [selectedIndex]="selectedTab">
+								<mat-tab *ngFor="let account of aService.accounts; let i = index">
+									<ng-template mat-tab-label>
+										<div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
+											*ngIf="aService.accounts.length > 1"
+											[icon]="['fas', 'times-circle']"
+											class="deleteteacc"
+											(click)="openRemoveAccModal(i,account)"></fa-icon>
+										</div>
+										<div style="font-size: 17px;">{{account.name}}</div>
+										<div
+											class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
+										<!--<div class="value">{{account.full_balance}} EOS</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+									</ng-template>
+								</mat-tab>
+							</mat-tab-group>
+						</div>
+
+						<div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
+							 style="padding-left: 0; padding-right: 0"
+							 (click)="importKeyModal = true">
+							<div class="text-center navbar-btn newaccount">
+								<div style="padding-top: 16px">
+									<fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
 								</div>
-								<div style="font-size: 17px;">{{account.name}}</div>
-								<div class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
-								<!--<div class="value">{{account.full_balance}} EOS</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-							</ng-template>
-						</mat-tab>
-					</mat-tab-group>
-				</div>
-				<div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
-					 style="padding-left: 0; padding-right: 0"
-					 (click)="importKeyModal = true">
-					<div class="text-center navbar-btn newaccount">
-						<div style="padding-top: 16px">
-							<fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
+								<div style="font-size: 15px;">ADD</div>
+								<div style="font-size: 15px;">ACCOUNT</div>
+							</div>
 						</div>
-						<div style="font-size: 15px;">ADD</div>
-						<div style="font-size: 15px;">ACCOUNT</div>
+
+						<div *ngIf="network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
+							 style="padding-left: 0; padding-right: 0" (click)="newAccountModal = true;initNewAcc();">
+							<div class="text-center navbar-btn newaccount">
+								<div style="padding-top: 16px">
+									<fa-icon [icon]="['fal', 'user-edit']" size="lg"></fa-icon>
+								</div>
+								<div style="font-size: 15px;">NEW</div>
+								<div style="font-size: 15px;">ACCOUNT</div>
+							</div>
+						</div>
+
+						<!--For WORBLI-->
+						<div *ngIf="!network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
+							 style="padding-left: 0; padding-right: 0;">
+						</div>
+
 					</div>
 				</div>
-				<div *ngIf="network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
-					 style="padding-left: 0; padding-right: 0" (click)="newAccountModal = true;initNewAcc();">
-					<div class="text-center navbar-btn newaccount">
-						<div style="padding-top: 16px">
-							<fa-icon [icon]="['fal', 'user-edit']" size="lg"></fa-icon>
+
+				<div class="clr-col-2">
+					<div class="clr-row">
+						<div class="clr-col-6" style="padding-left: 0; padding-right: 0">
+							<div class="text-center navbar-btn cog" [routerLink]="['config']">
+								<div>
+									<fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
+								</div>
+							</div>
 						</div>
-						<div style="font-size: 15px;">NEW</div>
-						<div style="font-size: 15px;">ACCOUNT</div>
-					</div>
-				</div>
-				<!--For WORBLI-->
-				<div *ngIf="!network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
-					 style="padding-left: 0; padding-right: 0;">
-				</div>
-				<div class="clr-col-auto" style="padding-left: 0; padding-right: 0">
-					<div class="text-center navbar-btn cog" [routerLink]="['config']">
-						<div>
-							<fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
-						</div>
-					</div>
-				</div>
-				<div class="clr-col-auto clr-col-md-auto" style="padding-left: 0; padding-right: 0">
-					<div class="text-center navbar-btn cog" [routerLink]="['about']">
-						<div>
-							<fa-icon [icon]="['far','question-circle']" size="2x"></fa-icon>
+						<div class="clr-col-6" style="padding-left: 0; padding-right: 0">
+							<div class="text-center navbar-btn cog" [routerLink]="['about']">
+								<div>
+									<fa-icon [icon]="['far','question-circle']" size="2x"></fa-icon>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -85,12 +103,14 @@
 				   [routerLink]="['ram']">
 					<fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RESOURCES
 				</a>
-				<a *ngIf="network.activeChain.features['vote'] || network.activeChain.features['staking']" class="nav-link" routerLinkActive="active"
+				<a *ngIf="network.activeChain.features['vote'] || network.activeChain.features['staking']"
+				   class="nav-link" routerLinkActive="active"
 				   [routerLink]="['vote']">
 					<ng-container *ngIf="network.activeChain.features['vote']">
 						<fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
 					</ng-container>
-					<ng-container *ngIf="network.activeChain.features['staking'] && !network.activeChain.features['vote']">
+					<ng-container
+						*ngIf="network.activeChain.features['staking'] && !network.activeChain.features['vote']">
 						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;STAKE
 					</ng-container>
 				</a>
@@ -208,7 +228,8 @@
 		<form [formGroup]="delegateForm" class="pt-0">
 			<!--Amount to delegate-->
 			<mat-form-field class="mt-1" style="width: 273px">
-				<input matInput type="text" placeholder="Amount to delegate (min = 1.0000 {{aService.activeChain['symbol']}})"
+				<input matInput type="text"
+					   placeholder="Amount to delegate (min = 1.0000 {{aService.activeChain['symbol']}})"
 					   [textMask]="{mask: numberMask}"
 					   formControlName="delegate_amount" (blur)="checkAmount('delegate_amount')">
 				<mat-error align="start" *ngIf="amounterror !== ''">
@@ -241,7 +262,8 @@
 
 			<!--Amount to Gift-->
 			<mat-form-field class="mt-1" style="width: 273px">
-				<input matInput placeholder="{{aService.activeChain['symbol']}} Amount to gift (optional)" [textMask]="{mask: numberMask}"
+				<input matInput placeholder="{{aService.activeChain['symbol']}} Amount to gift (optional)"
+					   [textMask]="{mask: numberMask}"
 					   formControlName="gift_amount" (blur)="checkAmount('gift_amount')" type="text">
 				<mat-error align="start" *ngIf="amounterror3 !== ''">
 					{{amounterror3}}
@@ -396,7 +418,6 @@
 	</clr-wizard-page>
 </clr-wizard>
 <!--IMPORT ONE MORE EXISTING WALLET END-->
-
 
 <!--REMOVE ACCOUNT-->
 <clr-modal [(clrModalOpen)]="deleteAccModal" [clrModalSize]="'md'">

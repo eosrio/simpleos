@@ -72,6 +72,7 @@ export const defaultChainsJSON = [
 				pattern: /^[a-f0-9]+$/gm
 			},
 			krakenkraken: {
+				memo_size: 10,
 				pattern: /^[0-9]+$/gm
 			},
 			binancecleos: {
@@ -85,6 +86,25 @@ export const defaultChainsJSON = [
 				memo_size: 16,
 				pattern: /^[a-f0-9]+$/gm
 			},
+			gateiowallet: {
+				memo_size: 16,
+				pattern: /^[a-f0-9]+$/gm
+			},
+			chainceoneos: {
+				memo_size: 10,
+				pattern: /^[a-z]+$/gm
+			},
+			zbeoscharge1: {
+				memo_size: 18,
+				pattern: /^[0-9]+$/gm
+			},
+			okbtothemoon: {
+				pattern: /^[0-9]+$/gm
+			},
+			eosusrwallet: {
+				memo_size: 36,
+				pattern: /[a-f0-9]{4}/gm
+			}
 		}
 	},
 	{
@@ -224,7 +244,7 @@ export const defaultChainsJSON = [
 		firstApi: 'https://api.worbli.eosrio.io',
 		historyApi: '',
 		lastNode: '',
-		eosrioBP: 'eosrio',
+		eosrioBP: '',
 		proxyRegistry: '',
 		features: {
 			history: true,

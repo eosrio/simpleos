@@ -1428,4 +1428,41 @@ export class RexComponent implements OnDestroy {
 			});
 		}
 	}
+
+	async updaterex() {
+		// Transaction Signature
+		const [auth, publicKey] = this.trxFactory.getAuth();
+		const messageHTML = `<h5 class="white mb-0">Updating REX Balances for <span class="blue" style="font-weight: bold">${auth.actor}</span></h5>`;
+
+		this.trxFactory.modalData.next({
+			transactionPayload: {
+				actions: [{
+					account: 'eosio',
+					name: 'updaterex',
+					authorization: [auth],
+					data: {
+						owner: auth.actor
+					}
+				}]
+			},
+			termsHeader: '',
+			signerAccount: auth.actor,
+			signerPublicKey: publicKey,
+			labelHTML: messageHTML,
+			actionTitle: 'update rex',
+			termsHTML: ''
+		});
+		this.trxFactory.launcher.emit(true);
+		const subs = this.trxFactory.status.subscribe((event) => {
+			console.log(event);
+			if (event === 'done') {
+				this.updateREXData(auth.actor);
+				this.updateGlobalRexData();
+				subs.unsubscribe();
+			}
+			if (event === 'modal_closed') {
+				subs.unsubscribe();
+			}
+		});
+	}
 }

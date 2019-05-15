@@ -85,7 +85,7 @@ async function createWindow() {
 		webPreferences: {
 			nodeIntegration: true,
 			webSecurity: !serve,
-			devTools: true
+			devTools: false
 		},
 		darkTheme: true,
 		width: 1440,
@@ -93,10 +93,10 @@ async function createWindow() {
 		minWidth: 800,
 		minHeight: 600,
 		backgroundColor: '#222222',
-		frame: true,
+		frame: false,
 		icon: path.join(__dirname, 'src/assets/icons/ico/simpleos.ico')
 	});
-	// win.removeMenu();
+	win.removeMenu();
 	if (serve) {
 		require('electron-reload')(__dirname, {
 			electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),

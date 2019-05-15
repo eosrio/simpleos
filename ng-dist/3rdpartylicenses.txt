@@ -962,7 +962,7 @@ component-inherit
 
 core-js
 MIT
-Copyright (c) 2014-2019 Denis Pushkarev
+Copyright (c) 2014-2018 Denis Pushkarev
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -2281,6 +2281,9 @@ SOFTWARE.
 
 
 ngx-echarts
+MIT
+
+ngx-electron
 MIT
 
 ngx-json-viewer

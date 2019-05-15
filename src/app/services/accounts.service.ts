@@ -150,6 +150,7 @@ export class AccountsService {
 	}
 
 	async fetchTokens(account) {
+
 		this.sessionTokens[this.selectedIdx] = [];
 		if (this.activeChain['name'] === 'EOS MAINNET') {
 			const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
@@ -557,8 +558,8 @@ export class AccountsService {
 				this.actions = [];
 			}
 			this.selected.next(sel);
-			this.fetchTokens(sel.name).catch(console.log);
 			this.selectedIdx = index;
+			this.fetchTokens(sel.name).catch(console.log);
 		}
 		// const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
 		// const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));

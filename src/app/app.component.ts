@@ -13,6 +13,7 @@ import {BackupService} from './services/backup.service';
 import {BehaviorSubject, Subscription} from 'rxjs';
 import {Eosjs2Service} from './services/eosjs2.service';
 import {TransactionFactoryService} from './services/transaction-factory.service';
+import {ElectronService} from 'ngx-electron';
 
 export interface LedgerSlot {
 	publicKey: string;
@@ -53,6 +54,8 @@ export class AppComponent implements AfterViewInit {
 	private fullTrxData: any;
 	private replyEvent: any;
 
+	public isMac: boolean;
+
 	constructor(private fb: FormBuilder,
 				public network: NetworkService,
 				// public ledger: LedgerHWService,
@@ -65,8 +68,12 @@ export class AppComponent implements AfterViewInit {
 				private autobackup: BackupService,
 				private trxFactory: TransactionFactoryService,
 				private zone: NgZone,
-				private cdr: ChangeDetectorRef
+				private cdr: ChangeDetectorRef,
+				private _electronService: ElectronService
 	) {
+
+		this.isMac = this._electronService.isMacOS;
+
 		this.confirmForm = this.fb.group({
 			pass: ['', Validators.required]
 		});
@@ -177,6 +184,31 @@ export class AppComponent implements AfterViewInit {
 					}
 				}
 			});
+		}
+	}
+
+	public minimizeWindow() {
+		console.log('Minimize...');
+		if (this._electronService.isElectronApp) {
+			this._electronService.remote.getCurrentWindow().minimize();
+		}
+	}
+
+	public closeWindow() {
+		console.log('Close...');
+		if (this._electronService.isElectronApp) {
+			this._electronService.remote.getCurrentWindow().close();
+		}
+	}
+
+	public maximizeWindow() {
+		console.log('Maximize...');
+		if (this._electronService.isElectronApp) {
+			if (this._electronService.remote.getCurrentWindow().isMaximized()) {
+				this._electronService.remote.getCurrentWindow().restore();
+			} else {
+				this._electronService.remote.getCurrentWindow().maximize();
+			}
 		}
 	}
 

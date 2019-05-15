@@ -53,6 +53,15 @@ li:hover {
 div#formAction > mat-form-field > input {
 	color:#0079b8;
 }
+.my-mat-class{
+	margin-top: 1rem;
+}
+/deep/ .my-mat-class .close-button{
+	fill: #737373 !important;
+}
+/deep/ .my-mat-class .close-button:hover{
+	fill: #c92100 !important;
+}
 /deep/ .tokenModal .modal-dialog {
   width: auto!important;
   min-width: 24rem!important;

@@ -58,6 +58,7 @@ import {Eosjs2Service} from './services/eosjs2.service';
 import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
 import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
 import { InputModalComponent } from './input-modal/input-modal.component';
+import {NgxElectronModule} from 'ngx-electron';
 
 library.add(far, fas, fab, fal);
 
@@ -113,7 +114,8 @@ library.add(far, fas, fab, fal);
 		FuseJsModule,
 		OrderModule,
 		NgxPaginationModule,
-		MaterialDesignFrameworkModule
+		MaterialDesignFrameworkModule,
+		NgxElectronModule
 	],
 	providers: [
 		EOSJSService,

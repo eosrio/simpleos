@@ -32,8 +32,10 @@
 							<span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
 						</a>
 					</div>
-					<div style="color: #b0b0b7;font-size: 16px;">
+					<div *ngIf="aService.activeChain.features['vote']&&hasVote"style="color: #b0b0b7;font-size: 16px;">
 						VOTE DECAY: <span [ngStyle]="{color:(votedDecay > 0.0000  ? '#e12200' : '#b0b0b7')}">
+							{{(votedEOSDecay) | number : '1.2-4'}} EOS
+
 							<fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']" ></fa-icon>
 							{{(votedDecay) | number : '1.2-4'}} %
 						</span>

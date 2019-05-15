@@ -2,7 +2,7 @@
   <div class="clr-row animate" style="padding-top: 15px;">
     <div class="clr-col-lg-6">
       <h1><span class="white">About </span><span class="blue">EOS Rio</span></h1>
-      <h5 *ngIf="aService.activeChain.features.vote" style="margin-top: 10px;">Producer name: <span class="blue">{{aService.activeChain.eosrioBP}}</span></h5>
+      <h5 *ngIf="aService.activeChain.features.vote&&aService.activeChain.eosrioBP!==''" style="margin-top: 10px;">Producer name: <span class="blue">{{aService.activeChain.eosrioBP}}</span></h5>
       <p class="paragraph">EOS Rio is a Block Producer based in Rio de Janeiro.</p>
       <p class="paragraph">Located in Brazil, EOS Rio contributes to the geographical and cultural distribution of the
         EOS network,
