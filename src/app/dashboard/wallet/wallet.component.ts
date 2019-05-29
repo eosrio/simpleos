@@ -166,10 +166,9 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 			this.getInfo();
 		}, 5000);
 		if (!this.blockTracker) {
-			this.blockTracker = setInterval(() => {
-				this.getInfo();
-			}, 5000);
-
+			// this.blockTracker = setInterval(() => {
+			// 	this.getInfo();
+			// }, 10000);
 		}
 
 		this.loading = true;

@@ -18,10 +18,10 @@ import {VotingService} from '../services/voting.service';
 })
 export class LandingComponent implements OnInit {
 
-	@ViewChild('wizardexists') exisitswizard: ClrWizard;
-	@ViewChild('wizardnew') wizardnew: ClrWizard;
-	@ViewChild('wizardkeys') wizardkeys: ClrWizard;
-	@ViewChild('customImportBK') customImportBK: ElementRef;
+	@ViewChild('wizardexists', {static: false}) exisitswizard: ClrWizard;
+	@ViewChild('wizardnew', {static: false}) wizardnew: ClrWizard;
+	@ViewChild('wizardkeys', {static: false}) wizardkeys: ClrWizard;
+	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
 	lottieConfig: Object;
 	anim: any;
 	busy: boolean;

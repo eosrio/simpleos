@@ -19,8 +19,8 @@ import {NetworkService} from '../services/network.service';
 	styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-	@ViewChild('newAccountWizard') wizardaccount: ClrWizard;
-	@ViewChild('importAccountWizard') importwizard: ClrWizard;
+	@ViewChild('newAccountWizard', {static: false}) wizardaccount: ClrWizard;
+	@ViewChild('importAccountWizard', {static: false}) importwizard: ClrWizard;
 	lottieConfig: Object;
 	anim: any;
 	busy = false;

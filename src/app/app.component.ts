@@ -27,7 +27,7 @@ export interface LedgerSlot {
 })
 export class AppComponent implements AfterViewInit {
 
-	@ViewChild('ledgerwizard') ledgerwizard: ClrWizard;
+	@ViewChild('ledgerwizard', {static: false}) ledgerwizard: ClrWizard;
 	confirmForm: FormGroup;
 	wrongpass: string;
 	transitconnect = false;

@@ -252,11 +252,7 @@ export class NetworkService {
 				this.lastEndpoint = endpoint;
 				this.autoMode = false;
 				this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
-				if (this.connectionTimeout) {
-					clearTimeout(this.connectionTimeout);
-					this.networkingReady.next(true);
-					this.connectionTimeout = null;
-				}
+
 				if (savedAccounts) {
 					if (savedAccounts.length > 0) {
 						// console.log('Locading local accounts');
@@ -282,6 +278,12 @@ export class NetworkService {
 							this.router['navigate'](['landing']);
 						}
 					}
+				}
+
+				if (this.connectionTimeout) {
+					clearTimeout(this.connectionTimeout);
+					this.networkingReady.next(true);
+					this.connectionTimeout = null;
 				}
 			}).catch((err) => {
 				console.log('>>> EOSJS_ERROR: ', err);

@@ -10,6 +10,7 @@ import {HttpClient} from '@angular/common/http';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {getMatIconFailedToSanitizeLiteralError} from '@angular/material';
+import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 
 
 @Component({
@@ -27,6 +28,7 @@ export class ReferendumComponent implements OnInit {
 	expired = false;
 	busy = false;
 	searchForm: FormGroup;
+	createProposalForm: FormGroup;
 	confirmvoteForm: FormGroup;
 	confirmunvoteForm: FormGroup;
 	wrongpass: string;
@@ -58,6 +60,8 @@ export class ReferendumComponent implements OnInit {
 	sMType: string;
 	sMOption = [];
 
+	public markdownData = '';
+
 
 	constructor(public aService: AccountsService,
 				public eos: EOSJSService,
@@ -72,6 +76,18 @@ export class ReferendumComponent implements OnInit {
 
 		this.searchForm = this.fb.group({
 			search: ['', [Validators.maxLength(12)]]
+		});
+
+		this.createProposalForm = this.fb.group({
+			id: ['', [Validators.required]],
+			title: ['', [Validators.required]],
+			content: ['', [Validators.required]],
+			expiry: ['', [Validators.required]],
+			type: ['', [Validators.required]],
+		});
+
+		this.createProposalForm.get('content').valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
+			this.markdownData = value;
 		});
 
 		this.confirmvoteForm = this.fb.group({
@@ -92,7 +108,7 @@ export class ReferendumComponent implements OnInit {
 
 	ngOnInit(): void {
 		setTimeout(() => {
-			this.loadVoteTally();
+			this.loadVoteTally(true);
 		}, 200);
 	}
 
@@ -102,6 +118,10 @@ export class ReferendumComponent implements OnInit {
 
 	extOpen(value) {
 		return window['shell']['openExternal'](value);
+	}
+
+	updateMarkdown() {
+		this.markdownData = this.createProposalForm.get('content').value;
 	}
 
 	filterProposals(term) {
@@ -153,32 +173,35 @@ export class ReferendumComponent implements OnInit {
 	}
 
 
-	loadVoteTally() {
+	loadVoteTally(forceReload?: boolean) {
 		this.selProposal = null;
 		this.vtProposal = 0;
 		this.proposals = [];
 		let now, lastFecth;
-		const url = 'https://s3.amazonaws.com/api.eosvotes.io/eosvotes/tallies/latest.json';
-		if (localStorage.getItem('simplEOS.lastProposalFetch') !== null) {
-			lastFecth = parseInt(localStorage.getItem('simplEOS.lastProposalFetch'), 10);
-			now = new Date().getTime();
-			// console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
-		}
+		const chainId = this.aService.activeChain.id;
+		if (this.aService.activeChain.forumTally !== '') {
+			if (localStorage.getItem('simplEOS.lastProposalFetch.' + chainId) !== null) {
+				lastFecth = parseInt(localStorage.getItem('simplEOS.lastProposalFetch.' + chainId), 10);
+				now = new Date().getTime();
+				// console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
+			}
 
-		if ((now - lastFecth > 10 * 60 * 1000) || localStorage.getItem('simplEOS.lastProposalFetch') === null) {
-			this.http.get(url).subscribe((data) => {
-				this.processProposalData(data);
-			}, err => {
-				console.log(err);
+			if (((now - lastFecth > 10 * 60 * 1000) || localStorage.getItem('simplEOS.lastProposalFetch.' + chainId) === null) || forceReload) {
+				this.http.get(this.aService.activeChain.forumTally).subscribe((data) => {
+					console.log(data);
+					this.processProposalData(data);
+				}, err => {
+					console.log(err);
+					this.loading = false;
+				});
+			} else {
+				// console.log('Loading proposals from local cache');
+				this.proposals = JSON.parse(localStorage.getItem('simplEOS.proposals.' + chainId));
+				this.allProposals = this.proposals;
 				this.loading = false;
-			});
-		} else {
-			// console.log('Loading proposals from local cache');
-			this.proposals = JSON.parse(localStorage.getItem('simplEOS.proposals'));
-			this.allProposals = this.proposals;
-			this.loading = false;
+			}
+			this.cdr.detectChanges();
 		}
-		this.cdr.detectChanges();
 	}
 
 	processProposalData(data) {
@@ -201,50 +224,50 @@ export class ReferendumComponent implements OnInit {
 			proposals.push(temp_obj);
 		});
 		this.loading = false;
-		localStorage.setItem('simplEOS.proposals', JSON.stringify(proposals));
-		localStorage.setItem('simplEOS.lastProposalFetch', new Date().getTime().toString());
+		localStorage.setItem('simplEOS.proposals.' + this.aService.activeChain.id, JSON.stringify(proposals));
+		localStorage.setItem('simplEOS.lastProposalFetch.' + this.aService.activeChain.id, new Date().getTime().toString());
 		this.allProposals = proposals;
 		this.proposals = proposals;
+		console.log(this.proposals.length, 'proposals loaded');
 	}
 
 
-	loadProposals(name) {
-		this.selProposal = null;
-		this.vtProposal = 0;
-		this.proposals = [];
-		this.eos.getProposals('eosio.forum', 200).then(dt => {
-			dt.rows.forEach((row) => {
-				const temp_obj = row;
-				let temp_json = null;
-				try {
-					temp_json = JSON.parse(row.proposal_json);
-				} catch (e) {
-					console.log(e);
-					console.log(row);
-				}
-				if (temp_json !== null) {
-					temp_obj['json_data'] = temp_json;
-				}
-				if (name !== '') {
-					if (name === temp_obj.proposal_name) {
-						this.proposals.push(temp_obj);
-					}
-				} else {
-					this.proposals.push(temp_obj);
-				}
-			});
-			this.loading = false;
-		}).catch(err => {
-			console.log(err);
-		});
-	}
+	// loadProposals(name) {
+	// 	this.selProposal = null;
+	// 	this.vtProposal = 0;
+	// 	this.proposals = [];
+	// 	this.eos.getProposals('eosio.forum', 200).then(dt => {
+	// 		dt.rows.forEach((row) => {
+	// 			const temp_obj = row;
+	// 			let temp_json = null;
+	// 			try {
+	// 				temp_json = JSON.parse(row.proposal_json);
+	// 			} catch (e) {
+	// 				console.log(e);
+	// 				console.log(row);
+	// 			}
+	// 			if (temp_json !== null) {
+	// 				temp_obj['json_data'] = temp_json;
+	// 			}
+	// 			if (name !== '') {
+	// 				if (name === temp_obj.proposal_name) {
+	// 					this.proposals.push(temp_obj);
+	// 				}
+	// 			} else {
+	// 				this.proposals.push(temp_obj);
+	// 			}
+	// 		});
+	// 		this.loading = false;
+	// 	}).catch(err => {
+	// 		console.log(err);
+	// 	});
+	// }
 
-
-	searchProposal(event) {
-		this.proposals = [];
-		this.loading = true;
-		this.loadProposals(event);
-	}
+	// searchProposal(event) {
+	// 	this.proposals = [];
+	// 	this.loading = true;
+	// 	this.loadProposals(event);
+	// }
 
 	getExpiretime(date) {
 		const info = moment.utc(date).fromNow();
@@ -308,7 +331,7 @@ export class ReferendumComponent implements OnInit {
 		ev.stopPropagation();
 	}
 
-	clickEv(ev){
+	clickEv(ev) {
 		if (ev.target.getAttribute('ref-link')) {
 			this.extOpen(ev.target.getAttribute('ref-link'));
 		}
@@ -327,28 +350,28 @@ export class ReferendumComponent implements OnInit {
 					newTxt += '<h5 class="text-muted2"><b>' + line.replace('###', '') + '</b></h5>';
 				} else if (line.substr(0, 2) === '##') {
 					newTxt += '<h4 class="blue"><b>' + line.replace('##', '') + '</b></h4>';
-				} else if (line.substr(0, 1) === '#' ) {
+				} else if (line.substr(0, 1) === '#') {
 					newTxt += '<h3 class="blue"><b>' + line.replace('#', '') + '</b></h3>';
-				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___' ) {
+				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___') {
 					newTxt += '<hr class="lineHR"/>';
-				} else if (line.match(/\(http(\w\S(.)*?)\)+/g)){
+				} else if (line.match(/\(http(\w\S(.)*?)\)+/g)) {
 
 					const link = line.match(/\(http(\w\S(.)*?)\)+/g);
 					const linkName = line.match(/(\[.*?])+/g);
 					const linkImage = line.match(/(!\[.*?])+/g);
 
 					let newLine = line;
-					link.forEach ( (val , idx: number) => {
-						const newlink = val.replace ( '(' , '' ).replace ( ')' , '' );
+					link.forEach((val, idx: number) => {
+						const newlink = val.replace('(', '').replace(')', '');
 						let oldVal = val;
 						let newValName = newlink;
 						let repVal = '';
 
 						if (linkImage !== null) {
-							if (linkImage[ idx ] !== null && linkImage[ idx ] !== '![]') {
-								newValName = linkImage[ idx ].replace ( '![' , '' ).replace ( ']' , '' );
-								oldVal = linkImage[ idx ] + val;
-							} else if (linkImage[ idx ] !== null && linkImage[ idx ] === '![]') {
+							if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
+								newValName = linkImage[idx].replace('![', '').replace(']', '');
+								oldVal = linkImage[idx] + val;
+							} else if (linkImage[idx] !== null && linkImage[idx] === '![]') {
 								newValName = '';
 								oldVal = '![]' + val;
 							} else {
@@ -359,10 +382,10 @@ export class ReferendumComponent implements OnInit {
 
 						} else {
 
-							if (linkName !== null && linkName[ idx ] !== '[]') {
-								newValName = linkName[ idx ].replace ( '[' , '' ).replace ( ']' , '' );
-								oldVal = linkName[ idx ] + val;
-							} else if (linkName !== null && linkName[ idx ] === '[]') {
+							if (linkName !== null && linkName[idx] !== '[]') {
+								newValName = linkName[idx].replace('[', '').replace(']', '');
+								oldVal = linkName[idx] + val;
+							} else if (linkName !== null && linkName[idx] === '[]') {
 								oldVal = '[]' + val;
 							} else {
 								oldVal = val;
@@ -371,8 +394,8 @@ export class ReferendumComponent implements OnInit {
 							repVal = '<span class="link-ref" ref-link="' + newlink + '" ><i>' + newValName + '</i></span>';
 						}
 
-						newLine = newLine.replace ( oldVal , repVal );
-					} );
+						newLine = newLine.replace(oldVal, repVal);
+					});
 
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + newLine + '</p>';
 
@@ -384,7 +407,7 @@ export class ReferendumComponent implements OnInit {
 		if (newTxt.match(/`(.*?)`+/g)) {
 			const strong = newTxt.match(/`(.*?)`+/g);
 			strong.forEach((val) => {
-				const newVal =  '<span class="white">' + val.replace( new RegExp(/`+/g, 'g') , '' ) + '</span> ';
+				const newVal = '<span class="white">' + val.replace(new RegExp(/`+/g, 'g'), '') + '</span> ';
 				newTxt = newTxt.replace(val, newVal);
 			});
 		}
@@ -402,8 +425,8 @@ export class ReferendumComponent implements OnInit {
 		this.sMContent = p.proposal.json_data.content;
 		this.sMexpires_at = p.proposal.expires_at;
 		this.sMType = p.proposal.json_data.type;
-		this.sMOption = p.proposal.json_data[ 'options' ];
-		this.newContent = this.sanitizer.bypassSecurityTrustHtml ( this.contentStyle( this.sMContent , 'text-muted' ) );
+		this.sMOption = p.proposal.json_data['options'];
+		this.newContent = this.sanitizer.bypassSecurityTrustHtml(this.contentStyle(this.sMContent, 'text-muted'));
 	}
 
 	voteProposal() {

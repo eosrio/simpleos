@@ -1,6 +1,6 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
 
-<div class="main-container" style="height: calc(100vh - 2rem);">
+<div class="main-container" style="height: calc(100vh - 2rem); width: 100vw">
 	<div class="content-container">
 		<div class="content-area">
 			<div class="clr-row" style="margin-right: 0; background-color: #191919;">
@@ -89,6 +89,7 @@
 					[options]="lottieConfig" [width]="'auto'" [height]="'auto'"
 					(animCreated)="handleAnimation($event)">
 				</lottie-animation-view>
+				<div style="margin-right: 4px;">connected to <span class="blue">{{network.activeChain['name']}}</span></div>
 			</section>
 			<section #sidenavContent class="sidenav-content">
 				<a *ngIf="network.activeChain.features['history']" class="nav-link" routerLinkActive="active"

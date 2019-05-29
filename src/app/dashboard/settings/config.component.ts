@@ -17,9 +17,9 @@ import {BackupService} from '../../services/backup.service';
 })
 export class ConfigComponent implements OnInit {
 
-	@ViewChild('customExportBK') customExportBK: ElementRef;
-	@ViewChild('customImportBK') customImportBK: ElementRef;
-	@ViewChild('pkModal') pkModal: ClrModal;
+	@ViewChild('customExportBK', {static: false}) customExportBK: ElementRef;
+	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
+	@ViewChild('pkModal', {static: false}) pkModal: ClrModal;
 
 	endpointModal: boolean;
 	logoutModal: boolean;

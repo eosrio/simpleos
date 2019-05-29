@@ -1,6 +1,6 @@
 <!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
-<div class="container" style="height: 100%; overflow-x: hidden;">
-	<div class="clr-row animate" style="padding-top: 15px;">
+<div class="container-fluid" style="height: 100%; overflow-x: hidden;">
+	<div class="clr-row votepage-row animate" style="padding-top: 15px;">
 		<div class="clr-col-lg-6">
 			<div class="card info-card">
 				<div class="card-block text-center">
@@ -157,7 +157,7 @@
 		</div>
 	</div>
 
-	<div class="clr-row animate">
+	<div class="clr-row votepage-row animate">
 		<div class="clr-col-lg-12">
 			<div class="card info-card">
 				<div class="card-block" style="padding: 0;">
@@ -174,7 +174,7 @@
 		</div>
 	</div>
 
-	<div class="clr-row animate" *ngIf="aService.activeChain.features.vote">
+	<div class="clr-row votepage-row animate" *ngIf="aService.activeChain.features.vote">
 		<div class="clr-col-lg-12" *ngIf="voteService">
 			<p-table #dt [value]="voteService.voteType ? voteService.proxies : voteService.bps"
 					 [globalFilterFields]="['reg','name','account','location']"

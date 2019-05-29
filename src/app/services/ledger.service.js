@@ -215,15 +215,6 @@ var LedgerService = /** @class */ (function () {
                         _this.currentPath = '44\'/194\'/0\'/0/0';
                         console.log('Enabling Ledger Config');
                         _this.enableLedgerEOS();
-                        // setTimeout(() => {
-                        //   this.ledgerEOS.transfer(
-                        //     'eosriovault1',
-                        //     'igorlseosrio',
-                        //     '0.0010 EOS',
-                        //     'ledger test').then(txdata => {
-                        //     console.log(txdata);
-                        //   });
-                        // }, 2000);
                     });
                 }
                 else if (event.type === 'remove') {

@@ -131,11 +131,19 @@ li:hover {
 /*domi's css*/
 .header-card {
 	background-color: #333333;
-	border-radius: 5px;
+	border-radius: 5px 5px 0 0;
 	border: 0;
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	color: #cccccc;
 	padding: .5rem .75rem;
+}
+
+.create-proposal-card {
+	background-color: #333333;
+	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+	border: 0;
+	border-radius: 0 0 5px 5px;
+	margin-top: -9px;
 }
 
 .proposal-card {
@@ -167,7 +175,7 @@ li:hover {
 }
 
 .searchbar {
-	margin-top: 5px;
+	margin-top: 6px;
 	margin-right: 10px;
 	width: 237px;
 	font-size: 15px;
@@ -176,8 +184,8 @@ li:hover {
 
 
 /deep/ .searchbar .mat-form-field-infix {
-	/*margin-top: 14px;*/
 	padding-top: 0;
+	margin-bottom: 0.4375em;
 }
 
 .proposal-content {
@@ -208,6 +216,10 @@ li:hover {
 	font-style: normal !important;
 }
 
+.pagination-row {
+	margin-top: 10px;
+}
+
 /deep/ .pagination-row .ngx-pagination .current {
 	background: #0094d2;
 	border-radius: 6px;
@@ -230,4 +242,74 @@ li:hover {
 .proposal-card:hover {
 	cursor: pointer;
 	background-color: #3b3b3b;
+}
+
+/deep/ .create-proposal {
+	font-family: metropolis;
+}
+
+/deep/ .create-proposal .ui-accordion-content {
+	background: none;
+	padding-left: 21px;
+}
+
+/deep/ .create-proposal .ui-accordion .ui-accordion-header {
+	padding: .2rem .75rem;
+	font-size: 14px;
+}
+
+.howto-item {
+	padding: 0 8px 8px 0;
+}
+
+.textarea {
+	display: block;
+}
+
+.textarea textarea::placeholder {
+	color: #cccccc;
+	font-weight: 600;
+	font-family: Roboto;
+}
+
+.textarea textarea {
+	font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+/deep/ .mat-form-field-appearance-outline .mat-form-field-outline-thick {
+	color: white;
+}
+
+/deep/ .mat-focused .mat-form-field-outline-thick {
+	color: #0094d2 !important;
+}
+
+/deep/ mat-form-field.mat-form-field {
+	color:white;
+}
+
+/deep/ .mat-form-field-appearance-outline .mat-form-field-outline {
+	color: #949494;
+}
+
+.mat-input-element {
+	font-family: Roboto;
+}
+
+.limit-container {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 1104px;
+}
+
+/deep/ .markdown-preview .mat-tab-label {
+	height: 33px;
+}
+
+/deep/ .markdown-preview .mat-tab-group {
+	margin-top: 15px;
+}
+
+/deep/ .markdown-preview .mat-tab-header {
+	margin-bottom: -2px;
 }

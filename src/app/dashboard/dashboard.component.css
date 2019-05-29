@@ -11,9 +11,13 @@
 
 .sidenav-header {
     flex: 0 0 auto;
-    padding: 17px 20px 17px 20px;
+    padding: 13px 20px 17px 20px;
     text-align: center;
     border-right: 1px solid #535353;
+}
+
+/deep/ .sidenav-header svg {
+	width: 90% !important;
 }
 
 .sidenav {
@@ -174,4 +178,8 @@
 /deep/ .mat-tab-label-active{
 	background-color: #3b3b3b ;
 	opacity: 1 !important;
+}
+
+/deep/ .container-fluid {
+	padding-right: 13px;
 }

@@ -1174,7 +1174,7 @@ export class RexComponent implements OnDestroy {
 
 	async voteOnProxy() {
 		// get proxy producers
-		const proxy = 'rexcoreproxy';
+		const proxy = 'eoscoreproxy';
 		const proxyInfo = await this.eosjs.rpc.get_account(proxy);
 		const producers = proxyInfo.voter_info.producers;
 
@@ -1183,7 +1183,7 @@ export class RexComponent implements OnDestroy {
 		this.trxFactory.modalData.next({
 			termsHTML: '',
 			actionTitle: 'vote on proxy',
-			labelHTML: `Do you confirm voting on the <strong class="blue">rexcoreproxy</strong> ?<br><br>Currently voting for: <h5 class="mt-0" style="color: rgb(166,171,175);">${producers.join(', ')}</h5>`,
+			labelHTML: `Do you confirm voting on the <strong class="blue">${proxy}</strong> ?<br><br>Currently voting for: <h5 class="mt-0" style="color: rgb(166,171,175);">${producers.join(', ')}</h5>`,
 			signerAccount: auth.actor,
 			signerPublicKey: publicKey,
 			termsHeader: '',

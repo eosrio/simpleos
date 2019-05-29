@@ -1,5 +1,5 @@
-<div class="container" style="overflow-x: hidden; height: 100%">
-	<div class="clr-row animate justify-content-center" style="padding-top: 15px;">
+<div class="container-fluid" style="overflow-x: hidden; height: 100%">
+	<div class="clr-row animate rexpage-row justify-content-center" style="padding-top: 15px;">
 		<div class="clr-col-lg-12">
 
 
@@ -18,7 +18,7 @@
 												<button type="button"
 														class="btn btn-info-outline btn-sm"
 														style="margin: 2px 10px;" (click)="updaterex()">
-													update
+													refresh
 												</button>
 											</div>
 											<div class="rex-balances white" style="background-color: #333333;"><span
@@ -48,8 +48,7 @@
 												<span
 													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button [disabled]="rexFund === 0" type="button"
-															class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
 															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>
@@ -141,7 +140,7 @@
 																type="button" class="btn btn-info-outline btn-sm"
 																style="float: right; margin-right: 0"
 																(click)="voteOnProxy()">
-															VOTE REXCOREPROXY
+															VOTE EOSCOREPROXY
 														</button>
 														<div style="margin-top: 12px;">
 										<span class="explain">You're currently voting for <span
@@ -604,8 +603,7 @@
 												<span
 													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button [disabled]="rexFund === 0" type="button"
-															class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
 															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>
@@ -709,8 +707,7 @@
 												<fa-icon [icon]="['far','question-circle']" class="blue"
 														 style="font-size: 16px;"></fa-icon>
 												<span
-													class="tooltip-content" style="z-index: 1000">If you want your loan to be automatically renewed, you can deposit {{aService.activeChain['symbol']}}
-													into this fund. When the 30 days expire, the renewal cost will be automatically debited from the fund.
+													class="tooltip-content" style="z-index: 1000">If you want your loan to be automatically renewed, you can deposit {{aService.activeChain['symbol']}} into this fund. When the 30 days expire, the renewal cost will be automatically debited from the fund.
 												</span>
 											</a>
 										</form>

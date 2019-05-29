@@ -30,6 +30,8 @@ export class AccountsService {
 	isLedger = false;
 	hasAnyLedgerAccount = false;
 	actionStore = {};
+	private loadingTokens = false;
+	private lastTkLoadTime = 0;
 
 	constructor(
 		private http: HttpClient,
@@ -150,24 +152,37 @@ export class AccountsService {
 	}
 
 	async fetchTokens(account) {
-
-		this.sessionTokens[this.selectedIdx] = [];
-		if (this.activeChain['name'] === 'EOS MAINNET') {
-			const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
-			const tokens = Object.keys(data);
-			this.loading = false;
-			tokens.forEach((idx) => {
-				if (data[idx]['symbol'] !== this.activeChain['symbol']) {
-					this.registerSymbol(data[idx]);
-				}
-			});
-			this.tokens.sort((a: any, b: any) => {
-				return a.usd_value < b.usd_value ? 1 : -1;
-			});
-			this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-			return this.accounts;
+		// console.log(this.sessionTokens[this.selectedIdx]);
+		if (!this.loadingTokens && ((Date.now() - this.lastTkLoadTime > 60 * 1000) || this.tokens.length === 0)) {
+			this.loadingTokens = true;
+			this.sessionTokens[this.selectedIdx] = [];
+			if (this.activeChain['name'] === 'EOS MAINNET') {
+				const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
+				this.lastTkLoadTime = Date.now();
+				const tokens = Object.keys(data);
+				this.loading = false;
+				tokens.forEach((idx) => {
+					if (data[idx]['symbol'] !== this.activeChain['symbol']) {
+						this.registerSymbol(data[idx]);
+					}
+				});
+				this.tokens.sort((a: any, b: any) => {
+					return a.usd_value < b.usd_value ? 1 : -1;
+				});
+				this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+				this.loadingTokens = false;
+				return this.accounts;
+			} else {
+				this.loading = false;
+				this.loadingTokens = false;
+				this.lastTkLoadTime = Date.now();
+				return null;
+			}
 		} else {
-			this.loading = false;
+			if (this.tokens.length > 0) {
+				this.loadingTokens = false;
+				this.loading = false;
+			}
 			return null;
 		}
 	}
