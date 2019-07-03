@@ -46,6 +46,8 @@ export class AccountsService {
 		this.fetchEOSprice().catch((err) => {
 			console.log(err);
 		});
+
+
 		this.eos.online.asObservable().subscribe(value => {
 			if (value) {
 				const store = localStorage.getItem('actionStore.' + this.eos.chainID);
@@ -738,8 +740,8 @@ export class AccountsService {
 
 	async fetchEOSprice() {
 		try {
-			const priceresult = await this.eosjs.getMainnetTableRows('delphioracle', 'delphioracle', 'eosusd');
-			this.usd_rate = priceresult.rows[0].average / 10000;
+			const priceresult = await this.eosjs.getMainnetTableRows('delphioracle', 'eosusd', 'datapoints');
+			this.usd_rate = priceresult.rows[0].median / 10000;
 		} catch (e) {
 			console.log(e);
 			this.usd_rate = 0;

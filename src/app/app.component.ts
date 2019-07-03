@@ -1,5 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, NgZone, ViewChild} from '@angular/core';
-import {ClrWizard} from '@clr/angular';
+import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {environment} from '../environments/environment';
@@ -14,6 +13,7 @@ import {BehaviorSubject, Subscription} from 'rxjs';
 import {Eosjs2Service} from './services/eosjs2.service';
 import {TransactionFactoryService} from './services/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
+import {ThemeService} from './services/theme.service';
 
 export interface LedgerSlot {
 	publicKey: string;
@@ -25,9 +25,9 @@ export interface LedgerSlot {
 	templateUrl: './app.component.html',
 	styleUrls: ['./app.component.css']
 })
-export class AppComponent implements AfterViewInit {
+export class AppComponent implements OnInit, AfterViewInit {
 
-	@ViewChild('ledgerwizard', {static: false}) ledgerwizard: ClrWizard;
+	// @ViewChild('ledgerwizard', {static: false}) ledgerwizard: ClrWizard;
 	confirmForm: FormGroup;
 	wrongpass: string;
 	transitconnect = false;
@@ -46,7 +46,11 @@ export class AppComponent implements AfterViewInit {
 	selectedSlotIndex: number;
 	showAll = false;
 	agreeConstitution = false;
+	dnSet = false;
+	activeChain = null;
+
 	public version = environment.VERSION;
+	public compilerVersion = environment.COMPILERVERSION;
 
 	updateauthWarning = false;
 	public newVersion: any;
@@ -70,8 +74,17 @@ export class AppComponent implements AfterViewInit {
 				private trxFactory: TransactionFactoryService,
 				private zone: NgZone,
 				private cdr: ChangeDetectorRef,
-				private _electronService: ElectronService
+				private _electronService: ElectronService,
+				private theme: ThemeService
 	) {
+		if (this.compilerVersion === 'LIBERLAND TESTNET') {
+			this.theme.liberlandTheme();
+		} else {
+			this.theme.defaultTheme();
+		}
+
+		this.activeChain = this.network.defaultChains.find((chain) => chain.name === this.compilerVersion);
+		this.network.changeChain(this.activeChain.id);
 
 		this.isMac = this._electronService.isMacOS;
 
@@ -109,7 +122,7 @@ export class AppComponent implements AfterViewInit {
 				console.log(payload);
 				switch (payload.message) {
 					case 'launch': {
-						alert(payload.content);
+						console.log(payload);
 						break;
 					}
 					case 'accounts': {
@@ -117,22 +130,65 @@ export class AppComponent implements AfterViewInit {
 						break;
 					}
 					case 'connect': {
-						this.dapp_name = payload.content.dappName;
+						this.dapp_name = payload.content.appName;
+						const requested_chain = payload.content.chainId;
+						console.log(requested_chain);
+						let result = null;
+						if (this.network.defaultChains.find((chain) => chain.id === requested_chain)) {
+							if (this.network.activeChain.id !== requested_chain) {
+								this.network.changeChain(requested_chain);
+							}
+							result = true;
+						} else {
+							result = false;
+						}
+						event.sender.send('connectResponse', result);
+						break;
+					}
+					case 'login': {
+						const reqAccount = payload.content.account;
+						console.log(reqAccount);
+						if (reqAccount) {
+							const foundAccount = this.aService.accounts.find((a) => a.accountName === reqAccount);
+							if (foundAccount) {
+								this.selectedAccount.next(foundAccount);
+								event.sender.send('loginResponse', foundAccount);
+								break;
+							} else {
+								console.log('Account not imported on wallet!');
+							}
+						}
+
 						this.zone.run(() => {
 							this.transitconnect = true;
 						});
+
 						if (this.aService.accounts.length > 0) {
 							this.accountChange = this.selectedAccount.subscribe((data) => {
 								if (data) {
-									event.sender.send('connectResponse', data);
+									console.log(data);
+									event.sender.send('loginResponse', data);
 									this.accountChange.unsubscribe();
 									this.selectedAccount.next(null);
 								}
 							});
 						} else {
 							console.log('No account found!');
-							event.sender.send('connectResponse', {});
+							event.sender.send('loginResponse', {});
 						}
+
+						break;
+					}
+					case 'logout': {
+						const reqAccount = payload.content.account;
+						console.log(reqAccount);
+						this.dapp_name = null;
+						event.sender.send('logoutResponse', {});
+						break;
+					}
+					case 'disconnect': {
+						this.dapp_name = null;
+						event.sender.send('disconnectResponse', {});
 						break;
 					}
 					case 'publicKeys': {
@@ -186,6 +242,26 @@ export class AppComponent implements AfterViewInit {
 				}
 			});
 		}
+
+	}
+
+	see() {
+		this.dnSet = !this.dnSet;
+		console.log();
+		if (this.dnSet) {
+			this.theme.lightTheme();
+		} else {
+			if (this.compilerVersion === 'LIBERLAND TESTNET') {
+				this.theme.liberlandTheme();
+			} else {
+				this.theme.defaultTheme();
+			}
+		}
+		this.cdr.detectChanges();
+	}
+
+	ngOnInit(): void {
+
 	}
 
 	public minimizeWindow() {
@@ -232,7 +308,7 @@ export class AppComponent implements AfterViewInit {
 	selectSlot(slot: LedgerSlot, index: number) {
 		this.selectedSlot = slot;
 		this.selectedSlotIndex = index;
-		this.ledgerwizard.next();
+		// this.ledgerwizard.next();
 		console.log(this.selectedSlot);
 	}
 

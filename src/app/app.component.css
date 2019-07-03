@@ -1,25 +1,3 @@
-#update-box {
-	visibility: hidden;
-	max-width: 13rem;
-	min-width: 9rem;
-	width: 18%;
-	background-color: #191919;
-	color: #fff;
-	text-align: center;
-	border: 1px solid #343434;
-	padding: 16px;
-	position: fixed;
-	z-index: 1;
-	right: -1px;
-	bottom: 0;
-	margin: 20px;
-}
-
-#update-box.show {
-	visibility: visible;
-	-webkit-animation: fadein 1.8s;
-	animation: fadein 1.8s;
-}
 
 @-webkit-keyframes fadein {
 	from {
@@ -133,6 +111,7 @@
 
 .nav-link {
 	height: 2rem !important;
+	cursor: pointer;
 }
 
 .main-container .header, .main-container header {

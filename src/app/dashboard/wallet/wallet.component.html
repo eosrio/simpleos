@@ -7,22 +7,22 @@
 			<div class="clr-col-md-10 text-center animate flex-column" style="padding: 39px; height: 100%" *ngIf="aService.selected.getValue().name">
 
 					<div>
-						<div class="balance" style="color: #b0b0b7">
+						<div class="balance">
 							BALANCE
 							<ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
 								${{(fullBalance) * aService.usd_rate | number: '1.2-2'}}
 							</ng-container>
 						</div>
-						<div class="eos">{{fullBalance | number: '1.2-4'}} {{aService.activeChain['symbol']}}</div>
+						<div class="eos special-font font-weight-bold">{{fullBalance | number: '1.2-4'}} {{aService.activeChain['symbol']}}</div>
 						<div class="infos">
 							<span style="padding-right: 15px">
 							  <fa-icon
-								  [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked {{staked | number: '1.0-4'}} {{aService.activeChain['symbol']}}
+								  [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked <span class="special-font-regular">{{staked | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
 							</span>
 								|
 								<span style="padding-left: 15px">
 							  <fa-icon
-								  [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked {{unstaked | number: '1.0-4'}} {{aService.activeChain['symbol']}}
+								  [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked <span  class="special-font-regular">{{unstaked | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
 									<span *ngIf="unstaking > 0" style="color: #616161;">(+{{(unstaking) | number :'1.0-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}})</span>
 							</span>
 						</div>
@@ -30,14 +30,14 @@
 						<div class="clr-row flex-items-xs-between" style="margin-top: 21px;">
 							<div class="clr-col-6">
 							<span style="width: 212px; float: left;">
-								<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="openAccount()">
+								<a class="blue btn btn-sm btn-link2" style="max-width: none;" (click)="openAccount()">
 									Open <strong style="color: #b0b0b7">{{aService.selected.getValue().name}}</strong> on a block explorer
 								</a>
 							</span>
 							</div>
 							<div class="clr-col-6">
 							<span (click)="refresh()" style="width: 100px; float: right">
-								<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
+								<a class="blue btn btn-sm btn-link2" style="max-width: none;" (click)="refresh()">
 									<fa-icon [icon]="['far', 'undo']"></fa-icon>
 									Refresh
 								</a>
@@ -203,7 +203,7 @@
 
 										<!--TRANSFER-->
 										<ng-container *ngIf="item.action_name === 'transfer'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span *ngIf="item.type === 'received'">+</span>
 												<span *ngIf="item.type === 'sent'">-</span>
 												<span *ngIf="item.type === 'sellram'">+</span>
@@ -217,7 +217,7 @@
 
 										<!--BUYRAMBYTES-->
 										<ng-container *ngIf="item.action_name === 'buyrambytes'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>+</span>
 												{{item.amount}} <span class="blue">{{item.symbol}}</span>
 											</span>
@@ -225,7 +225,7 @@
 
 										<!--SELLRAM-->
 										<ng-container *ngIf="item.action_name === 'sellram'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>-</span>
 												{{item.amount}} <span class="blue">{{item.symbol}}</span>
 											</span>
@@ -233,7 +233,7 @@
 
 										<!--MVTOSAVINGS-->
 										<ng-container *ngIf="item.action_name === 'mvtosavings'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>+</span>
 												{{item.amount}} <span class="blue">{{item.symbol}}</span>
 											</span>
@@ -241,7 +241,7 @@
 
 										<!--MVFRSAVINGS-->
 										<ng-container *ngIf="item.action_name === 'mvfrsavings'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>-</span>
 												{{item.amount}} <span class="blue">{{item.symbol}}</span>
 											</span>
@@ -259,16 +259,17 @@
 
 										<!--DELEGATEBW/UNDELEGATEBW-->
 										<ng-container *ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span *ngIf="item.type === 'staked_in'">-</span>
 												<span *ngIf="item.type === 'staked_out'">-</span>
 												<span *ngIf="item.type === 'unstaked_in'">+</span>
 												<span *ngIf="item.type === 'unstaked_out'">+</span>
 												{{item.amount}}
+												<span class="blue">
+													{{aService.activeChain['symbol']}}
+												</span>
 											</span>
-											<span class="blue">
-												{{aService.activeChain['symbol']}}
-											</span>
+
 											<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
 												(${{item.amount * aService.usd_rate | number}})
 											</span>
@@ -276,12 +277,13 @@
 
 										<!--UNSTAKEDTOREX-->
 										<ng-container *ngIf="item.action_name === 'unstaketorex'">
-											<span class="white">
+											<span class="white special-font-regular">
 												- {{item.amount}}
+												<span class="blue">
+													{{aService.activeChain['symbol']}}
+												</span>
 											</span>
-											<span class="blue">
-												{{aService.activeChain['symbol']}}
-											</span>
+
 <!--											<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">-->
 <!--												(${{item.amount * aService.usd_rate | number}})-->
 <!--											</span>-->
@@ -289,7 +291,7 @@
 
 										<!--BUYREX-->
 										<ng-container *ngIf="item.action_name === 'buyrex'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>+</span>
 												{{item.amount}} <span class="blue">{{aService.activeChain['symbol']}}</span>
 											</span>
@@ -297,7 +299,7 @@
 
 										<!--DEPOSIT-->
 										<ng-container *ngIf="item.action_name === 'deposit'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>-</span>
 												{{item.amount}} <span class="blue">{{aService.activeChain['symbol']}}</span>
 											</span>
@@ -305,7 +307,7 @@
 
 										<!--WITHDRAW-->
 										<ng-container *ngIf="item.action_name === 'withdraw'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>+</span>
 												{{item.amount}} <span class="blue">{{aService.activeChain['symbol']}}</span>
 										</span>
@@ -313,7 +315,7 @@
 
 										<!--SELLREX-->
 										<ng-container *ngIf="item.action_name === 'sellrex'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>-</span>
 												{{item.amount}} <span class="blue">{{item.symbol}}</span>
 											</span>
@@ -321,7 +323,7 @@
 
 										<!--RENTCPU-->
 										<ng-container *ngIf="item.action_name === 'rentcpu'">
-											<span class="white">
+											<span class="white special-font-regular">
 												<span>-</span>
 												{{item.amount}} <span class="blue">{{aService.activeChain['symbol']}}</span>
 											</span>
@@ -466,7 +468,7 @@
 							</ng-template>
 							<ng-template pTemplate="rowexpansion" let-item>
 								<tr class="tr-expanded">
-									<td colspan="6" style="background-color: #1c1c1c !important;">
+									<td colspan="6" >
 										<div class="clr-row row-expanded">
 											<div class="clr-col-1">
 											</div>
@@ -537,7 +539,7 @@
 		<div class="col-md-2 tokens-panel" style="height: 100%;">
 
 			<div class="clr-row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
-				<div class="col-12"><h3 class="gray">All tokens</h3>
+				<div class="col-12"><h3 style="color:var(--token-title-color);">All tokens</h3>
 					<ng-container *ngIf="aService.totalAssetsSum !== 0">
 						<div *ngIf="aService.activeChain.name === 'EOS MAINNET'" style="font-size: 16px;">Total:
 							${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
@@ -567,19 +569,18 @@
 			<div class="tokens-panel-body">
 				<ul>
 					<li class="tokens-pad">
-						<!--<h5 class="gray mt-0">EOS</h5>&lt;!&ndash;CSTAM&ndash;&gt;-->
-						<h5 class="gray mt-0">{{aService.activeChain['symbol']}}</h5>
-						<div style="color: #2e7db2;">{{fullBalance}}</div>
+						<h5 class="mt-0" style="color:var(--token-title-color);">{{aService.activeChain['symbol']}}</h5>
+						<div class="destaque-color-token">{{fullBalance}}</div>
 						<span *ngIf="aService.usd_rate !== null && aService.activeChain.name === 'EOS MAINNET'"
-							  style="color: #696969">
+							  style="color: var(--token-price-color);">
                 ${{(fullBalance * aService.usd_rate) | number:'1.2-2'}} @{{aService.usd_rate | number: '1.2-2'}}
               </span>
 					</li>
 					<li *ngFor="let token of aService.tokens" class="tokens-pad">
-						<h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
-						<div style="color: #2e7db2;">{{token.balance}}</div>
+						<h5 class="mt-0" style="color:var(--token-title-color);" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
+						<div class="destaque-color-token" >{{token.balance}}</div>
 						<ng-container *ngIf="token.balance">
-              <span *ngIf="token.price !== null" style="color: #696969">
+              <span *ngIf="token.price !== null" style="color: var(--token-price-color);">
                 ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
               </span>
 						</ng-container>

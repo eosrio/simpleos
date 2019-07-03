@@ -1,17 +1,23 @@
-<div class="wrap" style=" width:100vw;">
+<div class="wrap" style="height:-webkit-fill-available;overflow-y: scroll; width:100vw;">
     <div class="container-fluid">
         <div class="clr-row clr-justify-content-center animate fadeInDown">
 
             <div class="clr-col-md-12 text-center">
                 <div class="anim-logo">
-                    <lottie-animation-view
-                            [options]="lottieConfig"
-                            [width]="300"
-                            [height]="'auto'"
-                            (animCreated)="handleAnimation($event)">
-                    </lottie-animation-view>
+					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
+						<lottie-animation-view
+							[options]="lottieConfig"
+							[width]="300"
+							(animCreated)="handleAnimation($event)">
+						</lottie-animation-view>
+					</ng-container>
+					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+						<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="256" style="margin: 50px auto;"/>
+					</ng-container>
                 </div>
-                <div class="slogan">Your simple and secure EOS wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
+				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">Liberland Wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
 			</div>
 			<div class="clr-col-md-auto text-center">
                 <div class="card check-card">
@@ -21,7 +27,7 @@
                         <mat-form-field class="public-input">
                             <input matInput #pin2 type="password" autocomplete="off" placeholder="Pin"
                                    (keyup.enter)="unlock()" [(ngModel)]="pin" [autofocus]="true" >
-                            <button mat-button matSuffix mat-icon-button class="btn btn-inverse btn-sm btn-max"
+                            <button mat-button matSuffix mat-icon-button class="btn btn-outline btn-sm btn-max"
                                     (click)="unlock()" [disabled]="pin2.value.length === 0">
                                 Unlock
                             </button>
@@ -45,7 +51,7 @@
 				<section class="placeholder border-r" style="margin-top:10px;">
 					<div class="credits">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-						by <a style="color: #d7d7d7;">EOS Rio</a>
+						by <a class="link-eosrio">EOS Rio</a>
 					</div>
 					<div class="version">v{{aService.versionSys}}</div>
 					<br>

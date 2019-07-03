@@ -9,6 +9,7 @@ export const defaultChainsJSON = [
 		eosrioBP: 'eosriobrazil',
 		proxyRegistry: 'regproxyinfo',
 		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -115,9 +116,10 @@ export const defaultChainsJSON = [
 		firstApi: 'https://api.bos.eosrio.io',
 		historyApi: 'https://bos.hyperion.eosrio.io/v2',
 		forumTally: 'https://s3.amazonaws.com/bos.referendum/referendum/tallies/latest.json',
-		lastNode: '',
 		eosrioBP: 'bosriobrasil',
 		proxyRegistry: 'regproxyinfo',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -165,8 +167,9 @@ export const defaultChainsJSON = [
 		historyApi: 'https://meetone.hyperion.eosrio.io/v2',
 		forumTally: '',
 		eosrioBP: '',
-		lastNode: '',
 		proxyRegistry: 'proxies.m',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -209,8 +212,9 @@ export const defaultChainsJSON = [
 		firstApi: 'https://api.tlos.goodblock.io',
 		historyApi: '',
 		eosrioBP: '',
-		lastNode: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -248,9 +252,10 @@ export const defaultChainsJSON = [
 		firstApi: 'https://api.worbli.eosrio.io',
 		historyApi: '',
 		forumTally: '',
-		lastNode: '',
 		eosrioBP: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -294,8 +299,9 @@ export const defaultChainsJSON = [
 		historyApi: 'https://jungle.hyperion.eosrio.io/v2',
 		forumTally: '',
 		eosrioBP: '',
-		lastNode: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -314,7 +320,8 @@ export const defaultChainsJSON = [
 			'eosio.msig'
 		],
 		endpoints: [
-			{url: 'https://junglehistory.cryptolions.io:4433', owner: 'Jungle 2', latency: 0},
+			{url: 'https://jungle2.cryptolions.io:443', owner: 'Jungle 2', latency: 0},
+			{url: 'http://jungle2.cryptolions.io:80', owner: 'Jungle 2', latency: 0},
 		],
 		explorers: [
 			{
@@ -332,8 +339,9 @@ export const defaultChainsJSON = [
 		historyApi: '',
 		forumTally: '',
 		eosrioBP: 'bosriobrazil',
-		lastNode: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -371,8 +379,9 @@ export const defaultChainsJSON = [
 		historyApi: '',
 		forumTally: '',
 		eosrioBP: 'eosriobrazil',
-		lastNode: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -409,14 +418,15 @@ export const defaultChainsJSON = [
 	},
 	{
 		id: '246cbad5405bf2d8e8888adab0a9bd2ea49693edbd69ee4cd0316c64a9f68d60',
-		symbol: 'LLM',
+		symbol: 'LLC',
 		name: 'LIBERLAND TESTNET',
 		firstApi: 'https://liberland.eossweden.org',
 		historyApi: 'https://liberland.hyperion.eosrio.io/v2',
 		forumTally: '',
 		eosrioBP: '',
-		lastNode: '',
 		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,
@@ -445,11 +455,12 @@ export const defaultChainsJSON = [
 		symbol: 'MEETONE',
 		name: 'MEET.ONE TESTNET',
 		firstApi: 'https://sidechain-test-history.meet.one',
-		historyApi: '',
+		historyApi: 'https://meetone.hyperion.eosrio.io/v2',
 		forumTally: '',
 		eosrioBP: '',
 		proxyRegistry: 'proxies.m',
 		lastNode: '',
+		logoSrc: '',
 		features: {
 			history: true,
 			send: true,

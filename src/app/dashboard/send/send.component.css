@@ -5,12 +5,15 @@
 .balance {
     font-size: 21px;
     margin-bottom: 19px;
+	color: var(--text-gray3-color);
 }
 
 .eos {
     font-size: 46px;
     margin-bottom: 19px;
-    color: #0094d2;
+    color: var(--text-blue-color);
+	font-family:  var(--special-font-bold);
+	/*font-weight: var(--special-font-weight);*/
 }
 
 .dollar {
@@ -26,6 +29,7 @@
     width: 262px;
 }
 
+
 form {
     display: inline-block;
 }
@@ -40,13 +44,13 @@ form {
 }
 
 .letter-divider {
-    border-bottom: 1px solid #3f3f3f;
-    border-top: 1px solid #3f3f3f;
+    border-bottom: 1px solid var(--letter-divider);
+    border-top: 1px solid var(--letter-divider);
 }
 
 .letter {
     color: #e3e3e3;
-    padding-left: 0.5rem;
+	padding: 5px 0 2px 0.5rem;
     font-weight: 500;
     text-transform: uppercase;
 }
@@ -58,11 +62,16 @@ li {
 }
 
 li:hover {
-    background-color: #1f1f1f;
+    background-color: var(--sidenav-active-background);
+    color: var(--sidenav-active-color);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
     -webkit-transition-property: background-color;
     transition-property: background-color;
+}
+
+li:hover .contact-hover {
+	color: var(--contact-hover-color);
 }
 
 .last-item {
@@ -70,7 +79,7 @@ li:hover {
 }
 
 .contacts-panel {
-    background-color: #191919;
+    background-color: var(--sidenav-background);
     display: flex;
     flex-direction: column;
     padding-left: 0;
@@ -80,7 +89,7 @@ li:hover {
 .contacts-panel-header {
     margin-left: 0;
     margin-right: 0;
-    border-bottom: 1px solid #3f3f3f;
+    border-bottom: 1px solid var(--letter-divider);
 }
 
 .contacts-panel-body {
@@ -107,7 +116,7 @@ li:hover {
 }
 
 .name {
-    color: white;
+    color: var(--text-white-color);
 }
 
 .account {
@@ -144,4 +153,24 @@ mat-option:not(.last) {
 
 .deleteBtn, .editBtn {
   min-width: 0;
+}
+
+/deep/ .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-underline {
+	background-color: var(--token-title-color);
+}
+
+/deep/ .token-title-color .searchform input {
+	color: var(--token-title-color) !important;
+}
+
+/deep/ .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-label {
+	color: var(--token-title-color);;
+}
+
+/deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-label {
+	color: var(--text-destaque-color);
+}
+
+/deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
+	background-color: var(--text-destaque-color);
 }

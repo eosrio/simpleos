@@ -13,6 +13,7 @@ import {Subscription} from 'rxjs';
 
 import {Eosjs2Service} from '../../services/eosjs2.service';
 import {RexComponent} from '../rex/rex.component';
+import {AppComponent} from '../../app.component';
 
 @Component({
 	selector: 'app-vote',
@@ -102,7 +103,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				public crypto: CryptoService,
 				private fb: FormBuilder,
 				private toaster: ToasterService,
-				private cdr: ChangeDetectorRef
+				private cdr: ChangeDetectorRef,
+				public app: AppComponent
 				// private ledger: LedgerHWService
 	) {
 		this.isValidAccount = true;

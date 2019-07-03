@@ -5,15 +5,19 @@
 }
 
 .content-area {
-    background-color: #272727;
-    padding: 0 !important;
+    background-color: var(--main-background);
+	padding: 0 !important;
+	-webkit-transition-duration: 0.3s;
+	transition-duration: 0.3s;
+	-webkit-transition-property: color, background-color;
+	transition-property: color, background-color;
 }
 
 .sidenav-header {
     flex: 0 0 auto;
     padding: 13px 20px 17px 20px;
     text-align: center;
-    border-right: 1px solid #535353;
+    border-right: 1px solid var(--sidenav-active-border-color2);
 }
 
 /deep/ .sidenav-header svg {
@@ -21,8 +25,13 @@
 }
 
 .sidenav {
-    background-color: #191919;
+    background-color: var(--sidenav-background);
+    color: var(--sidenav-color);
     border: none;
+	-webkit-transition-duration: 0.3s;
+	transition-duration: 0.3s;
+	-webkit-transition-property: color, background-color;
+	transition-property: color, background-color;
 }
 
 .sidenav-content {
@@ -32,26 +41,32 @@
 }
 
 .sidenav .sidenav-content>.nav-link {
-    border-right: 1px solid #535353;
-    color: #b1b1b1;
+    border-right: 1px solid var(--sidenav-active-border-color2);
+    color: var(--sidenav-color);
     margin: 0;
     padding: 20px 0 20px 25px;
 }
 
 .sidenav .sidenav-content>.nav-link.active {
-    background: #272727;
-    color: #e3e3e3;
-    border-right: 1px solid #272727;
-    border-bottom: 1px solid #535353;
-    border-top: 1px solid #535353;
+    background:  var(--sidenav-active-background);
+    color: var(--sidenav-active-color);
+    border-right: 1px solid var(--sidenav-active-border-color1);
+    border-bottom: 1px solid  var(--sidenav-active-border-color2);
+    border-top: 1px solid  var(--sidenav-active-border-color2);
+	-webkit-transition-duration: 0.3s;
+	transition-duration: 0.3s;
+	-webkit-transition-property: color, background-color;
+	transition-property: color, background-color;
 }
 
 .sidenav .sidenav-content>.nav-link.active:hover {
-    background: #272727;
+    background: var(--sidenav-active-background);
+	color: var(--sidenav-active-color);
 }
 
 .sidenav .sidenav-content>.nav-link:hover {
-    background: #1f1f1f;
+	background: var(--sidenav-active-background);
+    color: var(--sidenav-active-color);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
     -webkit-transition-property: background-color;
@@ -59,9 +74,9 @@
 }
 
 .placeholder {
-    border-right: 1px solid #535353;
+    border-right: 1px solid var(--sidenav-active-border-color2);
     flex: 1 1 auto;
-    background-color: #191919;
+    background-color:  var(--sidenav-background);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -74,7 +89,7 @@
 
 /*material's tabs*/
 /deep/ #header-tabs .mat-tab-header {
-    background-color: #191919;
+    background-color: var(--sidenav-background);
     height: 4.5rem;
 }
 
@@ -92,16 +107,16 @@
 /*material's tabs end*/
 
 .navbar-btn {
-    background-color: #191919;
+    background-color: var(--sidenav-background);
     height: 4.5rem;
-    color: #525a60;
+    color: var(--sidenav-option-color);
     -webkit-transition-property: color, background-color;
     transition-property: color, background-color;
 }
 
 .navbar-btn:hover {
     cursor: pointer;
-    background-color: #1f1f1f;
+    background-color:  var(--top-btn-backgorund);
     color: #e3e3e3;
 }
 
@@ -176,7 +191,7 @@
 
 /*START TAB SELECTED ACTIVE */
 /deep/ .mat-tab-label-active{
-	background-color: #3b3b3b ;
+	background-color: var(--mat-tab-active) ;
 	opacity: 1 !important;
 }
 

@@ -9,6 +9,7 @@ import {CryptoService} from '../../services/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
+import {AppComponent} from '../../app.component';
 
 @Component({
 	selector: 'app-config',
@@ -75,7 +76,8 @@ export class ConfigComponent implements OnInit {
 				private crypto: CryptoService,
 				public aService: AccountsService,
 				private toaster: ToasterService,
-				private backup: BackupService
+				private backup: BackupService,
+				public app: AppComponent
 	) {
 
 		this.timetoclose = this.pkExposureTime;
@@ -188,7 +190,7 @@ export class ConfigComponent implements OnInit {
 	}
 
 	changeChain(event) {
-		this.network.changeChain(event);
+		this.network.changeChain(event.value);
 	}
 
 	selectEndpoint(data) {

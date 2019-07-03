@@ -3,7 +3,7 @@
 	<div class="clr-row animate flex-items-xs-between" style="padding-top: 15px;">
 		<div class="clr-col-lg-7">
 			<!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
-			<div class="card info-card">
+			<div class="card info-card" *ngIf="app.compilerVersion==='EOS MAINNET'">
 				<div class="card-header title">
 					Connected to
 					<mat-form-field class="chain-selector example-full-width" style="width: 207px;">
@@ -20,7 +20,7 @@
 			</div>
 
 			<div class="card info-card">
-				<div class="card-header title">
+				<div class="card-header title special-font">
 					Network Options
 				</div>
 				<div class="card-block">
@@ -37,11 +37,11 @@
 					</div>
 					<div class="clr-row" style="margin-left: 0;">
 						<div class="clr-col-auto">
-							<button class="btn btn-info-outline mt-1" (click)="endpointModal = true">Other</button>
+							<button class="btn btn-info-outline mt-1 special-font" (click)="endpointModal = true" style="font-weight: 700">Other</button>
 						</div>
 						<div class="clr-col-auto">
-							<button class="btn btn-info-outline mt-1" (click)="network.connect(true)"
-									pTooltip="Automatically connects on the fastest endpoint for you">Auto
+							<button class="btn btn-info-outline mt-1 special-font" (click)="network.connect(true)"
+									pTooltip="Automatically connects on the fastest endpoint for you" style="font-weight: 700">Auto
 							</button>
 						</div>
 						<div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
@@ -60,11 +60,11 @@
 		</div>
 		<div class="clr-col-lg-5">
 			<div class="card info-card">
-				<div class="card-header title">
+				<div class="card-header title special-font">
 					Logout Options
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline" (click)="logoutModal = true">Clear local data and logout
+					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"  style="font-weight: 700">Clear local data and logout
 					</button>
 					<div class="info">*Your data will be cleared from this PC. Should you want to login again, you will
 						have to
@@ -73,7 +73,7 @@
 				</div>
 			</div>
 			<div class="card info-card">
-				<div class="card-header title">
+				<div class="card-header title special-font">
 					Lockscreen Pin &nbsp;
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
@@ -82,25 +82,24 @@
 					</a>
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline" (click)="pinModal = true">SET PIN</button>
-					<button class="btn btn-danger-outline" (click)="clearPinModal = true">REMOVE lOCKSCREEN</button>
+					<button class="btn btn-info-outline special-font" (click)="pinModal = true" style="font-weight: 700">SET PIN</button>
+					<button class="btn btn-danger-outline special-font" (click)="clearPinModal = true"  style="font-weight: 700">REMOVE lOCKSCREEN</button>
 				</div>
 			</div>
 			<div class="card info-card">
-				<div class="card-header title">
+				<div class="card-header title special-font">
 					Change Password &nbsp;
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Password used to <br> make transactions / actions.
-              </span>
+						<span class="tooltip-content">Password used to <br> make transactions / actions.</span>
 					</a>
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline" (click)="changePassModal = true">CHANGE</button>
+					<button class="btn btn-info-outline special-font" (click)="changePassModal = true" style="font-weight: 700">CHANGE</button>
 				</div>
 			</div>
 			<div class="card info-card">
-				<div class="card-header title">
+				<div class="card-header title special-font">
 					Backup&nbsp;
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
@@ -117,12 +116,12 @@
 							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
 							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the autosave folder that is created on the same place that SimplEOS is installed.</span>
 						</a>
-						<div *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
+						<div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
 					</div>
-					<button class="btn btn-info-outline" (click)="exportBKModal = true">EXPORT</button>
-					<button class="btn btn-info-outline" (click)="importBKModal = true">IMPORT</button>
+					<button class="btn btn-info-outline special-font" (click)="exportBKModal = true" style="font-weight: 700">EXPORT</button>
+					<button class="btn btn-info-outline special-font" (click)="importBKModal = true" style="font-weight: 700">IMPORT</button>
 					<div style="margin-top: 20px;">
-						<button class="btn btn-info-outline" (click)="openPKModal()">VIEW PRIVATE KEY
+						<button class="btn btn-info-outline special-font" (click)="openPKModal()" style="font-weight: 700">VIEW PRIVATE KEY
 							<fa-icon [icon]="['fas', 'skull-crossbones']" size="lg"></fa-icon>
 						</button>
 					</div>
@@ -148,7 +147,7 @@
 			<button type="button" class="btn btn-info-outline" (click)="logout()">
 				Yes
 			</button>
-			<div class="text-center">*SimplEOS will <br> be restarted</div>
+			<div class="text-center black-white">*SimplEOS will <br> be restarted</div>
 		</div>
 	</div>
 </clr-modal>

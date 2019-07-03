@@ -13,32 +13,32 @@
 									<div class="clr-row animate">
 										<div class="clr-col-lg-5">
 											<div class="white">REX balance:</div>
-											<div class="rex-balances-top white"><span
-												class="gray">Liquid:</span> {{rexLiquid  | number:'1.0-2'}} REX
+											<div class="rex-balances-top white-rex"><span
+												class="gray-rex">Liquid:</span> {{rexLiquid  | number:'1.0-2'}} REX
 												<button type="button"
-														class="btn btn-info-outline btn-sm"
+														class="btn-rex btn btn-info-outline btn-sm"
 														style="margin: 2px 10px;" (click)="updaterex()">
 													refresh
 												</button>
 											</div>
-											<div class="rex-balances white" style="background-color: #333333;"><span
+											<div class="rex-balances white" style="background-color:  var(--tr-resource-odd-backgorund);"><span
 												class="gray">Staked (savings):</span> {{rexSavings | number:'1.0-2'}}
 												REX
 											</div>
-											<div class="rex-balances white"><span
-												class="gray">Unstaking (maturing):</span> {{rexMaturing | number:'1.0-2'}}
+											<div class="rex-balances white-rex"><span
+												class="gray-rex">Unstaking (maturing):</span> {{rexMaturing | number:'1.0-2'}}
 												REX
 											</div>
-											<div class="rex-balances white" style="background-color: #333333;"><span
+											<div class="rex-balances white" style="background-color: var(--tr-resource-odd-backgorund);"><span
 												class="gray">Total:</span> {{totalRexBalance | number:'1.0-2'}} REX (
 												<span
 													class="blue">{{totalRexBalance * rexPrice  | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>
 												)
 											</div>
-											<div class="rex-balances white">
+											<div class="rex-balances white-rex">
 												<a role="tooltip" aria-haspopup="true"
 												   class="tooltip tooltip-lg tooltip-right">
-													<fa-icon [icon]="['far','question-circle']" class="blue"
+													<fa-icon [icon]="['far','question-circle']" class="white-rex"
 															 style="font-size: 16px;"></fa-icon>
 													<span
 														class="tooltip-content">After selling your REX, the {{aService.activeChain['symbol']}}
@@ -46,10 +46,10 @@
 														back, please withdraw it to your account. </span>
 												</a>
 												<span
-													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
 													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
-															style="margin: 6px 0;" (click)="withdraw()">
+															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
 														withdraw to my account
 													</button>
 												</div>
@@ -121,7 +121,7 @@
 							<div class="card info-card buyrex" style="margin-bottom: 5px;">
 								<div class="clr-row">
 									<div class="clr-col-lg-8"
-										 style="border-right: 5px solid #272727; padding-right: 0;">
+										 style="border-right: 5px solid var(--sidenav-active-border-color1); padding-right: 0;">
 										<div class="card-block upper-buycard">
 											<div class="clr-row">
 
@@ -138,15 +138,15 @@
 														Vote for at least 21 block producers or a proxy.
 														<button *ngIf="aService.activeChain.name === 'EOS MAINNET'"
 																type="button" class="btn btn-info-outline btn-sm"
-																style="float: right; margin-right: 0"
+																style="float: right; margin-right: 5px; color: var(--rex-btn-color) !important;"
 																(click)="voteOnProxy()">
 															VOTE EOSCOREPROXY
 														</button>
 														<div style="margin-top: 12px;">
 										<span class="explain">You're currently voting for <span
-											class="blue">{{nVoters}}/21</span> producers.</span>
+											class="blue-rex">{{nVoters}}/21</span> producers.</span>
 															<button type="button" class="btn btn-info-outline btn-sm"
-																	style="float: right; margin-right: 0"
+																	style="float: right; margin-right: 5px; color: var(--rex-btn-color) !important;"
 																	(click)="gotoVote()">
 																OR GO TO VOTE PAGE
 															</button>
@@ -156,7 +156,7 @@
 
 												<ng-container *ngIf="canbuyREX">
 													<div class="clr-col-lg-6 gray mt-2"
-														 style="border-right: 1px solid #1d1d1d">
+														 style="border-right: 1px solid var(--sidenav-active-border-color1)">
 														<div style="font-size: 15px;">from
 															Staked {{aService.activeChain['symbol']}}
 															to
@@ -579,32 +579,32 @@
 									<div class="clr-row clr-justify-content-between">
 										<div class="clr-col-lg-5">
 											<div class="white">Market stats:</div>
-											<div class="rex-balances-top white"><span
-												class="gray">Available {{aService.activeChain['symbol']}}
+											<div class="rex-balances-top white-rex"><span
+												class="gray-rex">Available {{aService.activeChain['symbol']}}
 												in the resource pool:</span> {{total_unlent  | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 											</div>
-											<div class="rex-balances white" style="background-color: #333333;"><span
+											<div class="rex-balances white"  style="background-color:  var(--tr-resource-odd-backgorund);"><span
 												class="gray">
 												Total lent now:</span> {{total_lent | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 											</div>
-											<div class="rex-balances white"><span
-												class="gray">Ative loans' payments:</span> {{total_rent | number:'1.0-2'}}
+											<div class="rex-balances white-rex"><span
+												class="gray-rex">Ative loans' payments:</span> {{total_rent | number:'1.0-2'}}
 												{{aService.activeChain['symbol']}}
 											</div>
-											<div class="rex-balances white">
+											<div class="rex-balances white-rex">
 												<a role="tooltip" aria-haspopup="true"
 												   class="tooltip tooltip-lg tooltip-right">
-													<fa-icon [icon]="['far','question-circle']" class="blue"
+													<fa-icon [icon]="['far','question-circle']" class="white-rex"
 															 style="font-size: 16px;"></fa-icon>
 													<span
 														class="tooltip-content">When your loan ends, what is left on the renewal fund will be transfered to your REX fund.
 														To have your {{aService.activeChain['symbol']}} back, please withdraw it to your account. </span>
 												</a>
 												<span
-													class="gray">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
 													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
-															style="margin: 6px 0;" (click)="withdraw()">
+															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
 														withdraw to my account
 													</button>
 												</div>

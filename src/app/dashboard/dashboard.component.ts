@@ -12,6 +12,7 @@ import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {EOSAccount} from '../interfaces/account';
 import {NetworkService} from '../services/network.service';
+import {AppComponent} from '../app.component';
 
 @Component({
 	selector: 'app-dashboard',
@@ -106,7 +107,8 @@ export class DashboardComponent implements OnInit {
 		private crypto: CryptoService,
 		public network: NetworkService,
 		public ram: RamService,
-		private zone: NgZone
+		private zone: NgZone,
+		public app: AppComponent
 	) {
 		this.newAccountModal = false;
 		this.importKeyModal = false;

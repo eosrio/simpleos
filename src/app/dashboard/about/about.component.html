@@ -1,5 +1,6 @@
 <div class="container" style="height: 100%">
-  <div class="clr-row animate" style="padding-top: 15px;">
+	<ng-container *ngIf="app.compilerVersion=='EOS MAINNET'">
+  		<div class="clr-row animate" style="padding-top: 15px;">
     <div class="clr-col-lg-6">
       <h1><span class="white">About </span><span class="blue">EOS Rio</span></h1>
       <h5 *ngIf="aService.activeChain.features.vote&&aService.activeChain.eosrioBP!==''" style="margin-top: 10px;">Producer name: <span class="blue">{{aService.activeChain.eosrioBP}}</span></h5>
@@ -35,4 +36,5 @@
       <img src="assets/about_eosrio2.png" style="border-radius: 5px; width: 100%;">
     </div>
   </div>
+	</ng-container>
 </div>

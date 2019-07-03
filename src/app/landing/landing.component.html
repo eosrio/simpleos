@@ -5,13 +5,21 @@
 		<div class="clr-row animate fadeInDown">
 			<div class="clr-col-md-6 text-center" style="width: 466px; margin: 0 auto;">
 				<div class="anim-logo">
-					<lottie-animation-view
-						[options]="lottieConfig"
-						[width]="300"
-						(animCreated)="handleAnimation($event)">
-					</lottie-animation-view>
+					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
+						<lottie-animation-view
+							[options]="lottieConfig"
+							[width]="300"
+							(animCreated)="handleAnimation($event)">
+						</lottie-animation-view>
+					</ng-container>
+					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+						<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="210" style="margin: 50px auto;"/>
+					</ng-container>
+
 				</div>
-				<div class="slogan">Your simple and secure EOS wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
+				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">LIBERLAND Wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
 				<ng-container *ngIf="busy && network.status === ''">
 					<fa-layers class="mt-2 mb-1">
 						<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"></fa-icon>
@@ -51,7 +59,7 @@
 
 					<div class="clr-col-md-12">
 						<div class="card info-card">
-							<div class="card-header title">
+							<div class="card-header title" [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
 								Connected to
 								<mat-form-field class="chain-selector example-full-width select-father"
 												style="width: 207px;">
@@ -86,7 +94,7 @@
 					</div>
 				</ng-container>
 
-				<ng-container *ngIf="!busy">
+				<ng-container *ngIf="!busy && network.networkingReady">
 
 					<div style="margin-top: 30px">
 						<div class="clr-row" style="justify-content: center;">
@@ -134,17 +142,18 @@
 							</div>
 						</div>
 					</div>
+
 					<div class="card check-card" *ngIf="verifyPanel">
 						<div class="card-block">
 							<div class="info">You can do a quick check of your account here</div>
 							<mat-form-field class="public-input">
 								<input matInput type="text" placeholder="{{network.activeChain['name']}} Public key"
-									   [(ngModel)]="publicEOS" (keyup.enter)="checkAccount()"><!--CSTAM-->
-								<mat-hint align="start">
+									   [(ngModel)]="publicEOS" (keyup.enter)="checkAccount()" class="verify-mat-hint">
+								<mat-hint align="start" class="verify-mat-hint">
 									ctrl c + ctrl v to copy & paste
 								</mat-hint>
 							</mat-form-field>
-							<button class="btn btn-inverse btn-check" style="margin-top: 10px" (click)="checkAccount()"
+							<button class="btn btn-inverse2 btn-check" style="margin-top: 10px" (click)="checkAccount()"
 									[disabled]="!publicEOS">
 								Check
 							</button>
@@ -168,7 +177,7 @@
 					<div class="clr-row" style="justify-content: center;">
 						<div class="clr-col-md-12">
 							<div class="card info-card">
-								<div class="card-header title">
+								<div class="card-header title" [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
 									Connected to
 									<mat-form-field class="chain-selector example-full-width select-father"
 													style="width: 207px;">
@@ -206,12 +215,17 @@
 					</div>
 					<br>
 				</ng-container>
-				<section class="placeholder border-r" style="margin-top:10px;">
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion=='EOS MAINNET'">
 					<div class="credits">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-						by <a style="color: #d7d7d7;">EOS Rio</a>
+						by <a class="link-eosrio">EOS Rio</a>
 					</div>
 					<div class="version">v{{aService.versionSys}}</div>
+					<br>
+				</section>
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<div class="credits">Powered by</div>
+					<div class="version">SimplEOS v{{aService.versionSys}}</div>
 					<br>
 				</section>
 			</div>
@@ -343,10 +357,10 @@
 	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 	<clr-wizard-page>
 		<ng-template clrPageTitle>Intro</ng-template>
-		<h5 class="mt-0" style="color: #ffffff;"><strong>Recommended if you don't have any EOS account yet.</strong>
+		<h5 class="mt-0" style="color: var(--text-white-color);"><strong>Recommended if you don't have any EOS account yet.</strong>
 		</h5>
 		<h5 style="color: #a7a7a7;">Create your eos account via a smart contract.</h5>
-		<h5 style="color: #ffffff;"><strong>How does it work?</strong></h5>
+		<h5 style="color: var(--text-white-color);"><strong>How does it work?</strong></h5>
 		<h5 style="color: #a7a7a7;"><span class="blue">1.</span> Send EOS from an exchange to our smart contract <a
 			class="blue" (click)="openGit()" style="cursor: pointer;">eosriosignup</a>. This smart contract
 			is open source and anyone can verify its contents.</h5>
@@ -354,7 +368,7 @@
 			fees.</h5>
 		<h5 style="color: #a7a7a7;"><span class="blue">3.</span> After that, you can login in SimplEOS on the 'Import
 			Existing Key' button!</h5>
-		<h5 style="color: #ffffff;"><strong>Frequently Asked Questions</strong></h5>
+		<h5 style="color: var(--text-white-color);"><strong>Frequently Asked Questions</strong></h5>
 		<h5 style="color: #a7a7a7;"><strong><span class="blue">-</span> If the transfer fails, will my tokens be
 			lost?</strong> No! If this fails the transaction won't happen and your tokens will stay on the exchange</h5>
 		<h5 style="color: #a7a7a7;"><strong><span class="blue">-</span> How much does it cost to create an eos
@@ -448,9 +462,18 @@
 		</div>
 	</clr-wizard-page>
 	<clr-wizard-page (clrWizardPageOnLoad)="makePayload(); makeMemo();">
+		<ng-template clrPageTitle>
+			<ng-container *ngIf="!relayMethod">
+				Payment
+			</ng-container>
+			<ng-container *ngIf="relayMethod">
+				<span class="blue" style="font-weight: 500">Alternative Method</span>
+			</ng-container>
+			&nbsp;
+		</ng-template>
 		<ng-container *ngIf="!relayMethod">
-			<ng-template clrPageTitle>Payment</ng-template>
-			<h5 style="color: #ffffff;">Great! Now follow the steps:</h5>
+
+			<h5 style="color: var(--text-white-color);">Great! Now follow the steps:</h5>
 			<h5 style="color: #a7a7a7;"><span class="blue">1.</span> Log in to your exchange.</h5>
 			<h5 style="color: #a7a7a7;"><span class="blue">2.</span> Make an EOS transfer/withdrawal with the following
 				settings:</h5>
@@ -496,9 +519,9 @@
 			<!--<h5>Need help? Check our <span class="blue"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
 		</ng-container>
 		<ng-container *ngIf="relayMethod">
-			<ng-template clrPageTitle><span class="blue" style="font-weight: 500">Alternative Method</span>
-			</ng-template>
-			<h4 style="color: #ffffff;">Some exchanges, like Binance, impose some limitations. But don't worry, we came
+
+
+			<h4 style="color: var(--text-white-color);">Some exchanges, like Binance, impose some limitations. But don't worry, we came
 				up with a solution for those cases!</h4>
 			<h4 style="color: #a7a7a7;">Just follow the steps below:</h4>
 			<h5 style="color: #a7a7a7;"><span class="blue">1.</span> Log in to your exchange.</h5>

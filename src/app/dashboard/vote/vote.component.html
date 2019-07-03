@@ -9,7 +9,7 @@
 							| ${{(totalBalance * aService.usd_rate) | number: '1.2-2'}}
 						</ng-container>
 					</div>
-					<div class="blue eos">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
+					<div class="blue eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
 						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 				</div>
@@ -21,7 +21,7 @@
 							| ${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}}
 						</ng-container>
 					</div>
-					<div class="blue eos">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
+					<div class="blue eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
 						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 					<div *ngIf="aService.activeChain.features['rex']&&!hasRex" style="color: #b0b0b7;font-size: 16px;">
@@ -47,7 +47,7 @@
 		<div class="clr-col-lg-6">
 			<div class="card info-card">
 				<div class="card-block">
-					<div class="instruction expandable">Stake your {{aService.activeChain['symbol']}}
+					<div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
 							<span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
@@ -69,7 +69,7 @@
 									   placeholder="Value ({{aService.activeChain['symbol']}})"
 									   [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
 									   [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
-								<span class="suffix" matSuffix>{{aService.activeChain['symbol']}}</span>
+								<span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
 							</mat-form-field>
 						</div>
 					</div>
@@ -128,8 +128,8 @@
 					</div>
 					<div class="clr-row">
 						<div class="clr-col-lg-5">
-							<button (click)="setStake()" class="btn btn-outline btn-info-outline"
-									style="margin-top: 14px" [disabled]="stakedisabled">Set Stake
+							<button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+									style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
 							</button>
 							<div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
 							<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
@@ -145,10 +145,10 @@
 						<div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
 
 							<span class="text-white" style="font-weight: 600">CPU: </span>
-							<span *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
+							<span class=" special-font" *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
 							<span *ngIf="valuetoStake === ''">50% </span> /
 							<span class="text-white" style="font-weight: 600">NET: </span>
-							<span *ngIf="valuetoStake !== ''">{{ net_weight }} </span>
+							<span class=" special-font" *ngIf="valuetoStake !== ''">{{ net_weight }} </span>
 							<span *ngIf="valuetoStake === ''">50%</span>
 						</div>
 					</div>
@@ -157,11 +157,11 @@
 		</div>
 	</div>
 
-	<div class="clr-row votepage-row animate">
+	<div class="clr-row votepage-row animate" *ngIf="app.compilerVersion !== 'LIBERLAND TESTNET'">
 		<div class="clr-col-lg-12">
 			<div class="card info-card">
 				<div class="card-block" style="padding: 0;">
-					<p-accordion class="map">
+					<p-accordion class="map nohighlight-accordion">
 						<p-accordionTab header="Block Producers Map (Organization Location)">
 							<div echarts [options]="options" [merge]="voteService.updateOptions"
 								 [autoResize]="true" [initOpts]="initOptions"
@@ -342,9 +342,9 @@
 								{{item.total_votes}}
 							</span>
 							<span *ngIf="!voteService.voteType">
-								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left" style="text-decoration:none;">
+								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left mat-checkbox-label" style="text-decoration:none;">
 									{{item.total_votes}}
-									<span class="tooltip-content" style="width:3rem!important;">
+									<span class="tooltip-content " style="width:3rem!important;">
 										{{item.total_votes_eos}}
 									</span>
 								</a>

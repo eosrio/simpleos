@@ -1,10 +1,15 @@
 .info-card {
-	background-color: #333333;
+	background-color: var(--info-card-background);
 	border-radius: 5px;
 	border: 0;
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 }
-
+.white-rex{
+	color: var(--rex-balance-info-color) !important;
+}
+.gray-rex{
+	color: var(--rex-balance-title-color) !important;
+}
 .rex-chart {
 	height: 200px !important;
 	margin-right: 53px;
@@ -18,11 +23,11 @@
 
 .req {
 	color: white;
-	background-color: #2f2f2f;
+	background-color: var(--sidenav-background);
 	margin-top: 4px;
 	padding: 10px 0 8px 12px;
-	border-bottom: 1px solid #616161;
-	border-top: 1px solid #616161;
+	border-bottom: 1px solid var(--sidenav-active-border-color1);
+	border-top: 1px solid var(--sidenav-active-border-color1);
 }
 
 .line {
@@ -44,7 +49,7 @@
 }
 
 .upper-buycard {
-	border-bottom: 1px solid #1d1d1d !important;
+	border-bottom: 1px solid var(--sidenav-active-border-color1) !important;
 }
 
 .card-block {
@@ -52,17 +57,19 @@
 }
 
 .rex-balances-top {
-	background-color: #2f2f2f;
+	background-color: var(--tr-resource-even-backgorund);
 	padding: 5px 0 5px 12px;
-	border-bottom: 1px solid #4c4c4c;
-	border-top: 1px solid #4c4c4c;
+	border-bottom: 1px solid var(--sidenav-active-border-color1);
+	border-top: 1px solid var(--sidenav-active-border-color1);
 	margin-top: 10px;
+	color:var(--tr-resource-odd-color);
 }
 
 .rex-balances {
-	background-color: #2f2f2f;
+	background-color: var(--tr-resource-even-backgorund);
 	padding: 5px 0 5px 12px;
-	border-bottom: 1px solid #4c4c4c;
+	border-bottom: 1px solid var(--sidenav-active-border-color1);
+	color:var(--tr-resource-odd-color);
 }
 
 .warning-text {
@@ -87,14 +94,14 @@
 }
 
 /deep/ .maturing-table .ui-table-tbody {
-	background: #2c2c2c;
+	background: var(--info-card-background);
 	transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 	border-radius: 5px;
 	border: 0;
 }
 
 /deep/ .maturing-table .ui-table .ui-table-tbody > tr {
-	color: #b1b1b1;
+	color: var(--text-white-color);
 	background: transparent;
 }
 
@@ -116,6 +123,7 @@
 
 /deep/ .maturing-table .ui-table .ui-table-thead>tr>th {
 	padding: 0.7em .5em;
+	border-bottom: 1px solid #262626 !important;
 }
 
 /deep/ .maturing-table .ui-table .ui-table-caption {
@@ -123,12 +131,12 @@
 }
 
 /deep/ .maturing-table .ui-table-tfoot {
-	background: #2c2c2c;
+	background: var(--info-card-background);
 	border: 0;
 }
 
 /deep/ .maturing-table .ui-table .ui-table-tfoot > tr {
-	color: #b1b1b1;
+	color: var(--text-white-color);
 	background: transparent;
 }
 
@@ -166,7 +174,7 @@
 }
 
 /deep/ #rex-tabs .mat-tab-header {
-	background-color: #3b3b3b;
+	background-color: var(--info-card-background);
 	border-radius: 5px 5px 0 0;
 }
 
@@ -175,11 +183,11 @@
 }
 
 /deep/  #rex-tabs .mat-tab-label-active {
-	background-color: #333333;
+	background-color: var(--mat-tab-active);
 }
 
 /deep/ .time-selector .mat-select-value {
-	color: #0094d2;
+	color: var(--text-blue-color);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -190,11 +198,11 @@
 }
 
 /deep/ .mat-select-panel {
-	background: #333333;
+	background: var(--info-card-background)
 }
 
 /deep/ .mat-primary .time-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: #0094d2;
+	color: var(--text-blue-color);
 }
 
 /deep/ .time-selector .mat-select-arrow {
@@ -202,7 +210,7 @@
 }
 
 /deep/ .time-selector.mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: #0094d2 !important;
+	color: var(--text-blue-color) !important;
 }
 
 .rexpage-row {

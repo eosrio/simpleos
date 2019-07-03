@@ -42,7 +42,7 @@
 								<span *ngIf="token.name !== null">{{token.name}}</span>
 								<span *ngIf="token.name == null">{{token.contract}}</span>
 							</h5>
-							<div style="color: #2e7db2;">{{token.balance}}</div>
+							<div style="color: var(--text-blue-color);">{{token.balance}}</div>
 							<ng-container *ngIf="token.balance">
                 <span *ngIf="token.price !== null" style="color: #696969">
                   ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}

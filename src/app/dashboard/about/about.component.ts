@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {AccountsService} from '../../services/accounts.service';
+import {AppComponent} from '../../app.component';
 
 @Component({
 	selector: 'app-about',
@@ -8,7 +9,7 @@ import {AccountsService} from '../../services/accounts.service';
 })
 export class AboutComponent implements OnInit {
 
-	constructor(public aService: AccountsService) {
+	constructor(public aService: AccountsService, public app: AppComponent) {
 	}
 
 	ngOnInit() {

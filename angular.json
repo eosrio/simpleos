@@ -30,7 +30,7 @@
 							"node_modules/bootstrap/dist/css/bootstrap-grid.min.css",
 							"node_modules/@clr/ui/clr-ui.min.css",
 							"node_modules/@clr/icons/clr-icons.min.css",
-							"node_modules/primeng/resources/themes/darkness/theme.css",
+							"node_modules/primeng/resources/themes/nova-dark/theme.css",
 							"node_modules/angular2-toaster/toaster.css",
 							"node_modules/primeng/resources/primeng.min.css",
 							"node_modules/primeicons/primeicons.css",

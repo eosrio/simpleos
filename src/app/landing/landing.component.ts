@@ -10,6 +10,7 @@ import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toa
 import {RamService} from '../services/ram.service';
 import {HttpClient} from '@angular/common/http';
 import {VotingService} from '../services/voting.service';
+import {AppComponent} from '../app.component';
 
 @Component({
 	selector: 'app-landing',
@@ -18,9 +19,9 @@ import {VotingService} from '../services/voting.service';
 })
 export class LandingComponent implements OnInit {
 
-	@ViewChild('wizardexists', {static: false}) exisitswizard: ClrWizard;
-	@ViewChild('wizardnew', {static: false}) wizardnew: ClrWizard;
-	@ViewChild('wizardkeys', {static: false}) wizardkeys: ClrWizard;
+	@ViewChild('wizardexists', {static: true}) exisitswizard: ClrWizard;
+	@ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
+	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
 	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
 	lottieConfig: Object;
 	anim: any;
@@ -133,7 +134,8 @@ export class LandingComponent implements OnInit {
 				private router: Router,
 				private zone: NgZone,
 				public ram: RamService,
-				private http: HttpClient) {
+				private http: HttpClient,
+				public app: AppComponent) {
 
 		this.busy = true;
 		this.existingWallet = false;
@@ -233,13 +235,15 @@ export class LandingComponent implements OnInit {
 
 	ngOnInit() {
 		this.getCurrentEndpoint();
-		setTimeout(() => {
-			this.anim.pause();
-		}, 10);
+		if(this.app.compilerVersion==='EOS MAINNET') {
+			setTimeout ( () => {
+				this.anim.pause ();
+			} , 10 );
 
-		setTimeout(() => {
-			this.anim.play();
-		}, 900);
+			setTimeout ( () => {
+				this.anim.play ();
+			} , 900 );
+		}
 		this.checkPIN();
 	}
 
@@ -263,7 +267,7 @@ export class LandingComponent implements OnInit {
 
 	changeChain(event) {
 		this.exisitswizard.reset();
-		this.network.changeChain(event);
+		this.network.changeChain(event.value);
 		this.getCurrentEndpoint();
 	}
 
@@ -369,6 +373,7 @@ export class LandingComponent implements OnInit {
 	}
 
 	makePayload() {
+		console.log('Entrando aqui antes da hora');
 		if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
 			console.log('Generating account payload');
 			this.newAccountPayload = btoa(JSON.stringify({
@@ -513,6 +518,7 @@ export class LandingComponent implements OnInit {
 
 	verifyPrivateKey(input) {
 		if (input !== '') {
+			console.log(input);
 			this.busyActivekey = true;
 			this.eos.checkPvtKey(input).then((results) => {
 				this.publicEOS = results.publicKey;

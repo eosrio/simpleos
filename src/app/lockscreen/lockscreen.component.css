@@ -2,7 +2,7 @@
     display: flex;
     min-height: 100vh;
     flex-direction: column;
-    background-image: url("../../assets/fundosimpleos.png");
+	background: var(--landing-background);
     background-size: cover;
 }
 
@@ -15,9 +15,17 @@
     margin-top: 41px;
 }
 
+.sloganWallet {
+	font-size: 34px;
+	font-family: var(--special-font-bold);
+	margin-bottom: 10px;
+	font-weight: var(--special-font-weight);
+}
 .slogan {
     font-size: 20px;
-    font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
+    font-family: inherit;
+	margin-bottom: 10px;
+	letter-spacing: var(--special-font-spacing);
 }
 
 @-webkit-keyframes fadeInDown {
@@ -65,14 +73,15 @@
 .check-card {
     box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
     border: none;
-    background-color: rgba(162, 162, 162, 0.12);
+    background-color: var(--info-card-background);
     margin-top: 31px;
     width: 350px;
+	color: var(--text-title-color) !important;
 }
 
 .info {
     font-size: 18px;
-    color: #696969;
+    color: var(--text-title-color);
 }
 
 .public-input {

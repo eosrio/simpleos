@@ -1,5 +1,5 @@
 import {Component, ComponentFactoryResolver, ChangeDetectorRef, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, Validators, FormArray} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosjs.service';
 import {CryptoService} from '../../services/crypto.service';
@@ -11,6 +11,7 @@ import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {getMatIconFailedToSanitizeLiteralError} from '@angular/material';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
+import {utc} from 'moment';
 
 
 @Component({
@@ -24,6 +25,7 @@ export class ReferendumComponent implements OnInit {
 	loading = true;
 	voteModal = false;
 	unvoteModal = false;
+	proposalModal = false;
 	seeMore = false;
 	expired = false;
 	busy = false;
@@ -31,6 +33,7 @@ export class ReferendumComponent implements OnInit {
 	createProposalForm: FormGroup;
 	confirmvoteForm: FormGroup;
 	confirmunvoteForm: FormGroup;
+	confirmProposalForm: FormGroup;
 	wrongpass: string;
 	optionsV1: string;
 	errormsg = '';
@@ -60,6 +63,9 @@ export class ReferendumComponent implements OnInit {
 	sMType: string;
 	sMOption = [];
 
+	schemaJSON: any;
+	showOptions: string;
+
 	public markdownData = '';
 
 
@@ -79,10 +85,11 @@ export class ReferendumComponent implements OnInit {
 		});
 
 		this.createProposalForm = this.fb.group({
-			id: ['', [Validators.required]],
+			id: ['', [Validators.required,Validators.pattern('^(([a-z]|[1-5]|\\.){0,12})$')]],
 			title: ['', [Validators.required]],
 			content: ['', [Validators.required]],
-			expiry: ['', [Validators.required]],
+			expiry: ['', [Validators.required,Validators.min(1),Validators.max(180)]],
+			options: this.fb.array([]),
 			type: ['', [Validators.required]],
 		});
 
@@ -96,9 +103,11 @@ export class ReferendumComponent implements OnInit {
 		this.confirmunvoteForm = this.fb.group({
 			pass: ['', [Validators.required, Validators.minLength(10)]]
 		});
+		this.confirmProposalForm = this.fb.group({
+			pass: ['', [Validators.required, Validators.minLength(10)]]
+		});
 
 		this.optionsV1 = 'Choose an option!';
-
 		this.sortExpression = 'stats.staked.total';
 		this.sortReverse = true;
 		this.comparatorMethod = null;
@@ -107,6 +116,7 @@ export class ReferendumComponent implements OnInit {
 	}
 
 	ngOnInit(): void {
+		this.showOptions = 'none';
 		setTimeout(() => {
 			this.loadVoteTally(true);
 		}, 200);
@@ -210,10 +220,11 @@ export class ReferendumComponent implements OnInit {
 			const temp_obj = data[prop];
 			let temp_json = null;
 			try {
-				temp_json = JSON.parse(data[prop].proposal.proposal_json);
+				const pp_json = data[prop].proposal.proposal_json.replace(/[\n\r]/g, '');
+				temp_json = data[prop].proposal.proposal_json!==''?JSON.parse(pp_json):null;
 			} catch (e) {
 				console.log(e);
-				console.log(data[prop]);
+				console.log(data[prop].proposal.proposal_json);
 			}
 			if (temp_json !== null) {
 				if (temp_json['content'] === null) {
@@ -332,6 +343,9 @@ export class ReferendumComponent implements OnInit {
 	}
 
 	clickEv(ev) {
+		console.log(ev);
+		console.log(ev.target);
+		console.log(ev.target.getAttribute('ref-link'));
 		if (ev.target.getAttribute('ref-link')) {
 			this.extOpen(ev.target.getAttribute('ref-link'));
 		}
@@ -391,7 +405,7 @@ export class ReferendumComponent implements OnInit {
 								oldVal = val;
 							}
 
-							repVal = '<span class="link-ref" ref-link="' + newlink + '" ><i>' + newValName + '</i></span>';
+							repVal = '<span class="link-ref" ref-link="' + newlink + '" >' + newValName + '</span>';
 						}
 
 						newLine = newLine.replace(oldVal, repVal);
@@ -418,7 +432,7 @@ export class ReferendumComponent implements OnInit {
 	openLargeView(p) {
 		this.selProposal = p;
 		this.seeMore = true;
-		// console.log(p);
+		console.log(p);
 		this.sMTitle = p.proposal.title;
 		this.sMProposer = p.proposal.proposer;
 		this.sMProposer_name = p.proposal.proposal_name;
@@ -500,6 +514,92 @@ export class ReferendumComponent implements OnInit {
 			this.confirmunvoteForm.reset();
 		});
 
+	}
+
+	showOptionsField(val){
+		if (val==='options-v1'||val==='multi-select-v1'){
+			this.showOptions='inline';
+			this.options.controls = [];
+			this.options.setValue([]);
+			this.addOptiont();
+		}else{
+			this.showOptions='none';
+			this.options.controls = [];
+			this.options.setValue([]);
+		}
+	}
+
+	addOptiont(){
+		this.options.push(this.fb.control(''));
+		console.log( moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format(),this.createProposalForm.get('expiry').value);
+		this.cdr.detectChanges();
+	}
+
+	removeOption(){
+		const options: FormArray = this.createProposalForm.get('options') as FormArray;
+		// Validators is optional
+		if(options.length-1 > 0){
+			options.removeAt((options.length-1));
+		}
+		this.cdr.detectChanges();
+	}
+
+	// changeValueOptions(idx, val){
+	// 	const optionsArray = this.getOptionsControl();
+	// 	console.log(optionsArray[idx],val);
+	// 	optionsArray[idx].get(idx).setValue(val);
+	// }
+
+	get options(): FormArray {
+		return this.createProposalForm.get('options') as FormArray;
+	}
+
+	getExpiretimeProposal() {
+		return  (moment().utc().add(this.createProposalForm.get('expiry').value, 'days').fromNow())
+	}
+
+	pushProposal(){
+		const contract = 'eosio.forum';
+		const action = 'propose';
+		const account = this.aService.selected.getValue();
+		this.busy = true;
+
+		let formVal = {
+			"proposer":account.name,
+			"proposal_name":this.createProposalForm.getRawValue().id,
+			"title":this.createProposalForm.getRawValue().title,
+			"proposal_json":"{ \"content\":\""+this.createProposalForm.getRawValue().content+"\", \"type\":\""+this.createProposalForm.getRawValue().type+"\"}",
+			"expires_at": moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format()
+		};
+
+		if(this.createProposalForm.getRawValue().options.length>0){
+			formVal['proposal_json'] = "{ \"content\":\""+this.createProposalForm.getRawValue().content+"\", \"type\":\""+this.createProposalForm.getRawValue().type+", \"options\":\""+this.createProposalForm.getRawValue().options+"\"}";
+		}
+
+		const accountName = this.aService.selected.getValue().name;
+		const password = this.confirmProposalForm.get('pass').value;
+		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+
+		this.crypto.authenticate(password, pubkey).then((data) => {
+			if (data === true) {
+				console.log(formVal);
+				const val = this.eos.pushActionContract(contract, action, formVal, accountName).then((info) => {
+					console.log(info);
+					this.busy = false;
+					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+				}).catch(error => {
+					console.log(error);
+					this.busy = false;
+					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
+				});
+				console.log(val);
+				//this.busy = false;
+			}
+		}).catch(error2 => {
+			console.log(error2);
+			this.wrongpass = 'Wrong password!';
+			this.busy = false;
+		});
 	}
 
 }

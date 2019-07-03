@@ -1,58 +1,63 @@
 .info-card {
-  background-color: #333333;
-  border-radius: 5px;
-  border: 0;
-  box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+	background-color: var(--info-card-background);
+	border-radius: 5px;
+	border: 0;
+	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 }
 
 .progress.bottom {
-  bottom: 0;
+	bottom: 0;
 }
 
 .title {
-  color: #a4a4a4;
-  font-size: 16px;
+	color: var(--text-title-color);
+	font-size: 16px;
 }
 
 .resource {
-  font-size: 16px;
+	font-size: 16px;
 }
 
 .dark > ::-webkit-progress-bar {
-  background-color: #272727;
+	background-color: #272727;
 }
 
 .dark > ::-moz-progress-bar {
-  background-color: #272727;
+	background-color: #272727;
 }
 
 .mat-option {
-  line-height: 24px;
-  height: 54px;
-  padding: 30px 16px;
+	line-height: 24px;
+	height: 54px;
+	padding: 30px 16px;
 }
 
 
 mat-option:not(.last) {
-  border-bottom: 1px solid #404040;
+	border-bottom: 1px solid #404040;
 }
 
 /deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-  background: #3a3a3a;
+	background: #3a3a3a;
 }
 
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+	-webkit-appearance: none;
+	margin: 0;
 }
 
 tr:nth-child(even) {
-  background-color: #2C2C2C;
+	background-color: var(--tr-resource-even-backgorund);
+}
+
+tr:nth-child(odd) {
+	background-color: var(--tr-resource-odd-backgorund);
+	color: var(--tr-resource-odd-color);
 }
 
 .left {
-  padding-left: 0.75rem !important;
+	padding-left: 0.75rem !important;
 }
 
 .resourcespage-row {

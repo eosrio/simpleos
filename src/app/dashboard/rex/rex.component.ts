@@ -302,13 +302,14 @@ export class RexComponent implements OnDestroy {
 				this.updateGlobalRexData();
 			}
 		}));
-
+		const color = document.documentElement.style.getPropertyValue('--text-white-color')!==''?document.documentElement.style.getPropertyValue('--text-white-color'):'#ffffff';
+		
 		// Setup Charts
 		this.rex_price_chart = {
 			title: {
 				left: 'center',
 				subtext: 'REX/EOS price',
-				subtextStyle: {color: '#ffffff', fontWeight: 'bold'},
+				subtextStyle: {color: color, fontWeight: 'bold'},
 				top: '20'
 			},
 			grid: {height: '80%', width: '75%', right: '30', top: '11'},

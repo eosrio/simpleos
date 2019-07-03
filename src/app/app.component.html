@@ -17,21 +17,30 @@
 			</div>
 
 			<a class="nav-link">
-				<span class="title" style="color: #9a9a9a; font-size: 13px;">SimplEOS Wallet {{version}}</span>
+				<span *ngIf="compilerVersion=='EOS MAINNET'" class="title-header" style="color: #9a9a9a; font-size: 13px;">SimplEOS Wallet {{version}}</span>
+				<span *ngIf="compilerVersion!=='EOS MAINNET'" class="title-header" style="color: #9a9a9a; font-size: 13px;">LIBERLAND Wallet {{version}}</span>
 			</a>
 
 		</div>
+		<div style="width:100%;height: 2.05rem;">
+			<a class="nav-link nav-icon other-icon">
+				<clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon" style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+				<clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon" style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+			</a>
+		</div>
+
+
 		<div class="header-actions" *ngIf="!isMac">
-			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-min"></clr-icon>
 			</a>
-			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-restore"></clr-icon>
 			</a>
-			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon">
+			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-max"></clr-icon>
 			</a>
-			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon close-icon">
+			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon close-icon icon-header">
 				<clr-icon size="18" shape="window-close"></clr-icon>
 			</a>
 		</div>
@@ -199,10 +208,10 @@
 
 <!--LEDGER MODAL-->
 
-<div id="update-box" style="float:right;" [ngClass]="update ? 'show' : ''">
+<div id="update-box" class="update-box-class" style="float:right;" [ngClass]="update ? 'show' : ''" *ngIf="compilerVersion=='EOS MAINNET'">
 	<div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
 	<div>There is a new version available!<br/> Want to update?</div>
 	<div></div>
-	<button class="btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>
+	<button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>
 	<a class="btn btn-link btn-sm" (click)="openGithub()">View on Github</a>
 </div>

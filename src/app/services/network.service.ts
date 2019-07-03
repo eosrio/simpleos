@@ -100,8 +100,8 @@ export class NetworkService {
 		this.startTimeout();
 	}
 
-	changeChain(event) {
-		this.activeChain = this.defaultChains.find((chain) => chain.id === event.value);
+	changeChain(chainId) {
+		this.activeChain = this.defaultChains.find((chain) => chain.id === chainId);
 		if (this.activeChain) {
 			this.aService.activeChain = this.activeChain;
 			this.aService.accounts = [];
@@ -264,9 +264,9 @@ export class NetworkService {
 							} else {
 								this.aService.initFirst();
 							}
+							this.router['navigate'](['dashboard', 'wallet']);
 							// this.voting.forceReload();
 							this.networkingReady.next(true);
-							this.router['navigate'](['dashboard', 'wallet']);
 						});
 					} else {
 						this.networkingReady.next(true);

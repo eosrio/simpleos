@@ -1,78 +1,94 @@
 
 ul {
-  display: grid;
-  columns: 5;
-  -ms-grid-rows: 100px 10px 100px;
-  -ms-grid-columns: 2fr 10px 2fr 10px 2fr;
-  grid-template-columns: repeat(5, 1fr);
-  grid-gap: 10px;
-  list-style: none;
+	display: grid;
+	columns: 5;
+	-ms-grid-rows: 100px 10px 100px;
+	-ms-grid-columns: 2fr 10px 2fr 10px 2fr;
+	grid-template-columns: repeat(5, 1fr);
+	grid-gap: 10px;
+	list-style: none;
 }
 
 li {
-  background-color: #333333;
-  border-radius: 3px;
-  padding: 20px;
-  font-size: 14px;
-  display: inline-block;
+	background-color: var(--info-card-background);
+	color: var(--text-gray-color) !important;
+	border-radius: 3px;
+	padding: 20px;
+	font-size: 14px;
+	display: inline-block;
 }
 
 li:hover {
-  background-color: #3f3f3f;
-  -webkit-box-shadow: 3px 3px 3px 0 rgba(0,0,0,0.5);
-  -moz-box-shadow: 3px 3px 3px 0 rgba(0,0,0,0.5);
-  box-shadow: 3px 3px 3px 0 rgba(0,0,0,0.5);
-  cursor: pointer;
+	background-color: var(--top-btn-backgorund);
+	-webkit-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
+	-moz-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
+	box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
+	cursor: pointer;
 }
-.mat-error{
-	margin-top:5px;
+
+li:hover .gray{
+	color: var(--text-btn-color-hover) !important;
 }
+
+.mat-error {
+	margin-top: 5px;
+}
+
 .mat-button-toggle-group, .mat-button-toggle-standalone {
-  display: contents !important;
-  flex-direction: column !important;
+	display: contents !important;
+	flex-direction: column !important;
 }
-.btn, .mat-button-toggle{
-  text-transform: uppercase !important;
-  padding: 0 !important;
+
+.btn, .mat-button-toggle {
+	text-transform: uppercase !important;
+	padding: 0 !important;
 }
 
 .mat-button-toggle-checked {
-  background-color: #0079b8 !important;
-  color: white !important;
+	background-color: #0079b8 !important;
+	color: white !important;
 }
 
 .modal-header {
-  border-bottom: none;
-  padding: 0 0 0 !important;
+	border-bottom: none;
+	padding: 0 0 0 !important;
 }
 
-.active{
+.active {
 	background-color: #2e7db2;
-	color:#ffffff;
+	color: #ffffff;
 }
+
 div#formAction > mat-form-field > input {
-	color:#0079b8;
+	color: #0079b8;
 }
-.my-mat-class{
+
+.my-mat-class {
 	margin-top: 1rem;
 }
-/deep/ .my-mat-class .close-button{
+
+/deep/ .my-mat-class .close-button {
 	fill: #737373 !important;
 }
-/deep/ .my-mat-class .close-button:hover{
+
+/deep/ .my-mat-class .close-button:hover {
 	fill: #c92100 !important;
 }
+
 /deep/ .tokenModal .modal-dialog {
-  width: auto!important;
-  min-width: 24rem!important;
-  max-width: 65rem!important;
+	width: auto !important;
+	min-width: 24rem !important;
+	max-width: 65rem !important;
 }
-/deep/.legend{
-	color:#0079b8;
+
+/deep/ .legend {
+	color: #0079b8;
 }
-/deep/.array-item {
+
+/deep/ .array-item {
 	box-shadow: 0 3px 1px -2px rgba(110, 110, 110, 0.2), 0 2px 2px 0 rgba(128, 128, 128, 0.14), 0 1px 5px 0 rgba(161, 161, 161, 0.12) !important;
 }
+
 /*mat-form-field-appearance-standard mat-form-field-can-float ng-valid ng-touched ng-dirty*/
 /*mat-form-field ng-tns-c6-12 mat-primary mat-form-field-type-mat-input mat-form-field-appearance-legacy mat-form-field-can-float mat-form-field-hide-placeholder ng-pristine ng-valid ng-touched*/
 /*mat-input-element mat-form-field-autofill-control cdk-text-field-autofill-monitored ng-pristine ng-valid ng-touched*/

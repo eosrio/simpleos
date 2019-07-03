@@ -1,12 +1,12 @@
 .info-card {
-    background-color: #333333;
+    background-color: var(--info-card-background);
     border-radius: 5px;
     border: 0;
     box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 }
 
 .title {
-    color: #a4a4a4;
+    color: var(--text-title-color);
     font-size: 21px;
     border-bottom: 0;
     margin-bottom: 10px;
@@ -14,13 +14,13 @@
 }
 
 .info {
-    color: #a4a4a4;
+    color: var(--text-title-color);
     margin-bottom: 20px;
 }
 
 .info2 {
     font-size: 17px;
-    color: #a4a4a4;
+    color: var(--text-title-color);
 }
 
 .chains-card {
@@ -39,12 +39,13 @@
 }
 
 .chain-section:not(.selected):hover {
-    background-color: #2b2b2b;
+    background-color: var(--mat-tab-active);
+    color: #f8f8f8;
     cursor: pointer;
 }
 
 .selected {
-    background-color: #0077b7;
+    background-color: var(--text-blue-color);
     color: white;
 }
 
@@ -73,7 +74,7 @@
 }
 
 /deep/ .chain-selector .mat-select-value {
-	color: #0094d2;
+	color: var(--text-blue-color);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
@@ -85,11 +86,11 @@
 }
 
 /deep/ .mat-select-panel {
-	background: #333333;
+	background: var(--table-th-background);
 }
 
 /deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: #0094d2;
+	color: var(--text-blue-color);
 }
 
 /deep/ .mat-select-arrow {
@@ -97,5 +98,5 @@
 }
 
 /deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: #0094d2 !important;
+	color: var(--text-blue-color) !important;
 }

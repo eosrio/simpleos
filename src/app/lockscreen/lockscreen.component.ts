@@ -3,6 +3,7 @@ import {CryptoService} from '../services/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../services/network.service';
 import {AccountsService} from '../services/accounts.service';
+import {AppComponent} from '../app.component';
 
 @Component({
 	selector: 'app-lockscreen',
@@ -28,7 +29,8 @@ export class LockscreenComponent implements OnInit {
 		private crypto: CryptoService,
 		private router: Router,
 		private network: NetworkService,
-		public aService: AccountsService
+		public aService: AccountsService,
+		public app: AppComponent
 	) {
 		this.logoutModal = false;
 		this.clearContacts = false;

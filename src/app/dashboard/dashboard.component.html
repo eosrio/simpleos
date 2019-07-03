@@ -3,12 +3,11 @@
 <div class="main-container" style="height: calc(100vh - 2rem); width: 100vw">
 	<div class="content-container">
 		<div class="content-area">
-			<div class="clr-row" style="margin-right: 0; background-color: #191919;">
+			<div class="clr-row row-top-background" style="margin-right: 0; ">
 
 				<div class="clr-col-10" style="padding-right: 0">
 					<div class="clr-row" style="margin-right: 0;">
-						<div
-							class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
+						<div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
 							style="padding-right: 0; ">
 							<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 										   [selectedIndex]="selectedTab">
@@ -21,9 +20,7 @@
 											(click)="openRemoveAccModal(i,account)"></fa-icon>
 										</div>
 										<div style="font-size: 17px;">{{account.name}}</div>
-										<div
-											class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
-										<!--<div class="value">{{account.full_balance}} EOS</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+										<div class="value special-font-regular">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
 									</ng-template>
 								</mat-tab>
 							</mat-tab-group>
@@ -85,11 +82,17 @@
 		</div>
 		<nav class="sidenav">
 			<section class="sidenav-header">
-				<lottie-animation-view
-					[options]="lottieConfig" [width]="'auto'" [height]="'auto'"
-					(animCreated)="handleAnimation($event)">
-				</lottie-animation-view>
-				<div style="margin-right: 4px;">connected to <span class="blue">{{network.activeChain['name']}}</span></div>
+				<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
+					<lottie-animation-view
+						[options]="lottieConfig" [width]="'auto'" [height]="'auto'"
+						(animCreated)="handleAnimation($event)">
+					</lottie-animation-view>
+				</ng-container>
+				<ng-container  *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="128" style="margin: 50px auto;"/>
+				</ng-container>
+
+				<div style="margin-right: 4px;">connected to <span style="color: var(--text-destaque-color);">{{network.activeChain['name']}}</span></div>
 			</section>
 			<section #sidenavContent class="sidenav-content">
 				<a *ngIf="network.activeChain.features['history']" class="nav-link" routerLinkActive="active"
@@ -128,11 +131,15 @@
 					<fa-icon [icon]="['far', 'box-ballot']"></fa-icon>&nbsp;&nbsp;REFERENDUM
 				</a>
 			</section>
-			<section class="placeholder border-r">
+			<section class="placeholder border-r" *ngIf="app.compilerVersion=='EOS MAINNET'">
 				<div class="credits">Made with
 					<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-					by <a style="color: #d7d7d7;" [routerLink]="['about']">EOS Rio</a>
+					by <a class="link-eosrio" [routerLink]="['about']">EOS Rio</a>
 				</div>
+				<div class="version">v{{aService.versionSys}}</div>
+			</section>
+			<section class="placeholder border-r" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+				<div class="credits">Powered by SimplEOS</div>
 				<div class="version">v{{aService.versionSys}}</div>
 			</section>
 		</nav>

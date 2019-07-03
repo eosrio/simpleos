@@ -302,6 +302,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 				}
 
 			};
+			console.log(JSON.stringify(this.schemaJSON));
 			this.modelJSON = this.modelJson(actionType);
 
 			this.triggerAction = true;
@@ -441,6 +442,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
+				console.log(this.formVal);
 				const val = this.eos.pushActionContract(this.contract, this.action, this.formVal, accountName).then((info) => {
 					this.tokenModal = false;
 					this.busy2 = false;

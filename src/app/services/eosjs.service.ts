@@ -96,8 +96,22 @@ export class EOSJSService {
 		});
 	}
 
-	getKeyAccounts(pubkey: string) {
-		return this.eos.getKeyAccounts(pubkey);
+	// getKeyAccounts(pubkey: string) {
+	// 	return this.eos['getKeyAccounts']();
+	// }
+
+	getKeyAccounts(pubkey: string): Promise<any> {
+		return new Promise((resolve2, reject2) => {
+			this.eos['getKeyAccounts']({
+					public_key: pubkey
+				}).then(data => {
+				resolve2(data);
+				// console.log('ff',data);
+			}).catch(error => {
+				reject2(error);
+				// console.log(error);
+			});
+		});
 	}
 
 	getAccountInfo(name: string) {
@@ -264,7 +278,7 @@ export class EOSJSService {
 			if (this.ecc['isValidPublic'](pubkey)) {
 				const tempAccData = [];
 				this.getKeyAccounts(pubkey).then((data) => {
-					// console.log('load', data);
+					console.log('load', data);
 					// if (data['account_names'].length > 0) {
 					if (data.length > 0) {
 						const promiseQueue = [];
@@ -273,6 +287,7 @@ export class EOSJSService {
 							const tempPromise = new Promise((resolve1, reject1) => {
 								// this.getAccountInfo(acc).then((acc_data) => {
 								this.getAccountInfo(acc.account).then((acc_data) => {
+									console.log('eeee1.4');
 									tempAccData.push(acc_data);
 									// if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
 									this.getTokens(acc_data['account_name']).then((tokens) => {
@@ -304,7 +319,6 @@ export class EOSJSService {
 							});
 						});
 					} else if (data['account_names'].length > 0) {
-
 						const promiseQueue = [];
 						data['account_names'].forEach((acc) => {
 							// data.forEach((acc) => {
@@ -334,7 +348,6 @@ export class EOSJSService {
 								publicKey: pubkey
 							});
 						}).catch(() => {
-							console.log(data);
 							reject2({
 								message: 'non_active',
 								accounts: tempAccData
