@@ -1,0 +1,208 @@
+{
+	"name": "simpleos",
+	"version": "0.8.1-rc2",
+	"productName": "simpleos",
+	"compilerVersion": "EOS MAINNET",
+	"description": "EOSIO Blockchain Interface & Wallet",
+	"author": {
+		"name": "EOSRio",
+		"email": "contact@eosrio.io"
+	},
+	"repository": "https://github.com/eosrio/simpleos",
+	"license": "MIT",
+	"scripts": {
+		"ng": "ng",
+		"ng:serve": "ng serve --port 7777",
+		"start": "npm run postinstall:web && ng serve --port 7777",
+		"electron:start": "npm run postinstall:electron && npm-run-all -p ng:serve electron:serve",
+		"build": "ng build",
+		"build:prod": "ng build --prod",
+		"build:mac": "electron-builder build --mac",
+		"build:win": "electron-builder build --win",
+		"build:linux": "electron-builder build --linux",
+		"pack": "electron-builder --dir",
+		"dist": "electron-builder",
+		"release": "npm run build:prod && electron-builder",
+		"electron:serve-tsc": "tsc -p tsconfig-serve.json",
+		"electron:serve": "wait-on http-get://localhost:7777/ && electron index.js --serve --devtools",
+		"start:electron-dev": "electron index.js --devtools",
+		"start:electron-prod": "electron index.js",
+		"publish:win": "electron-builder build --win --ia32 --x64",
+		"publish:linux": "electron-builder build --linux -p always",
+		"publish:mac": "electron-builder build --mac -p always",
+		"test": "ng test",
+		"lint": "ng lint",
+		"e2e": "ng e2e",
+		"build-watch": "ng build --prod --watch",
+		"postinstall2": "node patch.js && electron-builder install-app-deps",
+		"postinstall": "electron-builder install-app-deps",
+		"postinstall:web": "node postinstall-web",
+		"postinstall:electron": "node postinstall"
+	},
+	"private": true,
+	"main": "index.js",
+	"build": {
+		"appId": "simpleos",
+		"files": [
+			"ng-dist",
+			"index.js",
+			"native.js",
+			"node_modules/opn/index.js",
+			"node_modules/asn1-ber/index.js",
+			"node_modules/fcbuffer/lib/index.js",
+			"node_modules/@ledgerhq/hw-transport-node-hid/lib/TransportNodeHid.js"
+		],
+		"mac": {
+			"category": "public.app-category.finance",
+			"target": [
+				"dmg",
+				"zip"
+			],
+			"icon": "icon.png"
+		},
+		"dmg": {
+			"icon": "src/assets/icons/256x256.icns",
+			"format": "UDZO"
+		},
+		"linux": {
+			"target": [
+				"appImage",
+				"deb"
+			],
+			"icon": "256x256.png",
+			"category": "Network"
+		},
+		"win": {
+			"target": [
+				"nsis"
+			],
+			"publish": [
+				{
+					"provider": "github",
+					"owner": "eosrio",
+					"repo": "simpleos"
+				}
+			],
+			"icon": "src/favicon.ico"
+		},
+		"nsis": {
+			"oneClick": true,
+			"createDesktopShortcut": true
+		},
+		"protocols": [
+			{
+				"name": "simpleos",
+				"role": "Viewer",
+				"schemes": [
+					"simpleos"
+				]
+			}
+		]
+	},
+	"files": [
+		"*.js",
+		"build",
+		"Ng-dist",
+		"node_modules"
+	],
+	"devDependencies": {
+		"@angular-devkit/build-angular": "^0.801.0",
+		"@angular/cli": "^8.1.0",
+		"@angular/compiler": "^8.1.0",
+		"@angular/compiler-cli": "^8.1.0",
+		"@angular/language-service": "^8.1.0",
+		"@types/echarts": "^4.1.8",
+		"@types/jasmine": "~2.8.6",
+		"@types/jasminewd2": "~2.0.3",
+		"@types/node": "^12.0.2",
+		"@webcomponents/custom-elements": "^1.2.2",
+		"ajv": "^6.10.0",
+		"angular2-text-mask": "^9.0.0",
+		"angular2-toaster": "^7.0.0",
+		"bootstrap": "^4.3.1",
+		"codelyzer": "~4.5.0",
+		"core-js": "^2.5.4",
+		"echarts": "^4.2.1",
+		"electron": "^5.0.6",
+		"electron-builder": "^20.44.4",
+		"electron-reload": "^1.4.0",
+		"fuse.js": "^3.4.5",
+		"hammerjs": "^2.0.8",
+		"jquery": "^3.4.0",
+		"lodash-es": "^4.17.11",
+		"lodash.get": "^4.4.2",
+		"lodash.set": "^4.3.2",
+		"moment": "^2.24.0",
+		"ng-lottie": "^0.3.2",
+		"ngx-echarts": "^4.2.1",
+		"ngx-electron": "^2.1.1",
+		"ngx-json-viewer": "^2.4.0",
+		"ngx-markdown": "^8.0.2",
+		"ngx-order-pipe": "^2.0.2",
+		"ngx-pagination": "^4.0.0",
+		"npm-run-all": "^4.1.5",
+		"popper.js": "^1.14.7",
+		"primeng": "^8.0.0",
+		"protractor": "^5.4.2",
+		"rxjs": "^6.5.1",
+		"rxjs-compat": "^6.5.1",
+		"text-encoding-shim": "latest",
+		"text-mask-addons": "^3.7.2",
+		"ts-node": "^7.0.1",
+		"tslint": "^5.12.0",
+		"typescript": "3.4.5",
+		"wait-on": "^3.0.1",
+		"webpack": "^4.12.0",
+		"webpack-dev-server": "^3.3.1",
+		"zone.js": "^0.9.0"
+	},
+	"dependencies": {
+		"@angular/animations": "^8.1.0",
+		"@angular/cdk": "^8.0.2",
+		"@angular/common": "^8.1.0",
+		"@angular/core": "^8.1.0",
+		"@angular/flex-layout": "^8.0.0-beta.26",
+		"@angular/forms": "^8.1.0",
+		"@angular/http": "^8.0.0-beta.10",
+		"@angular/material": "^8.0.2",
+		"@angular/material-moment-adapter": "^8.0.2",
+		"@angular/platform-browser": "^8.1.0",
+		"@angular/platform-browser-dynamic": "^8.1.0",
+		"@angular/router": "^8.1.0",
+		"@clr/angular": "^2.0.1",
+		"@clr/icons": "^2.0.1",
+		"@clr/ui": "^2.0.1",
+		"@fortawesome/angular-fontawesome": "^0.4.0",
+		"@fortawesome/fontawesome-svg-core": "^1.2.19",
+		"@fortawesome/free-brands-svg-icons": "^5.9.0",
+		"@fortawesome/free-regular-svg-icons": "^5.9.0",
+		"@fortawesome/free-solid-svg-icons": "^5.9.0",
+		"@fortawesome/pro-light-svg-icons": "^5.9.0",
+		"@fortawesome/pro-regular-svg-icons": "^5.9.0",
+		"@fortawesome/pro-solid-svg-icons": "^5.9.0",
+		"@ledgerhq/hw-transport": "latest",
+		"@types/crypto-js": "^3.1.43",
+		"angular7-json-schema-form": "^1.0.4",
+		"animate.css": "^3.7.0",
+		"asn1-ber": "^1.0.9",
+		"bip32-path": "^0.4.2",
+		"body-parser": "^1.19.0",
+		"chart.js": "^2.8.0",
+		"cors": "^2.8.5",
+		"crypto-js": "^3.1.9-1",
+		"electron-context-menu": "^0.12.1",
+		"eosjs": "^20.0.0",
+		"express": "^4.17.1",
+		"fcbuffer": "^2.2.1",
+		"loaderjs": "^1.0.0",
+		"menu": "^0.2.5",
+		"node-pre-gyp": "^0.13.0",
+		"open": "^6.3.0",
+		"primeicons": "^1.0.0",
+		"quill": "^1.3.6",
+		"socket.io": "^2.2.0",
+		"socket.io-client": "^2.2.0",
+		"tar": "^4.4.10",
+		"tslib": "^1.9.3"
+	}
+}

@@ -180,7 +180,7 @@ li:last-child {
 
 .tr-canexpand:hover {
 	cursor: pointer;
-	background-color: var(--top-btn-backgorund);
+	background-color: var(--tr-hover) !important;
 	-webkit-transition-duration: 0.3s;
 	transition-duration: 0.3s;
 	-webkit-transition-property: background-color;
@@ -232,11 +232,6 @@ li:last-child {
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	margin-top: 10px;
 }
-
-/deep/ .segment-key {
-	color: #b7b7b7 !important;
-}
-
 
 .table-flex {
 	display: flex;
@@ -290,4 +285,8 @@ li:last-child {
 
 /deep/ .mat-calendar-body-selected {
 	background-color: #0094d2;
+}
+
+/deep/ .history-json .ngx-json-viewer {
+	font-family: Metropolis !important;
 }

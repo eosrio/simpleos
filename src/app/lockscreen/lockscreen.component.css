@@ -21,11 +21,13 @@
 	margin-bottom: 10px;
 	font-weight: var(--special-font-weight);
 }
+
 .slogan {
     font-size: 20px;
     font-family: inherit;
 	margin-bottom: 10px;
 	letter-spacing: var(--special-font-spacing);
+	color: var(--slogan-special-color);
 }
 
 @-webkit-keyframes fadeInDown {
@@ -109,3 +111,7 @@
 .modal-body {
     overflow-y: hidden !important;
 }
+
+/*.logout-btn {*/
+/*	color: var(--text-destaque-color);*/
+/*}*/

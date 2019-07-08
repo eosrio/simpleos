@@ -320,9 +320,9 @@ export class DappComponent implements OnInit, AfterViewInit {
 			if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
 				const children = JSON.stringify(this.schemaJson(field_type));
 				if (arr) {
-					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", "type": "array", "items": {"type": "object", "properties": ' + children + '}}');
+					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", "type": "array", "items": {"type": "object", "properties": ' + children + '}}');
 				} else {
-					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", "type": "object", "properties": ' + children + '}');
+					out[field.name] = JSON.parse('{"title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", "type": "object", "properties": ' + children + '}');
 				}
 			} else {
 				const intArr = ['uint8', 'uint8_t', 'uint16', 'uint16_t', 'uint32', 'uint32_t', 'uint64', 'uint64_t', 'uint128', 'uint128_t', 'int8', 'int16', 'int32', 'int64', 'int128', 'bool'];
@@ -332,15 +332,15 @@ export class DappComponent implements OnInit, AfterViewInit {
 					typeABI = '"type": "number", "widget": "text",  "value":0';
 				} else if (arr) {
 					if (intArr.includes(field.type)) {
-						typeArr = '"type": "number", "widget": "text", "value":0 ,"title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '"';
+						typeArr = '"type": "number", "widget": "text", "value":0 ,"title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
 					} else {
-						typeArr = '"type": "string", "widget": "text", "value": "", "title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '"';
+						typeArr = '"type": "string", "widget": "text", "value": "", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
 					}
 					typeABI = '"type": "array", "items": { "widget": "text", "type":"string", ' + typeArr + ' } ';
 				} else {
 					typeABI = '"type": "string", "widget": "text", "value": ""';
 				}
-				const jsonTxt = '{ "title": "' + field.name.charAt(0).toUpperCase()  + field.name.slice(1) + '", ' + typeABI + ' }';
+				const jsonTxt = '{ "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", ' + typeABI + ' }';
 
 				out[field.name] = JSON.parse(jsonTxt);
 			}
@@ -349,7 +349,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 	}
 
 	modelJson(type: string) {
-		let out = {};
+		const out = {};
 		this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
 			const arr = (field.type.indexOf('[]') > 0);
 			const field_type = field.type.replace('[]', '');
@@ -375,15 +375,15 @@ export class DappComponent implements OnInit, AfterViewInit {
 		return out;
 	}
 
-	formJson(type: string, name?:string) {
-		let out = [];
+	formJson(type: string, name?: string) {
+		const out = [];
 		this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
 			const arr = (field.type.indexOf('[]') > 0);
 			const field_type = field.type.replace('[]', '');
 
 			if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
-				const children = JSON.stringify(this.formJson(field_type,field.name));
-				if (name!==''&&name!==undefined) {
+				const children = JSON.stringify(this.formJson(field_type, field.name));
+				if (name !== '' && name !== undefined) {
 					out.push(JSON.parse('{"key": "' + name + '[].' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"array","items":' + children + '}'));
 				} else {
 					out.push(JSON.parse('{"key": "' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"object","items":' + children + '}'));
@@ -402,7 +402,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 					// typeABI = "string";
 					typeABI = '"widget": "text", "type": "text","htmlClass":"mat-my-class"';
 				}
-				if (name!==''&&name!==undefined) {
+				if (name !== '' && name !== undefined) {
 					out.push(JSON.parse('{"title": "' + field.name + '","key": "' + name + '[].' + field.name + '",' + typeABI + '}'));
 				} else {
 					out.push(JSON.parse('{"title": "' + field.name + '","key": "' + field.name + '",' + typeABI + '}'));
@@ -417,11 +417,11 @@ export class DappComponent implements OnInit, AfterViewInit {
 		if (ev) {
 			this.busy = false;
 			this.wrongpass = '';
-			this.sendModal=true;
-			const fullForm = Object.assign ( this.modelJson(this.action) , ev[ 'schema' ] );
-			for (let idx in fullForm) {
-				if (DappComponent.isArray ( fullForm[ idx ] )) {
-					fullForm[ idx ].sort ();
+			this.sendModal = true;
+			const fullForm = Object.assign(this.modelJson(this.action), ev['schema']);
+			for (const idx in fullForm) {
+				if (DappComponent.isArray(fullForm[idx])) {
+					fullForm[idx].sort();
 				}
 			}
 			this.formVal = fullForm;
@@ -438,12 +438,12 @@ export class DappComponent implements OnInit, AfterViewInit {
 		const account = this.aService.selected.getValue();
 		const accountName = this.aService.selected.getValue().name;
 		const password = this.confirmForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				console.log(this.formVal);
-				const val = this.eos.pushActionContract(this.contract, this.action, this.formVal, accountName).then((info) => {
+				const val = this.eos.pushActionContract(this.contract, this.action, this.formVal, accountName, permission).then((info) => {
 					this.tokenModal = false;
 					this.busy2 = false;
 					this.sendModal = false;
@@ -455,7 +455,6 @@ export class DappComponent implements OnInit, AfterViewInit {
 					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 				console.log(val['__zone_symbol__state']);
-				//this.busy = false;
 			}
 		}).catch(error2 => {
 			console.log(error2);

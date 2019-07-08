@@ -109,7 +109,7 @@
 .navbar-btn {
     background-color: var(--sidenav-background);
     height: 4.5rem;
-    color: var(--sidenav-option-color);
+    color: var(--sidenav-color);
     -webkit-transition-property: color, background-color;
     transition-property: color, background-color;
 }

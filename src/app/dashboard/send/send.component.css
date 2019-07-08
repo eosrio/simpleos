@@ -62,7 +62,7 @@ li {
 }
 
 li:hover {
-    background-color: var(--sidenav-active-background);
+    background-color: var(--tr-hover);
     color: var(--sidenav-active-color);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
@@ -79,7 +79,7 @@ li:hover .contact-hover {
 }
 
 .contacts-panel {
-    background-color: var(--sidenav-background);
+    background-color: var(--tokens-panel-background);
     display: flex;
     flex-direction: column;
     padding-left: 0;
@@ -99,7 +99,7 @@ li:hover .contact-hover {
 }
 
 .newContactBtn {
-    background-color: #00000059;
+    background-color: #21212126;
     border-bottom: 0;
     border-left: 0;
     border-right: 0;
@@ -168,9 +168,9 @@ mat-option:not(.last) {
 }
 
 /deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-label {
-	color: var(--text-destaque-color);
+	color: var(--destaque-color-token);
 }
 
 /deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
-	background-color: var(--text-destaque-color);
+	background-color: var(--destaque-color-token);
 }

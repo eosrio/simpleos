@@ -2,6 +2,8 @@ export const defaultChainsJSON = [
 	{
 		id: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
 		symbol: 'EOS',
+		icon: 'eos.png',
+		precision: 4,
 		name: 'EOS MAINNET',
 		firstApi: 'https://hapi.eosrio.io',
 		historyApi: 'https://eos.hyperion.eosrio.io/v2',
@@ -10,6 +12,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: 'regproxyinfo',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -110,8 +113,55 @@ export const defaultChainsJSON = [
 		}
 	},
 	{
+		id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4',
+		symbol: 'WAX',
+		icon: 'wax.png',
+		precision: 8,
+		name: 'WAX MAINNET',
+		firstApi: 'https://wax.eosrio.io',
+		historyApi: 'https://wax.eosio.se/v2',
+		forumTally: '',
+		eosrioBP: 'eosriobrazil',
+		proxyRegistry: '',
+		lastNode: '',
+		logoSrc: '',
+		backdrop: '',
+		features: {
+			history: true,
+			send: true,
+			resource: true,
+			vote: true,
+			staking: true,
+			dapps: true,
+			addAcc: true,
+			newAcc: true,
+			forum: false,
+			rex: false,
+		},
+		system: [
+			'eosio',
+			'eosio.token',
+			'eosio.msig'
+		],
+		endpoints: [
+			{url: 'https://wax.eosrio.io', owner: 'EOS Rio - Wax', latency: 0, version: 'native'},
+			{url: 'https://wax.blockmatrix.network', owner: 'Blockmatrix', latency: 0, version: 'native'},
+			{url: 'https://api.waxsweden.org', owner: 'EOS Sweden - WAX', latency: 0}
+
+		],
+		explorers: [
+			{
+				name: 'Bloks.io',
+				account_url: 'https://wax.bloks.io/account/',
+				tx_url: 'https://wax.bloks.io/transaction/'
+			}
+		]
+	},
+	{
 		id: 'd5a3d18fbb3c084e3b1f3fa98c21014b5f3db536cc15d08f9f6479517c6a3d86',
 		symbol: 'BOS',
+		icon: 'bos.png',
+		precision: 4,
 		name: 'BOS MAINNET',
 		firstApi: 'https://api.bos.eosrio.io',
 		historyApi: 'https://bos.hyperion.eosrio.io/v2',
@@ -120,6 +170,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: 'regproxyinfo',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -155,13 +206,15 @@ export const defaultChainsJSON = [
 			{
 				name: 'Bloks.io',
 				account_url: 'https://bos.bloks.io/account/',
-				tx_url: 'https://bos.bloks.io/tx/'
+				tx_url: 'https://bos.bloks.io/transaction/'
 			}
 		]
 	},
 	{
 		id: 'cfe6486a83bad4962f232d48003b1824ab5665c36778141034d75e57b956e422',
 		symbol: 'MEETONE',
+		precision: 4,
+		icon: 'meetone.png',
 		name: 'MEET.ONE MAINNET',
 		firstApi: 'https://fullnode.meet.one',
 		historyApi: 'https://meetone.hyperion.eosrio.io/v2',
@@ -170,6 +223,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: 'proxies.m',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -208,6 +262,8 @@ export const defaultChainsJSON = [
 	{
 		id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
 		symbol: 'TLOS',
+		icon: 'telos.png',
+		precision: 4,
 		name: 'TELOS MAINNET',
 		firstApi: 'https://api.tlos.goodblock.io',
 		historyApi: '',
@@ -215,6 +271,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -248,6 +305,8 @@ export const defaultChainsJSON = [
 	{
 		id: '73647cde120091e0a4b85bced2f3cfdb3041e266cbbe95cee59b73235a1b3b6f',
 		symbol: 'WBI',
+		icon: 'worbli.png',
+		precision: 4,
 		name: 'WORBLI MAINNET',
 		firstApi: 'https://api.worbli.eosrio.io',
 		historyApi: '',
@@ -256,6 +315,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -287,13 +347,15 @@ export const defaultChainsJSON = [
 			{
 				name: 'Bloks.io',
 				account_url: 'https://worbli.bloks.io/account/',
-				tx_url: 'https://worbli.bloks.io/tx/'
+				tx_url: 'https://worbli.bloks.io/transaction/'
 			}
 		]
 	},
 	{
 		id: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
 		symbol: 'EOS',
+		icon: 'jungle.png',
+		precision: 4,
 		name: 'EOS JUNGLE TESTNET',
 		firstApi: 'https://jungle2.cryptolions.io:443',
 		historyApi: 'https://jungle.hyperion.eosrio.io/v2',
@@ -302,6 +364,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -334,6 +397,8 @@ export const defaultChainsJSON = [
 	{
 		id: '33cc2426f1b258ef8c798c34c0360b31732ea27a2d7e35a65797850a86d1ba85',
 		symbol: 'BOS',
+		icon: 'bos.png',
+		precision: 4,
 		name: 'BOS TESTNET',
 		firstApi: 'https://boscore.eosrio.io',
 		historyApi: '',
@@ -342,6 +407,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -374,6 +440,8 @@ export const defaultChainsJSON = [
 	{
 		id: '5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191',
 		symbol: 'EOS',
+		icon: 'kylin.png',
+		precision: 4,
 		name: 'EOS KYLIN TESTNET',
 		firstApi: 'https://api-kylin.eoslaomao.com',
 		historyApi: '',
@@ -382,6 +450,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -412,21 +481,24 @@ export const defaultChainsJSON = [
 			{
 				name: 'Bloks.io',
 				account_url: 'https://kylin.bloks.io/account/',
-				tx_url: 'https://kylin.bloks.io/tx/'
+				tx_url: 'https://kylin.bloks.io/transaction/'
 			}
 		]
 	},
 	{
-		id: '246cbad5405bf2d8e8888adab0a9bd2ea49693edbd69ee4cd0316c64a9f68d60',
+		id: '7f3f5ae1a73d7c14a72f65f257d41397b966ffcd95c588c50d5081eaa354984c',
 		symbol: 'LLC',
+		icon: 'liberland.png',
+		precision: 8,
 		name: 'LIBERLAND TESTNET',
 		firstApi: 'https://liberland.eossweden.org',
-		historyApi: 'https://liberland.hyperion.eosrio.io/v2',
+		historyApi: 'https://liberland.eosio.se/v2',
 		forumTally: '',
 		eosrioBP: '',
 		proxyRegistry: '',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,
@@ -453,6 +525,8 @@ export const defaultChainsJSON = [
 	{
 		id: '7136e3e32a458bb99cf6973ab5055869d25830607b9e78593769e1be52fb6f20',
 		symbol: 'MEETONE',
+		icon: 'meetone.png',
+		precision: 4,
 		name: 'MEET.ONE TESTNET',
 		firstApi: 'https://sidechain-test-history.meet.one',
 		historyApi: 'https://meetone.hyperion.eosrio.io/v2',
@@ -461,6 +535,7 @@ export const defaultChainsJSON = [
 		proxyRegistry: 'proxies.m',
 		lastNode: '',
 		logoSrc: '',
+		backdrop: '',
 		features: {
 			history: true,
 			send: true,

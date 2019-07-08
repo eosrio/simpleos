@@ -7,7 +7,8 @@
 
 				<div class="clr-col-10" style="padding-right: 0">
 					<div class="clr-row" style="margin-right: 0;">
-						<div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
+						<div
+							class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
 							style="padding-right: 0; ">
 							<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 										   [selectedIndex]="selectedTab">
@@ -20,7 +21,8 @@
 											(click)="openRemoveAccModal(i,account)"></fa-icon>
 										</div>
 										<div style="font-size: 17px;">{{account.name}}</div>
-										<div class="value special-font-regular">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
+										<div
+											class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
 									</ng-template>
 								</mat-tab>
 							</mat-tab-group>
@@ -82,17 +84,25 @@
 		</div>
 		<nav class="sidenav">
 			<section class="sidenav-header">
+				<img [src]="'./assets/chain-icons/' + network.activeChain.icon" width="40" height="40"
+					 class="chain-icon" style="position: absolute; top: 60px; left: 15px"/>
 				<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
 					<lottie-animation-view
 						[options]="lottieConfig" [width]="'auto'" [height]="'auto'"
-						(animCreated)="handleAnimation($event)">
+						(animCreated)="handleAnimation($event)" class="display-animation">
 					</lottie-animation-view>
+					<img src="./assets/simpleos-logo-clara-dashboard.svg" class="display-img" atl="Logo SimplEOS"
+						 height="128" style="margin: 12px auto 12px auto;"/>
 				</ng-container>
-				<ng-container  *ngIf="app.compilerVersion!=='EOS MAINNET'">
-					<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="128" style="margin: 50px auto;"/>
+				<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="128"
+						 style="margin: 50px auto;"/>
 				</ng-container>
 
-				<div style="margin-right: 4px;">connected to <span style="color: var(--text-destaque-color);">{{network.activeChain['name']}}</span></div>
+				<div style="margin-right: 4px;">
+					connected to
+					<span style="color: var(--text-destaque-color);">{{network.activeChain['name']}}</span>
+				</div>
 			</section>
 			<section #sidenavContent class="sidenav-content">
 				<a *ngIf="network.activeChain.features['history']" class="nav-link" routerLinkActive="active"
@@ -139,7 +149,7 @@
 				<div class="version">v{{aService.versionSys}}</div>
 			</section>
 			<section class="placeholder border-r" *ngIf="app.compilerVersion!=='EOS MAINNET'">
-				<div class="credits">Powered by SimplEOS</div>
+				<div class="credits">Powered by <a class="link-eosrio" [routerLink]="['about']">SimplEOS</a></div>
 				<div class="version">v{{aService.versionSys}}</div>
 			</section>
 		</nav>
@@ -363,7 +373,7 @@
 					 [clrWizardPagePreventDefault]="true"
 					 (clrWizardPageOnCancel)="doCancel()">
 		<ng-template clrPageTitle>Step 1</ng-template>
-		<h5 style="color: #a7a7a7;">Insert your other existing <strong>ACTIVE</strong> private key below</h5>
+		<h5 class="black-white">Insert your other existing <strong>ACTIVE</strong> private key below</h5>
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
@@ -435,10 +445,13 @@
 	<div class="modal-body" *ngIf="selectedAccRem">
 		<p style="margin-bottom: 20px; color: #b1b1b1;">Are you sure you want do remove the account <span
 			class="blue">{{selectedAccRem.name}}</span>
-			from SimplEOS?</p>
+			from <span *ngIf="app.compilerVersion=='EOS MAINNET'">SimplEOS</span><span
+				*ngIf="app.compilerVersion!=='EOS MAINNET'">Liberland wallet</span>?</p>
 		<p style="margin-bottom: 20px;">*This will NOT delete your account from the blockchain, it will just remove it
 			from
-			SimplEOS. Should you want to import it again, just click on the "ADD ACCOUNT" button.</p>
+			<span *ngIf="app.compilerVersion=='EOS MAINNET'">SimplEOS</span><span
+				*ngIf="app.compilerVersion!=='EOS MAINNET'">the wallet</span>. Should you want to import it again, just
+			click on the "ADD ACCOUNT" button.</p>
 	</div>
 	<div class="modal-footer">
 		<button class="btn btn-danger-outline" (click)="deleteAccModal = false">Cancel</button>

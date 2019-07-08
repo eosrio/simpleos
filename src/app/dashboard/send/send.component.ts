@@ -67,7 +67,7 @@ export class SendComponent implements OnInit {
 		'bitfinexdep1', 'krakenkraken', 'chainceoneos',
 		'huobideposit', 'zbeoscharge1', 'okbtothemoon',
 		'gateiowallet', 'eosusrwallet', 'binancecleos',
-		'novadaxstore','floweosaccnt','coinwwallet1' ];
+		'novadaxstore', 'floweosaccnt', 'coinwwallet1'];
 	memoMsg = 'optional';
 
 	constructor(private fb: FormBuilder,
@@ -89,6 +89,14 @@ export class SendComponent implements OnInit {
 			add: [false],
 			alias: [''],
 		});
+
+		this.numberMask = createNumberMask({
+			prefix: '',
+			allowDecimal: true,
+			includeThousandsSeparator: false,
+			decimalLimit: this.aService.activeChain.precision,
+		});
+
 		this.contactForm = this.fb.group({
 			account: ['', Validators.required],
 			name: ['', Validators.required],
@@ -131,7 +139,6 @@ export class SendComponent implements OnInit {
 			}
 		});
 	}
-
 
 
 	checkExchangeAccount() {
@@ -418,7 +425,9 @@ export class SendComponent implements OnInit {
 		const to = this.sendForm.get('to').value.toLowerCase();
 		const amount = parseFloat(this.sendForm.get('amount').value);
 		const memo = this.sendForm.get('memo').value;
-		const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
+
+		const [publicKey, permission] = this.aService.getStoredKey(selAcc);
+
 		if (amount > 0 && this.sendForm.valid) {
 			this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
 				// console.log(res);
@@ -427,7 +436,7 @@ export class SendComponent implements OnInit {
 					const tk_name = this.sendForm.get('token').value;
 					// console.log(tk_name);
 					// console.log(this.aService.tokens);
-					let precision = 4;
+					let precision = this.aService.activeChain['precision'];
 					// if (tk_name !== 'EOS') { // CSTAM
 					if (tk_name !== this.aService.activeChain['symbol']) { // CSTAM
 						const idx = this.aService.tokens.findIndex((val) => {
@@ -438,7 +447,7 @@ export class SendComponent implements OnInit {
 					}
 					console.log(precision);
 					console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
-					this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo).then((result) => {
+					this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo, permission).then((result) => {
 						if (result === true) {
 							this.wrongpass = '';
 							this.sendModal = false;

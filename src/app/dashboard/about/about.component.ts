@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {AccountsService} from '../../services/accounts.service';
 import {AppComponent} from '../../app.component';
+import {ThemeService} from '../../services/theme.service';
 
 @Component({
 	selector: 'app-about',
@@ -9,7 +10,7 @@ import {AppComponent} from '../../app.component';
 })
 export class AboutComponent implements OnInit {
 
-	constructor(public aService: AccountsService, public app: AppComponent) {
+	constructor(public aService: AccountsService, public app: AppComponent, public theme: ThemeService) {
 	}
 
 	ngOnInit() {

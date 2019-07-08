@@ -187,12 +187,10 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.selectedAccountSubscription = this.aService.selected.asObservable().subscribe((sel) => {
 			if (sel['name']) {
 				if (this.selectedAccountName !== sel['name']) {
-					console.log('account selected:', sel);
 					this.selectedAccountName = sel['name'];
 					this.fullBalance = sel.full_balance;
 					this.staked = sel.staked;
 					this.unstaking = sel.unstaking;
-					console.log(this.fullBalance, this.staked, this.unstaking);
 					this.unstaked = this.fullBalance - this.staked - this.unstaking;
 					this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
 					this.tokens = [];

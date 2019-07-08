@@ -67,8 +67,10 @@ export class ResourcesComponent implements OnInit {
 	ram_usage = 0;
 	cpu_limit: any;
 	cpu_weight = '';
+	cpu_weight_n = 0;
 	net_limit: any;
 	net_weight = '';
+	net_weight_n = 0;
 
 	delegations = [];
 	delegated_net = 0;
@@ -135,6 +137,14 @@ export class ResourcesComponent implements OnInit {
 		this.errormsgD = '';
 		this.errormsgD2 = '';
 		this.errormsgD3 = '';
+
+		this.net_limit = {
+			used: 0
+		};
+
+		this.cpu_limit = {
+			used: 0
+		};
 
 		this.ramMarketFormBuy = this.fb.group({
 			buyBytes: [0, Validators.required],
@@ -302,16 +312,19 @@ export class ResourcesComponent implements OnInit {
 
 	ngOnInit() {
 		this.loadHistory();
-
+		this.ramService.reload();
 		this.aService.selected.asObservable().subscribe((selected: any) => {
 			if (selected.details) {
+				this.ramPriceEOS = this.ramService.ramPriceEOS;
 				const d = selected.details;
 				this.ram_quota = d.ram_quota;
 				this.ram_usage = d.ram_usage;
 				this.cpu_limit = d.cpu_limit;
 				this.net_limit = d.net_limit;
 				this.cpu_weight = d.total_resources.cpu_weight;
+				this.cpu_weight_n = parseFloat(this.cpu_weight.split(' ')[0]);
 				this.net_weight = d.total_resources.net_weight;
+				this.net_weight_n = parseFloat(this.net_weight.split(' ')[0]);
 				this.listbw(selected.name);
 			}
 		});
@@ -526,7 +539,6 @@ export class ResourcesComponent implements OnInit {
 
 	checkSellBytes() {
 		if (this.ramMarketFormSell.value.sellBytes > 0) {
-			console.log(this.ram_quota);
 			if ((this.ram_quota - this.ram_usage) > (this.ramMarketFormSell.get('sellBytes').value) * 1024) {
 				this.ramMarketFormSell.controls['sellBytes'].setErrors(null);
 				this.ramMarketFormSell.controls['sellEos'].setErrors(null);
@@ -560,13 +572,14 @@ export class ResourcesComponent implements OnInit {
 		const account = this.aService.selected.getValue();
 		const namesel = this.aService.selected.getValue().name;
 		const password = this.passRefundForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
-
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.requestRefund(namesel).then((e) => {
+				this.eos.requestRefund(namesel, permission).then((e) => {
 					this.requestRefundModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+					this.aService.refreshFromChain();
+					this.busy = false;
 				}).catch((error) => {
 					this.wrongpassrefund = JSON.stringify(JSON.parse(error).error.details[0].message);
 					this.busy = false;
@@ -581,17 +594,17 @@ export class ResourcesComponent implements OnInit {
 
 	sell() {
 		this.busy = true;
-		console.log(this.busy);
 		this.wrongpasssell = '';
 		const account = this.aService.selected.getValue();
 		const password = this.passSellForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
-
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.ramSellBytes(this.seller, this.bytessell).then((e) => {
+				this.eos.ramSellBytes(this.seller, this.bytessell, permission).then((e) => {
 					this.passSellModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+					this.aService.refreshFromChain();
+					this.busy = false;
 				}).catch((error) => {
 					this.wrongpasssell = JSON.stringify(JSON.parse(error).error.details[0].message);
 					this.busy = false;
@@ -623,12 +636,14 @@ export class ResourcesComponent implements OnInit {
 		this.wrongpassbuy = '';
 		const account = this.aService.selected.getValue();
 		const password = this.passBuyForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.ramBuyBytes(this.payer, this.receiver, this.bytesbuy).then((e) => {
+				this.eos.ramBuyBytes(this.payer, this.receiver, this.bytesbuy, permission).then((e) => {
 					this.passBuyModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+					this.aService.refreshFromChain();
+					this.busy = false;
 				}).catch((error) => {
 					this.wrongpassbuy = JSON.stringify(JSON.parse(error).error.details[0].message);
 					this.busy = false;
@@ -652,10 +667,10 @@ export class ResourcesComponent implements OnInit {
 		this.busy = true;
 		const account = this.aService.selected.getValue();
 		const password = this.passUnDelegateForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.unDelegate(this.accNow, this.fromUD, this.netUD, this.cpuUD, this.aService.activeChain['symbol']).then((e) => {
+				this.eos.unDelegate(this.accNow, this.fromUD, this.netUD, this.cpuUD, this.aService.activeChain['symbol'], permission).then((e) => {
 					this.fromUD = '';
 					this.netUD = '';
 					this.cpuUD = '';
@@ -677,7 +692,7 @@ export class ResourcesComponent implements OnInit {
 	checkEos(eosVal, val) {
 		if (eosVal > 0) {
 			const sel = this.aService.selected.getValue();
-			if(sel) {
+			if (sel) {
 				if (val === 'net') {
 					this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('cpuEos').value;
 				} else {
@@ -699,8 +714,8 @@ export class ResourcesComponent implements OnInit {
 
 	fillDelegateRequest() {
 		this.accTo = this.delegateForm.get('receiverAcc').value;
-		this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(4);
-		this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(4);
+		this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(this.aService.activeChain['precision']);
+		this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(this.aService.activeChain['precision']);
 		this.accNow = this.aService.selected.getValue().name;
 
 	}
@@ -710,14 +725,15 @@ export class ResourcesComponent implements OnInit {
 		this.busy = true;
 		const account = this.aService.selected.getValue();
 		const password = this.passDelegateForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.delegateBW(this.accNow, this.accTo, this.netD, this.cpuD, this.aService.activeChain['symbol']).then((e) => {
+				this.eos.delegateBW(this.accNow, this.accTo, this.netD, this.cpuD, this.aService.activeChain['symbol'], permission).then((e) => {
 					this.accTo = '';
 					this.netD = '';
 					this.cpuD = '';
 					this.accNow = '';
+					this.busy = false;
 					this.passDelegateModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {

@@ -14,6 +14,11 @@ import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../../services/eosjs2.service';
 import {RexComponent} from '../rex/rex.component';
 import {AppComponent} from '../../app.component';
+import {ThemeService} from '../../services/theme.service';
+import {TransactionFactoryService} from '../../services/transaction-factory.service';
+import {ElectronService} from 'ngx-electron';
+import {Api, RpcError} from 'eosjs/dist';
+import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
 
 @Component({
 	selector: 'app-vote',
@@ -87,6 +92,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	net_weight = '';
 	cpu_weight = '';
+	cpu_weight_n = 0;
+	net_weight_n = 0;
 
 	stakingRatio = 75;
 
@@ -95,8 +102,27 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	subscriptions: Subscription[] = [];
 	private selectedProxy = '';
 
+	private ecc: any;
+	private keytar: any;
+	private fs: any;
+
+	autoClaimStatus: boolean;
+	claimPublicKey = '';
+	private claimError: string;
+	public gbmBalance = 0;
+	public gbmLastClaim: string;
+	public gbmNextClaim: string;
+	public claimReady: boolean;
+	public gbmEstimatedDaily = 0;
+	public voteRewardsDaily = 0;
+	private autoClaimConfig = {};
+	private selectedAccountName = '';
+	private last_claim_time: number;
+	public claimSetupWarning = '';
+
 	constructor(public voteService: VotingService,
 				private http: HttpClient,
+				private trxFactory: TransactionFactoryService,
 				public aService: AccountsService,
 				public eos: EOSJSService,
 				public eosjs: Eosjs2Service,
@@ -104,9 +130,16 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				private fb: FormBuilder,
 				private toaster: ToasterService,
 				private cdr: ChangeDetectorRef,
-				public app: AppComponent
+				public app: AppComponent,
+				public theme: ThemeService,
+				private _electronService: ElectronService
 				// private ledger: LedgerHWService
 	) {
+
+		this.ecc = this._electronService.remote.require('eosjs-ecc');
+		this.keytar = this._electronService.remote.require('keytar');
+		this.fs = this._electronService.remote.require('fs');
+
 		this.isValidAccount = true;
 		this.max = 100;
 		this.min = 0;
@@ -128,6 +161,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.stakerr = '';
 		this.fromAccount = '';
 		this.stakedisabled = true;
+		this.autoClaimStatus = false;
 		this.singleSelectionBP = {
 			name: ''
 		};
@@ -149,11 +183,12 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		}));
 
 		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
-			this.totalStaked = 0 ;
-			this.votedDecay = 0 ;
-			this.votedEOSDecay = 0 ;
-			if (selected && selected['name']) {
+			this.totalStaked = 0;
+			this.votedDecay = 0;
+			this.votedEOSDecay = 0;
+			if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
 				this.fromAccount = selected.name;
+				this.selectedAccountName = selected.name;
 				this.totalBalance = selected.full_balance;
 				this.stakedBalance = selected.staked;
 				this.unstaking = selected.unstaking;
@@ -173,25 +208,45 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.net_weight = selected.details.total_resources.net_weight;
 				const _cpu = RexComponent.asset2Float(this.cpu_weight);
 				const _net = RexComponent.asset2Float(this.net_weight);
+				this.cpu_weight_n = _cpu;
+				this.net_weight_n = _net;
 				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
 
 				if (selected.details.voter_info) {
+
+					let weeks = 52;
+					let block_timestamp_epoch = 946684800;
+					let precision = 10000;
+					if (this.aService.activeChain['symbol'] === 'WAX') {
+						weeks = 13;
+						block_timestamp_epoch = 946684800;
+						precision = 100000000;
+					}
+
+					if (this.aService.activeChain['symbol'] === 'LLC') {
+						precision = 100000000;
+					}
+
 					this.hasVote = true;
-					this.totalStaked = (selected.details.voter_info.staked / 10000);
-					const a = (moment().unix() - 946684800);
-					const b = parseInt('' + (a / 604800), 10) / 52;
-					const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / 10000);
+					this.totalStaked = (selected.details.voter_info.staked / precision);
+					const a = (moment().unix() - block_timestamp_epoch);
+					const b = parseInt('' + (a / 604800), 10) / weeks;
+					const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
 					this.votedEOSDecay = this.totalStaked - decayEOS;
-					if (selected.details.voter_info.last_vote_weight > 0){
-						this.votedDecay = 100 - Math.round(((decayEOS * 100 ) / this.totalStaked ) * 1000) / 1000;
+					if (selected.details.voter_info.last_vote_weight > 0) {
+						this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
 					}
 				} else {
 					this.hasVote = false;
 				}
 
-				this.eosjs.getRexData(selected.name).then(async (rexdata) => {
-					this.hasRex = !rexdata.rexbal;
-				});
+				this.getRexBalance(selected.name);
+
+				if (this.aService.activeChain.name === 'WAX MAINNET') {
+					this.checkWaxGBMdata(selected.name);
+					this.checkVoterRewards(selected.name);
+					this.verifyAutoClaimSetup(selected);
+				}
 			}
 		}));
 
@@ -273,6 +328,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			this.aService.selected.asObservable().subscribe((selected) => {
 				this.voteService.currentVoteType(selected);
 				this.voteOption(this.voteService.voteType);
+				this.cdr.detectChanges();
 			})
 		);
 	}
@@ -318,10 +374,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	callSetStake(password) {
 		this.busy = true;
 		const account = this.aService.selected.getValue();
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				this.eos.changebw(account.name, this.stakingDiff, this.aService.activeChain['symbol'], this.stakingRatio / 100)
+				this.eos.changebw(account.name, permission, this.stakingDiff, this.aService.activeChain['symbol'], this.stakingRatio / 100, this.aService.activeChain['precision'])
 					.then((trx) => {
 						this.busy = false;
 						this.wrongpass = '';
@@ -364,23 +420,123 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.totalBalance = selectedAcc.full_balance;
 		this.stakedBalance = selectedAcc.staked;
 		if (selectedAcc.details.voter_info) {
+
+			let weeks = 52;
+			let block_timestamp_epoch = 946684800;
+			let precision = 10000;
+			if (this.aService.activeChain['symbol'] === 'WAX') {
+				weeks = 13;
+				block_timestamp_epoch = 946684800;
+				precision = 100000000;
+			}
+
+			if (this.aService.activeChain['symbol'] === 'LLC') {
+				precision = 100000000;
+			}
+
 			this.hasVote = true;
-			this.totalStaked = (selectedAcc.details.voter_info.staked / 10000);
-			const a = (moment().unix() - 946684800);
-			const b = parseInt('' + (a / 604800), 10) / 52;
-			const decayEOS = (selectedAcc.details.voter_info.last_vote_weight / Math.pow(2, b) / 10000);
+			this.totalStaked = (selectedAcc.details.voter_info.staked / precision);
+			const a = (moment().unix() - block_timestamp_epoch);
+			const b = parseInt('' + (a / 604800), 10) / weeks;
+			const decayEOS = (selectedAcc.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
 			this.votedEOSDecay = this.totalStaked - decayEOS;
-			if (selectedAcc.details.voter_info.last_vote_weight > 0){
-				this.votedDecay = 100 - Math.round(((decayEOS * 100 ) / this.totalStaked ) * 1000) / 1000;
+			if (selectedAcc.details.voter_info.last_vote_weight > 0) {
+				this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 100000) / 100000;
 			}
 		} else {
 			this.hasVote = false;
 		}
 
-		this.eosjs.getRexData(selectedAcc.name).then(async (rexdata) => {
-			// console.log('REX DATA', rexdata.rexbal);
-			this.hasRex = !rexdata.rexbal;
+		this.getRexBalance(selectedAcc.name);
+	}
+
+	getRexBalance(acc) {
+		if (this.aService.activeChain.features['rex']) {
+			this.eosjs.getRexData(acc).then(async (rexdata) => {
+				this.hasRex = !rexdata.rexbal;
+			});
+		} else {
+			this.hasRex = false;
+		}
+	}
+
+	storeConfig() {
+		try {
+			const data = JSON.stringify(this.autoClaimConfig, null, '\t');
+			this.fs.writeFileSync('autoclaim.json', data);
+		} catch (e) {
+			console.log(e);
+		}
+	}
+
+	enableAutoClaimStartup() {
+		const AutoLaunch = this._electronService.remote.require('auto-launch');
+		const walletAutoLauncher = new AutoLaunch({
+			name: 'simpleos'
 		});
+		walletAutoLauncher.opts.appPath += '" --autostart"';
+		walletAutoLauncher.isEnabled().then((isEnabled) => {
+			if (isEnabled) {
+				return;
+			}
+			walletAutoLauncher.enable();
+		}).catch(function (err) {
+			console.log(err);
+		});
+	}
+
+	async verifyAutoClaimSetup(selected) {
+		this.autoClaimStatus = false;
+		this.claimSetupWarning = '';
+		const filename = 'autoclaim.json';
+		if (!this.fs.existsSync(filename)) {
+			console.log('autoclaim file not present, creating...');
+		} else {
+			this.autoClaimConfig = JSON.parse(this.fs.readFileSync('autoclaim.json'));
+		}
+		if (this.autoClaimConfig['enabled']) {
+			if (this.autoClaimConfig['WAX-GBM']) {
+				const accJob = this.autoClaimConfig['WAX-GBM']['jobs'].find(j => j.account === selected.name);
+				if (accJob) {
+					this.eosjs.rpc.get_account(selected.name).then(details => {
+						const perms = details.permissions;
+						const claim_perm = perms.find(p => p.perm_name === 'claim');
+						if (claim_perm) {
+							const claim_key = claim_perm.required_auth.keys[0].key;
+							this.keytar.getPassword('simpleos', claim_key).then((key) => {
+								try {
+									if (claim_key === this.ecc.privateToPublic(key)) {
+										this.checkLinkedAuth(selected.name).then((req_link) => {
+											if (req_link.length === 0) {
+												this.autoClaimStatus = true;
+												this.claimPublicKey = claim_key;
+											} else {
+												console.log('Missing link auth');
+												this.claimSetupWarning = 'Linkauth missing for (' + req_link.join(', ') + '). Please renew your claim key or set the permission links manually.';
+											}
+										});
+									} else {
+										console.log('FATAL: Invalid key');
+									}
+								} catch (e) {
+									console.log('Key verification failed');
+								}
+							}).catch((error) => {
+								console.log(error);
+							});
+						} else {
+							console.log('Claim permission not defined');
+							this.claimSetupWarning = 'Claim permission not defined. Please try renewing your key.';
+						}
+					});
+				}
+			}
+		} else {
+			console.log('autoclaim disabled');
+			this.enableAutoClaimStartup();
+			this.autoClaimConfig['enabled'] = true;
+			this.storeConfig();
+		}
 	}
 
 
@@ -396,7 +552,9 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	getProxyVotes(account) {
 		this.listProxyVote = [];
 		this.eos.getAccountInfo(account).then(v => {
-			this.listProxyVote = v['voter_info']['producers'];
+			if (v['voter_info']) {
+				this.listProxyVote = v['voter_info']['producers'];
+			}
 		});
 	}
 
@@ -545,17 +703,16 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	modalVote(pass) {
 		this.busy = true;
 		const voter = this.aService.selected.getValue();
-		const publicKey = voter.details['permissions'][0]['required_auth'].keys[0].key;
+		const [publicKey, permission] = this.aService.getStoredKey(voter);
 		this.crypto.authenticate(pass, publicKey).then((data) => {
 			if (data === true) {
-				// this.aService.injectLedgerSigner();
-				this.eos.voteAction(voter.name, this.selectedVotes, this.voteService.voteType).then((result) => {
+				this.eos.voteAction(voter.name, this.selectedVotes, this.voteService.voteType, permission).then((result) => {
 					if (JSON.parse(result).code) {
-						// if (err2.error.code === 3081001) {
-						this.wrongpass = JSON.parse(result).error.details[0].message;
-						// } else {
-						//   this.wrongpass = err2.error['what'];
-						// }
+						if (JSON.parse(result).error.details.length > 0) {
+							this.wrongpass = JSON.parse(result).error.details[0].message;
+						} else {
+							this.wrongpass = JSON.parse(result).error.what;
+						}
 						this.busy = false;
 					} else {
 						this.wrongpass = '';
@@ -680,5 +837,332 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		});
 	}
 
+	async checkLinkedAuth(account): Promise<string[]> {
+		const result = await this.http.get(this.aService.activeChain.historyApi + '/history/get_actions?account=' + account + '&filter=eosio:linkauth').toPromise();
+		const required = ['claimgbmvote', 'claimgenesis', 'voteproducer'];
+		if (result['actions'].length > 0) {
+			for (const a of result['actions']) {
+				const idx = required.indexOf(a['act']['data']['type']);
+				if (idx !== -1) {
+					required.splice(idx, 1);
+				}
+			}
+		}
+		return required;
+	}
 
+	claimGBMrewards() {
+		if (this.autoClaimStatus) {
+			this.claimDirect(false);
+		} else {
+			this.claimWithActive();
+		}
+	}
+
+	claimWithActive() {
+		const [auth, publicKey] = this.trxFactory.getAuth();
+		console.log(auth);
+		const sym = this.aService.activeChain['symbol'];
+		const messageHTML = `
+		<h5 class="white mb-0">Performing eosio::claimgenesis and eosio::claimgbmvote actions</h5>
+		`;
+		const _actions = [];
+		_actions.push({
+			account: 'eosio',
+			name: 'claimgenesis',
+			authorization: [{
+				actor: auth.actor,
+				permission: 'active',
+			}],
+			data: {
+				claimer: auth.actor
+			},
+		});
+		_actions.push({
+			account: 'eosio',
+			name: 'claimgbmvote',
+			authorization: [{
+				actor: auth.actor,
+				permission: 'active',
+			}],
+			data: {
+				owner: auth.actor
+			},
+		});
+		this.trxFactory.modalData.next({
+			transactionPayload: {
+				actions: _actions
+			},
+			termsHeader: '',
+			signerAccount: auth.actor,
+			signerPublicKey: publicKey,
+			labelHTML: messageHTML,
+			actionTitle: 'claim WAX GBM Rewards',
+			termsHTML: ''
+		});
+		this.trxFactory.launcher.emit(true);
+		const subs = this.trxFactory.status.subscribe((event) => {
+			if (event === 'done') {
+				subs.unsubscribe();
+			}
+			if (event === 'modal_closed') {
+				subs.unsubscribe();
+			}
+		});
+	}
+
+	async claimDirect(voteOnly) {
+		const [auth, publicKey] = this.trxFactory.getAuth();
+
+		// check current votes
+		const accountData = await this.eosjs.rpc.get_account(auth.actor);
+
+		let _producers = [];
+		let _proxy = '';
+
+		if (accountData['voter_info']) {
+			if (accountData['voter_info']['proxy'] !== '') {
+				// voting on proxy
+				_proxy = accountData['voter_info']['proxy'];
+			} else {
+				// voting on producers
+				_producers = accountData['voter_info']['producers'];
+			}
+		}
+
+		const claim_private_key = await this.keytar.getPassword('simpleos', this.claimPublicKey);
+		const signatureProvider = new JsSignatureProvider([claim_private_key]);
+		const rpc = this.eosjs.rpc;
+		const api = new Api({rpc, signatureProvider, textDecoder: new TextDecoder, textEncoder: new TextEncoder});
+
+		const _actions = [];
+
+		_actions.push({
+			account: 'eosio',
+			name: 'voteproducer',
+			authorization: [{
+				actor: auth.actor,
+				permission: 'claim',
+			}],
+			data: {
+				voter: auth.actor,
+				proxy: _proxy,
+				producers: _producers
+			},
+		});
+
+		if (!voteOnly) {
+			_actions.push({
+				account: 'eosio',
+				name: 'claimgenesis',
+				authorization: [{
+					actor: auth.actor,
+					permission: 'claim',
+				}],
+				data: {
+					claimer: auth.actor
+				},
+			});
+
+			_actions.push({
+				account: 'eosio',
+				name: 'claimgbmvote',
+				authorization: [{
+					actor: auth.actor,
+					permission: 'claim',
+				}],
+				data: {
+					owner: auth.actor
+				},
+			});
+		}
+
+		try {
+			const result = await api.transact({
+				actions: _actions
+			}, {
+				blocksBehind: 3,
+				expireSeconds: 30,
+			});
+			this.claimError = '';
+			if (voteOnly) {
+				this.showToast('success', 'Vote broadcasted', 'Check your history for confirmation.');
+			} else {
+				this.showToast('success', 'GBM Rewards Claimed', 'Check your history for confirmation.');
+			}
+		} catch (e) {
+			if (e instanceof RpcError) {
+				const eJson = e.json;
+				switch (eJson.error.code) {
+					case 3090005: {
+						this.claimError = 'Irrelevant authority included, missing linkauth';
+						break;
+					}
+					case 3050003: {
+						this.claimError = 'Account already claimed in the past 24 hours. Please wait.';
+						break;
+					}
+					default: {
+						this.claimError = eJson.error.what;
+					}
+				}
+				console.log(JSON.stringify(eJson, null, 2));
+			}
+		}
+	}
+
+
+	async createClaimPermission() {
+		const [auth, publicKey] = this.trxFactory.getAuth();
+		const sym = this.aService.activeChain['symbol'];
+		const messageHTML = `
+		<h5 class="white mb-0">
+		This action will create a custom permission that is only allowed to claim rewards (linked with eosio::claimgenesis).
+		<br><br> This permission will be automatically called once per day to claim your GBM rewards.
+		<br><br> You don't need to leave your wallet open, your computer just needs to be turned on.
+		<br><br>This action doesn't expose your private key.  </h5>
+		`;
+
+		console.log('Generating new key pair...');
+		const private_key = await this.ecc.randomKey();
+		const public_key = this.ecc.privateToPublic(private_key);
+
+		const _actions = [];
+		let changeKey = true;
+		if (auth.permission === 'active' || auth.permission === 'owner') {
+
+			_actions.push({
+				account: 'eosio',
+				name: 'updateauth',
+				authorization: [auth],
+				data: {
+					account: auth.actor,
+					permission: 'claim',
+					parent: 'active',
+					auth: {
+						threshold: 1,
+						keys: [{key: public_key, weight: 1}],
+						accounts: [],
+						waits: []
+					}
+				}
+			});
+		} else {
+			changeKey = false;
+		}
+
+		// Test linkauth
+		const req_link = await this.checkLinkedAuth(auth.actor);
+		console.log(req_link);
+
+		for (const link_type of req_link) {
+			_actions.push({
+				account: 'eosio',
+				name: 'linkauth',
+				authorization: [auth],
+				data: {
+					account: auth.actor,
+					code: 'eosio',
+					type: link_type,
+					requirement: 'claim'
+				}
+			});
+		}
+
+		console.log(_actions);
+
+		this.trxFactory.modalData.next({
+			transactionPayload: {
+				actions: _actions
+			},
+			termsHeader: '',
+			signerAccount: auth.actor,
+			signerPublicKey: publicKey,
+			labelHTML: messageHTML,
+			actionTitle: 'auto-claim setup',
+			termsHTML: ''
+		});
+		this.trxFactory.launcher.emit(true);
+		const subs = this.trxFactory.status.subscribe((event) => {
+			if (event === 'done') {
+				// Save private key to credential storage
+				if (!changeKey) {
+					this.keytar.setPassword('simpleos', publicKey, this.crypto.getPK());
+					this.claimPublicKey = publicKey;
+					this.configureAutoClaim(auth.actor, publicKey, 'claim');
+				} else {
+					this.keytar.setPassword('simpleos', public_key, private_key);
+					this.claimPublicKey = public_key;
+					this.configureAutoClaim(auth.actor, public_key, 'claim');
+				}
+				this.autoClaimStatus = true;
+				subs.unsubscribe();
+			}
+			if (event === 'modal_closed') {
+				subs.unsubscribe();
+			}
+		});
+	}
+
+	configureAutoClaim(accountName, publicKey, permission) {
+		if (!this.autoClaimConfig['WAX-GBM']) {
+			this.autoClaimConfig['WAX-GBM'] = {
+				apis: [
+					'https://wax.eosrio.io',
+					'https://api.waxsweden.org',
+					'https://chain.wax.io'
+				],
+				jobs: []
+			};
+		}
+		const newObj = {
+			'account': accountName,
+			'public_key': publicKey,
+			'permission': permission,
+			'last_claim': this.last_claim_time,
+			'total_rewards': 0,
+			'next_claim_time': this.last_claim_time + (24 * 60 * 60 * 1000)
+		};
+		const idx = this.autoClaimConfig['WAX-GBM']['jobs'].findIndex(j => j.account === accountName);
+		if (idx === -1) {
+			this.autoClaimConfig['WAX-GBM']['jobs'].push(newObj);
+		} else {
+			this.autoClaimConfig['WAX-GBM']['jobs'][idx] = newObj;
+		}
+		this.storeConfig();
+	}
+
+	private async checkVoterRewards(name: string) {
+		const voter = (await this.eosjs.rpc.get_account(name))['voter_info'];
+		const _gstate = (await this.eosjs.rpc.get_table_rows({
+			code: 'eosio',
+			scope: 'eosio',
+			table: 'global'
+		}))['rows'][0];
+		const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
+		const unpaidVoteShare = parseFloat(voter['unpaid_voteshare']);
+		const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
+		this.voteRewardsDaily = parseFloat((voterBucket * (unpaidVoteShare / globalUnpaidVoteShare)).toFixed(2));
+	}
+
+	private async checkWaxGBMdata(name: any) {
+		const results = await this.eosjs.rpc.get_table_rows({
+			json: true,
+			code: 'eosio',
+			table: 'genesis',
+			scope: name
+		});
+		const data = results.rows[0];
+		this.gbmBalance = parseFloat(data['balance'].split(' ')[0]);
+		this.gbmLastClaim = data['last_claim_time'];
+		this.last_claim_time = new Date(data['last_claim_time']).getTime();
+		this.gbmLastClaim = moment(this.gbmLastClaim).format('DD-MM-YYYY HH:mm');
+		if (this.gbmBalance > 0) {
+			this.gbmEstimatedDaily = parseFloat((this.gbmBalance / 1095).toFixed(2));
+		} else {
+			this.gbmEstimatedDaily = 0;
+		}
+		this.gbmNextClaim = moment(data['last_claim_time']).add(1, 'day').fromNow();
+		this.claimReady = ((new Date(data['last_claim_time']).getTime()) + (24 * 60 * 60 * 1000) === Date.now());
+	}
 }

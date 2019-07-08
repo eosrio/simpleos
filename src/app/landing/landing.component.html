@@ -1,19 +1,22 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="wrap" style="height:-webkit-fill-available;overflow-y: scroll; width:100vw;">
+<div class="wrap" style="height:-webkit-fill-available; overflow-y: scroll; width:100vw;">
 	<!--<div class="container-fluid" style="width: 466px;">-->
 	<div class="container">
 		<div class="clr-row animate fadeInDown">
 			<div class="clr-col-md-6 text-center" style="width: 466px; margin: 0 auto;">
 				<div class="anim-logo">
-					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
+					<ng-container *ngIf="app.compilerVersion=='EOS MAINNET'">
 						<lottie-animation-view
 							[options]="lottieConfig"
 							[width]="300"
-							(animCreated)="handleAnimation($event)">
+							(animCreated)="handleAnimation($event)" class="display-animation">
 						</lottie-animation-view>
+						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="230"
+							 style="margin: 64px auto 50px auto;"/>
 					</ng-container>
 					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
-						<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="210" style="margin: 50px auto;"/>
+						<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="210"
+							 style="margin: 50px auto;"/>
 					</ng-container>
 
 				</div>
@@ -31,7 +34,7 @@
 					<div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try
 						again
 					</div>
-					<button (click)="retryConn()" class="btn btn-link">
+					<button (click)="retryConn()" class="btn btn-link2">
 						<fa-icon [icon]="['far', 'undo']"></fa-icon>
 						&nbsp;RETRY
 					</button>
@@ -59,15 +62,18 @@
 
 					<div class="clr-col-md-12">
 						<div class="card info-card">
-							<div class="card-header title" [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
+							<div class="card-header title"
+								 [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
 								Connected to
 								<mat-form-field class="chain-selector example-full-width select-father"
-												style="width: 207px;">
+												style="width: 240px;">
 									<mat-select [value]="network.activeChain['id']"
 												(selectionChange)="changeChain($event)">
 										<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
 										<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 													[value]="chain.id">
+											<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+												 class="chain-icon"/>
 											{{ chain.name }}
 										</mat-option>
 									</mat-select>
@@ -159,7 +165,7 @@
 							</button>
 						</div>
 						<ng-container *ngIf="checkerr === ''">
-							<div class="card-footer" *ngFor="let account of accounts">
+							<div class="card-footer black-white" *ngFor="let account of accounts">
                                 <span style="float: left;">Account:
 									<span class="blue">{{account.name}}</span>
 									- balance:
@@ -177,15 +183,18 @@
 					<div class="clr-row" style="justify-content: center;">
 						<div class="clr-col-md-12">
 							<div class="card info-card">
-								<div class="card-header title" [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
+								<div class="card-header title"
+									 [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
 									Connected to
 									<mat-form-field class="chain-selector example-full-width select-father"
-													style="width: 207px;">
+													style="width: 240px;">
 										<mat-select [value]="network.activeChain['id']"
 													(selectionChange)="changeChain($event)">
 											<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
 											<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 														[value]="chain.id">
+												<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+													 class="chain-icon"/>
 												{{ chain.name }}
 											</mat-option>
 										</mat-select>
@@ -215,15 +224,17 @@
 					</div>
 					<br>
 				</ng-container>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion=='EOS MAINNET'">
-					<div class="credits">Made with
+				<section class="placeholder border-r" style="margin-top:10px;"
+						 *ngIf="app.compilerVersion=='EOS MAINNET'">
+					<div class="credits made-with-love">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-						by <a class="link-eosrio">EOS Rio</a>
+						by <span style="color: var(--btn-link2-color)">EOS Rio</span>
 					</div>
-					<div class="version">v{{aService.versionSys}}</div>
+					<div class="version made-with-love">v{{aService.versionSys}}</div>
 					<br>
 				</section>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+				<section class="placeholder border-r" style="margin-top:10px;"
+						 *ngIf="app.compilerVersion!=='EOS MAINNET'">
 					<div class="credits">Powered by</div>
 					<div class="version">SimplEOS v{{aService.versionSys}}</div>
 					<br>
@@ -244,11 +255,11 @@
 	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
 	<clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-					 (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)"
+					 (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value,true)"
 					 [clrWizardPagePreventDefault]="true"
 					 (clrWizardPageOnCancel)="doCancel()">
 		<ng-template clrPageTitle>Import Key</ng-template>
-		<h5 style="color: #a7a7a7;">Insert your existing <strong>ACTIVE</strong> private key below</h5>
+		<h5 class="black-white">Insert your existing private key below (ACTIVE key recommended)</h5>
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
@@ -269,11 +280,11 @@
 			</mat-form-field>
 		</form>
 
-		<div *ngIf="importedAccounts.length > 0" style="color: #bebebe; margin-top: 10px">
+		<div *ngIf="importedAccounts.length > 0" style="margin-top: 10px" class="gray3">
 			Account<span *ngIf="importedAccounts.length > 1">s</span>
 		</div>
-		<div *ngFor="let importedAccount of importedAccounts">
-			<span class="label label-blue">{{importedAccount['account_name']}}</span>
+		<div *ngFor="let importedAccount of importedAccounts" class="gray3">
+			<span class="label label-blue">{{importedAccount['account_name']}}@{{importedAccount['permission']}}</span>
 		</div>
 	</clr-wizard-page>
 	<clr-wizard-page
@@ -284,7 +295,7 @@
 		<ng-template clrPageTitle>Password</ng-template>
 
 		<form [formGroup]="passform">
-			<h5 style="color: #a7a7a7;">Define your password. This will be used to <strong>transactions
+			<h5 class="black-white">Define your password. This will be used to <strong>transactions
 				confirmations.</strong></h5>
 			<mat-form-field class="mt-1">
 				<input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
@@ -325,8 +336,8 @@
 
 	<clr-wizard-page *ngIf="noPIN" (clrWizardPageOnCommit)="importCredentials()">
 		<ng-template clrPageTitle>Lockscreen</ng-template>
-		<h5 style="margin-bottom: 15px; color: #a7a7a7;">
-			<span style="color: #c3c3c3; font-weight: 700;">Lockscreen pin.</span>
+		<h5 style="margin-bottom: 15px;" class="black-white">
+			<span style="font-weight: 700;" class="blue">Lockscreen pin.</span>
 			Do you want to define a small privacy pin used to unlock the screen next time you enter SimplEOS?
 		</h5>
 		<h5 style="margin-bottom: 18px; color: #636363;">*This <span style="font-weight: 700;">does not</span> replace
@@ -357,7 +368,8 @@
 	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 	<clr-wizard-page>
 		<ng-template clrPageTitle>Intro</ng-template>
-		<h5 class="mt-0" style="color: var(--text-white-color);"><strong>Recommended if you don't have any EOS account yet.</strong>
+		<h5 class="mt-0" style="color: var(--text-white-color);"><strong>Recommended if you don't have any EOS account
+			yet.</strong>
 		</h5>
 		<h5 style="color: #a7a7a7;">Create your eos account via a smart contract.</h5>
 		<h5 style="color: var(--text-white-color);"><strong>How does it work?</strong></h5>
@@ -445,17 +457,19 @@
 		<h5 style="color: #a9a9a9">In eos, creation of new accounts costs a small amount of eos to allocate the
 			necessary resources to the account.</h5>
 		<h5 style="color: #a9a9a9">The amount you will need to transfer will be as shown below:</h5>
-		<div style="color: white; margin-top: 15px"><strong>Amount to CPU:</strong><span class="blue"> 0.75 EOS</span>
+		<div class="black-white" style="margin-top: 15px"><strong>Amount to CPU:</strong><span
+			class="blue"> 0.75 EOS</span>
 		</div>
-		<div style="color: white;"><strong>Amount to NET:</strong><span class="blue"> 0.25 EOS</span></div>
-		<div style="color: white;"><strong>Amount of RAM:</strong><span style="color: #a9a9a9"> 4096 bytes</span>
+		<div class="black-white"><strong>Amount to NET:</strong><span class="blue"> 0.25 EOS</span></div>
+		<div class="black-white"><strong>Amount of RAM:</strong><span style="color: #a9a9a9"> 4096 bytes</span>
 			<span style="margin: 0 12px;">=</span>
 			<span class="blue">{{(ram.ramPriceEOS * (4096 / 1024)) * 1.05 | number: '1.0-4'}} EOS</span>
 		</div>
-		<div style="color: white;"><strong>Safety margin:</strong><span class="blue"> 0.25 EOS (in case RAM price changes)</span>
+		<div class="black-white"><strong>Safety margin:</strong><span
+			class="blue"> 0.25 EOS (in case RAM price changes)</span>
 		</div>
 		<div style="border-bottom: 1px solid #0079b8; margin: 10px 0;"></div>
-		<div style="color: white;"><strong>Total Amount:</strong><span
+		<div class="black-white"><strong>Total Amount:</strong><span
 			class="blue"> {{1.25 + (ram.ramPriceEOS * (4096 / 1024)) * 1.05 | number: '1.0-4'}} EOS</span></div>
 		<div style="margin-top: 5px; color: #a9a9a9;">*If you transfer more than this amount the difference will remain
 			as liquid tokens in your new account
@@ -521,7 +535,8 @@
 		<ng-container *ngIf="relayMethod">
 
 
-			<h4 style="color: var(--text-white-color);">Some exchanges, like Binance, impose some limitations. But don't worry, we came
+			<h4 style="color: var(--text-white-color);">Some exchanges, like Binance, impose some limitations. But don't
+				worry, we came
 				up with a solution for those cases!</h4>
 			<h4 style="color: #a7a7a7;">Just follow the steps below:</h4>
 			<h5 style="color: #a7a7a7;"><span class="blue">1.</span> Log in to your exchange.</h5>
@@ -617,9 +632,9 @@
 		<ng-template clrPageTitle>New Keys</ng-template>
 		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5>Please enter your desired public key or click the <span style="cursor:pointer;"
-																	class="blue"
-																	(click)="generateKeys()"> Generate Key Pair </span>
+		<h5 class="gray">Please enter your desired public key or click the <span style="cursor:pointer;"
+																				 class="blue"
+																				 (click)="generateKeys()"> Generate Key Pair </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">

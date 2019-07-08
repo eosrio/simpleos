@@ -14,6 +14,7 @@ import {Eosjs2Service} from './services/eosjs2.service';
 import {TransactionFactoryService} from './services/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
+import {Title} from '@angular/platform-browser';
 
 export interface LedgerSlot {
 	publicKey: string;
@@ -61,10 +62,15 @@ export class AppComponent implements OnInit, AfterViewInit {
 	public isMac: boolean;
 	private _maximized: boolean;
 
+	public transitEventHandler: any;
+	private eventFired: boolean;
+	public loadingTRX: boolean;
+
 	constructor(private fb: FormBuilder,
 				public network: NetworkService,
 				// public ledger: LedgerHWService,
 				public aService: AccountsService,
+				private titleService: Title,
 				public eos: EOSJSService,
 				private eosjs: Eosjs2Service,
 				private crypto: CryptoService,
@@ -75,16 +81,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 				private zone: NgZone,
 				private cdr: ChangeDetectorRef,
 				private _electronService: ElectronService,
-				private theme: ThemeService
+				public theme: ThemeService
 	) {
 		if (this.compilerVersion === 'LIBERLAND TESTNET') {
+			this.titleService.setTitle('Liberland Wallet v' + this.version);
 			this.theme.liberlandTheme();
+			this.activeChain = this.network.defaultChains.find((chain) => chain.name === this.compilerVersion);
+			localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
+			this.network.changeChain(this.activeChain.id);
 		} else {
 			this.theme.defaultTheme();
+			this.titleService.setTitle('SimplEOS Wallet v' + this.version);
 		}
-
-		this.activeChain = this.network.defaultChains.find((chain) => chain.name === this.compilerVersion);
-		this.network.changeChain(this.activeChain.id);
 
 		this.isMac = this._electronService.isMacOS;
 
@@ -103,6 +111,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.aService.versionSys = this.version;
 
 		this.ledgerOpen = false;
+		this.loadingTRX = false;
 
 		// this.ledger.ledgerStatus.asObservable().subscribe((status) => {
 		//   if (this.aService.hasAnyLedgerAccount === false) {
@@ -120,6 +129,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		if (this.connect.ipc) {
 			this.connect.ipc.on('request', (event, payload) => {
 				console.log(payload);
+				this.transitEventHandler = event;
 				switch (payload.message) {
 					case 'launch': {
 						console.log(payload);
@@ -161,7 +171,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 						this.zone.run(() => {
 							this.transitconnect = true;
+							this.eventFired = false;
 						});
+
+						if (!this.aService.accounts) {
+							console.log('No account found!');
+							event.sender.send('loginResponse', {});
+						}
 
 						if (this.aService.accounts.length > 0) {
 							this.accountChange = this.selectedAccount.subscribe((data) => {
@@ -197,6 +213,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 						break;
 					}
 					case 'sign': {
+						this.loadingTRX = true;
 						this.eosjs.localSigProvider.processTrx(payload.content.hex_data).then((data) => {
 							console.log(data);
 							this.fullTrxData = data;
@@ -218,22 +235,15 @@ export class AppComponent implements OnInit, AfterViewInit {
 							this.transit_signer = signer;
 							this.action_json = data.actions;
 							this.zone.run(() => {
+								this.loadingTRX = false;
 								this.transitAction = true;
+								this.eventFired = false;
 							});
 							this.replyEvent = event;
 						}).catch((e) => {
 							console.log(e);
+							this.loadingTRX = false;
 						});
-
-						// this.eosjs.deserializeTRX(payload.content.trx).then((results) => {
-						// 	console.log(results);
-						// 	event.sender.send('signResponse', {
-						// 		sigs: []
-						// 	});
-						// }).catch((error) => {
-						// 	console.log(error);
-						// });
-
 						break;
 					}
 					default: {
@@ -243,6 +253,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 			});
 		}
 
+	}
+
+	onModalClose(ev) {
+		if (this.transitEventHandler && ev === false && this.eventFired === false) {
+			this.eventFired = true;
+			this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
+		}
 	}
 
 	see() {
@@ -353,17 +370,34 @@ export class AppComponent implements OnInit, AfterViewInit {
 	}
 
 	selectAccount(account_data) {
-		const activePerm = account_data.details.permissions.find(p => p.perm_name === 'active');
-		const responseData = {
-			accountName: account_data.name,
-			permission: 'active',
-			publicKey: activePerm.required_auth.keys[0].key
-		};
-		this.selectedAccount.next(responseData);
-		this.transitconnect = false;
+		const store = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
+		let key = '';
+		let _perm = '';
+		if (store) {
+			const keys = Object.keys(JSON.parse(store));
+			account_data.details.permissions.forEach((p) => {
+				if (p.required_auth.keys.length > 0) {
+					const _k = p.required_auth.keys[0].key;
+					if (keys.indexOf(_k) !== -1) {
+						key = _k;
+						_perm = p.perm_name;
+					}
+				}
+			});
+		}
+		if (key !== '') {
+			const responseData = {
+				accountName: account_data.name,
+				permission: _perm,
+				publicKey: key
+			};
+			this.selectedAccount.next(responseData);
+			this.transitconnect = false;
+		}
 	}
 
 	async signTransitAction() {
+		this.wrongpass = '';
 		this.busy = true;
 		const account = this.aService.accounts.find(a => a.name === this.transit_signer);
 		this.aService.selected.next(account);
@@ -372,6 +406,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 			await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
 		} catch (e) {
 			this.wrongpass = 'wrong password';
+			this.busy = false;
 		}
 		try {
 			const result = await this.eosjs.signTrx(this.fullTrxData);
@@ -385,7 +420,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 				this.cdr.detectChanges();
 			}
 		} catch (e) {
+			this.wrongpass = e;
 			console.log(e);
+			this.busy = false;
 		}
 	}
 }

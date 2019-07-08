@@ -87,6 +87,25 @@ export class AccountsService {
 		// }
 	}
 
+	getStoredKey(account) {
+		const store = localStorage.getItem('eos_keys.' + this.activeChain.id);
+		let key = '';
+		let _perm = '';
+		if (store) {
+			const keys = Object.keys(JSON.parse(store));
+			account.details.permissions.forEach((p) => {
+				if (p.required_auth.keys.length > 0) {
+					const _k = p.required_auth.keys[0].key;
+					if (keys.indexOf(_k) !== -1) {
+						key = _k;
+						_perm = p.perm_name;
+					}
+				}
+			});
+		}
+		return [key, _perm];
+	}
+
 	parseEOS(tk_string) {
 		if (tk_string.split(' ')[1] === this.activeChain['symbol']) {
 			return parseFloat(tk_string.split(' ')[0]);
@@ -175,10 +194,37 @@ export class AccountsService {
 				this.loadingTokens = false;
 				return this.accounts;
 			} else {
-				this.loading = false;
-				this.loadingTokens = false;
-				this.lastTkLoadTime = Date.now();
-				return null;
+				if (this.activeChain.historyApi !== '') {
+					// Load with hyperion
+					const data = await this.http.get(this.activeChain.historyApi + '/state/get_tokens?account=' + account).toPromise();
+					const tokens = data['tokens'];
+					for (const token of tokens) {
+						if (token.symbol !== this.activeChain['symbol']) {
+							token['balance'] = token['amount'];
+							token['usd_value'] = 0;
+							this.registerSymbol(token);
+						}
+					}
+					this.tokens.sort((a: any, b: any) => {
+						if (a.symbol < b.symbol) {
+							return -1;
+						}
+						if (a.symbol > b.symbol) {
+							return 1;
+						}
+						return 0;
+					});
+					this.lastTkLoadTime = Date.now();
+					this.loading = false;
+					this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+					this.loadingTokens = false;
+					return this.accounts;
+				} else {
+					this.loading = false;
+					this.loadingTokens = false;
+					this.lastTkLoadTime = Date.now();
+					return null;
+				}
 			}
 		} else {
 			if (this.tokens.length > 0) {
@@ -393,7 +439,7 @@ export class AccountsService {
 			user: user,
 			block: block_num,
 			date: date,
-			amount: amount,
+			amount: (Math.round(amount * 10000) / 10000),
 			symbol: symbol,
 			memo: memo,
 			votedProducers: votedProducers,
@@ -445,6 +491,7 @@ export class AccountsService {
 				}
 			} else {
 				// Test API
+				this.getActions(account, nActions, 0);
 				console.log('Starting history api test');
 
 
@@ -453,28 +500,20 @@ export class AccountsService {
 	}
 
 	getActions(account, offset, pos, filter?, after?, before?, parent?) {
-		// filter = "eosio:buyrambytes";
 		this.actions = [];
 		this.totalActions = 0;
 		if (this.activeChain.historyApi !== '') {
-			console.log('Starting history api test V2');
-			// let url = this.activeChain.historyApi+'/get_actions?account='+account+'&limit='+offset+'&skip='+pos+'&parent=0';
 			let url = this.activeChain.historyApi + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
 			url = url + (filter !== '' && filter !== undefined ? filter : '');
 			url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
 			url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
 			url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
-
-			// console.log(url);
-
-
 			this.http.get(url).subscribe((result) => {
 				if (result['actions']) {
 					if (result['actions'].length > 0) {
 						this.actionStore[account]['actions'] = result['actions'];
 						const payload = JSON.stringify(this.actionStore);
 						localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
-
 						this.actionStore[account]['actions'].forEach((action) => {
 							const act = action['act'];
 							const tx_id = action['trx_id'];
@@ -483,19 +522,13 @@ export class AccountsService {
 							const seq = action['global_sequence'];
 							this.processAction(act, tx_id, blk_num, blk_time, seq);
 						});
-
-						// console.log(this.actions);
-
 						this.totalActions = result['total']['value'];
-
 						this.accounts[this.selectedIdx]['actions'] = this.actions;
 						this.calcTotalAssets();
-
 					} else {
 						this.actionStore[account]['actions'] = {};
 						this.actions = [];
 					}
-
 				} else {
 					console.log('empty result history!');
 					this.actions = [];
@@ -503,11 +536,10 @@ export class AccountsService {
 				}
 			}, (err) => {
 				console.log(err);
-
 			});
 		} else {
 			this.eos.getAccountActions(account, offset, pos).then(val => {
-				// console.log(val);
+				console.log(val);
 				const actions = val['actions'];
 				if (actions.length > 0) {
 					this.actionStore[account]['actions'] = actions;

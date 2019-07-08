@@ -48,7 +48,7 @@
 												<span
 													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn-rex btn btn-info-outline btn-sm"
 															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
 														withdraw to my account
 													</button>
@@ -131,7 +131,7 @@
 
 
 												<div class="clr-col-lg-11 white" *ngIf="!canbuyREX">
-													<div class="req-title">Requirements for buying REX</div>
+													<div class="req-title gray">Requirements for buying REX</div>
 													<div class="req white">
 														<fa-icon [icon]="['far', 'times-circle']" class="error"
 																 size="lg"></fa-icon>&nbsp;
@@ -143,7 +143,7 @@
 															VOTE EOSCOREPROXY
 														</button>
 														<div style="margin-top: 12px;">
-										<span class="explain">You're currently voting for <span
+										<span class="explain black-white">You're currently voting for <span
 											class="blue-rex">{{nVoters}}/21</span> producers.</span>
 															<button type="button" class="btn btn-info-outline btn-sm"
 																	style="float: right; margin-right: 5px; color: var(--rex-btn-color) !important;"
@@ -603,7 +603,7 @@
 												<span
 													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
 												<div>
-													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
+													<button [disabled]="rexFund === 0" type="button" class="btn-rex btn btn-info-outline btn-sm"
 															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
 														withdraw to my account
 													</button>

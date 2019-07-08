@@ -3,6 +3,7 @@ import {Injectable} from '@angular/core';
 import * as EOSJS from '../../assets/eos.js';
 import {BehaviorSubject, Subject} from 'rxjs';
 
+
 @Injectable()
 export class EOSJSService {
 	eosio: any;
@@ -103,8 +104,8 @@ export class EOSJSService {
 	getKeyAccounts(pubkey: string): Promise<any> {
 		return new Promise((resolve2, reject2) => {
 			this.eos['getKeyAccounts']({
-					public_key: pubkey
-				}).then(data => {
+				public_key: pubkey
+			}).then(data => {
 				resolve2(data);
 				// console.log('ff',data);
 			}).catch(error => {
@@ -238,20 +239,23 @@ export class EOSJSService {
 		});
 	}
 
-	requestRefund(from: string) {
+	requestRefund(from: string, permission) {
 		// console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
-		return this.eos.refund(from);
+		const options = {authorization: from + '@' + permission};
+		return this.eos.refund(from, options);
 	}
 
-	unDelegate(from: string, receiver: string, net: string, cpu: string, symbol: string) {
+	unDelegate(from: string, receiver: string, net: string, cpu: string, symbol: string, permission) {
 		// console.log(from, receiver, (net+' EOS'), (cpu+' EOS'));
-		return this.eos.undelegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol));
+		const options = {authorization: from + '@' + permission};
+		return this.eos.undelegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol), options);
 	}
 
-	delegateBW(from: string, receiver: string, net: string, cpu: string, symbol: string) {
+	delegateBW(from: string, receiver: string, net: string, cpu: string, symbol: string, permission) {
 		// console.log(from, receiver, (net +' EOS'), (cpu +' EOS'));
+		const options = {authorization: from + '@' + permission};
 		return new Promise((resolve, reject) => {
-			this.eos.delegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol), 0).then(data => {
+			this.eos.delegatebw(from, receiver, (net + ' ' + symbol), (cpu + ' ' + symbol), 0, options).then(data => {
 				resolve(data);
 			}).catch(err2 => {
 				reject(err2);
@@ -259,13 +263,13 @@ export class EOSJSService {
 		});
 	}
 
-	claimRefunds(account, k): Promise<any> {
+	claimRefunds(account, k, permission): Promise<any> {
 		this.baseConfig.keyProvider = [k];
 		const tempEos = EOSJS(this.baseConfig);
 		return tempEos['refund']({owner: account}, {
 			broadcast: true,
 			sign: true,
-			authorization: account + '@active'
+			authorization: account + '@' + permission
 		});
 	}
 
@@ -279,65 +283,20 @@ export class EOSJSService {
 				const tempAccData = [];
 				this.getKeyAccounts(pubkey).then((data) => {
 					console.log('load', data);
-					// if (data['account_names'].length > 0) {
-					if (data.length > 0) {
+					if (data['account_names'].length > 0) {
 						const promiseQueue = [];
-						// data['account_names'].forEach((acc) => {
-						data.forEach((acc) => {
+						data['account_names'].forEach((acc) => {
 							const tempPromise = new Promise((resolve1, reject1) => {
-								// this.getAccountInfo(acc).then((acc_data) => {
-								this.getAccountInfo(acc.account).then((acc_data) => {
-									console.log('eeee1.4');
+								this.getAccountInfo(acc).then((acc_data) => {
 									tempAccData.push(acc_data);
-									// if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
 									this.getTokens(acc_data['account_name']).then((tokens) => {
 										acc_data['tokens'] = tokens;
 										this.accounts[acc] = acc_data;
-										tempAccData.push(acc_data);
 										resolve1(acc_data);
 									}).catch((err) => {
 										console.log(err);
 										reject1();
 									});
-									// } else {
-									//   reject1();
-									// }
-								});
-							});
-							promiseQueue.push(tempPromise);
-						});
-						Promise.all(promiseQueue).then((results) => {
-							resolve({
-								foundAccounts: results,
-								publicKey: pubkey
-							});
-						}).catch(() => {
-							console.log(data);
-							reject2({
-								message: 'non_active',
-								accounts: data
-							});
-						});
-					} else if (data['account_names'].length > 0) {
-						const promiseQueue = [];
-						data['account_names'].forEach((acc) => {
-							// data.forEach((acc) => {
-							const tempPromise = new Promise((resolve1, reject1) => {
-								this.getAccountInfo(acc).then((acc_data) => {
-									tempAccData.push(acc_data);
-									// console.log(acc_data.permissions[0]['required_auth']['keys'][0].key);
-									if (acc_data.permissions[0]['required_auth']['keys'][0].key === pubkey) {
-										this.getTokens(acc_data['account_name']).then((tokens) => {
-											acc_data['tokens'] = tokens;
-											this.accounts[acc] = acc_data;
-											resolve1(acc_data);
-										}).catch((err) => {
-											console.log(err);
-											reject1();
-										});
-									} else {
-										reject1();
-									}
 								});
 							});
 							promiseQueue.push(tempPromise);
@@ -412,8 +371,8 @@ export class EOSJSService {
 		return this.eos['getAbi'](contract);
 	}
 
-	pushActionContract(contract, action, form, account) {
-		const options = {authorization: account + '@active'};
+	pushActionContract(contract, action, form, account, permission) {
+		const options = {authorization: account + '@' + permission};
 
 		console.log(JSON.stringify(form));
 		return new Promise((resolve, reject2) => {
@@ -440,12 +399,12 @@ export class EOSJSService {
 		localStorage.setItem('simpleos.txhistory.' + this.chainID, payload);
 	}
 
-	async transfer(contract, from, to, amount, memo): Promise<any> {
+	async transfer(contract, from, to, amount, memo, permission): Promise<any> {
 		if (this.auth) {
+			const options = {authorization: from + '@' + permission};
 			if (contract === 'eosio.token') {
 				return new Promise((resolve, reject) => {
-					this.eos['transfer'](from, to, amount, memo, (err) => {
-						// console.log(err, trx);
+					this.eos['transfer'](from, to, amount, memo, options, (err) => {
 						if (err) {
 							reject(JSON.parse(err));
 						} else {
@@ -458,9 +417,7 @@ export class EOSJSService {
 					this.eos['contract'](contract, (err, tokenContract) => {
 						if (!err) {
 							if (tokenContract['transfer']) {
-								const options = {authorization: from + '@active'};
 								tokenContract['transfer'](from, to, amount, memo, options, (err2) => {
-									// console.log(err, trx);
 									if (err2) {
 										reject(JSON.parse(err2));
 									} else {
@@ -492,30 +449,34 @@ export class EOSJSService {
 		}
 	}
 
-	ramBuyBytes(payer: string, receiver: string, bytes: string): Promise<any> {
-		return this.eos.buyrambytes(payer, receiver, parseInt(bytes, 10));
+	ramBuyBytes(payer: string, receiver: string, bytes: string, permission): Promise<any> {
+		const options = {authorization: payer + '@' + permission};
+		return this.eos.buyrambytes(payer, receiver, parseInt(bytes, 10), options);
 	}
 
-	ramBuyEOS(payer: string, receiver: string, quant: number, symbol: string): Promise<any> {
-		return this.eos.buyram(payer, receiver, quant.toFixed(4) + ' ' + symbol);
+	ramBuyEOS(payer: string, receiver: string, quant: number, symbol: string, permission): Promise<any> {
+		const options = {authorization: payer + '@' + permission};
+		return this.eos.buyram(payer, receiver, quant.toFixed(4) + ' ' + symbol, options);
 	}
 
-	ramSellBytes(account: string, bytes: string): Promise<any> {
-		return this.eos.sellram(account, parseInt(bytes, 10));
+	ramSellBytes(account: string, bytes: string, permission): Promise<any> {
+		const options = {authorization: account + '@' + permission};
+		return this.eos.sellram(account, parseInt(bytes, 10), options);
 	}
 
 	async createAccount(creator: string, name: string, owner: string,
 						active: string, delegateAmount: number,
 						rambytes: number, transfer: boolean,
-						giftAmount: number, giftMemo: string, symbol: string): Promise<any> {
+						giftAmount: number, giftMemo: string, symbol: string, precision: number, permission): Promise<any> {
 		if (this.auth) {
+			const options = {authorization: creator + '@' + permission};
 			return this.eos.transaction(tr => {
 				tr['newaccount']({creator: creator, name: name, owner: owner, active: active});
 				tr['buyrambytes']({payer: creator, receiver: name, bytes: rambytes});
 				tr['delegatebw']({
 					from: creator, receiver: name,
-					stake_net_quantity: (delegateAmount * 0.3).toFixed(4) + ' ' + symbol,
-					stake_cpu_quantity: (delegateAmount * 0.7).toFixed(4) + ' ' + symbol,
+					stake_net_quantity: (delegateAmount * 0.3).toFixed(precision) + ' ' + symbol,
+					stake_cpu_quantity: (delegateAmount * 0.7).toFixed(precision) + ' ' + symbol,
 					transfer: transfer ? 1 : 0
 				});
 				if (giftAmount > 0) {
@@ -526,7 +487,7 @@ export class EOSJSService {
 						memo: giftMemo
 					});
 				}
-			});
+			}, options);
 		} else {
 			return new Promise(resolve => resolve(null));
 		}
@@ -569,45 +530,22 @@ export class EOSJSService {
 		}
 	}
 
-	async voteProducer(voter: string, list: string[]): Promise<any> {
+	async voteProducer(voter: string, list: string[], permission): Promise<any> {
 		if (list.length <= 30) {
 			const currentVotes = list;
 			currentVotes.sort();
-			// const info = await this.eos['getInfo']({}).then(result => {
-			//   return result;
-			// });
-			// const broadcast_lib = info['last_irreversible_block_num'];
-			// console.log(this.eos);
-			const options = {authorization: voter + '@active'};
+			const options = {authorization: voter + '@' + permission};
 			return this.eosio['voteproducer'](voter, '', currentVotes, options).then(data => {
 				return JSON.stringify(data);
 			}).catch(err => {
 				return err;
 			});
-			// return new Promise((resolve, reject) => {
-			//   const cb = (err, res) => {
-			//     if (err) {
-			//       reject(JSON.parse(err));
-			//     } else {
-			//       console.log(res);
-			//       // setTimeout(() => {
-			//       //   this.txCheckQueue.push({
-			//       //     block: broadcast_lib,
-			//       //     id: res['transaction_id']
-			//       //   });
-			//       //   this.startMonitoringLoop();
-			//       // }, 1000);
-			//       resolve(res);
-			//     }
-			//   };
-			//
-			// });
 		} else {
 			return new Error('Cannot cast more than 30 votes!');
 		}
 	}
 
-	async voteAction(voter: string, list: string[], type: number): Promise<any> {
+	async voteAction(voter: string, list: string[], type: number, permission: string): Promise<any> {
 		let proxy = '';
 		let currentVotes = [];
 		if (list.length <= 30) {
@@ -621,7 +559,7 @@ export class EOSJSService {
 			return new Error('Cannot cast more than 30 votes!');
 		}
 		console.log(proxy);
-		const options = {authorization: voter + '@active'};
+		const options = {authorization: voter + '@' + permission};
 		return this.eosio['voteproducer'](voter, type ? proxy : '', type ? '' : currentVotes, options).then(data => {
 			return JSON.stringify(data);
 		}).catch(err => {
@@ -629,14 +567,25 @@ export class EOSJSService {
 		});
 	}
 
-	async changebw(account, amount, symbol, ratio) {
+	async changebw(account, permission, amount, symbol, ratio, fr) {
 		let cpu_v, net_v;
 		const accountInfo = await this.eos['getAccount'](account);
 		const refund = accountInfo['refund_request'];
 		const liquid_bal = accountInfo['core_liquid_balance'];
+		let wei_cpu: any;
+		let wei_net: any;
 		let ref_cpu = 0;
 		let ref_net = 0;
 		let liquid = 0;
+
+		if ((typeof accountInfo['cpu_weight']) === 'string') {
+			wei_cpu = Math.round(parseFloat(accountInfo['cpu_weight'].split(' ')[0]) / 10000);
+			wei_net = Math.round(parseFloat(accountInfo['net_weight'].split(' ')[0]) / 10000);
+		} else {
+			wei_cpu = accountInfo['cpu_weight'];
+			wei_net = accountInfo['net_weight'];
+		}
+
 		if (liquid_bal) {
 			liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
 		}
@@ -644,27 +593,31 @@ export class EOSJSService {
 			ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
 			ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
 		}
-		const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
+
+		const current_stake = wei_cpu + wei_net;
+
 		const new_total = current_stake + amount;
 		const new_cpu = new_total * ratio;
 		const new_net = new_total * (1 - ratio);
-		let cpu_diff = new_cpu - accountInfo['cpu_weight'];
-		let net_diff = new_net - accountInfo['net_weight'];
+		let cpu_diff = new_cpu - wei_cpu;
+		let net_diff = new_net - wei_net;
+
 
 		if (cpu_diff > (ref_cpu + liquid)) {
 			net_diff += (cpu_diff - (ref_cpu + liquid));
 			cpu_diff = (ref_cpu + liquid);
-		}
 
+		}
 		if (net_diff > (ref_net + liquid)) {
 			cpu_diff += (cpu_diff - (ref_cpu + liquid));
 			net_diff = (ref_net + liquid);
+
 		}
 		return this.eos.transaction((tr) => {
 			if (cpu_diff < 0 && net_diff >= 0) {
 				// Action 1 - Unstake CPU only
 				net_v = '0.0000';
-				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
+				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(fr);
 				// console.log('Unstake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
 					from: account,
@@ -675,7 +628,7 @@ export class EOSJSService {
 				if (net_diff > 0) {
 					// Action 2 - Stake NET only
 					cpu_v = '0.0000';
-					net_v = (net_diff / 10000).toFixed(4);
+					net_v = (net_diff / 10000).toFixed(fr);
 					// console.log('Stake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
 					tr['delegatebw']({
 						from: account,
@@ -687,7 +640,7 @@ export class EOSJSService {
 				}
 			} else if (net_diff < 0 && cpu_diff >= 0) {
 				// Action 1 - Unstake NET only
-				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+				net_v = ((Math.abs(net_diff)) / 10000).toFixed(fr);
 				cpu_v = '0.0000';
 				// console.log('Unstake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
@@ -699,7 +652,7 @@ export class EOSJSService {
 				// Action 2 - Stake CPU only
 				if (cpu_diff > 0) {
 					net_v = '0.0000';
-					cpu_v = (cpu_diff / 10000).toFixed(4);
+					cpu_v = (cpu_diff / 10000).toFixed(fr);
 					// console.log('Stake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
 					tr['delegatebw']({
 						from: account,
@@ -711,8 +664,8 @@ export class EOSJSService {
 				}
 			} else if (net_diff < 0 && cpu_diff < 0) {
 				// Action 1 - Unstake Both
-				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(4);
-				net_v = ((Math.abs(net_diff)) / 10000).toFixed(4);
+				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(fr);
+				net_v = ((Math.abs(net_diff)) / 10000).toFixed(fr);
 				// console.log('Unstake Both', 'NET: ', net_v, 'CPU: ', cpu_v);
 				tr['undelegatebw']({
 					from: account,
@@ -722,9 +675,9 @@ export class EOSJSService {
 				});
 			} else {
 				// Action 1 - Stake both
-				cpu_v = (cpu_diff / 10000).toFixed(4);
-				net_v = (net_diff / 10000).toFixed(4);
-				// console.log('NET: ', net_v, 'CPU: ', cpu_v);
+				cpu_v = (cpu_diff / 10000).toFixed(fr);
+				net_v = (net_diff / 10000).toFixed(fr);
+				console.log('NET: ', net_v, symbol, 'CPU: ', cpu_v, symbol);
 				tr['delegatebw']({
 					from: account,
 					receiver: account,
@@ -733,50 +686,7 @@ export class EOSJSService {
 					transfer: 0
 				});
 			}
-		});
+		}, {authorization: account + '@' + permission});
 	}
-
-	// async stake(account, amount, symbol) {
-	// 	const accountInfo = await this.eos['getAccount'](account);
-	// 	const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
-	// 	const new_total = current_stake + amount;
-	// 	const new_cpu = new_total * 0.75;
-	// 	const new_net = new_total * 0.25;
-	// 	const cpu_diff = new_cpu - accountInfo['cpu_weight'];
-	// 	const net_diff = new_net - accountInfo['net_weight'];
-	// 	if (amount > 2) {
-	// 		return this.changebw(account, cpu_diff, net_diff, symbol);
-	// 	} else {
-	// 		return null;
-	// 	}
-	// }
-
-	// async unstake(account, amount, symbol) {
-	// 	const accountInfo = await this.eos['getAccount'](account);
-	//
-	// 	const current_stake = accountInfo['cpu_weight'] + accountInfo['net_weight'];
-	//
-	// 	console.log(accountInfo);
-	// 	console.log(current_stake);
-	// 	console.log(amount);
-	// 	console.log(current_stake - amount);
-	//
-	// 	if (current_stake - amount >= 10000) {
-	// 		const n_ratio = accountInfo['net_weight'] / current_stake;
-	// 		const c_ratio = accountInfo['cpu_weight'] / current_stake;
-	// 		const net = ((amount * n_ratio) / 10000).toFixed(4);
-	// 		const cpu = ((amount * c_ratio) / 10000).toFixed(4);
-	// 		console.log('CPU: ', cpu + ' ' + symbol);
-	// 		console.log('NET: ', net + ' ' + symbol);
-	// 		return this.eos['undelegatebw']({
-	// 			from: account,
-	// 			receiver: account,
-	// 			unstake_net_quantity: net + ' ' + symbol,
-	// 			unstake_cpu_quantity: cpu + ' ' + symbol
-	// 		});
-	// 	} else {
-	// 		return null;
-	// 	}
-	// }
 
 }

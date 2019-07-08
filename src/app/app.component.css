@@ -55,7 +55,6 @@
 	background-color: transparent;
 	border: 1px solid #565656;
 	box-shadow: none;
-	color: #adadad;
 }
 
 .chain-section {
@@ -67,7 +66,7 @@
 }
 
 .chain-section:not(.selected):hover {
-	background-color: #2b2b2b;
+	background-color: var(--main-background);
 	cursor: pointer;
 }
 
@@ -223,3 +222,17 @@
 /*.alert-text {*/
 /*margin-left: 21px;*/
 /*}*/
+
+/*JSON formatter*/
+/deep/ .segment-key {
+	color: var(--text-white-color) !important;
+}
+
+/deep/ .transit-json .ngx-json-viewer {
+	font-family: 'open sans' !important;
+}
+
+/deep/ .transit-json .ngx-json-viewer .segment-type-string > .segment-main > .segment-value {
+	color: #f34d4d !important;
+}
+/*JSON formatter end*/

@@ -23,7 +23,7 @@
 
 .req {
 	color: white;
-	background-color: var(--sidenav-background);
+	background-color: var(--tr-resource-even-backgorund);
 	margin-top: 4px;
 	padding: 10px 0 8px 12px;
 	border-bottom: 1px solid var(--sidenav-active-border-color1);
@@ -39,7 +39,6 @@
 
 .explain {
 	margin-top: 10px;
-	color: #b0b0b7;
 	margin-left: 24px;
 }
 

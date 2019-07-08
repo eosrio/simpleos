@@ -15,18 +15,18 @@
 					</div>
 					<ng-container
 						*ngIf="sendForm.value.token !== aService.activeChain['symbol'] && selectedToken['price'] !== null">
-						${{token_balance * selectedToken['price'] | number :'1.2-2'}}
+						${{token_balance * selectedToken['price'] | number :'1.2-' + aService.activeChain['precision']}}
 					</ng-container>
 				</div>
 				<ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
-					<div class="eos">{{unstaked | number : '1.2-4'}} {{aService.activeChain['symbol']}}</div>
+					<div class="eos">{{unstaked | number : '1.2-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</div>
 					<div *ngIf="unstaking > 0" style="color: white">
 						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
 						'1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}
 					</div>
 				</ng-container>
 				<ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
-					<div class="eos">{{token_balance | number : '1.2-4'}} {{sendForm.value.token}}</div>
+					<div class="eos">{{token_balance | number : '1.2-' + aService.activeChain['precision']}} {{sendForm.value.token}}</div>
 				</ng-container>
 				<form [formGroup]="sendForm">
 					<div>
@@ -121,7 +121,7 @@
 							<div class="clr-row justify-content-between">
 								<div class="clr-col-lg-8 clr-col-sm-6 clr-col-md-7">
 									<h5 class="token-title-color contact-hover mt-0">{{contact.name}}</h5>
-									<div>{{contact.account}}</div>
+									<div class="black-white">{{contact.account}}</div>
 								</div>
 								<div class="clr-col-lg-4 clr-col-sm-6 clr-col-md-5" style="text-align: right">
 									<button class="btn btn-info-outline editBtn"
@@ -150,7 +150,7 @@
 
 <clr-modal [(clrModalOpen)]="sendModal" (clrModalOpenChange)="confirmForm.reset();">
 	<h3 class="modal-title text-white"><span class="blue">{{ fromAccount }}</span> sends <span
-		class="blue">{{ sendForm.value.amount | number : '1.2-4' }} {{sendForm.value.token}}</span>
+		class="blue">{{ sendForm.value.amount | number : '1.2-' + aService.activeChain['precision'] }} {{sendForm.value.token}}</span>
 		to
 	</h3>
 	<div class="modal-body">

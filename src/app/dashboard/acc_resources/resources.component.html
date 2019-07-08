@@ -137,7 +137,7 @@
 						<progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
 					</div>
 					<span class="title">NET Bandwidth</span>
-					<span class="resource" style="float:right; font-size: 14px;">{{net_weight}}</span>
+					<span class="resource" style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
 					<div class="resource"><span class="blue">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
 						KB </span><span style="color: #8d8d8d">/ {{net_limit.max / (1024)
 						| number: '1.2-2'}} KB</span>
@@ -156,7 +156,7 @@
               	<span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
 			  </a>
 		  </span>
-					<span class="resource" style="float:right; font-size: 14px;">{{cpu_weight}}</span>
+					<span class="resource" style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
 					<div class="blue resource"><span class="blue">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
 						ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
 						| number: '1.2-2'}} ms</span>

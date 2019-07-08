@@ -13,6 +13,7 @@ import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {EOSAccount} from '../interfaces/account';
 import {NetworkService} from '../services/network.service';
 import {AppComponent} from '../app.component';
+import {ThemeService} from '../services/theme.service';
 
 @Component({
 	selector: 'app-dashboard',
@@ -108,12 +109,21 @@ export class DashboardComponent implements OnInit {
 		public network: NetworkService,
 		public ram: RamService,
 		private zone: NgZone,
+		private theme: ThemeService,
 		public app: AppComponent
 	) {
 		this.newAccountModal = false;
 		this.importKeyModal = false;
 		this.deleteAccModal = false;
 		this.appVersion = window['appversion'];
+
+		if (this.aService.activeChain.name === 'WAX MAINNET') {
+			this.theme.defaultTheme();
+		}
+
+		if (this.aService.activeChain.name === 'LIBERLAND TESTNET') {
+			this.theme.defaultTheme();
+		}
 
 		this.passform = this.fb.group({
 			matchingPassword: this.fb.group({
@@ -174,12 +184,15 @@ export class DashboardComponent implements OnInit {
 				this.importedAccounts = [];
 				this.importedAccounts = [...results.foundAccounts];
 				this.importedAccounts.forEach((item) => {
+					item['permission'] = item.permissions.find(p => {
+						return p.required_auth.keys[0].key === results.publicKey;
+					})['perm_name'];
 					if (item['refund_request']) {
 						const tempDate = item['refund_request']['request_time'] + '.000Z';
 						const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
 						const now = new Date().getTime();
 						if (now > refundTime) {
-							this.eos.claimRefunds(item.account_name, input).then((tx) => {
+							this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
 								console.log(tx);
 							});
 						} else {
@@ -270,13 +283,15 @@ export class DashboardComponent implements OnInit {
 
 		const account = this.aService.selected.getValue();
 		this.final_creator = account.name;
-		const publicKey = account.details['permissions'][0]['required_auth'].keys[0].key;
+
+		const [publicKey, permission] = this.aService.getStoredKey(account);
+
 		this.crypto.authenticate(this.submitTXForm.get('pass').value, publicKey).then((data) => {
 			if (data === true) {
 				this.eos.createAccount(
 					this.final_creator, this.final_name, this.final_owner,
 					this.final_active, delegate_amount, ram_amount,
-					delegate_transfer, gift_amount, 'created with simpleos', this.aService.activeChain['symbol']).then((txdata) => {
+					delegate_transfer, gift_amount, 'created with simpleos', this.aService.activeChain['symbol'], this.aService.activeChain['precision'], permission).then((txdata) => {
 					console.log(txdata);
 					if (this.newAccOptions === 'newpk') {
 						setTimeout(() => {

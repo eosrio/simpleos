@@ -24,7 +24,6 @@ export class RamService {
 
 	constructor(private aService: AccountsService, private eos: EOSJSService) {
 		this.socket = socketIo('https://hapi.eosrio.io/');
-
 		this.socket.on('ticker', (data) => {
 			if (data.price) {
 				if (this.aService.activeChain.name === 'EOS MAINNET') {
@@ -33,7 +32,6 @@ export class RamService {
 				}
 			}
 		});
-		this.reload();
 		setInterval(() => {
 			this.reload();
 		}, 60000);

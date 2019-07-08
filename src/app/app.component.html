@@ -17,30 +17,38 @@
 			</div>
 
 			<a class="nav-link">
-				<span *ngIf="compilerVersion=='EOS MAINNET'" class="title-header" style="color: #9a9a9a; font-size: 13px;">SimplEOS Wallet {{version}}</span>
-				<span *ngIf="compilerVersion!=='EOS MAINNET'" class="title-header" style="color: #9a9a9a; font-size: 13px;">LIBERLAND Wallet {{version}}</span>
+				<span *ngIf="compilerVersion=='EOS MAINNET'" class="title-header"
+					  style="color: #9a9a9a; font-size: 13px;">SimplEOS Wallet {{version}}</span>
+				<span *ngIf="compilerVersion!=='EOS MAINNET'" class="title-header"
+					  style="color: #9a9a9a; font-size: 13px;">LIBERLAND Wallet {{version}}</span>
 			</a>
 
 		</div>
-		<div style="width:100%;height: 2.05rem;">
+		<div style="width:100%;height: 2.05rem;" *ngIf="compilerVersion=='EOS MAINNET' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
 			<a class="nav-link nav-icon other-icon">
-				<clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon" style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
-				<clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon" style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+				<clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
+						  style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+				<clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon"
+						  style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
 			</a>
 		</div>
 
 
 		<div class="header-actions" *ngIf="!isMac">
-			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
+			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;"
+			   class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-min"></clr-icon>
 			</a>
-			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
+			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
+			   class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-restore"></clr-icon>
 			</a>
-			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon other-icon icon-header">
+			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
+			   class="nav-link nav-icon other-icon icon-header">
 				<clr-icon size="18" shape="window-max"></clr-icon>
 			</a>
-			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;" class="nav-link nav-icon close-icon icon-header">
+			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;"
+			   class="nav-link nav-icon close-icon icon-header">
 				<clr-icon size="18" shape="window-close"></clr-icon>
 			</a>
 		</div>
@@ -49,7 +57,7 @@
 		<router-outlet></router-outlet>
 	</div>
 </div>
-<clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'">
+<clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onModalClose($event)">
 	<h3 class="modal-title text-white">
 		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->
 		Connect to
@@ -66,8 +74,8 @@
 	<!--		</div>-->
 	<!--	</ng-container>-->
 	<div class="modal-body" *ngIf="aService.accounts.length > 0">
-		<p style="margin-bottom: 20px; color: #d4d4d4;">Choose the account you want to connect:</p>
-		<div class="card chains-card">
+		<p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
+		<div class="card chains-card black-white">
 			<ng-container *ngFor="let acc of aService.accounts; let i = index">
 				<div class="card-block chain-section" (click)="selectAccount(acc)">
 					{{acc.name}}
@@ -76,23 +84,32 @@
 				</div>
 			</ng-container>
 		</div>
-		<div style="margin: 10px 0; color: #adadad">*This doesn't let the dapp do actions on your behalf</div>
+		<div style="margin: 10px 0;" class="black-white">*This doesn't let the dapp do actions on your behalf</div>
 	</div>
 	<div class="modal-body" *ngIf="aService.accounts.length === 0">
-		<p style="margin-bottom: 20px; color: #adadad"><strong>No account found.</strong> Please, close this window and
+		<p style="margin-bottom: 20px;" class="black-white"><strong>No account found.</strong> Please, close this window
+			and
 			import your account to continue.</p>
 	</div>
 </clr-modal>
 
+<clr-modal [(clrModalOpen)]="loadingTRX" [clrModalSize]="'md'">
+	<h3 class="modal-title">
+		<span class="blue">Loading transaction...</span>
+	</h3>
+	<div class="modal-body">
 
-<clr-modal [(clrModalOpen)]="transitAction" [clrModalSize]="'md'">
+	</div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="transitAction" [clrModalSize]="'md'" (clrModalOpenChange)="onModalClose($event)">
 	<h3 class="modal-title">
 		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->
 		<span class="blue">Confirm transaction</span>
 	</h3>
 	<div class="modal-body">
 		<h5 class="gray mt-0">Account: {{transit_signer}}</h5>
-		<h4 class="text-white">Are you sure you want to perform the following actions ?</h4>
+		<h5 class="text-white">Are you sure you want to perform the following actions ?</h5>
 		<div *ngIf="updateauthWarning" class="alert alert-danger" role="alert"
 			 style="margin-top: 10px; font-size: 15px">
 			<div class="alert-items">
@@ -113,7 +130,7 @@
 		<p-accordion>
 			<p-accordionTab *ngFor="let act of action_json; let i = index" header="{{act.name}} on {{act.account}}"
 							[selected]="i === 0">
-				<ngx-json-viewer width="300" [json]="act.data" [expanded]="true"></ngx-json-viewer>
+				<ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
 			</p-accordionTab>
 		</p-accordion>
 	</div>
@@ -208,10 +225,12 @@
 
 <!--LEDGER MODAL-->
 
-<div id="update-box" class="update-box-class" style="float:right;" [ngClass]="update ? 'show' : ''" *ngIf="compilerVersion=='EOS MAINNET'">
+<div id="update-box" class="update-box-class" style="float:right;" [ngClass]="update ? 'show' : ''"
+	 *ngIf="compilerVersion=='EOS MAINNET'">
 	<div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
 	<div>There is a new version available!<br/> Want to update?</div>
 	<div></div>
-	<button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes</button>
-	<a class="btn btn-link btn-sm" (click)="openGithub()">View on Github</a>
+	<button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes
+	</button>
+	<a class="btn btn-link2 btn-sm" (click)="openGithub()">View on Github</a>
 </div>

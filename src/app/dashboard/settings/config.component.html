@@ -12,6 +12,8 @@
 							<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
 							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
 										[value]="chain.id">
+								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+									 class="chain-icon"/>
 								{{ chain.name }}
 							</mat-option>
 						</mat-select>
@@ -37,11 +39,14 @@
 					</div>
 					<div class="clr-row" style="margin-left: 0;">
 						<div class="clr-col-auto">
-							<button class="btn btn-info-outline mt-1 special-font" (click)="endpointModal = true" style="font-weight: 700">Other</button>
+							<button class="btn btn-info-outline mt-1 special-font" (click)="endpointModal = true"
+									style="font-weight: 700">Other
+							</button>
 						</div>
 						<div class="clr-col-auto">
 							<button class="btn btn-info-outline mt-1 special-font" (click)="network.connect(true)"
-									pTooltip="Automatically connects on the fastest endpoint for you" style="font-weight: 700">Auto
+									pTooltip="Automatically connects on the fastest endpoint for you"
+									style="font-weight: 700">Auto
 							</button>
 						</div>
 						<div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
@@ -64,7 +69,8 @@
 					Logout Options
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"  style="font-weight: 700">Clear local data and logout
+					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"
+							style="font-weight: 700">Clear local data and logout
 					</button>
 					<div class="info">*Your data will be cleared from this PC. Should you want to login again, you will
 						have to
@@ -82,8 +88,12 @@
 					</a>
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="pinModal = true" style="font-weight: 700">SET PIN</button>
-					<button class="btn btn-danger-outline special-font" (click)="clearPinModal = true"  style="font-weight: 700">REMOVE lOCKSCREEN</button>
+					<button class="btn btn-info-outline special-font" (click)="pinModal = true"
+							style="font-weight: 700">SET PIN
+					</button>
+					<button class="btn btn-danger-outline special-font" (click)="clearPinModal = true"
+							style="font-weight: 700">REMOVE lOCKSCREEN
+					</button>
 				</div>
 			</div>
 			<div class="card info-card">
@@ -95,7 +105,9 @@
 					</a>
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="changePassModal = true" style="font-weight: 700">CHANGE</button>
+					<button class="btn btn-info-outline special-font" (click)="changePassModal = true"
+							style="font-weight: 700">CHANGE
+					</button>
 				</div>
 			</div>
 			<div class="card info-card">
@@ -118,10 +130,15 @@
 						</a>
 						<div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
 					</div>
-					<button class="btn btn-info-outline special-font" (click)="exportBKModal = true" style="font-weight: 700">EXPORT</button>
-					<button class="btn btn-info-outline special-font" (click)="importBKModal = true" style="font-weight: 700">IMPORT</button>
+					<button class="btn btn-info-outline special-font" (click)="exportBKModal = true"
+							style="font-weight: 700">EXPORT
+					</button>
+					<button class="btn btn-info-outline special-font" (click)="importBKModal = true"
+							style="font-weight: 700">IMPORT
+					</button>
 					<div style="margin-top: 20px;">
-						<button class="btn btn-info-outline special-font" (click)="openPKModal()" style="font-weight: 700">VIEW PRIVATE KEY
+						<button class="btn btn-info-outline special-font" (click)="openPKModal()"
+								style="font-weight: 700">VIEW PRIVATE KEY
 							<fa-icon [icon]="['fas', 'skull-crossbones']" size="lg"></fa-icon>
 						</button>
 					</div>
@@ -329,7 +346,7 @@
 			{{choosedDir}}
 			<input style="visibility:hidden;" type="file" placeholder="Backup Directory"
 				   (change)="exportCheckBK($event)" formControlName="customExportBK" webkitdirectory directory
-				   #customExportBK>
+                   #customExportBK>
 
 		</form>
 
@@ -349,7 +366,15 @@
 		<fa-icon [icon]="['fas', 'exclamation-triangle']"></fa-icon>
 	</h3>
 	<div class="modal-body">
-		<div *ngIf="!showpk">
+		<div *ngIf="claimKey">
+			Saved claim private key
+			<mat-form-field style="width: 470px; margin-top: 25px;">
+				<input matInput placeholder="Claim private key"
+					   [value]="claimPrivateKey" readonly>
+				<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(claimPrivateKey)"></fa-icon>
+			</mat-form-field>
+		</div>
+		<div *ngIf="!showpk && !claimKey">
 			<h4 class="text-white">Are you <span class="blue">sure</span> you want to see the active private key of the
 				account <span class="blue">{{selectedAccount}}</span>?</h4>
 			<div style="color: #9A9A9A;">*Your private key is the only access to your account, so it should always be
@@ -365,7 +390,7 @@
 				</button>
 			</form>
 		</div>
-		<div *ngIf="showpk">
+		<div *ngIf="showpk && !claimKey">
 			<h4 class="text-white">Please, save the active key on a safe place and <span class="blue">never share your private key with
 				anyone.</span></h4>
 			<mat-form-field style="width: 470px; margin-top: 25px;">

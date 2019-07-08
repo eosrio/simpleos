@@ -8,7 +8,7 @@
 }
 
 .clicked:hover {
-	border-bottom: 1px solid #0079b8 !important;
+	border-bottom: 1px solid var(--text-blue-color) !important;
 }
 
 .clicked {
@@ -152,7 +152,7 @@
 }
 
 .bold {
-	color: lightgrey;
+	color: var(--text-gray3-color);
 	font-weight: 500;
 }
 
@@ -191,7 +191,6 @@
 
 .label-blue {
 	font-size: 14px;
-	color: #d3d3d3;
 	border-radius: 2px;
 	padding: 14px 0.5rem;
 }
@@ -280,7 +279,7 @@
 }
 
 /deep/ .chain-selector .mat-select-value {
-	color: #0094d2;
+	color: var(--text-blue-color);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
@@ -292,11 +291,11 @@
 }
 
 /deep/ .mat-select-panel {
-	background: #333333;
+	background: var(--info-card-background);
 }
 
 /deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: #0094d2;
+	color: var(--text-blue-color);
 }
 
 /deep/ .mat-select-arrow {

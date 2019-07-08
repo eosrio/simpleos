@@ -189,19 +189,33 @@ export class VotingService {
 
 			this.hasList = producers.rows.length > 0;
 
+			let weeks = 52;
+			let block_timestamp_epoch = 946684800;
+			let precision = 10000;
+			if (this.aService.activeChain['symbol'] === 'WAX') {
+				weeks = 13;
+				block_timestamp_epoch = 946684800;
+				precision = 100000000;
+			}
+
+			if (this.aService.activeChain['symbol'] === 'LLC') {
+				precision = 100000000;
+			}
+
 			producers.rows.forEach((prod: any, idx) => {
 				const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
 				let voted;
-				// console.log( VotingService.amountFilter((prod['total_votes'] / 10000), '2'));
-				const a = (moment().unix() - 946684800);
-				const b = parseInt('' + (a / 604800), 10) / 52;
-				const totalEos = (prod['total_votes'] / Math.pow(2, b) / 10000);
-				// console.log(totalEos);
+
+				const a = (moment().unix() - block_timestamp_epoch);
+				const b = parseInt('' + (a / 604800), 10) / weeks;
+				const totalEos = (prod['total_votes'] / Math.pow(2, b) / precision);
+
 				if (myAccount.details['voter_info']) {
 					voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
 				} else {
 					voted = false;
 				}
+
 				const producerMetadata = {
 					name: prod['owner'],
 					account: prod['owner'],
@@ -359,6 +373,20 @@ export class VotingService {
 						// console.log('ListProxies returned ' + result['voters'].length + ' proxies');
 						// Pass 1 - Add accounts
 						// console.log(myAccount);
+
+						let weeks = 52;
+						let block_timestamp_epoch = 946684800;
+						let precision = 10000;
+						if (this.aService.activeChain['symbol'] === 'WAX') {
+							weeks = 13;
+							block_timestamp_epoch = 946684800;
+							precision = 100000000;
+						}
+
+						if (this.aService.activeChain['symbol'] === 'LLC') {
+							precision = 100000000;
+						}
+
 						result['voters'].forEach((item, idx) => {
 							let voted;
 							if (myAccount.details['voter_info']) {
@@ -368,9 +396,9 @@ export class VotingService {
 							}
 
 							// const vote_pct: any = Math.round((100 * item['total_votes'] / total_votes) * 1000) / 1000;
-							const a = (moment().unix() - 946684800);
-							const b = parseInt('' + (a / 604800), 10) / 52;
-							const totalEos = (item['weight'] / Math.pow(2, b) / 10000);
+							const a = (moment().unix() - block_timestamp_epoch);
+							const b = parseInt('' + (a / 604800), 10) / weeks;
+							const totalEos = (item['weight'] / Math.pow(2, b) / precision);
 
 							const proxiesMetadata = {
 								name: '-',

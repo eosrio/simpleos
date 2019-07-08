@@ -75,6 +75,15 @@ export class ConfirmModalComponent {
 			this.showToast('error', 'Authentication fail', `Wrong password`, {});
 		}
 		// Sign and push transaction
+		console.log(this.modalData.transactionPayload);
+		if (this.modalData.transactionPayload.actions.length === 0) {
+			this.trxFactory.status.emit('done');
+			this.confirmationForm.reset();
+			this.busy = false;
+			this.visibility = false;
+			this.cdr.detectChanges();
+			return true;
+		}
 		const trxResult = await this.processTransaction(this.modalData.transactionPayload);
 		if (trxResult) {
 			const trxId = trxResult.transaction_id;
@@ -89,13 +98,13 @@ export class ConfirmModalComponent {
 				this.visibility = false;
 				this.cdr.detectChanges();
 			}, 1500);
-			this.showToast('success', 'Tramsaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
+			this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
 				id: trxId
 			});
 		} else {
 			this.busy = false;
 			this.confirmationForm.reset();
-			this.showToast('error', 'Tramsaction failed', `${this.errormsg}`, {});
+			this.showToast('error', 'Transaction failed', `${this.errormsg}`, {});
 		}
 	}
 

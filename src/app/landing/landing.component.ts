@@ -1,4 +1,4 @@
-import {Component, NgZone, OnInit, ViewChild, ElementRef} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
 import {EOSJSService} from '../services/eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../services/accounts.service';
@@ -11,15 +11,17 @@ import {RamService} from '../services/ram.service';
 import {HttpClient} from '@angular/common/http';
 import {VotingService} from '../services/voting.service';
 import {AppComponent} from '../app.component';
+import {ThemeService} from '../services/theme.service';
+import {Subscription} from 'rxjs';
 
 @Component({
 	selector: 'app-landing',
 	templateUrl: './landing.component.html',
 	styleUrls: ['./landing.component.css']
 })
-export class LandingComponent implements OnInit {
+export class LandingComponent implements OnInit, OnDestroy {
 
-	@ViewChild('wizardexists', {static: true}) exisitswizard: ClrWizard;
+	@ViewChild('wizardexists', {static: false}) exisitswizard: ClrWizard;
 	@ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
 	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
 	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
@@ -96,6 +98,8 @@ export class LandingComponent implements OnInit {
 	requestError = '';
 	noPIN = true;
 	apierror = '';
+	private subscriptions: Subscription[] = [];
+	private pvtImportReady: boolean;
 
 	static parseEOS(tk_string) {
 		if (tk_string.split(' ')[1] === 'EOS') {
@@ -135,7 +139,24 @@ export class LandingComponent implements OnInit {
 				private zone: NgZone,
 				public ram: RamService,
 				private http: HttpClient,
-				public app: AppComponent) {
+				public app: AppComponent,
+				private theme: ThemeService) {
+
+
+		switch (this.aService.activeChain.name) {
+			case 'WAX MAINNET': {
+				this.theme.waxTheme();
+				break;
+			}
+			case 'LIBERLAND TESTNET': {
+				this.theme.liberlandTheme();
+				break;
+			}
+			default: {
+				this.theme.defaultTheme();
+				console.log('default theme');
+			}
+		}
 
 		this.busy = true;
 		this.existingWallet = false;
@@ -178,6 +199,15 @@ export class LandingComponent implements OnInit {
 		this.pvtform = this.fb.group({
 			private_key: ['', Validators.required]
 		});
+
+		this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
+			if (value.length === 51) {
+				this.verifyPrivateKey(value, false);
+			} else {
+				this.pvtImportReady = false;
+			}
+		}));
+
 		this.passformexodus = this.fb.group({
 			matchingPassword: this.fb.group({
 				pass1: ['', [Validators.required, Validators.minLength(10)]],
@@ -235,16 +265,22 @@ export class LandingComponent implements OnInit {
 
 	ngOnInit() {
 		this.getCurrentEndpoint();
-		if(this.app.compilerVersion==='EOS MAINNET') {
-			setTimeout ( () => {
-				this.anim.pause ();
-			} , 10 );
+		if (this.app.compilerVersion === 'EOS MAINNET') {
+			setTimeout(() => {
+				this.anim.pause();
+			}, 10);
 
-			setTimeout ( () => {
-				this.anim.play ();
-			} , 900 );
+			setTimeout(() => {
+				this.anim.play();
+			}, 900);
 		}
 		this.checkPIN();
+	}
+
+	ngOnDestroy(): void {
+		this.subscriptions.forEach((s) => {
+			s.unsubscribe();
+		});
 	}
 
 
@@ -516,59 +552,76 @@ export class LandingComponent implements OnInit {
 		}
 	}
 
-	verifyPrivateKey(input) {
-		if (input !== '') {
-			console.log(input);
-			this.busyActivekey = true;
-			this.eos.checkPvtKey(input).then((results) => {
-				this.publicEOS = results.publicKey;
-				this.importedAccounts = [];
-				this.importedAccounts = [...results.foundAccounts];
-				this.importedAccounts.forEach((item) => {
-					if (item['refund_request']) {
-						const tempDate = item['refund_request']['request_time'] + '.000Z';
-						const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-						const now = new Date().getTime();
-						if (now > refundTime) {
-							this.eos.claimRefunds(item.account_name, input).then((tx) => {
-								console.log(tx);
-							});
-						} else {
-							console.log('Refund not ready!');
-						}
-					}
-				});
-				this.pvtform.controls['private_key'].setErrors(null);
-				this.zone.run(() => {
-					this.exisitswizard.forceNext();
-					this.errormsg = '';
-					this.apierror = '';
-				});
-			}).catch((e) => {
-				this.zone.run(() => {
-					this.dropReady = true;
-					this.exodusValid = false;
-					this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-					this.importedAccounts = [];
-					if (e.message.includes('Invalid checksum')) {
-						this.errormsg = 'invalid private key';
-					}
-					if (e.message === 'no_account') {
-						this.errormsg = 'No account associated with this private key';
-					}
-					if (e.message === 'non_active') {
-						this.errormsg = 'This is not the active key. Please import the active key.';
-					}
-					if (e.message === 'api_arror') {
-						this.apierror = 'API Unavailable, please try again with another endpoint.';
-					}
-				});
+	verifyPrivateKey(input, auto) {
+		if (this.pvtImportReady) {
+			this.zone.run(() => {
+				this.exisitswizard.forceNext();
+				this.errormsg = '';
+				this.apierror = '';
 			});
+		} else {
+			if (input !== '') {
+				this.busyActivekey = true;
+				this.eos.checkPvtKey(input).then((results) => {
+					this.publicEOS = results.publicKey;
+					this.importedAccounts = [];
+					this.importedAccounts = [...results.foundAccounts];
+					this.importedAccounts.forEach((item) => {
+						console.log(item);
+						item['permission'] = item.permissions.find(p => {
+							return p.required_auth.keys[0].key === results.publicKey;
+						})['perm_name'];
+						if (item['refund_request']) {
+							const tempDate = item['refund_request']['request_time'] + '.000Z';
+							const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+							const now = new Date().getTime();
+							if (now > refundTime) {
+								this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
+									console.log(tx);
+								});
+							} else {
+								console.log('Refund not ready!');
+							}
+						}
+					});
+					this.pvtform.controls['private_key'].setErrors(null);
+					this.pvtImportReady = true;
+					this.zone.run(() => {
+						if (auto) {
+							this.exisitswizard.forceNext();
+						}
+						this.errormsg = '';
+						this.apierror = '';
+					});
+				}).catch((e) => {
+					this.pvtImportReady = false;
+					this.zone.run(() => {
+						this.dropReady = true;
+						this.exodusValid = false;
+						this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+						this.importedAccounts = [];
+						if (e.message.includes('Invalid checksum')) {
+							this.errormsg = 'invalid private key';
+						}
+						if (e.message === 'no_account') {
+							this.errormsg = 'No account associated with this private key';
+						}
+						if (e.message === 'non_active') {
+							this.errormsg = 'This is not the active key. Please import the active key.';
+						}
+						if (e.message === 'api_arror') {
+							this.apierror = 'API Unavailable, please try again with another endpoint.';
+						}
+					});
+				});
+			}
 		}
 	}
 
 	doCancel(): void {
+		this.pvtform.reset();
 		this.exisitswizard.close();
+		this.exisitswizard.reset();
 	}
 
 	// Verify public key - step 1
@@ -705,9 +758,9 @@ export class LandingComponent implements OnInit {
 					newTxt += '<h5 class="text-muted2"><b>' + line.replace('###', '') + '</b></h5>';
 				} else if (line.substr(0, 2) === '##') {
 					newTxt += '<h4 class="blue"><b>' + line.replace('##', '') + '</b></h4>';
-				} else if (line.substr(0, 1) === '#' ) {
+				} else if (line.substr(0, 1) === '#') {
 					newTxt += '<h3 class="blue"><b>' + line.replace('#', '') + '</b></h3>';
-				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___' ) {
+				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___') {
 					newTxt += '<hr class="lineHR"/>';
 				} else if (line.match(/\(http(\w\S(.)*?)\)/g)) {
 
@@ -716,17 +769,17 @@ export class LandingComponent implements OnInit {
 					const linkImage = line.match(/(!\[.*?])+/g);
 
 					let newLine = line;
-					link.forEach ( (val , idx: number) => {
-						const newlink = val.replace ( '(' , '' ).replace ( ')' , '' );
+					link.forEach((val, idx: number) => {
+						const newlink = val.replace('(', '').replace(')', '');
 						let oldVal = val;
 						let newValName = newlink;
 						let repVal = '';
 
 						if (linkImage !== null) {
-							if (linkImage[ idx ] !== null && linkImage[ idx ] !== '![]') {
-								newValName = linkImage[ idx ].replace ( '![' , '' ).replace ( ']' , '' );
-								oldVal = linkImage[ idx ] + val;
-							} else if (linkImage[ idx ] !== null && linkImage[ idx ] === '![]') {
+							if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
+								newValName = linkImage[idx].replace('![', '').replace(']', '');
+								oldVal = linkImage[idx] + val;
+							} else if (linkImage[idx] !== null && linkImage[idx] === '![]') {
 								newValName = '';
 								oldVal = '![]' + val;
 							} else {
@@ -737,10 +790,10 @@ export class LandingComponent implements OnInit {
 
 						} else {
 
-							if (linkName !== null && linkName[ idx ] !== '[]') {
-								newValName = linkName[ idx ].replace ( '[' , '' ).replace ( ']' , '' );
-								oldVal = linkName[ idx ] + val;
-							} else if (linkName !== null && linkName[ idx ] === '[]') {
+							if (linkName !== null && linkName[idx] !== '[]') {
+								newValName = linkName[idx].replace('[', '').replace(']', '');
+								oldVal = linkName[idx] + val;
+							} else if (linkName !== null && linkName[idx] === '[]') {
 								oldVal = '[]' + val;
 							} else {
 								oldVal = val;
@@ -749,12 +802,12 @@ export class LandingComponent implements OnInit {
 							repVal = '<span class="link-ref" ref-link="' + newlink + '" >' + newValName + '</span>';
 						}
 
-						newLine = newLine.replace ( oldVal , repVal );
-					} );
+						newLine = newLine.replace(oldVal, repVal);
+					});
 					newTxt += '<p class="' + color + '" >' + newLine + '</p>';
 
 				} else if (line.match(/`(.*?)`/g)) {
-					console.log()
+					console.log();
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
 				} else {
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
@@ -764,7 +817,7 @@ export class LandingComponent implements OnInit {
 		if (newTxt.match(/`(.*?)`+/g)) {
 			const strong = newTxt.match(/`(.*?)`+/g);
 			strong.forEach((val) => {
-				const newVal =  '<span class="white">' + val.replace( new RegExp(/`+/g, 'g') , '' ) + '</span> ';
+				const newVal = '<span class="white">' + val.replace(new RegExp(/`+/g, 'g'), '') + '</span> ';
 				newTxt = newTxt.replace(val, newVal);
 			});
 		}

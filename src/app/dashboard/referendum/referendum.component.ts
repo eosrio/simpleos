@@ -85,10 +85,10 @@ export class ReferendumComponent implements OnInit {
 		});
 
 		this.createProposalForm = this.fb.group({
-			id: ['', [Validators.required,Validators.pattern('^(([a-z]|[1-5]|\\.){0,12})$')]],
+			id: ['', [Validators.required, Validators.pattern('^(([a-z]|[1-5]|\\.){0,12})$')]],
 			title: ['', [Validators.required]],
 			content: ['', [Validators.required]],
-			expiry: ['', [Validators.required,Validators.min(1),Validators.max(180)]],
+			expiry: ['', [Validators.required, Validators.min(1), Validators.max(180)]],
 			options: this.fb.array([]),
 			type: ['', [Validators.required]],
 		});
@@ -221,7 +221,7 @@ export class ReferendumComponent implements OnInit {
 			let temp_json = null;
 			try {
 				const pp_json = data[prop].proposal.proposal_json.replace(/[\n\r]/g, '');
-				temp_json = data[prop].proposal.proposal_json!==''?JSON.parse(pp_json):null;
+				temp_json = data[prop].proposal.proposal_json !== '' ? JSON.parse(pp_json) : null;
 			} catch (e) {
 				console.log(e);
 				console.log(data[prop].proposal.proposal_json);
@@ -448,12 +448,12 @@ export class ReferendumComponent implements OnInit {
 		const account = this.aService.selected.getValue();
 		const accountName = this.aService.selected.getValue().name;
 		const password = this.confirmvoteForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.wrongpass = '';
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name, vote: this.vtProposal, vote_json: ''};
-				this.eos.pushActionContract('eosio.forum', 'vote', form, accountName).then((info) => {
+				this.eos.pushActionContract('eosio.forum', 'vote', form, accountName, permission).then((info) => {
 					this.voteModal = false;
 					if (this.seeMore) {
 						this.seeMore = !this.seeMore;
@@ -483,12 +483,12 @@ export class ReferendumComponent implements OnInit {
 		const account = this.aService.selected.getValue();
 		const accountName = this.aService.selected.getValue().name;
 		const password = this.confirmunvoteForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 		this.wrongpass = '';
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name};
-				this.eos.pushActionContract('eosio.forum', 'unvote', form, accountName).then((info) => {
+				this.eos.pushActionContract('eosio.forum', 'unvote', form, accountName, permission).then((info) => {
 					this.unvoteModal = false;
 					this.busy = false;
 					if (this.seeMore) {
@@ -516,30 +516,30 @@ export class ReferendumComponent implements OnInit {
 
 	}
 
-	showOptionsField(val){
-		if (val==='options-v1'||val==='multi-select-v1'){
-			this.showOptions='inline';
+	showOptionsField(val) {
+		if (val === 'options-v1' || val === 'multi-select-v1') {
+			this.showOptions = 'inline';
 			this.options.controls = [];
 			this.options.setValue([]);
 			this.addOptiont();
-		}else{
-			this.showOptions='none';
+		} else {
+			this.showOptions = 'none';
 			this.options.controls = [];
 			this.options.setValue([]);
 		}
 	}
 
-	addOptiont(){
+	addOptiont() {
 		this.options.push(this.fb.control(''));
-		console.log( moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format(),this.createProposalForm.get('expiry').value);
+		console.log(moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format(), this.createProposalForm.get('expiry').value);
 		this.cdr.detectChanges();
 	}
 
-	removeOption(){
+	removeOption() {
 		const options: FormArray = this.createProposalForm.get('options') as FormArray;
 		// Validators is optional
-		if(options.length-1 > 0){
-			options.removeAt((options.length-1));
+		if (options.length - 1 > 0) {
+			options.removeAt((options.length - 1));
 		}
 		this.cdr.detectChanges();
 	}
@@ -555,35 +555,35 @@ export class ReferendumComponent implements OnInit {
 	}
 
 	getExpiretimeProposal() {
-		return  (moment().utc().add(this.createProposalForm.get('expiry').value, 'days').fromNow())
+		return (moment().utc().add(this.createProposalForm.get('expiry').value, 'days').fromNow());
 	}
 
-	pushProposal(){
+	pushProposal() {
 		const contract = 'eosio.forum';
 		const action = 'propose';
 		const account = this.aService.selected.getValue();
 		this.busy = true;
 
-		let formVal = {
-			"proposer":account.name,
-			"proposal_name":this.createProposalForm.getRawValue().id,
-			"title":this.createProposalForm.getRawValue().title,
-			"proposal_json":"{ \"content\":\""+this.createProposalForm.getRawValue().content+"\", \"type\":\""+this.createProposalForm.getRawValue().type+"\"}",
-			"expires_at": moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format()
+		const formVal = {
+			'proposer': account.name,
+			'proposal_name': this.createProposalForm.getRawValue().id,
+			'title': this.createProposalForm.getRawValue().title,
+			'proposal_json': '{ "content":"' + this.createProposalForm.getRawValue().content + '", "type":"' + this.createProposalForm.getRawValue().type + '"}',
+			'expires_at': moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format()
 		};
 
-		if(this.createProposalForm.getRawValue().options.length>0){
-			formVal['proposal_json'] = "{ \"content\":\""+this.createProposalForm.getRawValue().content+"\", \"type\":\""+this.createProposalForm.getRawValue().type+", \"options\":\""+this.createProposalForm.getRawValue().options+"\"}";
+		if (this.createProposalForm.getRawValue().options.length > 0) {
+			formVal['proposal_json'] = '{ "content":"' + this.createProposalForm.getRawValue().content + '", "type":"' + this.createProposalForm.getRawValue().type + ', "options":"' + this.createProposalForm.getRawValue().options + '"}';
 		}
 
 		const accountName = this.aService.selected.getValue().name;
 		const password = this.confirmProposalForm.get('pass').value;
-		const pubkey = account.details['permissions'][0]['required_auth'].keys[0].key;
+		const [pubkey, permission] = this.aService.getStoredKey(account);
 
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				console.log(formVal);
-				const val = this.eos.pushActionContract(contract, action, formVal, accountName).then((info) => {
+				const val = this.eos.pushActionContract(contract, action, formVal, accountName, permission).then((info) => {
 					console.log(info);
 					this.busy = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
@@ -593,7 +593,6 @@ export class ReferendumComponent implements OnInit {
 					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 				console.log(val);
-				//this.busy = false;
 			}
 		}).catch(error2 => {
 			console.log(error2);

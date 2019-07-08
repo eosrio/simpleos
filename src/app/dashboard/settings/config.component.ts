@@ -10,6 +10,8 @@ import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toa
 import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
 import {AppComponent} from '../../app.component';
+import {ElectronService} from 'ngx-electron';
+import {Eosjs2Service} from '../../services/eosjs2.service';
 
 @Component({
 	selector: 'app-config',
@@ -63,6 +65,10 @@ export class ConfigComponent implements OnInit {
 	lastBackupTime: string;
 	selectedAccount = '';
 
+	claimKey = false;
+	private keytar: any;
+	claimPrivateKey = '';
+
 	static resetApp() {
 		window['remote']['app']['relaunch']();
 		window['remote']['app'].exit(0);
@@ -77,8 +83,12 @@ export class ConfigComponent implements OnInit {
 				public aService: AccountsService,
 				private toaster: ToasterService,
 				private backup: BackupService,
-				public app: AppComponent
+				public app: AppComponent,
+				private _electronService: ElectronService,
+				public eosjs: Eosjs2Service
 	) {
+
+		this.keytar = this._electronService.remote.require('keytar');
 
 		this.timetoclose = this.pkExposureTime;
 		this.endpointModal = false;
@@ -403,7 +413,27 @@ export class ConfigComponent implements OnInit {
 
 	openPKModal() {
 		this.selectedAccount = this.aService.selected.getValue().name;
-		this.viewPKModal = true;
+		const [publicKey, permission] = this.aService.getStoredKey(this.aService.selected.getValue());
+		console.log(publicKey, permission);
+		if (permission === 'claim' || publicKey === '') {
+			this.eosjs.rpc.get_account(this.selectedAccount).then((accData) => {
+				const claim_key = accData.permissions.find(p => {
+					return p.perm_name === 'claim';
+				});
+				this.keytar.getPassword('simpleos', claim_key.required_auth.keys[0].key).then((result) => {
+					console.log(result);
+					if (result !== '') {
+						this.claimPrivateKey = result;
+						this.claimKey = true;
+						this.viewPKModal = true;
+					}
+				});
+			});
+		} else {
+			this.claimKey = false;
+			this.claimPrivateKey = '';
+			this.viewPKModal = true;
+		}
 	}
 
 	closePkModal() {
@@ -423,7 +453,7 @@ export class ConfigComponent implements OnInit {
 	viewPK() {
 		if (this.showpkForm.get('pass').value !== '') {
 			const selAcc = this.aService.selected.getValue();
-			const publicKey = selAcc.details['permissions'][0]['required_auth'].keys[0].key;
+			const [publicKey, permission] = this.aService.getStoredKey(selAcc);
 			this.crypto.authenticate(this.showpkForm.get('pass').value, publicKey).then((result) => {
 				if (result) {
 					this.showpk = true;

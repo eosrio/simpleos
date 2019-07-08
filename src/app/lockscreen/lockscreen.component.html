@@ -8,11 +8,12 @@
 						<lottie-animation-view
 							[options]="lottieConfig"
 							[width]="300"
-							(animCreated)="handleAnimation($event)">
+							(animCreated)="handleAnimation($event)"  class="display-animation">
 						</lottie-animation-view>
+						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="256" style="margin: 12px auto 50px auto;"/>
 					</ng-container>
 					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
-						<img src="../../assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="256" style="margin: 50px auto;"/>
+						<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="256" style="margin: 50px auto;"/>
 					</ng-container>
                 </div>
 				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
@@ -42,18 +43,23 @@
                 </div>
 			</div>
 			<div class="clr-col-md-12 text-center">
-                <div>Forgot your pin?
-                    <a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="logoutModal = true">
+                <div class="made-with-love" style="margin-top: 5px;">Forgot your pin?
+                    <a class="blue c btn-sm btn-link2" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
                         Clear all data and logout
                         <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
                     </a>
                 </div>
-				<section class="placeholder border-r" style="margin-top:10px;">
-					<div class="credits">Made with
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion=='EOS MAINNET'">
+					<div class="credits made-with-love">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-						by <a class="link-eosrio">EOS Rio</a>
+						by <a style="color: var(--btn-link2-color)">EOS Rio</a>
 					</div>
-					<div class="version">v{{aService.versionSys}}</div>
+					<div class="version made-with-love">v{{aService.versionSys}}</div>
+					<br>
+				</section>
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<div class="credits">Powered by</div>
+					<div class="version">SimplEOS v{{aService.versionSys}}</div>
 					<br>
 				</section>
             </div>

@@ -18,23 +18,66 @@
       <p>
 		<p class="paragraph"><strong class="text-white">Go to SimplEOS FAQ for any <span class="blue" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>. <br> Our beloved Telegram BOT can also help you: <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
       <p>
-        <a (click)="extOpen('https://steemit.com/@eosrio')" class="social-icon">
-          <img src="assets/steemit.png" class="steemit">
+        <a (click)="extOpen('https://steemit.com/@eosrio')" class="social-icon" pTooltip="steemit.com/@eosrio">
+          <img [src]="theme.currentTheme === 'dark' ? 'assets/steemit.png' : 'assets/steemit3.png'" class="steemit">
         </a>
-        <a (click)="extOpen('https://t.me/eosrio')" class="social-icon" style="margin-left: 10px">
+        <a (click)="extOpen('https://t.me/eosrio')" class="social-icon" style="margin-left: 10px" pTooltip="t.me/eosrio">
           <fa-icon [icon]="['fab', 'telegram-plane']" size="2x"></fa-icon>
         </a>
-        <a (click)="extOpen('https://github.com/eosrio')" class="social-icon" style="margin-left: 12px">
-          <fa-icon [icon]="['fab', 'github']" size="2x"></fa-icon>
+        <a (click)="extOpen('https://github.com/eosrio')" class="social-icon" style="margin-left: 12px" >
+          <fa-icon [icon]="['fab', 'github']" size="2x" pTooltip="github.com/eosrio/simpleos" tooltipPosition="top"></fa-icon>
         </a>
-        <a (click)="extOpen('https://twitter.com/eosriobrazil')" class="social-icon" style="margin-left: 12px">
+        <a (click)="extOpen('https://twitter.com/eosriobrazil')" class="social-icon" style="margin-left: 12px" pTooltip="twitter.com/eosriobrazil">
           <fa-icon [icon]="['fab', 'twitter']" size="2x"></fa-icon>
         </a>
       </p>
     </div>
     <div class="clr-col-lg-6">
-      <img src="assets/about_eosrio2.png" style="border-radius: 5px; width: 100%;">
+      <img src="./assets/about_eosrio2.png" style="border-radius: 5px; width: 100%;">
     </div>
   </div>
+	</ng-container>
+	<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+		<div class="clr-row animate" style="padding-top: 15px;">
+			<div class="clr-col-lg-7">
+				<h1><span class="white">About </span><span class="blue">Liberland</span></h1>
+				<p class="paragraph">Free Republic of Liberland is a sovereign state located between Croatia and Serbia. It is a 7km2 land referred to as “Gornja Siga.”</p>
+				<p class="paragraph">Liberland is a constitutional republic with elements of direct democracy. The language is English.</p>
+				<p class="paragraph">The Liberland Merit is the currency of Liberland. The country's motto is: To live and let live.</p>
+				<p class="paragraph">For more information, visit <a (click)="extOpen('https://liberland.org/en/')"
+																	class="website blue" style="cursor: pointer">liberland.org</a></p>
+				<p class="paragraph"><strong class="text-white">
+					For any doubts on Liberland features, please join their telegram <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/liberlanders')">t.me/liberlanders</span>.</strong>
+				</p>
+				<p>
+					<a (click)="extOpen('https://t.me/liberlanders')" class="social-icon" style="margin-left: 10px" pTooltip="t.me/liberlanders" tooltipPosition="top">
+						<fa-icon [icon]="['fab', 'telegram-plane']" size="2x"></fa-icon>
+					</a>
+					<a (click)="extOpen('https://twitter.com/liberland_org')" class="social-icon" style="margin-left: 12px" pTooltip="twitter.com/liberland_org" tooltipPosition="top">
+						<fa-icon [icon]="['fab', 'twitter']" size="2x"></fa-icon>
+					</a>
+				</p>
+
+				<h1><span class="white">About </span><span class="blue">SimplEOS</span></h1>
+				<p class="paragraph">Liberland wallet is powered by SimplEOS, an open source wallet developed by EOS Rio. </p>
+				<p class="paragraph">EOS Rio is a block producer dedicated to eosio chains and member of the Ghostbusters tech colletive.</p>
+				<p class="paragraph"><strong class="text-white">Go to SimplEOS FAQ for any <span class="blue" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>.</strong></p>
+				<p class="paragraph"><strong class="text-white">Our beloved Telegram BOT can also help you: <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
+				<p>
+					<a (click)="extOpen('https://t.me/eosrio')" class="social-icon" style="margin-left: 10px" pTooltip="t.me/eosrio">
+						<fa-icon [icon]="['fab', 'telegram-plane']" size="2x"></fa-icon>
+					</a>
+					<a (click)="extOpen('https://github.com/eosrio/simpleos')" class="social-icon" style="margin-left: 12px" pTooltip="github.com/eosrio/simpleos" tooltipPosition="right">
+						<fa-icon [icon]="['fab', 'github']" size="2x"></fa-icon>
+					</a>
+					<a (click)="extOpen('https://twitter.com/eosriobrazil')" class="social-icon" style="margin-left: 12px" pTooltip="twitter.com/eosriobrazil">
+						<fa-icon [icon]="['fab', 'twitter']" size="2x"></fa-icon>
+					</a>
+				</p>
+			</div>
+			<div class="clr-col-lg-5">
+				<img src="./assets/liberland-map.png" style="border-radius: 5px; width: 100%;">
+			</div>
+		</div>
 	</ng-container>
 </div>

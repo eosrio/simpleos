@@ -10,7 +10,7 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
-						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+                        number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 				</div>
 			</div>
@@ -22,22 +22,22 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+                        number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 					<div *ngIf="aService.activeChain.features['rex']&&!hasRex" style="color: #b0b0b7;font-size: 16px;">
 						STAKED + REX: <span class="blue">{{(totalStaked) | number :
-						'1.2-4'}} {{aService.activeChain['symbol']}} </span>
+                        '1.2-4'}} {{aService.activeChain['symbol']}} </span>
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
 							<span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
 						</a>
 					</div>
-					<div *ngIf="aService.activeChain.features['vote']&&hasVote"style="color: #b0b0b7;font-size: 16px;">
+					<div *ngIf="aService.activeChain.features['vote']&&hasVote" style="color: #b0b0b7;font-size: 16px;">
 						VOTE DECAY: <span [ngStyle]="{color:(votedDecay > 0.0000  ? '#e12200' : '#b0b0b7')}">
-							{{(votedEOSDecay) | number : '1.2-4'}} EOS
+							{{(votedEOSDecay) | number : '1.2-4'}} {{aService.activeChain['symbol']}}
 
-							<fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']" ></fa-icon>
-							{{(votedDecay) | number : '1.2-4'}} %
+						<fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']"></fa-icon>
+						{{(votedDecay) | number : '1.2-4'}} %
 						</span>
 					</div>
 				</div>
@@ -46,7 +46,7 @@
 		</div>
 		<div class="clr-col-lg-6">
 			<div class="card info-card">
-				<div class="card-block">
+				<div class="card-block" style="min-height: 270px">
 					<div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
@@ -145,12 +145,85 @@
 						<div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
 
 							<span class="text-white" style="font-weight: 600">CPU: </span>
-							<span class=" special-font" *ngIf="valuetoStake !== ''">{{cpu_weight}} </span>
+							<span class=" special-font"
+								  *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
 							<span *ngIf="valuetoStake === ''">50% </span> /
 							<span class="text-white" style="font-weight: 600">NET: </span>
-							<span class=" special-font" *ngIf="valuetoStake !== ''">{{ net_weight }} </span>
+							<span class=" special-font"
+								  *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
 							<span *ngIf="valuetoStake === ''">50%</span>
 						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="clr-row votepage-row animate" *ngIf="aService.activeChain['name'] == 'WAX MAINNET' && gbmBalance > 0">
+		<div class="clr-col-lg-12">
+			<div class="card info-card">
+				<div class="card-block">
+					<div class="gbm-title ">WAX GBM Rewards
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+							<span
+								class="tooltip-content">Genesis block member Rewards. For memebers that claimed their WAX tokens on the period of June 30 to August 30, 2019.
+							</span>
+						</a>
+						<button class="btn btn-outline btn-info-outline" (click)="claimGBMrewards()"
+								style="margin-left: 10px; font-weight: 700;">Claim rewards
+						</button>
+						<div class="error" *ngIf="this.claimError !== ''">{{this.claimError}}</div>
+					</div>
+					<div class="rex-balances-top white-rex"
+						 style="background-color:  var(--tr-resource-odd-backgorund);"><span
+						class="gray-rex">Balance: {{gbmBalance}} WAX</span>
+					</div>
+					<div class="rex-balances white">
+						<span
+							class="gray">Estimated rewards per day: {{(gbmEstimatedDaily + voteRewardsDaily).toFixed(2)}}
+							WAX </span>
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+							<fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
+							<span
+								class="tooltip-content">Tip: win more rewards by voting for at least 16 block producers or a proxy below.
+							</span>
+						</a>
+						<span class="gray"> (GBM: {{gbmEstimatedDaily}} WAX</span>
+						<span class="gray"> - Voter: {{voteRewardsDaily}} WAX)</span>
+					</div>
+					<div class="rex-balances white-rex"
+						 style="background-color:  var(--tr-resource-odd-backgorund);"><span
+						class="gray-rex">Last claim: {{gbmLastClaim}}</span>
+					</div>
+					<div class="rex-balances white" *ngIf="!claimReady"><span
+						class="gray-rex">Next claim ready {{gbmNextClaim}}</span>
+					</div>
+					<div class="rex-balances white" *ngIf="claimReady"><span
+						class="gray">You can claim now</span>
+					</div>
+					<div *ngIf="!autoClaimStatus && claimSetupWarning === ''" class="black-white"
+						 style="margin-top: 6px">
+						Do you want to set a custom permission to automatically claim your rewards?
+						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+								style="margin-left: 10px; font-weight: 700;">Set auto-claim
+						</button>
+					</div>
+					<div *ngIf="autoClaimStatus" class="black-white" style="margin-top: 6px">
+						Auto-claim setup verified. All good.
+						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+								style="margin-left: 10px; font-weight: 700;">Renew claim key
+						</button>
+						<button class="btn btn-outline btn-info-outline" (click)="claimDirect(true)"
+								style="margin-left: 10px; font-weight: 700;">Force vote recast
+						</button>
+					</div>
+					<div *ngIf="!autoClaimStatus && claimSetupWarning !== ''" class="black-white"
+						 style="margin-top: 6px">
+						{{claimSetupWarning}}
+						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+								style="margin-left: 10px; font-weight: 700;">Renew claim key
+						</button>
 					</div>
 				</div>
 			</div>
@@ -275,7 +348,7 @@
 							<p-sortIcon [field]="'total_votes'"></p-sortIcon>
 						</th>
 						<th style="width: 100px;">
-							{{voteService.voteType === 1 ? nVotesProxy+'/1' : nVotes+'/30'}}
+							{{voteService.voteType === 1 ? nVotesProxy + '/1' : nVotes + '/30'}}
 						</th>
 					</tr>
 					<tr class="tr-canexpand" *ngIf="busyList && voteService.hasList">
@@ -322,7 +395,9 @@
 								</li>
 								<li class="social-icon" *ngIf="item.social['steemit']">
 									<a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
-										<img src="assets/steemit.png" class="steemit" style="">
+										<img
+											[src]="theme.currentTheme === 'dark' ? 'assets/steemit.png' : 'assets/steemit2.png'"
+											class="steemit" style="">
 									</a>
 								</li>
 								<li class="social-icon" *ngIf="item.social['telegram']">
@@ -342,13 +417,14 @@
 								{{item.total_votes}}
 							</span>
 							<span *ngIf="!voteService.voteType">
-								<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left mat-checkbox-label" style="text-decoration:none;">
+								<a role="tooltip" aria-haspopup="true"
+								   class="tooltip tooltip-lg tooltip-left mat-checkbox-label"
+								   style="text-decoration:none;">
 									{{item.total_votes}}
 									<span class="tooltip-content " style="width:3rem!important;">
 										{{item.total_votes_eos}}
 									</span>
 								</a>
-
 							</span>
 						</td>
 						<td>
@@ -365,7 +441,7 @@
 				</ng-template>
 				<ng-template pTemplate="rowexpansion" let-item>
 					<tr class="tr-expanded" *ngIf="voteService.hasList">
-						<td colspan="7">
+						<td colspan="8">
 							<div class="clr-row row-expanded flex-items-xs-between">
 								<div class="clr-col-auto">
 									<div>
@@ -418,7 +494,9 @@
 										<ul>
 											<li class="social-icon" *ngIf="item.social['steemit']">
 												<a (click)="extOpen('https://steemit.com/@' + item.social['steemit'])">
-													<img src="assets/steemit.png" class="steemit" style="">
+													<img
+														[src]="theme.currentTheme === 'dark' ? 'assets/steemit.png' : 'assets/steemit2.png'"
+														class="steemit" style="">
 												</a>
 											</li>
 											<li class="social-icon" *ngIf="item.social['telegram']">
@@ -530,7 +608,7 @@
 				producer candidates {{!voteService.voteType ? selectedVotes.join(', ') : listProxyVote.join(', ')}} with
 				a voting weight equal to all tokens currently owned
 				by {{
-				fromAccount }} and staked for CPU or bandwidth.
+                fromAccount }} and staked for CPU or bandwidth.
 				<br><br>
 				If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to
 				vote
