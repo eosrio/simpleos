@@ -666,6 +666,10 @@ if (isAutoLaunch) {
 			app.quit();
 		}
 	});
+	app.on("quit", () => {
+		unlinkLALock();
+	});
+
 	app.on('ready', () => {
 		clearLock();
 		appendLock();
@@ -693,13 +697,15 @@ if (isAutoLaunch) {
 	setupExpress();
 	launchApp();
 
-	// add agent
-	if (!devMode) {
-		const spawn = require('child_process').spawn;
-		spawn(process.execPath, ['--autostart'], {
-			stdio: 'ignore',
-			detached: true
-		}).unref();
+	if (!fs.existsSync(lockAutoLaunchFile)) {
+		// add agent
+		if (!devMode) {
+			const spawn = require('child_process').spawn;
+			spawn(process.execPath, ['--autostart'], {
+				stdio: 'ignore',
+				detached: true
+			}).unref();
+		}
 	}
 }
 
