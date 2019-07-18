@@ -95,6 +95,8 @@ export class ConfirmModalComponent {
 		const [trxResult, err] = await this.processTransaction(this.modalData.transactionPayload, this.modalData.errorFunc);
 		if (err) {
 			this.errormsg = err;
+			this.busy = false;
+			this.confirmationForm.reset();
 		} else {
 			if (trxResult) {
 				const trxId = trxResult.transaction_id;

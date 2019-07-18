@@ -917,10 +917,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		_actions.push({
 			account: 'eosio',
 			name: 'claimgenesis',
-			authorization: [{
-				actor: auth.actor,
-				permission: 'active',
-			}],
+			authorization: [auth],
 			data: {
 				claimer: auth.actor
 			},
@@ -928,10 +925,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		_actions.push({
 			account: 'eosio',
 			name: 'claimgbmvote',
-			authorization: [{
-				actor: auth.actor,
-				permission: 'active',
-			}],
+			authorization: [auth],
 			data: {
 				owner: auth.actor
 			},

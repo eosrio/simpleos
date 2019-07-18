@@ -55,7 +55,7 @@ function unlinkLLock() {
 
 function appendLock() {
 	if (isAutoLaunch) {
-		fs.writeFileSync(lockAutoLaunchFile, 'autolaunch\n');
+		fs.writeFileSync(lockAutoLaunchFile, process.pid);
 	} else {
 		fs.writeFileSync(lockLaunchFile, process.pid);
 	}
@@ -398,29 +398,29 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 		},
 	});
 
-	// _actions.push({
-	// 	account: 'eosio',
-	// 	name: 'claimgenesis',
-	// 	authorization: [{
-	// 		actor: account_name,
-	// 		permission: 'claim',
-	// 	}],
-	// 	data: {
-	// 		claimer: account_name
-	// 	},
-	// });
-	//
-	// _actions.push({
-	// 	account: 'eosio',
-	// 	name: 'claimgbmvote',
-	// 	authorization: [{
-	// 		actor: account_name,
-	// 		permission: 'claim',
-	// 	}],
-	// 	data: {
-	// 		owner: account_name
-	// 	},
-	// });
+	_actions.push({
+		account: 'eosio',
+		name: 'claimgenesis',
+		authorization: [{
+			actor: account_name,
+			permission: permission,
+		}],
+		data: {
+			claimer: account_name
+		},
+	});
+
+	_actions.push({
+		account: 'eosio',
+		name: 'claimgbmvote',
+		authorization: [{
+			actor: account_name,
+			permission: permission,
+		}],
+		data: {
+			owner: account_name
+		},
+	});
 
 	try {
 		const result = await api.transact({
@@ -438,12 +438,10 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 
 	} catch (e) {
 		console.log('\nCaught exception: ' + e);
+		let claimError = '';
 		if (e instanceof RpcError) {
 			// console.log(JSON.stringify(e.json, null, 2));
-
 			const eJson = e.json;
-			let claimError = '';
-
 			switch (eJson.error.code.toString()) {
 				case "3090005": {
 					claimError = 'Irrelevant authority included, missing linkauth';
@@ -460,7 +458,7 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 
 			notify('Auto-claim error', 'Account: ' + account_name + '\n Error: ' + claimError, 0);
 		}
-		return false;
+		throw new Error(claimError);
 	}
 }
 
@@ -521,6 +519,9 @@ async function safeRun(callback, errorReturn, api_list) {
 			} catch (e) {
 				if (e.message) {
 					console.log(`${api_list[api_idx]} failed with error: ${e.message}`);
+				}
+				if (e.name !== 'FetchError') {
+					break;
 				}
 				api_idx++;
 			}
@@ -657,10 +658,17 @@ function launchApp() {
 // Main startup logic
 
 if (isAutoLaunch) {
-	writeLog('>> Agent starting <<');
-	clearLock();
-	appendLock();
+
+	// check if another agent is running
+	app.requestSingleInstanceLock();
+	app.on('second-instance', (event, argv, workingDirectory) => {
+		if (argv[1] === '--autostart') {
+			app.quit();
+		}
+	});
 	app.on('ready', () => {
+		clearLock();
+		appendLock();
 		console.log('READY!');
 		const cPath = basePath + '/autoclaim.json';
 		if (fs.existsSync(basePath + '/autoclaim.json')) {
@@ -670,6 +678,7 @@ if (isAutoLaunch) {
 				let autoclaimConf = JSON.parse(data.toString());
 				if (autoclaimConf['enabled']) {
 					addTrayIcon();
+					runAutoClaim();
 					if (process.platform === 'darwin') {
 						app.dock.hide();
 					}
@@ -679,7 +688,7 @@ if (isAutoLaunch) {
 			});
 		}
 	});
-	runAutoClaim();
+
 } else {
 	setupExpress();
 	launchApp();
