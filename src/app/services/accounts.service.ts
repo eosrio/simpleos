@@ -4,6 +4,7 @@ import {EOSJSService} from './eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosjs2.service';
+import {defaultChainsJSON} from '../chains';
 
 @Injectable({
 	providedIn: 'root'
@@ -33,6 +34,8 @@ export class AccountsService {
 	private loadingTokens = false;
 	private lastTkLoadTime = 0;
 
+	defaultChains: any[];
+
 	constructor(
 		private http: HttpClient,
 		private eos: EOSJSService,
@@ -40,6 +43,21 @@ export class AccountsService {
 		private toaster: ToasterService,
 		// private ledger: LedgerHWService
 	) {
+
+		this.defaultChains = defaultChainsJSON;
+		const savedChainId = localStorage.getItem('simplEOS.activeChainID');
+		const EOS_MAINNET_ID = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
+		if (savedChainId) {
+			this.activeChain = this.defaultChains.find((chain) => chain.id === savedChainId);
+			if (!this.activeChain) {
+				this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
+				localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
+			}
+		} else {
+			this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
+			localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
+		}
+
 		this.accounts = [];
 		this.usd_rate = 10.00;
 		this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
@@ -129,9 +147,11 @@ export class AccountsService {
 			balance += net;
 			balance += cpu;
 		}
+
+		const precisionRound = Math.pow(10,this.activeChain['precision']);
 		return {
 			name: acc['account_name'],
-			full_balance: Math.round((balance) * 10000) / 10000,
+			full_balance: Math.round((balance) * precisionRound) / precisionRound,
 			staked: net + cpu,
 			details: acc
 		};
@@ -174,6 +194,9 @@ export class AccountsService {
 
 	async fetchTokens(account) {
 		// console.log(this.sessionTokens[this.selectedIdx]);
+		// console.log('loadingTokens', this.loadingTokens);
+		// console.log('loadingTokens Diff time',((Date.now() - this.lastTkLoadTime > 60 * 1000)));
+		// console.log('Tokens length',this.tokens.length);
 		if (!this.loadingTokens && ((Date.now() - this.lastTkLoadTime > 60 * 1000) || this.tokens.length === 0)) {
 			this.loadingTokens = true;
 			this.sessionTokens[this.selectedIdx] = [];
@@ -229,8 +252,8 @@ export class AccountsService {
 		} else {
 			if (this.tokens.length > 0) {
 				this.loadingTokens = false;
-				this.loading = false;
 			}
+				this.loading = false;
 			return null;
 		}
 	}
@@ -262,11 +285,11 @@ export class AccountsService {
 				} else {
 					if (contract === 'eosio.token') {
 						// NATIVE TOKEN
-						amount = act['data']['quantity']['split'](' ')[0];
+						amount = parseFloat(act['data']['quantity']['split'](' ')[0]);
 						symbol = this.activeChain['symbol'];
 					} else {
 						// CUSTOM TOKEN
-						amount = act['data']['quantity']['split'](' ')[0];
+						amount = parseFloat(act['data']['quantity']['split'](' ')[0]);
 						symbol = act['data']['quantity']['split'](' ')[1];
 					}
 				}
@@ -429,7 +452,7 @@ export class AccountsService {
 		];
 
 		const matched = allowedActions.includes(contract + '::' + action_name);
-
+		const precisionRound = Math.pow(10, this.activeChain['precision']);
 		const obj = {
 			id: id,
 			seq: account_action_seq,
@@ -439,7 +462,7 @@ export class AccountsService {
 			user: user,
 			block: block_num,
 			date: date,
-			amount: (Math.round(amount * 10000) / 10000),
+			amount: (Math.round(amount * precisionRound) / precisionRound),
 			symbol: symbol,
 			memo: memo,
 			votedProducers: votedProducers,
@@ -606,8 +629,8 @@ export class AccountsService {
 			} else {
 				this.actions = [];
 			}
-			this.selected.next(sel);
 			this.selectedIdx = index;
+			this.selected.next(sel);
 			this.fetchTokens(sel.name).catch(console.log);
 		}
 		// const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
@@ -729,8 +752,11 @@ export class AccountsService {
 					balance += net;
 					balance += cpu;
 				}
+
+				const precisionRound = Math.pow(10,this.activeChain['precision']);
+
 				this.accounts[idx].name = account['name'];
-				this.accounts[idx].full_balance = Math.round((balance) * 10000) / 10000;
+				this.accounts[idx].full_balance = Math.round((balance) * precisionRound) / precisionRound;
 				this.accounts[idx].staked = net + cpu;
 				this.accounts[idx].unstaking = ref_net + ref_cpu;
 				this.accounts[idx].unstakeTime = ref_time;

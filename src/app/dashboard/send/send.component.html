@@ -15,18 +15,18 @@
 					</div>
 					<ng-container
 						*ngIf="sendForm.value.token !== aService.activeChain['symbol'] && selectedToken['price'] !== null">
-						${{token_balance * selectedToken['price'] | number :'1.2-' + aService.activeChain['precision']}}
+						${{token_balance * selectedToken['price'] | number : precision}}
 					</ng-container>
 				</div>
 				<ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
-					<div class="eos">{{unstaked | number : '1.2-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</div>
+					<div class="eos">{{unstaked | number : precision}} {{aService.activeChain['symbol']}}</div>
 					<div *ngIf="unstaking > 0" style="color: white">
 						<fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
 						'1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}
 					</div>
 				</ng-container>
 				<ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
-					<div class="eos">{{token_balance | number : '1.2-' + aService.activeChain['precision']}} {{sendForm.value.token}}</div>
+					<div class="eos">{{token_balance | number : precision}} {{sendForm.value.token}}</div>
 				</ng-container>
 				<form [formGroup]="sendForm">
 					<div>

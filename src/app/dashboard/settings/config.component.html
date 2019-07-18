@@ -62,19 +62,40 @@
 					</div>
 				</div>
 			</div>
+			<div class="card info-card">
+				<div class="card-header title special-font">
+					Keys Generator Tool
+					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+						<span class="tooltip-content">Keys Generator tool.</span>
+					</a>
+				</div>
+				<div class="card-block">
+					<button class="btn btn-info-outline special-font" (click)="newKeys = true"
+							style="font-weight: 700">Generate
+					</button>
+				</div>
+			</div>
 		</div>
 		<div class="clr-col-lg-5">
 			<div class="card info-card">
 				<div class="card-header title special-font">
 					Logout Options
 				</div>
-				<div class="card-block">
+				<div class="card-block borderb">
 					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"
-							style="font-weight: 700">Clear local data and logout
+							style="font-weight: 700">Logout from all chains
+					</button>
+					<div class="info">*All your data will be cleared from this PC. Should you want to login again, you will
+						have to import your private key again.
+					</div>
+				</div>
+				<div class="card-block">
+					<button class="btn btn-info-outline special-font" (click)="logoutChainModal = true"
+							style="font-weight: 700">Logout from {{aService.activeChain['name']}}
 					</button>
 					<div class="info">*Your data will be cleared from this PC. Should you want to login again, you will
-						have to
-						import your private key again.
+						have to import your private key again.
 					</div>
 				</div>
 			</div>
@@ -126,7 +147,7 @@
 						</mat-checkbox>
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the autosave folder that is created on the same place that SimplEOS is installed.</span>
+							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the "simpleosAutosave" folder that is created on the same place that SimplEOS is installed.</span>
 						</a>
 						<div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
 					</div>
@@ -153,7 +174,7 @@
 		Are you <span class="blue">sure</span> ?
 	</h3>
 	<div class="modal-body">
-		<p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import
+		<p style="margin-bottom: 20px;">All your data will be cleared. If you want to login again you will have to import
 			your
 			private key again.</p>
 		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
@@ -162,6 +183,27 @@
 		<button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
 		<div>
 			<button type="button" class="btn btn-info-outline" (click)="logout()">
+				Yes
+			</button>
+			<div class="text-center black-white">*SimplEOS will <br> be restarted</div>
+		</div>
+	</div>
+</clr-modal>
+
+<clr-modal [(clrModalOpen)]="logoutChainModal" [clrModalSize]="'sm'">
+	<h3 class="modal-title text-white">
+		Are you <span class="blue">sure</span> ?
+	</h3>
+	<div class="modal-body">
+		<p style="margin-bottom: 20px;">Your <span class="blue">{{aService.activeChain['name']}}</span> data will be cleared . If you want to login again you will have to import
+			your
+			private key again.</p>
+		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
+	</div>
+	<div class="modal-footer">
+		<button class="btn btn-danger-outline" (click)="logoutChainModal = false">Cancel</button>
+		<div>
+			<button type="button" class="btn btn-info-outline" (click)="logoutByCahin()">
 				Yes
 			</button>
 			<div class="text-center black-white">*SimplEOS will <br> be restarted</div>
@@ -305,7 +347,7 @@
 			<br/>
 			<br/>
 			<br/>
-			{{choosedFil}}
+			<span class="black-white">{{choosedFil}}</span>
 			<input style="visibility:hidden;" type="file" placeholder="Backup file" (change)="importCheckBK($event)"
 				   formControlName="customImportBK" #customImportBK>
 		</form>
@@ -343,7 +385,7 @@
 			<br/>
 			<br/>
 			<br/>
-			{{choosedDir}}
+			<span class="black-white">{{choosedDir}}</span>
 			<input style="visibility:hidden;" type="file" placeholder="Backup Directory"
 				   (change)="exportCheckBK($event)" formControlName="customExportBK" webkitdirectory directory
                    #customExportBK>
@@ -404,5 +446,46 @@
 		This window will close in {{timetoclose}}s...
 	</div>
 </clr-modal>
+<clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
+	<clr-wizard-title>Generate new keys</clr-wizard-title>
+	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+	<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+	<clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+
+
+	<clr-wizard-page [clrWizardPageNextDisabled]="ownerpub2 === '' || ownerpk2 === '' || !agreeKeys2">
+		<ng-template clrPageTitle>New Keys</ng-template>
+		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
+		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
+		<h5 class="gray">Please enter your desired public key or click the <span style="cursor:pointer;"
+																				 class="blue"
+																				 (click)="generateNKeys()"> Generate Key Pair </span>
+			button.</h5>
+		<mat-form-field class="mt-1" style="width: 470px">
+			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
+			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+					 (click)="cc(ownerpub2)"></fa-icon>
+			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+		</mat-form-field>
+
+		<mat-form-field class="mt-1" style="width: 470px">
+			<input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
+			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+					 (click)="cc(ownerpk2)"></fa-icon>
+			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+		</mat-form-field>
+
+		<button class="btn btn-primary" style="margin-top:20px;" (click)="generateNKeys()">Generate Key Pair</button>
+
+		<fa-layers *ngIf="generating2" class="blue fa-fw">
+			<fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
+		</fa-layers>
+		<br/>
+		<ng-container *ngIf="generated2" style="clear:both;">
+			<mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys on a safe place</mat-checkbox>
+		</ng-container>
+	</clr-wizard-page>
+</clr-wizard>
 
 

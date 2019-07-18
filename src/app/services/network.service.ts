@@ -65,17 +65,8 @@ export class NetworkService {
 		private crypto: CryptoService
 		// private ledger: LedgerHWService
 	) {
-
 		this.defaultChains = defaultChainsJSON;
-		const savedChainId = localStorage.getItem('simplEOS.activeChainID');
-		if (savedChainId) {
-			this.activeChain = this.defaultChains.find((chain) => chain.id === savedChainId);
-		} else {
-			const EOS_MAINNET_ID = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
-			this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
-			localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
-		}
-		this.aService.activeChain = this.activeChain;
+		this.activeChain = this.aService.activeChain;
 		this.validEndpoints = [];
 		this.status = '';
 		this.connectionTimeout = null;
@@ -106,6 +97,7 @@ export class NetworkService {
 			this.aService.activeChain = this.activeChain;
 			this.aService.accounts = [];
 			this.voting.clearMap();
+			this.voting.clearLists();
 			this.voting.initList = false;
 			this.aService.lastAccount = null;
 			localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);

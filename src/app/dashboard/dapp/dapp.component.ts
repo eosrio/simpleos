@@ -302,7 +302,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 				}
 
 			};
-			console.log(JSON.stringify(this.schemaJSON));
+			// console.log(JSON.stringify(this.schemaJSON));
 			this.modelJSON = this.modelJson(actionType);
 
 			this.triggerAction = true;

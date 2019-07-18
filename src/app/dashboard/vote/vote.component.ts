@@ -19,13 +19,14 @@ import {TransactionFactoryService} from '../../services/transaction-factory.serv
 import {ElectronService} from 'ngx-electron';
 import {Api, RpcError} from 'eosjs/dist';
 import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
+import {SortEvent} from 'primeng/api';
 
 @Component({
 	selector: 'app-vote',
 	templateUrl: './vote.component.html',
 	styleUrls: ['./vote.component.css']
 })
-export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	max: number;
 	min: number;
@@ -42,8 +43,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	stakeModal: boolean;
 	voteModal: boolean;
 	isValidAccount: boolean;
-	nVotes: number;
-	nVotesProxy: number;
+	nVotes = 0;
+	nVotesProxy = 0;
 	busy: boolean;
 	totalBalance: number;
 	stakedBalance: number;
@@ -119,6 +120,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	private selectedAccountName = '';
 	private last_claim_time: number;
 	public claimSetupWarning = '';
+	public basePath = '';
+	enableAutoClaim: boolean;
 
 	constructor(public voteService: VotingService,
 				private http: HttpClient,
@@ -139,6 +142,8 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.ecc = this._electronService.remote.require('eosjs-ecc');
 		this.keytar = this._electronService.remote.require('keytar');
 		this.fs = this._electronService.remote.require('fs');
+
+		this.basePath = this._electronService.remote.app.getPath('appData') + '/simpleos-config';
 
 		this.isValidAccount = true;
 		this.max = 100;
@@ -179,74 +184,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.subscriptions.push(this.aService.lastUpdate.asObservable().subscribe(value => {
 			if (value.account === this.aService.selected.getValue().name) {
 				this.updateBalances();
-			}
-		}));
-
-		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
-			this.totalStaked = 0;
-			this.votedDecay = 0;
-			this.votedEOSDecay = 0;
-			if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
-				this.fromAccount = selected.name;
-				this.selectedAccountName = selected.name;
-				this.totalBalance = selected.full_balance;
-				this.stakedBalance = selected.staked;
-				this.unstaking = selected.unstaking;
-				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
-				if (this.totalBalance > 0) {
-					this.minToStake = 100 / this.totalBalance;
-					this.valuetoStake = this.stakedBalance.toString();
-				} else {
-					this.minToStake = 0;
-					this.valuetoStake = '0';
-					this.percenttoStake = '0';
-				}
-
-				this.updateStakePercent();
-				this.loadPlacedVotes(selected);
-				this.cpu_weight = selected.details.total_resources.cpu_weight;
-				this.net_weight = selected.details.total_resources.net_weight;
-				const _cpu = RexComponent.asset2Float(this.cpu_weight);
-				const _net = RexComponent.asset2Float(this.net_weight);
-				this.cpu_weight_n = _cpu;
-				this.net_weight_n = _net;
-				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
-
-				if (selected.details.voter_info) {
-
-					let weeks = 52;
-					let block_timestamp_epoch = 946684800;
-					let precision = 10000;
-					if (this.aService.activeChain['symbol'] === 'WAX') {
-						weeks = 13;
-						block_timestamp_epoch = 946684800;
-						precision = 100000000;
-					}
-
-					if (this.aService.activeChain['symbol'] === 'LLC') {
-						precision = 100000000;
-					}
-
-					this.hasVote = true;
-					this.totalStaked = (selected.details.voter_info.staked / precision);
-					const a = (moment().unix() - block_timestamp_epoch);
-					const b = parseInt('' + (a / 604800), 10) / weeks;
-					const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
-					this.votedEOSDecay = this.totalStaked - decayEOS;
-					if (selected.details.voter_info.last_vote_weight > 0) {
-						this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
-					}
-				} else {
-					this.hasVote = false;
-				}
-
-				this.getRexBalance(selected.name);
-
-				if (this.aService.activeChain.name === 'WAX MAINNET') {
-					this.checkWaxGBMdata(selected.name);
-					this.checkVoterRewards(selected.name);
-					this.verifyAutoClaimSetup(selected);
-				}
 			}
 		}));
 
@@ -313,6 +250,76 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				}
 			]
 		};
+
+		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
+			this.totalStaked = 0;
+			this.votedDecay = 0;
+			this.votedEOSDecay = 0;
+			if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
+
+				this.voteService.currentVoteType(selected);
+				if (this.voteService.proxies.length === 0 || this.voteService.bps.length === 0) {
+					// console.log('from subscriber', this.voteService.voteType);
+					this.voteOption(this.voteService.voteType);
+				}
+
+				this.fromAccount = selected.name;
+				this.selectedAccountName = selected.name;
+				this.totalBalance = selected.full_balance;
+				this.stakedBalance = selected.staked;
+				this.unstaking = selected.unstaking;
+				this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+				if (this.totalBalance > 0) {
+					this.minToStake = 100 / this.totalBalance;
+					this.valuetoStake = this.stakedBalance.toString();
+				} else {
+					this.minToStake = 0;
+					this.valuetoStake = '0';
+					this.percenttoStake = '0';
+				}
+				this.updateStakePercent();
+				this.loadPlacedVotes(selected);
+				this.cpu_weight = selected.details.total_resources.cpu_weight;
+				this.net_weight = selected.details.total_resources.net_weight;
+				const _cpu = RexComponent.asset2Float(this.cpu_weight);
+				const _net = RexComponent.asset2Float(this.net_weight);
+				this.cpu_weight_n = _cpu;
+				this.net_weight_n = _net;
+				this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+				if (selected.details.voter_info) {
+					let weeks = 52;
+					let block_timestamp_epoch = 946684800;
+					let precision = 10000;
+					if (this.aService.activeChain['symbol'] === 'WAX') {
+						weeks = 13;
+						block_timestamp_epoch = 946684800;
+						precision = 100000000;
+					}
+					if (this.aService.activeChain['symbol'] === 'LLC') {
+						precision = 100000000;
+					}
+					// console.log(selected.details.voter_info.producers, selected.details.voter_info.proxy);
+					this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
+					this.totalStaked = (selected.details.voter_info.staked / precision);
+					const a = (moment().unix() - block_timestamp_epoch);
+					const b = parseInt('' + (a / 604800), 10) / weeks;
+					const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
+					this.votedEOSDecay = this.totalStaked - decayEOS;
+					if (selected.details.voter_info.last_vote_weight > 0) {
+						this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
+					}
+				} else {
+					this.hasVote = false;
+				}
+				this.getRexBalance(selected.name);
+				if (this.aService.activeChain.name === 'WAX MAINNET') {
+					this.checkWaxGBMdata(selected.name).catch(console.log);
+					this.checkVoterRewards(selected.name).catch(console.log);
+					this.verifyAutoClaimSetup(selected).catch(console.log);
+					this.enableAutoClaim = this.edAutoClaim(true);
+				}
+			}
+		}));
 	}
 
 	ngOnInit() {
@@ -323,19 +330,23 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.getCurrentStake();
 	}
 
-	ngAfterViewInit() {
-		this.subscriptions.push(
-			this.aService.selected.asObservable().subscribe((selected) => {
-				this.voteService.currentVoteType(selected);
-				this.voteOption(this.voteService.voteType);
-				this.cdr.detectChanges();
-			})
-		);
-	}
-
 	ngOnDestroy(): void {
+		this.voteService.proxies = [];
+		this.voteService.bps = [];
 		this.subscriptions.forEach(s => {
 			s.unsubscribe();
+		});
+	}
+
+	ngAfterViewInit(): void {
+		setImmediate(() => {
+			// console.log('after view init');
+			console.log(this.voteService.bps.length, this.voteService.proxies.length);
+			if (this.voteService.proxies.length === 0 || this.voteService.bps.length === 0) {
+				// console.log('from after view init', this.voteService.voteType);
+				this.voteOption(this.voteService.voteType);
+			}
+			this.cdr.detectChanges();
 		});
 	}
 
@@ -371,48 +382,55 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	}
 
-	callSetStake(password) {
+	async callSetStake(password) {
 		this.busy = true;
 		const account = this.aService.selected.getValue();
 		const [pubkey, permission] = this.aService.getStoredKey(account);
-		this.crypto.authenticate(password, pubkey).then((data) => {
-			if (data === true) {
-				this.eos.changebw(account.name, permission, this.stakingDiff, this.aService.activeChain['symbol'], this.stakingRatio / 100, this.aService.activeChain['precision'])
-					.then((trx) => {
-						this.busy = false;
-						this.wrongpass = '';
-						this.stakeModal = false;
-						this.cdr.detectChanges();
-						this.showToast('success', 'Transaction broadcasted', 'Check your history for confirmation.');
-						setTimeout(() => {
-							this.aService.refreshFromChain().then(() => {
-								this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
-								this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
-							});
-						}, 1500);
-					})
-					.catch((error) => {
-						console.log(error);
-						if (typeof error === 'object') {
-							this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
+		try {
+			const authData = await this.crypto.authenticate(password, pubkey);
+			if (authData === true) {
+				try {
+					const trx = await this.eosjs.changebw(
+						account.name,
+						permission,
+						this.stakingDiff,
+						this.aService.activeChain['symbol'],
+						this.stakingRatio / 100,
+						this.aService.activeChain['precision']
+					);
+					console.log(trx);
+					this.busy = false;
+					this.wrongpass = '';
+					this.stakeModal = false;
+					this.cdr.detectChanges();
+					this.showToast('success', 'Transaction broadcasted', 'Check your history for confirmation.');
+					setTimeout(() => {
+						this.aService.refreshFromChain().then(() => {
+							this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+							this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+						});
+					}, 1500);
+				} catch (error) {
+					console.log(error.json);
+					if (typeof error === 'object') {
+						this.wrongpass = 'Operation timeout, please try again or select another endpoint.';
+					} else {
+						if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
+							this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
 						} else {
-							if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
-								this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
-							} else {
-								this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
-							}
+							this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 						}
-						this.busy = false;
-					});
+					}
+					this.busy = false;
+				}
 			} else {
-				console.dir(data);
 				this.wrongpass = 'Wrong password!';
 				this.busy = false;
 			}
-		}).catch(() => {
+		} catch (e) {
 			this.busy = false;
 			this.wrongpass = 'Wrong password!';
-		});
+		}
 	}
 
 	updateBalances() {
@@ -462,37 +480,61 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	storeConfig() {
 		try {
+			const filename = this.basePath + '/autoclaim.json';
 			const data = JSON.stringify(this.autoClaimConfig, null, '\t');
-			this.fs.writeFileSync('autoclaim.json', data);
+			this.fs.writeFileSync(filename, data);
 		} catch (e) {
 			console.log(e);
 		}
+
 	}
 
-	enableAutoClaimStartup() {
-		const AutoLaunch = this._electronService.remote.require('auto-launch');
-		const walletAutoLauncher = new AutoLaunch({
-			name: 'simpleos'
-		});
-		walletAutoLauncher.opts.appPath += '" --autostart"';
-		walletAutoLauncher.isEnabled().then((isEnabled) => {
-			if (isEnabled) {
-				return;
+	edAutoClaim(check?) {
+		try {
+			const filename = this.basePath + '/autoclaim.json';
+			if (this.fs.existsSync(filename)) {
+				const data = JSON.parse(this.fs.readFileSync(filename));
+				if (check) {
+					return data['enabled'];
+				}
+				data['enabled'] = !(data['enabled']);
+				this.enableAutoClaim = data['enabled'];
+				this.fs.writeFileSync(filename, JSON.stringify(data, null, '\t'));
+			} else {
+				const data = JSON.stringify(this.autoClaimConfig, null, '\t');
+				this.fs.writeFileSync(filename, data);
 			}
-			walletAutoLauncher.enable();
-		}).catch(function (err) {
-			console.log(err);
-		});
+
+		} catch (e) {
+			console.log(e);
+		}
+		this.verifyAutoClaimSetup(this.aService.selected.getValue()).catch(console.log);
 	}
+
+	// enableAutoClaimStartup() {
+	// 	const AutoLaunch = this._electronService.remote.require('auto-launch');
+	// 	const walletAutoLauncher = new AutoLaunch({
+	// 		name: 'simpleos'
+	// 	});
+	// 	walletAutoLauncher.opts.appPath += '" --autostart"';
+	// 	walletAutoLauncher.isEnabled().then((isEnabled) => {
+	// 		if (isEnabled) {
+	// 			return;
+	// 		}
+	// 		walletAutoLauncher.enable();
+	// 	}).catch(function (err) {
+	// 		console.log(err);
+	// 	});
+	// }
 
 	async verifyAutoClaimSetup(selected) {
 		this.autoClaimStatus = false;
 		this.claimSetupWarning = '';
-		const filename = 'autoclaim.json';
+		const filename = this.basePath + '/autoclaim.json';
 		if (!this.fs.existsSync(filename)) {
 			console.log('autoclaim file not present, creating...');
 		} else {
-			this.autoClaimConfig = JSON.parse(this.fs.readFileSync('autoclaim.json'));
+			this.autoClaimConfig = JSON.parse(this.fs.readFileSync(filename));
 		}
 		if (this.autoClaimConfig['enabled']) {
 			if (this.autoClaimConfig['WAX-GBM']) {
@@ -533,9 +575,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			}
 		} else {
 			console.log('autoclaim disabled');
-			this.enableAutoClaimStartup();
-			this.autoClaimConfig['enabled'] = true;
-			this.storeConfig();
+			this.enableAutoClaim = false;
+			// this.enableAutoClaimStartup();
+			// this.autoClaimConfig['enabled'] = true;
+			// this.storeConfig();
 		}
 	}
 
@@ -802,15 +845,18 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.busyList = true;
 		this.voteService.voteType = ev;
 		const acc = this.aService.selected.getValue();
-		this.voteService.initList = false;
 		this.voteService.loadingProds = false;
-		this.voteService.initListProx = false;
 		this.voteService.loadingProxs = false;
+		this.voteService.initList = false;
+		this.voteService.initListProx = false;
 		if (this.voteService.voteType === 0) {
 			this.voteService.listProducers().then(() => {
 				this.busyList = false;
 				this.setCheckListVote(acc.name);
 				this.loadPlacedVotes(acc);
+				if (!this.cdr['destroyed']) {
+					this.cdr.detectChanges();
+				}
 			}).catch(err => {
 				console.log('Load Account List Producers Error:', err);
 			});
@@ -819,11 +865,13 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.busyList = false;
 				this.setCheckListVote(acc.name);
 				this.loadPlacedVotes(acc);
+				if (!this.cdr['destroyed']) {
+					this.cdr.detectChanges();
+				}
 			}).catch(err => {
 				console.log('Load Account List Proxies Error:', err);
 			});
 		}
-		this.cdr.detectChanges();
 	}
 
 	validateProxy(account) {
@@ -853,7 +901,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	claimGBMrewards() {
 		if (this.autoClaimStatus) {
-			this.claimDirect(false);
+			this.claimDirect(false).catch(console.log);
 		} else {
 			this.claimWithActive();
 		}
@@ -862,7 +910,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 	claimWithActive() {
 		const [auth, publicKey] = this.trxFactory.getAuth();
 		console.log(auth);
-		const sym = this.aService.activeChain['symbol'];
 		const messageHTML = `
 		<h5 class="white mb-0">Performing eosio::claimgenesis and eosio::claimgbmvote actions</h5>
 		`;
@@ -889,6 +936,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				owner: auth.actor
 			},
 		});
+		console.log(_actions);
 		this.trxFactory.modalData.next({
 			transactionPayload: {
 				actions: _actions
@@ -898,7 +946,25 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			signerPublicKey: publicKey,
 			labelHTML: messageHTML,
 			actionTitle: 'claim WAX GBM Rewards',
-			termsHTML: ''
+			termsHTML: '',
+			errorFunc: (e) => {
+				if (e instanceof RpcError) {
+					const eJson = e.json;
+					switch (eJson.error.code) {
+						case 3090005: {
+							return 'Irrelevant authority included, missing linkauth';
+
+						}
+						case 3050003: {
+							return 'Account already claimed in the past 24 hours. Please wait.';
+
+						}
+						default: {
+							return eJson.error.what;
+						}
+					}
+				}
+			}
 		});
 		this.trxFactory.launcher.emit(true);
 		const subs = this.trxFactory.status.subscribe((event) => {
@@ -913,13 +979,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	async claimDirect(voteOnly) {
 		const [auth, publicKey] = this.trxFactory.getAuth();
-
 		// check current votes
 		const accountData = await this.eosjs.rpc.get_account(auth.actor);
-
 		let _producers = [];
 		let _proxy = '';
-
 		if (accountData['voter_info']) {
 			if (accountData['voter_info']['proxy'] !== '') {
 				// voting on proxy
@@ -929,14 +992,11 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				_producers = accountData['voter_info']['producers'];
 			}
 		}
-
 		const claim_private_key = await this.keytar.getPassword('simpleos', this.claimPublicKey);
 		const signatureProvider = new JsSignatureProvider([claim_private_key]);
 		const rpc = this.eosjs.rpc;
 		const api = new Api({rpc, signatureProvider, textDecoder: new TextDecoder, textEncoder: new TextEncoder});
-
 		const _actions = [];
-
 		_actions.push({
 			account: 'eosio',
 			name: 'voteproducer',
@@ -1014,7 +1074,6 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	async createClaimPermission() {
 		const [auth, publicKey] = this.trxFactory.getAuth();
-		const sym = this.aService.activeChain['symbol'];
 		const messageHTML = `
 		<h5 class="white mb-0">
 		This action will create a custom permission that is only allowed to claim rewards (linked with eosio::claimgenesis).
@@ -1068,9 +1127,7 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				}
 			});
 		}
-
 		console.log(_actions);
-
 		this.trxFactory.modalData.next({
 			transactionPayload: {
 				actions: _actions
@@ -1097,6 +1154,11 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 				}
 				this.autoClaimStatus = true;
 				subs.unsubscribe();
+				this.checkWaxGBMdata(this.aService.selected.getValue()).then(() => {
+					if (this.claimReady) {
+						this.claimDirect(false).catch(console.log);
+					}
+				});
 			}
 			if (event === 'modal_closed') {
 				subs.unsubscribe();
@@ -1139,10 +1201,10 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			scope: 'eosio',
 			table: 'global'
 		}))['rows'][0];
+		const unpaidVoteShare = ((1000 * 60 * 60 * 24) / 1000000) * parseFloat(voter['unpaid_voteshare_change_rate']);
 		const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
-		const unpaidVoteShare = parseFloat(voter['unpaid_voteshare']);
 		const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
-		this.voteRewardsDaily = parseFloat((voterBucket * (unpaidVoteShare / globalUnpaidVoteShare)).toFixed(2));
+		this.voteRewardsDaily = voterBucket * (unpaidVoteShare / globalUnpaidVoteShare);
 	}
 
 	private async checkWaxGBMdata(name: any) {
@@ -1153,16 +1215,44 @@ export class VoteComponent implements OnInit, AfterViewInit, OnDestroy {
 			scope: name
 		});
 		const data = results.rows[0];
-		this.gbmBalance = parseFloat(data['balance'].split(' ')[0]);
-		this.gbmLastClaim = data['last_claim_time'];
-		this.last_claim_time = new Date(data['last_claim_time']).getTime();
-		this.gbmLastClaim = moment(this.gbmLastClaim).format('DD-MM-YYYY HH:mm');
-		if (this.gbmBalance > 0) {
-			this.gbmEstimatedDaily = parseFloat((this.gbmBalance / 1095).toFixed(2));
+		if (data) {
+			this.gbmBalance = parseFloat(data['balance'].split(' ')[0]);
+			this.gbmLastClaim = data['last_claim_time'];
+			this.last_claim_time = moment(moment.utc(this.gbmLastClaim).toDate()).toDate().getTime();
+			this.gbmLastClaim = moment(moment.utc(this.gbmLastClaim).toDate()).local().format('DD-MM-YYYY HH:mm');
+			if (this.gbmBalance > 0) {
+				this.gbmEstimatedDaily = parseFloat((this.gbmBalance / 1095).toFixed(2));
+			} else {
+				this.gbmEstimatedDaily = 0;
+			}
+			this.gbmNextClaim = moment.utc(this.last_claim_time).add(1, 'day').fromNow();
+			this.claimReady = ((this.last_claim_time) + (24 * 60 * 60 * 1000) <= Date.now());
 		} else {
-			this.gbmEstimatedDaily = 0;
+			this.gbmBalance = 0;
+			this.claimReady = false;
 		}
-		this.gbmNextClaim = moment(data['last_claim_time']).add(1, 'day').fromNow();
-		this.claimReady = ((new Date(data['last_claim_time']).getTime()) + (24 * 60 * 60 * 1000) === Date.now());
+	}
+
+	customTableSort(event: SortEvent) {
+		event.data.sort((data1, data2) => {
+			if (event.field === 'total_votes') {
+				event.field = 'total_votes_num';
+			}
+			const value1 = data1[event.field];
+			const value2 = data2[event.field];
+			let result = null;
+			if (value1 == null && value2 != null) {
+				result = -1;
+			} else if (value1 != null && value2 == null) {
+				result = 1;
+			} else if (value1 == null && value2 == null) {
+				result = 0;
+			} else if (typeof value1 === 'string' && typeof value2 === 'string') {
+				result = value1.localeCompare(value2);
+			} else {
+				result = (value1 < value2) ? -1 : (value1 > value2) ? 1 : 0;
+			}
+			return (event.order * result);
+		});
 	}
 }

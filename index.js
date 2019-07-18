@@ -1,40 +1,93 @@
 const {app, BrowserWindow, Menu, protocol, ipcMain, Notification, Tray, shell} = require('electron');
 const path = require('path');
 const url = require('url');
-const {version, productName, name} = require('./package.json');
-app.getVersion = () => version;
-const PROTOCOL_PREFIX = 'simpleos';
-const args = process.argv.slice(1);
-
-const portfinder = require('portfinder');
-portfinder['basePort'] = 47888;
-portfinder['highestPort'] = 47900;
-
-const schedule = require('node-schedule');
-
 const keytar = require('keytar');
 const fs = require('fs');
-
+const moment = require('moment');
+const schedule = require('node-schedule');
+const portfinder = require('portfinder');
+const {version, productName, name} = require('./package.json');
 const {Api, JsonRpc, RpcError} = require('eosjs');
 const {TextEncoder, TextDecoder} = require('util');
 const fetch = require('isomorphic-fetch');
 const {JsSignatureProvider} = require('eosjs/dist/eosjs-jssig');
 const TextEnc = new TextEncoder();
 const TextDec = new TextDecoder();
-
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const express = require('express')();
 const PORT = 47888;
 const http = require('http').Server(express);
-
 let win, devtools, serve, isAutoLaunch;
 let appIcon = null;
 let deepLink = null;
 let job = null;
+app.getVersion = () => version;
+
+const PROTOCOL_PREFIX = 'simpleos';
+const args = process.argv.slice(1);
 devtools = args.some(val => val === '--devtools');
 serve = args.some(val => val === '--serve');
-isAutoLaunch = args.some(val => val === '--autostart');
+
+portfinder['basePort'] = 47888;
+portfinder['highestPort'] = 47900;
+
+const basePath = app.getPath('appData') + '/simpleos-config';
+const lockFile = basePath + '/lockFile';
+
+const lockAutoLaunchFile = basePath + '/' + productName + '-lockALFile';
+const lockLaunchFile = basePath + '/' + productName + '-lockLFile';
+const logFile = basePath + '/' + productName + '-autoclaim.log';
+
+console.log(lockFile);
+
+function clearLock() {
+	fs.writeFileSync(lockFile, '');
+}
+
+function unlinkLALock() {
+	fs.unlinkSync(lockAutoLaunchFile);
+}
+
+function unlinkLLock() {
+	fs.unlinkSync(lockLaunchFile);
+}
+
+function appendLock() {
+	if (isAutoLaunch) {
+		fs.writeFileSync(lockAutoLaunchFile, 'autolaunch\n');
+	} else {
+		fs.writeFileSync(lockLaunchFile, process.pid);
+	}
+}
+
+if (!fs.existsSync(basePath)) {
+	fs.mkdirSync(basePath);
+}
+
+try {
+	if (!fs.existsSync(lockFile)) {
+		unlinkLALock();
+		unlinkLLock();
+	}
+} catch (e) {
+	console.error(e);
+}
+
+const devMode = process.mainModule.filename.indexOf('app.asar') === -1;
+
+console.log('Developer Mode:', devMode);
+
+app.setLoginItemSettings({
+	openAtLogin: !devMode,
+	args: ["--autostart"]
+});
+
+const loginOpts = app.getLoginItemSettings({
+	args: ["--autostart"]
+});
+
+isAutoLaunch = loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
 
 const contextMenu = require('electron-context-menu');
 contextMenu();
@@ -101,13 +154,16 @@ function setupExpress() {
 	});
 
 	express.get('/login', (req, res) => {
+		console.log('CONNECT REQUEST, account:' + req.query.account);
 		win.webContents.send('request', {
 			message: 'login',
 			content: {
 				account: req.query.account
 			}
 		});
-		getFocus();
+		if (!req.query.account) {
+			getFocus();
+		}
 		if (req.query.account) {
 			if (req.query.account.length > 13) {
 				res.end('ERROR');
@@ -116,7 +172,13 @@ function setupExpress() {
 		}
 		ipcMain.once('loginResponse', (event, data) => {
 			console.log(data);
-			if (data.status !== 'CANCELLED') {
+			if (data.status) {
+				if (data.status !== 'CANCELLED') {
+					if (!req.query.account) {
+						unfocus();
+					}
+				}
+			} else {
 				unfocus();
 			}
 			res.setHeader('Content-Type', 'application/json');
@@ -159,13 +221,14 @@ function setupExpress() {
 }
 
 function getFocus() {
-
 	if (win) {
 		if (win.isMinimized()) {
 			win.restore();
 		}
+		// win.blur();
 		win.focus();
 		win.show();
+
 	}
 
 	if (process.platform === 'darwin') {
@@ -199,7 +262,6 @@ function regURI() {
 	protocol.registerHttpProtocol(PROTOCOL_PREFIX, (req, callback) => {
 		if (req.url < 128) {
 			deepLink = req;
-			alert(deepLink);
 			setTimeout(() => {
 				win.webContents.send('request', {
 					message: 'launch',
@@ -235,7 +297,9 @@ async function createWindow() {
 		frame: false,
 		icon: _icon
 	});
+
 	win.removeMenu();
+
 	if (serve) {
 		require('electron-reload')(__dirname, {
 			electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
@@ -272,9 +336,6 @@ function notify(title, body, autoClose) {
 	notification.on('click', () => {
 		if (win) {
 			getFocus();
-		} else {
-			launchApp();
-			createWindow();
 		}
 	});
 	if (autoClose > 0) {
@@ -302,55 +363,15 @@ function notifyTrx(title, body, autoClose, trx_id) {
 	}
 }
 
-function launchApp() {
-	const gotTheLock = app.requestSingleInstanceLock();
-	if (!gotTheLock) {
-		app.quit()
-	} else {
-		portfinder.getPortPromise().then((port) => {
-			http.listen(port, "127.0.0.1", () => {
-				console.log('listening on 127.0.0.1:' + port);
-			});
-		}).catch((err) => {
-			alert(err);
-		});
 
-		app.on('second-instance', () => {
-			console.log('launching second instance...');
-			if (win) {
-				if (win.isMinimized()) {
-					win.restore();
-				}
-				win.focus();
-			}
-		});
-
-		app.on('ready', () => {
-			console.log('creating window...');
-			createWindow();
-		});
-
-		app.on('window-all-closed', () => {
-			app.quit();
-		});
-
-		app.on('activate', async () => {
-			if (win === null) {
-				await createWindow();
-			}
-		});
-	}
-}
-
-async function claimGBM(account_name, api_url, private_key, permission) {
-	const rpc = new JsonRpc(api_url, {fetch});
+async function claimGBM(account_name, private_key, permission, rpc) {
 	const signatureProvider = new JsSignatureProvider([private_key]);
 	const api = new Api({rpc, signatureProvider, textDecoder: TextDec, textEncoder: TextEnc});
-
 	// check current votes
 	const accountData = await rpc.get_account(account_name);
 	let _producers = [];
 	let _proxy = '';
+
 	if (accountData['voter_info']) {
 		if (accountData['voter_info']['proxy'] !== '') {
 			// voting on proxy
@@ -377,29 +398,29 @@ async function claimGBM(account_name, api_url, private_key, permission) {
 		},
 	});
 
-	_actions.push({
-		account: 'eosio',
-		name: 'claimgenesis',
-		authorization: [{
-			actor: account_name,
-			permission: 'claim',
-		}],
-		data: {
-			claimer: account_name
-		},
-	});
-
-	_actions.push({
-		account: 'eosio',
-		name: 'claimgbmvote',
-		authorization: [{
-			actor: account_name,
-			permission: 'claim',
-		}],
-		data: {
-			owner: account_name
-		},
-	});
+	// _actions.push({
+	// 	account: 'eosio',
+	// 	name: 'claimgenesis',
+	// 	authorization: [{
+	// 		actor: account_name,
+	// 		permission: 'claim',
+	// 	}],
+	// 	data: {
+	// 		claimer: account_name
+	// 	},
+	// });
+	//
+	// _actions.push({
+	// 	account: 'eosio',
+	// 	name: 'claimgbmvote',
+	// 	authorization: [{
+	// 		actor: account_name,
+	// 		permission: 'claim',
+	// 	}],
+	// 	data: {
+	// 		owner: account_name
+	// 	},
+	// });
 
 	try {
 		const result = await api.transact({
@@ -409,100 +430,268 @@ async function claimGBM(account_name, api_url, private_key, permission) {
 			expireSeconds: 30,
 			broadcast: true
 		});
-		console.log(result);
-		const logFile = 'autoclaim-trx-log_' + (Date.now()) + '.txt';
+		// console.log(result);
+		const logFile = basePath + '/autoclaim-trx-log_' + (Date.now()) + '.txt';
 		fs.writeFileSync(logFile, JSON.stringify(result));
 		notifyTrx('Auto-claim executed', 'Account: ' + account_name, 0, result.transaction_id);
+		return true;
+
 	} catch (e) {
 		console.log('\nCaught exception: ' + e);
-		if (e instanceof RpcError)
-			console.log(JSON.stringify(e.json, null, 2));
+		if (e instanceof RpcError) {
+			// console.log(JSON.stringify(e.json, null, 2));
+
+			const eJson = e.json;
+			let claimError = '';
+
+			switch (eJson.error.code.toString()) {
+				case "3090005": {
+					claimError = 'Irrelevant authority included, missing linkauth';
+					break;
+				}
+				case "3050003": {
+					claimError = 'Account already claimed in the past 24 hours. Please wait.';
+					break;
+				}
+				default: {
+					claimError = eJson.error.what;
+				}
+			}
+
+			notify('Auto-claim error', 'Account: ' + account_name + '\n Error: ' + claimError, 0);
+		}
+		return false;
 	}
 }
 
 function addTrayIcon() {
-	const trayIcon = path.join(__dirname, 'src/assets/icons/ico/simpleos-multi.ico');
-	console.log(trayIcon);
-	appIcon = new Tray(trayIcon);
+	appIcon = new Tray(path.join(__dirname, 'static/tray-icon.png'));
 	const trayMenu = Menu.buildFromTemplate([
 		{
 			label: 'Quit SimplEOS Agent', click: () => {
 				appIcon.destroy();
+				fs.writeFileSync(lockFile, '');
 				app.quit();
 			}
 		}
 	]);
 	appIcon.setToolTip('simplEOS Agent');
 	appIcon.setContextMenu(trayMenu);
-	console.log('Adding tray icon');
+	appIcon.setHighlightMode('always');
 }
 
 function storeConfig(autoClaimConfig) {
 	try {
 		const data = JSON.stringify(autoClaimConfig, null, '\t');
-		fs.writeFileSync('autoclaim.json', data);
+		fs.writeFileSync(basePath + '/autoclaim.json', data);
 	} catch (e) {
-		const logFile = 'autoclaim-error_' + (Date.now()) + '.txt';
+		const logFile = basePath + '/autoclaim-error_' + (Date.now()) + '.txt';
 		fs.writeFileSync(logFile, e);
 		shell.openItem(logFile);
 		console.log(e);
 	}
 }
 
-// Main startup logic
+function writeLog(msg) {
+	const now = moment().format('YYYY-MM-DD HH:mm:ss');
+	msg = "[" + now + "] - " + msg;
+	console.log(msg);
+	fs.appendFileSync(logFile, msg + "\n");
+}
+
+async function getClaimTime(account, rpc) {
+	const genesis_table = await rpc.get_table_rows({
+		json: true, scope: account, code: "eosio", table: "genesis", limit: 1
+	});
+	if (genesis_table.rows.length === 1) {
+		return moment.utc(genesis_table.rows[0].last_claim_time);
+	} else {
+		return null;
+	}
+}
+
+async function safeRun(callback, errorReturn, api_list) {
+	let result = null;
+	let api_idx = 0;
+	if (api_idx < api_list.length) {
+		for (const api of api_list) {
+			try {
+				setRpcApi(api_list[api_idx]);
+				result = await callback(eosRPC);
+			} catch (e) {
+				if (e.message) {
+					console.log(`${api_list[api_idx]} failed with error: ${e.message}`);
+				}
+				api_idx++;
+			}
+			if (result) break;
+		}
+	}
+	if (result) {
+		return result;
+	} else {
+		return errorReturn;
+	}
+}
+
+let eosRPC = null;
+
+function setRpcApi(api) {
+	eosRPC = new JsonRpc(api, {fetch});
+}
 
 function runAutoClaim() {
-	const cPath = 'autoclaim.json';
-	if (fs.existsSync('autoclaim.json')) {
-		console.log('Loading configuration file...');
+	writeLog("Checking claim conditions...");
+	const cPath = basePath + '/autoclaim.json';
+	if (fs.existsSync(basePath + '/autoclaim.json')) {
 		fs.readFile(cPath, (err, data) => {
 			if (err) throw err;
-			let autoclaimConf = JSON.parse(data);
+			let autoclaimConf = JSON.parse(data.toString());
 			(async () => {
-				if (autoclaimConf['WAX-GBM']) {
+				if (autoclaimConf['enabled']) {
+					const apis = autoclaimConf['WAX-GBM']['apis'];
+					setRpcApi(apis[0]);
 					for (const job of autoclaimConf['WAX-GBM']['jobs']) {
-						if (Date.now() - job['last_claim'] > (24 * 60 * 60 * 1000)) {
-							console.log(`${job.account} is ready to claim!`);
-							try {
-								await claimGBM(job.account, autoclaimConf['WAX-GBM']['apis'][0], (await keytar.getPassword('simpleos', job['public_key'])), job['permission']);
-								job['last_claim'] = Date.now();
-								// const next_claim = (Date.now() + (24 * 60 * 60 * 1000));
-								const next_claim = (Date.now() + (60 * 1000));
-								console.log('Scheduling next claim to: ' + next_claim);
-								job['next_claim_time'] = next_claim;
-								schedule.scheduleJob(new Date(next_claim), () => {
-									runAutoClaim();
-								});
-							} catch (e) {
-								const logFile = 'autoclaim-error_' + (Date.now()) + '.txt';
-								fs.writeFileSync(logFile, e);
-								shell.openItem(logFile);
-								console.log(e);
+						const a = await safeRun((api) => getClaimTime(job.account, api), null, apis);
+						if (a) {
+							a.add(1, 'day');
+							const b = moment().utc();
+							if (b.diff(a, 'seconds') > 0) {
+								writeLog(`${job.account} is ready to claim!`);
+								try {
+									const pvtkey = await keytar.getPassword('simpleos', job['public_key']);
+									const perm = job['permission'];
+									const claimResult = await safeRun((api) => claimGBM(job.account, pvtkey, perm, api), null, apis);
+									if (claimResult) {
+										job['last_claim'] = Date.now();
+										schedule.scheduleJob(a.toDate(), () => {
+											runAutoClaim();
+										});
+									}
+								} catch (e) {
+									const logFile = basePath + '/autoclaim-error_' + (Date.now()) + '.txt';
+									fs.writeFileSync(logFile, e);
+									writeLog(`Autoclaim error, check log file: ${logFile}`);
+									// shell.openItem(logFile);
+									schedule.scheduleJob(b.add(10, 'minutes').toDate(), () => {
+										runAutoClaim();
+									});
+								}
+							} else {
+								writeLog(`${job.account} claims again at ${a.format()}`);
 							}
-						} else {
-							console.log(`${job.account} claims again at ${(new Date(job['last_claim'] + (24 * 60 * 60 * 1000)))}`);
 						}
 					}
 					storeConfig(autoclaimConf);
 				}
-			})();
+			})().catch(console.log);
 		});
-
-	} else {
-		console.log('Configuration file not present, quitting');
-		app.quit();
 	}
+
 }
 
+
+function launchApp() {
+
+	const gotTheLock = app.requestSingleInstanceLock();
+
+	process.defaultApp = true;
+	console.log(gotTheLock);
+
+
+	if (fs.existsSync(lockLaunchFile)) {
+		if (gotTheLock) {
+			unlinkLLock();
+		} else {
+			console.log('quiting');
+			app.quit();
+			return;
+		}
+	}
+	appendLock();
+
+
+	portfinder.getPortPromise().then((port) => {
+		http.listen(port, "127.0.0.1", () => {
+			console.log('listening on 127.0.0.1:' + port);
+		});
+	}).catch((err) => {
+		alert(err);
+	});
+
+	app.on('second-instance', () => {
+		console.log('launching second instance...');
+		if (win) {
+			if (win.isMinimized()) {
+				win.restore();
+			}
+			win.focus();
+		}
+	});
+
+	app.on('ready', () => {
+		console.log('ready');
+		createWindow();
+	});
+
+	app.on('window-all-closed', () => {
+		clearLock();
+		unlinkLLock();
+		app.quit();
+	});
+
+	app.on('activate', async () => {
+		if (win === null) {
+			await createWindow();
+		}
+	});
+
+	app.on('will-finish-launching', () => {
+		app.on('open-url', (e, url) => {
+			e.preventDefault();
+			console.log(url);
+		})
+	});
+}
+
+// Main startup logic
+
 if (isAutoLaunch) {
+	writeLog('>> Agent starting <<');
+	clearLock();
+	appendLock();
 	app.on('ready', () => {
 		console.log('READY!');
-		addTrayIcon();
+		const cPath = basePath + '/autoclaim.json';
+		if (fs.existsSync(basePath + '/autoclaim.json')) {
+			console.log('Loading configuration file...');
+			fs.readFile(cPath, (err, data) => {
+				if (err) throw err;
+				let autoclaimConf = JSON.parse(data.toString());
+				if (autoclaimConf['enabled']) {
+					addTrayIcon();
+					if (process.platform === 'darwin') {
+						app.dock.hide();
+					}
+				} else {
+					app.quit();
+				}
+			});
+		}
 	});
 	runAutoClaim();
 } else {
 	setupExpress();
 	launchApp();
+
+	// add agent
+	if (!devMode) {
+		const spawn = require('child_process').spawn;
+		spawn(process.execPath, ['--autostart'], {
+			stdio: 'ignore',
+			detached: true
+		}).unref();
+	}
 }
 
 

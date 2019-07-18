@@ -26,9 +26,11 @@ export class ConfigComponent implements OnInit {
 
 	endpointModal: boolean;
 	logoutModal: boolean;
+	logoutChainModal: boolean;
 	confirmModal: boolean;
 	chainModal: boolean;
 	pinModal: boolean;
+	newKeys: boolean;
 	clearPinModal: boolean;
 	changePassModal: boolean;
 	importBKModal: boolean;
@@ -68,6 +70,13 @@ export class ConfigComponent implements OnInit {
 	claimKey = false;
 	private keytar: any;
 	claimPrivateKey = '';
+
+
+	generating2 = false;
+	ownerpk2 = '';
+	ownerpub2 = '';
+	generated2 = false;
+	agreeKeys2 = false;
 
 	static resetApp() {
 		window['remote']['app']['relaunch']();
@@ -190,6 +199,25 @@ export class ConfigComponent implements OnInit {
 				localStorage.removeItem(k);
 			});
 		}
+		localStorage.setItem('simplEOS.init', 'false');
+		ConfigComponent.resetApp();
+	}
+
+	logoutByCahin() {
+		const arr = [];
+		for (let i = 0; i < localStorage.length; i++) {
+			if (this.clearContacts && localStorage.key(i) === 'simpleos.contacts.'+this.aService.activeChain['id']) {
+				arr.push(localStorage.key(i));
+			}
+			if ( localStorage.key(i).endsWith('.'+this.aService.activeChain['id']) && localStorage.key(i) !== 'simpleos.contacts.'+this.aService.activeChain['id'] ) {
+				if (this.clearContacts ) {}
+				arr.push(localStorage.key(i));
+			}
+		}
+		arr.forEach((k) => {
+			localStorage.removeItem(k);
+		});
+
 		localStorage.setItem('simplEOS.init', 'false');
 		ConfigComponent.resetApp();
 	}
@@ -484,6 +512,20 @@ export class ConfigComponent implements OnInit {
 				console.log('WRONG PASS', err);
 			});
 		}
+	}
+
+	generateNKeys() {
+		this.generating2 = true;
+		setTimeout(() => {
+			this.eos.ecc.initialize().then(() => {
+				this.eos.ecc['randomKey'](64).then((privateKey) => {
+					this.ownerpk2 = privateKey;
+					this.ownerpub2 = this.eos.ecc['privateToPublic'](this.ownerpk2);
+					this.generating2 = false;
+					this.generated2 = true;
+				});
+			});
+		}, 100);
 	}
 
 }

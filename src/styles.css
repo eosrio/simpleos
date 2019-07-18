@@ -37,7 +37,7 @@
 	--special-font-spacing: 'inherit';
 	--slogan-special-color: 'inherit';
 
-	--landing-background: url("./assets/cover-wax.png");
+	--landing-background: 'url("./assets/fundosimpleos.png")';
 	/*--landing-image-background:url("./assets/fundosimpleos.png");*/
 
 	--dashboard-animation-display: block;
@@ -323,6 +323,9 @@ body a.link-eosrio:hover{
 .mat-tab-label .mat-tab-label-content {
 	display: flex !important;
 	flex-direction: column;
+}
+.mat-tab-group.mat-primary .mat-tab-label.cdk-focused:not(.cdk-mouse-focused):not(.cdk-tab-disabled):not(.mat-tab-label-active) {
+	background: none !important;
 }
 
 /*material's tab end*/
@@ -615,7 +618,7 @@ input:not([readonly]) {
 /*texts hints below input below*/
 
 .mat-checkbox-frame {
-	border-color: var(--text-blue-color) !important;
+	border-color: var(--text-blue-color);
 }
 
 .mat-checkbox-label {
@@ -624,7 +627,7 @@ input:not([readonly]) {
 }
 
 .mat-checkbox-checked.mat-accent .mat-checkbox-background {
-	background-color: var(--text-blue-color) !important;
+	background-color: var(--text-blue-color);
 }
 
 .copy {
@@ -753,9 +756,10 @@ input:not([readonly]) {
 .ui-table .ui-table-caption {
 	color: var(--table-th-color) !important;
 }
+
 .ui-table .ui-table-caption, body .ui-table .ui-table-summary {
 	background-color: var(--info-card-background) !important;
-	border: 1px solid var(--info-card-background) !important;
+	border: 1px solid transparent !important;
 }
 
 .ui-table .ui-table-thead > tr > th {
@@ -766,6 +770,7 @@ input:not([readonly]) {
 .ui-table .ui-table-tfoot > tr > td{
 	color: var(--table-td-color) !important;
 	background-color: var(--tr-even-backgorund) !important;
+	border: none !important;
 }
 .ui-table .ui-table-tbody > tr {
 	color: var(--table-td-color) !important;

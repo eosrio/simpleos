@@ -10,7 +10,7 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
-                        number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 				</div>
 			</div>
@@ -22,11 +22,11 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-                        number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
 					</div>
 					<div *ngIf="aService.activeChain.features['rex']&&!hasRex" style="color: #b0b0b7;font-size: 16px;">
 						STAKED + REX: <span class="blue">{{(totalStaked) | number :
-                        '1.2-4'}} {{aService.activeChain['symbol']}} </span>
+						'1.2-4'}} {{aService.activeChain['symbol']}} </span>
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
 							<span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
@@ -162,7 +162,7 @@
 	<div class="clr-row votepage-row animate" *ngIf="aService.activeChain['name'] == 'WAX MAINNET' && gbmBalance > 0">
 		<div class="clr-col-lg-12">
 			<div class="card info-card">
-				<div class="card-block">
+				<div class="card-block" style="padding-left: 1.75rem;">
 					<div class="gbm-title ">WAX GBM Rewards
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
@@ -183,14 +183,17 @@
 						<span
 							class="gray">Estimated rewards per day: {{(gbmEstimatedDaily + voteRewardsDaily).toFixed(2)}}
 							WAX </span>
-						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-							<fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
-							<span
-								class="tooltip-content">Tip: win more rewards by voting for at least 16 block producers or a proxy below.
-							</span>
-						</a>
-						<span class="gray"> (GBM: {{gbmEstimatedDaily}} WAX</span>
-						<span class="gray"> - Voter: {{voteRewardsDaily}} WAX)</span>
+						<ng-container *ngIf="nVotes < 16 && nVotesProxy == 0">
+							<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+								<fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
+								<span
+									class="tooltip-content">Tip: win more rewards by voting for at least 16 block producers or a proxy below.
+								</span>
+							</a>
+						</ng-container>
+
+						<span class="gray"> (GBM: {{gbmEstimatedDaily}} WAX)</span>
+						<!--						<span class="gray"> - Voter: {{voteRewardsDaily}} WAX)</span>-->
 					</div>
 					<div class="rex-balances white-rex"
 						 style="background-color:  var(--tr-resource-odd-backgorund);"><span
@@ -200,16 +203,16 @@
 						class="gray-rex">Next claim ready {{gbmNextClaim}}</span>
 					</div>
 					<div class="rex-balances white" *ngIf="claimReady"><span
-						class="gray">You can claim now</span>
+						style="color: var(--mat-tab-bar-active)">You can claim now!</span>
 					</div>
-					<div *ngIf="!autoClaimStatus && claimSetupWarning === ''" class="black-white"
+					<div *ngIf="enableAutoClaim && (!autoClaimStatus && claimSetupWarning === '')" class="black-white"
 						 style="margin-top: 6px">
 						Do you want to set a custom permission to automatically claim your rewards?
 						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
 								style="margin-left: 10px; font-weight: 700;">Set auto-claim
 						</button>
 					</div>
-					<div *ngIf="autoClaimStatus" class="black-white" style="margin-top: 6px">
+					<div *ngIf="enableAutoClaim && autoClaimStatus" class="black-white" style="margin-top: 6px">
 						Auto-claim setup verified. All good.
 						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
 								style="margin-left: 10px; font-weight: 700;">Renew claim key
@@ -217,14 +220,22 @@
 						<button class="btn btn-outline btn-info-outline" (click)="claimDirect(true)"
 								style="margin-left: 10px; font-weight: 700;">Force vote recast
 						</button>
+
 					</div>
-					<div *ngIf="!autoClaimStatus && claimSetupWarning !== ''" class="black-white"
+					<div *ngIf="enableAutoClaim  && (!autoClaimStatus && claimSetupWarning !== '')" class="black-white"
 						 style="margin-top: 6px">
 						{{claimSetupWarning}}
 						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
 								style="margin-left: 10px; font-weight: 700;">Renew claim key
 						</button>
 					</div>
+					<div class="black-white" style="margin-top: 6px;"
+						 *ngIf="autoClaimStatus || !enableAutoClaim">
+						<mat-checkbox [checked]="enableAutoClaim" (change)="edAutoClaim()">
+							Enable autoclaim
+						</mat-checkbox>
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -253,7 +264,7 @@
 					 [globalFilterFields]="['reg','name','account','location']"
 					 [responsive]="true" dataKey="account" [totalRecords]="nbps" [alwaysShowPaginator]="false"
 					 class="bps-table" [paginator]="true" sortField="position" [rows]="50"
-					 rowExpandMode="single">
+					 rowExpandMode="single" (sortFunction)="customTableSort($event)" [customSort]="true">
 				<ng-template pTemplate="caption">
 
 					<mat-tab-group id="vote-tabs" (selectedIndexChange)="voteOption($event)"
@@ -270,7 +281,7 @@
 						</div>
 						<div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="voteService.voteType">
 							<h4 class="title">Vote through a Proxy! </h4>
-							<h5 class="subtitle mt-0">Choose a proxy that will vote in the block producers for you</h5>
+							<h5 class="subtitle mt-0">Choose a proxy to vote for block producers on your behalf</h5>
 						</div>
 						<div class="clr-col-lg-3 clr-col-md-6  text-right mt-3" *ngIf="voteService.hasList">
 							<mat-form-field class="searchbar">
@@ -554,6 +565,15 @@
 				</ng-template>
 				<ng-template pTemplate="summary">
 					<div class="ui-helper-clearfix" *ngIf="voteService.hasList">
+						<span *ngIf="voteService.voteType" (click)="voteService.reloadAllProxies()"
+							  style="float: left">
+								<a class="blue btn btn-sm btn-link" style="max-width: none;"
+								   (click)="voteService.reloadAllProxies()">
+									<fa-icon [spin]="voteService.busy"
+											 [icon]="['far', 'sync']"></fa-icon>
+									Reload All Proxies
+								</a>
+							</span>
 						<button (click)="processVotes()" class="btn btn-info-outline"
 								style="margin-top: 10px; margin-right: 25px; float:right;" [disabled]="nVotes > 30"
 								pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
@@ -608,7 +628,7 @@
 				producer candidates {{!voteService.voteType ? selectedVotes.join(', ') : listProxyVote.join(', ')}} with
 				a voting weight equal to all tokens currently owned
 				by {{
-                fromAccount }} and staked for CPU or bandwidth.
+				fromAccount }} and staked for CPU or bandwidth.
 				<br><br>
 				If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to
 				vote

@@ -20,7 +20,7 @@
 					</ng-container>
 
 				</div>
-				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOSIO wallet</div>
 				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">LIBERLAND Wallet</div>
 				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
 				<ng-container *ngIf="busy && network.status === ''">
@@ -263,7 +263,7 @@
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
-					   placeholder="{{network.activeChain['name']}} Active Private key">
+					   placeholder="{{network.activeChain['name']}} Private key">
 				<fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
 						 (click)="pkField.type = 'text'"></fa-icon>
 				<fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
@@ -634,7 +634,7 @@
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
 		<h5 class="gray">Please enter your desired public key or click the <span style="cursor:pointer;"
 																				 class="blue"
-																				 (click)="generateKeys()"> Generate Key Pair </span>
+																				 (click)="generateNKeys()"> Generate Key Pair </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
@@ -685,7 +685,7 @@
 			<br/>
 			<br/>
 			<br/>
-			{{choosedFil}}
+			<span class="black-white">{{choosedFil}}</span>
 			<input style="visibility:hidden;" type="file" placeholder="Backup file" (change)="importCheckBK($event)"
 				   formControlName="customImportBK" #customImportBK>
 		</form>

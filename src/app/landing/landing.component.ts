@@ -143,21 +143,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 				private theme: ThemeService) {
 
 
-		switch (this.aService.activeChain.name) {
-			case 'WAX MAINNET': {
-				this.theme.waxTheme();
-				break;
-			}
-			case 'LIBERLAND TESTNET': {
-				this.theme.liberlandTheme();
-				break;
-			}
-			default: {
-				this.theme.defaultTheme();
-				console.log('default theme');
-			}
-		}
-
 		this.busy = true;
 		this.existingWallet = false;
 		this.exodusWallet = false;
@@ -201,10 +186,13 @@ export class LandingComponent implements OnInit, OnDestroy {
 		});
 
 		this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
-			if (value.length === 51) {
-				this.verifyPrivateKey(value, false);
-			} else {
-				this.pvtImportReady = false;
+			if (value) {
+				value = value.trim();
+				if (value.length === 51) {
+					this.verifyPrivateKey(value, false);
+				} else {
+					this.pvtImportReady = false;
+				}
 			}
 		}));
 
@@ -264,6 +252,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnInit() {
+
 		this.getCurrentEndpoint();
 		if (this.app.compilerVersion === 'EOS MAINNET') {
 			setTimeout(() => {
@@ -285,11 +274,29 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 
 	getCurrentEndpoint() {
+
+		switch (this.network.activeChain.name) {
+			case 'WAX MAINNET': {
+				this.theme.defaultTheme();
+				this.theme.waxTheme();
+				break;
+			}
+			case 'LIBERLAND TESTNET': {
+				this.theme.defaultTheme();
+				this.theme.liberlandTheme();
+				break;
+			}
+			default: {
+				this.theme.defaultTheme();
+				console.log('default theme');
+			}
+		}
 		if (this.network.activeChain.lastNode !== '') {
 			this.endpoint = this.network.activeChain.lastNode;
 		} else {
 			this.endpoint = this.network.activeChain['firstApi'];
 		}
+
 	}
 
 
@@ -409,7 +416,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	makePayload() {
-		console.log('Entrando aqui antes da hora');
 		if (this.eos.ecc['isValidPublic'](this.ownerpub) && this.eos.ecc['isValidPublic'](this.activepub)) {
 			console.log('Generating account payload');
 			this.newAccountPayload = btoa(JSON.stringify({
@@ -437,7 +443,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		};
 		if (this.validateExchangeMemo(reqData.refund_account, reqData.refund_memo)) {
 			this.http.post('https://hapi.eosrio.io/account_creation_api/request_account', reqData).subscribe((data) => {
-				console.log(data);
+				// console.log(data);
 				if (data['status'] === 'OK') {
 					this.requestId = data['requestId'];
 					this.requestError = '';
@@ -567,7 +573,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 					this.importedAccounts = [];
 					this.importedAccounts = [...results.foundAccounts];
 					this.importedAccounts.forEach((item) => {
-						console.log(item);
+						// console.log(item);
 						item['permission'] = item.permissions.find(p => {
 							return p.required_auth.keys[0].key === results.publicKey;
 						})['perm_name'];
@@ -630,7 +636,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 			this.check = true;
 			this.accounts = [];
 			this.eos.loadPublicKey(this.publicEOS.trim()).then((account_data: any) => {
-				console.log(account_data);
+				// console.log(account_data);
 				this.processCheckAccount(account_data.foundAccounts);
 			}).catch((err) => {
 				console.log('ERROR', err.message);
@@ -681,7 +687,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 	importCheckBK(a) {
 		this.infile = a.target.files[0];
-		console.log(this.infile);
+		// console.log(this.infile);
 		const name = this.infile.name;
 		if (name.split('.')[1] !== 'bkp') {
 			this.showToast('error', 'Wrong file!', '');
@@ -807,7 +813,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 					newTxt += '<p class="' + color + '" >' + newLine + '</p>';
 
 				} else if (line.match(/`(.*?)`/g)) {
-					console.log();
+					// console.log();
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
 				} else {
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';

@@ -36,6 +36,7 @@ export class SendComponent implements OnInit {
 	accountvalid: boolean;
 	busy: boolean;
 	add: boolean;
+	precision: string;
 	errormsg: string;
 	adderrormsg: string;
 	amounterror: string;
@@ -188,6 +189,7 @@ export class SendComponent implements OnInit {
 				this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
 			}
 		});
+		this.precision = '1.'+this.aService.activeChain['precision'];
 		this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
 		this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
 		this.onChanges();
@@ -411,6 +413,7 @@ export class SendComponent implements OnInit {
 	}
 
 	openSendModal() {
+		this.wrongpass = '';
 		this.confirmForm.reset();
 		this.fromAccount = this.aService.selected.getValue().name;
 		this.sendModal = true;

@@ -282,7 +282,7 @@ export class EOSJSService {
 			if (this.ecc['isValidPublic'](pubkey)) {
 				const tempAccData = [];
 				this.getKeyAccounts(pubkey).then((data) => {
-					console.log('load', data);
+					// console.log('load', data);
 					if (data['account_names'].length > 0) {
 						const promiseQueue = [];
 						data['account_names'].forEach((acc) => {
@@ -439,7 +439,6 @@ export class EOSJSService {
 	checkPvtKey(k): Promise<any> {
 		try {
 			const pubkey = this.ecc['privateToPublic'](k);
-			console.log(pubkey);
 			return this.loadPublicKey(pubkey);
 		} catch (e) {
 			console.log(e);
@@ -462,72 +461,6 @@ export class EOSJSService {
 	ramSellBytes(account: string, bytes: string, permission): Promise<any> {
 		const options = {authorization: account + '@' + permission};
 		return this.eos.sellram(account, parseInt(bytes, 10), options);
-	}
-
-	async createAccount(creator: string, name: string, owner: string,
-						active: string, delegateAmount: number,
-						rambytes: number, transfer: boolean,
-						giftAmount: number, giftMemo: string, symbol: string, precision: number, permission): Promise<any> {
-		if (this.auth) {
-			const options = {authorization: creator + '@' + permission};
-			return this.eos.transaction(tr => {
-				tr['newaccount']({creator: creator, name: name, owner: owner, active: active});
-				tr['buyrambytes']({payer: creator, receiver: name, bytes: rambytes});
-				tr['delegatebw']({
-					from: creator, receiver: name,
-					stake_net_quantity: (delegateAmount * 0.3).toFixed(precision) + ' ' + symbol,
-					stake_cpu_quantity: (delegateAmount * 0.7).toFixed(precision) + ' ' + symbol,
-					transfer: transfer ? 1 : 0
-				});
-				if (giftAmount > 0) {
-					tr['transfer']({
-						from: creator,
-						to: name,
-						quantity: giftAmount.toFixed(4) + ' ' + symbol,
-						memo: giftMemo
-					});
-				}
-			}, options);
-		} else {
-			return new Promise(resolve => resolve(null));
-		}
-	}
-
-	startMonitoringLoop() {
-		if (!this.txMonitorInterval) {
-			// console.log('Starting monitoring loop!');
-			this.txMonitorInterval = setInterval(() => {
-				this.eos['getInfo']({}).then((info) => {
-					const lib = info['last_irreversible_block_num'];
-					if (this.txCheckQueue.length > 0) {
-						console.log('Loop pass - LIB = ' + lib);
-						this.txCheckQueue.forEach((tx, idx) => {
-							console.log(tx);
-							if (lib > tx.block) {
-								this.eos['getTransaction']({id: tx.id}).then((result) => {
-									console.log(result.id);
-									if (result.id === tx.id) {
-										this.txh.push(result);
-										console.log(result);
-										this.txCheckQueue.splice(idx, 1);
-										this.saveHistory();
-										this.loadHistory();
-									}
-								});
-							}
-						});
-					} else {
-						if (this.txMonitorInterval !== null) {
-							console.log('Stopping monitoring loop!');
-							clearInterval(this.txMonitorInterval);
-							this.txMonitorInterval = null;
-						}
-					}
-				});
-			}, 500);
-		} else {
-			console.log('monitor is already polling');
-		}
 	}
 
 	async voteProducer(voter: string, list: string[], permission): Promise<any> {
@@ -566,127 +499,4 @@ export class EOSJSService {
 			return err;
 		});
 	}
-
-	async changebw(account, permission, amount, symbol, ratio, fr) {
-		let cpu_v, net_v;
-		const accountInfo = await this.eos['getAccount'](account);
-		const refund = accountInfo['refund_request'];
-		const liquid_bal = accountInfo['core_liquid_balance'];
-		let wei_cpu: any;
-		let wei_net: any;
-		let ref_cpu = 0;
-		let ref_net = 0;
-		let liquid = 0;
-
-		if ((typeof accountInfo['cpu_weight']) === 'string') {
-			wei_cpu = Math.round(parseFloat(accountInfo['cpu_weight'].split(' ')[0]) / 10000);
-			wei_net = Math.round(parseFloat(accountInfo['net_weight'].split(' ')[0]) / 10000);
-		} else {
-			wei_cpu = accountInfo['cpu_weight'];
-			wei_net = accountInfo['net_weight'];
-		}
-
-		if (liquid_bal) {
-			liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
-		}
-		if (refund) {
-			ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
-			ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
-		}
-
-		const current_stake = wei_cpu + wei_net;
-
-		const new_total = current_stake + amount;
-		const new_cpu = new_total * ratio;
-		const new_net = new_total * (1 - ratio);
-		let cpu_diff = new_cpu - wei_cpu;
-		let net_diff = new_net - wei_net;
-
-
-		if (cpu_diff > (ref_cpu + liquid)) {
-			net_diff += (cpu_diff - (ref_cpu + liquid));
-			cpu_diff = (ref_cpu + liquid);
-
-		}
-		if (net_diff > (ref_net + liquid)) {
-			cpu_diff += (cpu_diff - (ref_cpu + liquid));
-			net_diff = (ref_net + liquid);
-
-		}
-		return this.eos.transaction((tr) => {
-			if (cpu_diff < 0 && net_diff >= 0) {
-				// Action 1 - Unstake CPU only
-				net_v = '0.0000';
-				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(fr);
-				// console.log('Unstake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
-				tr['undelegatebw']({
-					from: account,
-					receiver: account,
-					unstake_net_quantity: net_v + ' ' + symbol,
-					unstake_cpu_quantity: cpu_v + ' ' + symbol
-				});
-				if (net_diff > 0) {
-					// Action 2 - Stake NET only
-					cpu_v = '0.0000';
-					net_v = (net_diff / 10000).toFixed(fr);
-					// console.log('Stake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
-					tr['delegatebw']({
-						from: account,
-						receiver: account,
-						stake_net_quantity: net_v + ' ' + symbol,
-						stake_cpu_quantity: cpu_v + ' ' + symbol,
-						transfer: 0
-					});
-				}
-			} else if (net_diff < 0 && cpu_diff >= 0) {
-				// Action 1 - Unstake NET only
-				net_v = ((Math.abs(net_diff)) / 10000).toFixed(fr);
-				cpu_v = '0.0000';
-				// console.log('Unstake NET only', 'NET: ', net_v, 'CPU: ', cpu_v);
-				tr['undelegatebw']({
-					from: account,
-					receiver: account,
-					unstake_net_quantity: net_v + ' ' + symbol,
-					unstake_cpu_quantity: cpu_v + ' ' + symbol
-				});
-				// Action 2 - Stake CPU only
-				if (cpu_diff > 0) {
-					net_v = '0.0000';
-					cpu_v = (cpu_diff / 10000).toFixed(fr);
-					// console.log('Stake CPU only', 'NET: ', net_v, 'CPU: ', cpu_v);
-					tr['delegatebw']({
-						from: account,
-						receiver: account,
-						stake_net_quantity: net_v + ' ' + symbol,
-						stake_cpu_quantity: cpu_v + ' ' + symbol,
-						transfer: 0
-					});
-				}
-			} else if (net_diff < 0 && cpu_diff < 0) {
-				// Action 1 - Unstake Both
-				cpu_v = ((Math.abs(cpu_diff)) / 10000).toFixed(fr);
-				net_v = ((Math.abs(net_diff)) / 10000).toFixed(fr);
-				// console.log('Unstake Both', 'NET: ', net_v, 'CPU: ', cpu_v);
-				tr['undelegatebw']({
-					from: account,
-					receiver: account,
-					unstake_net_quantity: net_v + ' ' + symbol,
-					unstake_cpu_quantity: cpu_v + ' ' + symbol
-				});
-			} else {
-				// Action 1 - Stake both
-				cpu_v = (cpu_diff / 10000).toFixed(fr);
-				net_v = (net_diff / 10000).toFixed(fr);
-				console.log('NET: ', net_v, symbol, 'CPU: ', cpu_v, symbol);
-				tr['delegatebw']({
-					from: account,
-					receiver: account,
-					stake_net_quantity: net_v + ' ' + symbol,
-					stake_cpu_quantity: cpu_v + ' ' + symbol,
-					transfer: 0
-				});
-			}
-		}, {authorization: account + '@' + permission});
-	}
-
 }

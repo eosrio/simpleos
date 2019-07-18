@@ -49,6 +49,13 @@ export class SimpleosSigProvider implements SignatureProvider {
 	providedIn: 'root'
 })
 export class Eosjs2Service {
+
+	constructor() {
+		this.rpc = null;
+		this.textDecoder = new TextDecoder();
+		this.textEncoder = new TextEncoder();
+	}
+
 	rpc: JsonRpc;
 	textEncoder: TextEncoder;
 	textDecoder: TextDecoder;
@@ -60,10 +67,33 @@ export class Eosjs2Service {
 	private api: Api;
 	private defaultMainnetEndpoint = 'https://api.eosrio.io';
 
-	constructor() {
-		this.rpc = null;
-		this.textDecoder = new TextDecoder();
-		this.textEncoder = new TextEncoder();
+	static makeDelegateBW(auth, from: string, receiver: string, stake_net_quantity: string, stake_cpu_quantity: string, transfer: boolean, symbol: string) {
+		return {
+			account: 'eosio',
+			name: 'delegatebw',
+			authorization: [auth],
+			data: {
+				'from': from,
+				'receiver': receiver,
+				'stake_net_quantity': stake_net_quantity + ' ' + symbol,
+				'stake_cpu_quantity': stake_cpu_quantity + ' ' + symbol,
+				'transfer': transfer
+			}
+		};
+	}
+
+	static makeUndelegateBW(auth: any, from: string, receiver: string, unstake_net_quantity: string, unstake_cpu_quantity: string, symbol: string) {
+		return {
+			account: 'eosio',
+			name: 'undelegatebw',
+			authorization: [auth],
+			data: {
+				'from': from,
+				'receiver': receiver,
+				'unstake_net_quantity': unstake_net_quantity + ' ' + symbol,
+				'unstake_cpu_quantity': unstake_cpu_quantity + ' ' + symbol
+			}
+		};
 	}
 
 	initRPC(endpoint, chainID) {
@@ -75,7 +105,12 @@ export class Eosjs2Service {
 
 	initAPI(key) {
 		this.JsSigProvider = new JsSignatureProvider([key]);
-		this.api = new Api({rpc: this.rpc, signatureProvider: this.JsSigProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder()});
+		this.api = new Api({
+			rpc: this.rpc,
+			signatureProvider: this.JsSigProvider,
+			textDecoder: new TextDecoder(),
+			textEncoder: new TextEncoder()
+		});
 		setTimeout(() => {
 			this.JsSigProvider = null;
 			this.api = null;
@@ -92,10 +127,16 @@ export class Eosjs2Service {
 	}
 
 	transact(trx) {
-		return this.api.transact(trx, {
-			blocksBehind: 3,
-			expireSeconds: 30,
-		});
+		if (this.api) {
+			return this.api.transact(trx, {
+				blocksBehind: 3,
+				expireSeconds: 30,
+			});
+		} else {
+			return new Promise(resolve => {
+				resolve('wrong_pass');
+			});
+		}
 	}
 
 	async getTableRows(_code: string, _scope: string, _table: string) {
@@ -173,6 +214,7 @@ export class Eosjs2Service {
 	}
 
 	async getProxies(contract): Promise<any> {
+		console.log('Getting proxy data via chain API');
 		const result = {
 			rows: []
 		};
@@ -228,6 +270,146 @@ export class Eosjs2Service {
 			code: 'simpleosvers',
 			scope: 'simpleosvers',
 			table: 'info'
+		});
+	}
+
+	async createAccount(creator: string, name: string, owner: string,
+						active: string, delegateAmount: number,
+						rambytes: number, transfer: boolean,
+						giftAmount: number, giftMemo: string, symbol: string, precision: number, permission): Promise<any> {
+		const _actions = [];
+		const auth = {
+			actor: creator,
+			permission: permission
+		};
+		_actions.push({
+			account: 'eosio',
+			name: 'newaccount',
+			authorization: [auth],
+			data: {creator: creator, name: name, owner: owner, active: active}
+		});
+		_actions.push({
+			account: 'eosio',
+			name: 'buyrambytes',
+			authorization: [auth],
+			data: {payer: creator, receiver: name, bytes: rambytes}
+		});
+		_actions.push({
+			account: 'eosio',
+			name: 'delegatebw',
+			authorization: [auth],
+			data: {
+				from: creator, receiver: name,
+				stake_net_quantity: (delegateAmount * 0.3).toFixed(precision) + ' ' + symbol,
+				stake_cpu_quantity: (delegateAmount * 0.7).toFixed(precision) + ' ' + symbol,
+				transfer: transfer ? 1 : 0
+			}
+		});
+		if (giftAmount > 0) {
+			_actions.push({
+				from: creator,
+				to: name,
+				quantity: giftAmount.toFixed(precision) + ' ' + symbol,
+				memo: giftMemo
+			});
+		}
+		return this.api.transact({
+			actions: _actions
+		}, {
+			blocksBehind: 3,
+			expireSeconds: 30,
+		});
+	}
+
+	async changebw(account, permission, amount, symbol, ratio, fr) {
+		let cpu_v, net_v;
+		const accountInfo = await this.rpc.get_account(account);
+		const refund = accountInfo['refund_request'];
+		const liquid_bal = accountInfo['core_liquid_balance'];
+		let wei_cpu: any;
+		let wei_net: any;
+		let ref_cpu = 0;
+		let ref_net = 0;
+		let liquid = 0;
+
+		if ((typeof accountInfo['cpu_weight']) === 'string') {
+			wei_cpu = Math.round(parseFloat(accountInfo['cpu_weight'].split(' ')[0]) / 10000);
+			wei_net = Math.round(parseFloat(accountInfo['net_weight'].split(' ')[0]) / 10000);
+		} else {
+			wei_cpu = accountInfo['cpu_weight'];
+			wei_net = accountInfo['net_weight'];
+		}
+
+		if (liquid_bal) {
+			liquid = Math.round(parseFloat(liquid_bal.split(' ')[0]) * 10000);
+		}
+		if (refund) {
+			ref_cpu = Math.round(parseFloat(refund['cpu_amount'].split(' ')[0]) * 10000);
+			ref_net = Math.round(parseFloat(refund['net_amount'].split(' ')[0]) * 10000);
+		}
+
+		const current_stake = wei_cpu + wei_net;
+
+		const new_total = current_stake + amount;
+		const new_cpu = new_total * ratio;
+		const new_net = new_total * (1 - ratio);
+		let cpu_diff = new_cpu - wei_cpu;
+		let net_diff = new_net - wei_net;
+
+
+		if (cpu_diff > (ref_cpu + liquid)) {
+			net_diff += (cpu_diff - (ref_cpu + liquid));
+			cpu_diff = (ref_cpu + liquid);
+
+		}
+		if (net_diff > (ref_net + liquid)) {
+			cpu_diff += (cpu_diff - (ref_cpu + liquid));
+			net_diff = (ref_net + liquid);
+
+		}
+
+		const _actions = [];
+		const auth = {
+			actor: account,
+			permission: permission
+		};
+
+		const _div = Math.pow(10, fr);
+		const _zero = Number(0).toFixed(fr);
+
+		if (cpu_diff < 0 && net_diff >= 0) {
+			net_v = _zero;
+			cpu_v = ((Math.abs(cpu_diff)) / _div).toFixed(fr);
+			_actions.push(Eosjs2Service.makeUndelegateBW(auth, account, account, net_v, cpu_v, symbol));
+			if (net_diff > 0) {
+				cpu_v = _zero;
+				net_v = (net_diff / _div).toFixed(fr);
+				_actions.push(Eosjs2Service.makeDelegateBW(auth, account, account, net_v, cpu_v, false, symbol));
+			}
+		} else if (net_diff < 0 && cpu_diff >= 0) {
+			net_v = ((Math.abs(net_diff)) / _div).toFixed(fr);
+			cpu_v = _zero;
+			_actions.push(Eosjs2Service.makeUndelegateBW(auth, account, account, net_v, cpu_v, symbol));
+			if (cpu_diff > 0) {
+				net_v = _zero;
+				cpu_v = (cpu_diff / _div).toFixed(fr);
+				_actions.push(Eosjs2Service.makeDelegateBW(auth, account, account, net_v, cpu_v, false, symbol));
+			}
+		} else if (net_diff < 0 && cpu_diff < 0) {
+			cpu_v = ((Math.abs(cpu_diff)) / _div).toFixed(fr);
+			net_v = ((Math.abs(net_diff)) / _div).toFixed(fr);
+			_actions.push(Eosjs2Service.makeUndelegateBW(auth, account, account, net_v, cpu_v, symbol));
+		} else {
+			cpu_v = (cpu_diff / _div).toFixed(fr);
+			net_v = (net_diff / _div).toFixed(fr);
+			_actions.push(Eosjs2Service.makeDelegateBW(auth, account, account, net_v, cpu_v, false, symbol));
+		}
+
+		return this.api.transact({
+			actions: _actions
+		}, {
+			blocksBehind: 3,
+			expireSeconds: 30,
 		});
 	}
 }

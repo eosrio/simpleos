@@ -100,3 +100,8 @@
 /deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
 	color: var(--text-blue-color) !important;
 }
+
+.borderb {
+	border-bottom: 1px solid var(--sidenav-active-border-color1) !important;
+}
+

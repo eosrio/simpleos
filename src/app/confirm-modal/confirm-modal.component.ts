@@ -46,19 +46,27 @@ export class ConfirmModalComponent {
 		});
 	}
 
-	async processTransaction(trx) {
+	async processTransaction(trx, handler) {
 		console.log(trx);
 		try {
 			const result = await this.eosjs.transact(trx);
-			console.log(result);
-			return result;
+			if (result === 'wrong_pass') {
+				return [null, 'Wrong password!'];
+			} else {
+				return [result, null];
+			}
 		} catch (e) {
 			console.log('\nCaught exception: ' + e);
-			this.errormsg = e;
-			if (e instanceof RpcError) {
-				console.log(JSON.stringify(e.json, null, 2));
+			if (handler) {
+				return [false, handler(e)];
+			} else {
+				this.errormsg = e;
+				if (e instanceof RpcError) {
+					console.log(JSON.stringify(e.json, null, 2));
+				}
+				return [false, null];
 			}
-			return false;
+
 		}
 	}
 
@@ -84,27 +92,31 @@ export class ConfirmModalComponent {
 			this.cdr.detectChanges();
 			return true;
 		}
-		const trxResult = await this.processTransaction(this.modalData.transactionPayload);
-		if (trxResult) {
-			const trxId = trxResult.transaction_id;
-			this.wasClosed = true;
-			this.confirmationForm.reset();
-			setTimeout(() => {
-				this.aService.refreshFromChain().catch(e => {
-					console.log(e);
-				});
-				this.trxFactory.status.emit('done');
-				this.busy = false;
-				this.visibility = false;
-				this.cdr.detectChanges();
-			}, 1500);
-			this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
-				id: trxId
-			});
+		const [trxResult, err] = await this.processTransaction(this.modalData.transactionPayload, this.modalData.errorFunc);
+		if (err) {
+			this.errormsg = err;
 		} else {
-			this.busy = false;
-			this.confirmationForm.reset();
-			this.showToast('error', 'Transaction failed', `${this.errormsg}`, {});
+			if (trxResult) {
+				const trxId = trxResult.transaction_id;
+				this.wasClosed = true;
+				this.confirmationForm.reset();
+				setTimeout(() => {
+					this.aService.refreshFromChain().catch(e => {
+						console.log(e);
+					});
+					this.trxFactory.status.emit('done');
+					this.busy = false;
+					this.visibility = false;
+					this.cdr.detectChanges();
+				}, 1500);
+				this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
+					id: trxId
+				});
+			} else {
+				this.busy = false;
+				this.confirmationForm.reset();
+				this.showToast('error', 'Transaction failed', `${this.errormsg}`, {});
+			}
 		}
 	}
 

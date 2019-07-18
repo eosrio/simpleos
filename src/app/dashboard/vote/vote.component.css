@@ -318,3 +318,15 @@ mat-option:not(.last) {
 	border-bottom: 1px solid var(--sidenav-active-border-color1);
 	color:var(--tr-resource-odd-color);
 }
+
+/deep/ .red-checkbox .mat-checkbox-frame {
+	border-color: var(--text-error) !important;
+}
+
+/deep/ .red-checkbox .mat-checkbox-label {
+	color:  var(--text-error) !important;
+}
+
+/deep/ .red-checkbox .mat-checkbox-checked.mat-accent .mat-checkbox-background {
+	background-color: var(--text-error) !important;
+}

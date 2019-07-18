@@ -302,8 +302,8 @@ export class RexComponent implements OnDestroy {
 				this.updateGlobalRexData();
 			}
 		}));
-		const color = document.documentElement.style.getPropertyValue('--text-white-color')!==''?document.documentElement.style.getPropertyValue('--text-white-color'):'#ffffff';
-		
+		const color = document.documentElement.style.getPropertyValue('--text-white-color') !== '' ? document.documentElement.style.getPropertyValue('--text-white-color') : '#ffffff';
+
 		// Setup Charts
 		this.rex_price_chart = {
 			title: {
@@ -657,7 +657,7 @@ export class RexComponent implements OnDestroy {
 		if (acc.voter_info) {
 			const voter = acc.voter_info;
 			this.nVoters = voter.producers.length;
-			console.log(voter);
+			// console.log(voter);
 			if (voter.producers.length === 0) {
 				this.canbuyREX = voter.proxy !== '';
 			} else {
@@ -1175,7 +1175,7 @@ export class RexComponent implements OnDestroy {
 
 	async voteOnProxy() {
 		// get proxy producers
-		const proxy = 'eoscoreproxy';
+		const proxy = 'brockpierce1';
 		const proxyInfo = await this.eosjs.rpc.get_account(proxy);
 		const producers = proxyInfo.voter_info.producers;
 
@@ -1297,7 +1297,7 @@ export class RexComponent implements OnDestroy {
 
 	private updateGlobalRexData() {
 		this.eosjs.getRexPool().then((data) => {
-			console.log(data);
+			// console.log(data);
 			this.total_unlent = RexComponent.asset2Float(data.total_unlent);
 			this.total_lent = RexComponent.asset2Float(data.total_lent);
 			this.total_rent = RexComponent.asset2Float(data.total_rent);

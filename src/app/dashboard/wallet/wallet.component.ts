@@ -34,6 +34,7 @@ export const MY_FORMATS = {
 export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	fullBalance = 0;
+	precision:string;
 	staked: number;
 	unstaked: number;
 	unstaking: 0;
@@ -201,6 +202,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 						startDate: '',
 						endDate: ''
 					});
+					this.precision = '1.2-'+this.aService.activeChain['precision'];
 					this.actionsFilter = [
 						{name: 'ALL ACTIONS', filter: ''},
 						{name: 'ACCOUNT', filter: '&filter=*:newaccount'},

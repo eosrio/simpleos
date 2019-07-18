@@ -10,9 +10,9 @@
 						<div
 							class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
 							style="padding-right: 0; ">
-							<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
+							<mat-tab-group  id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 										   [selectedIndex]="selectedTab">
-								<mat-tab *ngFor="let account of aService.accounts; let i = index">
+								<mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
 									<ng-template mat-tab-label>
 										<div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
 											*ngIf="aService.accounts.length > 1"
@@ -369,15 +369,15 @@
 	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
 	<clr-wizard-page [clrWizardPageNextDisabled]="!pvtform.valid"
-					 (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value)"
+					 (clrWizardPageOnCommit)="verifyPrivateKey(pkField.value,true)"
 					 [clrWizardPagePreventDefault]="true"
 					 (clrWizardPageOnCancel)="doCancel()">
 		<ng-template clrPageTitle>Step 1</ng-template>
-		<h5 class="black-white">Insert your other existing <strong>ACTIVE</strong> private key below</h5>
+		<h5 class="black-white">Insert your existing private key below (ACTIVE key recommended)</h5>
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
-					   placeholder="{{aService.activeChain['name']}} Active Private key">
+					   placeholder="{{network.activeChain['name']}} Active Private key">
 				<fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
 						 (click)="pkField.type = 'text'"></fa-icon>
 				<fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
@@ -386,15 +386,19 @@
 					ctrl c + ctrl v to copy & paste
 				</mat-hint>
 				<mat-error *ngIf="!pvtform.valid">
-					{{this.errormsg}}
+					{{errormsg}}
+				</mat-error>
+				<mat-error>
+					{{apierror}}
 				</mat-error>
 			</mat-form-field>
 		</form>
-		<div *ngIf="importedAccounts.length > 0" style="color: #bebebe; margin-top: 10px">
+
+		<div *ngIf="importedAccounts.length > 0" style="margin-top: 10px" class="gray3">
 			Account<span *ngIf="importedAccounts.length > 1">s</span>
 		</div>
-		<div *ngFor="let importedAccount of importedAccounts">
-			<span class="label label-blue">{{importedAccount['account_name']}}</span>
+		<div *ngFor="let importedAccount of importedAccounts" class="gray3">
+			<span class="label label-blue">{{importedAccount['account_name']}}@{{importedAccount['permission']}}</span>
 		</div>
 	</clr-wizard-page>
 

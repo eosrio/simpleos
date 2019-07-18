@@ -1,9 +1,18 @@
-import {Component, OnInit, NgZone, ViewChild} from '@angular/core';
+import {
+	Component,
+	OnInit,
+	NgZone,
+	ViewChild,
+	OnDestroy,
+	AfterViewInit,
+	ChangeDetectorRef,
+	ElementRef
+} from '@angular/core';
 import {EOSJSService} from '../services/eosjs.service';
 import {AccountsService} from '../services/accounts.service';
 import {LandingComponent} from '../landing/landing.component';
 import {ClrWizard} from '@clr/angular';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 
 import * as moment from 'moment';
@@ -14,13 +23,17 @@ import {EOSAccount} from '../interfaces/account';
 import {NetworkService} from '../services/network.service';
 import {AppComponent} from '../app.component';
 import {ThemeService} from '../services/theme.service';
+import {Subscription} from 'rxjs';
+import {Eosjs2Service} from '../services/eosjs2.service';
+
 
 @Component({
 	selector: 'app-dashboard',
 	templateUrl: './dashboard.component.html',
 	styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+
 	@ViewChild('newAccountWizard', {static: false}) wizardaccount: ClrWizard;
 	@ViewChild('importAccountWizard', {static: false}) importwizard: ClrWizard;
 	lottieConfig: Object;
@@ -97,11 +110,20 @@ export class DashboardComponent implements OnInit {
 
 	selectedAccRem = null;
 	accRemovalIndex = null;
-	selectedTab = '';
+	selectedTab = 0;
 	importedPublicKey = '';
+
+
+	dropReady: boolean;
+	publicEOS: string;
+	busyActivekey = false;
+	apierror = '';
+	private subscriptions: Subscription[] = [];
+	private pvtImportReady: boolean;
 
 	constructor(
 		public eos: EOSJSService,
+		public eosjs: Eosjs2Service,
 		private fb: FormBuilder,
 		public aService: AccountsService,
 		private toaster: ToasterService,
@@ -110,8 +132,10 @@ export class DashboardComponent implements OnInit {
 		public ram: RamService,
 		private zone: NgZone,
 		private theme: ThemeService,
-		public app: AppComponent
+		public app: AppComponent,
+		private cdr: ChangeDetectorRef
 	) {
+
 		this.newAccountModal = false;
 		this.importKeyModal = false;
 		this.deleteAccModal = false;
@@ -157,6 +181,16 @@ export class DashboardComponent implements OnInit {
 			autoplay: true,
 			loop: false
 		};
+
+		this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
+			if (value) {
+				if (value.length === 51) {
+					this.verifyPrivateKey(value, false);
+				} else {
+					this.pvtImportReady = false;
+				}
+			}
+		}));
 	}
 
 	openTX(value) {
@@ -165,6 +199,12 @@ export class DashboardComponent implements OnInit {
 
 	extOpen(value) {
 		window['shell'].openExternal(value);
+	}
+
+	ngOnDestroy(): void {
+		this.subscriptions.forEach(s => {
+			s.unsubscribe();
+		});
 	}
 
 	// verifyPrivateKey(input) {
@@ -177,53 +217,119 @@ export class DashboardComponent implements OnInit {
 	//   }
 	// }
 
-	verifyPrivateKey(input) {
-		if (input !== '') {
-			this.eos.checkPvtKey(input).then((results) => {
-				this.importedPublicKey = results.publicKey;
-				this.importedAccounts = [];
-				this.importedAccounts = [...results.foundAccounts];
-				this.importedAccounts.forEach((item) => {
-					item['permission'] = item.permissions.find(p => {
-						return p.required_auth.keys[0].key === results.publicKey;
-					})['perm_name'];
-					if (item['refund_request']) {
-						const tempDate = item['refund_request']['request_time'] + '.000Z';
-						const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-						const now = new Date().getTime();
-						if (now > refundTime) {
-							this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
-								console.log(tx);
-							});
-						} else {
-							console.log('Refund not ready!');
-						}
-					}
-				});
-				this.pvtform.controls['private_key'].setErrors(null);
-				this.zone.run(() => {
-					this.importwizard.forceNext();
-					this.errormsg = '';
-				});
-			}).catch((e) => {
-				console.log(e);
-				this.zone.run(() => {
-					this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-					this.importedAccounts = [];
-
-					if (e.message.includes('Invalid checksum')) {
-						this.errormsg = 'invalid private key';
-					}
-					if (e.message === 'no_account') {
-						this.errormsg = 'No account associated with this private key';
-					}
-					if (e.message === 'non_active') {
-						this.errormsg = 'This is not the active key. Please import the active key.';
-					}
-				});
+	verifyPrivateKey(input, auto) {
+		if (this.pvtImportReady) {
+			this.zone.run(() => {
+				this.importwizard.forceNext();
+				this.errormsg = '';
+				this.apierror = '';
 			});
+		} else {
+			if (input !== '') {
+				this.busyActivekey = true;
+				this.eos.checkPvtKey(input).then((results) => {
+					this.publicEOS = results.publicKey;
+					this.importedPublicKey = results.publicKey;
+					this.importedAccounts = [];
+					this.importedAccounts = [...results.foundAccounts];
+					this.importedAccounts.forEach((item) => {
+						console.log(item);
+						item['permission'] = item.permissions.find(p => {
+							return p.required_auth.keys[0].key === results.publicKey;
+						})['perm_name'];
+						if (item['refund_request']) {
+							const tempDate = item['refund_request']['request_time'] + '.000Z';
+							const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+							const now = new Date().getTime();
+							if (now > refundTime) {
+								this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
+									console.log(tx);
+								});
+							} else {
+								console.log('Refund not ready!');
+							}
+						}
+					});
+					this.pvtform.controls['private_key'].setErrors(null);
+					this.pvtImportReady = true;
+					this.zone.run(() => {
+						if (auto) {
+							this.importwizard.forceNext();
+						}
+						this.errormsg = '';
+						this.apierror = '';
+					});
+				}).catch((e) => {
+					this.pvtImportReady = false;
+					this.zone.run(() => {
+						this.dropReady = true;
+						this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+						this.importedAccounts = [];
+						if (e.message.includes('Invalid checksum')) {
+							this.errormsg = 'invalid private key';
+						}
+						if (e.message === 'no_account') {
+							this.errormsg = 'No account associated with this private key';
+						}
+						if (e.message === 'non_active') {
+							this.errormsg = 'This is not the active key. Please import the active key.';
+						}
+						if (e.message === 'api_arror') {
+							this.apierror = 'API Unavailable, please try again with another endpoint.';
+						}
+					});
+				});
+			}
 		}
 	}
+
+	// verifyPrivateKey(input) {
+	// 	if (input !== '') {
+	// 		this.eos.checkPvtKey(input).then((results) => {
+	// 			this.importedPublicKey = results.publicKey;
+	// 			this.importedAccounts = [];
+	// 			this.importedAccounts = [...results.foundAccounts];
+	// 			this.importedAccounts.forEach((item) => {
+	// 				item['permission'] = item.permissions.find(p => {
+	// 					return p.required_auth.keys[0].key === results.publicKey;
+	// 				})['perm_name'];
+	// 				if (item['refund_request']) {
+	// 					const tempDate = item['refund_request']['request_time'] + '.000Z';
+	// 					const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+	// 					const now = new Date().getTime();
+	// 					if (now > refundTime) {
+	// 						this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
+	// 							console.log(tx);
+	// 						});
+	// 					} else {
+	// 						console.log('Refund not ready!');
+	// 					}
+	// 				}
+	// 			});
+	// 			this.pvtform.controls['private_key'].setErrors(null);
+	// 			this.zone.run(() => {
+	// 				this.importwizard.forceNext();
+	// 				this.errormsg = '';
+	// 			});
+	// 		}).catch((e) => {
+	// 			console.log(e);
+	// 			this.zone.run(() => {
+	// 				this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+	// 				this.importedAccounts = [];
+	//
+	// 				if (e.message.includes('Invalid checksum')) {
+	// 					this.errormsg = 'invalid private key';
+	// 				}
+	// 				if (e.message === 'no_account') {
+	// 					this.errormsg = 'No account associated with this private key';
+	// 				}
+	// 				if (e.message === 'non_active') {
+	// 					this.errormsg = 'This is not the active key. Please import the active key.';
+	// 				}
+	// 			});
+	// 		});
+	// 	}
+	// }
 
 	doCancel(): void {
 		this.importwizard.close();
@@ -236,7 +342,7 @@ export class DashboardComponent implements OnInit {
 					this.passform2.reset();
 					this.importwizard.reset();
 					this.pvtform.reset();
-					this.aService.appendAccounts(this.importedAccounts);
+					this.aService.appendAccounts(this.importedAccounts).catch(console.log);
 				}).catch((err) => {
 					console.log(err);
 				});
@@ -251,10 +357,18 @@ export class DashboardComponent implements OnInit {
 	}
 
 	doRemoveAcc() {
+		const [key] = this.aService.getStoredKey(this.aService.accounts[this.accRemovalIndex]);
+		const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
+		if (savedData) {
+			const keystore = JSON.parse(savedData);
+			delete keystore[key];
+			localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
+		}
 		this.aService.accounts.splice(this.accRemovalIndex, 1);
 		this.deleteAccModal = false;
 		this.aService.select(0);
-		this.selectedTab = '0';
+		this.selectedTab = 0;
+		this.aService.refreshFromChain().catch(console.log);
 	}
 
 	resetAndClose() {
@@ -288,7 +402,7 @@ export class DashboardComponent implements OnInit {
 
 		this.crypto.authenticate(this.submitTXForm.get('pass').value, publicKey).then((data) => {
 			if (data === true) {
-				this.eos.createAccount(
+				this.eosjs.createAccount(
 					this.final_creator, this.final_name, this.final_owner,
 					this.final_active, delegate_amount, ram_amount,
 					delegate_transfer, gift_amount, 'created with simpleos', this.aService.activeChain['symbol'], this.aService.activeChain['precision'], permission).then((txdata) => {
@@ -374,6 +488,17 @@ export class DashboardComponent implements OnInit {
 		});
 	}
 
+	ngAfterViewInit() {
+		this.subscriptions.push(
+			this.aService.selected.asObservable().subscribe((sel) => {
+				// this.aService.select(this.aService.selectedIdx.toString ());
+				this.selectedTab = this.aService.selectedIdx;
+			})
+		);
+		this.cdr.detectChanges();
+
+	}
+
 	decodeAccountPayload(payload: string) {
 		if (payload !== '') {
 			if (payload.endsWith('=')) {
@@ -402,8 +527,9 @@ export class DashboardComponent implements OnInit {
 	}
 
 	selectAccount(idx) {
-		this.selectedTab = idx;
 		this.aService.select(idx);
+		this.selectedTab = this.aService.selectedIdx;
+		this.cdr.detectChanges();
 	}
 
 	loadStoredAccounts() {
@@ -430,6 +556,7 @@ export class DashboardComponent implements OnInit {
 			});
 		}
 		this.aService.initFirst();
+
 	}
 
 	cc(text) {
@@ -441,30 +568,42 @@ export class DashboardComponent implements OnInit {
 	}
 
 	verifyAccountName(next) {
-		console.log(next);
+		const creator = this.aService.selected.getValue().name;
+		console.log(creator);
 		try {
 			this.accountname_valid = false;
 			const res = this.eos.checkAccountName(this.accountname);
-			const regexName = new RegExp('^([a-z]|[1-5])+$');
+			// const regexName = new RegExp('^([a-z]|[1-5])+$');
 			if (res !== 0) {
-				if (this.accountname.length === 12 && regexName.test(this.accountname)) {
-					this.eos.getAccountInfo(this.accountname).then(() => {
-						this.accountname_err = 'This account name is not available. Please try another.';
-						this.accountname_valid = false;
-					}).catch(() => {
-						this.accountname_valid = true;
-						this.newAccountData.n = this.accountname;
-						this.final_name = this.accountname;
-						this.final_creator = this.aService.selected.getValue().name;
-						this.accountname_err = '';
-						if (next) {
-							this.wizardaccount.next();
-						}
-					});
-				} else {
+
+				if (this.accountname.length < 12 && creator.length === 12) {
 					this.accountname_err = 'The account name must have exactly 12 characters. a-z, 1-5';
 					this.accountname_valid = false;
+					return;
 				}
+
+				if (creator.length < 12) {
+					console.log(this.accountname.endsWith(creator));
+					if (this.accountname.length < 12 && !this.accountname.endsWith(creator)) {
+						this.accountname_err = 'You are not eligible to create accounts under this suffix';
+						this.accountname_valid = false;
+						return;
+					}
+				}
+
+				this.eos.getAccountInfo(this.accountname).then(() => {
+					this.accountname_err = 'This account name is not available. Please try another.';
+					this.accountname_valid = false;
+				}).catch(() => {
+					this.accountname_valid = true;
+					this.newAccountData.n = this.accountname;
+					this.final_name = this.accountname;
+					this.final_creator = creator;
+					this.accountname_err = '';
+					if (next) {
+						this.wizardaccount.next();
+					}
+				});
 			}
 		} catch (e) {
 			this.accountname_err = e.message;
@@ -555,13 +694,11 @@ export class DashboardComponent implements OnInit {
 				this.eos.ecc['randomKey'](128).then((privateKey) => {
 					this.ownerpk = privateKey;
 					this.ownerpub = this.eos.ecc['privateToPublic'](this.ownerpk);
-					console.log(this.ownerpk, this.ownerpub);
 					this.eos.ecc['randomKey'](128).then((privateKey2) => {
 						this.activepk = privateKey2;
 						this.activepub = this.eos.ecc['privateToPublic'](this.activepk);
 						this.generating = false;
 						this.generated = true;
-						console.log(this.activepk, this.activepub);
 					});
 				});
 			});

@@ -228,7 +228,7 @@
 												<span *ngIf="item.type === 'sent'">-</span>
 												<span *ngIf="item.type === 'sellram'">+</span>
 												<span *ngIf="item.type === 'buyram'">-</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+												{{item.amount | number: precision}} <span class="blue">{{item.symbol}}</span>
 											</span>
 									<ng-container *ngIf="item.symbol === aService.activeChain['symbol']">
 										<span
@@ -277,6 +277,9 @@
 									<ng-container *ngIf="item.votedProducers.length === 0 && item.proxy !== ''">
 										Proxied votes to <span class="blue">{{item.proxy}}</span>
 									</ng-container>
+									<ng-container *ngIf="item.votedProducers.length === 0 && item.proxy === ''">
+										Removed all votes
+									</ng-container>
 								</ng-container>
 
 								<!--DELEGATEBW/UNDELEGATEBW-->
@@ -287,7 +290,7 @@
 												<span *ngIf="item.type === 'staked_out'">-</span>
 												<span *ngIf="item.type === 'unstaked_in'">+</span>
 												<span *ngIf="item.type === 'unstaked_out'">+</span>
-												{{item.amount}}
+												{{item.amount | number: precision}}
 												<span class="blue">
 													{{aService.activeChain['symbol']}}
 												</span>
@@ -528,10 +531,13 @@
 													   (click)="openAccount(item.proxy)">{{item.proxy}}</a>
 												</ng-container>
 											</ng-container>
-											<!--													<ng-container-->
-											<!--														*ngIf="item.action_name === 'transfer'||item.type === 'other2'">-->
-											<!--														<span class="blue">Memo: </span>{{item.memo}}-->
-											<!--													</ng-container>-->
+
+										</div>
+										<div>
+											<ng-container
+												*ngIf="item.action_name === 'transfer' && item.memo !== ''">
+												<span class="blue">Memo: </span>{{item.memo}}
+											</ng-container>
 										</div>
 										<div>
 													<span class="blue">

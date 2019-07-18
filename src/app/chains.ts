@@ -119,7 +119,7 @@ export const defaultChainsJSON = [
 		precision: 8,
 		name: 'WAX MAINNET',
 		firstApi: 'https://wax.eosrio.io',
-		historyApi: 'https://wax.eosio.se/v2',
+		historyApi: 'https://wax.hyperion.eosrio.io/v2',
 		forumTally: '',
 		eosrioBP: 'eosriobrazil',
 		proxyRegistry: '',

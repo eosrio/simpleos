@@ -184,6 +184,7 @@ export class ReferendumComponent implements OnInit {
 
 
 	loadVoteTally(forceReload?: boolean) {
+		console.log('loadVoteTally');
 		this.selProposal = null;
 		this.vtProposal = 0;
 		this.proposals = [];
@@ -193,19 +194,20 @@ export class ReferendumComponent implements OnInit {
 			if (localStorage.getItem('simplEOS.lastProposalFetch.' + chainId) !== null) {
 				lastFecth = parseInt(localStorage.getItem('simplEOS.lastProposalFetch.' + chainId), 10);
 				now = new Date().getTime();
-				// console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
+				console.log('Last fetch ', (now - lastFecth) / 1000 / 60, ' minutes ago');
 			}
 
 			if (((now - lastFecth > 10 * 60 * 1000) || localStorage.getItem('simplEOS.lastProposalFetch.' + chainId) === null) || forceReload) {
+				console.log('Loading live vote tally...');
 				this.http.get(this.aService.activeChain.forumTally).subscribe((data) => {
-					console.log(data);
+					// console.log(data);
 					this.processProposalData(data);
 				}, err => {
 					console.log(err);
 					this.loading = false;
 				});
 			} else {
-				// console.log('Loading proposals from local cache');
+				console.log('Loading proposals from local cache');
 				this.proposals = JSON.parse(localStorage.getItem('simplEOS.proposals.' + chainId));
 				this.allProposals = this.proposals;
 				this.loading = false;
@@ -231,15 +233,20 @@ export class ReferendumComponent implements OnInit {
 					temp_json['content'] = `<em>[no contents]</em>`;
 				}
 				temp_obj['proposal']['json_data'] = temp_json;
+				if (!temp_obj.proposal) {
+					console.log('PROP', temp_obj);
+				}
+				proposals.push(temp_obj);
+			} else {
+				console.log('FAILED PROPOSAL', temp_obj);
 			}
-			proposals.push(temp_obj);
 		});
 		this.loading = false;
 		localStorage.setItem('simplEOS.proposals.' + this.aService.activeChain.id, JSON.stringify(proposals));
 		localStorage.setItem('simplEOS.lastProposalFetch.' + this.aService.activeChain.id, new Date().getTime().toString());
 		this.allProposals = proposals;
 		this.proposals = proposals;
-		console.log(this.proposals.length, 'proposals loaded');
+		// console.log(this.proposals.length, 'proposals loaded');
 	}
 
 
@@ -452,7 +459,12 @@ export class ReferendumComponent implements OnInit {
 		this.wrongpass = '';
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
-				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name, vote: this.vtProposal, vote_json: ''};
+				const form = {
+					voter: accountName,
+					proposal_name: this.selProposal.proposal.proposal_name,
+					vote: this.vtProposal,
+					vote_json: ''
+				};
 				this.eos.pushActionContract('eosio.forum', 'vote', form, accountName, permission).then((info) => {
 					this.voteModal = false;
 					if (this.seeMore) {
@@ -568,12 +580,12 @@ export class ReferendumComponent implements OnInit {
 			'proposer': account.name,
 			'proposal_name': this.createProposalForm.getRawValue().id,
 			'title': this.createProposalForm.getRawValue().title,
-			'proposal_json': '{ "content":"' + this.createProposalForm.getRawValue().content + '", "type":"' + this.createProposalForm.getRawValue().type + '"}',
+			'proposal_json': '{\"type\":\"' + this.createProposalForm.getRawValue().type + '\",\"content\":\"' + this.createProposalForm.getRawValue().content.replace(/\n/g,'\\n') + '\"}',
 			'expires_at': moment().utc().add(this.createProposalForm.get('expiry').value, 'days').format()
 		};
 
 		if (this.createProposalForm.getRawValue().options.length > 0) {
-			formVal['proposal_json'] = '{ "content":"' + this.createProposalForm.getRawValue().content + '", "type":"' + this.createProposalForm.getRawValue().type + ', "options":"' + this.createProposalForm.getRawValue().options + '"}';
+			formVal['proposal_json'] = '{\"type\":\"' + this.createProposalForm.getRawValue().type + '\",\"options\":\"' + this.createProposalForm.getRawValue().options + '\",\"content\":\"' + this.createProposalForm.getRawValue().content.replace(/\n/g,'\\n') + '\"}';
 		}
 
 		const accountName = this.aService.selected.getValue().name;
@@ -586,6 +598,7 @@ export class ReferendumComponent implements OnInit {
 				const val = this.eos.pushActionContract(contract, action, formVal, accountName, permission).then((info) => {
 					console.log(info);
 					this.busy = false;
+					this.proposalModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch(error => {
 					console.log(error);
@@ -599,6 +612,7 @@ export class ReferendumComponent implements OnInit {
 			this.wrongpass = 'Wrong password!';
 			this.busy = false;
 		});
+		this.confirmProposalForm.reset();
 	}
 
 }

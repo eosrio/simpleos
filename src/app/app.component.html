@@ -24,7 +24,8 @@
 			</a>
 
 		</div>
-		<div style="width:100%;height: 2.05rem;" *ngIf="compilerVersion=='EOS MAINNET' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
+		<div style="width:100%;height: 2.05rem;"
+			 *ngIf="compilerVersion=='EOS MAINNET' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
 			<a class="nav-link nav-icon other-icon">
 				<clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
 						  style="height: 28px;width: 23px;margin:10px 10px;-webkit-app-region: no-drag;float:right;"></clr-icon>
@@ -77,7 +78,7 @@
 		<p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
 		<div class="card chains-card black-white">
 			<ng-container *ngFor="let acc of aService.accounts; let i = index">
-				<div class="card-block chain-section" (click)="selectAccount(acc)">
+				<div class="card-block chain-section" (click)="selectAccount(acc,i)">
 					{{acc.name}}
 					<span class="blue connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
 						[icon]="['far', 'angle-right']"></fa-icon></span>

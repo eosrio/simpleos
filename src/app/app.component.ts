@@ -81,7 +81,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 				private zone: NgZone,
 				private cdr: ChangeDetectorRef,
 				private _electronService: ElectronService,
-				public theme: ThemeService
+				public theme: ThemeService,
 	) {
 		if (this.compilerVersion === 'LIBERLAND TESTNET') {
 			this.titleService.setTitle('Liberland Wallet v' + this.version);
@@ -128,7 +128,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.busy = false;
 		if (this.connect.ipc) {
 			this.connect.ipc.on('request', (event, payload) => {
-				console.log(payload);
+
 				this.transitEventHandler = event;
 				switch (payload.message) {
 					case 'launch': {
@@ -142,7 +142,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 					case 'connect': {
 						this.dapp_name = payload.content.appName;
 						const requested_chain = payload.content.chainId;
-						console.log(requested_chain);
+						// console.log ( requested_chain );
 						let result = null;
 						if (this.network.defaultChains.find((chain) => chain.id === requested_chain)) {
 							if (this.network.activeChain.id !== requested_chain) {
@@ -156,8 +156,15 @@ export class AppComponent implements OnInit, AfterViewInit {
 						break;
 					}
 					case 'login': {
+
+						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
+							this.eventFired = true;
+							this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
+							return;
+						}
+
 						const reqAccount = payload.content.account;
-						console.log(reqAccount);
+						// console.log ( reqAccount );
 						if (reqAccount) {
 							const foundAccount = this.aService.accounts.find((a) => a.accountName === reqAccount);
 							if (foundAccount) {
@@ -166,7 +173,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 								break;
 							} else {
 								console.log('Account not imported on wallet!');
+								event.sender.send('loginResponse', {});
 							}
+							return;
 						}
 
 						this.zone.run(() => {
@@ -182,7 +191,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 						if (this.aService.accounts.length > 0) {
 							this.accountChange = this.selectedAccount.subscribe((data) => {
 								if (data) {
-									console.log(data);
+									// console.log ( data );
 									event.sender.send('loginResponse', data);
 									this.accountChange.unsubscribe();
 									this.selectedAccount.next(null);
@@ -197,7 +206,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 					}
 					case 'logout': {
 						const reqAccount = payload.content.account;
-						console.log(reqAccount);
+						// console.log ( reqAccount );
 						this.dapp_name = null;
 						event.sender.send('logoutResponse', {});
 						break;
@@ -213,9 +222,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 						break;
 					}
 					case 'sign': {
+						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
+							return;
+						}
 						this.loadingTRX = true;
 						this.eosjs.localSigProvider.processTrx(payload.content.hex_data).then((data) => {
-							console.log(data);
+							// console.log ( data );
 							this.fullTrxData = data;
 							this.updateauthWarning = false;
 							this.confirmForm.reset();
@@ -240,10 +252,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 								this.eventFired = false;
 							});
 							this.replyEvent = event;
+
 						}).catch((e) => {
 							console.log(e);
 							this.loadingTRX = false;
 						});
+
 						break;
 					}
 					default: {
@@ -264,7 +278,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 	see() {
 		this.dnSet = !this.dnSet;
-		console.log();
 		if (this.dnSet) {
 			this.theme.lightTheme();
 		} else {
@@ -369,7 +382,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		}, 900);
 	}
 
-	selectAccount(account_data) {
+	selectAccount(account_data, idx) {
 		const store = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
 		let key = '';
 		let _perm = '';
@@ -392,6 +405,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 				publicKey: key
 			};
 			this.selectedAccount.next(responseData);
+			this.aService.select(idx);
 			this.transitconnect = false;
 		}
 	}
@@ -400,10 +414,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.wrongpass = '';
 		this.busy = true;
 		const account = this.aService.accounts.find(a => a.name === this.transit_signer);
+		const idx = this.aService.accounts.indexOf(account);
 		this.aService.selected.next(account);
 		const [auth, publicKey] = this.trxFactory.getAuth();
 		try {
 			await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
+
 		} catch (e) {
 			this.wrongpass = 'wrong password';
 			this.busy = false;
@@ -417,6 +433,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 				this.wrongpass = '';
 				this.busy = false;
 				this.transitAction = false;
+				this.aService.select(idx);
+				this.aService.reloadActions(account);
+				this.aService.refreshFromChain();
 				this.cdr.detectChanges();
 			}
 		} catch (e) {

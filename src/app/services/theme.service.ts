@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {ApplicationRef, Injectable} from '@angular/core';
 
 export const DefaultTheme = {
 	'--main-background': '#272727',
@@ -38,7 +38,7 @@ export const DefaultTheme = {
 	'--tokens-panel-background': '#191919',
 	'--destaque-color-token': '#0094d2',
 	'--token-title-color': '#b1b1b1',
-	'--token-price-color':'#696969',
+	'--token-price-color': '#696969',
 	'--letter-divider': '#3f3f3f',
 	'--contact-hover-color': '#b1b1b1',
 
@@ -90,7 +90,7 @@ export const DefaultTheme = {
 
 	'--tr-even-backgorund': 'transparent',
 	'--tr-odd-backgorund': 'transparent',
-	'--tr-border-bottom-color':  '1px solid #3f3f3f',
+	'--tr-border-bottom-color': '1px solid #3f3f3f',
 
 	'--tr-resource-even-backgorund': '#2C2C2C',
 	'--tr-resource-odd-color': '#ececec',
@@ -128,7 +128,7 @@ export const DefaultTheme = {
 	'--btn-link-background-hover': '#ffffff',
 	'--btn-link-color-hover': '#0077b7',
 
-	'--update-box-background':'#1f1f1f',
+	'--update-box-background': '#1f1f1f',
 	'--chain-icon-bg': '#c5c5c5',
 };
 
@@ -149,7 +149,7 @@ export const LiberlandTheme = {
 	'--special-font-spacing': '1.3px',
 	'--slogan-special-color': '#ffffff61',
 
-	'--landing-background':  'url("./assets/cover-liberland3.png")',
+	'--landing-background': 'url("./assets/cover-liberland3.png")',
 
 	'--sidenav-background': '#1577C6',
 	'--sidenav-color': '#D6D6D6',
@@ -222,7 +222,7 @@ export const LiberlandTheme = {
 
 	'--tr-even-backgorund': '#ffffff',
 	'--tr-odd-backgorund': '#ffffff',
-	'--tr-border-bottom-color':  '1px solid #cccccc',
+	'--tr-border-bottom-color': '1px solid #cccccc',
 
 	'--tr-resource-even-backgorund': '#1577C6',
 	'--tr-resource-odd-color': '#202020',
@@ -260,7 +260,7 @@ export const LiberlandTheme = {
 	'--btn-link-background-hover': '#ffffff',
 	'--btn-link-color-hover': '#084577',
 
-	'--update-box-background':'#0d3352',
+	'--update-box-background': '#0d3352',
 	'--chain-icon-bg': '#c5c5c5',
 };
 
@@ -399,7 +399,7 @@ export const LightTheme = {
 	'--btn-link-background-hover': '#ffffff',
 	'--btn-link-color-hover': '#0077b7',
 
-	'--update-box-background':'#a4a4a4',
+	'--update-box-background': '#a4a4a4',
 	'--chain-icon-bg': '#c5c5c5',
 
 };
@@ -429,7 +429,7 @@ export const WaxLandingTheme = {
 
 };
 
-@Injectable({ providedIn: 'root' })
+@Injectable({providedIn: 'root'})
 export class ThemeService {
 	public currentTheme: string;
 

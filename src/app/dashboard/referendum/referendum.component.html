@@ -53,7 +53,7 @@
 											<mat-label>Proposal ID</mat-label>
 											<input #propID matInput type="text" formControlName="id"
 												   placeholder="Short unique ID name" maxlength="12"
-												   class="text-lowercase" [pattern]="'^(([a-z]|[1-5]|\.){0,12})$'" >
+												   class="text-lowercase" [pattern]="'^(([a-z]|[1-5]|\.){0,12})$'">
 											<span matPrefix>#&nbsp;</span>
 											<mat-error align="start" *ngIf="errormsg !== ''">
 												{{errormsg}}
@@ -76,7 +76,9 @@
 									<div class="clr-col-md-12 markdown-preview">
 										<div class="clr-row" style="margin-top: 10px">
 											<div class="clr-col-6">
-												<mat-label style="font-family: Metropolis;">Proposal content (Markdown)</mat-label>
+												<mat-label style="font-family: Metropolis;">Proposal content
+													(Markdown)
+												</mat-label>
 												<mat-form-field appearance="outline" class="textarea"
 																style="margin-top: -3px; margin-bottom: 12px">
 													<textarea matInput type="text" rows="20"
@@ -86,14 +88,17 @@
 													<mat-error align="start" *ngIf="errormsg !== ''">
 														{{errormsg}}
 													</mat-error>
-													<mat-hint align="start"><a style="cursor:pointer;" (click)="extOpen('https://guides.github.com/features/mastering-markdown/')">How to style using markdown</a></mat-hint>
+													<mat-hint align="start"><a style="cursor:pointer;"
+																			   (click)="extOpen('https://guides.github.com/features/mastering-markdown/')">How
+														to style using markdown</a></mat-hint>
 												</mat-form-field>
 											</div>
 											<div class="clr-col-6">
 												<mat-label style="font-family: Metropolis;">Preview</mat-label>
-												<div style="border: 1px solid #a1a1a1;height: 336px; overflow-y: auto; border-radius: 5px;flex: 0 0 49%; padding: 1.48em .75em 0 .75em;">
-												<markdown id="markdown" style="color: white;"
-														  [data]="markdownData"></markdown>
+												<div
+													style="border: 1px solid #a1a1a1;height: 336px; overflow-y: auto; border-radius: 5px;flex: 0 0 49%; padding: 1.48em .75em 0 .75em;">
+													<markdown id="markdown" style="color: white;"
+															  [data]="markdownData"></markdown>
 												</div>
 											</div>
 										</div>
@@ -102,7 +107,7 @@
 										<mat-form-field class="field-width"
 														style="margin-top: 12px; margin-bottom: 12px">
 											<input matInput type="number" formControlName="expiry"
-												   placeholder="Days until expiry" min="0" max="180" >
+												   placeholder="Days until expiry" min="0" max="180">
 											<mat-error align="start" *ngIf="errormsg !== ''">
 												{{errormsg}}
 											</mat-error>
@@ -112,42 +117,56 @@
 									<div class="clr-col-lg-4">
 										<mat-form-field class="example-full-width ref-type"
 														style="width: 207px; margin-top: 12px;">
-											<mat-select value="0" placeholder="Answer type" formControlName="type" (selectionChange)="showOptionsField($event.value)">
-												<mat-option value="referendum-v1" class="ref-option filter-option">Referendum
+											<mat-select value="0" placeholder="Answer type" formControlName="type"
+														(selectionChange)="showOptionsField($event.value)">
+												<mat-option value="referendum-v1" class="ref-option filter-option">
+													Referendum
 												</mat-option>
-												<mat-option value="poll-yn-v1" class="ref-option filter-option">Yes/No Poll
-												</mat-option>
-												<mat-option value="poll-yna-v1" class="ref-option filter-option">Yes/No/Abstain
+												<mat-option value="poll-yn-v1" class="ref-option filter-option">Yes/No
 													Poll
 												</mat-option>
-												<mat-option value="options-v1" class="ref-option filter-option">Options Poll
+												<mat-option value="poll-yna-v1" class="ref-option filter-option">
+													Yes/No/Abstain
+													Poll
 												</mat-option>
-												<mat-option value="multi-select-v1" class="ref-option filter-option">Multi-Select
+												<mat-option value="options-v1" class="ref-option filter-option">Options
+													Poll
+												</mat-option>
+												<mat-option value="multi-select-v1" class="ref-option filter-option">
+													Multi-Select
 													Poll (Checkboxes)
 												</mat-option>
 											</mat-select>
 										</mat-form-field>
 									</div>
-									<div class="clr-col-lg-3" [ngStyle]="{'display':showOptions}" formArrayName="options">
-										<button  type="button" class="btn btn-info-outline btn-icon btn-sm" style="width: 34px;" (click)="addOptiont()">
+									<div class="clr-col-lg-3" [ngStyle]="{'display':showOptions}"
+										 formArrayName="options">
+										<button type="button" class="btn btn-info-outline btn-icon btn-sm"
+												style="width: 34px;" (click)="addOptiont()">
 											<fa-icon [icon]="['far', 'plus']"></fa-icon>
 										</button>
 										&nbsp;
-										<button  type="button" class="btn btn-danger-outline btn-icon btn-sm" style="width: 34px;" (click)="removeOption()">
+										<button type="button" class="btn btn-danger-outline btn-icon btn-sm"
+												style="width: 34px;" (click)="removeOption()">
 											<fa-icon [icon]="['far', 'minus']"></fa-icon>
 										</button>
 
-										<div style="float:left;clear:both" *ngFor="let option of options.controls; let i = index">
-											<mat-form-field class="field-width" style="margin-top: 12px; margin-bottom: 12px" >
-												<input matInput [id]="i" type="text" [formControlName]="i" [placeholder]="'Option - ' + (i+1)"  value="">
-												<mat-error align="start" *ngIf="errormsg !== ''">{{errormsg}}</mat-error>
+										<div style="float:left;clear:both"
+											 *ngFor="let option of options.controls; let i = index">
+											<mat-form-field class="field-width"
+															style="margin-top: 12px; margin-bottom: 12px">
+												<input matInput [id]="i" type="text" [formControlName]="i"
+													   [placeholder]="'Option - ' + (i+1)" value="">
+												<mat-error align="start"
+														   *ngIf="errormsg !== ''">{{errormsg}}</mat-error>
 											</mat-form-field>
 										</div>
 									</div>
 									<div class="clr-col-lg-2">
 										<button type="button" class="btn btn-block btn-outline btn-info-outline"
 												style="margin-top: 15px; padding:0px 17px !important;"
-												(click)="createProposalForm.valid?(proposalModal=true):null" [disabled]="!createProposalForm.valid">
+												(click)="createProposalForm.valid?(proposalModal=true):null"
+												[disabled]="!createProposalForm.valid">
 											Submit
 										</button>
 									</div>
@@ -211,7 +230,8 @@
 									</span>
 						<div style="clear: both;">
 							<h4 class="white mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
-								<div style="height: 100px" [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
+								<div style="height: 100px"
+									 [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
 							</h4>
 
 							<ng-container *ngIf="p.proposal.json_data">
@@ -219,26 +239,25 @@
 									 [innerHTML]="p['fuseJsHighlighted'].proposal.json_data.content"></div>
 							</ng-container>
 						</div>
-
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
 							(click)="startVote(p,0, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
+							style="margin-top: 15px; padding:0 17px !important;">
 							0 - No
 						</button>
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && ((p.proposal.json_data.type !== 'options-v1') && (p.proposal.json_data.type !== 'multi-select-v1'))"
 							type="button" class="btn btn-outline btn-info-outline"
 							(click)="startVote(p,1, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
+							style="margin-top: 15px; padding:0 17px !important;">
 							1 - Yes
 						</button>
 						<button
 							*ngIf="(!isExpired(p.proposal.expires_at)) && (p.proposal.json_data.type==='poll-yna-v1')"
 							type="button" class="btn btn-outline btn-info-outline"
 							(click)="startVote(p,2, $event);"
-							style="margin-top: 15px; padding:0px 17px !important;">
+							style="margin-top: 15px; padding:0 17px !important;">
 							2 - Abstain
 						</button>
 
@@ -428,9 +447,9 @@
 		</span>
 	</h3>
 
-	<div *ngIf="selProposal" class="modal-body">
+	<div *ngIf="selProposal" class="modal-body black-white">
 		Proposal Title
-		<h4 style="color: whitesmoke">
+		<h4 class="black-white">
 			{{selProposal.proposal.title}}
 		</h4>
 	</div>
@@ -486,11 +505,12 @@
 <clr-modal [(clrModalOpen)]="proposalModal">
 	<div class="modal-title">
 		<h3 class="text-white">Create <span
-			class="blue">{{createProposalForm.get('title').value}} <b>(#{{createProposalForm.get('id').value}})</b></span> proposal by <span
+			class="blue">{{createProposalForm.get('title').value}} <b>(#{{createProposalForm.get('id').value}}
+			)</b></span> proposal by <span
 			class="blue">{{aService.selected.getValue().name}}</span>
 		</h3>
 		<h5 class=" text-white">
-			Expires  <span class="blue">{{getExpiretimeProposal()}}</span>
+			Expires <span class="blue">{{getExpiretimeProposal()}}</span>
 		</h5>
 	</div>
 
