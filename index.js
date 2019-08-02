@@ -1,10 +1,12 @@
-const {app, BrowserWindow, Menu, protocol, ipcMain, Notification, Tray, shell} = require('electron');
+const _electron = require('electron');
+const {app, BrowserWindow, Menu, protocol, ipcMain, Notification, Tray, shell} = _electron;
 const path = require('path');
 const url = require('url');
 const keytar = require('keytar');
 const fs = require('fs');
 const moment = require('moment');
 const schedule = require('node-schedule');
+const AutoLaunch = require('auto-launch');
 const portfinder = require('portfinder');
 const {version, productName, name} = require('./package.json');
 const {Api, JsonRpc, RpcError} = require('eosjs');
@@ -22,6 +24,8 @@ let win, devtools, serve, isAutoLaunch;
 let appIcon = null;
 let deepLink = null;
 let job = null;
+let isEnableAutoClaim = false;
+
 app.getVersion = () => version;
 
 const PROTOCOL_PREFIX = 'simpleos';
@@ -39,18 +43,20 @@ const lockAutoLaunchFile = basePath + '/' + productName + '-lockALFile';
 const lockLaunchFile = basePath + '/' + productName + '-lockLFile';
 const logFile = basePath + '/' + productName + '-autoclaim.log';
 
-console.log(lockFile);
-
 function clearLock() {
 	fs.writeFileSync(lockFile, '');
 }
 
 function unlinkLALock() {
-	fs.unlinkSync(lockAutoLaunchFile);
+	if (fs.existsSync(lockAutoLaunchFile)) {
+		fs.unlinkSync(lockAutoLaunchFile);
+	}
 }
 
 function unlinkLLock() {
-	fs.unlinkSync(lockLaunchFile);
+	if (fs.existsSync(lockLaunchFile)) {
+		fs.unlinkSync(lockLaunchFile);
+	}
 }
 
 function appendLock() {
@@ -74,9 +80,45 @@ try {
 	console.error(e);
 }
 
-const devMode = process.mainModule.filename.indexOf('app.asar') === -1;
+function autoClaimCheck() {
+	const cPath = basePath + '/autoclaim.json';
+	if (fs.existsSync(basePath + '/autoclaim.json')) {
+		console.log('file exist');
+		const autoclaimConf = JSON.parse(fs.readFileSync(cPath).toString());
+		isEnableAutoClaim = autoclaimConf['enabled'];
+		if (!isEnableAutoClaim) {
+			unlinkLALock();
+		}
+	} else {
+		unlinkLALock();
+	}
+}
 
+const devMode = process.mainModule.filename.indexOf('app.asar') === -1;
+writeLog(`Developer Mode: ${devMode}`);
 console.log('Developer Mode:', devMode);
+
+const simpleosAutoLauncher = new AutoLaunch({
+	name: 'simpleos'
+});
+
+writeLog(`simpleos Auto Launcher: ${JSON.stringify(simpleosAutoLauncher)}`);
+
+simpleosAutoLauncher.opts.appPath += ' --autostart';
+
+simpleosAutoLauncher.isEnabled().then(function (status) {
+	console.log('STATUS:', status);
+	if (status) {
+		console.log('Auto launch already enabled!');
+		return;
+	}
+	if (!devMode) {
+		console.log('Enabling auto-launch!');
+		simpleosAutoLauncher.enable();
+	}
+}).catch(function (err) {
+	console.log(err);
+});
 
 app.setLoginItemSettings({
 	openAtLogin: !devMode,
@@ -90,6 +132,7 @@ const loginOpts = app.getLoginItemSettings({
 isAutoLaunch = loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
 
 const contextMenu = require('electron-context-menu');
+
 contextMenu();
 
 function setupExpress() {
@@ -251,6 +294,7 @@ function unfocus() {
 			break;
 		}
 		case "darwin": {
+			writeLog(`unfocus `);
 			Menu.sendActionToFirstResponder('hide:');
 			break;
 		}
@@ -286,7 +330,7 @@ async function createWindow() {
 		webPreferences: {
 			nodeIntegration: true,
 			webSecurity: !serve,
-			devTools: false
+			devTools: true
 		},
 		darkTheme: true,
 		width: 1440,
@@ -298,7 +342,7 @@ async function createWindow() {
 		icon: _icon
 	});
 
-	win.removeMenu();
+	// win.removeMenu();
 
 	if (serve) {
 		require('electron-reload')(__dirname, {
@@ -466,16 +510,24 @@ function addTrayIcon() {
 	appIcon = new Tray(path.join(__dirname, 'static/tray-icon.png'));
 	const trayMenu = Menu.buildFromTemplate([
 		{
+			label: 'SimplEOS Wallet', click: () => {
+				const spawn = require('child_process').spawn;
+				spawn(process.execPath, [], {
+					detached: true,
+					stdio: 'ignore'
+				}).unref();
+			}
+		},
+		{
 			label: 'Quit SimplEOS Agent', click: () => {
 				appIcon.destroy();
-				fs.writeFileSync(lockFile, '');
+				unlinkLALock();
 				app.quit();
 			}
 		}
 	]);
 	appIcon.setToolTip('simplEOS Agent');
 	appIcon.setContextMenu(trayMenu);
-	appIcon.setHighlightMode('always');
 }
 
 function storeConfig(autoClaimConfig) {
@@ -550,55 +602,79 @@ function runAutoClaim() {
 			let autoclaimConf = JSON.parse(data.toString());
 			(async () => {
 				if (autoclaimConf['enabled']) {
-					const apis = autoclaimConf['WAX-GBM']['apis'];
-					setRpcApi(apis[0]);
-					for (const job of autoclaimConf['WAX-GBM']['jobs']) {
-						const a = await safeRun((api) => getClaimTime(job.account, api), null, apis);
-						if (a) {
-							a.add(1, 'day');
-							const b = moment().utc();
-							if (b.diff(a, 'seconds') > 0) {
-								writeLog(`${job.account} is ready to claim!`);
-								try {
-									const pvtkey = await keytar.getPassword('simpleos', job['public_key']);
-									const perm = job['permission'];
-									const claimResult = await safeRun((api) => claimGBM(job.account, pvtkey, perm, api), null, apis);
-									if (claimResult) {
-										job['last_claim'] = Date.now();
-										schedule.scheduleJob(a.toDate(), () => {
+					if (autoclaimConf['WAX-GBM']) {
+						const apis = autoclaimConf['WAX-GBM']['apis'];
+						setRpcApi(apis[0]);
+						for (const job of autoclaimConf['WAX-GBM']['jobs']) {
+							const a = await safeRun((api) => getClaimTime(job.account, api), null, apis);
+							if (a) {
+								a.add(1, 'day');
+								const b = moment().utc();
+								const scheduleName = 'autoClaim-' + job['account'];
+								if (b.diff(a, 'seconds') > 0) {
+									writeLog(`${job.account} is ready to claim!`);
+									try {
+										const pvtkey = await keytar.getPassword('simpleos', job['public_key']);
+										const perm = job['permission'];
+										const claimResult = await safeRun((api) => claimGBM(job.account, pvtkey, perm, api), null, apis);
+
+										if (claimResult) {
+											job['last_claim'] = Date.now();
+											schedule.scheduleJob(scheduleName, a.toDate(), () => {
+												runAutoClaim();
+											});
+										}
+									} catch (e) {
+										const logFile = basePath + '/autoclaim-error_' + (Date.now()) + '.txt';
+										fs.writeFileSync(logFile, e);
+										writeLog(`Autoclaim error, check log file: ${logFile}`);
+										// shell.openItem(logFile);
+										schedule.scheduleJob(scheduleName, b.add(10, 'minutes').toDate(), () => {
 											runAutoClaim();
 										});
 									}
-								} catch (e) {
-									const logFile = basePath + '/autoclaim-error_' + (Date.now()) + '.txt';
-									fs.writeFileSync(logFile, e);
-									writeLog(`Autoclaim error, check log file: ${logFile}`);
-									// shell.openItem(logFile);
-									schedule.scheduleJob(b.add(10, 'minutes').toDate(), () => {
-										runAutoClaim();
-									});
+								} else {
+									writeLog(`${job.account} claims again at ${a.format()}`);
 								}
-							} else {
-								writeLog(`${job.account} claims again at ${a.format()}`);
 							}
 						}
+						storeConfig(autoclaimConf);
 					}
-					storeConfig(autoclaimConf);
 				}
 			})().catch(console.log);
 		});
 	}
-
 }
 
+function rescheduleAutoClaim() {
+	writeLog("Checking claim conditions reschedule...");
+	const cPath = basePath + '/autoclaim.json';
+	if (fs.existsSync(basePath + '/autoclaim.json')) {
+		const data = fs.readFileSync(cPath);
+		let autoclaimConf = JSON.parse(data.toString());
+		if (autoclaimConf['enabled']) {
+			if (autoclaimConf['WAX-GBM']) {
+				for (const job of autoclaimConf['WAX-GBM']['jobs']) {
+					const a = moment.utc(job['next_claim_time']);
+					const b = moment().utc();
+					const scheduleName = 'autoClaim-' + job['account'];
+					writeLog(`Diff next date from now (sec): ${b.diff(a, 'seconds')}`);
+					if (b.diff(a, 'seconds') > 0) {
+						runAutoClaim();
+					}
+				}
+			}
+		}
+	}
+}
 
 function launchApp() {
-
 	const gotTheLock = app.requestSingleInstanceLock();
 
 	process.defaultApp = true;
-	console.log(gotTheLock);
 
+	// writeLog(`On Launching File LAUNCH: ${(fs.existsSync(lockLaunchFile))} `);
+	writeLog(`On Launching File LAUNCH: ${(fs.existsSync(lockLaunchFile))} | The LOCK: ${gotTheLock}`);
 
 	if (fs.existsSync(lockLaunchFile)) {
 		if (gotTheLock) {
@@ -609,8 +685,8 @@ function launchApp() {
 			return;
 		}
 	}
-	appendLock();
 
+	appendLock();
 
 	portfinder.getPortPromise().then((port) => {
 		http.listen(port, "127.0.0.1", () => {
@@ -632,10 +708,11 @@ function launchApp() {
 
 	app.on('ready', () => {
 		console.log('ready');
-		createWindow();
+		createWindow().catch(console.log);
 	});
 
 	app.on('window-all-closed', () => {
+		writeLog(`Quitting Application...`);
 		clearLock();
 		unlinkLLock();
 		app.quit();
@@ -649,61 +726,65 @@ function launchApp() {
 
 	app.on('will-finish-launching', () => {
 		app.on('open-url', (e, url) => {
-			e.preventDefault();
+			//e.preventDefault();
 			console.log(url);
 		})
 	});
 }
 
 // Main startup logic
-
 if (isAutoLaunch) {
-
 	// check if another agent is running
-	app.requestSingleInstanceLock();
 	app.on('second-instance', (event, argv, workingDirectory) => {
 		if (argv[1] === '--autostart') {
+			writeLog(`Force quit agent in second instance...`);
+			const spawn = require('child_process').spawn;
 			app.quit();
 		}
 	});
+
 	app.on("quit", () => {
+		writeLog(`Quitting Agent...`);
 		unlinkLALock();
 	});
 
 	app.on('ready', () => {
-		clearLock();
+		unlinkLALock();
 		appendLock();
+		autoClaimCheck();
 		console.log('READY!');
-		const cPath = basePath + '/autoclaim.json';
-		if (fs.existsSync(basePath + '/autoclaim.json')) {
-			console.log('Loading configuration file...');
-			fs.readFile(cPath, (err, data) => {
-				if (err) throw err;
-				let autoclaimConf = JSON.parse(data.toString());
-				if (autoclaimConf['enabled']) {
-					addTrayIcon();
-					runAutoClaim();
-					if (process.platform === 'darwin') {
-						app.dock.hide();
-					}
-				} else {
-					app.quit();
-				}
-			});
+		if (isEnableAutoClaim) {
+			addTrayIcon();
+			runAutoClaim();
+			if (process.platform === 'darwin') {
+				app.dock.hide();
+			}
+		} else {
+			writeLog(`Quitting disabled auto claim...`);
+			app.quit();
 		}
+		_electron.powerMonitor.on('suspend', () => {
+			rescheduleAutoClaim();
+		});
+		_electron.powerMonitor.on('resume', () => {
+			rescheduleAutoClaim();
+		});
+		_electron.powerMonitor.on('lock-screen', () => {
+			rescheduleAutoClaim();
+		});
 	});
-
 } else {
+
 	setupExpress();
 	launchApp();
+	autoClaimCheck();
 
-	if (!fs.existsSync(lockAutoLaunchFile)) {
-		// add agent
-		if (!devMode) {
-			const spawn = require('child_process').spawn;
+	const spawn = require('child_process').spawn;
+	if (isEnableAutoClaim) {
+		if (!(fs.existsSync(lockAutoLaunchFile))) {
 			spawn(process.execPath, ['--autostart'], {
-				stdio: 'ignore',
-				detached: true
+				detached: true,
+				stdio: 'ignore'
 			}).unref();
 		}
 	}

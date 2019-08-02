@@ -1,4 +1,4 @@
-<!--<toaster-container [toasterconfig]="settings"></toaster-container>-->
+
 <div class="container-fluid" style="height: 100%; overflow:hidden;">
 
 
@@ -14,7 +14,7 @@
 						</ng-container>
 					</div>
 					<ng-container
-						*ngIf="sendForm.value.token !== aService.activeChain['symbol'] && selectedToken['price'] !== null">
+						*ngIf="sendForm.value.token !== aService.activeChain['symbol'] && 'selectedToken'['price'] !== null">
 						${{token_balance * selectedToken['price'] | number : precision}}
 					</ng-container>
 				</div>
@@ -32,7 +32,7 @@
 					<div>
 						<mat-form-field class="example-full-width">
 							<input type="text" placeholder="Token" matInput formControlName="token"
-								   [matAutocomplete]="auto1">
+								   [matAutocomplete]="auto1" >
 							<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
 							<mat-autocomplete #auto1="matAutocomplete">
 								<mat-option value="{{aService.activeChain['symbol']}}">
@@ -182,6 +182,7 @@
 	</div>
 	<div class="modal-footer">
 		<form [formGroup]="confirmForm" class="confirmForm">
+
 			<mat-form-field>
 				<input matInput #pass type="password" (keyup.enter)="transfer()" placeholder="Password"
 					   formControlName="pass">

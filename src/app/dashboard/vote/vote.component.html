@@ -10,7 +10,7 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
-						number: '1.2-4') + "K" : ((totalBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+						number: '1.2-4') + "K" : ((totalBalance) | number: precision) }} {{aService.activeChain['symbol']}}
 					</div>
 				</div>
 			</div>
@@ -22,7 +22,7 @@
 						</ng-container>
 					</div>
 					<div class="blue eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-						number: '1.2-4') + "K" : ((stakedBalance) | number: '1.2-4') }} {{aService.activeChain['symbol']}}
+						number: '1.2-4') + "K" : ((stakedBalance) | number: precision) }} {{aService.activeChain['symbol']}}
 					</div>
 					<div *ngIf="aService.activeChain.features['rex']&&!hasRex" style="color: #b0b0b7;font-size: 16px;">
 						STAKED + REX: <span class="blue">{{(totalStaked) | number :
@@ -211,6 +211,15 @@
 						<button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
 								style="margin-left: 10px; font-weight: 700;">Set auto-claim
 						</button>
+						<mat-checkbox [checked]="enableLinkAuth" (change)="toggleLinkAuth()">
+							Add linkauth
+						</mat-checkbox>
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right" style="margin-left: 10px;">
+							<fa-icon [icon]="['far','exclamation-circle']" class="info"></fa-icon>
+							<span class="tooltip-content">
+								Authorize your custom permission to execute these actions: <br>eosio::claimgbmvote,<br> eosio::claimgenesis,<br> eosio::voteproducer.
+							</span>
+						</a>
 					</div>
 					<div *ngIf="enableAutoClaim && autoClaimStatus" class="black-white" style="margin-top: 6px">
 						Auto-claim setup verified. All good.
@@ -234,6 +243,7 @@
 						<mat-checkbox [checked]="enableAutoClaim" (change)="edAutoClaim()">
 							Enable autoclaim
 						</mat-checkbox>
+
 					</div>
 
 				</div>
@@ -591,7 +601,7 @@
 	<h3 *ngIf="stakingDiff > 0" class="modal-title text-white">Stake <span class="blue">+{{stakingHRV}}</span> ?</h3>
 	<h3 *ngIf="stakingDiff < 0" class="modal-title text-white">Unstake <span class="blue">{{stakingHRV}}</span> ?</h3>
 	<div class="modal-body">
-		<h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number: '1.4-4'}}</span></h4>
+		<h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number: precision}}</span></h4>
 		<h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
 		<h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
 		<h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>

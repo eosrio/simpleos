@@ -1,4 +1,4 @@
-import {ApplicationRef, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 
 export const DefaultTheme = {
 	'--main-background': '#272727',

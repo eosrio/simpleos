@@ -284,6 +284,14 @@
 	font-size: 21px;
 }
 
+/deep/ .mat-optgroup-label  {
+	color: var(--text-blue-color);
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+	font-size: 14px !important;
+	line-height: 2.5em!important;
+	height: 2.5em!important;
+}
+
 /deep/ .chain-option.mat-option {
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;

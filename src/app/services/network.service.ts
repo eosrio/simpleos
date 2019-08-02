@@ -55,6 +55,21 @@ export class NetworkService {
 
 	public activeChain = null;
 	defaultChains: any[];
+	selectGroup: any[];
+
+	static groupBy(list, keyGetter) {
+		const map = new Map();
+		list.forEach((item) => {
+			const key = keyGetter(item);
+			const collection = map.get(key);
+			if (!collection) {
+				map.set(key, [item]);
+			} else {
+				collection.push(item);
+			}
+		});
+		return map;
+	}
 
 	constructor(
 		private eosjs: EOSJSService,
@@ -70,7 +85,15 @@ export class NetworkService {
 		this.validEndpoints = [];
 		this.status = '';
 		this.connectionTimeout = null;
+
+		const groupChain = NetworkService.groupBy(this.defaultChains, chain => chain.network);
+		const mainnet = groupChain.get('MAINNET');
+		const testenet = groupChain.get('TESTNET');
+		this.selectGroup = [{'name':'MAINNETS','chains': mainnet},{'name':'TESTNETS','chains': testenet}];
+
 	}
+
+
 
 	connect(automatic: boolean) {
 		// console.log('analyzing endpoints...');

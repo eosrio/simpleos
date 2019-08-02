@@ -17,7 +17,7 @@ export class AboutComponent implements OnInit {
 	}
 
 	extOpen(value) {
-		window['shell'].openExternal(value);
+		window['shell'].openExternal(value).catch(console.log);
 	}
 
 }

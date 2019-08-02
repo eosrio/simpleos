@@ -16,7 +16,7 @@
 				 [merge]="ram_chartMerge" class="demo-chart"></div>
 		</div>
 
-		<div class="clr-col-lg-4">
+		<div class="clr-col-lg-3">
 
 			<div class="card info-card special-font">
 				<div class="card-block">
@@ -49,12 +49,11 @@
 						</mat-form-field>
 						<span style="margin: 0 12px;">=</span>
 						<mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
-							<input matInput type="text" #buyAmountEos placeholder="Price"
+							<input matInput type="text" #buyAmountEos placeholder="Price in {{aService.activeChain['symbol']}}"
 								   [textMask]="{mask: numberMask}" formControlName="buyEos"
 								   (keyup)="(errormsg2='');convertToBytes()"/>
 						</mat-form-field>
-						<!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>
+<!--						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>-->
 						<mat-error align="start" *ngIf="errormsg2 !== ''">
 							{{errormsg2}}
 						</mat-error>
@@ -99,8 +98,7 @@
 								   placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
 								   (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
 						</mat-form-field>
-						<!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>
+<!--						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>-->
 						<mat-error align="start" *ngIf="errormsgeos !== ''">
 							{{errormsgeos}}
 						</mat-error>
@@ -121,7 +119,7 @@
 								class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
               				</span>
 						</a>
-						<button class="btn btn-outline btn-info-outline" style="margin-left: 10px; font-weight: 700;" (click)="requestRefundModal=true">Request</button>
+						<button class="btn btn-outline btn-info-outline" style="margin:15px auto; font-weight: 700; display: flex;" (click)="requestRefundModal=true">Request</button>
 					</div>
 
 				</div>
@@ -129,7 +127,7 @@
 
 		</div>
 
-		<div class="clr-col-lg-4">
+		<div class="clr-col-lg-5">
 
 			<div class="card info-card special-font">
 				<div class="card-block">

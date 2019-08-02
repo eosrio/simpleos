@@ -526,7 +526,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		if (pass1 === pass2) {
 			this.crypto.initKeys(pubk, pass1).then(() => {
 
-				let pvk = this.pvtform.value.private_key;
+				let pvk = this.pvtform.value.private_key.trim();
 
 				this.crypto.encryptAndStore(pvk, pubk).then(() => {
 
@@ -568,7 +568,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		} else {
 			if (input !== '') {
 				this.busyActivekey = true;
-				this.eos.checkPvtKey(input).then((results) => {
+				this.eos.checkPvtKey(input.trim()).then((results) => {
 					this.publicEOS = results.publicKey;
 					this.importedAccounts = [];
 					this.importedAccounts = [...results.foundAccounts];
@@ -582,7 +582,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 							const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
 							const now = new Date().getTime();
 							if (now > refundTime) {
-								this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
+								this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
 									console.log(tx);
 								});
 							} else {

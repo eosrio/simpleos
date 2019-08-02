@@ -5,14 +5,13 @@ import {
 	ViewChild,
 	OnDestroy,
 	AfterViewInit,
-	ChangeDetectorRef,
-	ElementRef
+	ChangeDetectorRef
 } from '@angular/core';
 import {EOSJSService} from '../services/eosjs.service';
 import {AccountsService} from '../services/accounts.service';
 import {LandingComponent} from '../landing/landing.component';
 import {ClrWizard} from '@clr/angular';
-import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 
 import * as moment from 'moment';
@@ -121,6 +120,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 	private subscriptions: Subscription[] = [];
 	private pvtImportReady: boolean;
 
+
+
+	static extOpen(value) {
+		window['shell'].openExternal(value).catch(console.log);
+	}
+
 	constructor(
 		public eos: EOSJSService,
 		public eosjs: Eosjs2Service,
@@ -185,7 +190,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
 			if (value) {
 				if (value.length === 51) {
-					this.verifyPrivateKey(value, false);
+					this.verifyPrivateKey(value.trim(), false);
 				} else {
 					this.pvtImportReady = false;
 				}
@@ -197,9 +202,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 		window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
 	}
 
-	extOpen(value) {
-		window['shell'].openExternal(value);
-	}
 
 	ngOnDestroy(): void {
 		this.subscriptions.forEach(s => {
@@ -227,7 +229,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 		} else {
 			if (input !== '') {
 				this.busyActivekey = true;
-				this.eos.checkPvtKey(input).then((results) => {
+				this.eos.checkPvtKey(input.trim()).then((results) => {
 					this.publicEOS = results.publicKey;
 					this.importedPublicKey = results.publicKey;
 					this.importedAccounts = [];
@@ -242,7 +244,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 							const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
 							const now = new Date().getTime();
 							if (now > refundTime) {
-								this.eos.claimRefunds(item.account_name, input, item['permission']).then((tx) => {
+								this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
 									console.log(tx);
 								});
 							} else {
@@ -357,13 +359,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	doRemoveAcc() {
-		const [key] = this.aService.getStoredKey(this.aService.accounts[this.accRemovalIndex]);
-		const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
-		if (savedData) {
-			const keystore = JSON.parse(savedData);
-			delete keystore[key];
-			localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
-		}
+		// const [key] = this.aService.getStoredKey(this.aService.accounts[this.accRemovalIndex]);
+		// const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
+		// console.log(key);
+		// if (savedData) {
+		// 	const keystore = JSON.parse(savedData);
+		// 	delete keystore[key];
+		// 	// localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
+		// }
 		this.aService.accounts.splice(this.accRemovalIndex, 1);
 		this.deleteAccModal = false;
 		this.aService.select(0);
@@ -415,14 +418,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 								if (pform.pass1 === pform.pass2) {
 									this.crypto.initKeys(this.final_active, pform.pass1).then(() => {
 										this.crypto.encryptAndStore(this.activepk, this.final_active).then(() => {
-											this.aService.appendNewAccount(results.foundAccounts[0]);
+											this.aService.appendNewAccount(results.foundAccounts[0]).catch(console.log);
 											this.wrongwalletpass = '';
 											this.busy = false;
 											this.success = true;
 											this.confirmationID = txdata['transaction_id'];
 											this.showToast('success', 'Account created', 'Check your history for confirmation.');
 											this.submitTXForm.reset();
-											this.aService.refreshFromChain();
+											this.aService.refreshFromChain().catch(console.log);
 										}).catch((err) => {
 											console.log(err);
 										});
@@ -442,7 +445,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 							this.eos.getAccountInfo(this.final_name).then((acc_data) => {
 								this.eos.getTokens(acc_data['account_name']).then((tokens) => {
 									acc_data['tokens'] = tokens;
-									this.aService.appendNewAccount(acc_data);
+									this.aService.appendNewAccount(acc_data).catch(console.log);
 									this.wrongwalletpass = '';
 									this.busy = false;
 									this.success = true;
@@ -456,16 +459,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 						}, 5000);
 					}
 				}).catch((err2) => {
-					const errorJSON = JSON.parse(err2);
-					if (errorJSON.error.code === 3081001) {
-						this.wrongwalletpass = 'Not enough stake to perform this action.';
-					} else if (errorJSON.error.code === 3050000) {
-						this.wrongwalletpass = 'Account name not available.';
-					} else {
-						this.wrongwalletpass = errorJSON.error['what'];
-					}
+					console.log(err2);
 					this.busy = false;
 					this.success = false;
+					// const errorJSON = JSON.parse(err2);
+					// if (errorJSON.error.code === 3081001) {
+					// 	this.wrongwalletpass = 'Not enough stake to perform this action.';
+					// } else if (errorJSON.error.code === 3050000) {
+					// 	this.wrongwalletpass = 'Account name not available.';
+					// } else {
+					// 	this.wrongwalletpass = errorJSON.error['what'];
+					// }
+
 				});
 			} else {
 				this.wrongwalletpass = 'Something went wrong!';
@@ -490,7 +495,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	ngAfterViewInit() {
 		this.subscriptions.push(
-			this.aService.selected.asObservable().subscribe((sel) => {
+			this.aService.selected.asObservable().subscribe(() => {
 				// this.aService.select(this.aService.selectedIdx.toString ());
 				this.selectedTab = this.aService.selectedIdx;
 			})

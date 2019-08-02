@@ -73,13 +73,22 @@
     display: block;
 }
 
-/deep/ .chain-selector .mat-select-value {
+
+/deep/ .chain-selector .mat-select-value  {
 	color: var(--text-blue-color);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
-/deep/ .chain-option.mat-option {
+/deep/ .mat-optgroup-label  {
+	color: var(--text-blue-color);
+	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+	font-size: 14px !important;
+	line-height: 2.5em!important;
+	height: 2.5em!important;
+}
+
+/deep/ .chain-option.mat-option{
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;
 	/*background-color: #333333;*/

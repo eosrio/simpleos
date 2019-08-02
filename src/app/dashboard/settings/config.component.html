@@ -10,12 +10,19 @@
 						<mat-select [value]="network.activeChain['id']"
 									(selectionChange)="changeChain($event)">
 							<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
-										[value]="chain.id">
-								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
-									 class="chain-icon"/>
-								{{ chain.name }}
-							</mat-option>
+							<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name" >
+								<mat-option *ngFor="let chain of group.chains" [value]="chain.id"  class="chain-option">
+									<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+										 class="chain-icon"/>
+									{{ chain.name }}
+								</mat-option>
+							</mat-optgroup>
+<!--							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"-->
+<!--										[value]="chain.id">-->
+<!--								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"-->
+<!--									 class="chain-icon"/>-->
+<!--								{{ chain.name }}-->
+<!--							</mat-option>-->
 						</mat-select>
 					</mat-form-field>
 				</div>

@@ -1,5 +1,5 @@
-import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnInit, ViewChild} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {AfterViewInit , ChangeDetectorRef , Component , NgZone , OnInit} from '@angular/core';
+import {FormBuilder , FormGroup , Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {environment} from '../environments/environment';
 
@@ -9,7 +9,7 @@ import {EOSJSService} from './services/eosjs.service';
 import {CryptoService} from './services/crypto.service';
 import {ConnectService} from './services/connect.service';
 import {BackupService} from './services/backup.service';
-import {BehaviorSubject, Subscription} from 'rxjs';
+import {BehaviorSubject , Subscription} from 'rxjs';
 import {Eosjs2Service} from './services/eosjs2.service';
 import {TransactionFactoryService} from './services/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
@@ -93,8 +93,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 			this.theme.defaultTheme();
 			this.titleService.setTitle('SimplEOS Wallet v' + this.version);
 		}
-
-		this.isMac = this._electronService.isMacOS;
 
 		this.confirmForm = this.fb.group({
 			pass: ['', Validators.required]
@@ -267,6 +265,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 			});
 		}
 
+		this.isMac = this._electronService.isMacOS;
+		console.log('Is MacOS?',this._electronService.isMacOS);
+
 	}
 
 	onModalClose(ev) {
@@ -437,6 +438,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 				this.aService.reloadActions(account);
 				this.aService.refreshFromChain();
 				this.cdr.detectChanges();
+
 			}
 		} catch (e) {
 			this.wrongpass = e;

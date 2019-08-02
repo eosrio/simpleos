@@ -330,7 +330,7 @@
 				key shall be {{ final_owner }} and the active public key shall be {{ final_active }}.
 			</p-accordionTab>
 		</p-accordion>
-		<form [formGroup]="submitTXForm" class="confirmForm">
+		<form [formGroup]="submitTXForm" class="confirmForm" style="margin-top:15px;">
 			<mat-form-field>
 				<input matInput type="password" (keyup.enter)="executeTX()" placeholder="Password"
 					   formControlName="pass">

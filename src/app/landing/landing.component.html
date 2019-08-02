@@ -191,12 +191,19 @@
 										<mat-select [value]="network.activeChain['id']"
 													(selectionChange)="changeChain($event)">
 											<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-											<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
-														[value]="chain.id">
-												<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
-													 class="chain-icon"/>
-												{{ chain.name }}
-											</mat-option>
+											<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name" >
+												<mat-option *ngFor="let chain of group.chains" [value]="chain.id"  class="chain-option">
+													<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+														 class="chain-icon"/>
+													{{ chain.name }}
+												</mat-option>
+											</mat-optgroup>
+											<!--							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"-->
+											<!--										[value]="chain.id">-->
+											<!--								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"-->
+											<!--									 class="chain-icon"/>-->
+											<!--								{{ chain.name }}-->
+											<!--							</mat-option>-->
 										</mat-select>
 									</mat-form-field>
 								</div>
@@ -263,7 +270,7 @@
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
-					   placeholder="{{network.activeChain['name']}} Private key">
+					   placeholder="{{network.activeChain['name']}} Private key" pattern="[0-9a-zA-Z ]" >
 				<fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
 						 (click)="pkField.type = 'text'"></fa-icon>
 				<fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"

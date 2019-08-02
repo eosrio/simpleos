@@ -20,14 +20,14 @@
 }
 
 .social-icon fa-icon:hover {
-    color: white;
+    color: var(--text-white-color);
     cursor: pointer;
 }
 
 .steemit {
     width: 29px;
     margin-bottom: 11px;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 .steemit:hover {

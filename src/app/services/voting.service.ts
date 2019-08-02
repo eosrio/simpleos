@@ -360,7 +360,7 @@ export class VotingService {
 	}
 
 	async listProxies() {
-		console.log('list proxies!');
+		// console.log('list proxies!');
 		this.setWeightParams();
 		let registry = null;
 		if (this.proxies.length > 0) {
@@ -368,7 +368,7 @@ export class VotingService {
 		}
 		if (!this.loadingProxs && this.initListProx === false && this.aService.selected.getValue().name) {
 			this.loadingProxs = true;
-			console.log('listProxies 1', this.loadingProxs, this.initListProx);
+			// console.log('listProxies 1', this.loadingProxs, this.initListProx);
 			this.proxies = [];
 			this.uniqueProxies.clear();
 			const myAccount = this.aService.selected.getValue();
@@ -466,7 +466,7 @@ export class VotingService {
 			this.initListProx = true;
 			this.listReady.next(true);
 			this.loadingProxs = false;
-			console.log('listProxies 2', this.loadingProxs, this.initListProx);
+			// console.log('listProxies 2', this.loadingProxs, this.initListProx);
 
 			// Pass 2 - Enhance metadata
 			this.activeCounter = 50;
@@ -512,8 +512,8 @@ export class VotingService {
 					requestQueue.push({proxy: prox['account'], index: idx});
 				}
 			});
-			console.log('After');
-			console.log(this.proxies);
+			// console.log('After');
+			// console.log(this.proxies);
 			if (requestQueue.length > 0) {
 				this.processReqQueueProxy(requestQueue, registry).then(() => {
 					console.log('success');

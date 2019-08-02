@@ -65,6 +65,11 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 	private selectedAccountSubscription: Subscription;
 	private lastUpdateSubscription: Subscription;
 
+
+	static openExplorer(accountName, explorer) {
+		window['shell']['openExternal'](explorer.account_url + accountName);
+	}
+
 	constructor(
 		public aService: AccountsService,
 		public eos: EOSJSService,
@@ -108,9 +113,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
-	openExplorer(accountName, explorer) {
-		window['shell']['openExternal'](explorer.account_url + accountName);
-	}
 
 	handleAnimation(anim: any) {
 		this.anim = anim;
@@ -196,7 +198,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 					this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
 					this.tokens = [];
 					this.aService.reloadActions(sel['name']);
-					this.aService.refreshFromChain();
+					this.aService.refreshFromChain().catch(console.log);
 					this.frmFilters.patchValue({
 						selectAction: '',
 						startDate: '',
