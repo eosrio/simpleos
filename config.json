@@ -88,48 +88,46 @@
 					"tx_url": "https://eospark.com/tx/"
 				}
 			],
-			"exchanges": [
-				{
-					"bitfinexdep1": {
-						"memo_size": 32,
-						"pattern": "/[a-f0-9]+$/gm"
-					},
-					"krakenkraken": {
-						"memo_size": 10,
-						"pattern": "/[0-9]+$/gm"
-					},
-					"binancecleos": {
-						"memo_size": 9,
-						"pattern": "/[0-9]+$/gm"
-					},
-					"huobideposit": {
-						"pattern": "/^[0-9]+$/gm"
-					},
-					"poloniexeos1": {
-						"memo_size": 16,
-						"pattern": "/[a-f0-9]+$/gm"
-					},
-					"gateiowallet": {
-						"memo_size": 16,
-						"pattern": "/[a-f0-9]+$/gm"
-					},
-					"chainceoneos": {
-						"memo_size": 10,
-						"pattern": "/[a-z]+$/gm"
-					},
-					"zbeoscharge1": {
-						"memo_size": 18,
-						"pattern": "/[0-9]+$/gm"
-					},
-					"okbtothemoon": {
-						"pattern": "/[0-9]+$/gm"
-					},
-					"eosusrwallet": {
-						"memo_size": 36,
-						"pattern": "/[a-f0-9]{4}/gm"
-					}
+			"exchanges": {
+				"bitfinexdep1": {
+					"memo_size": 32,
+					"pattern": "/[a-f0-9]+$/gm"
+				},
+				"krakenkraken": {
+					"memo_size": 10,
+					"pattern": "/[0-9]+$/gm"
+				},
+				"binancecleos": {
+					"memo_size": 9,
+					"pattern": "/[0-9]+$/gm"
+				},
+				"huobideposit": {
+					"pattern": "/^[0-9]+$/gm"
+				},
+				"poloniexeos1": {
+					"memo_size": 16,
+					"pattern": "/[a-f0-9]+$/gm"
+				},
+				"gateiowallet": {
+					"memo_size": 16,
+					"pattern": "/[a-f0-9]+$/gm"
+				},
+				"chainceoneos": {
+					"memo_size": 10,
+					"pattern": "/[a-z]+$/gm"
+				},
+				"zbeoscharge1": {
+					"memo_size": 18,
+					"pattern": "/[0-9]+$/gm"
+				},
+				"okbtothemoon": {
+					"pattern": "/[0-9]+$/gm"
+				},
+				"eosusrwallet": {
+					"memo_size": 36,
+					"pattern": "/[a-f0-9]{4}/gm"
 				}
-			]
+			}			
 		},
 		{
 			"id": "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4",
