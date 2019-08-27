@@ -91,41 +91,41 @@
 			"exchanges": {
 				"bitfinexdep1": {
 					"memo_size": 32,
-					"pattern": "/[a-f0-9]+$/gm"
+					"pattern": "^[a-f0-9]+$"
 				},
 				"krakenkraken": {
 					"memo_size": 10,
-					"pattern": "/[0-9]+$/gm"
+					"pattern": "^[0-9]+$"
 				},
 				"binancecleos": {
 					"memo_size": 9,
-					"pattern": "/[0-9]+$/gm"
+					"pattern": "^[0-9]+$"
 				},
 				"huobideposit": {
-					"pattern": "/^[0-9]+$/gm"
+					"pattern": "^[0-9]+$"
 				},
 				"poloniexeos1": {
 					"memo_size": 16,
-					"pattern": "/[a-f0-9]+$/gm"
+					"pattern": "^[a-f0-9]+$"
 				},
 				"gateiowallet": {
 					"memo_size": 16,
-					"pattern": "/[a-f0-9]+$/gm"
+					"pattern": "^[a-f0-9]+$"
 				},
 				"chainceoneos": {
 					"memo_size": 10,
-					"pattern": "/[a-z]+$/gm"
+					"pattern": "^[a-z]+$"
 				},
 				"zbeoscharge1": {
 					"memo_size": 18,
-					"pattern": "/[0-9]+$/gm"
+					"pattern": "^[0-9]+$"
 				},
 				"okbtothemoon": {
-					"pattern": "/[0-9]+$/gm"
+					"pattern": "^[0-9]+$"
 				},
 				"eosusrwallet": {
 					"memo_size": 36,
-					"pattern": "/[a-f0-9]{4}/gm"
+					"pattern": "^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$"
 				}
 			}			
 		},
