@@ -1,10 +1,10 @@
-<div class="container-fluid" style="height: 100%; overflow:hidden;">
+<div class="container-fluid" style=" overflow:hidden;">
 
 
-	<div class="clr-row flex-items-xs-between" style="height: 100%;">
+	<div class="clr-row flex-items-xs-between"  style="height: calc(100vh - 6.2rem);">
 
 		<!--<div >-->
-		<div class="clr-col-md-10 text-center animate flex-column" style="padding: 39px; height: 100%"
+		<div class="clr-col-md-10 text-center animate flex-column"  style="height: 100%; padding: 25px; overflow: auto;"
 			 *ngIf="aService.selected.getValue().name">
 
 			<div>
@@ -44,7 +44,7 @@
 					</div>
 					<div class="clr-col-6">
 							<span (click)="refresh()" style="width: 100px; float: right">
-								<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="refresh()">
+								<a class="btn btn-sm btn-link2" style="max-width: none;" (click)="refresh()">
 									<fa-icon [icon]="['far', 'undo']"></fa-icon>
 									Refresh
 								</a>
@@ -142,7 +142,7 @@
 				</ng-container>
 				-->
 			<!--HISTORY TABLE-->
-			<div class="table-flex history-table"> <!-- || aService.activeChain.name === 'EOS MAINNET'">-->
+			<div class="table-flex history-table" style="max-height: 100%; ">
 
 				<p-table #tableHistory [value]="aService.actions"
 						 [responsive]="true"
@@ -155,7 +155,7 @@
 						 [rows]="12"
 						 [paginator]="true"
 						 rowExpandMode="single"
-						 (onPage)="loadActionsLazy($event)">
+						 (onPage)="loadActionsLazy($event)" [scrollable]="true" scrollHeight="100%">
 					<ng-template pTemplate="header">
 						<tr>
 							<th style="width: 70px;">

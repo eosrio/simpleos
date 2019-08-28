@@ -4,8 +4,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpClientModule} from '@angular/common/http';
 import {ClarityModule} from '@clr/angular';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {library} from '@fortawesome/fontawesome-svg-core';
+import {FontAwesomeModule, FaIconLibrary} from '@fortawesome/angular-fontawesome';
 import {far} from '@fortawesome/pro-regular-svg-icons';
 import {fas} from '@fortawesome/pro-solid-svg-icons';
 import {fab} from '@fortawesome/free-brands-svg-icons';
@@ -56,6 +55,7 @@ import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
 import { ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
 
 /* SERVICES */
+import { ChainService} from './services/chain.service';
 import { EOSJSService } from './services/eosjs.service';
 import { Eosjs2Service } from './services/eosjs2.service';
 import { NetworkService } from './services/network.service';
@@ -66,7 +66,7 @@ import { RamService } from './services/ram.service';
 import { BackupService } from './services/backup.service';
 import { ThemeService } from './services/theme.service';
 
-library.add(far, fas, fab, fal);
+
 
 @NgModule({
 	// entryComponents: [FormComponent],
@@ -127,6 +127,7 @@ library.add(far, fas, fab, fal);
 	providers: [
 		EOSJSService,
 		Eosjs2Service,
+		ChainService,
 		AccountsService,
 		NetworkService,
 		CryptoService,
@@ -139,4 +140,11 @@ library.add(far, fas, fab, fal);
 	bootstrap: [AppComponent]
 })
 export class AppModule {
+	constructor(library: FaIconLibrary) {
+		library.addIconPacks(far);
+		library.addIconPacks(fas);
+		library.addIconPacks(fab);
+		library.addIconPacks(fal);
+	}
+	// FaIconLibrary.addIconPacks(far, fas, fab, fal);
 }

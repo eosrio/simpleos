@@ -418,7 +418,7 @@
 		</p>
 	</clr-wizard-page>
 
-	<clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
+	<clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || (generated?!agreeKeys:false)">
 		<ng-template clrPageTitle>Define Keys</ng-template>
 		<h5 class="bold">At this point, we recommend you <span class="error">disconnet from the internet</span></h5>
 		<h5>Selected account: <span class="blue">{{accountname.toLowerCase()}}</span></h5>
@@ -639,10 +639,7 @@
 		<ng-template clrPageTitle>New Keys</ng-template>
 		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5 class="gray">Please enter your desired public key or click the <span style="cursor:pointer;"
-																				 class="blue"
-																				 (click)="generateNKeys()"> Generate Key Pair </span>
-			button.</h5>
+		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue" > Generate Key Pair </span> button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"

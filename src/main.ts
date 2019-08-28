@@ -3,6 +3,7 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 
 import {AppModule} from './app/app.module';
 import {environment} from './environments/environment';
+import 'isomorphic-fetch';
 
 import 'hammerjs';
 
@@ -14,6 +15,19 @@ if (environment.production) {
 	enableProdMode();
 }
 
-platformBrowserDynamic().bootstrapModule(AppModule, {
-	preserveWhitespaces: false
-}).catch(err => console.log(err));
+const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/config.json';
+fetch( url ).then(function(response) {
+	if (response.status >= 400) {
+		throw new Error("Bad response from server");
+	}
+	return response.json();
+}).then(function(result) {
+		// console.log(result);
+	const payload = {lastUpdate: new Date(), config: result };
+	localStorage.setItem('configSimpleos',JSON.stringify(payload));
+
+	platformBrowserDynamic().bootstrapModule(AppModule, {
+		preserveWhitespaces: false
+	}).catch(err => console.log(err));
+});
+

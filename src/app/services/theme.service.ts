@@ -254,9 +254,10 @@ export const LiberlandTheme = {
 
 	'--btn-link2-color': '#FCD215',
 	'--btn-link2-background-hover': '#ffffff',
-	'--btn-link2-color-hover': '#ffffff',
+	'--btn-link2-color-hover': '#c39d13',
 
-	'--btn-link-color': '#1577C6',
+	'--btn-link-color': '#fafafa',
+	// '--btn-link-color': '#1577C6',
 	'--btn-link-background-hover': '#ffffff',
 	'--btn-link-color-hover': '#084577',
 
@@ -426,7 +427,7 @@ export const WaxLandingTheme = {
 	'--chain-icon-bg': 'white',
 	'--text-error': '#ff8e85',
 	'--made-with-love': '#bfbfbf',
-
+	'--modal-title-color': '#ffffff',
 };
 
 @Injectable({providedIn: 'root'})

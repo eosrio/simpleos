@@ -68,7 +68,7 @@
 /deep/ .overview-table .ui-table {
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif;
-	overflow-y: scroll;
+	/*overflow-y: scroll;*/
 }
 
 /deep/ .overview-table .ui-table-tbody {
@@ -236,6 +236,10 @@ li:last-child {
 .table-flex {
 	display: flex;
 	flex-grow: 1;
+	margin-bottom:10px;
+	height: auto;
+	/*overflow-x: hidden;*/
+	/*overflow-y: scroll;*/
 }
 
 /deep/ .spam-checkbox .mat-checkbox-layout {

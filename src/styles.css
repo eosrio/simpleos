@@ -274,7 +274,11 @@ body a.link-eosrio:hover{
 
 .content {
 	height: calc(100% - 4.5rem);
+}
 
+.content-page{
+	height: calc(100vh - 1.7rem) !important;
+	width: 100vw;
 }
 
 .destaque-color-token{
@@ -875,8 +879,6 @@ input:not([readonly]) {
 	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;
 	box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;
 }
-
-
 
 .btn-link .btn, .btn.btn-link {
 	border-color: transparent !important;

@@ -12,6 +12,7 @@ import {BackupService} from '../../services/backup.service';
 import {AppComponent} from '../../app.component';
 import {ElectronService} from 'ngx-electron';
 import {Eosjs2Service} from '../../services/eosjs2.service';
+import {ChainService} from '../../services/chain.service';
 
 @Component({
 	selector: 'app-config',
@@ -23,6 +24,8 @@ export class ConfigComponent implements OnInit {
 	@ViewChild('customExportBK', {static: false}) customExportBK: ElementRef;
 	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
 	@ViewChild('pkModal', {static: false}) pkModal: ClrModal;
+	@ViewChild('managepkModal', {static: false}) managepkModal: ClrModal;
+	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
 
 	endpointModal: boolean;
 	logoutModal: boolean;
@@ -31,6 +34,7 @@ export class ConfigComponent implements OnInit {
 	chainModal: boolean;
 	pinModal: boolean;
 	newKeys: boolean;
+	managerKeys: boolean;
 	clearPinModal: boolean;
 	changePassModal: boolean;
 	importBKModal: boolean;
@@ -78,6 +82,9 @@ export class ConfigComponent implements OnInit {
 	generated2 = false;
 	agreeKeys2 = false;
 
+	keysaccounts = [];
+
+
 	static resetApp() {
 		window['remote']['app']['relaunch']();
 		window['remote']['app'].exit(0);
@@ -94,7 +101,8 @@ export class ConfigComponent implements OnInit {
 				private backup: BackupService,
 				public app: AppComponent,
 				private _electronService: ElectronService,
-				public eosjs: Eosjs2Service
+				public eosjs: Eosjs2Service,
+				private chain: ChainService,
 	) {
 
 		this.keytar = this._electronService.remote.require('keytar');
@@ -112,6 +120,7 @@ export class ConfigComponent implements OnInit {
 		this.exportBKModal = false;
 		this.viewPKModal = false;
 		this.showpk = false;
+		this.managerKeys = false;
 		this.passForm = this.fb.group({
 			oldpass: ['', [Validators.required, Validators.minLength(10)]],
 			matchingPassword: this.fb.group({
@@ -138,6 +147,7 @@ export class ConfigComponent implements OnInit {
 		});
 		this.disableEx = false;
 		this.disableIm = false;
+
 		this.chainConnected = [];
 		const lastbkp = localStorage.getItem('simplEOS.lastBackupTime');
 		if (lastbkp === '' || lastbkp === null) {
@@ -145,6 +155,38 @@ export class ConfigComponent implements OnInit {
 		} else {
 			this.lastBackupTime = (new Date(parseInt(lastbkp, 10))).toLocaleString();
 		}
+
+		console.log(this.aService.accounts);
+		// console.log(this.aService.getStoredKey());
+
+		this.keysaccounts = [
+			{
+				public_key: 'EOS7zG5owDg1c7HmTjMt9Hsc8EASzrL7dGHyYcP5EoSE1rFaVAU9z',
+				accounts:[{
+					name:'account1',
+					idx:'0',
+				},{
+					name:'account2',
+					idx:'1',
+				},{
+					name:'account3',
+					idx:'2',
+				}],
+			},
+			{
+				public_key: 'EOS5EaTTG7eDV6DRAJUbuaeM6MTgbmsdC6ZQ4WwHagpMgQdB4J9EZ',
+				accounts:[{
+					name:'account4',
+					idx:'3',
+				},{
+					name:'account5',
+					idx:'4',
+				},{
+					name:'account6',
+					idx:'5',
+				}],
+			}
+		];
 
 	}
 
@@ -228,6 +270,7 @@ export class ConfigComponent implements OnInit {
 	}
 
 	changeChain(event) {
+		this.chain.setRawGithub();
 		this.network.changeChain(event.value);
 	}
 

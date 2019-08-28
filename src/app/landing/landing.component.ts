@@ -277,12 +277,12 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 		switch (this.network.activeChain.name) {
 			case 'WAX MAINNET': {
-				this.theme.defaultTheme();
+				// this.theme.defaultTheme();
 				this.theme.waxTheme();
 				break;
 			}
 			case 'LIBERLAND TESTNET': {
-				this.theme.defaultTheme();
+				// this.theme.defaultTheme();
 				this.theme.liberlandTheme();
 				break;
 			}

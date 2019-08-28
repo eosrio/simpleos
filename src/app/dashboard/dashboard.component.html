@@ -1,6 +1,6 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
 
-<div class="main-container" style="height: calc(100vh - 2rem); width: 100vw">
+<div class="main-container content-page">
 	<div class="content-container">
 		<div class="content-area">
 			<div class="clr-row row-top-background" style="margin-right: 0; ">
@@ -30,7 +30,7 @@
 
 						<div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
 							 style="padding-left: 0; padding-right: 0"
-							 (click)="importKeyModal = true">
+							 (click)="importKeyModal = true;importedAccounts = [];pvtform.reset();">
 							<div class="text-center navbar-btn newaccount">
 								<div style="padding-top: 16px">
 									<fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
@@ -203,19 +203,19 @@
 	</clr-wizard-page>
 
 	<clr-wizard-page *ngIf="newAccOptions === 'newpk'"
-					 [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || !agreeKeys">
+					 [clrWizardPageNextDisabled]="ownerpub==='' || activepub==='' || (generated?!agreeKeys:false)">
 		<ng-template clrPageTitle>Define Keys</ng-template>
 		<h5>Selected account: <span class="blue">{{accountname}}</span></h5>
 		<h5>Please enter your desired public keys or click the <span
 			class="blue"> Generate Key Pairs </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
+			<input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub" (blur)="validOwnerPubKey=(ownerpub.length==53);" >
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
 			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
 		</mat-form-field>
 		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Active Public key" [(ngModel)]="activepub">
+			<input matInput placeholder="Active Public key" [(ngModel)]="activepub" (blur)="validActivePubKey=(activepub.length==53);" >
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
 		</mat-form-field>
 
@@ -290,7 +290,7 @@
 		</form>
 	</clr-wizard-page>
 
-	<clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'newpk'">
+	<clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'newpk' && generated && agreeKeys">
 		<ng-template clrPageTitle>Set Password</ng-template>
 		<h5>Define your password for this account. This will be used to transactions confirmations.</h5>
 		<form [formGroup]="passform" class="confirmForm">

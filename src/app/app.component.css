@@ -109,7 +109,7 @@
 }
 
 .nav-link {
-	height: 2rem !important;
+	height: 1.7rem !important;
 	cursor: pointer;
 }
 
@@ -121,7 +121,7 @@
 .traffic-lights {
 	top: 1px;
 	left: 8px;
-	margin-top: 13px;
+	margin-top: 8px;
 	margin-right: 20px;
 }
 .focus .traffic-lights > .traffic-light-close, .traffic-lights:hover > .traffic-light-close, .traffic-lights:active > .traffic-light-close {

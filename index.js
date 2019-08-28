@@ -30,6 +30,8 @@ app.getVersion = () => version;
 
 const PROTOCOL_PREFIX = 'simpleos';
 const args = process.argv.slice(1);
+
+
 devtools = args.some(val => val === '--devtools');
 serve = args.some(val => val === '--serve');
 
@@ -327,15 +329,16 @@ async function createWindow() {
 	}
 	win = new BrowserWindow({
 		title: productName,
+		titleBarStyle: "hiddenInset",
 		webPreferences: {
 			nodeIntegration: true,
 			webSecurity: !serve,
-			devTools: true
+			devTools: false
 		},
 		darkTheme: true,
 		width: 1440,
 		height: 920,
-		minWidth: 800,
+		minWidth: 1024,
 		minHeight: 600,
 		backgroundColor: _bgColor,
 		frame: false,
@@ -652,7 +655,7 @@ function rescheduleAutoClaim() {
 	if (fs.existsSync(basePath + '/autoclaim.json')) {
 		const data = fs.readFileSync(cPath);
 		let autoclaimConf = JSON.parse(data.toString());
-		if (autoclaimConf['enabled']) {
+		if (autoclaimConf['enabled']  && productName==="simpleos") {
 			if (autoclaimConf['WAX-GBM']) {
 				for (const job of autoclaimConf['WAX-GBM']['jobs']) {
 					const a = moment.utc(job['next_claim_time']);
@@ -753,7 +756,7 @@ if (isAutoLaunch) {
 		appendLock();
 		autoClaimCheck();
 		console.log('READY!');
-		if (isEnableAutoClaim) {
+		if (isEnableAutoClaim && productName==="simpleos") {
 			addTrayIcon();
 			runAutoClaim();
 			if (process.platform === 'darwin') {
@@ -781,7 +784,7 @@ if (isAutoLaunch) {
 
 	const spawn = require('child_process').spawn;
 	if (isEnableAutoClaim) {
-		if (!(fs.existsSync(lockAutoLaunchFile))) {
+		if (!(fs.existsSync(lockAutoLaunchFile)) && productName==="simpleos") {
 			spawn(process.execPath, ['--autostart'], {
 				detached: true,
 				stdio: 'ignore'

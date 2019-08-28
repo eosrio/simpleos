@@ -7,9 +7,8 @@ import * as Eos from '../../assets/eos.js';
 import {BehaviorSubject} from 'rxjs';
 import {CryptoService} from './crypto.service';
 import {VotingService} from './voting.service';
-
-import {defaultChainsJSON} from '../chains';
 import {Eosjs2Service} from './eosjs2.service';
+
 
 export interface Endpoint {
 	url: string;
@@ -19,9 +18,9 @@ export interface Endpoint {
 	chain: string;
 }
 
-@Injectable({
+@Injectable ( {
 	providedIn: 'root'
-})
+} )
 export class NetworkService {
 
 	publicEndpoints: Endpoint[];
@@ -36,18 +35,18 @@ export class NetworkService {
 	txrefBlock = 191;
 	voterefBlock = 572278;
 	baseConfig = {
-		httpEndpoint: '',
-		expireInSeconds: 60,
-		broadcast: true,
-		debug: false,
-		sign: true,
+		httpEndpoint: '' ,
+		expireInSeconds: 60 ,
+		broadcast: true ,
+		debug: false ,
+		sign: true ,
 		chainId: ''
 	};
 	validEndpoints: Endpoint[];
 	status: string;
 	connectionTimeout: any;
-	selectedEndpoint = new BehaviorSubject<Endpoint>(null);
-	networkingReady = new BehaviorSubject<boolean>(false);
+	selectedEndpoint = new BehaviorSubject<Endpoint> ( null );
+	networkingReady = new BehaviorSubject<boolean> ( false );
 
 	connected = false;
 	lastEndpoint = '';
@@ -57,43 +56,41 @@ export class NetworkService {
 	defaultChains: any[];
 	selectGroup: any[];
 
-	static groupBy(list, keyGetter) {
-		const map = new Map();
-		list.forEach((item) => {
-			const key = keyGetter(item);
-			const collection = map.get(key);
+	static groupBy(list , keyGetter) {
+		const map = new Map ();
+		list.forEach ( (item) => {
+			const key = keyGetter ( item );
+			const collection = map.get ( key );
 			if (!collection) {
-				map.set(key, [item]);
+				map.set ( key , [ item ] );
 			} else {
-				collection.push(item);
+				collection.push ( item );
 			}
-		});
+		} );
 		return map;
 	}
 
 	constructor(
-		private eosjs: EOSJSService,
-		private eosjs2: Eosjs2Service,
-		private router: Router,
-		private aService: AccountsService,
-		private voting: VotingService,
-		private crypto: CryptoService
+		private eosjs: EOSJSService ,
+		private eosjs2: Eosjs2Service ,
+		private router: Router ,
+		private aService: AccountsService ,
+		private voting: VotingService ,
+		private crypto: CryptoService ,
 		// private ledger: LedgerHWService
 	) {
-		this.defaultChains = defaultChainsJSON;
+		const configSimpleos = JSON.parse ( localStorage.getItem ( 'configSimpleos' ) );
+		this.defaultChains = configSimpleos[ 'config' ][ 'chains' ];
+		const groupChain = NetworkService.groupBy ( this.defaultChains , chain => chain.network );
+		const mainnet = groupChain.get ( 'MAINNET' );
+		const testenet = groupChain.get ( 'TESTNET' );
+		this.selectGroup = [ {'name': 'MAINNETS' , 'chains': mainnet} , {'name': 'TESTNETS' , 'chains': testenet} ];
+
 		this.activeChain = this.aService.activeChain;
 		this.validEndpoints = [];
 		this.status = '';
 		this.connectionTimeout = null;
-
-		const groupChain = NetworkService.groupBy(this.defaultChains, chain => chain.network);
-		const mainnet = groupChain.get('MAINNET');
-		const testenet = groupChain.get('TESTNET');
-		this.selectGroup = [{'name':'MAINNETS','chains': mainnet},{'name':'TESTNETS','chains': testenet}];
-
 	}
-
-
 
 	connect(automatic: boolean) {
 		// console.log('analyzing endpoints...');
@@ -101,72 +98,72 @@ export class NetworkService {
 		this.status = '';
 		this.mainnetId = '';
 		this.aService.activeChain = this.activeChain;
-		this.mainnetId = this.activeChain['id'];
-		this.networkingReady.next(false);
+		this.mainnetId = this.activeChain[ 'id' ];
+		this.networkingReady.next ( false );
 		const pQueue = [];
 		this.connected = false;
-		this.activeChain['endpoints'].forEach((apiNode) => {
-			pQueue.push(this.apiCheck(apiNode));
-		});
-		Promise.all(pQueue).then(() => {
-			this.extractValidNode();
-		});
-		this.startTimeout();
+		this.activeChain[ 'endpoints' ].forEach ( (apiNode) => {
+			pQueue.push ( this.apiCheck ( apiNode ) );
+		} );
+		Promise.all ( pQueue ).then ( () => {
+			this.extractValidNode ();
+		} );
+		this.startTimeout ();
 	}
 
 	changeChain(chainId) {
-		this.activeChain = this.defaultChains.find((chain) => chain.id === chainId);
+		this.activeChain = this.defaultChains.find ( (chain) => chain.id === chainId );
 		if (this.activeChain) {
 			this.aService.activeChain = this.activeChain;
 			this.aService.accounts = [];
-			this.voting.clearMap();
-			this.voting.clearLists();
+			this.voting.clearMap ();
+			this.voting.clearLists ();
 			this.voting.initList = false;
 			this.aService.lastAccount = null;
-			localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
-			this.connect(false);
-			console.log('Network switched to: ' + this.activeChain['name']);
+			localStorage.setItem ( 'simplEOS.activeChainID' , this.activeChain.id );
+			this.connect ( false );
+			console.log ( 'Network switched to: ' + this.activeChain[ 'name' ] );
 		}
 	}
 
 	startTimeout() {
 		if (!this.connectionTimeout) {
-			this.connectionTimeout = setTimeout(() => {
-				console.log('Timeout!');
-				if (!this.networkingReady.getValue()) {
+			this.connectionTimeout = setTimeout ( () => {
+				console.log ( 'Timeout!' );
+				if (!this.networkingReady.getValue ()) {
 					this.status = 'timeout';
-					clearTimeout(this.connectionTimeout);
-					this.networkingReady.next(false);
+					clearTimeout ( this.connectionTimeout );
+					this.networkingReady.next ( false );
 					this.connectionTimeout = null;
 				}
-			}, 10000);
+			} , 10000 );
 		}
 	}
 
 	extractValidNode() {
 		this.validEndpoints = [];
-		this.activeChain.endpoints.forEach((apiNode) => {
+		this.activeChain.endpoints.forEach ( (apiNode) => {
 			if (apiNode.latency > 0 && apiNode.latency < 1200) {
-				this.validEndpoints.push(apiNode);
+				this.validEndpoints.push ( apiNode );
 			}
-		});
-		this.selectEndpoint();
+		} );
+		this.selectEndpoint ();
 	}
 
 	selectEndpoint() {
 		let latency = 2000;
 		if (this.connected === false) {
-			this.validEndpoints.forEach((node) => {
+			this.validEndpoints.forEach ( (node) => {
 				if (node.latency < latency && node.latency > 1) {
 					latency = node.latency;
-					this.selectedEndpoint.next(node);
+					this.selectedEndpoint.next ( node );
 				}
-			});
-			if (this.selectedEndpoint.getValue() === null) {
-				this.networkingReady.next(false);
+			} );
+			if (this.selectedEndpoint.getValue () === null) {
+				this.networkingReady.next ( false );
 			} else {
-				console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-				this.startup(null);
+				console.log ( 'Best Server Selected!' , this.selectedEndpoint.getValue ().url );
+				this.startup ( null );
 			}
 		}
 	}
@@ -176,89 +173,89 @@ export class NetworkService {
 	}
 
 	filterCheck(server: Endpoint) {
-		console.log('Starting filter check for ' + server.url);
+		console.log ( 'Starting filter check for ' + server.url );
 		const config = this.baseConfig;
 		config.httpEndpoint = server.url;
 		config.chainId = this.mainnetId;
-		const eosCK = Eos(config);
+		const eosCK = Eos ( config );
 		const pq = [];
-		const getkeyAcc = eosCK['getKeyAccounts'](this.accountez).then(info => {
+		const getkeyAcc = eosCK[ 'getKeyAccounts' ] ( this.accountez ).then ( info => {
 
-			if (info.length > 0 || info['account_names'].length > 0) {
-				this.publicEndpoints.find(ep => ep.url === server.url).filters.push({eosio: 'history'});
+			if (info.length > 0 || info[ 'account_names' ].length > 0) {
+				this.publicEndpoints.find ( ep => ep.url === server.url ).filters.push ( {eosio: 'history'} );
 				return true;
 			} else {
-				console.log('eosio:history filter is disabled on ' + server.url);
+				console.log ( 'eosio:history filter is disabled on ' + server.url );
 			}
-		}).catch(err => {
-			console.log(err);
+		} ).catch ( err => {
+			console.log ( err );
 			return false;
-		});
-		pq.push(getkeyAcc);
-		return Promise.all(pq);
+		} );
+		pq.push ( getkeyAcc );
+		return Promise.all ( pq );
 	}
 
 	apiCheck(server: Endpoint) {
 		// console.log('Starting latency check for ' + server.url);
-		return new Promise((resolve) => {
+		return new Promise ( (resolve) => {
 			const config = this.baseConfig;
 			config.httpEndpoint = server.url;
 			config.chainId = this.mainnetId;
-			const eos = Eos(config);
-			const refTime = new Date().getTime();
-			const tempTimer = setTimeout(() => {
+			const eos = Eos ( config );
+			const refTime = new Date ().getTime ();
+			const tempTimer = setTimeout ( () => {
 				server.latency = -1;
-				resolve();
-			}, 2000);
+				resolve ();
+			} , 2000 );
 			try {
-				eos['getInfo']({}, (err) => {
+				eos[ 'getInfo' ] ( {} , (err) => {
 					if (err) {
 						server.latency = -1;
 					} else {
-						server.latency = ((new Date().getTime()) - refTime);
+						server.latency = ((new Date ().getTime ()) - refTime);
 						// console.log(server.url, server.latency);
 					}
-					clearTimeout(tempTimer);
+					clearTimeout ( tempTimer );
 					if (server.latency > 1 && server.latency < 200) {
 						// force quick connection
 						if (this.connected === false) {
 							this.connected = true;
-							this.callStartupConn(server);
+							this.callStartupConn ( server );
 						}
 					}
-					resolve();
-				});
+					resolve ();
+				} );
 			} catch (e) {
 				server.latency = -1;
-				resolve();
+				resolve ();
 			}
-		});
+		} );
 	}
 
 	callStartupConn(server) {
 		if (this.connected === true) {
 			// console.log('fast api detected, connecting to:', server.url);
-			this.selectedEndpoint.next(server);
-			this.startup(null);
+			this.selectedEndpoint.next ( server );
+			this.startup ( null );
 		}
 	}
 
 	startup(url) {
 		let endpoint = url;
 		if (!url) {
-			endpoint = this.selectedEndpoint.getValue().url;
+			endpoint = this.selectedEndpoint.getValue ().url;
 			// console.log('switcing to saved endpoint:', endpoint);
 		} else {
 			this.status = '';
-			console.log('startup called - url: ', url);
+			console.log ( 'startup called - url: ' , url );
 		}
-		this.networkingReady.next(false);
-		this.eosjs.online.next(false);
-		this.startTimeout();
+		this.networkingReady.next ( false );
+		this.eosjs.online.next ( false );
+		this.startTimeout ();
 		// prevent double load after quick connection mode
 		if (endpoint !== this.lastEndpoint || this.autoMode === true) {
-			this.eosjs2.initRPC(endpoint, this.activeChain.id);
-			this.eosjs.init(endpoint, this.activeChain.id).then((savedAccounts: any) => {
+			this.eosjs2.initRPC ( endpoint , this.activeChain.id );
+			this.eosjs.init ( endpoint , this.activeChain.id ).then ( (savedAccounts: any) => {
 				// if (this.ledger.isElectron()) {
 				//   this.aService.checkLedgerAccounts().then(() => {
 				//     this.ledger.initListener();
@@ -266,51 +263,51 @@ export class NetworkService {
 				// }
 				this.lastEndpoint = endpoint;
 				this.autoMode = false;
-				this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
+				this.defaultChains.find ( c => c.id === this.activeChain.id ).lastNode = this.lastEndpoint;
 
 				if (savedAccounts) {
 					if (savedAccounts.length > 0) {
 						// console.log('Locading local accounts');
-						this.aService.loadLocalAccounts(savedAccounts).then(() => {
+						this.aService.loadLocalAccounts ( savedAccounts ).then ( () => {
 							if (this.aService.lastAccount) {
-								this.aService.select(this.aService.accounts.findIndex((a) => {
+								this.aService.select ( this.aService.accounts.findIndex ( (a) => {
 									return a.name === this.aService.lastAccount;
-								}));
+								} ) );
 							} else {
-								this.aService.initFirst();
+								this.aService.initFirst ();
 							}
-							this.router['navigate'](['dashboard', 'wallet']);
+							this.router[ 'navigate' ] ( [ 'dashboard' , 'wallet' ] );
 							// this.voting.forceReload();
-							this.networkingReady.next(true);
-						});
+							this.networkingReady.next ( true );
+						} );
 					} else {
-						this.networkingReady.next(true);
+						this.networkingReady.next ( true );
 						if (this.crypto.locked) {
-							console.log('No saved accounts!');
-							this.router['navigate'](['']);
+							console.log ( 'No saved accounts!' );
+							this.router[ 'navigate' ] ( [ '' ] );
 						} else {
-							console.log('No saved accounts!');
-							this.router['navigate'](['landing']);
+							console.log ( 'No saved accounts!' );
+							this.router[ 'navigate' ] ( [ 'landing' ] );
 						}
 					}
 				}
 
 				if (this.connectionTimeout) {
-					clearTimeout(this.connectionTimeout);
-					this.networkingReady.next(true);
+					clearTimeout ( this.connectionTimeout );
+					this.networkingReady.next ( true );
 					this.connectionTimeout = null;
 				}
-			}).catch((err) => {
-				console.log('>>> EOSJS_ERROR: ', err);
-				this.networkingReady.next(false);
-			});
+			} ).catch ( (err) => {
+				console.log ( '>>> EOSJS_ERROR: ' , err );
+				this.networkingReady.next ( false );
+			} );
 		} else {
 			if (this.connectionTimeout) {
-				clearTimeout(this.connectionTimeout);
-				this.networkingReady.next(true);
+				clearTimeout ( this.connectionTimeout );
+				this.networkingReady.next ( true );
 				this.connectionTimeout = null;
 			}
-			this.networkingReady.next(true);
+			this.networkingReady.next ( true );
 		}
 	}
 

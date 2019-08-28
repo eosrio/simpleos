@@ -33,7 +33,7 @@
 					</div>
 					<div class="resource"><span class="blue">Used {{ram_usage / (1024) | number: '1.2-2'}}
 						KB</span><span style="color: #8d8d8d"> / {{ram_quota / (1024) | number:
-						'1.2-2'}} KB</span>
+                        '1.2-2'}} KB</span>
 					</div>
 				</div>
 			</div>
@@ -41,7 +41,7 @@
 			<div class="card info-card special-font">
 				<div class="card-block" style="height: auto;">
 					<form [formGroup]="ramMarketFormBuy">
-						<div class="title white" >Buy RAM</div>
+						<div class="title white">Buy RAM</div>
 						<mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
 							<input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
 								   [textMask]="{mask: numberMask}" formControlName="buyBytes"
@@ -49,11 +49,12 @@
 						</mat-form-field>
 						<span style="margin: 0 12px;">=</span>
 						<mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
-							<input matInput type="text" #buyAmountEos placeholder="Price in {{aService.activeChain['symbol']}}"
+							<input matInput type="text" #buyAmountEos
+								   placeholder="Price in {{aService.activeChain['symbol']}}"
 								   [textMask]="{mask: numberMask}" formControlName="buyEos"
 								   (keyup)="(errormsg2='');convertToBytes()"/>
 						</mat-form-field>
-<!--						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>-->
+						<!--						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>-->
 						<mat-error align="start" *ngIf="errormsg2 !== ''">
 							{{errormsg2}}
 						</mat-error>
@@ -98,7 +99,7 @@
 								   placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
 								   (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
 						</mat-form-field>
-<!--						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>-->
+						<!--						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>-->
 						<mat-error align="start" *ngIf="errormsgeos !== ''">
 							{{errormsgeos}}
 						</mat-error>
@@ -119,7 +120,10 @@
 								class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
               				</span>
 						</a>
-						<button class="btn btn-outline btn-info-outline" style="margin:15px auto; font-weight: 700; display: flex;" (click)="requestRefundModal=true">Request</button>
+						<button class="btn btn-outline btn-info-outline"
+								style="margin:15px auto; font-weight: 700; display: flex;"
+								(click)="requestRefundModal=true">Request
+						</button>
 					</div>
 
 				</div>
@@ -135,10 +139,11 @@
 						<progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
 					</div>
 					<span class="title">NET Bandwidth</span>
-					<span class="resource" style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+					<span class="resource"
+						  style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
 					<div class="resource"><span class="blue">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
 						KB </span><span style="color: #8d8d8d">/ {{net_limit.max / (1024)
-						| number: '1.2-2'}} KB</span>
+                        | number: '1.2-2'}} KB</span>
 					</div>
 				</div>
 			</div>
@@ -154,10 +159,11 @@
               	<span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
 			  </a>
 		  </span>
-					<span class="resource" style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+					<span class="resource"
+						  style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
 					<div class="blue resource"><span class="blue">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
 						ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
-						| number: '1.2-2'}} ms</span>
+                        | number: '1.2-2'}} ms</span>
 					</div>
 				</div>
 			</div>
@@ -197,30 +203,29 @@
 
 							<mat-form-field class="mt-1"
 											style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-								<input matInput type="text" #netAmountEos placeholder="NET"
+								<input matInput type="text" #netAmountEos
+									   placeholder="NET ({{aService.activeChain['symbol']}})"
 									   [textMask]="{mask: numberMask}" formControlName="netEos"
 									   (keyup)="checkEos(netAmountEos.value,'net');"/>
 							</mat-form-field>
-							<!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-							<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>
 
 							<span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
 
 							<mat-form-field class="mt-1"
 											style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-								<input matInput type="text" #cpuAmountEos placeholder="CPU"
+								<input matInput type="text" #cpuAmountEos
+									   placeholder="CPU ({{aService.activeChain['symbol']}})"
 									   [textMask]="{mask: numberMask}" formControlName="cpuEos"
 									   (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
 							</mat-form-field>
-							<!--<span style="margin: 0 12px;">EOS</span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-							<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>
 							<mat-error align="start" *ngIf="errormsgD3 !== ''">
 								{{errormsgD3}}
 							</mat-error>
 
 							<button class="btn btn-outline btn-info-outline"
 									[disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
-									(click)="passDelegateModal=true;fillDelegateRequest();" style="font-weight: 700;">DELEGATE
+									(click)="passDelegateModal=true;fillDelegateRequest();" style="font-weight: 700;">
+								DELEGATE
 							</button>
 
 						</form>
@@ -440,14 +445,16 @@
 
 
 <clr-modal [(clrModalOpen)]="requestRefundModal">
-	<h3 class="modal-title text-white">Request Refund to <span class="blue">{{aService.selected.getValue().name}}</span></h3>
+	<h3 class="modal-title text-white">Request Refund to <span class="blue">{{aService.selected.getValue().name}}</span>
+	</h3>
 
 	<div class="modal-body">
 		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
 			<p-accordionTab header="By submiting this transaction, you agree to the refund Terms & Conditions">
 				The intent of the <span class="blue">refund</span> action is to return previously
 				unstaked tokens to an account after the unstaking period has elapsed.
-				<br><br>As an authorized party I <span class="blue">{{aService.selected.getValue().name}}</span> wish to have the unstaked tokens of <span class="blue">{{aService.selected.getValue().name}}</span> returned.
+				<br><br>As an authorized party I <span class="blue">{{aService.selected.getValue().name}}</span> wish to
+				have the unstaked tokens of <span class="blue">{{aService.selected.getValue().name}}</span> returned.
 			</p-accordionTab>
 		</p-accordion>
 	</div>

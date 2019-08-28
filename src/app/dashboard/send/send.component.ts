@@ -142,20 +142,28 @@ export class SendComponent implements OnInit {
 		} );
 	}
 
-
 	checkExchangeAccount() {
 		const memo = this.sendForm.get ( 'memo' );
-		const acc = this.sendForm.get ( 'to' ).value;
+		const acc = this.sendForm.value.to.toLowerCase ();
 
 		if (this.knownExchanges.includes ( acc )) {
-			if (this.aService.activeChain.exchanges[ acc ]) {
-				memo.setValidators ( [ Validators.required , Validators.pattern ( this.aService.activeChain.exchanges[ acc ].pattern ) , Validators.maxLength ( this.aService.activeChain.exchanges[ acc ].memo_size ) ] );
+
+			console.log(this.aService.activeChain['exchanges'][acc].pattern.toString());
+			const aux = new RegExp("^[0-9]+$","gm");
+			if (this.aService.activeChain['exchanges'][acc]) {
+				if(this.aService.activeChain['exchanges'][acc].memo_size) {
+					memo.setValidators ( [ Validators.required , Validators.pattern ( this.aService.activeChain['exchanges'][acc].pattern ), Validators.minLength ( parseInt(this.aService.activeChain[ 'exchanges' ][ acc ].memo_size, 10 )) , Validators.maxLength ( parseInt(this.aService.activeChain[ 'exchanges' ][ acc ].memo_size, 10 )) ] );
+				}else{
+					memo.setValidators ( [ Validators.required , Validators.pattern ( this.aService.activeChain['exchanges'][acc].pattern)]);
+					console.log('only pattern');
+				}
 			} else {
 				memo.setValidators ( [ Validators.required ] );
 			}
 			this.memoMsg = 'required';
 
 			memo.updateValueAndValidity ();
+			console.log(memo);
 		} else {
 			this.memoMsg = 'optional';
 			memo.setValidators ( null );
@@ -164,7 +172,6 @@ export class SendComponent implements OnInit {
 	}
 
 	ngOnInit() {
-
 		this.aService.selected.asObservable ().subscribe ( (sel: EOSAccount) => {
 			if (sel) {
 				this.fullBalance = sel.full_balance;
@@ -196,7 +203,6 @@ export class SendComponent implements OnInit {
 		this.filteredContacts = this.sendForm.get ( 'to' ).valueChanges.pipe ( startWith ( '' ) , map ( value => this.filter ( value , false ) ) );
 		this.searchedContacts = this.searchForm.get ( 'search' ).valueChanges.pipe ( startWith ( '' ) , map ( value => this.filter ( value , true ) ) );
 		this.onChanges ();
-
 	}
 
 	onChanges(): void {
@@ -206,7 +212,6 @@ export class SendComponent implements OnInit {
 	}
 
 	checkContact(value) {
-		this.checkExchangeAccount ();
 		const found = this.contacts.find ( (el) => {
 			return el.account === value;
 		} );
@@ -239,10 +244,12 @@ export class SendComponent implements OnInit {
 		if (this.sendForm.value.to !== '') {
 			try {
 				this.eos.checkAccountName ( this.sendForm.value.to.toLowerCase () );
-				this.sendForm.controls[ 'to' ].setErrors ( null );
-				this.errormsg = '';
+				// this.sendForm.controls[ 'to' ].setErrors ( null );
+				// this.errormsg = '';
+				console.log( this.sendForm.value.to.toLowerCase ());
 				this.eos.getAccountInfo ( this.sendForm.value.to.toLowerCase () ).then ( () => {
 					this.sendForm.controls[ 'to' ].setErrors ( null );
+					this.checkExchangeAccount ();
 					this.errormsg = '';
 				} ).catch ( () => {
 					this.sendForm.controls[ 'to' ].setErrors ( {'incorrect': true} );

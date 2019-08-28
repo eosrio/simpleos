@@ -25,6 +25,8 @@ import {ThemeService} from '../services/theme.service';
 import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../services/eosjs2.service';
 
+import {environment} from '../../environments/environment';
+
 
 @Component({
 	selector: 'app-dashboard',
@@ -120,7 +122,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 	private subscriptions: Subscription[] = [];
 	private pvtImportReady: boolean;
 
+	compilerVersion = environment.COMPILERVERSION;
 
+	validOwnerPubKey: boolean = false;
+	validActivePubKey: boolean = false;
 
 	static extOpen(value) {
 		window['shell'].openExternal(value).catch(console.log);
@@ -146,11 +151,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.deleteAccModal = false;
 		this.appVersion = window['appversion'];
 
-		if (this.aService.activeChain.name === 'WAX MAINNET') {
+		if (this.aService.activeChain.name === 'WAX MAINNET' && this.compilerVersion === 'EOS MAINNET') {
 			this.theme.defaultTheme();
 		}
 
-		if (this.aService.activeChain.name === 'LIBERLAND TESTNET') {
+		if (this.aService.activeChain.name === 'LIBERLAND TESTNET' && this.compilerVersion === 'EOS MAINNET') {
 			this.theme.defaultTheme();
 		}
 
@@ -220,13 +225,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 	// }
 
 	verifyPrivateKey(input, auto) {
-		if (this.pvtImportReady) {
-			this.zone.run(() => {
-				this.importwizard.forceNext();
-				this.errormsg = '';
-				this.apierror = '';
-			});
-		} else {
+		// if (this.pvtImportReady) {
+		// 	this.zone.run(() => {
+		// 		this.importwizard.forceNext();
+		// 		this.errormsg = '';
+		// 		this.apierror = '';
+		// 	});
+		// } else {
 			if (input !== '') {
 				this.busyActivekey = true;
 				this.eos.checkPvtKey(input.trim()).then((results) => {
@@ -253,6 +258,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 						}
 					});
 					this.pvtform.controls['private_key'].setErrors(null);
+					// this.pvtform.reset();
 					this.pvtImportReady = true;
 					this.zone.run(() => {
 						if (auto) {
@@ -267,6 +273,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 						this.dropReady = true;
 						this.pvtform.controls['private_key'].setErrors({'incorrect': true});
 						this.importedAccounts = [];
+						console.log(e);
 						if (e.message.includes('Invalid checksum')) {
 							this.errormsg = 'invalid private key';
 						}
@@ -282,7 +289,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 					});
 				});
 			}
-		}
+		// }
 	}
 
 	// verifyPrivateKey(input) {
@@ -333,6 +340,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 	// 	}
 	// }
 
+
 	doCancel(): void {
 		this.importwizard.close();
 	}
@@ -367,11 +375,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 		// 	delete keystore[key];
 		// 	// localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
 		// }
-		this.aService.accounts.splice(this.accRemovalIndex, 1);
-		this.deleteAccModal = false;
-		this.aService.select(0);
-		this.selectedTab = 0;
-		this.aService.refreshFromChain().catch(console.log);
+		// console.log(' ID :',this.accRemovalIndex);
+		if(!this.aService.isRefreshing){
+
+			this.aService.accounts.splice ( this.accRemovalIndex , 1 );
+			// console.log(' Accounts left :',this.aService.accounts);
+			this.deleteAccModal = false;
+			this.aService.select ( 0 );
+			this.selectedTab = 0;
+			this.aService.refreshFromChain ().catch ( console.log );
+		}
 	}
 
 	resetAndClose() {
@@ -411,29 +424,40 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 					delegate_transfer, gift_amount, 'created with simpleos', this.aService.activeChain['symbol'], this.aService.activeChain['precision'], permission).then((txdata) => {
 					console.log(txdata);
 					if (this.newAccOptions === 'newpk') {
-						setTimeout(() => {
-							this.eos.checkPvtKey(this.activepk).then((results) => {
-								const pform = this.passform.value.matchingPassword;
-								// Import private key
-								if (pform.pass1 === pform.pass2) {
-									this.crypto.initKeys(this.final_active, pform.pass1).then(() => {
-										this.crypto.encryptAndStore(this.activepk, this.final_active).then(() => {
-											this.aService.appendNewAccount(results.foundAccounts[0]).catch(console.log);
-											this.wrongwalletpass = '';
-											this.busy = false;
-											this.success = true;
-											this.confirmationID = txdata['transaction_id'];
-											this.showToast('success', 'Account created', 'Check your history for confirmation.');
-											this.submitTXForm.reset();
-											this.aService.refreshFromChain().catch(console.log);
-										}).catch((err) => {
-											console.log(err);
-										});
-									});
-								}
-							});
-						}, 5000);
+						if (this.generated && this.agreeKeys) {
+							setTimeout ( () => {
+								this.eos.checkPvtKey ( this.activepk ).then ( (results) => {
+									const pform = this.passform.value.matchingPassword;
+									// Import private key
+									if (pform.pass1 === pform.pass2) {
+										this.crypto.initKeys ( this.final_active , pform.pass1 ).then ( () => {
+											this.crypto.encryptAndStore ( this.activepk , this.final_active ).then ( () => {
+												this.aService.appendNewAccount ( results.foundAccounts[ 0 ] ).catch ( console.log );
+												this.wrongwalletpass = '';
+												this.busy = false;
+												this.success = true;
+												this.confirmationID = txdata[ 'transaction_id' ];
+												this.showToast ( 'success' , 'Account created' , 'Check your history for confirmation.' );
+												this.submitTXForm.reset ();
+												this.aService.refreshFromChain ().catch ( console.log );
+											} ).catch ( (err) => {
+												console.log ( err );
+											} );
+										} );
+									}
+								} );
+							} , 5000 );
+						}else{
+							this.wrongwalletpass = '';
+							this.busy = false;
+							this.success = true;
+							this.confirmationID = txdata[ 'transaction_id' ];
+							this.showToast ( 'success' , 'Account created' , 'Check your history for confirmation.' );
+							this.submitTXForm.reset ();
+							this.aService.refreshFromChain ().catch ( console.log );
+						}
 					} else if (this.newAccOptions === 'friend') {
+
 						this.wrongwalletpass = '';
 						this.confirmationID = txdata['transaction_id'];
 						this.success = true;
@@ -460,9 +484,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 					}
 				}).catch((err2) => {
 					console.log(err2);
+					this.wrongwalletpass = err2;
 					this.busy = false;
 					this.success = false;
-					// const errorJSON = JSON.parse(err2);
 					// if (errorJSON.error.code === 3081001) {
 					// 	this.wrongwalletpass = 'Not enough stake to perform this action.';
 					// } else if (errorJSON.error.code === 3050000) {

@@ -83,6 +83,25 @@
 					</button>
 				</div>
 			</div>
+
+			<!--
+			TO THE NEXT VERSION
+
+			<div class="card info-card">
+				<div class="card-header title special-font">
+					Keys Management
+					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+						<span class="tooltip-content">Manage your keys.</span>
+					</a>
+				</div>
+				<div class="card-block">
+					<button class="btn btn-info-outline special-font" (click)="managerKeys = true"
+							style="font-weight: 700">Manager
+					</button>
+				</div>
+			</div>
+			-->
 		</div>
 		<div class="clr-col-lg-5">
 			<div class="card info-card">
@@ -453,6 +472,7 @@
 		This window will close in {{timetoclose}}s...
 	</div>
 </clr-modal>
+
 <clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
 	<clr-wizard-title>Generate new keys</clr-wizard-title>
 	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -465,9 +485,7 @@
 		<ng-template clrPageTitle>New Keys</ng-template>
 		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5 class="gray">Please enter your desired public key or click the <span style="cursor:pointer;"
-																				 class="blue"
-																				 (click)="generateNKeys()"> Generate Key Pair </span>
+		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue" > Generate Key Pair </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
@@ -494,5 +512,36 @@
 		</ng-container>
 	</clr-wizard-page>
 </clr-wizard>
+
+<clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
+	<h3 class="modal-title">
+		Keys Management
+	</h3>
+	<div class="modal-body">
+		<clr-tabs clrLayout="vertical">
+			<clr-tab *ngFor="let key of keysaccounts; let idx = index">
+				<button clrTabLink id="link1">Key {{idx+1}}</button>
+				<clr-tab-content [id]="'content'+idx" *clrIfActive >
+					PUBLIC KEY: {{key.public_key}}
+					<ng-container *ngFor="let acc of key.accounts">
+						{{acc.name}}<br>
+					</ng-container>
+				</clr-tab-content>
+			</clr-tab>
+<!--			<clr-tab>-->
+<!--				<button clrTabLink>Key 2</button>-->
+<!--				<clr-tab-content *clrIfActive="true">-->
+<!--					PUBLIC KEY:-->
+<!--					Account 1<br>-->
+<!--					Account 2<br>-->
+<!--					Account 3<br>-->
+<!--				</clr-tab-content>-->
+<!--			</clr-tab>-->
+		</clr-tabs>
+	</div>
+	<div class="modal-footer" *ngIf="showpk">
+		This window will close in {{timetoclose}}s...
+	</div>
+</clr-modal>
 
 

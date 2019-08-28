@@ -109,6 +109,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 	autoClaimStatus: boolean;
 
 	claimPublicKey = '';
+	private isDestroyed = false;
 	private claimError: string;
 	public gbmBalance = 0;
 	public gbmLastClaim: string;
@@ -254,7 +255,26 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 				}
 			]
 		};
+	}
 
+	ngOnInit() {
+		const selectedAcc = this.aService.selected.getValue();
+		if (this.aService.activeChain.features['vote']) {
+			this.setCheckListVote(selectedAcc.name);
+		}
+		this.getCurrentStake();
+	}
+
+	ngOnDestroy(): void {
+		this.isDestroyed = true
+		this.voteService.proxies = [];
+		this.voteService.bps = [];
+		this.subscriptions.forEach(s => {
+			s.unsubscribe();
+		});
+	}
+
+	ngAfterViewInit(): void {
 		this.subscriptions.push(this.aService.selected.asObservable().subscribe((selected: any) => {
 			this.totalStaked = 0;
 			this.votedDecay = 0;
@@ -320,28 +340,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 					this.verifyAutoClaimSetup(selected).catch(console.log);
 					this.enableAutoClaim = this.edAutoClaim(true);
 				}
-				this.cdr.detectChanges();
+				if(!this.isDestroyed) this.cdr.detectChanges();
 			}
 		}));
-	}
-
-	ngOnInit() {
-		const selectedAcc = this.aService.selected.getValue();
-		if (this.aService.activeChain.features['vote']) {
-			this.setCheckListVote(selectedAcc.name);
-		}
-		this.getCurrentStake();
-	}
-
-	ngOnDestroy(): void {
-		this.voteService.proxies = [];
-		this.voteService.bps = [];
-		this.subscriptions.forEach(s => {
-			s.unsubscribe();
-		});
-	}
-
-	ngAfterViewInit(): void {
 		setImmediate(() => {
 			// console.log('after view init');
 			// console.log(this.voteService.bps.length, this.voteService.proxies.length);
@@ -349,7 +350,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 				// console.log('from after view init', this.voteService.voteType);
 				this.voteOption(this.voteService.voteType);
 			}
-			this.cdr.detectChanges();
+			// this.cdr.detectChanges();
 		});
 	}
 

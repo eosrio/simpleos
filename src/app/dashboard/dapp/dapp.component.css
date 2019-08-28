@@ -55,8 +55,8 @@ li:hover .gray{
 }
 
 .active {
-	background-color: #2e7db2;
-	color: #ffffff;
+	color: var(--btn-color-hover) !important;
+	background-color: var(--btn-background-hover) !important;
 }
 
 div#formAction > mat-form-field > input {

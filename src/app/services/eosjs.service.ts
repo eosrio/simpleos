@@ -332,6 +332,7 @@ export class EOSJSService {
 				const payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + this.chainID));
 				payload.updatedOn = new Date();
 				payload.accounts = accounts;
+				// console.log("Set Item Local Storage: ",payload);
 				localStorage.setItem('simpleos.accounts.' + this.chainID, JSON.stringify(payload));
 				return true;
 			} else {
