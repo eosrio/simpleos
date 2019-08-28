@@ -9,8 +9,6 @@ Your simple and secure EOS wallet.
 
 *Made with :hearts: by [EOS Rio](https://eosrio.io/)*, a Block producer candidate for the EOS ecosystem.
 
-[![Build Status](https://travis-ci.com/eosrio/simpleos.svg?branch=master)](https://travis-ci.com/eosrio/simpleos)
-
 # About
 
 SimplEOS is a wallet made solely for the EOS ecosystem and fully integrated with all features available in the EOS.IO software.
@@ -64,15 +62,15 @@ Off-chain information (such as the Block Producer standard) are fetched via a pr
 
 ## Download a pre-compiled build
 
-- Windows (64-bit): [**simpleos.Setup.0.8.0.exe**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos.Setup.0.8.0.exe)
-  - `374c598ee58bda0966344d899b732a33add8b3d962c3aa0e635475244e6a5f58`
+- Windows (64-bit): [**simpleos.Setup.0.9.3.exe**](https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos.Setup.0.9.3.exe)
+  - `c63e84909d9d8566ee8abd4e0afa276c6a4b9c16de6bc3e5b6c40925bd279a90`
 - Linux
-  - [**simpleos.0.8.0.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos.0.8.0.AppImage)
-  `458fc09bc104f6b8fe9a7ca8f50e275a519e57018d7ffed0c4c3c4f9c422146b`
-  - [**simpleos_0.8.0_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos_0.8.0_amd64.deb)
-  `406047edaab1e4b6d516241934727ec0502c49bbd4af0e9af5c32d2d32969d6c`  
-- MacOS: [**simpleos-0.8.0.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.8.0/simpleos-0.8.0.dmg)
-  - `fec8bf0ec532bb689bc2eb41c7d6ca04ce36351aef083796b7a6bd79fbadcb73`
+  - [**simpleos.0.9.3.AppImage**](https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos-0.9.3.AppImage)
+  `66144ab4d51ec5a2d1f635dc2f5440b1ac11f79f203303d9c6f242f5d34f8460`
+  - [**simpleos_0.9.3_amd64.deb**](https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos_0.9.3_amd64.deb)
+  `7dc7681722a9ad50a1d989434120710c3e1e454678fc605b8f34f133fa97e18b`  
+- MacOS: [**simpleos-0.9.3.dmg**](https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos-0.9.3.dmg)
+  - `10248e8482e30efe5801cbd5d884abbb250c52638ca01b5b45a469710cacff52`
 
 ## Legal Disclaimer
 
@@ -81,7 +79,7 @@ By downloading SimplEOS you agree to the [Terms of Service](https://eosrio.io/te
 ## Build it yourself
 
 ### Dependencies Setup
-- [Node.js 12.2.0](https://nodejs.org/en/download/current/)
+- [Node.js v12.x](https://nodejs.org/en/download/current/)
 
 ## Setup sources:
 ```console
