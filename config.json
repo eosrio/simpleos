@@ -40,6 +40,11 @@
 					"latency": 0
 				},
 				{
+					"url": "https://api.eosrio.io",
+					"owner": "EOS Rio",
+					"latency": 0
+				},
+				{
 					"url": "https://eu.eosdac.io",
 					"owner": "eosDAC",
 					"latency": 0
