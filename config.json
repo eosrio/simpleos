@@ -45,25 +45,24 @@
 					"latency": 0
 				},
 				{
-					"url": "https://eu.eosdac.io",
-					"owner": "eosDAC",
+					"url": "https://eos.greymass.com",
+					"owner": "EOS Greymass",
 					"latency": 0
 				},
 				{
-					"url": "https://node1.eosphere.io",
-					"owner": "EOS Asia",
+					"url": "https://nodes.get-scatter.com",
+					"owner": "Scatter",
+					"latency": 0
+				},
+				{
+					"url": "https://eu.eosdac.io",
+					"owner": "eosDAC",
 					"latency": 0
 				},
 				{
 					"url": "https://proxy.eosnode.tools",
 					"owner": "Proxy Node",
 					"latency": 0
-				},
-				{
-					"url": "https://history.cryptolions.io",
-					"owner": "EOS Cryptolions",
-					"latency": 0,
-					"version": "mongo"
 				}
 			],
 			"explorers": [
