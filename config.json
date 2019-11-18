@@ -342,9 +342,9 @@
 			"name": "TELOS MAINNET",
 			"network": "MAINNET",
 			"firstApi": "https://api.tlos.goodblock.io",
-			"historyApi": "",
-			"eosrioBP": "",
-			"proxyRegistry": "",
+			"historyApi": "https://telos.eosrio.io/v2",
+			"eosrioBP": "eosriobrazil",
+			"proxyRegistry": "tlsproxyinfo",
 			"lastNode": "",
 			"logoSrc": "",
 			"backdrop": "",
@@ -354,11 +354,11 @@
 				"resource": true,
 				"vote": true,
 				"staking": true,
-				"dapps": false,
+				"dapps": true,
 				"addAcc": true,
 				"newAcc": true,
 				"forum": false,
-				"rex": false
+				"rex": true
 			},
 			"system": [
 				"eosio",
@@ -366,6 +366,11 @@
 				"eosio.msig"
 			],
 			"endpoints": [
+				{
+					"url": "https://telos.eosrio.io",
+					"owner": "EOS Rio",
+					"latency": 0
+				},
 				{
 					"url": "https://api.eos.miami",
 					"owner": "Telos Miami",
@@ -383,6 +388,11 @@
 				}
 			],
 			"explorers": [
+				{
+					"name": "Bloks.io",
+					"account_url": "https://telos.bloks.io/account/",
+					"tx_url": "https://telos.bloks.io/transaction/"
+				},
 				{
 					"name": "EOSX",
 					"account_url": "https://telos.eosx.io/account/",
