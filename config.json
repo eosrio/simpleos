@@ -8,7 +8,7 @@
 			"name": "EOS MAINNET",
 			"network": "MAINNET",
 			"firstApi": "https://hapi.eosrio.io",
-			"historyApi": "https://eos.hyperion.eosrio.io/v2",
+			"historyApi": "https://api.eossweden.org/v2",
 			"forumTally": "https://s3.amazonaws.com/api.eosvotes.io/eosvotes/tallies/latest.json",
 			"eosrioBP": "eosriobrazil",
 			"proxyRegistry": "regproxyinfo",
@@ -35,13 +35,8 @@
 			],
 			"endpoints": [
 				{
-					"url": "https://hapi.eosrio.io",
-					"owner": "EOS Rio",
-					"latency": 0
-				},
-				{
-					"url": "https://api.eosrio.io",
-					"owner": "EOS Rio",
+					"url": "https://api.eossweden.org",
+					"owner": "sw/eden",
 					"latency": 0
 				},
 				{
