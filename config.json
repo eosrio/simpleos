@@ -429,12 +429,6 @@
 			],
 			"endpoints": [
 				{
-					"url": "https://api.uos.eosrio.io",
-					"owner": "EOS Rio - UOS",
-					"latency": 0,
-					"version": "native"
-				},
-				{
 					"url": "https://history.uos.network:7889",
 					"owner": "UOS",
 					"latency": 0,
