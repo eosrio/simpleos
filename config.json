@@ -89,7 +89,7 @@
 			],
 			"exchanges": {
 				"bitfinexdep1": {
-					"memo_size": 32,
+					"memo_size": 16,
 					"pattern": "^[a-f0-9]+$"
 				},
 				"krakenkraken": {
