@@ -607,21 +607,28 @@
 		<h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
 	</div>
 	<div class="modal-footer">
-		<form [formGroup]="passFormStake" class="modal-footer">
-			<mat-form-field>
-				<input #passtake matInput type="password" formControlName="pass" placeholder="Password"
-					   (keyup.enter)="callSetStake(passtake.value)">
-				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-					{{wrongpass}}
-				</mat-hint>
-			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
-					(click)="callSetStake(passtake.value)" [disabled]="busy">
-				Confirm
-				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-			</button>
-		</form>
+		<div style="display:flex;">
+			<form [formGroup]="passFormStake" class="modal-footer">
+				<mat-form-field>
+					<input #passtake matInput type="password" formControlName="pass" placeholder="Password"
+						   (keyup.enter)="callSetStake(passtake.value)">
+					<!--				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">-->
+					<!--					{{wrongpass}}-->
+					<!--				</mat-hint>-->
+				</mat-form-field>
+				<button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+						(click)="callSetStake(passtake.value)" [disabled]="busy">
+					Confirm
+					<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+				</button>
+
+			</form>
+		</div>
+		<div class="error" style="display:flex;" *ngIf="wrongpass !== ''">
+			{{wrongpass}}
+		</div>
 	</div>
+
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="voteModal" [clrModalStaticBackdrop]="true">

@@ -804,12 +804,14 @@ export class AccountsService {
 	}
 
 	async fetchEOSprice() {
-		try {
-			const priceresult = await this.eosjs.getMainnetTableRows ( 'delphioracle' , 'eosusd' , 'datapoints' );
-			this.usd_rate = priceresult.rows[ 0 ].median / 10000;
-		} catch (e) {
-			console.log ( e );
-			this.usd_rate = 0;
+		if (this.activeChain[ 'name' ] === 'EOS MAINNET') {
+			try {
+				const priceresult = await this.eosjs.getMainnetTableRows('delphioracle', 'eosusd', 'datapoints');
+				this.usd_rate = priceresult.rows[0].median / 10000;
+			} catch (e) {
+				console.log(e);
+				this.usd_rate = 0;
+			}
 		}
 		return null;
 	}

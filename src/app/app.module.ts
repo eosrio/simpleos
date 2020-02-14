@@ -266,7 +266,6 @@ export class AppModule {
 		library.addIcons(faUserPlus);
 		library.addIcons(faUserEdit);
 		library.addIcons(faPaperPlane);
-		library.addIcons(faMemory);
 
 		// // fal light
 		library.addIcons(faPaperPlane);
