@@ -1,23 +1,6 @@
-<!--<div style="background-color: #1f1f1f; height: 44px; width: 100%">-->
-<!--	-->
-<!--</div>-->
 <div class="main-container">
 	<header class="header-1" style="-webkit-app-region: drag; height: 1.7rem;flex-basis: 1.7rem;">
 		<div class="branding" [ngStyle]="{'padding':'0 s10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
-<!--		<div class="branding" [ngStyle]="{'height': '1.7rem','margin':'auto'}">-->
-			<!--		<div class="branding" [ngStyle]="{'padding':(!isMac?'0 1rem':'0px'),'text-align':(!isMac?'left':'right'),'width':(!isMac?'8.5rem':'85%'),'height': '1.7rem'}">-->
-
-			<!--			<div *ngIf="isMac" class="focus" style="-webkit-app-region: no-drag;">-->
-			<!--				<div class="traffic-lights">-->
-			<!--					<button class="traffic-light traffic-light-close" style="margin-right: 10px;" id="close"-->
-			<!--							(click)="closeWindow()"></button>-->
-			<!--					<button class="traffic-light traffic-light-minimize" style="margin-right: 10px;" id="minimize"-->
-			<!--							(click)="minimizeWindow()"></button>-->
-			<!--					<button class="traffic-light traffic-light-maximize" id="maximize"-->
-			<!--							(click)="maximizeWindow()"></button>-->
-			<!--				</div>-->
-			<!--			</div>-->
-
 			<a class="nav-link" [ngStyle]="{'margin':(!isMac?'0 0':'0 auto')}">
 				<span *ngIf="compilerVersion=='EOS MAINNET'" class="title-header"
 					  style="color: #9a9a9a; font-size: 14px;">SimplEOS Wallet {{version}}</span>
@@ -62,20 +45,9 @@
 </div>
 <clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onModalClose($event)">
 	<h3 class="modal-title text-white">
-		<!--<fa-icon [icon]="['far', 'link']"></fa-icon>&nbsp;&nbsp;-->
 		Connect to
 		<div class="blue" style="margin-top: 8px;">{{dapp_name}}</div>
 	</h3>
-	<!--	<ng-container *ngIf="aService.loading">-->
-	<!--		<fa-layers class="mt-1 mb-1">-->
-	<!--			<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"-->
-	<!--					 style="color:#0094d2;"></fa-icon>-->
-	<!--		</fa-layers>-->
-	<!--		<br>-->
-
-	<!--		<div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...-->
-	<!--		</div>-->
-	<!--	</ng-container>-->
 	<div class="modal-body" *ngIf="aService.accounts.length > 0">
 		<p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
 		<div class="card chains-card black-white">
