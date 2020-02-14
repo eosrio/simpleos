@@ -1,5 +1,8 @@
+process.traceDeprecation = true;
+process.traceProcessWarnings = true;
+process.throwDeprecation = true;
+
 const _electron = require('electron');
-const {app, BrowserWindow, Menu, protocol, ipcMain, Notification, Tray, shell} = _electron;
 const path = require('path');
 const url = require('url');
 const keytar = require('keytar');
@@ -13,30 +16,21 @@ const {Api, JsonRpc, RpcError} = require('eosjs');
 const {TextEncoder, TextDecoder} = require('util');
 const fetch = require('isomorphic-fetch');
 const {JsSignatureProvider} = require('eosjs/dist/eosjs-jssig');
-const TextEnc = new TextEncoder();
-const TextDec = new TextDecoder();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const express = require('express')();
-const PORT = 47888;
 const http = require('http').Server(express);
-let win, devtools, serve, isAutoLaunch;
-let appIcon = null;
-let deepLink = null;
-let job = null;
-let isEnableAutoClaim = false;
+const contextMenu = require('electron-context-menu');
 
-app.getVersion = () => version;
+
+const {app, BrowserWindow, Menu, protocol, ipcMain, Notification, Tray, shell} = _electron;
+
+const TextEnc = new TextEncoder();
+const TextDec = new TextDecoder();
+const PORT = 47888;
 
 const PROTOCOL_PREFIX = 'simpleos';
 const args = process.argv.slice(1);
-
-
-devtools = args.some(val => val === '--devtools');
-serve = args.some(val => val === '--serve');
-
-portfinder['basePort'] = 47888;
-portfinder['highestPort'] = 47900;
 
 const basePath = app.getPath('appData') + '/simpleos-config';
 const lockFile = basePath + '/lockFile';
@@ -45,29 +39,39 @@ const lockAutoLaunchFile = basePath + '/' + productName + '-lockALFile';
 const lockLaunchFile = basePath + '/' + productName + '-lockLFile';
 const logFile = basePath + '/' + productName + '-autoclaim.log';
 
-function clearLock() {
-	fs.writeFileSync(lockFile, '');
-}
+const simpleosAutoLauncher = new AutoLaunch({
+	name: 'simpleos',
+});
 
-function unlinkLALock() {
-	if (fs.existsSync(lockAutoLaunchFile)) {
-		fs.unlinkSync(lockAutoLaunchFile);
-	}
-}
+const devMode = process.mainModule.filename.indexOf('app.asar') === -1;
 
-function unlinkLLock() {
-	if (fs.existsSync(lockLaunchFile)) {
-		fs.unlinkSync(lockLaunchFile);
-	}
-}
+const loginOpts = app.getLoginItemSettings({
+	args: ['--autostart'],
+});
 
-function appendLock() {
-	if (isAutoLaunch) {
-		fs.writeFileSync(lockAutoLaunchFile, process.pid);
-	} else {
-		fs.writeFileSync(lockLaunchFile, process.pid);
-	}
-}
+
+let win, devtools, serve, isAutoLaunch;
+let appIcon = null;
+let deepLink = null;
+let job = null;
+let isEnableAutoClaim = false;
+let eosRPC = null;
+
+
+app.allowRendererProcessReuse = true;
+app.getVersion = () => version;
+
+portfinder['basePort'] = 47888;
+portfinder['highestPort'] = 49800;
+
+devtools = args.some(val => val === '--devtools');
+serve = args.some(val => val === '--serve');
+
+
+writeLog(`Developer Mode: ${devMode}`);
+console.log('Developer Mode:', devMode);
+
+writeLog(`simpleos Auto Launcher: ${JSON.stringify(simpleosAutoLauncher)}`);
 
 if (!fs.existsSync(basePath)) {
 	fs.mkdirSync(basePath);
@@ -82,33 +86,9 @@ try {
 	console.error(e);
 }
 
-function autoClaimCheck() {
-	const cPath = basePath + '/autoclaim.json';
-	if (fs.existsSync(basePath + '/autoclaim.json')) {
-		console.log('file exist');
-		const autoclaimConf = JSON.parse(fs.readFileSync(cPath).toString());
-		isEnableAutoClaim = autoclaimConf['enabled'];
-		if (!isEnableAutoClaim) {
-			unlinkLALock();
-		}
-	} else {
-		unlinkLALock();
-	}
-}
-
-const devMode = process.mainModule.filename.indexOf('app.asar') === -1;
-writeLog(`Developer Mode: ${devMode}`);
-console.log('Developer Mode:', devMode);
-
-const simpleosAutoLauncher = new AutoLaunch({
-	name: 'simpleos'
-});
-
-writeLog(`simpleos Auto Launcher: ${JSON.stringify(simpleosAutoLauncher)}`);
-
 simpleosAutoLauncher.opts.appPath += ' --autostart';
 
-simpleosAutoLauncher.isEnabled().then(function (status) {
+simpleosAutoLauncher.isEnabled().then(function(status) {
 	console.log('STATUS:', status);
 	if (status) {
 		console.log('Auto launch already enabled!');
@@ -118,26 +98,22 @@ simpleosAutoLauncher.isEnabled().then(function (status) {
 		console.log('Enabling auto-launch!');
 		simpleosAutoLauncher.enable();
 	}
-}).catch(function (err) {
+}).catch(function(err) {
 	console.log(err);
 });
 
 app.setLoginItemSettings({
 	openAtLogin: !devMode,
-	args: ["--autostart"]
-});
-
-const loginOpts = app.getLoginItemSettings({
-	args: ["--autostart"]
+	args: ['--autostart'],
 });
 
 isAutoLaunch = loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
 
-const contextMenu = require('electron-context-menu');
-
 contextMenu();
 
 function setupExpress() {
+	console.log('Setup Express');
+
 	express.use(cors());
 
 	express.get('/ping', (req, res) => {
@@ -155,7 +131,7 @@ function setupExpress() {
 
 	express.get('/getPublicKeys', (req, res) => {
 		win.webContents.send('request', {
-			message: 'publicKeys'
+			message: 'publicKeys',
 		});
 		ipcMain.once('publicKeyResponse', (event, data) => {
 			console.log(data);
@@ -167,7 +143,7 @@ function setupExpress() {
 	express.post('/sign', bodyParser.json(), (req, res) => {
 		win.webContents.send('request', {
 			message: 'sign',
-			content: req.body
+			content: req.body,
 		});
 		getFocus();
 		ipcMain.once('signResponse', (event, data) => {
@@ -182,14 +158,16 @@ function setupExpress() {
 
 	express.get('/connect', (req, res) => {
 		console.log('CONNECT REQUEST');
+		getFocus();
 		win.webContents.send('request', {
 			message: 'connect',
 			content: {
 				appName: req.query['appName'],
-				chainId: req.query['chainId']
-			}
+				chainId: req.query['chainId'],
+			},
 		});
-		if (req.query['appName'].length < 32 && req.query['chainId'].length === 64) {
+		if (req.query['appName'].length < 32 && req.query['chainId'].length ===
+			64) {
 			ipcMain.once('connectResponse', (event, data) => {
 				console.log(data);
 				res.setHeader('Content-Type', 'application/json');
@@ -203,8 +181,8 @@ function setupExpress() {
 		win.webContents.send('request', {
 			message: 'login',
 			content: {
-				account: req.query.account
-			}
+				account: req.query.account,
+			},
 		});
 		if (!req.query.account) {
 			getFocus();
@@ -236,8 +214,8 @@ function setupExpress() {
 		win.webContents.send('request', {
 			message: 'logout',
 			content: {
-				account: req.query.account
-			}
+				account: req.query.account,
+			},
 		});
 		if (req.query.account) {
 			if (req.query.account.length > 13) {
@@ -255,7 +233,7 @@ function setupExpress() {
 	express.get('/disconnect', (req, res) => {
 		console.log('DISCONNECT REQUEST');
 		win.webContents.send('request', {
-			message: 'disconnect'
+			message: 'disconnect',
 		});
 		ipcMain.once('disconnectResponse', (event, data) => {
 			console.log(data);
@@ -270,7 +248,6 @@ function getFocus() {
 		if (win.isMinimized()) {
 			win.restore();
 		}
-		// win.blur();
 		win.focus();
 		win.show();
 
@@ -287,15 +264,15 @@ function getFocus() {
 
 function unfocus() {
 	switch (process.platform) {
-		case "win32": {
+		case 'win32': {
 			win.minimize();
 			break;
 		}
-		case "linux": {
+		case 'linux': {
 			win.hide();
 			break;
 		}
-		case "darwin": {
+		case 'darwin': {
 			writeLog(`unfocus `);
 			Menu.sendActionToFirstResponder('hide:');
 			break;
@@ -311,12 +288,16 @@ function regURI() {
 			setTimeout(() => {
 				win.webContents.send('request', {
 					message: 'launch',
-					content: deepLink.url
+					content: deepLink.url,
 				});
 			}, 5000);
 		}
 		callback();
 	});
+}
+
+function setRpcApi(api) {
+	eosRPC = new JsonRpc(api, {fetch});
 }
 
 async function createWindow() {
@@ -329,11 +310,11 @@ async function createWindow() {
 	}
 	win = new BrowserWindow({
 		title: productName,
-		titleBarStyle: "hiddenInset",
+		titleBarStyle: 'hiddenInset',
 		webPreferences: {
 			nodeIntegration: true,
 			webSecurity: !serve,
-			devTools: false
+			devTools: true,
 		},
 		darkTheme: true,
 		width: 1440,
@@ -342,22 +323,25 @@ async function createWindow() {
 		minHeight: 600,
 		backgroundColor: _bgColor,
 		frame: false,
-		icon: _icon
+		icon: _icon,
+		enableRemoteModule: false,
 	});
 
 	// win.removeMenu();
+	console.log(
 
+	);
 	if (serve) {
 		require('electron-reload')(__dirname, {
 			electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
-			hardResetMethod: 'exit'
+			hardResetMethod: 'exit',
 		});
 		await win.loadURL('http://localhost:7777');
 	} else {
 		await win.loadURL(url.format({
 			pathname: path.join(__dirname, 'ng-dist/index.html'),
 			protocol: 'file:',
-			slashes: true
+			slashes: true,
 		}));
 	}
 
@@ -377,7 +361,7 @@ async function createWindow() {
 function notify(title, body, autoClose) {
 	const notification = new Notification({
 		title: title,
-		body: body
+		body: body,
 	});
 	notification.show();
 	notification.on('click', () => {
@@ -395,7 +379,7 @@ function notify(title, body, autoClose) {
 function notifyTrx(title, body, autoClose, trx_id) {
 	const notification = new Notification({
 		title: title,
-		body: body
+		body: body,
 	});
 	notification.show();
 
@@ -410,10 +394,29 @@ function notifyTrx(title, body, autoClose, trx_id) {
 	}
 }
 
+function autoClaimCheck() {
+	const cPath = basePath + '/autoclaim.json';
+	if (fs.existsSync(basePath + '/autoclaim.json')) {
+		console.log('file exist', cPath);
+		const autoclaimConfStr = fs.readFileSync(cPath, 'utf8');
+		console.log('Read STR exist', autoclaimConfStr);
+		if (autoclaimConfStr !== '') {
+			const autoclaimConf = JSON.parse(fs.readFileSync(cPath));
+			isEnableAutoClaim = autoclaimConf['enabled'];
+			if (!isEnableAutoClaim) {
+				unlinkLALock();
+			}
+		}
+
+	} else {
+		unlinkLALock();
+	}
+}
 
 async function claimGBM(account_name, private_key, permission, rpc) {
 	const signatureProvider = new JsSignatureProvider([private_key]);
-	const api = new Api({rpc, signatureProvider, textDecoder: TextDec, textEncoder: TextEnc});
+	const api = new Api(
+		{rpc, signatureProvider, textDecoder: TextDec, textEncoder: TextEnc});
 	// check current votes
 	const accountData = await rpc.get_account(account_name);
 	let _producers = [];
@@ -434,53 +437,58 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 	_actions.push({
 		account: 'eosio',
 		name: 'voteproducer',
-		authorization: [{
-			actor: account_name,
-			permission: permission,
-		}],
+		authorization: [
+			{
+				actor: account_name,
+				permission: permission,
+			}],
 		data: {
 			voter: account_name,
 			proxy: _proxy,
-			producers: _producers
+			producers: _producers,
 		},
 	});
 
 	_actions.push({
 		account: 'eosio',
 		name: 'claimgenesis',
-		authorization: [{
-			actor: account_name,
-			permission: permission,
-		}],
+		authorization: [
+			{
+				actor: account_name,
+				permission: permission,
+			}],
 		data: {
-			claimer: account_name
+			claimer: account_name,
 		},
 	});
 
 	_actions.push({
 		account: 'eosio',
 		name: 'claimgbmvote',
-		authorization: [{
-			actor: account_name,
-			permission: permission,
-		}],
+		authorization: [
+			{
+				actor: account_name,
+				permission: permission,
+			}],
 		data: {
-			owner: account_name
+			owner: account_name,
 		},
 	});
 
 	try {
 		const result = await api.transact({
-			actions: _actions
+			actions: _actions,
 		}, {
 			blocksBehind: 3,
 			expireSeconds: 30,
-			broadcast: true
+			broadcast: true,
 		});
 		// console.log(result);
-		const logFile = basePath + '/autoclaim-trx-log_' + (Date.now()) + '.txt';
+		const logFile = basePath + '/autoclaim-trx-log_' + (Date.now()) +
+			'.txt';
 		fs.writeFileSync(logFile, JSON.stringify(result));
-		notifyTrx('Auto-claim executed', 'Account: ' + account_name, 0, result.transaction_id);
+		notifyTrx('Auto-claim executed', 'Account: ' + account_name, 0,
+			result.transaction_id);
 		return true;
 
 	} catch (e) {
@@ -490,11 +498,11 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 			// console.log(JSON.stringify(e.json, null, 2));
 			const eJson = e.json;
 			switch (eJson.error.code.toString()) {
-				case "3090005": {
+				case '3090005': {
 					claimError = 'Irrelevant authority included, missing linkauth';
 					break;
 				}
-				case "3050003": {
+				case '3050003': {
 					claimError = 'Account already claimed in the past 24 hours. Please wait.';
 					break;
 				}
@@ -503,7 +511,8 @@ async function claimGBM(account_name, private_key, permission, rpc) {
 				}
 			}
 
-			notify('Auto-claim error', 'Account: ' + account_name + '\n Error: ' + claimError, 0);
+			notify('Auto-claim error',
+				'Account: ' + account_name + '\n Error: ' + claimError, 0);
 		}
 		throw new Error(claimError);
 	}
@@ -517,17 +526,17 @@ function addTrayIcon() {
 				const spawn = require('child_process').spawn;
 				spawn(process.execPath, [], {
 					detached: true,
-					stdio: 'ignore'
+					stdio: 'ignore',
 				}).unref();
-			}
+			},
 		},
 		{
 			label: 'Quit SimplEOS Agent', click: () => {
 				appIcon.destroy();
 				unlinkLALock();
 				app.quit();
-			}
-		}
+			},
+		},
 	]);
 	appIcon.setToolTip('simplEOS Agent');
 	appIcon.setContextMenu(trayMenu);
@@ -547,14 +556,14 @@ function storeConfig(autoClaimConfig) {
 
 function writeLog(msg) {
 	const now = moment().format('YYYY-MM-DD HH:mm:ss');
-	msg = "[" + now + "] - " + msg;
+	msg = '[' + now + '] - ' + msg;
 	console.log(msg);
-	fs.appendFileSync(logFile, msg + "\n");
+	fs.appendFileSync(logFile, msg + '\n');
 }
 
 async function getClaimTime(account, rpc) {
 	const genesis_table = await rpc.get_table_rows({
-		json: true, scope: account, code: "eosio", table: "genesis", limit: 1
+		json: true, scope: account, code: 'eosio', table: 'genesis', limit: 1,
 	});
 	if (genesis_table.rows.length === 1) {
 		return moment.utc(genesis_table.rows[0].last_claim_time);
@@ -573,7 +582,8 @@ async function safeRun(callback, errorReturn, api_list) {
 				result = await callback(eosRPC);
 			} catch (e) {
 				if (e.message) {
-					console.log(`${api_list[api_idx]} failed with error: ${e.message}`);
+					console.log(
+						`${api_list[api_idx]} failed with error: ${e.message}`);
 				}
 				if (e.name !== 'FetchError') {
 					break;
@@ -590,14 +600,8 @@ async function safeRun(callback, errorReturn, api_list) {
 	}
 }
 
-let eosRPC = null;
-
-function setRpcApi(api) {
-	eosRPC = new JsonRpc(api, {fetch});
-}
-
 function runAutoClaim() {
-	writeLog("Checking claim conditions...");
+	writeLog('Checking claim conditions...');
 	const cPath = basePath + '/autoclaim.json';
 	if (fs.existsSync(basePath + '/autoclaim.json')) {
 		fs.readFile(cPath, (err, data) => {
@@ -609,35 +613,49 @@ function runAutoClaim() {
 						const apis = autoclaimConf['WAX-GBM']['apis'];
 						setRpcApi(apis[0]);
 						for (const job of autoclaimConf['WAX-GBM']['jobs']) {
-							const a = await safeRun((api) => getClaimTime(job.account, api), null, apis);
+							const a = await safeRun(
+								(api) => getClaimTime(job.account, api), null,
+								apis);
 							if (a) {
 								a.add(1, 'day');
 								const b = moment().utc();
-								const scheduleName = 'autoClaim-' + job['account'];
+								const scheduleName = 'autoClaim-' +
+									job['account'];
 								if (b.diff(a, 'seconds') > 0) {
-									writeLog(`${job.account} is ready to claim!`);
+									writeLog(
+										`${job.account} is ready to claim!`);
 									try {
-										const pvtkey = await keytar.getPassword('simpleos', job['public_key']);
+										const pvtkey = await keytar.getPassword(
+											'simpleos', job['public_key']);
 										const perm = job['permission'];
-										const claimResult = await safeRun((api) => claimGBM(job.account, pvtkey, perm, api), null, apis);
+										const claimResult = await safeRun(
+											(api) => claimGBM(job.account,
+												pvtkey, perm, api), null, apis);
 
 										if (claimResult) {
 											job['last_claim'] = Date.now();
-											schedule.scheduleJob(scheduleName, a.toDate(), () => {
-												runAutoClaim();
-											});
+											schedule.scheduleJob(scheduleName,
+												a.toDate(), () => {
+													runAutoClaim();
+												});
 										}
 									} catch (e) {
-										const logFile = basePath + '/autoclaim-error_' + (Date.now()) + '.txt';
+										const logFile = basePath +
+											'/autoclaim-error_' + (Date.now()) +
+											'.txt';
 										fs.writeFileSync(logFile, e);
-										writeLog(`Autoclaim error, check log file: ${logFile}`);
+										writeLog(
+											`Autoclaim error, check log file: ${logFile}`);
 										// shell.openItem(logFile);
-										schedule.scheduleJob(scheduleName, b.add(10, 'minutes').toDate(), () => {
-											runAutoClaim();
-										});
+										schedule.scheduleJob(scheduleName,
+											b.add(10, 'minutes').toDate(),
+											() => {
+												runAutoClaim();
+											});
 									}
 								} else {
-									writeLog(`${job.account} claims again at ${a.format()}`);
+									writeLog(
+										`${job.account} claims again at ${a.format()}`);
 								}
 							}
 						}
@@ -650,18 +668,19 @@ function runAutoClaim() {
 }
 
 function rescheduleAutoClaim() {
-	writeLog("Checking claim conditions reschedule...");
+	writeLog('Checking claim conditions reschedule...');
 	const cPath = basePath + '/autoclaim.json';
 	if (fs.existsSync(basePath + '/autoclaim.json')) {
 		const data = fs.readFileSync(cPath);
 		let autoclaimConf = JSON.parse(data.toString());
-		if (autoclaimConf['enabled']  && productName==="simpleos") {
+		if (autoclaimConf['enabled'] && productName === 'simpleos') {
 			if (autoclaimConf['WAX-GBM']) {
 				for (const job of autoclaimConf['WAX-GBM']['jobs']) {
 					const a = moment.utc(job['next_claim_time']);
 					const b = moment().utc();
 					const scheduleName = 'autoClaim-' + job['account'];
-					writeLog(`Diff next date from now (sec): ${b.diff(a, 'seconds')}`);
+					writeLog(`Diff next date from now (sec): ${b.diff(a,
+						'seconds')}`);
 					if (b.diff(a, 'seconds') > 0) {
 						runAutoClaim();
 					}
@@ -671,13 +690,47 @@ function rescheduleAutoClaim() {
 	}
 }
 
+function clearLock() {
+	fs.writeFileSync(lockFile, '');
+}
+
+function unlinkLALock() {
+	if (fs.existsSync(lockAutoLaunchFile)) {
+		fs.unlinkSync(lockAutoLaunchFile);
+	}
+}
+
+function unlinkLLock() {
+	if (fs.existsSync(lockLaunchFile)) {
+		fs.unlinkSync(lockLaunchFile);
+	}
+}
+
+function appendLock() {
+	if (isAutoLaunch) {
+		fs.writeFileSync(lockAutoLaunchFile, process.pid);
+	} else {
+		fs.writeFileSync(lockLaunchFile, process.pid);
+	}
+}
+
 function launchApp() {
 	const gotTheLock = app.requestSingleInstanceLock();
 
 	process.defaultApp = true;
 
 	// writeLog(`On Launching File LAUNCH: ${(fs.existsSync(lockLaunchFile))} `);
-	writeLog(`On Launching File LAUNCH: ${(fs.existsSync(lockLaunchFile))} | The LOCK: ${gotTheLock}`);
+	writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
+		lockLaunchFile))} | The LOCK: ${gotTheLock}`);
+	portfinder.getPortPromise().then((port) => {
+		http.listen(port, '127.0.0.1', () => {
+			console.log('listening on 127.0.0.1:' + port);
+		});
+	}).catch((err) => {
+		alert(err);
+	});
+
+	console.log('listen port');
 
 	if (fs.existsSync(lockLaunchFile)) {
 		if (gotTheLock) {
@@ -689,15 +742,9 @@ function launchApp() {
 		}
 	}
 
-	appendLock();
+	console.log('Not gotTheLock');
 
-	portfinder.getPortPromise().then((port) => {
-		http.listen(port, "127.0.0.1", () => {
-			console.log('listening on 127.0.0.1:' + port);
-		});
-	}).catch((err) => {
-		alert(err);
-	});
+	appendLock();
 
 	app.on('second-instance', () => {
 		console.log('launching second instance...');
@@ -731,7 +778,7 @@ function launchApp() {
 		app.on('open-url', (e, url) => {
 			//e.preventDefault();
 			console.log(url);
-		})
+		});
 	});
 }
 
@@ -746,7 +793,7 @@ if (isAutoLaunch) {
 		}
 	});
 
-	app.on("quit", () => {
+	app.on('quit', () => {
 		writeLog(`Quitting Agent...`);
 		unlinkLALock();
 	});
@@ -756,7 +803,7 @@ if (isAutoLaunch) {
 		appendLock();
 		autoClaimCheck();
 		console.log('READY!');
-		if (isEnableAutoClaim && productName==="simpleos") {
+		if (isEnableAutoClaim && productName === 'simpleos') {
 			addTrayIcon();
 			runAutoClaim();
 			if (process.platform === 'darwin') {
@@ -777,17 +824,17 @@ if (isAutoLaunch) {
 		});
 	});
 } else {
-
 	setupExpress();
 	launchApp();
 	autoClaimCheck();
 
 	const spawn = require('child_process').spawn;
 	if (isEnableAutoClaim) {
-		if (!(fs.existsSync(lockAutoLaunchFile)) && productName==="simpleos") {
+		if (!(fs.existsSync(lockAutoLaunchFile)) && productName ===
+			'simpleos') {
 			spawn(process.execPath, ['--autostart'], {
 				detached: true,
-				stdio: 'ignore'
+				stdio: 'ignore',
 			}).unref();
 		}
 	}

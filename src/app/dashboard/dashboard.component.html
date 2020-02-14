@@ -16,7 +16,7 @@
 									<ng-template mat-tab-label>
 										<div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
 											*ngIf="aService.accounts.length > 1"
-											[icon]="['fas', 'times-circle']"
+											[icon]="['far', 'times-circle']"
 											class="deleteteacc"
 											(click)="openRemoveAccModal(i,account)"></fa-icon>
 										</div>
@@ -33,7 +33,7 @@
 							 (click)="importKeyModal = true;importedAccounts = [];pvtform.reset();">
 							<div class="text-center navbar-btn newaccount">
 								<div style="padding-top: 16px">
-									<fa-icon [icon]="['fal', 'user-plus']" size="lg"></fa-icon>
+									<fa-icon [icon]="['far', 'user-plus']" size="lg"></fa-icon>
 								</div>
 								<div style="font-size: 15px;">ADD</div>
 								<div style="font-size: 15px;">ACCOUNT</div>
@@ -44,7 +44,7 @@
 							 style="padding-left: 0; padding-right: 0" (click)="newAccountModal = true;initNewAcc();">
 							<div class="text-center navbar-btn newaccount">
 								<div style="padding-top: 16px">
-									<fa-icon [icon]="['fal', 'user-edit']" size="lg"></fa-icon>
+									<fa-icon [icon]="['far', 'user-edit']" size="lg"></fa-icon>
 								</div>
 								<div style="font-size: 15px;">NEW</div>
 								<div style="font-size: 15px;">ACCOUNT</div>
@@ -183,7 +183,7 @@
 					 (clrWizardPageOnCommit)="verifyAccountName(true)"
 					 (clrWizardPagePrevious)="newAccountWizard.previous()"
 					 (clrWizardPageOnCancel)="resetAndClose()">
-		<ng-template clrPageTitle>Account Name</ng-template>
+		<ng-template clrPageTitle >Account Name</ng-template>
 		<h5 style="color: #a9a9a9">Choose your account name</h5>
 		<h5 class="mt-0">12 characters. Allows all letters and numbers 1-5.</h5>
 		<mat-form-field class="mt-1" style="display: block; width: 180px">

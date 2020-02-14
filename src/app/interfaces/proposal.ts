@@ -10,7 +10,7 @@ export interface Proposal {
 		proposer: string;
 		title: string;
 		proposal_json: string;
-		json_data: ProposalJsonData[];
+		json_data: ProposalJsonData;
 	};
 	stats: {
 		votes: any;

@@ -376,6 +376,8 @@ export class EOSJSService {
 		const options = {authorization: account + '@' + permission};
 
 		console.log(JSON.stringify(form));
+		console.log(contract, action);
+		console.log(options);
 		return new Promise((resolve, reject2) => {
 			this.eos['contract'](contract).then((tc) => {
 				if (tc[action]) {

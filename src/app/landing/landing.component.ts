@@ -21,10 +21,10 @@ import {Subscription} from 'rxjs';
 })
 export class LandingComponent implements OnInit, OnDestroy {
 
-	@ViewChild('wizardexists', {static: false}) exisitswizard: ClrWizard;
+	@ViewChild('wizardexists', {static:true}) exisitswizard: ClrWizard;
 	@ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
 	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
-	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
+	@ViewChild('customImportBK',{static:true}) customImportBK: ElementRef;
 	lottieConfig: Object;
 	anim: any;
 	busy: boolean;
@@ -315,10 +315,11 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	setEndPoint(ep) {
+		console.log('------------->>>>>>>>>',ep,this.endpoint);
 		if (ep !== this.endpoint) {
 			this.endpoint = ep;
 			this.customConnect();
-			this.endpointModal = false;
+		// 	this.endpointModal = false;
 		}
 	}
 

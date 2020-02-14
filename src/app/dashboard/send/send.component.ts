@@ -478,11 +478,16 @@ export class SendComponent implements OnInit {
 						}
 					} ).catch ( (error) => {
 						console.log ( 'Catch2' , error );
-						if (error.error.code === 3081001) {
-							this.wrongpass = 'Not enough stake to perform this action.';
-						} else {
-							this.wrongpass = error.error.details[ 0 ].message;
-						}
+            if (typeof error === 'object') {
+              if (error.error.code === 3081001) {
+                this.wrongpass = 'Not enough stake to perform this action.';
+              } else {
+                this.wrongpass = error.error.details[ 0 ].message;
+              }
+            } else {
+              this.wrongpass = JSON.parse(error).error.details[ 0 ].message;
+            }
+
 						this.busy = false;
 					} );
 				} else {

@@ -21,10 +21,10 @@ import {ChainService} from '../../services/chain.service';
 })
 export class ConfigComponent implements OnInit {
 
-	@ViewChild('customExportBK', {static: false}) customExportBK: ElementRef;
-	@ViewChild('customImportBK', {static: false}) customImportBK: ElementRef;
-	@ViewChild('pkModal', {static: false}) pkModal: ClrModal;
-	@ViewChild('managepkModal', {static: false}) managepkModal: ClrModal;
+	@ViewChild('customExportBK') customExportBK: ElementRef;
+	@ViewChild('customImportBK') customImportBK: ElementRef;
+	@ViewChild('pkModal') pkModal: ClrModal;
+	@ViewChild('managepkModal') managepkModal: ClrModal;
 	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
 
 	endpointModal: boolean;

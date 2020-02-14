@@ -35,8 +35,8 @@ import {environment} from '../../environments/environment';
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
-	@ViewChild('newAccountWizard', {static: false}) wizardaccount: ClrWizard;
-	@ViewChild('importAccountWizard', {static: false}) importwizard: ClrWizard;
+	@ViewChild('newAccountWizard',{static:true}) wizardaccount: ClrWizard;
+	@ViewChild('importAccountWizard',{static:true}) importwizard: ClrWizard;
 	lottieConfig: Object;
 	anim: any;
 	busy = false;
@@ -604,7 +604,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 			const res = this.eos.checkAccountName(this.accountname);
 			// const regexName = new RegExp('^([a-z]|[1-5])+$');
 			if (res !== 0) {
-
 				if (this.accountname.length < 12 && creator.length === 12) {
 					this.accountname_err = 'The account name must have exactly 12 characters. a-z, 1-5';
 					this.accountname_valid = false;

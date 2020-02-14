@@ -439,6 +439,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 		const accountName = this.aService.selected.getValue().name;
 		const password = this.confirmForm.get('pass').value;
 		const [pubkey, permission] = this.aService.getStoredKey(account);
+		console.log(pubkey, permission);
 
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {

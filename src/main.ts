@@ -15,6 +15,10 @@ if (environment.production) {
 	enableProdMode();
 }
 
+if(!localStorage.getItem('simplEOS.activeChainID')){
+	localStorage.setItem('simplEOS.activeChainID','aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906');
+}
+
 const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/config.json';
 fetch( url ).then(function(response) {
 	if (response.status >= 400) {

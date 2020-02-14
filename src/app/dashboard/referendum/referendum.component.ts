@@ -9,7 +9,6 @@ import * as moment from 'moment';
 import {HttpClient} from '@angular/common/http';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
-import {getMatIconFailedToSanitizeLiteralError} from '@angular/material';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 import {utc} from 'moment';
 
@@ -477,7 +476,11 @@ export class ReferendumComponent implements OnInit {
 					this.confirmvoteForm.reset();
 				}).catch(error => {
 					console.log(error);
-					this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+          if(typeof error === 'object'){
+            this.wrongpass =error.error.details[0].message;
+          }else{
+            this.wrongpass = JSON.parse(error).error.details[0].message;
+          }
 					this.busy = false;
 					this.confirmvoteForm.reset();
 				});
@@ -511,7 +514,12 @@ export class ReferendumComponent implements OnInit {
 					this.confirmunvoteForm.reset();
 				}).catch(error => {
 					console.log(error);
-					this.wrongpass = 'Error: ' + JSON.stringify(JSON.parse(error).error.details[0].message);
+          if(typeof error === 'object'){
+            this.wrongpass =error.error.details[0].message;
+          }else{
+            this.wrongpass = JSON.parse(error).error.details[0].message;
+          }
+
 					if (this.wrongpass.includes('no vote exists')) {
 						this.wrongpass = 'you never voted for this proposal!';
 					}
@@ -602,8 +610,12 @@ export class ReferendumComponent implements OnInit {
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch(error => {
 					console.log(error);
+					if(typeof error === 'object'){
+					  this.wrongpass =error.error.details[0].message;
+          }else{
+					  this.wrongpass = JSON.parse(error).error.details[0].message;
+          }
 					this.busy = false;
-					this.wrongpass = JSON.stringify(JSON.parse(error).error.details[0].message);
 				});
 				console.log(val);
 			}

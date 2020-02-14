@@ -81,6 +81,7 @@ export class NetworkService {
 	) {
 		const configSimpleos = JSON.parse ( localStorage.getItem ( 'configSimpleos' ) );
 		this.defaultChains = configSimpleos[ 'config' ][ 'chains' ];
+		console.log(this.defaultChains);
 		const groupChain = NetworkService.groupBy ( this.defaultChains , chain => chain.network );
 		const mainnet = groupChain.get ( 'MAINNET' );
 		const testenet = groupChain.get ( 'TESTNET' );

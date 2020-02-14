@@ -126,7 +126,6 @@ export class AppComponent implements OnInit , AfterViewInit {
 		this.busy = false;
 		if (this.connect.ipc) {
 			this.connect.ipc.on ( 'request' , (event , payload) => {
-
 				this.transitEventHandler = event;
 				switch (payload.message) {
 					case 'launch': {
