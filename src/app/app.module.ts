@@ -30,7 +30,6 @@ import {faSkullCrossbones} from '@fortawesome/pro-solid-svg-icons/faSkullCrossbo
 import {faKey} from '@fortawesome/pro-solid-svg-icons/faKey';
 import {faExclamationTriangle} from '@fortawesome/pro-solid-svg-icons/faExclamationTriangle';
 import {faGlobe} from '@fortawesome/pro-solid-svg-icons/faGlobe';
-
 // FAL
 import {faArrowAltToBottom} from '@fortawesome/pro-light-svg-icons/faArrowAltToBottom';
 import {faChevronCircleUp} from '@fortawesome/pro-light-svg-icons/faChevronCircleUp';
@@ -47,7 +46,7 @@ import {faFacebook} from '@fortawesome/free-brands-svg-icons/faFacebook';
 import {faReddit} from '@fortawesome/free-brands-svg-icons/faReddit';
 import {faKeybase} from '@fortawesome/free-brands-svg-icons/faKeybase';
 import {faWeixin} from '@fortawesome/free-brands-svg-icons/faWeixin';
-//FAR
+// FAR
 import {faSignOutAlt} from '@fortawesome/pro-regular-svg-icons/faSignOutAlt';
 import {faExclamationCircle} from '@fortawesome/pro-regular-svg-icons/faExclamationCircle';
 import {faUndo} from '@fortawesome/pro-regular-svg-icons/faUndo';
@@ -85,6 +84,7 @@ import {faMinus} from '@fortawesome/pro-regular-svg-icons/faMinus';
 import {faTimesCircle} from '@fortawesome/pro-regular-svg-icons/faTimesCircle';
 import {faUserPlus} from '@fortawesome/pro-regular-svg-icons/faUserPlus';
 import {faUserEdit} from '@fortawesome/pro-regular-svg-icons/faUserEdit';
+import {faExternalLink} from '@fortawesome/pro-regular-svg-icons/faExternalLink';
 /* COMPONENTS */
 import {AppComponent} from './app.component';
 import {AppRoutingModule} from './app-routing.module';
@@ -266,6 +266,7 @@ export class AppModule {
 		library.addIcons(faUserPlus);
 		library.addIcons(faUserEdit);
 		library.addIcons(faPaperPlane);
+		library.addIcons(faExternalLink);
 
 		// // fal light
 		library.addIcons(faPaperPlane);

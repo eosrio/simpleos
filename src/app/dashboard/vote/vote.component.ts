@@ -1344,4 +1344,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
       return (event.order * result);
     });
   }
+
+	processLiberlandVotes() {
+		//go to website
+	}
 }

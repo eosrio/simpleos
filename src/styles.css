@@ -153,6 +153,12 @@
 	--btn-link2-background-hover: #ffffff;
 	--btn-link2-color-hover: #0077b7;
 
+	--btn-link3-color: #0079b8;
+	--btn-link3-background: #ffffff;
+	--btn-link3-background-hover: #0079b8;
+	--btn-link3-color-hover: #FCD215;
+	--btn-link3-hover-border-color: #0079b8;
+
 	--btn-link-color: #0094d2;
 	--btn-link-background-hover: #ffffff;
 	--btn-link-color-hover: #0077b7;
@@ -916,6 +922,29 @@ input:not([readonly]) {
 .btn-link2 .btn:active, .btn.btn-link2:active {
 	color: var(--btn-link2-color-hover) !important;
 	background-color: transparent !important;
+	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
+	box-shadow: 0 2px 0 0 transparent inset !important;
+}
+
+.btn-link3 .btn, .btn.btn-link3 {
+	border-color: var(--btn-link3-background) !important;
+	background-color: var(--btn-link3-background);
+	color: var(--btn-link3-color) !important;
+	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
+	box-shadow: 0 2px 0 0 transparent inset !important;
+}
+.btn-link3 .btn:hover, .btn.btn-link3:hover {
+	color: var(--btn-link3-color-hover) !important;
+	border-color: var(--btn-link3-hover-border-color) !important;
+	background-color: var(--btn-link3-background-hover) !important;
+}
+.btn-link3 .btn:visited, .btn.btn-link3:visited {
+	color: var(--btn-link3-color-hover) !important;
+	background-color: transparent !important;
+}
+.btn-link3 .btn:active, .btn.btn-link3:active {
+	color: var(--btn-link3-color-hover) !important;
+	background-color: var(--btn-link3-background-hover) !important;
 	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
 	box-shadow: 0 2px 0 0 transparent inset !important;
 }
