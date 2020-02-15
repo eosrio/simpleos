@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {Eosjs2Service} from '../services/eosjs2.service';
+import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {CryptoService} from '../services/crypto.service';
 import {RpcError} from 'eosjs/dist';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';

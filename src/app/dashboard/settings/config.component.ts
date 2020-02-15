@@ -11,7 +11,7 @@ import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
 import {AppComponent} from '../../app.component';
 import {ElectronService} from 'ngx-electron';
-import {Eosjs2Service} from '../../services/eosjs2.service';
+import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
 
 @Component({

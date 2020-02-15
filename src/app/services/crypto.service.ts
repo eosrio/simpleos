@@ -4,7 +4,7 @@ import {EOSJSService} from './eosjs.service';
 
 import * as CryptoJS from 'crypto-js';
 import {Router} from '@angular/router';
-import {Eosjs2Service} from './eosjs2.service';
+import {Eosjs2Service} from './eosio/eosjs2.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -204,6 +204,7 @@ export class CryptoService {
 		const hash = CryptoJS.PBKDF2(pin, salt, {keySize: 512 / 32, iterations: 1000}).toString();
 		if (hash === saved_hash) {
 			this.locked = false;
+			console.log('unlocked!');
 			this.router.navigate(target).catch(() => {
 				alert('cannot navigate :(');
 			});
@@ -233,8 +234,9 @@ export class CryptoService {
 
 	lock() {
 		this.locked = true;
+		console.log('locking wallet');
 		this.router.navigate(['']).catch(() => {
-			alert('cannot navigate :(');
+			console.log('cannot navigate :(');
 		});
 	}
 

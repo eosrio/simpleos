@@ -4,7 +4,7 @@ import {EOSJSService} from './eosjs.service';
 import {Subject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import * as moment from 'moment';
-import {Eosjs2Service} from './eosjs2.service';
+import {Eosjs2Service} from './eosio/eosjs2.service';
 
 @Injectable({
 	providedIn: 'root'

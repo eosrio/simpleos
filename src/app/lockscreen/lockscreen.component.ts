@@ -1,4 +1,4 @@
-import {Component , OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {CryptoService} from '../services/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../services/network.service';
@@ -42,9 +42,10 @@ export class LockscreenComponent implements OnInit {
 	}
 
 	ngOnInit() {
-		if (localStorage.getItem('simpleos-hash') === null) {
+		if (!localStorage.getItem('simpleos-hash')) {
+			console.log('no hash saved.. navigating to landing page');
 			this.router.navigate(['landing']).catch(() => {
-				alert('cannot navigate out');
+				console.log('cannot navigate out');
 			});
 		}
 	}

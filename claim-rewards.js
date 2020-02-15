@@ -54,7 +54,7 @@ class ClaimRewardsService {
 		if (fs.existsSync(basePath + '/autoclaim.json')) {
 			console.log('file exist', cPath);
 			const autoclaimConfStr = fs.readFileSync(cPath, 'utf8');
-			console.log('Read STR exist', autoclaimConfStr);
+			// console.log('Read STR exist', autoclaimConfStr);
 			if (autoclaimConfStr !== '') {
 				const autoclaimConf = JSON.parse(fs.readFileSync(cPath).toString());
 				this.isEnableAutoClaim = autoclaimConf['enabled'];

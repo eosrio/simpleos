@@ -1,5 +1,5 @@
-import {AfterViewInit , ChangeDetectorRef , Component , NgZone , OnInit} from '@angular/core';
-import {FormBuilder , FormGroup , Validators} from '@angular/forms';
+import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnInit} from '@angular/core';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {environment} from '../environments/environment';
 
@@ -9,32 +9,32 @@ import {EOSJSService} from './services/eosjs.service';
 import {CryptoService} from './services/crypto.service';
 import {ConnectService} from './services/connect.service';
 import {BackupService} from './services/backup.service';
-import {BehaviorSubject , Subscription} from 'rxjs';
-import {Eosjs2Service} from './services/eosjs2.service';
+import {BehaviorSubject, Subscription} from 'rxjs';
+import {Eosjs2Service} from './services/eosio/eosjs2.service';
 import {TransactionFactoryService} from './services/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
+import {LedgerService} from "./services/ledger/ledger.service";
 
 export interface LedgerSlot {
 	publicKey: string;
 	account: string;
 }
 
-@Component ( {
-	selector: 'app-root' ,
-	templateUrl: './app.component.html' ,
-	styleUrls: [ './app.component.css' ]
-} )
-export class AppComponent implements OnInit , AfterViewInit {
+@Component({
+	selector: 'app-root',
+	templateUrl: './app.component.html',
+	styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit, AfterViewInit {
 
-	// @ViewChild('ledgerwizard', {static: false}) ledgerwizard: ClrWizard;
 	confirmForm: FormGroup;
 	wrongpass: string;
 	transitconnect = false;
 	transitAction = false;
 	dapp_name = '';
-	selectedAccount = new BehaviorSubject<any> ( '' );
+	selectedAccount = new BehaviorSubject<any>('');
 	accountChange: Subscription;
 	ledgerOpen: boolean;
 	update: boolean;
@@ -66,40 +66,40 @@ export class AppComponent implements OnInit , AfterViewInit {
 	private eventFired: boolean;
 	public loadingTRX: boolean;
 
-	constructor(private fb: FormBuilder ,
-				public network: NetworkService ,
-				// public ledger: LedgerHWService,
-				public aService: AccountsService ,
-				private titleService: Title ,
-				public eos: EOSJSService ,
-				private eosjs: Eosjs2Service ,
-				private crypto: CryptoService ,
-				private connect: ConnectService ,
-				private router: Router ,
-				private autobackup: BackupService ,
-				private trxFactory: TransactionFactoryService ,
-				private zone: NgZone ,
-				private cdr: ChangeDetectorRef ,
-				private _electronService: ElectronService ,
-				public theme: ThemeService ,
+	constructor(private fb: FormBuilder,
+				public network: NetworkService,
+				public ledger: LedgerService,
+				public aService: AccountsService,
+				private titleService: Title,
+				public eos: EOSJSService,
+				private eosjs: Eosjs2Service,
+				private crypto: CryptoService,
+				private connect: ConnectService,
+				private router: Router,
+				private autobackup: BackupService,
+				private trxFactory: TransactionFactoryService,
+				private zone: NgZone,
+				private cdr: ChangeDetectorRef,
+				private _electronService: ElectronService,
+				public theme: ThemeService,
 	) {
 		if (this.compilerVersion === 'LIBERLAND TESTNET') {
-			this.titleService.setTitle ( 'Liberland Wallet v' + this.version );
-			this.theme.liberlandTheme ();
-			this.activeChain = this.network.defaultChains.find ( (chain) => chain.name === this.compilerVersion );
-			localStorage.setItem ( 'simplEOS.activeChainID' , this.activeChain.id );
-			this.network.changeChain ( this.activeChain.id );
+			this.titleService.setTitle('Liberland Wallet v' + this.version);
+			this.theme.liberlandTheme();
+			this.activeChain = this.network.defaultChains.find((chain) => chain.name === this.compilerVersion);
+			localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
+			this.network.changeChain(this.activeChain.id);
 		} else {
-			this.theme.defaultTheme ();
-			this.titleService.setTitle ( 'SimplEOS Wallet v' + this.version );
+			this.theme.defaultTheme();
+			this.titleService.setTitle('SimplEOS Wallet v' + this.version);
 		}
 
-		this.confirmForm = this.fb.group ( {
-			pass: [ '' , Validators.required ]
-		} );
+		this.confirmForm = this.fb.group({
+			pass: ['', Validators.required]
+		});
 
 		// countdown 30 seconds to automatic backup
-		this.autobackup.startTimeout ();
+		this.autobackup.startTimeout();
 
 		this.accSlots = [];
 		this.selectedSlot = null;
@@ -111,29 +111,17 @@ export class AppComponent implements OnInit , AfterViewInit {
 		this.ledgerOpen = false;
 		this.loadingTRX = false;
 
-		// this.ledger.ledgerStatus.asObservable().subscribe((status) => {
-		//   if (this.aService.hasAnyLedgerAccount === false) {
-		//     this.ledgerOpen = status;
-		//   }
-		// });
-
-		// this.ledger.openPanel.subscribe((event) => {
-		// 	if (event === 'open') {
-		// 		this.ledgerOpen = true;
-		// 	}
-		// });
-
 		this.busy = false;
 		if (this.connect.ipc) {
-			this.connect.ipc.on ( 'request' , (event , payload) => {
+			this.connect.ipc.on('request', (event, payload) => {
 				this.transitEventHandler = event;
 				switch (payload.message) {
 					case 'launch': {
-						console.log ( payload );
+						console.log(payload);
 						break;
 					}
 					case 'accounts': {
-						event.sender.send ( 'accountsResponse' , this.aService.accounts.map ( a => a.name ) );
+						event.sender.send('accountsResponse', this.aService.accounts.map(a => a.name));
 						break;
 					}
 					case 'connect': {
@@ -141,62 +129,62 @@ export class AppComponent implements OnInit , AfterViewInit {
 						const requested_chain = payload.content.chainId;
 						// console.log ( requested_chain );
 						let result = null;
-						if (this.network.defaultChains.find ( (chain) => chain.id === requested_chain )) {
+						if (this.network.defaultChains.find((chain) => chain.id === requested_chain)) {
 							if (this.network.activeChain.id !== requested_chain) {
-								this.network.changeChain ( requested_chain );
+								this.network.changeChain(requested_chain);
 							}
 							result = true;
 						} else {
 							result = false;
 						}
-						event.sender.send ( 'connectResponse' , result );
+						event.sender.send('connectResponse', result);
 						break;
 					}
 					case 'login': {
 
-						if (localStorage.getItem ( 'simpleos-hash' ) && this.crypto.locked) {
+						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
 							this.eventFired = true;
-							this.transitEventHandler.sender.send ( 'loginResponse' , {status: 'CANCELLED'} );
+							this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
 							return;
 						}
 
 						const reqAccount = payload.content.account;
 						// console.log ( reqAccount );
 						if (reqAccount) {
-							const foundAccount = this.aService.accounts.find ( (a) => a.accountName === reqAccount );
+							const foundAccount = this.aService.accounts.find((a) => a.accountName === reqAccount);
 							if (foundAccount) {
-								this.selectedAccount.next ( foundAccount );
-								event.sender.send ( 'loginResponse' , foundAccount );
+								this.selectedAccount.next(foundAccount);
+								event.sender.send('loginResponse', foundAccount);
 								break;
 							} else {
-								console.log ( 'Account not imported on wallet!' );
-								event.sender.send ( 'loginResponse' , {} );
+								console.log('Account not imported on wallet!');
+								event.sender.send('loginResponse', {});
 							}
 							return;
 						}
 
-						this.zone.run ( () => {
+						this.zone.run(() => {
 							this.transitconnect = true;
 							this.eventFired = false;
-						} );
+						});
 
 						if (!this.aService.accounts) {
-							console.log ( 'No account found!' );
-							event.sender.send ( 'loginResponse' , {} );
+							console.log('No account found!');
+							event.sender.send('loginResponse', {});
 						}
 
 						if (this.aService.accounts.length > 0) {
-							this.accountChange = this.selectedAccount.subscribe ( (data) => {
+							this.accountChange = this.selectedAccount.subscribe((data) => {
 								if (data) {
 									// console.log ( data );
-									event.sender.send ( 'loginResponse' , data );
-									this.accountChange.unsubscribe ();
-									this.selectedAccount.next ( null );
+									event.sender.send('loginResponse', data);
+									this.accountChange.unsubscribe();
+									this.selectedAccount.next(null);
 								}
-							} );
+							});
 						} else {
-							console.log ( 'No account found!' );
-							event.sender.send ( 'loginResponse' , {} );
+							console.log('No account found!');
+							event.sender.send('loginResponse', {});
 						}
 
 						break;
@@ -205,63 +193,63 @@ export class AppComponent implements OnInit , AfterViewInit {
 						const reqAccount = payload.content.account;
 						// console.log ( reqAccount );
 						this.dapp_name = null;
-						event.sender.send ( 'logoutResponse' , {} );
+						event.sender.send('logoutResponse', {});
 						break;
 					}
 					case 'disconnect': {
 						this.dapp_name = null;
-						event.sender.send ( 'disconnectResponse' , {} );
+						event.sender.send('disconnectResponse', {});
 						break;
 					}
 					case 'publicKeys': {
-						const localKeys = JSON.parse ( localStorage.getItem ( 'eos_keys.' + this.eos.chainID ) );
-						event.sender.send ( 'publicKeyResponse' , Object.keys ( localKeys ) );
+						const localKeys = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
+						event.sender.send('publicKeyResponse', Object.keys(localKeys));
 						break;
 					}
 					case 'sign': {
-						if (localStorage.getItem ( 'simpleos-hash' ) && this.crypto.locked) {
+						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
 							return;
 						}
 						this.loadingTRX = true;
-						this.eosjs.localSigProvider.processTrx ( payload.content.hex_data ).then ( (data) => {
+						this.eosjs.localSigProvider.processTrx(payload.content.hex_data).then((data) => {
 							// console.log ( data );
 							this.fullTrxData = data;
 							this.updateauthWarning = false;
-							this.confirmForm.reset ();
+							this.confirmForm.reset();
 							let signer = '';
 							for (const action of data.actions) {
 								if (action.account === 'eosio' && action.name === 'updateauth') {
 									this.updateauthWarning = true;
 								}
 								if (signer === '') {
-									signer = action.authorization[ 0 ].actor;
+									signer = action.authorization[0].actor;
 								} else {
-									if (signer !== action.authorization[ 0 ].actor) {
-										console.log ( 'Multiple signers!!!' );
+									if (signer !== action.authorization[0].actor) {
+										console.log('Multiple signers!!!');
 									}
 								}
 							}
 							this.transit_signer = signer;
 							this.action_json = data.actions;
-							this.zone.run ( () => {
+							this.zone.run(() => {
 								this.loadingTRX = false;
 								this.transitAction = true;
 								this.eventFired = false;
-							} );
+							});
 							this.replyEvent = event;
 
-						} ).catch ( (e) => {
-							console.log ( e );
+						}).catch((e) => {
+							console.log(e);
 							this.loadingTRX = false;
-						} );
+						});
 
 						break;
 					}
 					default: {
-						console.log ( payload );
+						console.log(payload);
 					}
 				}
-			} );
+			});
 		}
 
 
@@ -270,58 +258,58 @@ export class AppComponent implements OnInit , AfterViewInit {
 	onModalClose(ev) {
 		if (this.transitEventHandler && ev === false && this.eventFired === false) {
 			this.eventFired = true;
-			this.transitEventHandler.sender.send ( 'loginResponse' , {status: 'CANCELLED'} );
+			this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
 		}
 	}
 
 	see() {
 		this.dnSet = !this.dnSet;
 		if (this.dnSet) {
-			this.theme.lightTheme ();
+			this.theme.lightTheme();
 		} else {
 			if (this.compilerVersion === 'LIBERLAND TESTNET') {
-				this.theme.liberlandTheme ();
+				this.theme.liberlandTheme();
 			} else {
-				this.theme.defaultTheme ();
+				this.theme.defaultTheme();
 			}
 		}
-		this.cdr.detectChanges ();
+		this.cdr.detectChanges();
 	}
 
 	ngOnInit(): void {
 		this.isMac = this._electronService.isMacOS;
-		console.log ( 'Is MacOS?' , this._electronService.isMacOS );
-		this.cdr.detectChanges ();
+		console.log('Is MacOS?', this._electronService.isMacOS);
+		this.cdr.detectChanges();
 	}
 
 	public minimizeWindow() {
-		console.log ( 'Minimize...' );
+		console.log('Minimize...');
 		if (this._electronService.isElectronApp) {
-			this._electronService.remote.getCurrentWindow ().minimize ();
+			this._electronService.remote.getCurrentWindow().minimize();
 		}
 	}
 
 	public closeWindow() {
-		console.log ( 'Close...' );
+		console.log('Close...');
 		if (this._electronService.isElectronApp) {
-			this._electronService.remote.getCurrentWindow ().close ();
+			this._electronService.remote.getCurrentWindow().close();
 		}
 	}
 
 	public maximizeWindow() {
-		console.log ( 'Maximize...' );
+		console.log('Maximize...');
 		if (this._electronService.isElectronApp) {
-			if (this._electronService.remote.getCurrentWindow ().isMaximized ()) {
-				this._electronService.remote.getCurrentWindow ().restore ();
+			if (this._electronService.remote.getCurrentWindow().isMaximized()) {
+				this._electronService.remote.getCurrentWindow().restore();
 			} else {
-				this._electronService.remote.getCurrentWindow ().maximize ();
+				this._electronService.remote.getCurrentWindow().maximize();
 			}
 		}
 	}
 
 
 	get maximized(): boolean {
-		return this._electronService.remote.getCurrentWindow ().isMaximized ();
+		return this._electronService.remote.getCurrentWindow().isMaximized();
 	}
 
 // scanPublicKeys() {
@@ -335,77 +323,77 @@ export class AppComponent implements OnInit , AfterViewInit {
 	// 	}
 	// }
 
-	selectSlot(slot: LedgerSlot , index: number) {
+	selectSlot(slot: LedgerSlot, index: number) {
 		this.selectedSlot = slot;
 		this.selectedSlotIndex = index;
 		// this.ledgerwizard.next();
-		console.log ( this.selectedSlot );
+		console.log(this.selectedSlot);
 	}
 
 	importLedgerAccount() {
-		this.eos.loadPublicKey ( this.selectedSlot.publicKey ).then ( (data: any) => {
-			console.log ( data );
-			this.crypto.storeLedgerAccount ( data.publicKey , this.selectedSlotIndex ).then ( () => {
-				this.aService.appendNewAccount ( data.foundAccounts[ 0 ] ).catch ( console.log );
-				setTimeout ( () => {
-					this.router.navigate ( [ 'dashboard' , 'wallet' ] ).catch ( (err) => {
-						console.log ( err );
-					} );
-				} , 1000 );
-			} );
-		} );
+		this.eos.loadPublicKey(this.selectedSlot.publicKey).then((data: any) => {
+			console.log(data);
+			this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex).then(() => {
+				this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
+				setTimeout(() => {
+					this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+						console.log(err);
+					});
+				}, 1000);
+			});
+		});
 	}
 
 	performUpdate() {
-		window[ 'shell' ].openExternal ( 'https://eosrio.io/simpleos/' ).catch ( console.log );
+		window['shell'].openExternal('https://eosrio.io/simpleos/').catch(console.log);
 	}
 
 	openGithub() {
-		window[ 'shell' ].openExternal ( this.newVersion[ 'link' ] ).catch ( console.log );
+		window['shell'].openExternal(this.newVersion['link']).catch(console.log);
 	}
 
 	ngAfterViewInit() {
-		setTimeout ( () => {
-			this.network.connect ( false );
-			setTimeout ( () => {
-				this.eosjs.checkSimpleosUpdate ().then ( v => {
-					if (v[ 'rows' ].length > 0) {
-						this.newVersion = v[ 'rows' ][ 0 ];
-						if (this.version !== (this.newVersion[ 'version_number' ]).replace ( 'v' , '' )) {
+		setTimeout(() => {
+			this.network.connect(false);
+			setTimeout(() => {
+				this.eosjs.checkSimpleosUpdate().then(v => {
+					if (v['rows'].length > 0) {
+						this.newVersion = v['rows'][0];
+						if (this.version !== (this.newVersion['version_number']).replace('v', '')) {
 							this.update = true;
 						}
 					}
-				} ).catch ( err => {
-					console.log ( err );
-				} );
-			} , 5000 );
-		} , 900 );
+				}).catch(err => {
+					console.log(err);
+				});
+			}, 5000);
+		}, 900);
 	}
 
-	selectAccount(account_data , idx) {
-		const store = localStorage.getItem ( 'eos_keys.' + this.aService.activeChain.id );
+	selectAccount(account_data, idx) {
+		const store = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
 		let key = '';
 		let _perm = '';
 		if (store) {
-			const keys = Object.keys ( JSON.parse ( store ) );
-			account_data.details.permissions.forEach ( (p) => {
+			const keys = Object.keys(JSON.parse(store));
+			account_data.details.permissions.forEach((p) => {
 				if (p.required_auth.keys.length > 0) {
-					const _k = p.required_auth.keys[ 0 ].key;
-					if (keys.indexOf ( _k ) !== -1) {
+					const _k = p.required_auth.keys[0].key;
+					if (keys.indexOf(_k) !== -1) {
 						key = _k;
 						_perm = p.perm_name;
 					}
 				}
-			} );
+			});
 		}
 		if (key !== '') {
 			const responseData = {
-				accountName: account_data.name ,
-				permission: _perm ,
+				accountName: account_data.name,
+				permission: _perm,
 				publicKey: key
 			};
-			this.selectedAccount.next ( responseData );
-			this.aService.select ( idx );
+			this.selectedAccount.next(responseData);
+			this.aService.select(idx);
 			this.transitconnect = false;
 		}
 	}
@@ -413,35 +401,35 @@ export class AppComponent implements OnInit , AfterViewInit {
 	async signTransitAction() {
 		this.wrongpass = '';
 		this.busy = true;
-		const account = this.aService.accounts.find ( a => a.name === this.transit_signer );
-		const idx = this.aService.accounts.indexOf ( account );
-		this.aService.selected.next ( account );
-		const [ auth , publicKey ] = this.trxFactory.getAuth ();
+		const account = this.aService.accounts.find(a => a.name === this.transit_signer);
+		const idx = this.aService.accounts.indexOf(account);
+		this.aService.selected.next(account);
+		const [auth, publicKey] = this.trxFactory.getAuth();
 		try {
-			await this.crypto.authenticate ( this.confirmForm.get ( 'pass' ).value , publicKey );
+			await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
 
 		} catch (e) {
 			this.wrongpass = 'wrong password';
 			this.busy = false;
 		}
 		try {
-			const result = await this.eosjs.signTrx ( this.fullTrxData );
+			const result = await this.eosjs.signTrx(this.fullTrxData);
 			if (result) {
-				this.replyEvent.sender.send ( 'signResponse' , {
+				this.replyEvent.sender.send('signResponse', {
 					sigs: result.signatures
-				} );
+				});
 				this.wrongpass = '';
 				this.busy = false;
 				this.transitAction = false;
-				this.aService.select ( idx );
-				this.aService.reloadActions ( account );
-				this.aService.refreshFromChain ();
-				this.cdr.detectChanges ();
+				this.aService.select(idx);
+				this.aService.reloadActions(account);
+				await this.aService.refreshFromChain();
+				this.cdr.detectChanges();
 
 			}
 		} catch (e) {
 			this.wrongpass = e;
-			console.log ( e );
+			console.log(e);
 			this.busy = false;
 		}
 	}

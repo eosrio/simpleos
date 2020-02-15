@@ -1,7 +1,7 @@
 const args = process.argv.slice(1);
-process.traceDeprecation = true;
-process.traceProcessWarnings = true;
-process.throwDeprecation = true;
+// process.traceDeprecation = true;
+// process.traceProcessWarnings = true;
+// process.throwDeprecation = true;
 process.defaultApp = true;
 
 const {app, BrowserWindow, Notification, Menu, protocol, ipcMain, shell, powerMonitor} = require('electron');
@@ -21,25 +21,22 @@ const contextMenu = require('electron-context-menu');
 const AutoLaunch = require('auto-launch');
 const fs = require('fs');
 
+
+const {LedgerManager} = require("./ledger-manager");
 const {ClaimRewardsService} = require('./claim-rewards.js');
 
 class SimpleosWallet {
 	claimRW;
+	ledger;
 	win;
 	devtools;
 	serve;
 	isAutoLaunch;
 	deepLink;
 	isEnableAutoClaim = false;
-
 	PROTOCOL_PREFIX = 'simpleos';
-
-	simpleosAutoLauncher = new AutoLaunch({
-		name: 'simpleos',
-	});
-
+	simpleosAutoLauncher = new AutoLaunch({name: 'simpleos'});
 	devMode = process.mainModule.filename.indexOf('app.asar') === -1;
-
 	loginOpts = app.getLoginItemSettings({
 		args: ['--autostart'],
 	});
@@ -373,6 +370,7 @@ class SimpleosWallet {
 
 		app.on('ready', () => {
 			console.log('ready');
+			this.ledger = new LedgerManager(this);
 			this.createWindow().catch(console.log);
 		});
 

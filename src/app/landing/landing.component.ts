@@ -13,6 +13,7 @@ import {VotingService} from '../services/voting.service';
 import {AppComponent} from '../app.component';
 import {ThemeService} from '../services/theme.service';
 import {Subscription} from 'rxjs';
+import {LedgerService} from "../services/ledger/ledger.service";
 
 @Component({
 	selector: 'app-landing',
@@ -21,13 +22,17 @@ import {Subscription} from 'rxjs';
 })
 export class LandingComponent implements OnInit, OnDestroy {
 
-	@ViewChild('wizardexists', {static:true}) exisitswizard: ClrWizard;
+	@ViewChild('wizardexists', {static: true}) exisitswizard: ClrWizard;
+	@ViewChild('ledgerwizard', {static: true}) ledgerwizard: ClrWizard;
 	@ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
 	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
-	@ViewChild('customImportBK',{static:true}) customImportBK: ElementRef;
+	@ViewChild('customImportBK', {static: true}) customImportBK: ElementRef;
 	lottieConfig: Object;
 	anim: any;
 	busy: boolean;
+
+	importFromLedger = false;
+
 	existingWallet: boolean;
 	exodusWallet: boolean;
 	newWallet: boolean;
@@ -74,7 +79,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 	lockscreen2: boolean;
 	importedAccounts: any[];
 	exodusValid = false;
-	// endpoint = 'http://api.eosrio.io';
 	endpoint: string;
 	payloadValid = false;
 	generated = false;
@@ -128,21 +132,22 @@ export class LandingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	constructor(public eos: EOSJSService,
-				private voting: VotingService,
-				private crypto: CryptoService,
-				private fb: FormBuilder,
-				public aService: AccountsService,
-				private toaster: ToasterService,
-				public network: NetworkService,
-				private router: Router,
-				private zone: NgZone,
-				public ram: RamService,
-				private http: HttpClient,
-				public app: AppComponent,
-				private theme: ThemeService) {
-
-
+	constructor(
+		public eos: EOSJSService,
+		public ledgerService: LedgerService,
+		private voting: VotingService,
+		private crypto: CryptoService,
+		private fb: FormBuilder,
+		public aService: AccountsService,
+		private toaster: ToasterService,
+		public network: NetworkService,
+		private router: Router,
+		private zone: NgZone,
+		public ram: RamService,
+		private http: HttpClient,
+		public app: AppComponent,
+		private theme: ThemeService
+	) {
 		this.busy = true;
 		this.existingWallet = false;
 		this.exodusWallet = false;
@@ -196,16 +201,24 @@ export class LandingComponent implements OnInit, OnDestroy {
 			}
 		}));
 
+		this.subscriptions.push(this.ledgerService.openPanel.asObservable().subscribe((value) => {
+			if (value && !this.importFromLedger) {
+				this.ledgerwizard.open();
+			}
+		}));
+
 		this.passformexodus = this.fb.group({
 			matchingPassword: this.fb.group({
 				pass1: ['', [Validators.required, Validators.minLength(10)]],
 				pass2: ['', [Validators.required, Validators.minLength(10)]]
 			})
 		});
+
 		this.importForm = this.fb.group({
 			pass: [''],
 			customImportBK: ['', Validators.required],
 		});
+
 		this.refundForm = this.fb.group({
 			account: ['', Validators.required],
 			memo: ['', Validators.required]
@@ -220,10 +233,15 @@ export class LandingComponent implements OnInit, OnDestroy {
 		});
 	}
 
+	checkLedgerReady() {
+		if (this.ledgerService.appReady) {
+			this.ledgerwizard.next();
+		}
+	}
+
 	checkPIN() {
 		this.noPIN = localStorage.getItem('simpleos-hash') === null;
 	}
-
 
 	resetAndClose() {
 		this.wizardnew.reset();
@@ -252,7 +270,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnInit() {
-
+		console.log('loaded landing');
 		this.getCurrentEndpoint();
 		if (this.app.compilerVersion === 'EOS MAINNET') {
 			setTimeout(() => {
@@ -264,6 +282,9 @@ export class LandingComponent implements OnInit, OnDestroy {
 			}, 900);
 		}
 		this.checkPIN();
+		if (this.ledgerService.appReady) {
+			this.importFromLedger = true;
+		}
 	}
 
 	ngOnDestroy(): void {
@@ -271,7 +292,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 			s.unsubscribe();
 		});
 	}
-
 
 	getCurrentEndpoint() {
 
@@ -299,7 +319,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 	}
 
-
 	parseSYMBOL(tk_string) {
 		if (tk_string.split(' ')[1] === this.network.activeChain['symbol']) {
 			return parseFloat(tk_string.split(' ')[0]);
@@ -315,11 +334,11 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	setEndPoint(ep) {
-		console.log('------------->>>>>>>>>',ep,this.endpoint);
+		console.log('------------->>>>>>>>>', ep, this.endpoint);
 		if (ep !== this.endpoint) {
 			this.endpoint = ep;
 			this.customConnect();
-		// 	this.endpointModal = false;
+			// 	this.endpointModal = false;
 		}
 	}
 
@@ -400,7 +419,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 			});
 		}, 100);
 	}
-
 
 	generateNKeys() {
 		this.generating2 = true;
@@ -829,5 +847,10 @@ export class LandingComponent implements OnInit, OnDestroy {
 			});
 		}
 		return newTxt;
+	}
+
+	getSlots() {
+		console.log('reading ledger slots...');
+		this.ledgerService.readSlots(0);
 	}
 }

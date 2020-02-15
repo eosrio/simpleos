@@ -3,7 +3,7 @@ import {BehaviorSubject , Subject} from 'rxjs';
 import {EOSJSService} from './eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType , Toast , ToasterService} from 'angular2-toaster';
-import {Eosjs2Service} from './eosjs2.service';
+import {Eosjs2Service} from './eosio/eosjs2.service';
 
 @Injectable ( {
 	providedIn: 'root'
@@ -74,7 +74,7 @@ export class AccountsService {
 				if (store) {
 					this.actionStore = JSON.parse ( store );
 				} else {
-					console.log ( this.selected.getValue ().name , 'creating new actionStore' );
+					// console.log ( this.selected.getValue ().name , 'creating new actionStore' );
 					if (this.selected.getValue ()[ 'name' ] !== undefined) {
 						this.actionStore[ this.selected.getValue ()[ 'name' ] ] = {
 							last_gs: 0 ,

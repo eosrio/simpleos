@@ -7,7 +7,7 @@ import {Router} from '@angular/router';
 import {CryptoService} from '../../services/crypto.service';
 import {EOSJSService} from '../../services/eosjs.service';
 import {ToasterConfig, ToasterService} from 'angular2-toaster';
-import {Eosjs2Service} from '../../services/eosjs2.service';
+import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {TransactionFactoryService} from '../../services/transaction-factory.service';
 import {Subscription} from 'rxjs';
 import {RexChartsService} from '../../services/rex-charts.service';

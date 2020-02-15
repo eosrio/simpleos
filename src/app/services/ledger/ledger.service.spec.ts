@@ -1,15 +1,15 @@
 import { TestBed, inject } from '@angular/core/testing';
 
-import { LedgerHWService } from './ledger-h-w.service';
+import { LedgerService } from './ledger.service';
 
 describe('LedgerHWService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [LedgerHWService]
+      providers: [LedgerService]
     });
   });
 
-  it('should be created', inject([LedgerHWService], (service: LedgerHWService) => {
+  it('should be created', inject([LedgerService], (service: LedgerService) => {
     expect(service).toBeTruthy();
   }));
 });

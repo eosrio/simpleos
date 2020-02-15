@@ -191,9 +191,12 @@
 										<mat-select [value]="network.activeChain['id']"
 													(selectionChange)="changeChain($event)">
 											<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-											<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name" >
-												<mat-option *ngFor="let chain of group.chains" [value]="chain.id"  class="chain-option">
-													<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+											<mat-optgroup *ngFor="let group of network.selectGroup"
+														  [label]="group.name">
+												<mat-option *ngFor="let chain of group.chains" [value]="chain.id"
+															class="chain-option">
+													<img [src]="'./assets/chain-icons/' + chain.icon" width="28"
+														 height="28"
 														 class="chain-icon"/>
 													{{ chain.name }}
 												</mat-option>
@@ -244,6 +247,9 @@
 						 *ngIf="app.compilerVersion!=='EOS MAINNET'">
 					<div class="credits">Powered by</div>
 					<div class="version">SimplEOS v{{aService.versionSys}}</div>
+					<div (click)="ledgerwizard.open()" class="version" *ngIf="ledgerService.deviceName !== ''">
+						Hardware Wallet Connected: {{ledgerService.deviceName}}
+					</div>
 					<br>
 				</section>
 			</div>
@@ -251,6 +257,58 @@
 	</div>
 </div>
 
+
+<!--IMPORT LEDGER ACCOUNT-->
+<clr-wizard #ledgerwizard [(clrWizardOpen)]="importFromLedger" [clrWizardSize]="'lg'">
+	<clr-wizard-title>Ledger Access</clr-wizard-title>
+
+	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+	<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+	<clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+
+	<clr-wizard-page [clrWizardPageNextDisabled]="ledgerService.deviceName === ''"
+					 (clrWizardPageOnCommit)="checkLedgerReady()"
+					 [clrWizardPagePreventDefault]="true">
+		<ng-template clrPageTitle>Detect Device</ng-template>
+		<ng-container *ngIf="ledgerService.deviceName !== ''">
+			<h5 class="black-white">{{ledgerService.deviceName}}</h5>
+			<ng-container *ngIf="!ledgerService.checkingApp">
+				<h5 *ngIf="ledgerService.appReady" class="black-white">
+					EOS App ready!
+				</h5>
+				<h5 *ngIf="!ledgerService.appReady" class="black-white">
+					Please open the EOS app on your {{ledgerService.deviceName}}
+				</h5>
+			</ng-container>
+		</ng-container>
+		<ng-container *ngIf="ledgerService.deviceName === ''">
+			<h5 class="black-white">device not found</h5>
+		</ng-container>
+	</clr-wizard-page>
+
+	<clr-wizard-page (clrWizardPageOnLoad)="getSlots()">
+		<ng-template clrPageTitle>Select Accounts</ng-template>
+		<h5 class="black-white">Stored Accounts:</h5>
+		<div *ngFor="let elem of ledgerService.ledgerAccounts">
+			<span><strong>Slot {{elem.slot}}:</strong></span>
+			<span>{{elem.key}}</span>
+			<ng-container *ngIf="elem.accounts.length === 0">
+				<span>No accounts found on this key</span>
+			</ng-container>
+			<ng-container *ngIf="elem.accounts.length > 0">
+				<div *ngFor="let acct of elem.accounts">
+					<span>{{acct}}</span>
+				</div>
+			</ng-container>
+		</div>
+		<div>
+			Select custom slot <input placeholder="slot number">
+			<button type="button">OK</button>
+		</div>
+	</clr-wizard-page>
+
+</clr-wizard>
 
 <!--IMPORT EXISTING WALLET-->
 <clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
@@ -270,7 +328,7 @@
 		<form [formGroup]="pvtform">
 			<mat-form-field class="mt-1" style="width: 100%;">
 				<input #pkField matInput type="password" formControlName="private_key"
-					   placeholder="{{network.activeChain['name']}} Private key" pattern="[0-9a-zA-Z ]" >
+					   placeholder="{{network.activeChain['name']}} Private key" pattern="[0-9a-zA-Z ]">
 				<fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
 						 (click)="pkField.type = 'text'"></fa-icon>
 				<fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
@@ -639,7 +697,8 @@
 		<ng-template clrPageTitle>New Keys</ng-template>
 		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue" > Generate Key Pair </span> button.</h5>
+		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue"> Generate Key Pair </span> button.
+		</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"

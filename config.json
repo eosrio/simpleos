@@ -126,7 +126,7 @@
 					"memo_size": 36,
 					"pattern": "^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$"
 				}
-			}			
+			}
 		},
 		{
 			"id": "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4",
@@ -398,7 +398,7 @@
 		{
 			"id": "43b9bfe83bea36d397ffa701f716dbeceda684648b5d99956acf5e3971fded3a",
 			"symbol": "UOS",
-			"icon": "",
+			"icon": "uos.png",
 			"precision": 4,
 			"name": "U°Community",
 			"network": "MAINNET",

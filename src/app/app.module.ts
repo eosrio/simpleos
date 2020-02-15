@@ -106,7 +106,7 @@ import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
 /* SERVICES */
 import {ChainService} from './services/chain.service';
 import {EOSJSService} from './services/eosjs.service';
-import {Eosjs2Service} from './services/eosjs2.service';
+import {Eosjs2Service} from './services/eosio/eosjs2.service';
 import {NetworkService} from './services/network.service';
 import {CryptoService} from './services/crypto.service';
 import {AccountsService} from './services/accounts.service';
@@ -132,6 +132,7 @@ import {AccordionModule} from 'primeng/accordion';
 import {TableModule} from 'primeng/table';
 import {TooltipModule} from 'primeng/tooltip';
 import {MaterialDesignFrameworkModule} from '@ajsf/material';
+import {LedgerService} from "./services/ledger/ledger.service";
 
 @NgModule({
 	// entryComponents: [FormComponent],
@@ -197,7 +198,7 @@ import {MaterialDesignFrameworkModule} from '@ajsf/material';
 		NetworkService,
 		CryptoService,
 		RamService,
-		// LedgerHWService,
+		LedgerService,
 		ConnectService,
 		BackupService,
 		ThemeService,

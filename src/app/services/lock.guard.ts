@@ -16,6 +16,7 @@ export class LockGuard implements CanActivate {
 		state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
 		if (localStorage.getItem('simpleos-hash')) {
 			if (this.crypto.locked) {
+				console.log('wallet locked, redirecting...');
 				this.router.navigate(['']).then(() => {
 					console.log('Navigation failed');
 				});

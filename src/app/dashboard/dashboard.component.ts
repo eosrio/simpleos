@@ -23,7 +23,7 @@ import {NetworkService} from '../services/network.service';
 import {AppComponent} from '../app.component';
 import {ThemeService} from '../services/theme.service';
 import {Subscription} from 'rxjs';
-import {Eosjs2Service} from '../services/eosjs2.service';
+import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 
 import {environment} from '../../environments/environment';
 
