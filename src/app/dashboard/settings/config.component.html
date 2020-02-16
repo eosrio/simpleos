@@ -2,27 +2,19 @@
 
 	<div class="clr-row animate flex-items-xs-between" style="padding-top: 15px;">
 		<div class="clr-col-lg-7">
-			<!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
-			<div class="card info-card" *ngIf="app.compilerVersion==='EOS MAINNET'">
+			<div class="card info-card" *ngIf="app.compilerVersion === 'DEFAULT'">
 				<div class="card-header title">
 					Connected to
 					<mat-form-field class="chain-selector example-full-width" style="width: 207px;">
 						<mat-select [value]="network.activeChain['id']"
 									(selectionChange)="changeChain($event)">
-							<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-							<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name" >
-								<mat-option *ngFor="let chain of group.chains" [value]="chain.id"  class="chain-option">
+							<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name">
+								<mat-option *ngFor="let chain of group.chains" [value]="chain.id" class="chain-option">
 									<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
 										 class="chain-icon"/>
 									{{ chain.name }}
 								</mat-option>
 							</mat-optgroup>
-<!--							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"-->
-<!--										[value]="chain.id">-->
-<!--								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"-->
-<!--									 class="chain-icon"/>-->
-<!--								{{ chain.name }}-->
-<!--							</mat-option>-->
 						</mat-select>
 					</mat-form-field>
 				</div>
@@ -69,30 +61,26 @@
 					</div>
 				</div>
 			</div>
+
 			<div class="card info-card">
 				<div class="card-header title special-font">
-					Keys Generator Tool
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Keys Generator tool.</span>
-					</a>
+					Other Tools
 				</div>
 				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="newKeys = true"
-							style="font-weight: 700">Generate
+					<button class="btn btn-info-outline special-font"
+							(click)="newKeys = true"
+							style="font-weight: 700">
+						Key Generator
 					</button>
 				</div>
 			</div>
 
-			<!--
-			TO THE NEXT VERSION
-
 			<div class="card info-card">
 				<div class="card-header title special-font">
-					Keys Management
+					Key/Account Management
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Manage your keys.</span>
+						<span class="tooltip-content">Manage your imported keys.</span>
 					</a>
 				</div>
 				<div class="card-block">
@@ -101,9 +89,11 @@
 					</button>
 				</div>
 			</div>
-			-->
+
 		</div>
+
 		<div class="clr-col-lg-5">
+
 			<div class="card info-card">
 				<div class="card-header title special-font">
 					Logout Options
@@ -112,7 +102,8 @@
 					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"
 							style="font-weight: 700">Logout from all chains
 					</button>
-					<div class="info">*All your data will be cleared from this PC. Should you want to login again, you will
+					<div class="info">*All your data will be cleared from this PC. Should you want to login again, you
+						will
 						have to import your private key again.
 					</div>
 				</div>
@@ -125,13 +116,14 @@
 					</div>
 				</div>
 			</div>
+
 			<div class="card info-card">
 				<div class="card-header title special-font">
 					Lockscreen Pin &nbsp;
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Small security pin <br> used to unlock the screen.
-              </span>
+						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;">
+						</fa-icon>
+						<span class="tooltip-content">Small security pin <br> used to unlock the screen.</span>
 					</a>
 				</div>
 				<div class="card-block">
@@ -143,6 +135,7 @@
 					</button>
 				</div>
 			</div>
+
 			<div class="card info-card">
 				<div class="card-header title special-font">
 					Change Password &nbsp;
@@ -157,6 +150,7 @@
 					</button>
 				</div>
 			</div>
+
 			<div class="card info-card">
 				<div class="card-header title special-font">
 					Backup&nbsp;
@@ -200,7 +194,8 @@
 		Are you <span class="blue">sure</span> ?
 	</h3>
 	<div class="modal-body">
-		<p style="margin-bottom: 20px;">All your data will be cleared. If you want to login again you will have to import
+		<p style="margin-bottom: 20px;">All your data will be cleared. If you want to login again you will have to
+			import
 			your
 			private key again.</p>
 		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
@@ -221,7 +216,8 @@
 		Are you <span class="blue">sure</span> ?
 	</h3>
 	<div class="modal-body">
-		<p style="margin-bottom: 20px;">Your <span class="blue">{{aService.activeChain['name']}}</span> data will be cleared . If you want to login again you will have to import
+		<p style="margin-bottom: 20px;">Your <span class="blue">{{aService.activeChain['name']}}</span> data will be
+			cleared . If you want to login again you will have to import
 			your
 			private key again.</p>
 		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
@@ -360,12 +356,7 @@
 				Select file
 			</button>
 			<mat-form-field class="mt-8">
-				<input matInput #passimport type="password" placeholder="Password" formControlName="pass"
-					   [disabled]="customImportBK">
-				<!--<fa-icon matSuffix *ngIf="passimport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"-->
-				<!--(click)="passimport.type = 'text'"></fa-icon>-->
-				<!--<fa-icon matSuffix *ngIf="passimport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"-->
-				<!--(click)="passimport.type = 'password'"></fa-icon>-->
+				<input matInput #passimport type="password" placeholder="Password" formControlName="pass">
 				<mat-hint align="start">
 					Password that was used to encrypt your file
 				</mat-hint>
@@ -414,7 +405,7 @@
 			<span class="black-white">{{choosedDir}}</span>
 			<input style="visibility:hidden;" type="file" placeholder="Backup Directory"
 				   (change)="exportCheckBK($event)" formControlName="customExportBK" webkitdirectory directory
-                   #customExportBK>
+				   #customExportBK>
 
 		</form>
 
@@ -439,7 +430,8 @@
 			<mat-form-field style="width: 470px; margin-top: 25px;">
 				<input matInput placeholder="Claim private key"
 					   [value]="claimPrivateKey" readonly>
-				<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(claimPrivateKey)"></fa-icon>
+				<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+						 (click)="cc(claimPrivateKey)"></fa-icon>
 			</mat-form-field>
 		</div>
 		<div *ngIf="!showpk && !claimKey">
@@ -485,7 +477,7 @@
 		<ng-template clrPageTitle>New Keys</ng-template>
 		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
 		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue" > Generate Key Pair </span>
+		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue"> Generate Key Pair </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
 			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
@@ -515,28 +507,32 @@
 
 <clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
 	<h3 class="modal-title">
-		Keys Management
+		Key/Account Management
 	</h3>
 	<div class="modal-body">
 		<clr-tabs clrLayout="vertical">
-			<clr-tab *ngFor="let key of keysaccounts; let idx = index">
-				<button clrTabLink id="link1">Key {{idx+1}}</button>
-				<clr-tab-content [id]="'content'+idx" *clrIfActive >
-					PUBLIC KEY: {{key.public_key}}
-					<ng-container *ngFor="let acc of key.accounts">
-						{{acc.name}}<br>
-					</ng-container>
+			<clr-tab *ngFor="let key of localKeys; let idx = index">
+				<button style="font-family: 'SourceCodePro',monospace" clrTabLink id="link1">Key {{idx + 1}}:
+					<span>
+						{{key.slice(0, 5)}}...{{key.slice(key.length - 4, key.length - 1)}}
+					</span>
+				</button>
+				<clr-tab-content [id]="'content'+idx" *clrIfActive>
+					<span style="font-size: smaller">PUBLIC KEY: {{key}}</span>
+					<div *ngFor="let a of keysaccounts.get(key)">
+						{{a.account.name}}@{{a.permission}}
+					</div>
 				</clr-tab-content>
 			</clr-tab>
-<!--			<clr-tab>-->
-<!--				<button clrTabLink>Key 2</button>-->
-<!--				<clr-tab-content *clrIfActive="true">-->
-<!--					PUBLIC KEY:-->
-<!--					Account 1<br>-->
-<!--					Account 2<br>-->
-<!--					Account 3<br>-->
-<!--				</clr-tab-content>-->
-<!--			</clr-tab>-->
+			<!--			<clr-tab>-->
+			<!--				<button clrTabLink>Key 2</button>-->
+			<!--				<clr-tab-content *clrIfActive="true">-->
+			<!--					PUBLIC KEY:-->
+			<!--					Account 1<br>-->
+			<!--					Account 2<br>-->
+			<!--					Account 3<br>-->
+			<!--				</clr-tab-content>-->
+			<!--			</clr-tab>-->
 		</clr-tabs>
 	</div>
 	<div class="modal-footer" *ngIf="showpk">

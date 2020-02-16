@@ -3,6 +3,8 @@
 /*@import "~@fortawesome/fontawesome-pro/css/light.css";*/
 /*@import "~@fortawesome/fontawesome-pro/css/regular.css";*/
 /*@import "~@fortawesome/fontawesome-pro/css/solid.css";*/
+
+
 @font-face {
 	font-family: 'Lora';
 	src:url('./assets/fonts/Lora-Regular.ttf') format('truetype');
@@ -18,6 +20,11 @@
 @font-face {
 	font-family: 'Lora-BoldItalic';
 	src:url('./assets/fonts/Lora-BoldItalic.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'SourceCodePro';
+	src:url('./assets/fonts/SourceCodePro-Regular.ttf') format('truetype');
 }
 
 :root{
@@ -217,6 +224,8 @@ body {
 
 .display-animation{
 	display: var(--dashboard-animation-display);
+	margin-left: auto;
+	margin-right: auto;
 }
 .display-img{
 	display: var(--dashboard-img-display);

@@ -1,11 +1,11 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
-import {EOSJSService} from '../../services/eosjs.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {AccountsService} from '../../services/accounts.service';
 import {VotingService} from '../../services/voting.service';
 import {NetworkService} from '../../services/network.service';
-import {CryptoService} from '../../services/crypto.service';
+import {CryptoService} from '../../services/crypto/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
@@ -82,8 +82,8 @@ export class ConfigComponent implements OnInit {
 	generated2 = false;
 	agreeKeys2 = false;
 
-	keysaccounts = [];
-
+	keysaccounts: Map<string, any[]>;
+	localKeys: string[] = [];
 
 	static resetApp() {
 		window['remote']['app']['relaunch']();
@@ -156,38 +156,27 @@ export class ConfigComponent implements OnInit {
 			this.lastBackupTime = (new Date(parseInt(lastbkp, 10))).toLocaleString();
 		}
 
-		console.log(this.aService.accounts);
-		// console.log(this.aService.getStoredKey());
+		this.keysaccounts = new Map();
+		this.populateAccounts();
+	}
 
-		this.keysaccounts = [
-			{
-				public_key: 'EOS7zG5owDg1c7HmTjMt9Hsc8EASzrL7dGHyYcP5EoSE1rFaVAU9z',
-				accounts:[{
-					name:'account1',
-					idx:'0',
-				},{
-					name:'account2',
-					idx:'1',
-				},{
-					name:'account3',
-					idx:'2',
-				}],
-			},
-			{
-				public_key: 'EOS5EaTTG7eDV6DRAJUbuaeM6MTgbmsdC6ZQ4WwHagpMgQdB4J9EZ',
-				accounts:[{
-					name:'account4',
-					idx:'3',
-				},{
-					name:'account5',
-					idx:'4',
-				},{
-					name:'account6',
-					idx:'5',
-				}],
+	populateAccounts() {
+		for (let i = 0; i < this.aService.accounts.length; i++) {
+			const account = this.aService.accounts[i];
+			const auth = this.aService.getStoredKey(account);
+			if (!this.keysaccounts.has(auth[0])) {
+				this.keysaccounts.set(auth[0], []);
 			}
-		];
-
+			this.keysaccounts.get(auth[0]).push({
+				account: account,
+				permission: auth[1],
+				idx: i
+			});
+		}
+		this.localKeys = [...this.keysaccounts.keys()];
+		for (const key of this.localKeys) {
+			console.log(this.keysaccounts.get(key));
+		}
 	}
 
 	private showToast(type: string, title: string, body: string) {
@@ -248,11 +237,12 @@ export class ConfigComponent implements OnInit {
 	logoutByCahin() {
 		const arr = [];
 		for (let i = 0; i < localStorage.length; i++) {
-			if (this.clearContacts && localStorage.key(i) === 'simpleos.contacts.'+this.aService.activeChain['id']) {
+			if (this.clearContacts && localStorage.key(i) === 'simpleos.contacts.' + this.aService.activeChain['id']) {
 				arr.push(localStorage.key(i));
 			}
-			if ( localStorage.key(i).endsWith('.'+this.aService.activeChain['id']) && localStorage.key(i) !== 'simpleos.contacts.'+this.aService.activeChain['id'] ) {
-				if (this.clearContacts ) {}
+			if (localStorage.key(i).endsWith('.' + this.aService.activeChain['id']) && localStorage.key(i) !== 'simpleos.contacts.' + this.aService.activeChain['id']) {
+				if (this.clearContacts) {
+				}
 				arr.push(localStorage.key(i));
 			}
 		}

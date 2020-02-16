@@ -5,11 +5,13 @@
             <div class="clr-col-md-12 text-center">
                 <div class="anim-logo">
 					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
-						<lottie-animation-view
-							[options]="lottieConfig"
-							[width]="300"
-							(animCreated)="handleAnimation($event)"  class="display-animation">
-						</lottie-animation-view>
+
+						<ng-lottie [options]="lottieConfig"
+								   containerClass="display-animation"
+								   (animationCreated)="handleAnimation($event)"
+								   [width]="300">
+						</ng-lottie>
+
 						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="256" style="margin: 12px auto 50px auto;"/>
 					</ng-container>
 					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">

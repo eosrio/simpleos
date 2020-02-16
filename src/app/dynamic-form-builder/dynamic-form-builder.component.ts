@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output,ElementRef,ViewChild,Renderer2} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {DappComponent} from '../dashboard/dapp/dapp.component';
-import {EOSJSService} from '../services/eosjs.service';
+import {EOSJSService} from '../services/eosio/eosjs.service';
 
 
 @Component({

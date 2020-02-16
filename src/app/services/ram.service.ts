@@ -3,7 +3,7 @@ import {Injectable, OnInit} from '@angular/core';
 import * as socketIo from 'socket.io-client';
 import {BehaviorSubject} from 'rxjs';
 import {AccountsService} from './accounts.service';
-import {EOSJSService} from './eosjs.service';
+import {EOSJSService} from './eosio/eosjs.service';
 
 @Injectable({
 	providedIn: 'root'

@@ -1,11 +1,11 @@
 import {Component, NgZone, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
-import {EOSJSService} from '../services/eosjs.service';
+import {EOSJSService} from '../services/eosio/eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../services/accounts.service';
 import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../services/network.service';
-import {CryptoService} from '../services/crypto.service';
+import {CryptoService} from '../services/crypto/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {RamService} from '../services/ram.service';
 import {HttpClient} from '@angular/common/http';
@@ -14,6 +14,16 @@ import {AppComponent} from '../app.component';
 import {ThemeService} from '../services/theme.service';
 import {Subscription} from 'rxjs';
 import {LedgerService} from "../services/ledger/ledger.service";
+import {AnimationOptions} from "ngx-lottie";
+import {AnimationItem} from 'lottie-web';
+
+interface simpleosExtendedWindow {
+	filesystem: any;
+	shell: any;
+	remote: any;
+}
+
+declare var window: Window & (typeof globalThis) & simpleosExtendedWindow;
 
 @Component({
 	selector: 'app-landing',
@@ -27,19 +37,25 @@ export class LandingComponent implements OnInit, OnDestroy {
 	@ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
 	@ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
 	@ViewChild('customImportBK', {static: true}) customImportBK: ElementRef;
-	lottieConfig: Object;
-	anim: any;
+
+	lottieConfig: AnimationOptions = {
+		path: 'assets/logoanim.json',
+		autoplay: false,
+		loop: false,
+		assetsPath: 'assets/images/'
+	};
+
+	anim: AnimationItem;
 	busy: boolean;
 
 	importFromLedger = false;
-
 	existingWallet: boolean;
 	exodusWallet: boolean;
 	newWallet: boolean;
 	newKeys: boolean;
 	importBKP: boolean;
 	endpointModal: boolean;
-	// endPoint = 'http://api.eosrio.io';
+
 	accountname = '';
 	accountname_err = '';
 	accountname_valid = false;
@@ -114,21 +130,21 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	static openTXID(value) {
-		window['shell']['openExternal']('https://www.bloks.io/account/' + value);
+		window.shell['openExternal']('https://www.bloks.io/account/' + value);
 	}
 
 	static openGithub() {
-		window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
+		window.shell['openExternal']('https://github.com/eosrio/eosriosignup');
 	}
 
 	static openFAQ() {
-		window['shell']['openExternal']('https://github.com/eosrio/eosriosignup');
+		window.shell['openExternal']('https://github.com/eosrio/eosriosignup');
 	}
 
 	static resetApp() {
-		if (window['remote']) {
-			window['remote']['app']['relaunch']();
-			window['remote']['app'].exit(0);
+		if (window.remote) {
+			window.remote['app']['relaunch']();
+			window.remote['app'].exit(0);
 		}
 	}
 
@@ -171,11 +187,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 		this.total_amount = 1;
 		this.memo = '';
 		this.busyActivekey = false;
-		this.lottieConfig = {
-			path: 'assets/logoanim.json',
-			autoplay: false,
-			loop: false
-		};
 		this.network.networkingReady.asObservable().subscribe((status) => {
 			this.busy = !status;
 		});
@@ -226,7 +237,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	cc(text, title, body) {
-		window['navigator']['clipboard']['writeText'](text).then(() => {
+		window.navigator['clipboard']['writeText'](text).then(() => {
 			this.showToast('success', title + ' copied to clipboard!', body);
 		}).catch(() => {
 			this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
@@ -249,6 +260,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	private showToast(type: string, title: string, body: string) {
+
 		this.config = new ToasterConfig({
 			positionClass: 'toast-top-right',
 			timeout: 10000,
@@ -258,6 +270,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 			animation: 'slideDown',
 			limit: 1,
 		});
+
 		const toast: Toast = {
 			type: type,
 			title: title,
@@ -266,20 +279,16 @@ export class LandingComponent implements OnInit, OnDestroy {
 			showCloseButton: true,
 			bodyOutputType: BodyOutputType.TrustedHtml,
 		};
+
 		this.toaster.popAsync(toast);
 	}
 
 	ngOnInit() {
 		console.log('loaded landing');
 		this.getCurrentEndpoint();
-		if (this.app.compilerVersion === 'EOS MAINNET') {
-			setTimeout(() => {
-				this.anim.pause();
-			}, 10);
-
-			setTimeout(() => {
-				this.anim.play();
-			}, 900);
+		if (this.app.compilerVersion === 'DEFAULT') {
+			setTimeout(() => this.anim.pause(), 10);
+			setTimeout(() => this.anim.play(), 900);
 		}
 		this.checkPIN();
 		if (this.ledgerService.appReady) {
@@ -496,7 +505,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	handleAnimation(anim: any) {
+	handleAnimation(anim: AnimationItem) {
 		this.anim = anim;
 		this.anim['setSpeed'](0.8);
 	}
@@ -721,49 +730,48 @@ export class LandingComponent implements OnInit, OnDestroy {
 		this.disableIm = true;
 		this.busy2 = true;
 		if (this.infile && this.infile !== '') {
-			window['filesystem']['readFile'](this.infile.path, 'utf-8', (err, data) => {
-				if (!err) {
-					const pass = this.importForm.value.pass;
-					let arrLS = null;
-					let decrypt = null;
-					try {
-						console.log('trying to parse json...');
-						arrLS = JSON.parse(data);
-					} catch (e) {
-						// backup encrypted, password required
-						if (pass !== '') {
-							decrypt = this.crypto.decryptBKP(data, pass);
-							try {
-								arrLS = JSON.parse(decrypt);
-							} catch (e) {
-								this.showToast('error', 'Wrong password, please try again!', '');
-								console.log('wrong file');
-							}
-						} else {
-							this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
-						}
-					}
-					if (arrLS) {
-						arrLS.forEach(function (d) {
-							localStorage.setItem(d['key'], d['value']);
-						});
-						this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
-						LandingComponent.resetApp();
-						this.choosedFil = '';
-						this.disableIm = false;
-						this.busy2 = false;
-						this.importBKP = false;
-					} else {
-						this.choosedFil = '';
-						this.disableIm = false;
-						this.busy2 = false;
-					}
+			try {
+				const data = window.filesystem.readFileSync(this.infile.path, 'utf-8');
+				const pass = this.importForm.value.pass;
+				let arrLS = null;
+				let decrypt = null;
 
-				} else {
-					this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
-					console.log('wrong entry');
+				try {
+					console.log('trying to parse json...');
+					arrLS = JSON.parse(data);
+				} catch (e) {
+					// backup encrypted, password required
+					if (pass !== '') {
+						decrypt = this.crypto.decryptBKP(data, pass);
+						try {
+							arrLS = JSON.parse(decrypt);
+						} catch (e) {
+							this.showToast('error', 'Wrong password, please try again!', '');
+							console.log('wrong file');
+						}
+					} else {
+						this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
+					}
 				}
-			});
+				if (arrLS) {
+					arrLS.forEach((d) => {
+						localStorage.setItem(d['key'], d['value']);
+					});
+					this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
+					LandingComponent.resetApp();
+					this.choosedFil = '';
+					this.disableIm = false;
+					this.busy2 = false;
+					this.importBKP = false;
+				} else {
+					this.choosedFil = '';
+					this.disableIm = false;
+					this.busy2 = false;
+				}
+			} catch (e) {
+				this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
+				console.log('wrong entry');
+			}
 		} else {
 			this.showToast('error', 'Choose your backup file', '');
 			this.choosedFil = '';
@@ -788,18 +796,15 @@ export class LandingComponent implements OnInit, OnDestroy {
 				} else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___') {
 					newTxt += '<hr class="lineHR"/>';
 				} else if (line.match(/\(http(\w\S(.)*?)\)/g)) {
-
 					const link = line.match(/\(http(\w\S(.)*?)\)+/g);
 					const linkName = line.match(/(\[.*?])+/g);
 					const linkImage = line.match(/(!\[.*?])+/g);
-
 					let newLine = line;
 					link.forEach((val, idx: number) => {
 						const newlink = val.replace('(', '').replace(')', '');
 						let oldVal = val;
 						let newValName = newlink;
 						let repVal = '';
-
 						if (linkImage !== null) {
 							if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
 								newValName = linkImage[idx].replace('![', '').replace(']', '');
@@ -812,9 +817,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 								oldVal = val;
 							}
 							repVal = '<img style="width:100%" src="' + newlink + '" alt=""/>' + newValName + '';
-
 						} else {
-
 							if (linkName !== null && linkName[idx] !== '[]') {
 								newValName = linkName[idx].replace('[', '').replace(']', '');
 								oldVal = linkName[idx] + val;
@@ -823,16 +826,12 @@ export class LandingComponent implements OnInit, OnDestroy {
 							} else {
 								oldVal = val;
 							}
-
 							repVal = '<span class="link-ref" ref-link="' + newlink + '" >' + newValName + '</span>';
 						}
-
 						newLine = newLine.replace(oldVal, repVal);
 					});
 					newTxt += '<p class="' + color + '" >' + newLine + '</p>';
-
 				} else if (line.match(/`(.*?)`/g)) {
-					// console.log();
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
 				} else {
 					newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
@@ -852,5 +851,12 @@ export class LandingComponent implements OnInit, OnDestroy {
 	getSlots() {
 		console.log('reading ledger slots...');
 		this.ledgerService.readSlots(0);
+	}
+
+	toggleAnimation() {
+		if (this.anim) {
+			const duration = this.anim.getDuration(true);
+			this.anim.goToAndPlay(Math.round(duration / 3), true);
+		}
 	}
 }

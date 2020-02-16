@@ -1,6 +1,6 @@
 import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosjs.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
 
 import {FormBuilder, FormGroup} from '@angular/forms';
 

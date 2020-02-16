@@ -1,9 +1,10 @@
 import {Component, OnInit} from '@angular/core';
-import {CryptoService} from '../services/crypto.service';
+import {CryptoService} from '../services/crypto/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../services/network.service';
 import {AccountsService} from '../services/accounts.service';
 import {AppComponent} from '../app.component';
+import {AnimationOptions} from "ngx-lottie";
 
 @Component({
 	selector: 'app-lockscreen',
@@ -18,7 +19,11 @@ export class LockscreenComponent implements OnInit {
 	logoutModal: boolean;
 	clearContacts: boolean;
 	anim: any;
-	lottieConfig: Object;
+	lottieConfig: AnimationOptions = {
+		path: 'assets/logoanim.json',
+		autoplay: false,
+		loop: false
+	};
 
 	static resetApp() {
 		window['remote']['app']['relaunch']();
@@ -34,11 +39,6 @@ export class LockscreenComponent implements OnInit {
 	) {
 		this.logoutModal = false;
 		this.clearContacts = false;
-		this.lottieConfig = {
-			path: 'assets/logoanim.json',
-			autoplay: true,
-			loop: false
-		};
 	}
 
 	ngOnInit() {

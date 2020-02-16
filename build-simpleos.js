@@ -2,7 +2,7 @@ const fs = require('fs');
 
 const conf = require('./package.json');
 
-conf.compilerVersion = "EOS MAINNET";
+conf.compilerVersion = "DEFAULT";
 conf.name = 'simpleos';
 conf.appId = "io.eosrio.simpleos";
 conf.productName = 'simpleos';

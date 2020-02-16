@@ -1,33 +1,40 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="wrap" style="height:-webkit-fill-available; overflow-y: scroll; width:100vw;">
-	<!--<div class="container-fluid" style="width: 466px;">-->
+<div class="wrap" style="overflow-y: scroll; width:100vw;">
 	<div class="container">
 		<div class="clr-row animate fadeInDown">
-			<div class="clr-col-md-6 text-center" style="width: 466px; margin: 0 auto;">
-				<div class="anim-logo">
-					<ng-container *ngIf="app.compilerVersion=='EOS MAINNET'">
-						<lottie-animation-view
-							[options]="lottieConfig"
-							[width]="300"
-							(animCreated)="handleAnimation($event)" class="display-animation">
-						</lottie-animation-view>
-						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="230"
-							 style="margin: 64px auto 50px auto;"/>
-					</ng-container>
-					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
-						<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="210"
-							 style="margin: 50px auto;"/>
-					</ng-container>
+			<div class="clr-col-md-8 clr-col-lg-6 text-center" style="width: 466px; margin: 0 auto;">
 
+				<div class="anim-logo" (click)="toggleAnimation()">
+					<ng-container *ngIf="app.compilerVersion === 'DEFAULT'">
+
+						<ng-lottie
+							[options]="lottieConfig"
+							containerClass="display-animation"
+							(animationCreated)="handleAnimation($event)"
+							width="300px">
+						</ng-lottie>
+
+						<img alt="Logo SimplEOS" class="display-img"
+							 src="./assets/simpleos-logo-clara.svg"
+							 height="230" style="margin: 64px auto 50px auto;"/>
+
+					</ng-container>
+					<ng-container *ngIf="app.compilerVersion !== 'DEFAULT'">
+						<img *ngIf="app.compilerVersion === 'LIBERLAND'" alt="Logo Liberland"
+							 src="./assets/logos/liberland_logo.PNG" height="210" style="margin: 50px auto;"/>
+					</ng-container>
 				</div>
-				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOSIO wallet</div>
-				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">LIBERLAND Wallet</div>
-				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
+
+				<div class="slogan" *ngIf="app.compilerVersion === 'DEFAULT'">Your simple and secure EOSIO wallet</div>
+
+				<div class="sloganWallet" *ngIf="app.compilerVersion === 'LIBERLAND'">LIBERLAND Wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion === 'LIBERLAND'">To live and let live</div>
+
 				<ng-container *ngIf="busy && network.status === ''">
-					<fa-layers class="mt-2 mb-1">
+					<fa-layers class="mt-4 mb-4">
 						<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"></fa-icon>
 					</fa-layers>
-					<div>Connecting to the Blockchain...</div>
+					<div>Connecting to the {{network.activeChain.name}} blockchain...</div>
 				</ng-container>
 
 				<ng-container *ngIf="busy && network.status === 'timeout'">
@@ -62,8 +69,10 @@
 
 					<div class="clr-col-md-12">
 						<div class="card info-card">
+
 							<div class="card-header title"
-								 [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
+								 *ngIf="app.compilerVersion === 'DEFAULT'"
+								 [ngStyle]="{'display':(app.compilerVersion === 'DEFAULT' ? 'inherit' : 'none')}">
 								Connected to
 								<mat-form-field class="chain-selector example-full-width select-father"
 												style="width: 240px;">
@@ -79,23 +88,29 @@
 									</mat-select>
 								</mat-form-field>
 							</div>
+
 							<div class="card-block">
 								<div class="clr-row" style="margin-left: 0;">
+
 									<div class="text-left advanced"><span class="error">Advanced Option:</span> you can
 										also try
 										to connect to
 										another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
 									</div>
+
 									<mat-form-field class="public-input" style="overflow: inherit;">
 										<input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
 									</mat-form-field>
+
 									<button class="btn btn-inverse btn-check" (click)="customConnect()"
 											[disabled]="!endpoint"
 											style="clear: both;">
 										Connect
 									</button>
+
 								</div>
 							</div>
+
 						</div>
 					</div>
 				</ng-container>
@@ -103,6 +118,7 @@
 				<ng-container *ngIf="!busy && network.networkingReady">
 
 					<div style="margin-top: 30px">
+
 						<div class="clr-row" style="justify-content: center;">
 							<div class="clr-col-md-12 clr-col-lg-6">
 								<button class="btn btn-inverse btn-block" (click)="existingWallet = true">
@@ -112,41 +128,29 @@
 									Import Backup
 								</button>
 							</div>
-							<!--</div>-->
-							<!--<div class="clr-row" style="justify-content: center;">-->
 							<div class="clr-col-md-12 clr-col-lg-6">
 								<button class="btn btn-inverse btn-block"
-										*ngIf="network.activeChain['name']==='EOS MAINNET'"
+										*ngIf="network.activeChain['name'] === 'EOS MAINNET'"
 										(click)="newWallet = true">
 									Request New Account
 								</button>
-								<button class="btn btn-inverse btn-block" (click)="verifyPanel = true">
+								<button class="btn btn-inverse btn-block" (click)="verifyPanel = !verifyPanel">
 									Verify Account
 								</button>
-								<button class="btn btn-inverse btn-block"
-										*ngIf="network.activeChain['name']!=='EOS MAINNET'" (click)="newKeys = true">
-									Generate Keys
-								</button>
-							</div>
-							<!--</div>-->
-							<!--<div class="clr-row" style="justify-content: center;">-->
-							<!--<div class="clr-col-md-9">-->
-
-							<!--</div>-->
-							<!--</div>-->
-							<!--<div class="clr-row" style="justify-content: center;">-->
-							<!--<div class="clr-col-md-9">-->
-
-							<!--</div>-->
-						</div>
-						<div class="clr-row" style="justify-content: center;">
-							<div class="clr-col-md-12 clr-col-lg-6">
-								<button class="btn btn-inverse btn-block"
-										*ngIf="network.activeChain['name']==='EOS MAINNET'" (click)="newKeys = true">
+								<button class="btn btn-inverse btn-block" (click)="newKeys = true">
 									Generate Keys
 								</button>
 							</div>
 						</div>
+
+<!--						<div class="clr-row" style="justify-content: center;">-->
+<!--							<div class="clr-col-md-12 clr-col-lg-6">-->
+<!--								<button class="btn btn-inverse btn-block" (click)="newKeys = true">-->
+<!--									Generate Keys-->
+<!--								</button>-->
+<!--							</div>-->
+<!--						</div>-->
+
 					</div>
 
 					<div class="card check-card" *ngIf="verifyPanel">
@@ -184,7 +188,8 @@
 						<div class="clr-col-md-12">
 							<div class="card info-card">
 								<div class="card-header title"
-									 [ngStyle]="{'display':(app.compilerVersion!=='EOS MAINNET'?'none':'inherit')}">
+									 *ngIf="app.compilerVersion === 'DEFAULT'"
+									 [ngStyle]="{'display':(app.compilerVersion === 'LIBERLAND'?'none':'inherit')}">
 									Connected to
 									<mat-form-field class="chain-selector example-full-width select-father"
 													style="width: 240px;">
@@ -235,7 +240,7 @@
 					<br>
 				</ng-container>
 				<section class="placeholder border-r" style="margin-top:10px;"
-						 *ngIf="app.compilerVersion=='EOS MAINNET'">
+						 *ngIf="app.compilerVersion=='DEFAULT'">
 					<div class="credits made-with-love">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
 						by <span style="color: var(--btn-link2-color)">EOS Rio</span>
@@ -244,7 +249,7 @@
 					<br>
 				</section>
 				<section class="placeholder border-r" style="margin-top:10px;"
-						 *ngIf="app.compilerVersion!=='EOS MAINNET'">
+						 *ngIf="app.compilerVersion === 'LIBERLAND'">
 					<div class="credits">Powered by</div>
 					<div class="version">SimplEOS v{{aService.versionSys}}</div>
 					<div (click)="ledgerwizard.open()" class="version" *ngIf="ledgerService.deviceName !== ''">
@@ -309,6 +314,7 @@
 	</clr-wizard-page>
 
 </clr-wizard>
+<!--IMPORT LEDGER ACCOUNT END-->
 
 <!--IMPORT EXISTING WALLET-->
 <clr-wizard #wizardexists [(clrWizardOpen)]="existingWallet" [clrWizardSize]="'md'">
@@ -685,6 +691,7 @@
 </clr-wizard>
 <!--CREATE NEW WALLET END-->
 
+<!--GENERATE KEYS-->
 <clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
 	<clr-wizard-title>Generate new keys</clr-wizard-title>
 	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -724,8 +731,10 @@
 		</ng-container>
 	</clr-wizard-page>
 </clr-wizard>
+<!--GENERATE KEYS END-->
 
-<clr-modal [(clrModalOpen)]="importBKP" [clrModalSize]="'md'">
+<!--IMPORT BACKUP START-->
+<clr-modal #importBackupModal [(clrModalOpen)]="importBKP" [clrModalSize]="'md'">
 	<h3 class="modal-title text-white">
 		Select your backup file:
 	</h3>
@@ -760,8 +769,10 @@
 		</button>
 	</div>
 </clr-modal>
+<!--IMPORT BACKUP END-->
 
-<clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'md'">
+<!--ENDPOINT MODAL-->
+<clr-modal #selectEndpointModal [(clrModalOpen)]="endpointModal" [clrModalSize]="'md'">
 	<h3 class="modal-title">
 		<span class="blue">Network Options</span>
 	</h3>
@@ -802,3 +813,4 @@
 
 	</div>
 </clr-modal>
+<!--ENDPOINT MODAL END-->

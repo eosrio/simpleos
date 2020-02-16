@@ -1,13 +1,14 @@
 import {Injectable} from '@angular/core';
 import {AccountsService} from './accounts.service';
-import {EOSJSService} from './eosjs.service';
+import {EOSJSService} from './eosio/eosjs.service';
 import {Router} from '@angular/router';
 
 import * as Eos from '../../assets/eos.js';
 import {BehaviorSubject} from 'rxjs';
-import {CryptoService} from './crypto.service';
+import {CryptoService} from './crypto/crypto.service';
 import {VotingService} from './voting.service';
 import {Eosjs2Service} from './eosio/eosjs2.service';
+import {HttpClient} from "@angular/common/http";
 
 
 export interface Endpoint {
@@ -72,6 +73,7 @@ export class NetworkService {
 	}
 
 	constructor(
+		private http: HttpClient,
 		private eosjs: EOSJSService,
 		private eosjs2: Eosjs2Service,
 		private router: Router,
@@ -81,13 +83,18 @@ export class NetworkService {
 	) {
 		const configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
 		this.defaultChains = configSimpleos['config']['chains'];
-		// console.log(this.defaultChains);
 		const groupChain = NetworkService.groupBy(this.defaultChains, chain => chain.network);
 		const mainnet = groupChain.get('MAINNET');
 		const testenet = groupChain.get('TESTNET');
 		this.selectGroup = [
-			{'name': 'MAINNETS', 'chains': mainnet},
-			{'name': 'TESTNETS', 'chains': testenet}
+			{
+				'name': 'MAINNETS',
+				'chains': mainnet
+			},
+			{
+				'name': 'TESTNETS',
+				'chains': testenet
+			}
 		];
 		this.activeChain = this.aService.activeChain;
 		this.validEndpoints = [];
@@ -166,7 +173,7 @@ export class NetworkService {
 				this.networkingReady.next(false);
 			} else {
 				console.log('Best Server Selected!', this.selectedEndpoint.getValue().url);
-				this.startup(null);
+				this.startup(null).catch(console.log);
 			}
 		}
 	}
@@ -198,51 +205,48 @@ export class NetworkService {
 	}
 
 	apiCheck(server: Endpoint) {
-		// console.log('Starting latency check for ' + server.url);
+		console.log('Starting latency check for ' + server.url);
 		return new Promise((resolve) => {
-			const config = this.baseConfig;
-			config.httpEndpoint = server.url;
-			config.chainId = this.mainnetId;
-			const eos = Eos(config);
 			const refTime = new Date().getTime();
+
 			const tempTimer = setTimeout(() => {
 				server.latency = -1;
 				resolve();
 			}, 2000);
-			try {
-				eos['getInfo']({}, (err) => {
-					if (err) {
-						server.latency = -1;
-					} else {
+
+			this.http.get(`${server.url}/v1/chain/get_info`).subscribe(
+				(data: any) => {
+					if (data["chain_id"] === this.activeChain.id) {
 						server.latency = ((new Date().getTime()) - refTime);
-						// console.log(server.url, server.latency);
-					}
-					clearTimeout(tempTimer);
-					if (server.latency > 1 && server.latency < 200) {
-						// force quick connection
-						if (this.connected === false) {
-							this.connected = true;
-							this.callStartupConn(server);
+						clearTimeout(tempTimer);
+						if (server.latency > 1 && server.latency < 200) {
+							if (this.connected === false) {
+								this.connected = true;
+								this.callStartupConn(server);
+							}
 						}
+						resolve();
+					} else {
+						console.log(`API ${server.url} is serving a different chain id! expected: ${this.activeChain.id}, got: ${data["chain_id"]}`)
 					}
+				},
+				() => {
+					server.latency = -1;
 					resolve();
-				});
-			} catch (e) {
-				server.latency = -1;
-				resolve();
-			}
+				}
+			);
 		});
 	}
 
 	callStartupConn(server) {
 		if (this.connected === true) {
-			// console.log('fast api detected, connecting to:', server.url);
 			this.selectedEndpoint.next(server);
-			this.startup(null);
+			this.startup(null).catch(console.log);
 		}
 	}
 
-	startup(url) {
+	async startup(url) {
+		// console.log(`startup - url:${url}`);
 		if (this.isStarting) {
 			return;
 		} else {
@@ -259,53 +263,60 @@ export class NetworkService {
 		this.networkingReady.next(false);
 		this.eosjs.online.next(false);
 		this.startTimeout();
+
 		// prevent double load after quick connection mode
 		if (endpoint !== this.lastEndpoint || this.autoMode === true) {
+
 			this.eosjs2.initRPC(endpoint, this.activeChain.id);
-			this.eosjs.init(endpoint, this.activeChain.id).then((savedAccounts: any) => {
-				this.lastEndpoint = endpoint;
-				this.autoMode = false;
-				this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
-				if (savedAccounts) {
-					if (savedAccounts.length > 0) {
-						// console.log('Locading local accounts');
-						this.aService.loadLocalAccounts(savedAccounts).then(() => {
-							if (this.aService.lastAccount) {
-								this.aService.select(this.aService.accounts.findIndex((a) => {
-									return a.name === this.aService.lastAccount;
-								}));
-							} else {
-								this.aService.initFirst();
-							}
-							this.router['navigate'](['dashboard', 'wallet']);
-							// this.voting.forceReload();
-							this.networkingReady.next(true);
-							this.isStarting = false;
-						});
+			let savedAccounts: any[];
+			try {
+				savedAccounts = await this.eosjs.init(endpoint, this.activeChain.id);
+			} catch (err) {
+				console.log('>>> EOSJS_ERROR: ', err);
+				this.networkingReady.next(false);
+			}
+			if (!savedAccounts) {
+				return;
+			}
+
+			this.lastEndpoint = endpoint;
+			this.autoMode = false;
+			this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
+			if (savedAccounts) {
+				if (savedAccounts.length > 0) {
+					await this.aService.loadLocalAccounts(savedAccounts);
+					if (this.aService.lastAccount) {
+						this.aService.select(this.aService.accounts.findIndex((a) => {
+							return a.name === this.aService.lastAccount;
+						}));
 					} else {
-						this.networkingReady.next(true);
-						this.isStarting = false;
-						console.log('Locked status:', this.crypto.locked);
-						if (this.crypto.locked) {
-							console.log('No saved accounts!');
-							this.router['navigate'](['']);
-						} else {
-							console.log('No saved accounts!');
-							this.router['navigate'](['landing']);
+						this.aService.initFirst();
+					}
+					await this.router['navigate'](['dashboard', 'wallet']);
+					this.networkingReady.next(true);
+					this.isStarting = false;
+
+				} else {
+					this.networkingReady.next(true);
+					this.isStarting = false;
+					if (this.crypto.getLockStatus()) {
+						console.log('No saved accounts! - Navigating to lockscreen');
+						await this.router['navigate'](['']);
+					} else {
+						// navigate to landing if on any other page
+						if (this.router.url !== '/landing') {
+							await this.router['navigate'](['landing']);
 						}
 					}
 				}
+			}
 
-				if (this.connectionTimeout) {
-					clearTimeout(this.connectionTimeout);
-					this.networkingReady.next(true);
-					this.isStarting = false;
-					this.connectionTimeout = null;
-				}
-			}).catch((err) => {
-				console.log('>>> EOSJS_ERROR: ', err);
-				this.networkingReady.next(false);
-			});
+			if (this.connectionTimeout) {
+				clearTimeout(this.connectionTimeout);
+				this.networkingReady.next(true);
+				this.isStarting = false;
+				this.connectionTimeout = null;
+			}
 		} else {
 			if (this.connectionTimeout) {
 				clearTimeout(this.connectionTimeout);

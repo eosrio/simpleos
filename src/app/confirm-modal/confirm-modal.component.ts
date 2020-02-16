@@ -1,11 +1,11 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
-import {CryptoService} from '../services/crypto.service';
+import {CryptoService} from '../services/crypto/crypto.service';
 import {RpcError} from 'eosjs/dist';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {AccountsService} from '../services/accounts.service';
-import {TransactionFactoryService, TrxModalData} from '../services/transaction-factory.service';
+import {TransactionFactoryService, TrxModalData} from '../services/eosio/transaction-factory.service';
 
 @Component({
 	selector: 'app-confirm-modal',

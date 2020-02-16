@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 
-import * as EOSJS from '../../assets/eos.js';
+import * as EOSJS from '../../../assets/eos.js';
 import {BehaviorSubject, Subject} from 'rxjs';
 
 
@@ -38,6 +38,7 @@ export class EOSJSService {
 	public chainID: string;
 	public eos: any;
 
+	// TODO: move all methods to eosjs2
 	constructor() {
 		this.eosio = null;
 		this.ecc = EOSJS.modules['ecc'];
@@ -71,7 +72,7 @@ export class EOSJSService {
 		});
 	}
 
-	init(url, chain) {
+	init(url, chain): Promise<any[] | any> {
 		this.chainID = chain;
 		return new Promise((resolve, reject) => {
 			this.baseConfig.chainId = this.chainID;
@@ -80,7 +81,7 @@ export class EOSJSService {
 			this.eos['getInfo']({}).then(result => {
 				this.ready = true;
 				this.online.next(result['head_block_num'] - result['last_irreversible_block_num'] < 400);
-				let savedAcc = [];
+				let savedAcc: any[] = [];
 				const savedpayload = localStorage.getItem('simpleos.accounts.' + this.chainID);
 				if (savedpayload) {
 					savedAcc = JSON.parse(savedpayload).accounts;
@@ -88,7 +89,6 @@ export class EOSJSService {
 				}
 				this.eos['contract']('eosio').then(contract => {
 					this.eosio = contract;
-					// console.log(savedAcc);
 					resolve(savedAcc);
 				});
 			}).catch((err) => {
@@ -96,10 +96,6 @@ export class EOSJSService {
 			});
 		});
 	}
-
-	// getKeyAccounts(pubkey: string) {
-	// 	return this.eos['getKeyAccounts']();
-	// }
 
 	getKeyAccounts(pubkey: string): Promise<any> {
 		return new Promise((resolve2, reject2) => {

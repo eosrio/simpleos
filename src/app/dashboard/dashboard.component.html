@@ -10,7 +10,7 @@
 						<div
 							class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
 							style="padding-right: 0; ">
-							<mat-tab-group  id="header-tabs" (selectedIndexChange)="selectAccount($event)"
+							<mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
 										   [selectedIndex]="selectedTab">
 								<mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
 									<ng-template mat-tab-label>
@@ -86,15 +86,21 @@
 			<section class="sidenav-header">
 				<img [src]="'./assets/chain-icons/' + network.activeChain.icon" width="40" height="40"
 					 class="chain-icon" style="position: absolute; top: 60px; left: 15px"/>
-				<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
-					<lottie-animation-view
-						[options]="lottieConfig" [width]="'auto'" [height]="'auto'"
-						(animCreated)="handleAnimation($event)" class="display-animation">
-					</lottie-animation-view>
+
+				<ng-container *ngIf="app.compilerVersion === 'DEFAULT'">
+
+					<ng-lottie [options]="lottieConfig"
+							   containerClass="display-animation"
+							   (animationCreated)="handleAnimation($event)"
+							   [width]="'auto'" [height]="'auto'">
+					</ng-lottie>
+
 					<img src="./assets/simpleos-logo-clara-dashboard.svg" class="display-img" atl="Logo SimplEOS"
 						 height="128" style="margin: 12px auto 12px auto;"/>
+
 				</ng-container>
-				<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+
+				<ng-container *ngIf="app.compilerVersion === 'LIBERLAND'">
 					<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="128"
 						 style="margin: 50px auto;"/>
 				</ng-container>
@@ -103,6 +109,7 @@
 					connected to
 					<span style="color: var(--text-destaque-color);">{{network.activeChain['name']}}</span>
 				</div>
+
 			</section>
 			<section #sidenavContent class="sidenav-content">
 				<a *ngIf="network.activeChain.features['history']" class="nav-link" routerLinkActive="active"
@@ -141,14 +148,14 @@
 					<fa-icon [icon]="['far', 'box-ballot']"></fa-icon>&nbsp;&nbsp;REFERENDUM
 				</a>
 			</section>
-			<section class="placeholder border-r" *ngIf="app.compilerVersion=='EOS MAINNET'">
+			<section class="placeholder border-r" *ngIf="app.compilerVersion === 'DEFAULT'">
 				<div class="credits">Made with
 					<fa-icon [icon]="['fas', 'heart']"></fa-icon>
 					by <a class="link-eosrio" [routerLink]="['about']">EOS Rio</a>
 				</div>
 				<div class="version">v{{aService.versionSys}}</div>
 			</section>
-			<section class="placeholder border-r" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+			<section class="placeholder border-r" *ngIf="app.compilerVersion !== 'DEFAULT'">
 				<div class="credits">Powered by <a class="link-eosrio" [routerLink]="['about']">SimplEOS</a></div>
 				<div class="version">v{{aService.versionSys}}</div>
 			</section>
@@ -183,7 +190,7 @@
 					 (clrWizardPageOnCommit)="verifyAccountName(true)"
 					 (clrWizardPagePrevious)="newAccountWizard.previous()"
 					 (clrWizardPageOnCancel)="resetAndClose()">
-		<ng-template clrPageTitle >Account Name</ng-template>
+		<ng-template clrPageTitle>Account Name</ng-template>
 		<h5 style="color: #a9a9a9">Choose your account name</h5>
 		<h5 class="mt-0">12 characters. Allows all letters and numbers 1-5.</h5>
 		<mat-form-field class="mt-1" style="display: block; width: 180px">
@@ -210,12 +217,14 @@
 			class="blue"> Generate Key Pairs </span>
 			button.</h5>
 		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub" (blur)="validOwnerPubKey=(ownerpub.length==53);" >
+			<input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub"
+				   (blur)="validOwnerPubKey=(ownerpub.length==53);">
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
 			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
 		</mat-form-field>
 		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Active Public key" [(ngModel)]="activepub" (blur)="validActivePubKey=(activepub.length==53);" >
+			<input matInput placeholder="Active Public key" [(ngModel)]="activepub"
+				   (blur)="validActivePubKey=(activepub.length==53);">
 			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
 		</mat-form-field>
 
@@ -290,7 +299,8 @@
 		</form>
 	</clr-wizard-page>
 
-	<clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid" *ngIf="newAccOptions === 'newpk' && generated && agreeKeys">
+	<clr-wizard-page [clrWizardPageNextDisabled]="!passform.valid"
+					 *ngIf="newAccOptions === 'newpk' && generated && agreeKeys">
 		<ng-template clrPageTitle>Set Password</ng-template>
 		<h5>Define your password for this account. This will be used to transactions confirmations.</h5>
 		<form [formGroup]="passform" class="confirmForm">
@@ -449,12 +459,12 @@
 	<div class="modal-body" *ngIf="selectedAccRem">
 		<p style="margin-bottom: 20px; color: #b1b1b1;">Are you sure you want do remove the account <span
 			class="blue">{{selectedAccRem.name}}</span>
-			from <span *ngIf="app.compilerVersion=='EOS MAINNET'">SimplEOS</span><span
-				*ngIf="app.compilerVersion!=='EOS MAINNET'">Liberland wallet</span>?</p>
+			from <span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span><span
+				*ngIf="app.compilerVersion !== 'DEFAULT'">Liberland wallet</span>?</p>
 		<p style="margin-bottom: 20px;">*This will NOT delete your account from the blockchain, it will just remove it
 			from
-			<span *ngIf="app.compilerVersion=='EOS MAINNET'">SimplEOS</span><span
-				*ngIf="app.compilerVersion!=='EOS MAINNET'">the wallet</span>. Should you want to import it again, just
+			<span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span><span
+				*ngIf="app.compilerVersion !== 'DEFAULT'">the wallet</span>. Should you want to import it again, just
 			click on the "ADD ACCOUNT" button.</p>
 	</div>
 	<div class="modal-footer">

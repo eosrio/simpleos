@@ -5,17 +5,18 @@ import {environment} from '../environments/environment';
 
 import {NetworkService} from './services/network.service';
 import {AccountsService} from './services/accounts.service';
-import {EOSJSService} from './services/eosjs.service';
-import {CryptoService} from './services/crypto.service';
+import {EOSJSService} from './services/eosio/eosjs.service';
+import {CryptoService} from './services/crypto/crypto.service';
 import {ConnectService} from './services/connect.service';
 import {BackupService} from './services/backup.service';
 import {BehaviorSubject, Subscription} from 'rxjs';
 import {Eosjs2Service} from './services/eosio/eosjs2.service';
-import {TransactionFactoryService} from './services/transaction-factory.service';
+import {TransactionFactoryService} from './services/eosio/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
 import {LedgerService} from "./services/ledger/ledger.service";
+import {log} from "util";
 
 export interface LedgerSlot {
 	publicKey: string;
@@ -112,6 +113,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.loadingTRX = false;
 
 		this.busy = false;
+
 		if (this.connect.ipc) {
 			this.connect.ipc.on('request', (event, payload) => {
 				this.transitEventHandler = event;
@@ -142,7 +144,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 					}
 					case 'login': {
 
-						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
+						if (localStorage.getItem('simpleos-hash') && this.crypto.getLockStatus()) {
 							this.eventFired = true;
 							this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
 							return;
@@ -207,7 +209,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 						break;
 					}
 					case 'sign': {
-						if (localStorage.getItem('simpleos-hash') && this.crypto.locked) {
+						if (localStorage.getItem('simpleos-hash') && this.crypto.getLockStatus()) {
 							return;
 						}
 						this.loadingTRX = true;
@@ -355,17 +357,17 @@ export class AppComponent implements OnInit, AfterViewInit {
 	ngAfterViewInit() {
 		setTimeout(() => {
 			this.network.connect(false);
-			setTimeout(() => {
-				this.eosjs.checkSimpleosUpdate().then(v => {
-					if (v['rows'].length > 0) {
-						this.newVersion = v['rows'][0];
-						if (this.version !== (this.newVersion['version_number']).replace('v', '')) {
-							this.update = true;
-						}
+			setTimeout(async () => {
+				this.newVersion = await this.eosjs.checkSimpleosUpdate();
+				if (this.newVersion) {
+					const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
+					const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
+					console.log(`Remote Version: ${remoteVersionNum}`);
+					console.log(`Local Version: ${currentVersionNum}`);
+					if (remoteVersionNum > currentVersionNum) {
+						this.update = true;
 					}
-				}).catch(err => {
-					console.log(err);
-				});
+				}
 			}, 5000);
 		}, 900);
 	}

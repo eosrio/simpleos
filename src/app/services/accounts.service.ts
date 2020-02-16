@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject , Subject} from 'rxjs';
-import {EOSJSService} from './eosjs.service';
+import {EOSJSService} from './eosio/eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType , Toast , ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';

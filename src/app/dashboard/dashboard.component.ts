@@ -7,7 +7,7 @@ import {
 	AfterViewInit,
 	ChangeDetectorRef
 } from '@angular/core';
-import {EOSJSService} from '../services/eosjs.service';
+import {EOSJSService} from '../services/eosio/eosjs.service';
 import {AccountsService} from '../services/accounts.service';
 import {LandingComponent} from '../landing/landing.component';
 import {ClrWizard} from '@clr/angular';
@@ -15,7 +15,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 
 import * as moment from 'moment';
-import {CryptoService} from '../services/crypto.service';
+import {CryptoService} from '../services/crypto/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {EOSAccount} from '../interfaces/account';
@@ -26,6 +26,7 @@ import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 
 import {environment} from '../../environments/environment';
+import {AnimationOptions} from "ngx-lottie";
 
 
 @Component({
@@ -37,7 +38,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	@ViewChild('newAccountWizard',{static:true}) wizardaccount: ClrWizard;
 	@ViewChild('importAccountWizard',{static:true}) importwizard: ClrWizard;
-	lottieConfig: Object;
+
+	lottieConfig: AnimationOptions = {
+		path: 'assets/logoanim2.json',
+		autoplay: false,
+		loop: false
+	};
+
 	anim: any;
 	busy = false;
 

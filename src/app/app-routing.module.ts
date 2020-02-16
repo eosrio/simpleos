@@ -8,7 +8,7 @@ import {SendComponent} from './dashboard/send/send.component';
 import {ConfigComponent} from './dashboard/settings/config.component';
 import {AboutComponent} from './dashboard/about/about.component';
 import {LockscreenComponent} from './lockscreen/lockscreen.component';
-import {LockGuard} from './services/lock.guard';
+import {LockGuard} from './guards/lock.guard';
 import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 import {DappComponent} from './dashboard/dapp/dapp.component';
 import {ReferendumComponent} from './dashboard/referendum/referendum.component';

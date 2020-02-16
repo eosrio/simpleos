@@ -6,9 +6,9 @@ import {EOSAccount} from '../../interfaces/account';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 
 import {AccountsService} from '../../services/accounts.service';
-import {CryptoService} from '../../services/crypto.service';
+import {CryptoService} from '../../services/crypto/crypto.service';
 import {RamService} from '../../services/ram.service';
-import {EOSJSService} from '../../services/eosjs.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
 
 import * as moment from 'moment';
 

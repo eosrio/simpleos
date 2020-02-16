@@ -1,8 +1,8 @@
 import {Component, ComponentFactoryResolver, ChangeDetectorRef, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators, FormArray} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosjs.service';
-import {CryptoService} from '../../services/crypto.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
+import {CryptoService} from '../../services/crypto/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {Proposal} from '../../interfaces/proposal';
 import * as moment from 'moment';

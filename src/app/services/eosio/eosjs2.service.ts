@@ -294,12 +294,17 @@ export class Eosjs2Service {
 
 	async checkSimpleosUpdate() {
 		const tempRpc = new JsonRpc(this.EOStMainnetEndpoint);
-		return tempRpc.get_table_rows({
+		const data = await tempRpc.get_table_rows({
 			json: true,
 			code: 'simpleosvers',
 			scope: 'simpleosvers',
 			table: 'info',
 		});
+		if(data.rows.length > 0) {
+			return data.rows[0];
+		} else {
+			return null;
+		}
 	}
 
 	async createAccount(creator: string, name: string, owner: string,

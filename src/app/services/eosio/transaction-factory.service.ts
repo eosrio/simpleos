@@ -1,7 +1,7 @@
 import {EventEmitter , Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
-import {AccountsService} from './accounts.service';
-import {CryptoService} from './crypto.service';
+import {AccountsService} from '../accounts.service';
+import {CryptoService} from '../crypto/crypto.service';
 
 export interface TrxModalData {
 	labelHTML: string;

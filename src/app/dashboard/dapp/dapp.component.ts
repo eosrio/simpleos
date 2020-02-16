@@ -1,9 +1,9 @@
 import {Component, OnInit, AfterViewInit, ChangeDetectorRef} from '@angular/core';
 import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosjs.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {EOSAccount} from '../../interfaces/account';
-import {CryptoService} from '../../services/crypto.service';
+import {CryptoService} from '../../services/crypto/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {Subscription} from 'rxjs';
 

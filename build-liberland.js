@@ -1,7 +1,7 @@
 const fs = require('fs');
 const conf = require('./package.json');
 
-conf.compilerVersion = "LIBERLAND TESTNET";
+conf.compilerVersion = "LIBERLAND";
 conf.name = 'liberland-wallet';
 conf.appId = "io.eosrio.liberland-wallet";
 conf.productName = 'Liberland Wallet';

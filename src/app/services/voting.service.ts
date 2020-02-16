@@ -1,6 +1,6 @@
 import {ApplicationRef, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {EOSJSService} from './eosjs.service';
+import {EOSJSService} from './eosio/eosjs.service';
 import {Subject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import * as moment from 'moment';

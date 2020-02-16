@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosjs.service';
+import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {
   BodyOutputType,
@@ -16,7 +16,7 @@ import {
   ToasterService,
 } from 'angular2-toaster';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
-import {CryptoService} from '../../services/crypto.service';
+import {CryptoService} from '../../services/crypto/crypto.service';
 import {HttpClient} from '@angular/common/http';
 
 import * as moment from 'moment';
@@ -26,7 +26,7 @@ import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {RexComponent} from '../rex/rex.component';
 import {AppComponent} from '../../app.component';
 import {ThemeService} from '../../services/theme.service';
-import {TransactionFactoryService} from '../../services/transaction-factory.service';
+import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {ElectronService} from 'ngx-electron';
 import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
 import {SortEvent} from 'primeng/api';

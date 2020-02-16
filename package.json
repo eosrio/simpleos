@@ -1,10 +1,10 @@
 {
-	"name": "liberland-wallet",
+	"name": "simpleos",
 	"version": "0.9.5",
-	"productName": "Liberland Wallet",
-	"appId": "io.eosrio.liberland-wallet",
-	"compilerVersion": "LIBERLAND TESTNET",
-	"description": "Liberland Blockchain Wallet",
+	"productName": "simpleos",
+	"appId": "io.eosrio.simpleos",
+	"compilerVersion": "DEFAULT",
+	"description": "EOSIO Blockchain Interface & Wallet",
 	"author": {
 		"name": "EOS Rio",
 		"email": "contact@eosrio.io"
@@ -44,7 +44,7 @@
 	"private": true,
 	"main": "index.js",
 	"build": {
-		"appId": "liberland-wallet",
+		"appId": "simpleos",
 		"directories": {
 			"buildResources": "build"
 		},
@@ -65,10 +65,10 @@
 				"dmg",
 				"zip"
 			],
-			"icon": "liberland518x518.png"
+			"icon": "icon.png"
 		},
 		"dmg": {
-			"icon": "src/assets/icons/liberland256x256.icns",
+			"icon": "src/assets/icons/256x256.icns",
 			"format": "UDZO"
 		},
 		"linux": {
@@ -76,7 +76,7 @@
 				"appImage",
 				"deb"
 			],
-			"icon": "liberland256x256.png",
+			"icon": "256x256.png",
 			"category": "Network"
 		},
 		"win": {
@@ -90,7 +90,7 @@
 					"repo": "simpleos"
 				}
 			],
-			"icon": "src/assets/liberland_256_LdC_icon.ico"
+			"icon": "src/favicon.ico"
 		},
 		"appx": {
 			"backgroundColor": "#232526",
@@ -129,6 +129,7 @@
 		"@angular/language-service": "^9.0.1",
 		"@electron/typescript-definitions": "^8.6.6",
 		"@types/echarts": "^4.4.3",
+		"@types/mocha": "^7.0.1",
 		"@types/node": "^13.7.1",
 		"@types/crypto-js": "^3.1.43",
 		"@types/express": "^4.17.2",
@@ -151,7 +152,7 @@
 		"lodash.get": "^4.4.2",
 		"lodash.set": "^4.3.2",
 		"moment": "^2.24.0",
-		"ng-lottie": "^0.3.2",
+		"ngx-lottie": "^5.3.2",
 		"ngx-echarts": "^4.2.2",
 		"ngx-electron": "^2.2.0",
 		"ngx-json-viewer": "^2.4.0",
@@ -200,8 +201,8 @@
 		"@fortawesome/pro-light-svg-icons": "^5.12.1",
 		"@fortawesome/pro-regular-svg-icons": "^5.12.1",
 		"@fortawesome/pro-solid-svg-icons": "^5.12.1",
-		"@ledgerhq/hw-transport-node-hid": "^5.9.0",
 		"@ledgerhq/hw-transport": "^5.9.0",
+		"@ledgerhq/hw-transport-node-hid": "^5.9.0",
 		"animate.css": "^3.7.2",
 		"asn1-ber": "^1.0.9",
 		"auto-launch": "^5.0.5",
@@ -218,6 +219,7 @@
 		"fcbuffer": "^2.2.2",
 		"isomorphic-fetch": "^2.2.1",
 		"keytar": "^5.2.0",
+		"lottie-web": "^5.6.4",
 		"menu": "^0.2.5",
 		"node-fetch": "^2.6.0",
 		"node-pre-gyp": "^0.14.0",
