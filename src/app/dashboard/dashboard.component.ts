@@ -216,6 +216,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
             }
         }));
+
+        document.onkeydown = (e) => {
+
+            // next account
+            if (e.ctrlKey && e.key === 'ArrowRight') {
+                if (this.aService.selectedIdx < this.aService.accounts.length) {
+                    this.aService.select(this.aService.selectedIdx + 1);
+                    this.cdr.detectChanges();
+                }
+            }
+
+            // previous account
+            if (e.ctrlKey && e.key === 'ArrowLeft') {
+                if (this.aService.selectedIdx > 0) {
+                    this.aService.select(this.aService.selectedIdx - 1);
+                    this.cdr.detectChanges();
+                }
+            }
+        };
     }
 
     openTX(value) {

@@ -85,26 +85,6 @@ export class AccountsService {
                 }
             }
         });
-
-        // if(this.mainnetActive['name']==='EOS MAINNET') {
-        //   this.socket.on('action', (data) => {
-        //     if (!this.actionStore[data.account]) {
-        //       this.actionStore[data.account] = {
-        //         last_gs: 0,
-        //         actions: []
-        //       };
-        //     }
-        //
-        //     this.actionStore[data.account]['last_gs'] = data.data.receipt.global_sequence;
-        //     const idx = this.actionStore[data.account]['actions'].findIndex((v) => {
-        //       return v.receipt.act_digest === data.data.receipt.act_digest;
-        //     });
-        //     if (idx === -1) {
-        //       this.actionStore[data.account]['actions'].push(data.data);
-        //       this.totalActions = this.actionStore[data.account]['actions'].length;
-        //     }
-        //   });
-        // }
     }
 
     getStoredKey(account) {

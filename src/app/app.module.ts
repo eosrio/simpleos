@@ -156,171 +156,171 @@ import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
 
 export function playerFactory() {
-	return player;
+    return player;
 }
 
 @NgModule({
-	// entryComponents: [FormComponent],
-	declarations: [
-		AppComponent,
-		LandingComponent,
-		DashboardComponent,
-		SendComponent,
-		WalletComponent,
-		VoteComponent,
-		ConfigComponent,
-		AboutComponent,
-		LockscreenComponent,
-		ResourcesComponent,
-		DappComponent,
-		ReferendumComponent,
-		RexComponent,
-		ThousandSuffixesPipe,
-		ConfirmModalComponent,
-		InputModalComponent,
-	],
-	imports: [
-		FormsModule,
-		AccordionModule,
-		TableModule,
-		TooltipModule,
-		BrowserAnimationsModule,
-		BrowserModule,
-		ClarityModule,
-		FontAwesomeModule,
-		HttpClientModule,
-		MatAutocompleteModule,
-		MatCheckboxModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatRadioModule,
-		MatSelectModule,
-		MatSliderModule,
-		MatProgressBarModule,
-		MatTabsModule,
-		MatButtonToggleModule,
-		MatDatepickerModule,
-		MatSlideToggleModule,
-		ReactiveFormsModule,
-		TextMaskModule,
-		NgxEchartsModule,
-		ToasterModule.forRoot(),
-		AppRoutingModule,
-		NgxJsonViewerModule,
-		FuseJsModule,
-		OrderModule,
-		NgxPaginationModule,
-		NgxElectronModule,
-		MarkdownModule.forRoot(),
-		MaterialDesignFrameworkModule,
-		MatListModule,
-		LottieModule.forRoot({
-			player: playerFactory,
-			useCache: false
-		}),
-	],
-	providers: [
-		EOSJSService,
-		Eosjs2Service,
-		ChainService,
-		AccountsService,
-		NetworkService,
-		CryptoService,
-		RamService,
-		LedgerService,
-		ConnectService,
-		BackupService,
-		ThemeService
-	],
-	bootstrap: [AppComponent],
+    // entryComponents: [FormComponent],
+    declarations: [
+        AppComponent,
+        LandingComponent,
+        DashboardComponent,
+        SendComponent,
+        WalletComponent,
+        VoteComponent,
+        ConfigComponent,
+        AboutComponent,
+        LockscreenComponent,
+        ResourcesComponent,
+        DappComponent,
+        ReferendumComponent,
+        RexComponent,
+        ThousandSuffixesPipe,
+        ConfirmModalComponent,
+        InputModalComponent,
+    ],
+    imports: [
+        FormsModule,
+        AccordionModule,
+        TableModule,
+        TooltipModule,
+        BrowserAnimationsModule,
+        BrowserModule,
+        ClarityModule,
+        FontAwesomeModule,
+        HttpClientModule,
+        MatAutocompleteModule,
+        MatCheckboxModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatRadioModule,
+        MatSelectModule,
+        MatSliderModule,
+        MatProgressBarModule,
+        MatTabsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatSlideToggleModule,
+        ReactiveFormsModule,
+        TextMaskModule,
+        NgxEchartsModule,
+        ToasterModule.forRoot(),
+        AppRoutingModule,
+        NgxJsonViewerModule,
+        FuseJsModule,
+        OrderModule,
+        NgxPaginationModule,
+        NgxElectronModule,
+        MarkdownModule.forRoot(),
+        MaterialDesignFrameworkModule,
+        MatListModule,
+        LottieModule.forRoot({
+            player: playerFactory,
+            useCache: false
+        }),
+    ],
+    providers: [
+        EOSJSService,
+        Eosjs2Service,
+        ChainService,
+        AccountsService,
+        NetworkService,
+        CryptoService,
+        RamService,
+        LedgerService,
+        ConnectService,
+        BackupService,
+        ThemeService
+    ],
+    bootstrap: [AppComponent],
 })
 export class AppModule {
-	constructor(library: FaIconLibrary) {
+    constructor(library: FaIconLibrary) {
 
-		const icons = [];
+        const icons = [];
 
-		// fas solid
-		icons.push(...[
-			faHeart,
-			faTh,
-			faCaretDown,
-			faSkullCrossbones,
-			faKey,
-			faExclamationTriangle,
-			faTimesCircle,
-			faGlobe
-		]);
+        // fas solid
+        icons.push(...[
+            faHeart,
+            faTh,
+            faCaretDown,
+            faSkullCrossbones,
+            faKey,
+            faExclamationTriangle,
+            faTimesCircle,
+            faGlobe
+        ]);
 
-		// fab brands
-		icons.push(...[
-			faTelegramPlane,
-			faTwitter,
-			faGithub,
-			faYoutube,
-			faFacebook,
-			faReddit,
-			faKeybase,
-			faWeixin
-		]);
+        // fab brands
+        icons.push(...[
+            faTelegramPlane,
+            faTwitter,
+            faGithub,
+            faYoutube,
+            faFacebook,
+            faReddit,
+            faKeybase,
+            faWeixin
+        ]);
 
-		// far regular
-		icons.push(...[
-			faSignOutAlt,
-			faExclamationCircle,
-			faUndo,
-			faQuestionCircle,
-			faSpinner,
-			faExchangeAlt,
-			faDonate,
-			faUndoAlt,
-			faHandHoldingUsd,
-			faUser,
-			faReceipt,
-			faEdit,
-			faLock,
-			faLockOpen,
-			faParachuteBox,
-			faCheck,
-			faHourglass,
-			faEye,
-			faEyeSlash,
-			faClone,
-			faHistory,
-			faPaperPlane,
-			faMemory,
-			faPuzzlePiece,
-			faBoxBallot,
-			faUserMinus,
-			faAngleRight,
-			faTimes,
-			faLongArrowAltDown,
-			faSearch,
-			faSync,
-			faPencil,
-			faMinus,
-			faPlus,
-			faTimesCircle,
-			faUserPlus,
-			faUserEdit,
-			faPaperPlane,
-			faExternalLink
-		]);
+        // far regular
+        icons.push(...[
+            faSignOutAlt,
+            faExclamationCircle,
+            faUndo,
+            faQuestionCircle,
+            faSpinner,
+            faExchangeAlt,
+            faDonate,
+            faUndoAlt,
+            faHandHoldingUsd,
+            faUser,
+            faReceipt,
+            faEdit,
+            faLock,
+            faLockOpen,
+            faParachuteBox,
+            faCheck,
+            faHourglass,
+            faEye,
+            faEyeSlash,
+            faClone,
+            faHistory,
+            faPaperPlane,
+            faMemory,
+            faPuzzlePiece,
+            faBoxBallot,
+            faUserMinus,
+            faAngleRight,
+            faTimes,
+            faLongArrowAltDown,
+            faSearch,
+            faSync,
+            faPencil,
+            faMinus,
+            faPlus,
+            faTimesCircle,
+            faUserPlus,
+            faUserEdit,
+            faPaperPlane,
+            faExternalLink
+        ]);
 
-		// fal light
-		icons.push(...[
-			faPaperPlane,
-			faArrowAltToBottom,
-			faChevronCircleUp,
-			faChevronCircleDown,
-			faCog,
-			faSearchMinus,
-			faSearchPlus
-		]);
+        // fal light
+        icons.push(...[
+            faPaperPlane,
+            faArrowAltToBottom,
+            faChevronCircleUp,
+            faChevronCircleDown,
+            faCog,
+            faSearchMinus,
+            faSearchPlus
+        ]);
 
-		icons.forEach((iconDef) => {
-			library.addIcons(iconDef)
-		});
-	}
+        icons.forEach((iconDef) => {
+            library.addIcons(iconDef)
+        });
+    }
 
-	// FaIconLibrary.addIconPacks(far, fas, fab, fal);
+    // FaIconLibrary.addIconPacks(far, fas, fab, fal);
 }
