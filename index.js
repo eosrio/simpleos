@@ -1,32 +1,44 @@
 const args = process.argv.slice(1);
 process.defaultApp = true;
 
-const {app, BrowserWindow, Notification, Menu, protocol, ipcMain, shell, powerMonitor} = require(
-    'electron');
+const {
+  app,
+  BrowserWindow,
+  Notification,
+  Menu,
+  protocol,
+  shell,
+  powerMonitor,
+} = require('electron');
+
 const path = require('path');
-const portfinder = require('portfinder');
 const {version, productName, name} = require('./package.json');
 const url = require('url');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const express = require('express')();
-const http = require('http').createServer(express);
 const {spawn} = require('child_process');
-
 const contextMenu = require('electron-context-menu');
 const AutoLaunch = require('auto-launch');
 const fs = require('fs');
 
-const {SimpleoConnectService} = require('./electron_modules/simpleos-connect');
+const {TransitApiService} = require('./electron_modules/transit-api');
+const {SimpleosConnectService} = require('./electron_modules/simpleos-connect');
 const {LedgerManager} = require('./electron_modules/ledger-manager');
 const {ClaimRewardsService} = require('./electron_modules/claim-rewards.js');
 
 class SimpleosWallet {
 
+  // wax auto claim manager
   claimRW;
+
+  // ledger hardware wallet connector
   ledger;
+
+  // transit api service
+  transit;
+
+  // simpleos connect service
   connect;
 
+  // chrome window object
   win;
   devtools;
   serve;
@@ -42,14 +54,13 @@ class SimpleosWallet {
 
   constructor() {
     this.claimRW = new ClaimRewardsService(this);
-    this.connect = new SimpleoConnectService(this);
+    this.connect = new SimpleosConnectService(this);
+    this.transit = new TransitApiService(this);
   }
 
   init() {
     app.allowRendererProcessReuse = true;
     app.getVersion = () => version;
-    portfinder['basePort'] = 47888;
-    portfinder['highestPort'] = 49800;
     this.devtools = args.some(val => val === '--devtools');
     this.serve = args.some(val => val === '--serve');
     this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
@@ -121,7 +132,7 @@ class SimpleosWallet {
         });
       });
     } else {
-      this.setupExpress();
+      this.transit.init();
       this.launchApp();
       this.claimRW.autoClaimCheck();
       if (this.isEnableAutoClaim) {
@@ -142,140 +153,6 @@ class SimpleosWallet {
     } else {
       fs.writeFileSync(this.claimRW.lockLaunchFile, process.pid);
     }
-  }
-
-  setupExpress() {
-    console.log('Setup Express');
-
-    express.use(cors());
-
-    express.get('/ping', (req, res) => {
-      res.end('OK');
-    });
-
-    express.get('/accounts', (req, res) => {
-      this.win.webContents.send('request', 'accounts');
-      ipcMain.once('accountsResponse', (event, data) => {
-        console.log(data);
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      });
-    });
-
-    express.get('/getPublicKeys', (req, res) => {
-      this.win.webContents.send('request', {
-        message: 'publicKeys',
-      });
-      ipcMain.once('publicKeyResponse', (event, data) => {
-        console.log(data);
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      });
-    });
-
-    express.post('/sign', bodyParser.json(), (req, res) => {
-      this.win.webContents.send('request', {
-        message: 'sign',
-        content: req.body,
-      });
-      this.getFocus();
-      ipcMain.once('signResponse', (event, data) => {
-        console.log(data);
-        res.setHeader('Content-Type', 'application/json');
-        if (data.status !== 'CANCELLED') {
-          this.unfocus();
-        }
-        res.end(JSON.stringify(data));
-      });
-    });
-
-    express.get('/connect', (req, res) => {
-      console.log('CONNECT REQUEST');
-      this.getFocus();
-
-      this.win.webContents.send('request', {
-        message: 'connect',
-        content: {
-          appName: req.query['appName'],
-          chainId: req.query['chainId'],
-        },
-      });
-
-      if (req.query['appName'].length < 32 && req.query['chainId'].length ===
-          64) {
-        ipcMain.once('connectResponse', (event, data) => {
-          console.log(data);
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(data));
-        });
-      }
-    });
-
-    express.get('/login', (req, res) => {
-      console.log('CONNECT REQUEST, account:' + req.query.account);
-      this.win.webContents.send('request', {
-        message: 'login',
-        content: {
-          account: req.query.account,
-        },
-      });
-      if (!req.query.account) {
-        this.getFocus();
-      }
-      if (req.query.account) {
-        if (req.query.account.length > 13) {
-          res.end('ERROR');
-          return false;
-        }
-      }
-      ipcMain.once('loginResponse', (event, data) => {
-        console.log(data);
-        if (data.status) {
-          if (data.status !== 'CANCELLED') {
-            if (!req.query.account) {
-              this.unfocus();
-            }
-          }
-        } else {
-          this.unfocus();
-        }
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      });
-    });
-
-    express.get('/logout', (req, res) => {
-      console.log('LOGOUT REQUEST');
-      this.win.webContents.send('request', {
-        message: 'logout',
-        content: {
-          account: req.query.account,
-        },
-      });
-      if (req.query.account) {
-        if (req.query.account.length > 13) {
-          res.end('ERROR');
-          return false;
-        }
-      }
-      ipcMain.once('logoutResponse', (event, data) => {
-        console.log(data);
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      });
-    });
-
-    express.get('/disconnect', (req, res) => {
-      console.log('DISCONNECT REQUEST');
-      this.win.webContents.send('request', {
-        message: 'disconnect',
-      });
-      ipcMain.once('disconnectResponse', (event, data) => {
-        console.log(data);
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      });
-    });
   }
 
   getFocus() {
@@ -335,18 +212,8 @@ class SimpleosWallet {
     const gotTheLock = app.requestSingleInstanceLock();
     this.claimRW.writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
         this.claimRW.lockLaunchFile))} | The LOCK: ${gotTheLock}`);
-    try {
-      portfinder.getPortPromise().then((port) => {
-        http.listen(port, '127.0.0.1', () => {
-          console.log('listening on 127.0.0.1:' + port);
-        });
-      }).catch((err) => {
-        alert(err);
-      });
-    } catch (e) {
-      console.log(e);
-    }
-    console.log('listen port');
+
+    this.transit.startServer();
 
     if (fs.existsSync(this.claimRW.lockLaunchFile)) {
       if (gotTheLock) {

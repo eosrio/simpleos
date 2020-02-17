@@ -1,6 +1,6 @@
 const {ipcMain} = require('electron');
 
-class SimpleoConnectService {
+class SimpleosConnectService {
 
 	main;
 
@@ -11,4 +11,4 @@ class SimpleoConnectService {
 
 }
 
-module.exports = {SimpleoConnectService};
+module.exports = {SimpleosConnectService};
