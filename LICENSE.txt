@@ -1,4 +1,4 @@
-Copyright (c) 2018 Dominique Deschatre, Igor Lins e Silva
+Copyright (c) 2020 Dominique Deschatre, Igor Lins e Silva
 
 This software may be used on a personal computer for personal use only. This
 software may not be distributed, rebranded, or used on public or commercial
