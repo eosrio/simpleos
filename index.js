@@ -59,6 +59,8 @@ class SimpleosWallet {
   launchServices() {
     // simpleos connect
     this.connect = new SimpleosConnectService(this);
+    this.connect.init();
+    this.connect.startServer();
 
     // transit api
     this.transit = new TransitApiService(this);
