@@ -19,8 +19,8 @@
 							 height="230" style="margin: 64px auto 50px auto;"/>
 
 					</ng-container>
-					<ng-container *ngIf="app.compilerVersion !== 'DEFAULT'">
-						<img *ngIf="app.compilerVersion === 'LIBERLAND'" alt="Logo Liberland"
+					<ng-container *ngIf="app.compilerVersion === 'LIBERLAND'">
+						<img alt="Logo Liberland"
 							 src="./assets/logos/liberland_logo.PNG" height="210" style="margin: 50px auto;"/>
 					</ng-container>
 				</div>
@@ -240,7 +240,7 @@
 					<br>
 				</ng-container>
 				<section class="placeholder border-r" style="margin-top:10px;"
-						 *ngIf="app.compilerVersion=='DEFAULT'">
+						 *ngIf="app.compilerVersion === 'DEFAULT'">
 					<div class="credits made-with-love">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
 						by <span style="color: var(--btn-link2-color)">EOS Rio</span>

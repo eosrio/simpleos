@@ -4,7 +4,7 @@
 
             <div class="clr-col-md-12 text-center">
                 <div class="anim-logo">
-					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
+					<ng-container *ngIf="app.compilerVersion==='DEFAULT'">
 
 						<ng-lottie [options]="lottieConfig"
 								   containerClass="display-animation"
@@ -14,13 +14,13 @@
 
 						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="256" style="margin: 12px auto 50px auto;"/>
 					</ng-container>
-					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<ng-container *ngIf="app.compilerVersion==='LIBERLAND'">
 						<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="256" style="margin: 50px auto;"/>
 					</ng-container>
                 </div>
-				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
-				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">Liberland Wallet</div>
-				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
+				<div class="slogan" *ngIf="app.compilerVersion==='DEFAULT'">Your simple and secure EOS wallet</div>
+				<div class="sloganWallet" *ngIf="app.compilerVersion==='LIBERLAND'">Liberland Wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion==='LIBERLAND'">To live and let live</div>
 			</div>
 			<div class="clr-col-md-auto text-center">
                 <div class="card check-card">
@@ -51,7 +51,7 @@
                         <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
                     </a>
                 </div>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion=='EOS MAINNET'">
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion === 'DEFAULT'">
 					<div class="credits made-with-love">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
 						by <a style="color: var(--btn-link2-color)">EOS Rio</a>
@@ -59,7 +59,7 @@
 					<div class="version made-with-love">v{{aService.versionSys}}</div>
 					<br>
 				</section>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion!=='EOS MAINNET'">
+				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion !== 'DEFAULT'">
 					<div class="credits">Powered by</div>
 					<div class="version">SimplEOS v{{aService.versionSys}}</div>
 					<br>

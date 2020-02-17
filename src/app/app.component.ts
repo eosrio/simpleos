@@ -85,10 +85,10 @@ export class AppComponent implements OnInit, AfterViewInit {
         private _electronService: ElectronService,
         public theme: ThemeService,
     ) {
-        if (this.compilerVersion === 'LIBERLAND TESTNET') {
+        if (this.compilerVersion === 'LIBERLAND') {
             this.titleService.setTitle('Liberland Wallet v' + this.version);
             this.theme.liberlandTheme();
-            this.activeChain = this.network.defaultChains.find((chain) => chain.name === this.compilerVersion);
+            this.activeChain = this.network.defaultChains.find((chain) => chain.name ==='LIBERLAND TESTNET');
             localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
             this.network.changeChain(this.activeChain.id);
         } else {

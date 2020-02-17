@@ -155,7 +155,7 @@
                 </div>
                 <div class="version">v{{aService.versionSys}}</div>
             </section>
-            <section class="placeholder border-r" *ngIf="app.compilerVersion !== 'DEFAULT'">
+            <section class="placeholder border-r" *ngIf="app.compilerVersion === 'LIBERLAND'">
                 <div class="credits">Powered by <a class="link-eosrio" [routerLink]="['about']">SimplEOS</a></div>
                 <div class="version">v{{aService.versionSys}}</div>
             </section>
@@ -530,11 +530,11 @@
         <p style="margin-bottom: 20px; color: #b1b1b1;">Are you sure you want do remove the account <span
                 class="blue">{{selectedAccRem.name}}</span>
             from <span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span><span
-                    *ngIf="app.compilerVersion !== 'DEFAULT'">Liberland wallet</span>?</p>
+                    *ngIf="app.compilerVersion === 'LIBERLAND'">Liberland wallet</span>?</p>
         <p style="margin-bottom: 20px;">*This will NOT delete your account from the blockchain, it will just remove it
             from
             <span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span><span
-                    *ngIf="app.compilerVersion !== 'DEFAULT'">the wallet</span>. Should you want to import it again,
+                    *ngIf="app.compilerVersion === 'LIBERLAND'">the wallet</span>. Should you want to import it again,
             just
             click on the "ADD ACCOUNT" button.</p>
     </div>

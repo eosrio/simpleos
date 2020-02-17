@@ -1,5 +1,5 @@
 <div class="container" style="height: 100%">
-	<ng-container *ngIf="app.compilerVersion=='EOS MAINNET'">
+	<ng-container *ngIf="app.compilerVersion === 'DEFAULT'">
   		<div class="clr-row animate" style="padding-top: 15px;">
     <div class="clr-col-lg-6">
       <h1><span class="white">About </span><span class="blue">EOS Rio</span></h1>
@@ -37,7 +37,7 @@
     </div>
   </div>
 	</ng-container>
-	<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+	<ng-container *ngIf="app.compilerVersion === 'LIBERLAND'">
 		<div class="clr-row animate" style="padding-top: 15px;">
 			<div class="clr-col-lg-7">
 				<h1><span class="white">About </span><span class="blue">Liberland</span></h1>
