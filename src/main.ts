@@ -3,7 +3,7 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 
 import {AppModule} from './app/app.module';
 import {environment} from './environments/environment';
-import 'isomorphic-fetch';
+import 'node-fetch';
 
 import 'hammerjs';
 
@@ -26,7 +26,6 @@ fetch( url ).then(function(response) {
 	}
 	return response.json();
 }).then(function(result) {
-		// console.log(result);
 	const payload = {lastUpdate: new Date(), config: result };
 	localStorage.setItem('configSimpleos',JSON.stringify(payload));
 
