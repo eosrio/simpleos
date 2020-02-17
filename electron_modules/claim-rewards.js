@@ -1,5 +1,5 @@
 const path = require('path');
-const {productName} = require('./package.json');
+const {productName} = require('../package.json');
 const keytar = require('keytar');
 const fs = require('fs');
 const moment = require('moment');
