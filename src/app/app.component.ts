@@ -216,7 +216,14 @@ export class AppComponent implements OnInit, AfterViewInit {
     switch (payload.message) {
       case 'change_chain': {
         const result = this.changeChain(payload.chain_id);
-        event.sender.send('changeChainResponse', result);
+
+        // wait for chain to change
+        const onceListener = this.network.networkingReady.subscribe((value)=>{
+          if(value) {
+            event.sender.send('changeChainResponse', result);
+            onceListener.unsubscribe();
+          }
+        });
         break;
       }
       case 'authorizations': {

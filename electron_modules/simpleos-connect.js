@@ -82,16 +82,23 @@ class SimpleosConnectService {
   onGetAuthorizations(chainId, callback) {
     console.log('onGetAuthorizations');
 
-    this.sendMessage('sc_request', {message: 'change_chain', chain_id: chainId});
+    this.sendMessage('sc_request',
+        {message: 'change_chain', chain_id: chainId});
+
     ipcMain.once('changeChainResponse', (event, changeChainResp) => {
+
       if (changeChainResp) {
+
         this.sendMessage('sc_request', {message: 'authorizations'});
+
         ipcMain.once('authorizationsResponse', (event, authorizations) => {
           callback(authorizations);
         });
+
       } else {
         callback();
       }
+
     });
   }
 
@@ -116,7 +123,8 @@ class SimpleosConnectService {
   onIsLoggedIn(sessionUuid, callback) {
     console.log('isLoggedIn');
 
-    callback(this.currentSessionUuid === sessionUuid && this.currentAuthorization);
+    callback(
+        this.currentSessionUuid === sessionUuid && this.currentAuthorization);
   }
 
   onGetCurrentAuthorization(sessionUuid, callback) {

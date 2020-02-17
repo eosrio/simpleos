@@ -207,6 +207,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             loop: false
         };
 
+
         this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
             if (value) {
                 if (value.length === 51) {
