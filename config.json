@@ -665,14 +665,14 @@
 			]
 		},
 		{
-			"id": "7f3f5ae1a73d7c14a72f65f257d41397b966ffcd95c588c50d5081eaa354984c",
+			"id": "cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a",
 			"symbol": "LLC",
 			"icon": "liberland.png",
 			"precision": 8,
 			"name": "LIBERLAND TESTNET",
 			"network": "TESTNET",
-			"firstApi": "https://liberland.eossweden.org",
-			"historyApi": "https://liberland.eosio.se/v2",
+			"firstApi": "https://liberland-test.eosio.se",
+			"historyApi": "",
 			"forumTally": "",
 			"eosrioBP": "",
 			"proxyRegistry": "",
@@ -682,10 +682,10 @@
 			"features": {
 				"history": true,
 				"send": true,
-				"resource": true,
+				"resource": false,
 				"vote": false,
 				"staking": true,
-				"dapps": false,
+				"dapps": true,
 				"addAcc": true,
 				"newAcc": false,
 				"forum": false,
@@ -698,9 +698,10 @@
 			],
 			"endpoints": [
 				{
-					"url": "https://liberland.eossweden.org",
+					"url": "https://liberland-test.eosio.se",
 					"owner": "EOS Sweden",
-					"latency": 0
+					"latency": 0,
+					"version": "native"
 				}
 			],
 			"explorers": []
