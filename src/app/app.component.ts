@@ -115,9 +115,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         this.busy = false;
 
-        this.onSimpleosConnectMessage = this.onSimpleosConnectMessage.bind(this);
-
         if (this.connect.ipc) {
+
+            // Bind simpleos connect requests
+            this.onSimpleosConnectMessage = this.onSimpleosConnectMessage.bind(this);
+            this.connect.ipc.on('sc_request', this.onSimpleosConnectMessage);
+
+            // bind transit api requests
             this.connect.ipc.on('request', (event, payload) => {
                 this.transitEventHandler = event;
                 switch (payload.message) {
