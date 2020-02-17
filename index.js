@@ -54,8 +54,19 @@ class SimpleosWallet {
 
   constructor() {
     this.claimRW = new ClaimRewardsService(this);
+  }
+
+  launchServices() {
+    // simpleos connect
     this.connect = new SimpleosConnectService(this);
+
+    // transit api
     this.transit = new TransitApiService(this);
+    this.transit.init();
+    this.transit.startServer();
+
+    // ledger integration
+    this.ledger = new LedgerManager(this);
   }
 
   init() {
@@ -132,7 +143,6 @@ class SimpleosWallet {
         });
       });
     } else {
-      this.transit.init();
       this.launchApp();
       this.claimRW.autoClaimCheck();
       if (this.isEnableAutoClaim) {
@@ -213,8 +223,6 @@ class SimpleosWallet {
     this.claimRW.writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
         this.claimRW.lockLaunchFile))} | The LOCK: ${gotTheLock}`);
 
-    this.transit.startServer();
-
     if (fs.existsSync(this.claimRW.lockLaunchFile)) {
       if (gotTheLock) {
         this.claimRW.unlinkLLock();
@@ -241,7 +249,7 @@ class SimpleosWallet {
 
     app.on('ready', () => {
       console.log('ready');
-      this.ledger = new LedgerManager(this);
+      this.launchServices();
       this.createWindow().catch(console.log);
     });
 
