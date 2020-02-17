@@ -10,8 +10,8 @@
             </a>
 
         </div>
-        <div style="align-self:end;width:auto;height: 1.7rem;"
-             *ngIf="compilerVersion === 'DEFAULT' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
+<!--        <div style="align-self:end;width:auto;height: 1.7rem;" *ngIf="compilerVersion === 'DEFAULT' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">-->
+        <div style="align-self:end;width:auto;height: 1.7rem;" *ngIf="compilerVersion === 'DEFAULT'">
             <a class="nav-link nav-icon other-icon">
                 <clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
                           style="height: auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>

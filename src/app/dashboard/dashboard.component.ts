@@ -166,11 +166,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.deleteAccModal = false;
         this.appVersion = window['appversion'];
 
-        if (this.aService.activeChain.name === 'WAX MAINNET' && this.compilerVersion === 'EOS MAINNET') {
-            this.theme.defaultTheme();
-        }
-
-        if (this.aService.activeChain.name === 'LIBERLAND TESTNET' && this.compilerVersion === 'EOS MAINNET') {
+        if (this.compilerVersion === 'DEFAULT') {
             this.theme.defaultTheme();
         }
 

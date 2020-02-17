@@ -254,17 +254,17 @@
         </div>
     </div>
 
-    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'LIBERLAND'">
+    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'LIBERLAND' || aService.activeChain['name'] === 'LIBERLAND TESTNET'">
         <div class="clr-col-lg-12 d-flex justify-content-center">
             <button (click)="processLiberlandVotes()" class="btn btn-link3 special-font"
-                    style="margin: 50px auto; text-align: center;width: 480px; height: 60px; font-size: 22px; ">
+                    style="margin: 50px auto; text-align: center;width: 520px; max-width: 800px;height: 60px; font-size: 22px; ">
                 GO TO VOTE CANDIDATES PAGE
                 <fa-icon [icon]="['far','external-link']"></fa-icon>
             </button>
         </div>
     </div>
 
-    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'DEFAULT'">
+    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'DEFAULT' && aService.activeChain.features.vote">
         <div class="clr-col-lg-12">
             <div class="card info-card">
                 <div class="card-block" style="padding: 0;">
