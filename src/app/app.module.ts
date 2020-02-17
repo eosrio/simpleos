@@ -142,6 +142,7 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {MatSliderModule} from '@angular/material/slider';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatListModule} from "@angular/material/list";
+import {FlexLayoutModule} from "@angular/flex-layout";
 
 // PrimeNG
 import {AccordionModule} from 'primeng/accordion';
@@ -218,6 +219,7 @@ export function playerFactory() {
             player: playerFactory,
             useCache: false
         }),
+        FlexLayoutModule,
     ],
     providers: [
         EOSJSService,

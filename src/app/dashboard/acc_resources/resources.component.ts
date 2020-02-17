@@ -581,7 +581,19 @@ export class ResourcesComponent implements OnInit {
 					this.aService.refreshFromChain();
 					this.busy = false;
 				}).catch((error) => {
-					this.wrongpassrefund = JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (typeof error === 'object') {
+						if (error.json) {
+							this.wrongpassrefund = 'Error: '+error.json.error.details[0].message;
+						} else {
+							this.wrongpassrefund = 'Error: '+error.error.details[0].message;
+						}
+					}else{
+						if (error.json) {
+							this.wrongpassrefund = 'Error: '+JSON.parse(error).json.error.details[0].message;
+						} else {
+							this.wrongpassrefund = 'Error: '+JSON.parse(error).error.details[0].message;
+						}
+					}
 					this.busy = false;
 				});
 			}
@@ -606,7 +618,19 @@ export class ResourcesComponent implements OnInit {
 					this.aService.refreshFromChain();
 					this.busy = false;
 				}).catch((error) => {
-					this.wrongpasssell = JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (typeof error === 'object') {
+						if (error.json) {
+							this.wrongpasssell = 'Error: '+error.json.error.details[0].message;
+						} else {
+							this.wrongpasssell = 'Error: '+error.error.details[0].message;
+						}
+					}else{
+						if (error.json) {
+							this.wrongpasssell = 'Error: '+JSON.parse(error).json.error.details[0].message;
+						} else {
+							this.wrongpasssell = 'Error: '+JSON.parse(error).error.details[0].message;
+						}
+					}
 					this.busy = false;
 				});
 			}
@@ -645,7 +669,19 @@ export class ResourcesComponent implements OnInit {
 					this.aService.refreshFromChain();
 					this.busy = false;
 				}).catch((error) => {
-					this.wrongpassbuy = JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (typeof error === 'object') {
+						if (error.json) {
+							this.wrongpassbuy = 'Error: '+error.json.error.details[0].message;
+						} else {
+							this.wrongpassbuy = 'Error: '+error.error.details[0].message;
+						}
+					}else{
+						if (error.json) {
+							this.wrongpassbuy = 'Error: '+JSON.parse(error).json.error.details[0].message;
+						} else {
+							this.wrongpassbuy = 'Error: '+JSON.parse(error).error.details[0].message;
+						}
+					}
 					this.busy = false;
 				});
 			}
@@ -678,7 +714,19 @@ export class ResourcesComponent implements OnInit {
 					this.passUnDelegateModal = false;
 					this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
 				}).catch((error) => {
-					this.wrongpassundelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (typeof error === 'object') {
+						if (error.json) {
+							this.wrongpassundelegate = 'Error: '+error.json.error.details[0].message;
+						} else {
+							this.wrongpassundelegate = 'Error: '+error.error.details[0].message;
+						}
+					}else{
+						if (error.json) {
+							this.wrongpassundelegate = 'Error: '+JSON.parse(error).json.error.details[0].message;
+						} else {
+							this.wrongpassundelegate = 'Error: '+JSON.parse(error).error.details[0].message;
+						}
+					}
 					this.busy = false;
 				});
 			}
@@ -739,7 +787,19 @@ export class ResourcesComponent implements OnInit {
 				}).catch((error) => {
 					console.log(error);
 					this.busy = false;
-					this.wrongpassdelegate = JSON.stringify(JSON.parse(error).error.details[0].message);
+					if (typeof error === 'object') {
+						if (error.json) {
+							this.wrongpassdelegate = 'Error: '+error.json.error.details[0].message;
+						} else {
+							this.wrongpassdelegate = 'Error: '+error.error.details[0].message;
+						}
+					}else{
+						if (error.json) {
+							this.wrongpassdelegate = 'Error: '+JSON.parse(error).json.error.details[0].message;
+						} else {
+							this.wrongpassdelegate = 'Error: '+JSON.parse(error).error.details[0].message;
+						}
+					}
 				});
 			}
 		}).catch((q) => {

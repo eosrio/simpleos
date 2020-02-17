@@ -451,10 +451,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
           if (typeof error === 'object') {
             this.wrongpass = error.json.error.details[0].message;
           } else {
-            if (JSON.parse(error).error.name === 'leeway_deadline_exception') {
+            if (JSON.parse(error).json.error.name === 'leeway_deadline_exception') {
               this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
             } else {
-              this.wrongpass = JSON.parse(error).error.details[0].message;
+              this.wrongpass = JSON.parse(error).json.error.details[0].message;
             }
           }
           this.busy = false;
@@ -804,43 +804,56 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
       if (data === true) {
         this.eos.voteAction(voter.name, this.selectedVotes,
             this.voteService.voteType, permission).then((result) => {
-          if (JSON.parse(result).code) {
-            if (JSON.parse(result).error.details.length > 0) {
-              this.wrongpass = JSON.parse(result).error.details[0].message;
+              let newResult;
+              let _result;
+              if(typeof result !== 'object'){
+                newResult = JSON.parse(result);
+              }else{
+                newResult = result;
+              }
+              if(newResult.json){
+                _result = result.json;
+              }else{
+                _result = result;
+              }
+              console.log(_result);
+              if(_result.code){
+                this.wrongpass = "Error: "+_result.error.details[0].message;
+              } else {
+                this.wrongpass = '';
+                this.cdr.detectChanges();
+                setTimeout(() => {
+                  this.aService.refreshFromChain().then(() => {
+                    this.voteOption(this.voteService.voteType);
+                    this.voteService.currentVoteType(voter.name);
+                    this.loadPlacedVotes(this.aService.selected.getValue());
+                    this.setCheckListVote(this.aService.selected.getValue().name);
+                    this.showToast('success', 'Vote broadcasted',
+                        'Check your history for confirmation.');
+                    this.voteModal = false;
+                    this.busy = false;
+                  }).catch(err => {
+                    console.log('Refresh From Chain Error:', err);
+                  });
+                  // this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
+                }, 1500);
+                // this.passForm.reset();
+              }
+
+        }).catch((error) => {
+          console.log(error);
+          if (typeof error === 'object') {
+            if (error.json) {
+              this.wrongpass = "Error: "+error.json.error.details[0].message;
             } else {
-              this.wrongpass = JSON.parse(result).error.what;
+              this.wrongpass = "Error: "+error.error.details[0].message;
             }
-            this.busy = false;
-          } else {
-            this.wrongpass = '';
-            this.cdr.detectChanges();
-            setTimeout(() => {
-              this.aService.refreshFromChain().then(() => {
-                this.voteOption(this.voteService.voteType);
-                this.voteService.currentVoteType(voter.name);
-                this.loadPlacedVotes(this.aService.selected.getValue());
-                this.setCheckListVote(this.aService.selected.getValue().name);
-                this.showToast('success', 'Vote broadcasted',
-                    'Check your history for confirmation.');
-                this.voteModal = false;
-                this.busy = false;
-              }).catch(err => {
-                console.log('Refresh From Chain Error:', err);
-              });
-              // this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
-            }, 1500);
-            // this.passForm.reset();
-          }
-        }).catch((err2) => {
-          console.log(err2);
-          if (typeof err2 === 'object') {
-            if (err2.error.code === 3081001) {
-              this.wrongpass = 'Not enough stake to perform this action.';
+          }else{
+            if (error.json) {
+              this.wrongpass = "Error: "+JSON.parse(error).json.error.details[0].message;
             } else {
-              this.wrongpass = err2.error.details[0].message;
+              this.wrongpass = "Error: "+JSON.parse(error).error.details[0].message;
             }
-          } else {
-            this.wrongpass = JSON.parse(err2).error.details[0].message;
           }
           this.busy = false;
         });
@@ -1003,7 +1016,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
       termsHTML: '',
       errorFunc: (e) => {
         if (e instanceof RpcError) {
-          const eJson = e.json;
+          let eJson;
+          if(e.json){
+            eJson = e.json;
+          }else{
+            eJson = e;
+          }
           switch (eJson.error.code) {
             case 3090005: {
               return 'Irrelevant authority included, missing linkauth';
@@ -1014,7 +1032,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
             }
             default: {
-              return eJson.error.what;
+              return eJson.error.details[0].message;
             }
           }
         }
@@ -1119,7 +1137,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
       this.cdr.detectChanges();
     } catch (e) {
       if (e instanceof RpcError) {
-        const eJson = e.json;
+        let eJson;
+        if(e.json){
+          eJson = e.json;
+        }else{
+          eJson = e;
+        }
         switch (eJson.error.code) {
           case 3090005: {
             this.claimError = 'Irrelevant authority included, missing linkauth';
@@ -1130,7 +1153,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             break;
           }
           default: {
-            this.claimError = eJson.error.what;
+            this.claimError = eJson.error.details[0].message;
           }
         }
         console.log(JSON.stringify(eJson, null, 2));
