@@ -217,8 +217,6 @@ export class AppComponent implements OnInit, AfterViewInit {
                 }
             });
         }
-
-
     }
 
     onLoginModalClose(ev) {
@@ -228,12 +226,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
     }
 
-	onSignModalClose(ev) {
-		if (this.transitEventHandler && ev === false && this.eventFired === false) {
-			this.eventFired = true;
-			this.transitEventHandler.sender.send('signResponse', {status: 'CANCELLED'});
-		}
-	}
+    onSignModalClose(ev) {
+        if (this.transitEventHandler && ev === false && this.eventFired === false) {
+            this.eventFired = true;
+            this.transitEventHandler.sender.send('signResponse', {status: 'CANCELLED'});
+        }
+    }
 
     see() {
         this.dnSet = !this.dnSet;
@@ -306,14 +304,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     importLedgerAccount() {
         this.eos.loadPublicKey(this.selectedSlot.publicKey).then((data: any) => {
             console.log(data);
-            this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex).then(() => {
-                this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
-                setTimeout(() => {
-                    this.router.navigate(['dashboard', 'wallet']).catch((err) => {
-                        console.log(err);
-                    });
-                }, 1000);
-            });
+            this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex);
+            this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
+            setTimeout(() => {
+                this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+                    console.log(err);
+                });
+            }, 1000);
         });
     }
 

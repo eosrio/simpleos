@@ -72,12 +72,17 @@ class SimpleosWallet {
   init() {
     app.allowRendererProcessReuse = true;
     app.getVersion = () => version;
+
     this.devtools = args.some(val => val === '--devtools');
     this.serve = args.some(val => val === '--serve');
+
     this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
     console.log('Developer Mode:', this.devMode);
+
     this.claimRW.writeLog(
-        `simpleos Auto Launcher: ${JSON.stringify(this.simpleosAutoLauncher)}`);
+        `Auto Launcher: ${JSON.stringify(this.simpleosAutoLauncher)}`,
+    );
+
     this.simpleosAutoLauncher.opts.appPath += ' --autostart';
     this.simpleosAutoLauncher.isEnabled().then((status) => {
       console.log('STATUS:', status);

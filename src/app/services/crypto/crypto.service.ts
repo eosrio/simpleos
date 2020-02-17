@@ -241,7 +241,7 @@ export class CryptoService {
 		return this.eosjs.baseConfig.keyProvider;
 	}
 
-	async storeLedgerAccount(pbk: string, slotNumber: number): Promise<void> {
+	storeLedgerAccount(pbk: string, slotNumber: number) {
 		let store = {};
 		const oldData = JSON.parse(localStorage.getItem('eos_keys.' + this.eosjs.chainID));
 		if (oldData) {

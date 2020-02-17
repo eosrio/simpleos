@@ -141,6 +141,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatSliderModule} from '@angular/material/slider';
 import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatListModule} from "@angular/material/list";
 
 // PrimeNG
 import {AccordionModule} from 'primeng/accordion';
@@ -212,6 +213,7 @@ export function playerFactory() {
 		NgxElectronModule,
 		MarkdownModule.forRoot(),
 		MaterialDesignFrameworkModule,
+		MatListModule,
 		LottieModule.forRoot({
 			player: playerFactory,
 			useCache: false
