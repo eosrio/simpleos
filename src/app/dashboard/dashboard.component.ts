@@ -799,7 +799,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     async completeLedgerImport() {
         this.keysToImport.forEach((slot, key) => {
-            this.crypto.storeLedgerAccount(key, slot);
+            this.crypto.storeLedgerAccount(key, slot, this.ledgerService.deviceName);
         });
         await this.aService.appendAccounts(this.accountsToImport);
     }

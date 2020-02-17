@@ -154,7 +154,7 @@ class SimpleosConnectService {
         this.main.unfocus();
       }
 
-      callback();
+      callback(data);
     });
   }
 

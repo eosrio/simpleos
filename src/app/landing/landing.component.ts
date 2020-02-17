@@ -213,11 +213,11 @@ export class LandingComponent implements OnInit, OnDestroy {
             }
         }));
 
-        this.subscriptions.push(this.ledgerService.openPanel.asObservable().subscribe((value) => {
-            if (value && !this.importFromLedger) {
-                this.ledgerwizard.open();
-            }
-        }));
+        // this.subscriptions.push(this.ledgerService.openPanel.asObservable().subscribe((value) => {
+        //     if (value && !this.importFromLedger) {
+        //         this.ledgerwizard.open();
+        //     }
+        // }));
 
         this.passformexodus = this.fb.group({
             matchingPassword: this.fb.group({

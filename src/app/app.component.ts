@@ -244,8 +244,15 @@ export class AppComponent implements OnInit, AfterViewInit {
                 }));
                 break;
             }
-            case 'transact': {
-
+            case 'sign': {
+                if (this.crypto.getLockStatus()) {
+                    event.sender.send('signResponse', {
+                        status: 'CANCELLED'
+                    });
+                } else {
+                    this.simpleosConnectSign(event, payload).catch(console.log);
+                }
+                break;
             }
         }
     }
@@ -280,7 +287,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         if (this.dnSet) {
             this.theme.lightTheme();
         } else {
-            if (this.compilerVersion === 'LIBERLAND TESTNET') {
+            if (this.compilerVersion === 'LIBERLAND') {
                 this.theme.liberlandTheme();
             } else {
                 this.theme.defaultTheme();
@@ -324,36 +331,27 @@ export class AppComponent implements OnInit, AfterViewInit {
         return this._electronService.remote.getCurrentWindow().isMaximized();
     }
 
-// scanPublicKeys() {
-    // 	if (this.ledgerOpen) {
-    // 		this.busy = true;
-    // 		this.ledger.readPublicKeys(8).then((ledger_slots: LedgerSlot[]) => {
-    // 			this.accSlots = ledger_slots;
-    // 			this.busy = false;
-    // 			console.log(this.accSlots);
-    // 		});
-    // 	}
+    mode: string = 'local';
+
+    // selectSlot(slot: LedgerSlot, index: number) {
+    //     this.selectedSlot = slot;
+    //     this.selectedSlotIndex = index;
+    //     // this.ledgerwizard.next();
+    //     console.log(this.selectedSlot);
     // }
-
-    selectSlot(slot: LedgerSlot, index: number) {
-        this.selectedSlot = slot;
-        this.selectedSlotIndex = index;
-        // this.ledgerwizard.next();
-        console.log(this.selectedSlot);
-    }
-
-    importLedgerAccount() {
-        this.eos.loadPublicKey(this.selectedSlot.publicKey).then((data: any) => {
-            console.log(data);
-            this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex);
-            this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
-            setTimeout(() => {
-                this.router.navigate(['dashboard', 'wallet']).catch((err) => {
-                    console.log(err);
-                });
-            }, 1000);
-        });
-    }
+    //
+    // importLedgerAccount() {
+    //     this.eos.loadPublicKey(this.selectedSlot.publicKey).then((data: any) => {
+    //         console.log(data);
+    //         this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex);
+    //         this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
+    //         setTimeout(() => {
+    //             this.router.navigate(['dashboard', 'wallet']).catch((err) => {
+    //                 console.log(err);
+    //             });
+    //         }, 1000);
+    //     });
+    // }
 
     performUpdate() {
         window['shell'].openExternal('https://eosrio.io/simpleos/').catch(console.log);
@@ -409,40 +407,81 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
     }
 
-    async signTransitAction() {
+    async signExternalAction() {
         this.wrongpass = '';
         this.busy = true;
-        const account = this.aService.accounts.find(a => a.name === this.external_signer);
-        const idx = this.aService.accounts.indexOf(account);
-        this.aService.selected.next(account);
-        const [auth, publicKey] = this.trxFactory.getAuth();
-        try {
-            await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
 
-        } catch (e) {
-            this.wrongpass = 'wrong password';
-            this.busy = false;
-        }
-        try {
-            const result = await this.eosjs.signTrx(this.fullTrxData);
-            if (result) {
-                this.replyEvent.sender.send('signResponse', {
-                    sigs: result.signatures,
-                });
-                this.wrongpass = '';
+        if (this.mode === 'local') {
+            const account = this.aService.accounts.find(a => a.name === this.external_signer);
+            const idx = this.aService.accounts.indexOf(account);
+            this.aService.selected.next(account);
+            const [, publicKey] = this.trxFactory.getAuth();
+
+
+            try {
+                await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
+            } catch (e) {
+                this.wrongpass = 'wrong password';
                 this.busy = false;
-                this.externalActionModal = false;
-                this.aService.select(idx);
-                this.aService.reloadActions(account);
-                await this.aService.refreshFromChain();
-                this.cdr.detectChanges();
-
+                return;
             }
-        } catch (e) {
-            this.wrongpass = e;
-            console.log(e);
-            this.busy = false;
+
+            try {
+                const result = await this.eosjs.signTrx(this.fullTrxData);
+                if (result) {
+                    this.replyEvent.sender.send('signResponse', {
+                        sigs: result.signatures,
+                    });
+                    this.wrongpass = '';
+                    this.busy = false;
+                    this.externalActionModal = false;
+                    this.aService.select(idx);
+                    this.aService.reloadActions(account);
+                    await this.aService.refreshFromChain();
+                    this.cdr.detectChanges();
+                }
+            } catch (e) {
+                this.wrongpass = e;
+                console.log(e);
+                this.busy = false;
+            }
+
+        } else if (this.mode === 'ledger') {
+            try {
+                const result = await this.ledger.sign(
+                    this.fullTrxData,
+                    this.crypto.requiredLedgerSlot,
+                    this.network.selectedEndpoint.getValue().url
+                );
+                if (result) {
+                    this.wrongpass = '';
+                    this.busy = false;
+                    this.externalActionModal = false;
+                    this.cdr.detectChanges();
+                }
+            } catch (e) {
+                this.wrongpass = e;
+                console.log(e);
+                this.busy = false;
+            }
         }
+    }
+
+    processSigners() {
+        let signer = '';
+        for (const action of this.fullTrxData.actions) {
+            if (action.account === 'eosio' && action.name === 'updateauth') {
+                this.updateauthWarning = true;
+            }
+            if (signer === '') {
+                signer = action.authorization[0].actor;
+            } else {
+                if (signer !== action.authorization[0].actor) {
+                    console.log('Multiple signers!!!');
+                }
+            }
+        }
+        this.external_signer = signer;
     }
 
     async onTransitSign(event, payload) {
@@ -458,20 +497,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             this.fullTrxData = data;
             this.updateauthWarning = false;
             this.confirmForm.reset();
-            let signer = '';
-            for (const action of data.actions) {
-                if (action.account === 'eosio' && action.name === 'updateauth') {
-                    this.updateauthWarning = true;
-                }
-                if (signer === '') {
-                    signer = action.authorization[0].actor;
-                } else {
-                    if (signer !== action.authorization[0].actor) {
-                        console.log('Multiple signers!!!');
-                    }
-                }
-            }
-            this.external_signer = signer;
+            this.processSigners();
             this.action_json = data.actions;
             this.zone.run(() => {
                 this.loadingTRX = false;
@@ -483,5 +509,44 @@ export class AppComponent implements OnInit, AfterViewInit {
             console.log(e);
             this.loadingTRX = false;
         }
+    }
+
+    async simpleosConnectSign(event, payload) {
+        this.fullTrxData = payload.content;
+        this.loadingTRX = true;
+        try {
+            this.updateauthWarning = false;
+            this.confirmForm.reset();
+            this.processSigners();
+            this.action_json = this.fullTrxData.actions;
+
+            this.checkSignerMode();
+
+            this.zone.run(() => {
+                this.loadingTRX = false;
+                this.externalActionModal = true;
+                this.eventFired = false;
+            });
+            this.replyEvent = event;
+        } catch (e) {
+            console.log(e);
+            this.loadingTRX = false;
+        }
+    }
+
+    private checkSignerMode() {
+        const account = this.aService.accounts.find(a => a.name === this.external_signer);
+        const [auth, publicKey] = this.trxFactory.getAuth(account);
+        console.log(auth, publicKey);
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        console.log(this.crypto.requiredLedgerDevice);
+        console.log(this.crypto.requiredLedgerSlot);
+    }
+
+    get requiredLedgerInfo() {
+        return {
+            device: this.crypto.requiredLedgerDevice,
+            slot: this.crypto.requiredLedgerSlot
+        };
     }
 }

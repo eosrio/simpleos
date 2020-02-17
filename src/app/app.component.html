@@ -128,24 +128,36 @@
 
     <div class="modal-footer">
 
-        <form [formGroup]="confirmForm" class="confirmForm">
+        <ng-container *ngIf="mode === 'local'">
+            <form [formGroup]="confirmForm" class="confirmForm">
+                <mat-form-field>
+                    <input matInput #pass type="password" placeholder="Password"
+                           formControlName="pass" (keyup.enter)="signExternalAction()">
+                    <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+                        {{wrongpass}}
+                    </mat-hint>
+                </mat-form-field>
 
-            <mat-form-field>
-                <input matInput #pass type="password" placeholder="Password"
-                       formControlName="pass" (keyup.enter)="signTransitAction()">
-                <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-                    {{wrongpass}}
-                </mat-hint>
-            </mat-form-field>
+                <button type="button" class="btn btn-info-outline"
+                        style="margin-top: 12px;"
+                        [disabled]="!confirmForm.valid || busy" (click)="signExternalAction()">
+                    Confirm
+                    <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                </button>
+            </form>
+        </ng-container>
 
+        <ng-container *ngIf="mode === 'ledger'">
+            <span>device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
             <button type="button" class="btn btn-info-outline"
-                    style="margin-top: 12px;"
-                    [disabled]="!confirmForm.valid || busy" (click)="signTransitAction()">
-                Confirm
+                    style="margin-top: 12px;" (click)="signExternalAction()">
+                sign with ledger
                 <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
             </button>
-
-        </form>
+            <div class="error" *ngIf="wrongpass !== ''">
+                {{wrongpass}}
+            </div>
+        </ng-container>
 
     </div>
 </clr-modal>
