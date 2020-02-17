@@ -1,149 +1,153 @@
 <div class="main-container">
-	<header class="header-1" style="-webkit-app-region: drag; height: 1.7rem;flex-basis: 1.7rem;">
-		<div class="branding"
-			 [ngStyle]="{'padding':'0 s10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
-			<a class="nav-link" [ngStyle]="{'margin':(!isMac?'0 0':'0 auto')}">
+    <header class="header-1" style="-webkit-app-region: drag; height: 1.7rem;flex-basis: 1.7rem;">
+        <div class="branding"
+             [ngStyle]="{'padding':'0 s10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
+            <a class="nav-link" [ngStyle]="{'margin':(!isMac?'0 0':'0 auto')}">
 				<span *ngIf="compilerVersion === 'DEFAULT'" class="title-header"
-					  style="color: #9a9a9a; font-size: 14px;">SimplEOS Wallet {{version}}</span>
-				<span *ngIf="compilerVersion === 'LIBERLAND'" class="title-header"
-					  style="color: #9a9a9a; font-size: 14px;">LIBERLAND Wallet {{version}}</span>
-			</a>
+                      style="color: #9a9a9a; font-size: 14px;">SimplEOS Wallet {{version}}</span>
+                <span *ngIf="compilerVersion === 'LIBERLAND'" class="title-header"
+                      style="color: #9a9a9a; font-size: 14px;">LIBERLAND Wallet {{version}}</span>
+            </a>
 
-		</div>
-		<div style="align-self:end;width:auto;height: 1.7rem;"
-			 *ngIf="compilerVersion === 'DEFAULT' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
-			<a class="nav-link nav-icon other-icon">
-				<clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
-						  style="height: auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
-				<clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon"
-						  style="height:auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
-			</a>
-		</div>
+        </div>
+        <div style="align-self:end;width:auto;height: 1.7rem;"
+             *ngIf="compilerVersion === 'DEFAULT' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">
+            <a class="nav-link nav-icon other-icon">
+                <clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
+                          style="height: auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+                <clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon"
+                          style="height:auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+            </a>
+        </div>
 
 
-		<div class="header-actions" style="width:auto;height:1.7rem;" *ngIf="!isMac">
-			<a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;"
-			   class="nav-link nav-icon other-icon icon-header">
-				<clr-icon size="18" shape="window-min"></clr-icon>
-			</a>
-			<a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
-			   class="nav-link nav-icon other-icon icon-header">
-				<clr-icon size="18" shape="window-restore"></clr-icon>
-			</a>
-			<a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
-			   class="nav-link nav-icon other-icon icon-header">
-				<clr-icon size="18" shape="window-max"></clr-icon>
-			</a>
-			<a (click)="closeWindow()" style="-webkit-app-region: no-drag;"
-			   class="nav-link nav-icon close-icon icon-header">
-				<clr-icon size="18" shape="window-close"></clr-icon>
-			</a>
-		</div>
-	</header>
+        <div class="header-actions" style="width:auto;height:1.7rem;" *ngIf="!isMac">
+            <a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;"
+               class="nav-link nav-icon other-icon icon-header">
+                <clr-icon size="18" shape="window-min"></clr-icon>
+            </a>
+            <a *ngIf="maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
+               class="nav-link nav-icon other-icon icon-header">
+                <clr-icon size="18" shape="window-restore"></clr-icon>
+            </a>
+            <a *ngIf="!maximized" (click)="maximizeWindow()" style="-webkit-app-region: no-drag;"
+               class="nav-link nav-icon other-icon icon-header">
+                <clr-icon size="18" shape="window-max"></clr-icon>
+            </a>
+            <a (click)="closeWindow()" style="-webkit-app-region: no-drag;"
+               class="nav-link nav-icon close-icon icon-header">
+                <clr-icon size="18" shape="window-close"></clr-icon>
+            </a>
+        </div>
+    </header>
 
-	<div class="content-container">
-		<router-outlet></router-outlet>
-	</div>
+    <div class="content-container">
+        <router-outlet></router-outlet>
+    </div>
 
 </div>
 
-<clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onModalClose($event)">
-	<h3 class="modal-title text-white">
-		Connect to
-		<div class="blue" style="margin-top: 8px;">{{dapp_name}}</div>
-	</h3>
-	<div class="modal-body" *ngIf="aService.accounts.length > 0">
-		<p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
-		<div class="card chains-card black-white">
-			<ng-container *ngFor="let acc of aService.accounts; let i = index">
-				<div class="card-block chain-section" (click)="selectAccount(acc,i)">
-					{{acc.name}}
-					<span class="blue connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
-						[icon]="['far', 'angle-right']"></fa-icon></span>
-				</div>
-			</ng-container>
-		</div>
-		<div style="margin: 10px 0;" class="black-white">*This doesn't let the dapp do actions on your behalf</div>
-	</div>
-	<div class="modal-body" *ngIf="aService.accounts.length === 0">
-		<p style="margin-bottom: 20px;" class="black-white"><strong>No account found.</strong> Please, close this window
-			and
-			import your account to continue.</p>
-	</div>
+<clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onLoginModalClose($event)">
+    <h3 class="modal-title text-white">
+        Connect to
+        <div class="blue" style="margin-top: 8px;">{{dapp_name}}</div>
+    </h3>
+    <div class="modal-body" *ngIf="aService.accounts.length > 0">
+        <p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
+        <div class="card chains-card black-white">
+            <ng-container *ngFor="let acc of aService.accounts; let i = index">
+                <div class="card-block chain-section" (click)="selectAccount(acc,i)">
+                    {{acc.name}}
+                    <span class="blue connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
+                            [icon]="['far', 'angle-right']"></fa-icon></span>
+                </div>
+            </ng-container>
+        </div>
+        <div style="margin: 10px 0;" class="black-white">*This doesn't let the dapp do actions on your behalf</div>
+    </div>
+    <div class="modal-body" *ngIf="aService.accounts.length === 0">
+        <p style="margin-bottom: 20px;" class="black-white"><strong>No account found.</strong> Please, close this window
+            and
+            import your account to continue.</p>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="loadingTRX" [clrModalSize]="'md'">
 
-	<h3 class="modal-title">
-		<span class="blue">Loading transaction...</span>
-	</h3>
+    <h3 class="modal-title">
+        <span class="blue">Loading transaction...</span>
+    </h3>
 
-	<div class="modal-body">
+    <div class="modal-body">
 
-	</div>
+    </div>
 
 </clr-modal>
 
-<clr-modal [(clrModalOpen)]="transitAction" [clrModalSize]="'md'" (clrModalOpenChange)="onModalClose($event)">
+<clr-modal [(clrModalOpen)]="externalActionModal" [clrModalSize]="'md'" (clrModalOpenChange)="onSignModalClose($event)">
 
-	<h3 class="modal-title">
-		<span class="blue">Confirm transaction</span>
-	</h3>
+    <h3 class="modal-title">
+        <span class="blue">Confirm transaction</span>
+    </h3>
 
-	<div class="modal-body">
+    <div class="modal-body">
 
-		<h5 class="gray mt-0">Account: {{transit_signer}}</h5>
-		<h5 class="text-white">Are you sure you want to perform the following actions ?</h5>
+        <h5 class="gray mt-0">Account: {{external_signer}}</h5>
+        <h5 class="text-white">Are you sure you want to perform the following actions ?</h5>
 
-		<div *ngIf="updateauthWarning" class="alert alert-danger" role="alert"
-			 style="margin-top: 10px; font-size: 15px">
-			<div class="alert-items">
-				<div class="alert-item static">
-					<div class="alert-icon-wrapper">
-						<clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
-					</div>
-					<span class="alert-text" style="color: #c92100;"><strong>CAUTION !</strong></span>
-				</div>
-				<div class="alert-item static">
-					<div class="alert-icon-wrapper">
-						<fa-icon [icon]="['far', 'skull-crossbones']" class="alert-icon skull-icon"></fa-icon>
-					</div>
-					<span class="alert-text"><strong>This action will modify your permissions.<br> Please be extra careful!</strong></span>
-				</div>
-			</div>
-		</div>
+        <div *ngIf="updateauthWarning" class="alert alert-danger" role="alert"
+             style="margin-top: 10px; font-size: 15px">
+            <div class="alert-items">
+                <div class="alert-item static">
+                    <div class="alert-icon-wrapper">
+                        <clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
+                    </div>
+                    <span class="alert-text" style="color: #c92100;"><strong>CAUTION !</strong></span>
+                </div>
+                <div class="alert-item static">
+                    <div class="alert-icon-wrapper">
+                        <fa-icon [icon]="['far', 'skull-crossbones']" class="alert-icon skull-icon"></fa-icon>
+                    </div>
+                    <span class="alert-text">
+						<strong>
+							This action will modify your permissions.<br> Please be extra careful!
+						</strong>
+					</span>
+                </div>
+            </div>
+        </div>
 
-		<p-accordion>
-			<p-accordionTab *ngFor="let act of action_json; let i = index" header="{{act.name}} on {{act.account}}"
-							[selected]="i === 0">
-				<ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
-			</p-accordionTab>
-		</p-accordion>
+        <p-accordion>
+            <p-accordionTab *ngFor="let act of action_json; let i = index" header="{{act.name}} on {{act.account}}"
+                            [selected]="i === 0">
+                <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
+            </p-accordionTab>
+        </p-accordion>
 
-	</div>
+    </div>
 
-	<div class="modal-footer">
+    <div class="modal-footer">
 
-		<form [formGroup]="confirmForm" class="confirmForm">
+        <form [formGroup]="confirmForm" class="confirmForm">
 
-			<mat-form-field>
-				<input matInput #pass type="password" placeholder="Password"
-					   formControlName="pass" (keyup.enter)="signTransitAction()">
-				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-					{{wrongpass}}
-				</mat-hint>
-			</mat-form-field>
+            <mat-form-field>
+                <input matInput #pass type="password" placeholder="Password"
+                       formControlName="pass" (keyup.enter)="signTransitAction()">
+                <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+                    {{wrongpass}}
+                </mat-hint>
+            </mat-form-field>
 
-			<button type="button" class="btn btn-info-outline"
-					style="margin-top: 12px;"
-					[disabled]="!confirmForm.valid || busy" (click)="signTransitAction()">
-				Confirm
-				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-			</button>
+            <button type="button" class="btn btn-info-outline"
+                    style="margin-top: 12px;"
+                    [disabled]="!confirmForm.valid || busy" (click)="signTransitAction()">
+                Confirm
+                <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+            </button>
 
-		</form>
+        </form>
 
-	</div>
+    </div>
 </clr-modal>
 
 <app-confirm-modal></app-confirm-modal>
@@ -218,11 +222,11 @@
 <!--LEDGER MODAL-->
 
 <div id="update-box" class="update-box-class" style="float:right;" [ngClass]="update ? 'show' : ''"
-	 *ngIf="compilerVersion=='EOS MAINNET'">
-	<div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
-	<div>There is a new version available!<br/> Want to update?</div>
-	<div></div>
-	<button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes
-	</button>
-	<a class="btn btn-link2 btn-sm" (click)="openGithub()">View on Github</a>
+     *ngIf="compilerVersion=='EOS MAINNET'">
+    <div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
+    <div>There is a new version available!<br/> Want to update?</div>
+    <div></div>
+    <button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes
+    </button>
+    <a class="btn btn-link2 btn-sm" (click)="openGithub()">View on Github</a>
 </div>

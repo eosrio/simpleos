@@ -60,7 +60,7 @@
 							"node_modules/moment/min/moment.min.js",
 							"node_modules/@webcomponents/custom-elements/custom-elements.min.js",
 							"node_modules/echarts/dist/echarts.min.js",
-							"native.js"
+							"electron_modules/native.js"
 						]
 					},
 					"configurations": {
