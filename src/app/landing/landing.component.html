@@ -1,5 +1,5 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="wrap" style="overflow-y: scroll; width:100vw;">
+<div class="wrap" style="height:-webkit-fill-available; overflow-y: scroll; width:100vw;">
     <div class="container">
         <div class="clr-row animate fadeInDown">
             <div class="clr-col-md-8 clr-col-lg-6 text-center" style="width: 466px; margin: 0 auto;">
@@ -688,7 +688,7 @@
                     <mat-form-field class="public-input" style="overflow: inherit;">
                         <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
                     </mat-form-field>
-                    <button class="btn btn-inverse btn-check" (click)="customConnect()" [disabled]="!endpoint"
+                    <button class="btn btn-info-outline btn-check" (click)="customConnect()" [disabled]="!endpoint"
                             style="clear: both;">
                         Connect
                     </button>
