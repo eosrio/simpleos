@@ -474,21 +474,21 @@ export class SendComponent implements OnInit {
         if (amount > 0 && this.sendForm.valid) {
 
 
-            const result = await this.ledger.sign(
-                this.fullTrxData,
-                this.crypto.requiredLedgerSlot,
-                this.network.selectedEndpoint.getValue().url
-            );
-            if (result) {
-                this.replyEvent.sender.send('signResponse', {
-                    status: 'OK',
-                    content: result
-                });
-                this.wrongpass = '';
-                this.busy = false;
-                this.externalActionModal = false;
-                this.cdr.detectChanges();
-            }
+            // const result = await this.ledger.sign(
+            //     this.fullTrxData,
+            //     this.crypto.requiredLedgerSlot,
+            //     this.network.selectedEndpoint.getValue().url
+            // );
+            // if (result) {
+            //     this.replyEvent.sender.send('signResponse', {
+            //         status: 'OK',
+            //         content: result
+            //     });
+            //     this.wrongpass = '';
+            //     this.busy = false;
+            //     this.externalActionModal = false;
+            //     this.cdr.detectChanges();
+            // }
 
 
             this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
