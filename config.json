@@ -782,7 +782,7 @@
 			"endpoints": [
 				{
 					"url": "https://staging.liberland.eosrio.io",
-					"owner": "EOS Sweden",
+					"owner": "EOS Rio",
 					"latency": 0,
 					"version": "native"
 				}
