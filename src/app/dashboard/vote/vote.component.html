@@ -203,7 +203,7 @@
                     </div>
                     <div class="clr-row">
                         <div class="clr-col-lg-5">
-                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+                            <button (click)="setStake()" class="btn btn-outline btn-info-outline"
                                     style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
                             </button>
                             <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
@@ -309,7 +309,7 @@
 
     <div class="clr-row votepage-row animate" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > '-1'">
         <div class="clr-col-lg-12 d-flex justify-content-center">
-            <button (click)="processLiberlandVotes()" class="btn btn-link3 special-font"
+            <button (click)="processLiberlandVotes()" class="btn btn-info special-font"
                     style="margin: 50px auto; text-align: center;width: 520px; max-width: 800px;height: 60px; font-size: 22px; ">
                 GO TO VOTE CANDIDATES PAGE
                 <fa-icon [icon]="['far','external-link']"></fa-icon>

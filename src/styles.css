@@ -36,21 +36,16 @@
 	--header-icon-color: #fafafa;
 	--theme-icon-color: #fafafa;
 	--theme-icon-color-hover: #c0c0c0;
-	--special-font-regular: inherit;
-	--special-font-bold: inherit;
-	--special-font-italic: inherit;
-	--special-font-bolditalic: inherit;
-	--special-font-weight: 'inherit';
-	--special-font-spacing: 'inherit';
-	--slogan-special-color: 'inherit';
 
+	/*landing*/
+	--slogan-special-color: 'inherit';
 	--landing-background: 'url("./assets/fundosimpleos.png")';
 	/*--landing-image-background:url("./assets/fundosimpleos.png");*/
 
 	--dashboard-animation-display: block;
 	--dashboard-img-display: none;
 
-
+	/*sidenav*/
 	--sidenav-background: #191919;
 	--sidenav-color: #b1b1b1;
 	--sidenav-option-color: #525a60;
@@ -59,17 +54,22 @@
 	--sidenav-active-border-color1: #272727;
 	--sidenav-active-border-color2: #535353;
 
+	/*tabs*/
+	--mat-tab-active: #3b3b3b;
+	--tab-active-background: #333333;
+	--mat-tab-bar-active: #0094d2;
+	--mat-tab-bar-height: 2px;
+	/*toolbar*/
 	--top-btn-backgorund: #1f1f1f;
 	--top-btn-color: #f8f8f8;
 
-	--mat-tab-active: #3b3b3b;
-	--mat-tab-bar-active: #0094d2;
-	--mat-tab-bar-height: 2px;
-
+	/*tokens panel*/
 	--tokens-panel-background: #191919;
 	--destaque-color-token: #0094d2;
 	--token-title-color: #b1b1b1;
 	--token-price-color:#696969;
+
+	/*contacts panel*/
 	--letter-divider: #3f3f3f;
 	--contact-hover-color: #b1b1b1;
 
@@ -82,37 +82,51 @@
 	--card-hover-backgorund: #3b3b3b;
 	--expand-background: #1c1c1c;
 
-	--tab-active-background: #333333;
-
 	--text-calendar: #FFFFFF;
 	--text-disabled-calendar: #4d4d4d;
 
+	/*scrollbar*/
 	--scroll-track-background: #191919;
 	--scroll-background: #191919;
 	--scroll-thumb-background: #555555;
 
+	/*history table*/
 	--table-th-color: #cccccc;
 	--table-th-background: #333333;
 	--table-tr-background: transparent;
 	--table-tr-color: #b1b1b1;
 	--table-td-color: #b1b1b1;
+	--tr-even-backgorund: transparent;
+	--tr-odd-backgorund: transparent;
+	--tr-border-bottom-color:  1px solid #3f3f3f;
 
 	--verify-card-text-color: #696969;
 	--verify-card-backgound-color: rgba(162, 162, 162, 0.12);
 
+	/*typography*/
+	--special-font-regular: inherit;
+	--special-font-bold: inherit;
+	--special-font-italic: inherit;
+	--special-font-bolditalic: inherit;
+	--special-font-weight: 'inherit';
+	--special-font-spacing: 'inherit';
+
 	--text-title-color: #a4a4a4;
 	--text-white-color: #ffffff;
 	--text-btn-color-hover: #ffffff;
+	/*used a lot, but in wax its orange XD*/
 	--text-blue-color: #0094d2;
 	--text-gray-color: #b1b1b1;
 	--text-gray2-color: #e9e9e9;
 	--text-gray3-color: #d6d6d6;
+	/*used only 1 time, below the logo, connected to ->CHAIN NAME<-*/
 	--text-destaque-color: #0094d2;
 	--text-error: #fb3c2c;
 	--made-with-love: #a4a4a4;
 
 	--a-link-color: #0094d2;
 
+	/*modal*/
 	--modal-background: #191919;
 	--modal-side-background: #272727;
 	--modal-step-background: #535353;
@@ -122,10 +136,6 @@
 	--modal-title-color: #e3e3e3;
 	--modal-side-title-color: #e3e3e3;
 	--modal-side-color: #c2c2c2;
-
-	--tr-even-backgorund: transparent;
-	--tr-odd-backgorund: transparent;
-	--tr-border-bottom-color:  1px solid #3f3f3f;
 
 	--tr-resource-even-backgorund: #2C2C2C;
 	--tr-resource-odd-color: #ececec;
@@ -156,19 +166,22 @@
 	--btn-inverse2-background-hover: #ffffff;
 	--btn-inverse2-color-hover: #0094d2;
 
+	/*used in... refresh btn, open account on explorer, reload all proxys*/
+	--btn-link-color: #0094d2;
+	--btn-link-background-hover: #ffffff;
+	--btn-link-color-hover: #0077b7;
+
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
 	--btn-link2-color: #0094d2;
 	--btn-link2-background-hover: #ffffff;
 	--btn-link2-color-hover: #0077b7;
 
+	/*not used yet...*/
 	--btn-link3-color: #0079b8;
 	--btn-link3-background: #ffffff;
 	--btn-link3-background-hover: #0079b8;
 	--btn-link3-color-hover: #FCD215;
 	--btn-link3-hover-border-color: #0079b8;
-
-	--btn-link-color: #0094d2;
-	--btn-link-background-hover: #ffffff;
-	--btn-link-color-hover: #0077b7;
 
 	--update-box-background: #1f1f1f;
 	--chain-icon-bg: #c5c5c5;
