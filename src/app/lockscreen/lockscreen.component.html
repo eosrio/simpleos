@@ -1,7 +1,6 @@
-<div class="wrap" style="height:-webkit-fill-available;overflow-y: scroll; width:100vw;">
+<div class="wrap" style="overflow-y: scroll; width:100vw;">
     <div class="container-fluid">
         <div class="clr-row clr-justify-content-center animate fadeInDown">
-
             <div class="clr-col-md-12 text-center">
                 <div class="anim-logo">
 					<ng-container *ngIf="app.compilerVersion==='DEFAULT'">
@@ -9,7 +8,7 @@
 						<ng-lottie [options]="lottieConfig"
 								   containerClass="display-animation"
 								   (animationCreated)="handleAnimation($event)"
-								   [width]="300">
+                                   width="300px">
 						</ng-lottie>
 
 						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="256" style="margin: 12px auto 50px auto;"/>

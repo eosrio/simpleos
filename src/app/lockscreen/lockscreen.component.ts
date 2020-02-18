@@ -19,9 +19,10 @@ export class LockscreenComponent implements OnInit {
 	logoutModal: boolean;
 	clearContacts: boolean;
 	anim: any;
+
 	lottieConfig: AnimationOptions = {
 		path: 'assets/logoanim.json',
-		autoplay: false,
+		autoplay: true,
 		loop: false
 	};
 
