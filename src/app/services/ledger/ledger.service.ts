@@ -1,7 +1,5 @@
 import {EventEmitter, Injectable} from '@angular/core';
 import {Eosjs2Service} from "../eosio/eosjs2.service";
-
-import ECC from 'eosjs-ecc';
 import {ConnectService} from "../connect.service";
 
 declare let window: any;
@@ -32,9 +30,6 @@ interface LAccounts {
 export class LedgerService {
 
     electronStatus: boolean;
-    fcbuffer: any;
-    asn1: any;
-    bippath: any;
     slots: any[];
 
     openPanel = new EventEmitter();
@@ -50,8 +45,6 @@ export class LedgerService {
 
     currentSlot = 0;
 
-    ecc: ECC;
-
     private errorCodes = {
         26628: 'Device is not ready, please unlock',
         28160: 'EOS App is not ready, please open the eos app on your ledger',
@@ -59,8 +52,9 @@ export class LedgerService {
         27264: 'Invalid data, please enable arbitrary data on your ledger device'
     };
 
-    public deviceName = '';
+    public deviceName = 'Ledger';
     private readCount = 0;
+    private tempTrx: any;
 
     constructor(
         private eos: Eosjs2Service,
@@ -68,10 +62,10 @@ export class LedgerService {
     ) {
         console.log('Loading ledger service...');
         this.slots = [];
+    }
+
+    startListener() {
         if (this.isElectron()) {
-            this.asn1 = window.asn1;
-            this.bippath = window.require('bip32-path');
-            this.ecc = window.require('eosjs-ecc');
             this.requestLedgerListener();
             this.connect.ipc.on('ledger', (event, payload) => {
                 this.handleIpcMessage(event, payload);
@@ -81,7 +75,7 @@ export class LedgerService {
                     this.ledgerPublicKeys.push(payload.data);
                     this.lookupAccounts(payload.data).catch(console.log);
                 }
-            })
+            });
         }
     }
 
@@ -109,8 +103,6 @@ export class LedgerService {
 
     async sign(transaction: any, slotNumber: number, rpcEndpoint: string) {
         return new Promise((resolve, reject) => {
-            console.log(transaction);
-
             // send to main process
             this.connect.ipc.send('ledger', {
                 event: 'sign_trx',
@@ -118,11 +110,16 @@ export class LedgerService {
                 slot: slotNumber,
                 endpoint: rpcEndpoint
             });
-
-            this.connect.ipc.once('ledger_reply', (event, args) => {
-                console.log(event, args);
+            this.connect.ipc.once('ledger_reply', async (event, args) => {
                 if (args.data) {
-                    resolve(args.data);
+                    if (args.event === 'sign_trx') {
+                        try {
+                            const trxResult = await this.pushSignedTrx(args.data);
+                            resolve(trxResult);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }
                 } else if (args.error) {
                     reject(args.error);
                 }
@@ -161,18 +158,6 @@ export class LedgerService {
                 this.checkingApp = true;
                 this.openPanel.emit(true);
                 this.checkEosApp();
-                // Transport.open(event.descriptor).then(async (t) => {
-                // 	switch (opMode) {
-                // 		case 'add_account': {
-                // 			getAddresses(t).catch(console.log);
-                // 			break;
-                // 		}
-                // 		case 'sign': {
-                // 			await recursiveCheck(t, api);
-                // 			break;
-                // 		}
-                // 	}
-                // });
             } else if (payload.data.type === 'remove') {
                 this.openPanel.emit(false);
                 this.deviceName = '';
@@ -247,5 +232,18 @@ export class LedgerService {
             }
         }
         return perm;
+    }
+
+    async pushSignedTrx(data: any) {
+        // store transaction for eventual resubmission
+        this.tempTrx = data;
+        return new Promise(async (resolve, reject) => {
+            try {
+                const pushResults = await this.eos.rpc.push_transaction(data);
+                resolve(pushResults);
+            } catch (e) {
+                reject(e.json.error.details[0].message);
+            }
+        })
     }
 }
