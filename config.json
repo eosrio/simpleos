@@ -669,7 +669,7 @@
 			"symbol": "LLM",
 			"icon": "liberland.png",
 			"precision": 8,
-			"name": "LIBERLAND TESTNET",
+			"name": "LIBERLAND TEST",
 			"network": "TESTNET",
 			"firstApi": "https://liberland-test.eosio.se",
 			"historyApi": "",
@@ -743,6 +743,48 @@
 					"url": "https://sidechain-test-history.meet.one",
 					"owner": "MEET.ONE",
 					"latency": 0
+				}
+			],
+			"explorers": []
+		},
+		{
+			"id": "cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f",
+			"symbol": "LLM",
+			"icon": "liberland.png",
+			"precision": 8,
+			"name": "LIBERLAND TESTNET",
+			"network": "TESTNET",
+			"firstApi": "https://staging.liberland.eosrio.io",
+			"historyApi": "",
+			"forumTally": "",
+			"eosrioBP": "",
+			"proxyRegistry": "",
+			"lastNode": "",
+			"logoSrc": "",
+			"backdrop": "",
+			"features": {
+				"history": true,
+				"send": true,
+				"resource": false,
+				"vote": false,
+				"staking": true,
+				"dapps": true,
+				"addAcc": true,
+				"newAcc": false,
+				"forum": false,
+				"rex": false
+			},
+			"system": [
+				"eosio",
+				"eosio.token",
+				"eosio.msig"
+			],
+			"endpoints": [
+				{
+					"url": "https://staging.liberland.eosrio.io",
+					"owner": "EOS Sweden",
+					"latency": 0,
+					"version": "native"
 				}
 			],
 			"explorers": []
