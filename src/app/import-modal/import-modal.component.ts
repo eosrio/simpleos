@@ -171,7 +171,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
             this.crypto.storeLedgerAccount(key, slot, this.ledger.deviceName);
         });
         if (this.aService.accounts.length === 0) {
-            await this.aService.importAccounts(this.importedAccounts);
+            await this.aService.importAccounts(this.accountsToImport);
             await this.router.navigate(['dashboard', 'wallet']);
         } else {
             await this.aService.appendAccounts(this.accountsToImport);
