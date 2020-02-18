@@ -325,13 +325,16 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             }
             this.updateStakePercent();
             this.loadPlacedVotes(selected);
-            this.cpu_weight = selected.details.total_resources.cpu_weight;
-            this.net_weight = selected.details.total_resources.net_weight;
-            const _cpu = RexComponent.asset2Float(this.cpu_weight);
-            const _net = RexComponent.asset2Float(this.net_weight);
-            this.cpu_weight_n = _cpu;
-            this.net_weight_n = _net;
-            this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+            if(this.app.compilerVersion === 'DEFAULT'){
+              this.cpu_weight = selected.details.total_resources.cpu_weight;
+              this.net_weight = selected.details.total_resources.net_weight;
+              const _cpu = RexComponent.asset2Float(this.cpu_weight);
+              const _net = RexComponent.asset2Float(this.net_weight);
+              this.cpu_weight_n = _cpu;
+              this.net_weight_n = _net;
+              this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+            }
+
             if (selected.details.voter_info) {
               let weeks = 52;
               let block_timestamp_epoch = 946684800;
