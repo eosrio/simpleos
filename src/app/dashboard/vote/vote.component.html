@@ -46,7 +46,7 @@
 
             </div>
         </div>
-        <div class="clr-col-lg-6" *ngIf="app.compilerVersion === 'DEFAULT'">
+        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') === '-1'">
             <div class="card info-card">
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
@@ -159,6 +159,59 @@
                 </div>
             </div>
         </div>
+
+
+        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > '-1'">
+            <div class="card info-card">
+                <div class="card-block" style="min-height: 270px">
+                    <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+                            <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+                        </a>
+                    </div>
+                    <div class="clr-row">
+                        <div class="clr-col-lg-6">
+                            <mat-form-field class="input-width">
+                                <input matInput type="text" placeholder="Value (%)"
+                                       (blur)="updateStakeValue(); checkPercent();"
+                                       [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                       [textMask]="{mask: percentMask}">
+                                <span class="suffix" matSuffix>%</span>
+                            </mat-form-field>
+                        </div>
+                        <div class="clr-col-lg-6">
+                            <mat-form-field class="input-width">
+                                <input matInput type="text" min="1"
+                                       placeholder="Value ({{aService.activeChain['symbol']}})"
+                                       [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
+                                       [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                                <span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div>
+                        <mat-slider class="stake-slider"
+                                    [min]="minToStake"
+                                    [max]="max"
+                                    [thumbLabel]="true"
+                                    (change)="updateStakeValue()"
+                                    [tickInterval]="25"
+                                    [displayWith]="sliderLabel"
+                                    [(ngModel)]="percenttoStake">
+                        </mat-slider>
+                    </div>
+                    <div class="clr-row">
+                        <div class="clr-col-lg-5">
+                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
+                            </button>
+                            <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="clr-row votepage-row animate" *ngIf="aService.activeChain['name'] == 'WAX MAINNET' && gbmBalance > 0">
@@ -254,7 +307,7 @@
         </div>
     </div>
 
-    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'LIBERLAND' || aService.activeChain['name'] === 'LIBERLAND TESTNET'">
+    <div class="clr-row votepage-row animate" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > '-1'">
         <div class="clr-col-lg-12 d-flex justify-content-center">
             <button (click)="processLiberlandVotes()" class="btn btn-link3 special-font"
                     style="margin: 50px auto; text-align: center;width: 520px; max-width: 800px;height: 60px; font-size: 22px; ">

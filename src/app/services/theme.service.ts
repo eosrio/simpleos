@@ -151,21 +151,21 @@ export const LiberlandTheme = {
 
 	'--landing-background': 'url("./assets/cover-liberland3.png")',
 
-	'--sidenav-background': '#1577C6',
+	'--sidenav-background': '#2a566f',
 	'--sidenav-color': '#D6D6D6',
 	'--sidenav-option-color': '#f8f8f8',
 	'--sidenav-active-background': '#EDEDEC',
-	'--sidenav-active-color': '#1577C6',
+	'--sidenav-active-color': '#2a566f',
 	'--sidenav-active-border-color1': '#EDEDEC',
 
-	'--top-btn-backgorund': '#084577',
+	'--top-btn-backgorund': '#0f3a53',
 	'--top-btn-color': '#f8f8f8',
 
-	'--mat-tab-active': '#084577',
+	'--mat-tab-active': '#0f3a53',
 	'--mat-tab-bar-active': '#FCD215',
 	'--mat-tab-bar-height': '4px',
 
-	'--tokens-panel-background': '#1577C6',
+	'--tokens-panel-background': '#2a566f',
 	'--destaque-color-token': '#FCD215',
 	'--token-title-color': '#f8f8f8',
 	'--token-price-color': '#D6D6D6',
@@ -204,7 +204,7 @@ export const LiberlandTheme = {
 	'--text-gray2-color': '#707070',
 	'--text-gray3-color': '#b1b1b1',
 	'--text-destaque-color': '#FCD215',
-	'--text-blue-color': '#1577C6',
+	'--text-blue-color': '#2a566f',
 	'--text-error': '#ff8880',
 	'--made-with-love': '#ffffff',
 
@@ -215,16 +215,16 @@ export const LiberlandTheme = {
 	'--modal-title-color': '#404040',
 	'--modal-side-title-color': '#F8F8F8',
 	'--modal-side-color': '#d6d6d6',
-	'--modal-side-background': '#1577C6',
-	'--modal-step-background': '#084577',
-	'--modal-step-line-background': '#084577',
+	'--modal-side-background': '#2a566f',
+	'--modal-step-background': '#0f3a53',
+	'--modal-step-line-background': '#0f3a53',
 	'--modal-step-off-background': '#ffffff',
 
 	'--tr-even-backgorund': '#ffffff',
 	'--tr-odd-backgorund': '#ffffff',
 	'--tr-border-bottom-color': '1px solid #cccccc',
 
-	'--tr-resource-even-backgorund': '#1577C6',
+	'--tr-resource-even-backgorund': '#2a566f',
 	'--tr-resource-odd-color': '#202020',
 	'--tr-resource-odd-backgorund': 'transparent',
 	'--tr-hover': '#d2d2d2',
@@ -234,14 +234,14 @@ export const LiberlandTheme = {
 	'--rex-btn-color': '#ffffff',
 	'--rex-border-color': '#ffffff',
 
-	'--btn-border-color': '#084577',
-	'--btn-color': '#084577',
+	'--btn-border-color': '#2a566f',
+	'--btn-color': '#2a566f',
 	'--btn-success-color': '#303030',
 	'--btn-color-hover': '#ffffff',
-	'--btn-background-hover': '#084577',
-	'--btn-rev-color-hover': '#1577C6',
+	'--btn-background-hover': '#2a566f',
+	'--btn-rev-color-hover': '#2a566f',
 
-	'--btn-primary-bg': '#0079b8',
+	'--btn-primary-bg': '#2a566f',
 	'--btn-primary-hover': '#004d8a',
 
 	'--btn-inverse-color': '#ffffff',
@@ -255,6 +255,12 @@ export const LiberlandTheme = {
 	'--btn-link2-color': '#FCD215',
 	'--btn-link2-background-hover': '#ffffff',
 	'--btn-link2-color-hover': '#c39d13',
+
+	'--btn-link3-color': '#2a566f',
+	'--btn-link3-background': '#ffffff',
+	'--btn-link3-background-hover': '#2a566f',
+	'--btn-link3-color-hover': '#FCD215',
+	'--btn-link3-hover-border-color': '#2a566f',
 
 	'--btn-link-color': '#fafafa',
 	// '--btn-link-color': '#1577C6',

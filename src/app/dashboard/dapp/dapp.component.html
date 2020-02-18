@@ -14,7 +14,7 @@
                     </mat-error>
                 </mat-form-field>
             </form>
-            <div class="tokens-pad"> Search for <b>Smart Contracts</b> here and interact whith them!</div>
+            <div class="instruction" style="margin: 15px 0"> Search for <b>Smart Contracts</b> here and interact whith them!</div>
             <!--</div>-->
         </div>
     </div>
@@ -51,9 +51,7 @@
                         </div>
                     </li>
                 </ul>
-                <div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will
-                    appear
-                    here.
+                <div *ngIf="aService.tokens.length === 0" class="instruction"  style="margin-top: 20px">Your other tokens, such as Airdrops, will appear here.
                 </div>
             </div>
         </div>

@@ -89,7 +89,7 @@
 }
 
 .selected {
-	background-color: var(--text-blue-color);
+	background-color: var(--text-blue-color) !important;
 	color: white;
 }
 
