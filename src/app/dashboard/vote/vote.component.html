@@ -46,7 +46,7 @@
 
             </div>
         </div>
-        <div class="clr-col-lg-6">
+        <div class="clr-col-lg-6" *ngIf="app.compilerVersion === 'DEFAULT'">
             <div class="card info-card">
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
