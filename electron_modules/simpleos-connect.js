@@ -6,161 +6,161 @@ const socketio = require('socket.io');
 
 class SimpleosConnectService {
 
-  main;
-  express;
-  httpServer;
-  websocketServer;
+    main;
+    express;
+    httpServer;
+    websocketServer;
 
-  currentSessionUuid;
-  currentAuthorization;
+    currentSessionUuid;
+    currentAuthorization;
 
-  constructor(simpleosWallet) {
-    this.main = simpleosWallet;
-    this.express = express();
-    this.httpServer = http.createServer(this.express);
-    this.websocketServer = socketio(this.httpServer);
+    constructor(simpleosWallet) {
+        this.main = simpleosWallet;
+        this.express = express();
+        this.httpServer = http.createServer(this.express);
+        this.websocketServer = socketio(this.httpServer);
 
-    this.currentSessionUuid = '';
-    this.currentAuthorization = null;
+        this.currentSessionUuid = '';
+        this.currentAuthorization = null;
 
-    this.onConnection = this.onConnection.bind(this);
-    this.onDisconnect = this.onDisconnect.bind(this);
-    this.onGetAuthorizations = this.onGetAuthorizations.bind(this);
-    this.onLogIn = this.onLogIn.bind(this);
-    this.onLogOut = this.onLogOut.bind(this);
-    this.onIsLoggedIn = this.onIsLoggedIn.bind(this);
-    this.onGetCurrentAuthorization = this.onGetCurrentAuthorization.bind(this);
-    this.onTransact = this.onTransact.bind(this);
-  }
-
-  init() {
-    this.setupRoutes();
-  }
-
-  setupRoutes() {
-    this.express.use(cors());
-
-    this.express.get('/simpleos_ping', (req, res) => {
-      res.end('pong');
-    });
-  }
-
-  startServer(port = 5000) {
-    try {
-      this.httpServer.listen(port, '127.0.0.1', () => {
-        console.log('listening on 127.0.0.1:' + port);
-      });
-    } catch (error) {
-      console.log(error);
+        this.onConnection = this.onConnection.bind(this);
+        this.onDisconnect = this.onDisconnect.bind(this);
+        this.onGetAuthorizations = this.onGetAuthorizations.bind(this);
+        this.onLogIn = this.onLogIn.bind(this);
+        this.onLogOut = this.onLogOut.bind(this);
+        this.onIsLoggedIn = this.onIsLoggedIn.bind(this);
+        this.onGetCurrentAuthorization = this.onGetCurrentAuthorization.bind(this);
+        this.onTransact = this.onTransact.bind(this);
     }
 
-    this.websocketServer.on('connection', this.onConnection);
-  }
+    init() {
+        this.setupRoutes();
+    }
 
-  onConnection(socket) {
-    console.log('new connection');
+    setupRoutes() {
+        this.express.use(cors());
 
-    socket.on('disconnect', this.onDisconnect);
+        this.express.get('/simpleos_ping', (req, res) => {
+            res.end('pong');
+        });
+    }
 
-    socket.on('get_authorizations', this.onGetAuthorizations);
+    startServer(port = 5000) {
+        try {
+            this.httpServer.listen(port, '127.0.0.1', () => {
+                console.log('listening on 127.0.0.1:' + port);
+            });
+        } catch (error) {
+            console.log(error);
+        }
 
-    socket.on('log_in', this.onLogIn);
+        this.websocketServer.on('connection', this.onConnection);
+    }
 
-    socket.on('log_out', this.onLogOut);
+    onConnection(socket) {
+        console.log('new connection');
 
-    socket.on('is_logged_in', this.onIsLoggedIn);
+        socket.on('disconnect', this.onDisconnect);
 
-    socket.on('get_current_authorization', this.onGetCurrentAuthorization);
+        socket.on('get_authorizations', this.onGetAuthorizations);
 
-    socket.on('transact', this.onTransact);
-  }
+        socket.on('log_in', this.onLogIn);
 
-  onDisconnect(reason) {
-    console.log('disconnection reason:', reason);
-  }
+        socket.on('log_out', this.onLogOut);
 
-  onGetAuthorizations(chainId, callback) {
-    console.log('onGetAuthorizations');
+        socket.on('is_logged_in', this.onIsLoggedIn);
 
-    this.sendMessage('sc_request',
-        {message: 'change_chain', chain_id: chainId});
+        socket.on('get_current_authorization', this.onGetCurrentAuthorization);
 
-    ipcMain.once('changeChainResponse', (event, changeChainResp) => {
+        socket.on('transact', this.onTransact);
+    }
 
-      if (changeChainResp) {
+    onDisconnect(reason) {
+        console.log('disconnection reason:', reason);
+    }
 
-        this.sendMessage('sc_request', {message: 'authorizations'});
+    onGetAuthorizations(chainId, callback) {
+        console.log('onGetAuthorizations');
 
-        ipcMain.once('authorizationsResponse', (event, authorizations) => {
-          callback(authorizations);
+        this.sendMessage('sc_request',
+            {message: 'change_chain', chain_id: chainId});
+
+        ipcMain.once('changeChainResponse', (event, changeChainResp) => {
+
+            if (changeChainResp) {
+
+                this.sendMessage('sc_request', {message: 'authorizations'});
+
+                ipcMain.once('authorizationsResponse', (event, authorizations) => {
+                    callback(authorizations);
+                });
+
+            } else {
+                callback();
+            }
+
+        });
+    }
+
+    onLogIn(sessionUuid, authorization, callback) {
+        console.log('onLogIn');
+
+        this.currentSessionUuid = sessionUuid;
+        this.currentAuthorization = authorization;
+
+        callback();
+    }
+
+    onLogOut(callback) {
+        console.log('onLogOut');
+
+        this.currentSessionUuid = '';
+        this.currentAuthorization = null;
+
+        callback();
+    }
+
+    onIsLoggedIn(sessionUuid, callback) {
+        console.log('isLoggedIn');
+
+        callback(
+            this.currentSessionUuid === sessionUuid && this.currentAuthorization);
+    }
+
+    onGetCurrentAuthorization(sessionUuid, callback) {
+        console.log('onGetCurrentAuthorization');
+
+        if (sessionUuid === this.currentSessionUuid) {
+            callback(this.currentAuthorization);
+            return;
+        }
+        callback();
+    }
+
+    onTransact(transaction, callback) {
+        console.log('onTransact');
+
+        console.log(transaction);
+
+        this.sendMessage('sc_request', {
+            message: 'sign',
+            content: transaction,
         });
 
-      } else {
-        callback();
-      }
+        this.main.getFocus();
 
-    });
-  }
-
-  onLogIn(sessionUuid, authorization, callback) {
-    console.log('onLogIn');
-
-    this.currentSessionUuid = sessionUuid;
-    this.currentAuthorization = authorization;
-
-    callback();
-  }
-
-  onLogOut(callback) {
-    console.log('onLogOut');
-
-    this.currentSessionUuid = '';
-    this.currentAuthorization = null;
-
-    callback();
-  }
-
-  onIsLoggedIn(sessionUuid, callback) {
-    console.log('isLoggedIn');
-
-    callback(
-        this.currentSessionUuid === sessionUuid && this.currentAuthorization);
-  }
-
-  onGetCurrentAuthorization(sessionUuid, callback) {
-    console.log('onGetCurrentAuthorization');
-
-    if (sessionUuid === this.currentSessionUuid) {
-      callback(this.currentAuthorization);
-      return;
+        ipcMain.once('signResponse', (event, data) => {
+            if (data.status !== 'CANCELLED') {
+                this.main.unfocus();
+            }
+            console.log(data);
+            callback(data);
+        });
     }
-    callback();
-  }
 
-  onTransact(transaction, callback) {
-    console.log('onTransact');
-
-    console.log(transaction);
-
-    this.sendMessage('sc_request', {
-      message: 'sign',
-      content: transaction,
-    });
-
-    this.main.getFocus();
-
-    ipcMain.once('signResponse', (event, data) => {
-      if (data.status !== 'CANCELLED') {
-        this.main.unfocus();
-      }
-
-      callback(data);
-    });
-  }
-
-  sendMessage(channel, data) {
-    this.main.win.webContents.send(channel, data);
-  }
+    sendMessage(channel, data) {
+        this.main.win.webContents.send(channel, data);
+    }
 
 }
 
