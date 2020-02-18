@@ -73,7 +73,7 @@ export const DefaultTheme = {
 	'--text-white-color': '#ffffff',
 	'--text-destaque-color': '#0094d2',
 	'--text-blue-color': '#0094d2',
-	'--text-error': '#d04d42',
+	'--text-error': '#fb3c2c',
 	'--made-with-love': '#a4a4a4',
 
 	'--a-link-color': '#0094d2',
@@ -133,9 +133,9 @@ export const DefaultTheme = {
 };
 
 export const LiberlandTheme = {
-	'--main-background': '#EDEDEC',
-	'--background-gd': 'linear-gradient(to right, #EDEDEC, #F8F8F8)',
-	'--background-gd-webkit': '-webkit-linear-gradient(to right, #EDEDEC, #F8F8F8)',
+	'--main-background': '#2a566f',
+	'--background-gd': 'linear-gradient(to right, #2a566f, #2a566f)',
+	'--background-gd-webkit': '-webkit-linear-gradient(to right, #2a566f, #2a566f)',
 	'--header-background': '#D1D1D1',
 	'--header-title-color': '#292929',
 	'--header-icon-color': '#20202095',
@@ -149,7 +149,7 @@ export const LiberlandTheme = {
 	'--special-font-spacing': '1.3px',
 	'--slogan-special-color': '#ffffff61',
 
-	'--landing-background': 'url("./assets/cover-liberland3.png")',
+	'--landing-background': 'url("./assets/cover-liberland4.png")',
 
 	'--sidenav-background': '#2a566f',
 	'--sidenav-color': '#D6D6D6',
@@ -172,7 +172,7 @@ export const LiberlandTheme = {
 	'--letter-divider': '#FCD215',
 	'--contact-hover-color': '#292929',
 
-	'--accordion-hover-background': '#0078a3',
+	'--accordion-hover-background': '#2a566f',
 	'--accordion-color': '#707070',
 	'--accordion-a-color': '#707070',
 	'--accordion-color-hover': '#404040',
@@ -188,7 +188,7 @@ export const LiberlandTheme = {
 	'--scroll-background': '#f1f1f1',
 	'--scroll-thumb-background': '#D6D6D6',
 
-	'--table-th-color': '#084577',
+	'--table-th-color': '#2a566f',
 	'--table-th-background': '#f8f8f8',
 	'--table-tr-background': '#ffffff',
 	'--table-tr-color': '#404040',
@@ -202,10 +202,10 @@ export const LiberlandTheme = {
 	'--text-btn-color-hover': '#f8f8f8',
 	'--text-gray-color': '#404040',
 	'--text-gray2-color': '#707070',
-	'--text-gray3-color': '#b1b1b1',
+	'--text-gray3-color': '#a8a8a8',
 	'--text-destaque-color': '#FCD215',
 	'--text-blue-color': '#2a566f',
-	'--text-error': '#ff8880',
+	'--text-error': '#e4291d',
 	'--made-with-love': '#ffffff',
 
 	'--a-link-color': '#F8F8F8',
@@ -242,7 +242,7 @@ export const LiberlandTheme = {
 	'--btn-rev-color-hover': '#2a566f',
 
 	'--btn-primary-bg': '#2a566f',
-	'--btn-primary-hover': '#004d8a',
+	'--btn-primary-hover': '#0f3a53',
 
 	'--btn-inverse-color': '#ffffff',
 	'--btn-inverse-background-hover': '#ffffff',
@@ -431,9 +431,10 @@ export const WaxLandingTheme = {
 	'--btn-primary-bg': '#c56907',
 	'--btn-primary-hover': '#8f4c05',
 	'--chain-icon-bg': 'white',
-	'--text-error': '#ff8e85',
+	'--text-error': '#ec4d40',
 	'--made-with-love': '#bfbfbf',
 	'--modal-title-color': '#ffffff',
+	'--text-gray-color': '#b1b1b1',
 };
 
 @Injectable({providedIn: 'root'})

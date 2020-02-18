@@ -325,7 +325,7 @@ class SimpleosWallet {
     let _bgColor = '#222222';
     if (name === 'liberland-wallet') {
       _icon = path.join(__dirname, 'src/assets/icons/ico/ll.ico');
-      _bgColor = '#084577';
+      _bgColor = '#2a566f';
     }
     this.win = new BrowserWindow({
       title: productName,

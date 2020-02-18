@@ -5,6 +5,7 @@
 	background: var(--landing-background);
 	/*background-image: var(--landing-image-background);*/
 	background-size: cover;
+	background-color: var(--background-gd);
 }
 
 .clicked:hover {
@@ -58,8 +59,8 @@
 }
 
 .chains-card {
-	background-color: var(--info-card-background);
-	/*background-color: transparent;*/
+	/*background-color: var(--info-card-background);*/
+	background-color: transparent;
 	border: 1px solid #565656;
 	box-shadow: none;
 	color: #848484;
@@ -250,11 +251,12 @@
 
 .advanced {
 	font-size: 14px;
-	color: #696969;
+	color: var(--text-title-color);
 }
 
 .warn {
-	color: #ff3f32;
+	/*color: #ff3f32;*/
+	color: var(--text-error);
 }
 
 .fit-content {
