@@ -6,6 +6,9 @@ import {RpcError} from 'eosjs/dist';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {AccountsService} from '../services/accounts.service';
 import {TransactionFactoryService, TrxModalData} from '../services/eosio/transaction-factory.service';
+import {LedgerService} from "../services/ledger/ledger.service";
+import {NetworkService} from "../services/network.service";
+import {Subject, Subscription} from "rxjs";
 
 @Component({
 	selector: 'app-confirm-modal',
@@ -17,6 +20,7 @@ export class ConfirmModalComponent {
 	public visibility = false;
 	wasClosed = false;
 	public displayTerms = false;
+	public mode = 'local';
 	public errormsg = '';
 	public busy = false;
 
@@ -30,13 +34,17 @@ export class ConfirmModalComponent {
 		private eosjs: Eosjs2Service,
 		private crypto: CryptoService,
 		private toaster: ToasterService,
-		private trxFactory: TransactionFactoryService
+		private trxFactory: TransactionFactoryService,
+		public ledger: LedgerService,
+		public network: NetworkService,
 	) {
 		this.confirmationForm = this.fb.group({
 			pass: ['', [Validators.required]]
 		});
 		this.trxFactory.launcher.subscribe((state) => {
-			this.visibility = state;
+			this.visibility = state.visibility;
+			this.mode = state.mode;
+			console.log(state.mode);
 			if (this.visibility) {
 				this.wasClosed = false;
 			}
@@ -122,6 +130,44 @@ export class ConfirmModalComponent {
 		}
 	}
 
+	async signLedger() {
+		this.errormsg = '';
+		this.busy = true;
+
+		try {
+			const result = await this.ledger.sign(
+				this.modalData.transactionPayload,
+				this.crypto.requiredLedgerSlot,
+				this.network.selectedEndpoint.getValue().url
+			);
+			if (result) {
+				console.log(result);
+				const trxId = result['transaction_id'];
+				setTimeout(() => {
+					this.aService.refreshFromChain().catch(e => {
+						console.log(e);
+					});
+					this.trxFactory.status.emit('done');
+					this.busy = false;
+					this.visibility = false;
+					this.cdr.detectChanges();
+				}, 1500);
+				this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
+					id: trxId
+				});
+				this.errormsg = '';
+				this.busy = false;
+				this.visibility = false;
+				this.cdr.detectChanges();
+			}
+		} catch (e) {
+			this.errormsg = e;
+			console.log(e);
+			this.busy = false;
+			this.showToast('error', 'Transaction failed', `${this.errormsg}`, {});
+		}
+	}
+
 	private showToast(type: string, title: string, body: string, extraData: any) {
 		const toast: Toast = {
 			type: type,
@@ -145,8 +191,16 @@ export class ConfirmModalComponent {
 	onClose() {
 		if (!this.wasClosed) {
 			this.wasClosed = true;
+			this.busy = false;
 			this.trxFactory.status.emit('modal_closed');
 			this.errormsg = '';
 		}
+	}
+
+	get requiredLedgerInfo() {
+		return {
+			device: this.crypto.requiredLedgerDevice,
+			slot: this.crypto.requiredLedgerSlot
+		};
 	}
 }
