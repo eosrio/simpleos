@@ -45,7 +45,6 @@ export class AccountsService {
         private eos: EOSJSService,
         private eosjs: Eosjs2Service,
         private toaster: ToasterService,
-        private crypto: CryptoService,
         // private ledger: LedgerHWService
     ) {
         const configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
@@ -623,25 +622,6 @@ export class AccountsService {
         // if(this.isLedger){
         //   this.isLedger = stored_data[pbk]['private'] === 'ledger';
         // }
-    }
-
-    getModeAccount(account?: any) {
-        const actor = account ?? this.selected.getValue();
-        let _permission = 'active';
-        let publicKey = actor.details['permissions'].find((p) => p.perm_name === 'active')['required_auth'].keys[0].key;
-        const validKey = this.crypto.checkPublicKey(publicKey);
-        if (!validKey) {
-            for (const perm of actor.details['permissions']) {
-                if (this.crypto.checkPublicKey(perm['required_auth'].keys[0].key)) {
-                    _permission = perm.perm_name;
-                    publicKey = perm['required_auth'].keys[0].key;
-                    break;
-                }
-            }
-            console.log(`non-active permission selected: ${_permission}`);
-        }
-
-        return this.crypto.getPrivateKeyMode(publicKey);
     }
 
     initFirst() {

@@ -85,7 +85,7 @@
                             <input matInput formControlName="alias" type="text" placeholder="Contact name">
                         </mat-form-field>
                     </ng-container>
-                    <button class="btn btn-block btn-info-outline" (click)="openSendModal()"
+                    <button class="btn btn-block btn-info-outline" (click)="newTransfer()"
                             [disabled]="!sendForm.valid">
                         <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
                     </button>

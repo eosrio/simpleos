@@ -8,8 +8,14 @@ import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {EOSAccount} from '../../interfaces/account';
+import {LedgerService} from "../../services/ledger/ledger.service";
+import {NetworkService} from "../../services/network.service";
 
 import * as moment from 'moment';
+import {TransactionFactoryService} from "../../services/eosio/transaction-factory.service";
+import {formatNumber} from "@angular/common";
+import {ModalStateService} from "../../services/modal-state.service";
+
 
 export interface Contact {
     name: string;
@@ -64,7 +70,7 @@ export class SendComponent implements OnInit {
     selectedDeleteContact = null;
     displayAddToContacts = false;
 
-    accountMode: string;
+    mode: string;
 
     knownExchanges = [
         'bitfinexdep1', 'krakenkraken', 'chainceoneos',
@@ -78,7 +84,10 @@ export class SendComponent implements OnInit {
                 public eos: EOSJSService,
                 private crypto: CryptoService,
                 private toaster: ToasterService,
-                private cdr: ChangeDetectorRef
+                private cdr: ChangeDetectorRef,
+                private ledger: LedgerService,
+                private network: NetworkService,
+                private trxFactory: TransactionFactoryService,
     ) {
         this.sendModal = false;
         this.newContactModal = false;
@@ -455,11 +464,117 @@ export class SendComponent implements OnInit {
         this.confirmForm.reset();
         this.fromAccount = this.aService.selected.getValue().name;
         this.sendModal = true;
-        this.accountMode = this.aService.getModeAccount(this.aService.selected.getValue());
-        console.log(this.aService.accMode);
+
+        // this.newTransfer();
     }
 
-    transfer() {
+    async newTransfer(){
+        this.busy = true;
+        this.wrongpass = '';
+        const selAcc = this.aService.selected.getValue();
+        const from = selAcc.name;
+        const to = this.sendForm.get('to').value.toLowerCase();
+        const amount = parseFloat(this.sendForm.get('amount').value);
+        const memo = this.sendForm.get('memo').value;
+
+        let contract = 'eosio.token';
+        let termsHeader = '';
+        let termsHtml = '';
+
+        const tk_name = this.sendForm.get('token').value;
+
+        let precision = this.aService.activeChain['precision'];
+
+        if (tk_name !== this.aService.activeChain['symbol']) {
+            const idx = this.aService.tokens.findIndex((val) => {
+                return val.name === tk_name;
+            });
+            contract = this.aService.tokens[idx].contract;
+            precision = this.aService.tokens[idx].precision;
+        }
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        console.log(this.mode);
+
+        const messageHTML = `
+         <h5 class="modal-title text-white"><span class="blue">${from}</span> sends <span
+            class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="blue">${to}</span></h5> 	
+		`;
+
+        if(this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions';
+
+            termsHtml = `I, ${from}, certify the following to be true to the best of my knowledge:<br><br>
+            &#9; 1. I certify that ${amount.toFixed(precision) + ' ' + tk_name} is not the proceeds of fraudulent or
+            violent activities.<br>
+            2. I certify that, to the best of my knowledge, ${to} is not supporting initiation of violence against others.<br>
+            3. I have disclosed any contractual terms & conditions with respect to ${amount.toFixed(precision) + ' ' + tk_name} to ${to}.<br>
+            4. I understand that funds transfers are not reversible after the seconds or other delay as configured by ${from}'s permissions.<br>
+            <br><br>
+            If this action fails to be irreversibly confirmed after receiving goods or services from '${to}', 
+            I agree to either return the goods or services or resend ${amount.toFixed(precision) + ' ' + tk_name} in a timely manner.`;
+        }
+
+        console.log(termsHeader, termsHtml);
+        // if (amount > 0 && this.sendForm.valid) {
+            this.trxFactory.modalData.next({
+                transactionPayload: {
+                    actions: [{
+                        account: contract,
+                        name: 'transfer',
+                        authorization: [auth],
+                        data: {
+                            'from':from,
+                            'to':to,
+                            'quantity':amount.toFixed(precision) + ' ' + tk_name,
+                            'memo': memo
+                        }
+                    }]
+                },
+                signerAccount: auth.actor,
+                signerPublicKey: publicKey,
+                actionTitle: 'Transfer',
+                labelHTML: messageHTML,
+                termsHeader: 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions',
+                termsHTML: termsHtml
+            });
+            this.trxFactory.launcher.emit({visibility:true,mode: this.mode});
+            const subs = this.trxFactory.status.subscribe((event) => {
+                console.log(event);
+                if (event === 'done') {
+                    this.aService.refreshFromChain().catch(console.log);
+                    setTimeout(() => {
+                        const sel = this.aService.selected.getValue();
+                        this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                    }, 2000);
+                    subs.unsubscribe();
+                }
+                if (event === 'modal_closed') {
+                    subs.unsubscribe();
+                }
+            });
+        // }
+
+        if(this.mode === 'legder') {
+            // const result = await this.ledger.sign(
+            //     this.fullTrxData,
+            //     this.crypto.requiredLedgerSlot,
+            //     this.network.selectedEndpoint.getValue().url
+            // );
+            // if (result) {
+            //     this.wrongpass = '';
+            //     this.busy = false;
+            //     this.sendModal = false;
+            //     this.cdr.detectChanges();
+            // }
+        }
+    }
+
+
+    async transfer() {
 
         this.busy = true;
         this.wrongpass = '';
@@ -471,105 +586,90 @@ export class SendComponent implements OnInit {
 
         const [publicKey, permission] = this.aService.getStoredKey(selAcc);
 
+
         if (amount > 0 && this.sendForm.valid) {
 
+            if(this.mode === 'legder'){
 
-            // const result = await this.ledger.sign(
-            //     this.fullTrxData,
-            //     this.crypto.requiredLedgerSlot,
-            //     this.network.selectedEndpoint.getValue().url
-            // );
-            // if (result) {
-            //     this.replyEvent.sender.send('signResponse', {
-            //         status: 'OK',
-            //         content: result
-            //     });
-            //     this.wrongpass = '';
-            //     this.busy = false;
-            //     this.externalActionModal = false;
-            //     this.cdr.detectChanges();
-            // }
-
-
-            this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
-                // console.log(res);
-                if (res) {
-                    let contract = 'eosio.token';
-                    const tk_name = this.sendForm.get('token').value;
-                    // console.log(tk_name);
-                    // console.log(this.aService.tokens);
-                    let precision = this.aService.activeChain['precision'];
-                    if (tk_name !== this.aService.activeChain['symbol']) {
-                        const idx = this.aService.tokens.findIndex((val) => {
-                            return val.name === tk_name;
-                        });
-                        contract = this.aService.tokens[idx].contract;
-                        precision = this.aService.tokens[idx].precision;
-                    }
-                    console.log(precision);
-                    console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
-                    this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo, permission).then((result) => {
-                        if (result === true) {
-                            this.wrongpass = '';
-                            this.sendModal = false;
-                            this.busy = false;
-                            this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
-                            this.aService.refreshFromChain().catch(console.log);
-                            setTimeout(() => {
-                                const sel = this.aService.selected.getValue();
-                                this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-                            }, 2000);
-
-                            this.confirmForm.reset();
-                            if (this.add === true && this.sendForm.get('alias').value !== '') {
-                                this.addContactOnSend();
-                            }
-                        } else {
-							if (typeof result === 'object') {
-								if (result.json) {
-									this.wrongpass = "Error: "+result.json.error.details[0].message;
-								} else {
-									this.wrongpass = "Error: "+result.error.details[0].message;
-								}
-							}else{
-								if (result.json) {
-									this.wrongpass = "Error: "+JSON.parse(result).json.error.details[0].message;
-								} else {
-									this.wrongpass = "Error: "+JSON.parse(result).error.details[0].message;
-								}
-                        	}
-                            this.busy = false;
+            } else {
+                this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
+                    // console.log(res);
+                    if (res) {
+                        let contract = 'eosio.token';
+                        const tk_name = this.sendForm.get('token').value;
+                        let precision = this.aService.activeChain['precision'];
+                        if (tk_name !== this.aService.activeChain['symbol']) {
+                            const idx = this.aService.tokens.findIndex((val) => {
+                                return val.name === tk_name;
+                            });
+                            contract = this.aService.tokens[idx].contract;
+                            precision = this.aService.tokens[idx].precision;
                         }
-                    }).catch((error) => {
-                        console.log('Catch2', error);
-                        if (typeof error === 'object') {
-                            if (error.error.code === 3081001) {
-                                this.wrongpass = 'Error: Not enough stake to perform this action.';
+                        console.log(precision);
+                        console.log(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo);
+                        this.eos.transfer(contract, from, to, amount.toFixed(precision) + ' ' + tk_name, memo, permission).then((result) => {
+                            if (result === true) {
+                                this.wrongpass = '';
+                                this.sendModal = false;
+                                this.busy = false;
+                                this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+                                this.aService.refreshFromChain().catch(console.log);
+                                setTimeout(() => {
+                                    const sel = this.aService.selected.getValue();
+                                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                                }, 2000);
+
+                                this.confirmForm.reset();
+                                if (this.add === true && this.sendForm.get('alias').value !== '') {
+                                    this.addContactOnSend();
+                                }
+                            } else {
+                                if (typeof result === 'object') {
+                                    if (result.json) {
+                                        this.wrongpass = "Error: " + result.json.error.details[0].message;
+                                    } else {
+                                        this.wrongpass = "Error: " + result.error.details[0].message;
+                                    }
+                                } else {
+                                    if (result.json) {
+                                        this.wrongpass = "Error: " + JSON.parse(result).json.error.details[0].message;
+                                    } else {
+                                        this.wrongpass = "Error: " + JSON.parse(result).error.details[0].message;
+                                    }
+                                }
+                                this.busy = false;
+                            }
+                        }).catch((error) => {
+                            console.log('Catch2', error);
+                            if (typeof error === 'object') {
+                                if (error.error.code === 3081001) {
+                                    this.wrongpass = 'Error: Not enough stake to perform this action.';
+                                } else {
+                                    if (error.json) {
+                                        this.wrongpass = "Error: " + error.json.error.details[0].message;
+                                    } else {
+                                        this.wrongpass = "Error: " + error.error.details[0].message;
+                                    }
+                                }
                             } else {
                                 if (error.json) {
-                                    this.wrongpass = "Error: "+error.json.error.details[0].message;
+                                    this.wrongpass = "Error: " + JSON.parse(error).json.error.details[0].message;
                                 } else {
-                                    this.wrongpass = "Error: "+error.error.details[0].message;
+                                    this.wrongpass = "Error: " + JSON.parse(error).error.details[0].message;
                                 }
                             }
-                        } else {
-                            if (error.json) {
-                                this.wrongpass = "Error: "+JSON.parse(error).json.error.details[0].message;
-                            } else {
-                                this.wrongpass = "Error: "+JSON.parse(error).error.details[0].message;
-                            }
-                        }
+                            this.busy = false;
+                        });
+                    } else {
                         this.busy = false;
-                    });
-                } else {
+                        this.wrongpass = 'Error: Wrong password!';
+                    }
+                }).catch((err) => {
+                    console.log(err);
                     this.busy = false;
                     this.wrongpass = 'Error: Wrong password!';
-                }
-            }).catch((err) => {
-                console.log(err);
-                this.busy = false;
-                this.wrongpass = 'Error: Wrong password!';
-            });
+                });
+            }
         }
     }
 
