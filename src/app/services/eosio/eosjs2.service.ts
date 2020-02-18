@@ -67,12 +67,16 @@ export class Eosjs2Service {
 
     private JsSigProvider: SignatureProvider;
     private api: Api;
+
     private activeChain = localStorage.getItem('simplEOS.activeChainID');
+
     private configLS = JSON.parse(localStorage.getItem('configSimpleos'));
-    private defaultMainnetEndpoint = this.configLS['config']['chains'].find(
-        chain => chain.id === this.activeChain)['firstApi'];
-    private EOStMainnetEndpoint = this.configLS['config']['chains'].find(
-        chain => chain.name === 'EOS MAINNET')['firstApi'];
+
+    private defaultChain = this.configLS['config']['chains'].find(chain => chain.id === this.activeChain);
+    private defaultMainnetEndpoint = this.defaultChain.firstApi;
+
+    private EOSMainnetChain =  this.configLS['config']['chains'].find(chain => chain.name === 'EOS MAINNET');
+    private EOStMainnetEndpoint = this.EOSMainnetChain.firstApi;
 
     static makeDelegateBW(auth, from: string, receiver: string,
                           stake_net_quantity: string,
