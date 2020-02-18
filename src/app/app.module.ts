@@ -155,6 +155,7 @@ import {MaterialDesignFrameworkModule} from '@ajsf/material';
 // Lottie
 import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
+import { ImportModalComponent } from './import-modal/import-modal.component';
 
 export function playerFactory() {
     return player;
@@ -179,6 +180,7 @@ export function playerFactory() {
         ThousandSuffixesPipe,
         ConfirmModalComponent,
         InputModalComponent,
+        ImportModalComponent,
     ],
     imports: [
         FormsModule,

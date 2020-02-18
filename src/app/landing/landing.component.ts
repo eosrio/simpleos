@@ -17,6 +17,7 @@ import {LedgerService} from "../services/ledger/ledger.service";
 import {AnimationOptions} from "ngx-lottie";
 import {AnimationItem} from 'lottie-web';
 import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
+import {ImportModalComponent} from "../import-modal/import-modal.component";
 
 interface simpleosExtendedWindow {
     filesystem: any;
@@ -33,11 +34,13 @@ declare var window: Window & (typeof globalThis) & simpleosExtendedWindow;
 })
 export class LandingComponent implements OnInit, OnDestroy {
 
-    @ViewChild('wizardexists', {static: true}) exisitswizard: ClrWizard;
     @ViewChild('ledgerwizard', {static: true}) ledgerwizard: ClrWizard;
     @ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
     @ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
     @ViewChild('customImportBK', {static: true}) customImportBK: ElementRef;
+
+    @ViewChild(ImportModalComponent)
+    private importModal: ImportModalComponent;
 
     lottieConfig: AnimationOptions = {
         path: 'assets/logoanim.json',
@@ -84,18 +87,15 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     passform: FormGroup;
     passformexodus: FormGroup;
-    pvtform: FormGroup;
     importForm: FormGroup;
     refundForm: FormGroup;
 
     pk: string;
     publickey: string;
     pin: string;
-    pinexodus: string;
     lockscreen: boolean;
     lockscreen2: boolean;
     importedAccounts: any[];
-    exodusValid = false;
     endpoint: string;
     payloadValid = false;
     generated = false;
@@ -107,9 +107,11 @@ export class LandingComponent implements OnInit, OnDestroy {
     infile: any;
     total_amount: number;
     memo: string;
+
     openTX = LandingComponent.openTXID;
     openGit = LandingComponent.openGithub;
     openFaq = LandingComponent.openFAQ;
+
     busy2 = false;
     busyActivekey = false;
 
@@ -118,9 +120,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     requestId = '';
     requestError = '';
     noPIN = true;
-    apierror = '';
     private subscriptions: Subscription[] = [];
-    private pvtImportReady: boolean;
 
     static parseEOS(tk_string) {
         if (tk_string.split(' ')[1] === 'EOS') {
@@ -192,32 +192,13 @@ export class LandingComponent implements OnInit, OnDestroy {
             this.busy = !status;
         });
         this.publicEOS = '';
+
         this.passform = this.fb.group({
             matchingPassword: this.fb.group({
                 pass1: ['', [Validators.required, Validators.minLength(10)]],
                 pass2: ['', [Validators.required, Validators.minLength(10)]]
             })
         });
-        this.pvtform = this.fb.group({
-            private_key: ['', Validators.required]
-        });
-
-        this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
-            if (value) {
-                value = value.trim();
-                if (value.length === 51) {
-                    this.verifyPrivateKey(value, false);
-                } else {
-                    this.pvtImportReady = false;
-                }
-            }
-        }));
-
-        // this.subscriptions.push(this.ledgerService.openPanel.asObservable().subscribe((value) => {
-        //     if (value && !this.importFromLedger) {
-        //         this.ledgerwizard.open();
-        //     }
-        // }));
 
         this.passformexodus = this.fb.group({
             matchingPassword: this.fb.group({
@@ -304,7 +285,6 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
 
     getCurrentEndpoint() {
-
         switch (this.network.activeChain.name) {
             case 'WAX MAINNET': {
                 // this.theme.defaultTheme();
@@ -326,7 +306,6 @@ export class LandingComponent implements OnInit, OnDestroy {
         } else {
             this.endpoint = this.network.activeChain['firstApi'];
         }
-
     }
 
     parseSYMBOL(tk_string) {
@@ -338,7 +317,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
 
     changeChain(event) {
-        this.exisitswizard.reset();
+        this.importModal.reset();
         this.network.changeChain(event.value);
         this.getCurrentEndpoint();
     }
@@ -350,10 +329,6 @@ export class LandingComponent implements OnInit, OnDestroy {
             this.customConnect();
             // 	this.endpointModal = false;
         }
-    }
-
-    setPin() {
-        this.crypto.createPIN(this.pin);
     }
 
     validateExchangeMemo(account: string, memo: string) {
@@ -500,125 +475,65 @@ export class LandingComponent implements OnInit, OnDestroy {
         this.network.startup(this.endpoint);
     }
 
-    getConstitution() {
-        if (this.network.activeChain['name'] === 'EOS MAINNET') {
-            this.eos.getConstitution();
-        }
-    }
-
     handleAnimation(anim: AnimationItem) {
         this.anim = anim;
         this.anim['setSpeed'](0.8);
     }
 
-    passCompare() {
-        this.passmatch = compare2FormPasswords(this.passform);
-    }
-
-    preImportCredentials(EOS) {
-        if (EOS) {
-            if (!this.noPIN) {
-                this.importCredentials();
-            }
-        } else {
-            if (!this.noPIN && this.aService.activeChain.name !== 'EOS MAINNET') {
-                this.importCredentials();
-            }
-        }
-    }
-
-    importCredentials() {
-        const pubk = this.publicEOS;
-        const pass1 = this.passform.value.matchingPassword.pass1;
-        const pass2 = this.passform.value.matchingPassword.pass2;
-        if (pass1 === pass2) {
-            this.crypto.initKeys(pubk, pass1).then(() => {
-                let pvk = this.pvtform.value.private_key.trim();
-                this.crypto.encryptAndStore(pvk, pubk).then(() => {
-                    pvk = '';
-                    this.aService.importAccounts(this.importedAccounts).then((data: any[]) => {
-                        if (data.length > 0) {
-                            this.crypto.decryptKeys(pubk).then(() => {
-                                this.router.navigate(['dashboard', 'wallet']).then(() => {
-
-                                }).catch((err) => {
-                                    console.log(err);
-                                });
-                                if (this.lockscreen) {
-                                    this.setPin();
-                                }
-                            }).catch((error) => {
-                                console.log('Error', error);
-                            });
-                        }
-                    });
-                }).catch((err) => {
-                    console.log(err);
-                });
-            });
-        }
-    }
-
-    verifyPrivateKey(input, auto) {
-        if (this.pvtImportReady) {
-            this.zone.run(() => {
-                this.exisitswizard.forceNext();
-                this.errormsg = '';
-                this.apierror = '';
-            });
-        } else {
-            if (input !== '') {
-                this.busyActivekey = true;
-                this.eos.checkPvtKey(input.trim()).then((results) => {
-                    this.publicEOS = results.publicKey;
-                    this.importedAccounts = [];
-                    this.importedAccounts = [...results.foundAccounts];
-                    this.importedAccounts.forEach((item) => {
-                        // console.log(item);
-                        item['permission'] = item.permissions.find(p => {
-                            return p.required_auth.keys[0].key === results.publicKey;
-                        })['perm_name'];
-                        if (item['refund_request']) {
-                            const tempDate = item['refund_request']['request_time'] + '.000Z';
-                            const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-                            const now = new Date().getTime();
-                            if (now > refundTime) {
-                                this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
-                                    console.log(tx);
-                                });
-                            } else {
-                                console.log('Refund not ready!');
-                            }
-                        }
-                    });
-                    this.pvtform.controls['private_key'].setErrors(null);
-                    this.pvtImportReady = true;
-                    this.zone.run(() => {
-                        if (auto) {
-                            this.exisitswizard.forceNext();
-                        }
-                        this.errormsg = '';
-                        this.apierror = '';
-                    });
-                }).catch((e) => {
-                    this.pvtImportReady = false;
-                    this.zone.run(() => {
-                        this.dropReady = true;
-                        this.exodusValid = false;
-                        this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-                        this.importedAccounts = [];
-                        handleErrorMessage(e, this.errormsg);
-                    });
-                });
-            }
-        }
-    }
-
-    doCancel(): void {
-        this.pvtform.reset();
-        this.exisitswizard.close();
-        this.exisitswizard.reset();
-    }
+    // verifyPrivateKey(input, auto) {
+    //     if (this.pvtImportReady) {
+    //         this.zone.run(() => {
+    //             this.exisitswizard.forceNext();
+    //             this.errormsg = '';
+    //             this.apierror = '';
+    //         });
+    //     } else {
+    //         if (input !== '') {
+    //             this.busyActivekey = true;
+    //             this.eos.checkPvtKey(input.trim()).then((results) => {
+    //                 this.publicEOS = results.publicKey;
+    //                 this.importedAccounts = [];
+    //                 this.importedAccounts = [...results.foundAccounts];
+    //                 this.importedAccounts.forEach((item) => {
+    //                     // console.log(item);
+    //                     item['permission'] = item.permissions.find(p => {
+    //                         return p.required_auth.keys[0].key === results.publicKey;
+    //                     })['perm_name'];
+    //                     if (item['refund_request']) {
+    //                         const tempDate = item['refund_request']['request_time'] + '.000Z';
+    //                         const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+    //                         const now = new Date().getTime();
+    //                         if (now > refundTime) {
+    //                             this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
+    //                                 console.log(tx);
+    //                             });
+    //                         } else {
+    //                             console.log('Refund not ready!');
+    //                         }
+    //                     }
+    //                 });
+    //                 this.pvtform.controls['private_key'].setErrors(null);
+    //                 this.pvtImportReady = true;
+    //                 this.zone.run(() => {
+    //                     if (auto) {
+    //                         this.exisitswizard.forceNext();
+    //                     }
+    //                     this.errormsg = '';
+    //                     this.apierror = '';
+    //                 });
+    //             }).catch((e) => {
+    //                 this.pvtImportReady = false;
+    //                 this.zone.run(() => {
+    //                     this.dropReady = true;
+    //                     this.exodusValid = false;
+    //                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+    //                     this.importedAccounts = [];
+    //                     handleErrorMessage(e, this.errormsg);
+    //                 });
+    //             });
+    //         }
+    //     }
+    // }
 
     // Verify public key - step 1
     checkAccount() {
@@ -742,74 +657,6 @@ export class LandingComponent implements OnInit, OnDestroy {
         }
     }
 
-    contentStyle(txt, color?) {
-        const splitLines = txt.split('<br>');
-        let newTxt = '';
-        splitLines.forEach(line => {
-            if (line.length > 1) {
-                if (line.substr(0, 4) === '####') {
-                    newTxt += '<h3 class="blue"><b>' + line.replace('####', '') + '</b></h3>';
-                } else if (line.substr(0, 3) === '###') {
-                    newTxt += '<h5 class="text-muted2"><b>' + line.replace('###', '') + '</b></h5>';
-                } else if (line.substr(0, 2) === '##') {
-                    newTxt += '<h4 class="blue"><b>' + line.replace('##', '') + '</b></h4>';
-                } else if (line.substr(0, 1) === '#') {
-                    newTxt += '<h3 class="blue"><b>' + line.replace('#', '') + '</b></h3>';
-                } else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___') {
-                    newTxt += '<hr class="lineHR"/>';
-                } else if (line.match(/\(http(\w\S(.)*?)\)/g)) {
-                    const link = line.match(/\(http(\w\S(.)*?)\)+/g);
-                    const linkName = line.match(/(\[.*?])+/g);
-                    const linkImage = line.match(/(!\[.*?])+/g);
-                    let newLine = line;
-                    link.forEach((val, idx: number) => {
-                        const newlink = val.replace('(', '').replace(')', '');
-                        let oldVal = val;
-                        let newValName = newlink;
-                        let repVal = '';
-                        if (linkImage !== null) {
-                            if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
-                                newValName = linkImage[idx].replace('![', '').replace(']', '');
-                                oldVal = linkImage[idx] + val;
-                            } else if (linkImage[idx] !== null && linkImage[idx] === '![]') {
-                                newValName = '';
-                                oldVal = '![]' + val;
-                            } else {
-                                newValName = '';
-                                oldVal = val;
-                            }
-                            repVal = '<img style="width:100%" src="' + newlink + '" alt=""/>' + newValName + '';
-                        } else {
-                            if (linkName !== null && linkName[idx] !== '[]') {
-                                newValName = linkName[idx].replace('[', '').replace(']', '');
-                                oldVal = linkName[idx] + val;
-                            } else if (linkName !== null && linkName[idx] === '[]') {
-                                oldVal = '[]' + val;
-                            } else {
-                                oldVal = val;
-                            }
-                            repVal = '<span class="link-ref" ref-link="' + newlink + '" >' + newValName + '</span>';
-                        }
-                        newLine = newLine.replace(oldVal, repVal);
-                    });
-                    newTxt += '<p class="' + color + '" >' + newLine + '</p>';
-                } else if (line.match(/`(.*?)`/g)) {
-                    newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
-                } else {
-                    newTxt += '<p class="' + color + '" style="overflow-wrap: break-word;" >' + line + '</p>';
-                }
-            }
-        });
-        if (newTxt.match(/`(.*?)`+/g)) {
-            const strong = newTxt.match(/`(.*?)`+/g);
-            strong.forEach((val) => {
-                const newVal = '<span class="white">' + val.replace(new RegExp(/`+/g, 'g'), '') + '</span> ';
-                newTxt = newTxt.replace(val, newVal);
-            });
-        }
-        return newTxt;
-    }
-
     getSlots() {
         console.log('reading ledger slots...');
         this.ledgerService.readSlots(0, 5);
@@ -820,5 +667,9 @@ export class LandingComponent implements OnInit, OnDestroy {
             const duration = this.anim.getDuration(true);
             this.anim.goToAndPlay(Math.round(duration / 3), true);
         }
+    }
+
+    openImportModal() {
+        this.importModal.openModal();
     }
 }

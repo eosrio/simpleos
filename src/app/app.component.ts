@@ -16,7 +16,6 @@ import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
 import {LedgerService} from './services/ledger/ledger.service';
-import {log} from 'util';
 
 export interface LedgerSlot {
     publicKey: string;
@@ -88,7 +87,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         if (this.compilerVersion === 'LIBERLAND') {
             this.titleService.setTitle('Liberland Wallet v' + this.version);
             this.theme.liberlandTheme();
-            this.activeChain = this.network.defaultChains.find((chain) => chain.name ==='LIBERLAND TESTNET');
+            this.activeChain = this.network.defaultChains.find((chain) => chain.name === 'LIBERLAND TESTNET');
             localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
             this.network.changeChain(this.activeChain.id);
         } else {
@@ -115,104 +114,136 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         this.busy = false;
 
+        this.ledger.startListener();
+        this.startIPCListeners();
+    }
+
+    ngOnInit(): void {
+        this.isMac = this._electronService.isMacOS;
+        console.log('Is MacOS?', this._electronService.isMacOS);
+        this.cdr.detectChanges();
+    }
+
+    ngAfterViewInit() {
+        setTimeout(() => {
+            this.network.connect(false);
+            setTimeout(async () => {
+                this.newVersion = await this.eosjs.checkSimpleosUpdate();
+                if (this.newVersion) {
+                    const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
+                    const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
+                    console.log(`Remote Version: ${remoteVersionNum}`);
+                    console.log(`Local Version: ${currentVersionNum}`);
+                    if (remoteVersionNum > currentVersionNum) {
+                        this.update = true;
+                    }
+                }
+            }, 5000);
+        }, 900);
+    }
+
+    startIPCListeners() {
         if (this.connect.ipc) {
 
             // Bind simpleos connect requests
             this.onSimpleosConnectMessage = this.onSimpleosConnectMessage.bind(this);
             this.connect.ipc.on('sc_request', this.onSimpleosConnectMessage);
 
-            // bind transit api requests
-            this.connect.ipc.on('request', (event, payload) => {
-                this.transitEventHandler = event;
-                switch (payload.message) {
-                    case 'launch': {
-                        console.log(payload);
-                        break;
-                    }
-                    case 'accounts': {
-                        event.sender.send('accountsResponse', this.aService.accounts.map(a => a.name));
-                        break;
-                    }
-                    case 'connect': {
-                        this.dapp_name = payload.content.appName;
-                        const result = this.changeChain(payload.content.chainId);
-                        event.sender.send('connectResponse', result);
-                        break;
-                    }
-                    case 'login': {
+            // Bind transit api requests
+            this.onTransitApiMessage = this.onTransitApiMessage.bind(this);
+            this.connect.ipc.on('request', this.onTransitApiMessage);
+        }
+    }
 
-                        if (localStorage.getItem('simpleos-hash') && this.crypto.getLockStatus()) {
-                            this.eventFired = true;
-                            this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
-                            return;
-                        }
+    private onTransitApiMessage(event, payload) {
+        this.transitEventHandler = event;
+        switch (payload.message) {
+            case 'launch': {
+                console.log(payload);
+                break;
+            }
+            case 'accounts': {
+                event.sender.send('accountsResponse', this.aService.accounts.map(a => a.name));
+                break;
+            }
+            case 'connect': {
+                this.dapp_name = payload.content.appName;
+                const result = this.changeChain(payload.content.chainId);
+                event.sender.send('connectResponse', result);
+                break;
+            }
+            case 'login': {
 
-                        const reqAccount = payload.content.account;
-                        // console.log ( reqAccount );
-                        if (reqAccount) {
-                            const foundAccount = this.aService.accounts.find((a) => a.accountName === reqAccount);
-                            if (foundAccount) {
-                                this.selectedAccount.next(foundAccount);
-                                event.sender.send('loginResponse', foundAccount);
-                                break;
-                            } else {
-                                console.log('Account not imported on wallet!');
-                                event.sender.send('loginResponse', {});
-                            }
-                            return;
-                        }
-
-                        this.zone.run(() => {
-                            this.transitconnect = true;
-                            this.eventFired = false;
-                        });
-
-                        if (!this.aService.accounts) {
-                            console.log('No account found!');
-                            event.sender.send('loginResponse', {});
-                        }
-
-                        if (this.aService.accounts.length > 0) {
-                            this.accountChange = this.selectedAccount.subscribe((data) => {
-                                if (data) {
-                                    // console.log ( data );
-                                    event.sender.send('loginResponse', data);
-                                    this.accountChange.unsubscribe();
-                                    this.selectedAccount.next(null);
-                                }
-                            });
-                        } else {
-                            console.log('No account found!');
-                            event.sender.send('loginResponse', {});
-                        }
-                        break;
-                    }
-                    case 'logout': {
-                        const reqAccount = payload.content.account;
-                        console.log(reqAccount);
-                        this.dapp_name = null;
-                        event.sender.send('logoutResponse', {});
-                        break;
-                    }
-                    case 'disconnect': {
-                        this.dapp_name = null;
-                        event.sender.send('disconnectResponse', {});
-                        break;
-                    }
-                    case 'publicKeys': {
-                        const localKeys = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-                        event.sender.send('publicKeyResponse', Object.keys(localKeys));
-                        break;
-                    }
-                    case 'sign': {
-                        this.onTransitSign(event, payload).catch(console.log);
-                        break;
-                    }
-                    default: {
-                        console.log(payload);
-                    }
+                if (localStorage.getItem('simpleos-hash') && this.crypto.getLockStatus()) {
+                    this.eventFired = true;
+                    this.transitEventHandler.sender.send('loginResponse', {status: 'CANCELLED'});
+                    return;
                 }
-            });
+
+                const reqAccount = payload.content.account;
+                // console.log ( reqAccount );
+                if (reqAccount) {
+                    const foundAccount = this.aService.accounts.find((a) => a.accountName === reqAccount);
+                    if (foundAccount) {
+                        this.selectedAccount.next(foundAccount);
+                        event.sender.send('loginResponse', foundAccount);
+                        break;
+                    } else {
+                        console.log('Account not imported on wallet!');
+                        event.sender.send('loginResponse', {});
+                    }
+                    return;
+                }
+
+                this.zone.run(() => {
+                    this.transitconnect = true;
+                    this.eventFired = false;
+                });
+
+                if (!this.aService.accounts) {
+                    console.log('No account found!');
+                    event.sender.send('loginResponse', {});
+                }
+
+                if (this.aService.accounts.length > 0) {
+                    this.accountChange = this.selectedAccount.subscribe((data) => {
+                        if (data) {
+                            // console.log ( data );
+                            event.sender.send('loginResponse', data);
+                            this.accountChange.unsubscribe();
+                            this.selectedAccount.next(null);
+                        }
+                    });
+                } else {
+                    console.log('No account found!');
+                    event.sender.send('loginResponse', {});
+                }
+                break;
+            }
+            case 'logout': {
+                const reqAccount = payload.content.account;
+                console.log(reqAccount);
+                this.dapp_name = null;
+                event.sender.send('logoutResponse', {});
+                break;
+            }
+            case 'disconnect': {
+                this.dapp_name = null;
+                event.sender.send('disconnectResponse', {});
+                break;
+            }
+            case 'publicKeys': {
+                const localKeys = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
+                event.sender.send('publicKeyResponse', Object.keys(localKeys));
+                break;
+            }
+            case 'sign': {
+                this.onTransitSign(event, payload).catch(console.log);
+                break;
+            }
+            default: {
+                console.log(payload);
+            }
         }
     }
 
@@ -296,12 +327,6 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.cdr.detectChanges();
     }
 
-    ngOnInit(): void {
-        this.isMac = this._electronService.isMacOS;
-        console.log('Is MacOS?', this._electronService.isMacOS);
-        this.cdr.detectChanges();
-    }
-
     public minimizeWindow() {
         console.log('Minimize...');
         if (this._electronService.isElectronApp) {
@@ -333,50 +358,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     mode: string = 'local';
 
-    // selectSlot(slot: LedgerSlot, index: number) {
-    //     this.selectedSlot = slot;
-    //     this.selectedSlotIndex = index;
-    //     // this.ledgerwizard.next();
-    //     console.log(this.selectedSlot);
-    // }
-    //
-    // importLedgerAccount() {
-    //     this.eos.loadPublicKey(this.selectedSlot.publicKey).then((data: any) => {
-    //         console.log(data);
-    //         this.crypto.storeLedgerAccount(data.publicKey, this.selectedSlotIndex);
-    //         this.aService.appendNewAccount(data.foundAccounts[0]).catch(console.log);
-    //         setTimeout(() => {
-    //             this.router.navigate(['dashboard', 'wallet']).catch((err) => {
-    //                 console.log(err);
-    //             });
-    //         }, 1000);
-    //     });
-    // }
-
     performUpdate() {
         window['shell'].openExternal('https://eosrio.io/simpleos/').catch(console.log);
     }
 
     openGithub() {
         window['shell'].openExternal(this.newVersion['link']).catch(console.log);
-    }
-
-    ngAfterViewInit() {
-        setTimeout(() => {
-            this.network.connect(false);
-            setTimeout(async () => {
-                this.newVersion = await this.eosjs.checkSimpleosUpdate();
-                if (this.newVersion) {
-                    const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
-                    const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
-                    console.log(`Remote Version: ${remoteVersionNum}`);
-                    console.log(`Local Version: ${currentVersionNum}`);
-                    if (remoteVersionNum > currentVersionNum) {
-                        this.update = true;
-                    }
-                }
-            }, 5000);
-        }, 900);
     }
 
     selectAccount(account_data, idx) {
@@ -417,7 +404,6 @@ export class AppComponent implements OnInit, AfterViewInit {
             this.aService.selected.next(account);
             const [, publicKey] = this.trxFactory.getAuth();
 
-
             try {
                 await this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey);
             } catch (e) {
@@ -454,12 +440,20 @@ export class AppComponent implements OnInit, AfterViewInit {
                     this.network.selectedEndpoint.getValue().url
                 );
                 if (result) {
+                    this.replyEvent.sender.send('signResponse', {
+                        status: 'OK',
+                        content: result
+                    });
                     this.wrongpass = '';
                     this.busy = false;
                     this.externalActionModal = false;
                     this.cdr.detectChanges();
                 }
             } catch (e) {
+                this.replyEvent.sender.send('signResponse', {
+                    status: 'ERROR',
+                    reason: e
+                });
                 this.wrongpass = e;
                 console.log(e);
                 this.busy = false;
@@ -519,10 +513,9 @@ export class AppComponent implements OnInit, AfterViewInit {
             this.confirmForm.reset();
             this.processSigners();
             this.action_json = this.fullTrxData.actions;
-
             this.checkSignerMode();
-
             this.zone.run(() => {
+                this.wrongpass = '';
                 this.loadingTRX = false;
                 this.externalActionModal = true;
                 this.eventFired = false;
