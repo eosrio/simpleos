@@ -24,7 +24,8 @@ export class RamService {
 
     restrictedChains = [
         'EOS MAINNET',
-        'LIBERLAND TESTNET'
+        'LIBERLAND TESTNET',
+        'LIBERLAND TEST'
     ];
 
     constructor(private aService: AccountsService, private eos: EOSJSService) {
