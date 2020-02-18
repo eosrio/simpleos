@@ -12,5 +12,5 @@ conf.build.dmg.icon = "src/assets/icons/liberland256x256.icns";
 conf.build.mac.icon = "other_assets/liberland518x518.png";
 conf.build.linux.icon = "other_assets/liberland256x256.png";
 
-fs.writeFileSync('../package.json', JSON.stringify(conf, null, "\t"));
+fs.writeFileSync('./package.json', JSON.stringify(conf, null, "\t"));
 
