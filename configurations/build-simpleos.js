@@ -13,5 +13,5 @@ conf.build.mac.icon = "other_assets/icon.png";
 conf.build.dmg.icon = "src/assets/icons/256x256.icns";
 conf.build.linux.icon = "other_assets/256x256.png";
 
-fs.writeFileSync('../package.json', JSON.stringify(conf, null, "\t"));
+fs.writeFileSync('package.json', JSON.stringify(conf, null, "\t"));
 
