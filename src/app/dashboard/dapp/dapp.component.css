@@ -98,3 +98,7 @@ div#formAction > mat-form-field > input {
 	margin-right: auto;
 	max-width: 1104px;
 }
+
+.instruction {
+	color: var(--text-title-color);
+}

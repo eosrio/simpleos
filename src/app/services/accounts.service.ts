@@ -4,6 +4,8 @@ import {EOSJSService} from './eosio/eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';
+import {TransactionFactoryService} from "./eosio/transaction-factory.service";
+import {CryptoService} from "./crypto/crypto.service";
 
 @Injectable({
     providedIn: 'root'
@@ -17,6 +19,7 @@ export class AccountsService {
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
     public versionSys: string;
+    public accMode: string;
 
     usd_rate = 1;
     cmcListings = [];
@@ -42,6 +45,7 @@ export class AccountsService {
         private eos: EOSJSService,
         private eosjs: Eosjs2Service,
         private toaster: ToasterService,
+        private crypto: CryptoService,
         // private ledger: LedgerHWService
     ) {
         const configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
@@ -615,11 +619,29 @@ export class AccountsService {
             this.selected.next(sel);
             this.fetchTokens(sel.name).catch(console.log);
         }
-        // const pbk = this.selected.getValue().details.permissions[0].required_auth.keys[0].key;
         // const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
         // if(this.isLedger){
         //   this.isLedger = stored_data[pbk]['private'] === 'ledger';
         // }
+    }
+
+    getModeAccount(account?: any) {
+        const actor = account ?? this.selected.getValue();
+        let _permission = 'active';
+        let publicKey = actor.details['permissions'].find((p) => p.perm_name === 'active')['required_auth'].keys[0].key;
+        const validKey = this.crypto.checkPublicKey(publicKey);
+        if (!validKey) {
+            for (const perm of actor.details['permissions']) {
+                if (this.crypto.checkPublicKey(perm['required_auth'].keys[0].key)) {
+                    _permission = perm.perm_name;
+                    publicKey = perm['required_auth'].keys[0].key;
+                    break;
+                }
+            }
+            console.log(`non-active permission selected: ${_permission}`);
+        }
+
+        return this.crypto.getPrivateKeyMode(publicKey);
     }
 
     initFirst() {

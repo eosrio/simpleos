@@ -64,6 +64,8 @@ export class SendComponent implements OnInit {
     selectedDeleteContact = null;
     displayAddToContacts = false;
 
+    accountMode: string;
+
     knownExchanges = [
         'bitfinexdep1', 'krakenkraken', 'chainceoneos',
         'huobideposit', 'zbeoscharge1', 'okbtothemoon',
@@ -83,10 +85,15 @@ export class SendComponent implements OnInit {
         this.contactExist = true;
         this.fromAccount = '';
         this.busy = false;
+
+        //-----------------------------
+        // CHANGE BACK AMOUNT REQUIRED
+        //-----------------------------
+
         this.sendForm = this.fb.group({
             token: [aService.activeChain['symbol'], Validators.required],
             to: ['', Validators.required],
-            amount: ['', Validators.required],
+            amount: [''],
             memo: [''],
             add: [false],
             alias: [''],
@@ -448,6 +455,8 @@ export class SendComponent implements OnInit {
         this.confirmForm.reset();
         this.fromAccount = this.aService.selected.getValue().name;
         this.sendModal = true;
+        this.accountMode = this.aService.getModeAccount(this.aService.selected.getValue());
+        console.log(this.aService.accMode);
     }
 
     transfer() {
@@ -463,6 +472,25 @@ export class SendComponent implements OnInit {
         const [publicKey, permission] = this.aService.getStoredKey(selAcc);
 
         if (amount > 0 && this.sendForm.valid) {
+
+
+            // const result = await this.ledger.sign(
+            //     this.fullTrxData,
+            //     this.crypto.requiredLedgerSlot,
+            //     this.network.selectedEndpoint.getValue().url
+            // );
+            // if (result) {
+            //     this.replyEvent.sender.send('signResponse', {
+            //         status: 'OK',
+            //         content: result
+            //     });
+            //     this.wrongpass = '';
+            //     this.busy = false;
+            //     this.externalActionModal = false;
+            //     this.cdr.detectChanges();
+            // }
+
+
             this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {
                 // console.log(res);
                 if (res) {
