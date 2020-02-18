@@ -163,7 +163,7 @@
                                     ctrl c + ctrl v to copy & paste
                                 </mat-hint>
                             </mat-form-field>
-                            <button class="btn btn-inverse2 btn-check" style="margin-top: 10px" (click)="checkAccount()"
+                            <button class="btn btn-info-outline btn-check" style="margin-top: 10px" (click)="checkAccount()"
                                     [disabled]="!publicEOS">
                                 Check
                             </button>
@@ -252,7 +252,7 @@
                          *ngIf="app.compilerVersion === 'LIBERLAND'">
                     <div class="credits">Powered by</div>
                     <div class="version">SimplEOS v{{aService.versionSys}}</div>
-                    <div (click)="ledgerwizard.open()" class="version" *ngIf="ledgerService.deviceName !== ''">
+                    <div (click)="ledgerwizard.open()" class="version" *ngIf="ledgerService.appReady">
                         Hardware Wallet Connected: {{ledgerService.deviceName}}
                     </div>
                     <br>
@@ -593,21 +593,21 @@
         <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
         <h5 class="gray">Please click the <span style="cursor:pointer;" class="blue"> Generate Key Pair </span> button.
         </h5>
-        <mat-form-field class="mt-1" style="width: 470px">
+        <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
                      (click)="cc(ownerpub2,'Key', 'Please save it on a safe place.')"></fa-icon>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
-        <mat-form-field class="mt-1" style="width: 470px">
+        <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
                      (click)="cc(ownerpk2, 'Key', 'Please save it on a safe place.')"></fa-icon>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
-        <button class="btn btn-primary" style="margin-top:20px;" (click)="generateNKeys()">Generate Key Pair</button>
+        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair</button>
 
         <fa-layers *ngIf="generating2" class="blue fa-fw">
             <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
@@ -664,8 +664,8 @@
         <span class="blue">Network Options</span>
     </h3>
     <div class="modal-body">
-        <div class="card info-card">
-            <div class="card-block">
+<!--        <div class="card info-card mat-elevation-z2">-->
+<!--            <div class="card-block">-->
                 <div class="info2">Connect to another endpoint.</div>
                 <div class="card chains-card">
                     <ng-container *ngFor="let ep of network.validEndpoints">
@@ -693,8 +693,8 @@
                         Connect
                     </button>
                 </div>
-            </div>
-        </div>
+<!--            </div>-->
+<!--        </div>-->
     </div>
     <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
 

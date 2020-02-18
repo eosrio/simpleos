@@ -152,6 +152,9 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         this.pvtform.reset();
         this.importwizard.close();
         this.importwizard.reset();
+        this.usingLedger = false;
+        this.accountsToImport = [];
+        this.ledger.ledgerAccounts = [];
     }
 
     getConstitution() {

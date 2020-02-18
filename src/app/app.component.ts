@@ -65,6 +65,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     public transitEventHandler: any;
     private eventFired: boolean;
     public loadingTRX: boolean;
+    private transitMode = false;
 
     constructor(
         private fb: FormBuilder,
@@ -238,6 +239,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                 break;
             }
             case 'sign': {
+                this.transitMode = true;
                 this.onTransitSign(event, payload).catch(console.log);
                 break;
             }
@@ -310,6 +312,10 @@ export class AppComponent implements OnInit, AfterViewInit {
         if (this.transitEventHandler && ev === false && this.eventFired === false) {
             this.eventFired = true;
             this.transitEventHandler.sender.send('signResponse', {status: 'CANCELLED'});
+        }
+        if (this.replyEvent && ev === false && this.eventFired === false) {
+            this.eventFired = true;
+            this.replyEvent.sender.send('signResponse', {status: 'CANCELLED'});
         }
     }
 
@@ -394,11 +400,18 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
     }
 
+    signResponse(data) {
+        this.replyEvent.sender.send('signResponse', data);
+    }
+
     async signExternalAction() {
         this.wrongpass = '';
         this.busy = true;
 
         if (this.mode === 'local') {
+
+            console.log('signing in local mode');
+
             const account = this.aService.accounts.find(a => a.name === this.external_signer);
             const idx = this.aService.accounts.indexOf(account);
             this.aService.selected.next(account);
@@ -413,11 +426,22 @@ export class AppComponent implements OnInit, AfterViewInit {
             }
 
             try {
-                const result = await this.eosjs.signTrx(this.fullTrxData);
+
+                console.log(this.fullTrxData, !this.transitMode);
+                const result = await this.eosjs.signTrx(this.fullTrxData, !this.transitMode);
+                console.log(result);
+
                 if (result) {
-                    this.replyEvent.sender.send('signResponse', {
-                        sigs: result.signatures,
-                    });
+                    if (this.transitMode) {
+                        this.signResponse({
+                            sigs: result.signatures,
+                        });
+                    } else {
+                        this.signResponse({
+                            status: 'OK',
+                            content: result
+                        })
+                    }
                     this.wrongpass = '';
                     this.busy = false;
                     this.externalActionModal = false;
@@ -440,7 +464,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     this.network.selectedEndpoint.getValue().url
                 );
                 if (result) {
-                    this.replyEvent.sender.send('signResponse', {
+                    this.signResponse({
                         status: 'OK',
                         content: result
                     });
@@ -450,7 +474,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     this.cdr.detectChanges();
                 }
             } catch (e) {
-                this.replyEvent.sender.send('signResponse', {
+                this.signResponse({
                     status: 'ERROR',
                     reason: e
                 });
@@ -482,10 +506,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         if (this.crypto.getLockStatus()) {
             return;
         }
-
         this.loadingTRX = true;
         const hexData = payload.content.hex_data;
-
         try {
             const data = await this.eosjs.localSigProvider.processTrx(hexData);
             this.fullTrxData = data;
@@ -506,6 +528,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     async simpleosConnectSign(event, payload) {
+        console.log('new signature proposal', payload.content);
         this.fullTrxData = payload.content;
         this.loadingTRX = true;
         try {
@@ -530,10 +553,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private checkSignerMode() {
         const account = this.aService.accounts.find(a => a.name === this.external_signer);
         const [auth, publicKey] = this.trxFactory.getAuth(account);
-        console.log(auth, publicKey);
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        console.log(this.crypto.requiredLedgerDevice);
-        console.log(this.crypto.requiredLedgerSlot);
     }
 
     get requiredLedgerInfo() {

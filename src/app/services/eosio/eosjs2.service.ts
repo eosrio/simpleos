@@ -75,7 +75,7 @@ export class Eosjs2Service {
     private defaultChain = this.configLS['config']['chains'].find(chain => chain.id === this.activeChain);
     private defaultMainnetEndpoint = this.defaultChain.firstApi;
 
-    private EOSMainnetChain =  this.configLS['config']['chains'].find(chain => chain.name === 'EOS MAINNET');
+    private EOSMainnetChain = this.configLS['config']['chains'].find(chain => chain.name === 'EOS MAINNET');
     private EOStMainnetEndpoint = this.EOSMainnetChain.firstApi;
 
     static makeDelegateBW(auth, from: string, receiver: string,
@@ -133,11 +133,11 @@ export class Eosjs2Service {
         }, 5000);
     }
 
-    signTrx(trx) {
+    signTrx(trx: any, shouldBroadcast: boolean) {
         return this.api.transact(trx, {
             blocksBehind: 3,
             expireSeconds: 30,
-            broadcast: false,
+            broadcast: shouldBroadcast,
             sign: true,
         });
     }
