@@ -4,17 +4,24 @@
         <h5 class="gray mt-0">Account: {{modalData.signerAccount}}</h5>
         <h4 class="text-white" [innerHTML]="modalData.labelHTML"></h4>
         <h5 class="mt-0"></h5>
-        <p-accordion *ngIf="displayTerms">
-            <p-accordionTab [header]="modalData.termsHeader"
-                            [innerHTML]="modalData.termsHTML">
-            </p-accordionTab>
-        </p-accordion>
+        <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
+            <p-accordion>
+                <p-accordionTab>
+                    <p-header>
+                        <div style="display: contents;" [innerHTML]="modalData.termsHeader"></div>
+                    </p-header>
+                    <div [innerHTML]="modalData.termsHTML"></div>
+                </p-accordionTab>
+            </p-accordion>
+        </ng-container>
+
     </div>
     <div class="modal-footer">
         <div fxLayout="column" style="display:flex;">
             <div dir="ltr" fxLayoutGap="20px">
-                <form [formGroup]="confirmationForm"  style="float:right" >
-                    <ng-container>
+                <ng-container *ngIf="mode === 'local'">
+                    <form [formGroup]="confirmationForm" style="float:right">
+
                         <mat-form-field>
                             <input matInput #pass type="password" formControlName="pass"
                                    (keyup.enter)="executeAction(pass.value);"
@@ -25,8 +32,17 @@
                             Confirm
                             <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
                         </button>
-                    </ng-container>
-                </form>
+                    </form>
+                </ng-container>
+                <ng-container *ngIf="mode === 'ledger'">
+                    <span>device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
+                    <button type="button" class="btn btn-info-outline"
+                            style="margin-top: 12px;" (click)="signLedger()" >
+                        sign with ledger
+                        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                    </button>
+
+                </ng-container>
             </div>
             <div class="error" style="display:flex;" *ngIf="errormsg !== ''">
                 {{errormsg}}
