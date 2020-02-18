@@ -20,7 +20,7 @@ export interface TrxModalData {
 export class TransactionFactoryService {
 
     public modalData: BehaviorSubject<TrxModalData>;
-    public launcher: EventEmitter<boolean>;
+    public launcher: EventEmitter<any>;
     public status: EventEmitter<string>;
 
     constructor(
@@ -31,6 +31,7 @@ export class TransactionFactoryService {
         this.status = new EventEmitter<string>(true);
         this.modalData = new BehaviorSubject<TrxModalData>({
             labelHTML: '',
+
             termsHTML: '',
             termsHeader: '',
             actionTitle: '',
