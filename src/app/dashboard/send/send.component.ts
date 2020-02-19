@@ -377,19 +377,19 @@ export class SendComponent implements OnInit {
                 this.addDividers();
                 this.storeContacts();
             }).catch((err) => {
-				if (typeof err === 'object') {
-					if (err.json) {
-						alert("Error: "+err.json.error.details[0].message);
-					} else {
-						alert("Error: "+err.error.details[0].message);
-					}
-				}else{
-					if (err.json) {
-						alert("Error: "+JSON.parse(err).json.error.details[0].message);
-					} else {
-						alert("Error: "+JSON.parse(err).error.details[0].message);
-					}
-				}
+                if (typeof err === 'object') {
+                    if (err.json) {
+                        alert("Error: " + err.json.error.details[0].message);
+                    } else {
+                        alert("Error: " + err.error.details[0].message);
+                    }
+                } else {
+                    if (err.json) {
+                        alert("Error: " + JSON.parse(err).json.error.details[0].message);
+                    } else {
+                        alert("Error: " + JSON.parse(err).error.details[0].message);
+                    }
+                }
             });
         } catch (e) {
             alert('invalid account name!');
@@ -409,19 +409,19 @@ export class SendComponent implements OnInit {
                 this.addDividers();
                 this.storeContacts();
             }).catch((err) => {
-				if (typeof err === 'object') {
-					if (err.json) {
-						alert("Error: "+err.json.error.details[0].message);
-					} else {
-						alert("Error: "+err.error.details[0].message);
-					}
-				}else{
-					if (err.json) {
-						alert("Error: "+JSON.parse(err).json.error.details[0].message);
-					} else {
-						alert("Error: "+JSON.parse(err).error.details[0].message);
-					}
-				}
+                if (typeof err === 'object') {
+                    if (err.json) {
+                        alert("Error: " + err.json.error.details[0].message);
+                    } else {
+                        alert("Error: " + err.error.details[0].message);
+                    }
+                } else {
+                    if (err.json) {
+                        alert("Error: " + JSON.parse(err).json.error.details[0].message);
+                    } else {
+                        alert("Error: " + JSON.parse(err).error.details[0].message);
+                    }
+                }
             });
         } catch (e) {
             alert('invalid account name!');
@@ -468,7 +468,7 @@ export class SendComponent implements OnInit {
         // this.newTransfer();
     }
 
-    async newTransfer(){
+    async newTransfer() {
         this.busy = true;
         this.wrongpass = '';
         const selAcc = this.aService.selected.getValue();
@@ -497,14 +497,14 @@ export class SendComponent implements OnInit {
         const [auth, publicKey] = this.trxFactory.getAuth();
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        console.log(this.mode);
 
+        const actionTitle = `<span class="blue">Transfer</span>`;
         const messageHTML = `
          <h5 class="modal-title text-white"><span class="blue">${from}</span> sends <span
             class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="blue">${to}</span></h5> 	
 		`;
 
-        if(this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
+        if (this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
             termsHeader = 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions';
 
             termsHtml = `I, ${from}, certify the following to be true to the best of my knowledge:<br><br>
@@ -518,59 +518,42 @@ export class SendComponent implements OnInit {
             I agree to either return the goods or services or resend ${amount.toFixed(precision) + ' ' + tk_name} in a timely manner.`;
         }
 
-        console.log(termsHeader, termsHtml);
-        // if (amount > 0 && this.sendForm.valid) {
-            this.trxFactory.modalData.next({
-                transactionPayload: {
-                    actions: [{
-                        account: contract,
-                        name: 'transfer',
-                        authorization: [auth],
-                        data: {
-                            'from':from,
-                            'to':to,
-                            'quantity':amount.toFixed(precision) + ' ' + tk_name,
-                            'memo': memo
-                        }
-                    }]
-                },
-                signerAccount: auth.actor,
-                signerPublicKey: publicKey,
-                actionTitle: 'Transfer',
-                labelHTML: messageHTML,
-                termsHeader: 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions',
-                termsHTML: termsHtml
-            });
-            this.trxFactory.launcher.emit({visibility:true,mode: this.mode});
-            const subs = this.trxFactory.status.subscribe((event) => {
-                console.log(event);
-                if (event === 'done') {
-                    this.aService.refreshFromChain().catch(console.log);
-                    setTimeout(() => {
-                        const sel = this.aService.selected.getValue();
-                        this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-                    }, 2000);
-                    subs.unsubscribe();
-                }
-                if (event === 'modal_closed') {
-                    subs.unsubscribe();
-                }
-            });
-        // }
-
-        if(this.mode === 'legder') {
-            // const result = await this.ledger.sign(
-            //     this.fullTrxData,
-            //     this.crypto.requiredLedgerSlot,
-            //     this.network.selectedEndpoint.getValue().url
-            // );
-            // if (result) {
-            //     this.wrongpass = '';
-            //     this.busy = false;
-            //     this.sendModal = false;
-            //     this.cdr.detectChanges();
-            // }
-        }
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: contract,
+                    name: 'transfer',
+                    authorization: [auth],
+                    data: {
+                        'from': from,
+                        'to': to,
+                        'quantity': amount.toFixed(precision) + ' ' + tk_name,
+                        'memo': memo
+                    }
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions',
+            termsHTML: termsHtml
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe((event) => {
+            console.log(event);
+            if (event === 'done') {
+                this.aService.refreshFromChain().catch(console.log);
+                setTimeout(() => {
+                    const sel = this.aService.selected.getValue();
+                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                }, 2000);
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
     }
 
 
@@ -589,7 +572,7 @@ export class SendComponent implements OnInit {
 
         if (amount > 0 && this.sendForm.valid) {
 
-            if(this.mode === 'legder'){
+            if (this.mode === 'legder') {
 
             } else {
                 this.crypto.authenticate(this.confirmForm.get('pass').value, publicKey).then((res) => {

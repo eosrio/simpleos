@@ -494,12 +494,12 @@ export class Eosjs2Service {
                 Eosjs2Service.makeDelegateBW(auth, account, account, net_v,
                     cpu_v, false, symbol));
         }
-
-        return this.api.transact({
-            actions: _actions,
-        }, {
-            blocksBehind: 3,
-            expireSeconds: 30,
-        });
+        return _actions;
+        // return this.api.transact({
+        //     actions: _actions,
+        // }, {
+        //     blocksBehind: 3,
+        //     expireSeconds: 30,
+        // });
     }
 }

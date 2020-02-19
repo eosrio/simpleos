@@ -119,6 +119,8 @@ export class AccountsService {
 
     extendAccount(acc) {
         let balance = 0;
+        let staked = 0;
+        console.log(acc);
         if (acc.tokens) {
             acc.tokens.forEach((tk) => {
                 balance += this.parseEOS(tk);
@@ -129,15 +131,23 @@ export class AccountsService {
         if (acc['self_delegated_bandwidth']) {
             net = this.parseEOS(acc['self_delegated_bandwidth']['net_weight']);
             cpu = this.parseEOS(acc['self_delegated_bandwidth']['cpu_weight']);
+            staked = net + cpu;
             balance += net;
             balance += cpu;
         }
 
         const precisionRound = Math.pow(10, this.activeChain['precision']);
+        console.log('account',this.activeChain['name'].indexOf('LIBERLAND'));
+        console.log('account',acc['voter_info']['staked']);
+        if(this.activeChain['name'].indexOf('LIBERLAND') > -1){
+            staked = acc['voter_info']['staked'] / precisionRound;
+            balance += staked;
+        }
+
         return {
             name: acc['account_name'],
             full_balance: Math.round((balance) * precisionRound) / precisionRound,
-            staked: net + cpu,
+            staked: staked,
             details: acc
         };
     }
@@ -724,6 +734,7 @@ export class AccountsService {
                 let ref_time = null;
                 let ref_cpu = 0;
                 let ref_net = 0;
+                let staked = 0;
                 const refund = newdata['refund_request'];
                 if (refund) {
                     ref_cpu = this.parseEOS(refund['cpu_amount']);
@@ -741,15 +752,21 @@ export class AccountsService {
                 if (newdata['self_delegated_bandwidth']) {
                     net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
                     cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+                    staked = net + cpu;
                     balance += net;
                     balance += cpu;
                 }
 
                 const precisionRound = Math.pow(10, this.activeChain['precision']);
 
+                if(this.activeChain['name'].indexOf('LIBERLAND') > -1){
+                    staked = newdata['voter_info']['staked'] / precisionRound;
+                    balance += staked;
+                }
+
                 this.accounts[idx].name = account['name'];
                 this.accounts[idx].full_balance = Math.round((balance) * precisionRound) / precisionRound;
-                this.accounts[idx].staked = net + cpu;
+                this.accounts[idx].staked = staked;
                 this.accounts[idx].unstaking = ref_net + ref_cpu;
                 this.accounts[idx].unstakeTime = ref_time;
                 this.accounts[idx].details = newdata;

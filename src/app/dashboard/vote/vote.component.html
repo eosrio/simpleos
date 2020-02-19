@@ -46,7 +46,7 @@
 
             </div>
         </div>
-        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') === '-1'">
+        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') === -1">
             <div class="card info-card">
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
@@ -86,82 +86,86 @@
                                     [(ngModel)]="percenttoStake">
                         </mat-slider>
                     </div>
-                    <small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option: Change
-                        Staking Ratio
-                    </small>
-                    <div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}" style="margin-top: 12px;">
-                        <div>
-                            <div class="clr-row" style="color: #b0b0b7">
-                                <div class="clr-col-lg-4"></div>
-                                <div class="clr-col-lg-2 text-center">
-                                    BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
-                                </div>
-                                <div class="clr-col-lg-2" style="text-align: center">
+                    <ng-container>
+                        <small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option:
+                            Change
+                            Staking Ratio
+                        </small>
+                        <div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}"
+                             style="margin-top: 12px;">
+                            <div>
+                                <div class="clr-row" style="color: #b0b0b7">
+                                    <div class="clr-col-lg-4"></div>
+                                    <div class="clr-col-lg-2 text-center">
+                                        BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
+                                    </div>
+                                    <div class="clr-col-lg-2" style="text-align: center">
 									<span style="margin-left: 20px;">RECOMMENDED
 									<br><span style="position: absolute; margin-left: 41px;">|</span>
 									</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="clr-row" style="color: #b0b0b7">
-                                <div class="clr-col-lg-2 text-right">
-                                    NET FOCUS
+                                <div class="clr-row" style="color: #b0b0b7">
+                                    <div class="clr-col-lg-2 text-right">
+                                        NET FOCUS
+                                    </div>
+                                    <div class="clr-col-lg-8">
+                                        <mat-slider class="stake-slider"
+                                                    [min]="20"
+                                                    [max]="90"
+                                                    [step]="1"
+                                                    [thumbLabel]="true"
+                                                    (change)="updateRatio()"
+                                                    [tickInterval]="20"
+                                                    [displayWith]="sliderLabel"
+                                                    [(ngModel)]="stakingRatio">
+                                        </mat-slider>
+                                    </div>
+                                    <div class="clr-col-lg-2 text-left">
+                                        CPU FOCUS
+                                    </div>
                                 </div>
-                                <div class="clr-col-lg-8">
-                                    <mat-slider class="stake-slider"
-                                                [min]="20"
-                                                [max]="90"
-                                                [step]="1"
-                                                [thumbLabel]="true"
-                                                (change)="updateRatio()"
-                                                [tickInterval]="20"
-                                                [displayWith]="sliderLabel"
-                                                [(ngModel)]="stakingRatio">
-                                    </mat-slider>
-                                </div>
-                                <div class="clr-col-lg-2 text-left">
-                                    CPU FOCUS
-                                </div>
-                            </div>
-                            <span style="color: #b0b0b7">
+                                <span style="color: #b0b0b7">
 								<span class="font-weight-bold">Attention:</span> If you have an unstaking in progress, your staking ratio might be limited by your unstaking balance. SimplEOS will attemp to use the selected ratio.
 							If that is not possible, SimplEOS will try to get close as possible to the desired ratio.
 						</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="clr-row">
-                        <div class="clr-col-lg-5">
-                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
-                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
-                            </button>
-                            <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
-                            <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
-                               *ngIf="minstake">
-                                <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
-                                <span class="tooltip-content">
+                        <div class="clr-row">
+                            <div class="clr-col-lg-5">
+                                <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+                                        style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
+                                </button>
+                                <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
+                                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
+                                   *ngIf="minstake">
+                                    <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
+                                    <span class="tooltip-content">
 									Please, be careful when staking the minimum. <br>
 									This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
 									However, if you just want to remove the tokens to an exchange, that is fine.
 								</span>
-                            </a>
-                        </div>
-                        <div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
+                                </a>
+                            </div>
+                            <div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
 
-                            <span class="text-white" style="font-weight: 600">CPU: </span>
-                            <span class=" special-font"
-                                  *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                            <span *ngIf="valuetoStake === ''">50% </span> /
-                            <span class="text-white" style="font-weight: 600">NET: </span>
-                            <span class=" special-font"
-                                  *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                            <span *ngIf="valuetoStake === ''">50%</span>
+                                <span class="text-white" style="font-weight: 600">CPU: </span>
+                                <span class=" special-font"
+                                      *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                <span *ngIf="valuetoStake === ''">50% </span> /
+                                <span class="text-white" style="font-weight: 600">NET: </span>
+                                <span class=" special-font"
+                                      *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                <span *ngIf="valuetoStake === ''">50%</span>
+                            </div>
                         </div>
-                    </div>
+                    </ng-container>
                 </div>
             </div>
         </div>
 
 
-        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > '-1'">
+        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > -1">
             <div class="card info-card">
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
@@ -317,7 +321,8 @@
         </div>
     </div>
 
-    <div class="clr-row votepage-row animate" *ngIf="app.compilerVersion === 'DEFAULT' && aService.activeChain.features.vote">
+    <div class="clr-row votepage-row animate"
+         *ngIf="app.compilerVersion === 'DEFAULT' && aService.activeChain.features.vote">
         <div class="clr-col-lg-12">
             <div class="card info-card">
                 <div class="card-block" style="padding: 0;">

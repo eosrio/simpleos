@@ -577,11 +577,21 @@ export class LandingComponent implements OnInit, OnDestroy {
             balance += this.parseSYMBOL(tk);
         });
         // Add stake balance
-        balance += this.parseSYMBOL(acc['total_resources']['cpu_weight']);
-        balance += this.parseSYMBOL(acc['total_resources']['net_weight']);
+        if(acc['total_resources']){
+            balance += this.parseSYMBOL(acc['total_resources']['cpu_weight']);
+            balance += this.parseSYMBOL(acc['total_resources']['net_weight']);
+        }
+
+        const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
+        console.log('landing',this.aService.activeChain['name'].indexOf('LIBERLAND'));
+        if(this.aService.activeChain['name'].indexOf('LIBERLAND') > -1){
+            const staked = acc['voter_info']['staked'] / precisionRound;
+            balance += staked;
+        }
+
         const accData = {
             name: acc['account_name'],
-            full_balance: Math.round((balance) * 10000) / 10000
+            full_balance: Math.round((balance) * precisionRound) / precisionRound
         };
         this.accounts.push(accData);
     }

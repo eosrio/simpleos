@@ -29,6 +29,7 @@ import {environment} from '../../environments/environment';
 import {AnimationOptions} from "ngx-lottie";
 import {LedgerService} from "../services/ledger/ledger.service";
 import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
+import {dashboardIcon} from "@clr/core/icon-shapes";
 
 
 @Component({
@@ -581,17 +582,29 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             account_names.forEach((name) => {
                 const acc = this.eos.accounts.getValue()[name];
                 let balance = 0;
+                let staked = 0;
                 acc['tokens'].forEach((tk) => {
                     balance += LandingComponent.parseEOS(tk);
                 });
-                const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-                const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-                balance += net;
-                balance += cpu;
+                if(acc['total_resources']){
+                    const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+                    const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+                    balance += net;
+                    balance += cpu;
+                    staked = net + cpu;
+                }
+
+                const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
+                console.log('dashboard',this.aService.activeChain['name'].indexOf('LIBERLAND'));
+                if(this.aService.activeChain['name'].indexOf('LIBERLAND') > -1){
+                    staked = acc['voter_info']['staked'] / precisionRound;
+                    balance += staked;
+                }
+
                 const accData = {
                     name: acc['account_name'],
-                    full_balance: Math.round((balance) * 10000) / 10000,
-                    staked: net + cpu,
+                    full_balance: Math.round((balance) * precisionRound) / precisionRound,
+                    staked: staked,
                     details: acc
                 };
                 this.accounts.push(accData);
