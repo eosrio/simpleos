@@ -488,10 +488,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const subs = this.trxFactory.status.subscribe((event) => {
             console.log(event);
             if (event === 'done') {
-                this.aService.refreshFromChain(false).catch(console.log);
                 setTimeout(() => {
-                    // const sel = this.aService.selected.getValue();
-                }, 2000);
+                    this.aService.refreshFromChain(false).then(() => {
+                        this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+                        this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+                    });
+                }, 1500);
                 subs.unsubscribe();
             }
             if (event === 'modal_closed') {
@@ -856,9 +858,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 });
             }
         }
-        this.passForm.reset();
-        this.wrongpass = '';
-        this.voteModal = true;
+        // this.passForm.reset();
+        // this.wrongpass = '';
+        // this.voteModal = true;
+        this.setVote();
     }
 
     updateCounter() {
@@ -876,6 +879,103 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             px.checked = px.account === proxy;
         });
         this.nVotes = 1;
+    }
+
+    setVote() {
+
+        const voter = this.aService.selected.getValue();
+        let proxy = '';
+        let currentVotes = [];
+        if (this.selectedVotes.length <= 30) {
+            if (!this.voteService.voteType) {
+                currentVotes = this.selectedVotes;
+                currentVotes.sort();
+            } else {
+                proxy = this.selectedVotes[0];
+            }
+        } else {
+            return new Error('Cannot cast more than 30 votes!');
+        }
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+
+        let termsHeader = '';
+        let termsHtml = '';
+
+        const actionTitle = `<span class="blue">vote</span>`;
+
+        const messageHTML = `<h4 class="text-white">Do you confirm voting on the following ${this.voteService.voteType ? 'Proxy' : 'BPs'}?</h4>
+        <h5 class="mt-0">${this.selectedVotes.join(', ')}</h5>`;
+
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this action, you agree to the voteproducer Terms & Conditions';
+            termsHtml = ` The intent of the voteproducer action is to cast a valid vote for up to 30 BP candidates.
+                <br><br>
+                As an authorized party I, <span class="blue">${this.fromAccount}</span>, wish to vote on behalf of <span class="blue">${this.fromAccount}</span> in favor of the
+                block
+                producer candidates <span class="blue">${this.selectedVotes.join(', ')}</span> with
+                a voting weight equal to all tokens currently owned
+                by <span class="blue">${this.fromAccount}</span> and staked for CPU or bandwidth.
+                <br><br>
+                If I am not the beneficial owner of these shares I stipulate I have proof that I’ve been authorized to
+                vote
+                these shares by their beneficial owner(s).
+                <br><br>
+                I stipulate I have not and will not accept anything of value in exchange for these votes, on penalty of
+                confiscation of these tokens, and other penalties.
+                <br><br>
+                I acknowledge that using any system of automatic voting, re-voting, or vote refreshing, or allowing such
+                a
+                system to be used on my behalf or on behalf of another, is forbidden and doing so violates this
+                contract.`;
+        }
+
+
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'voteproducer',
+                    authorization: [auth],
+                    data: {
+                        'voter': voter.name,
+                        'proxy': this.voteService.voteType? proxy : '',
+                        'producers': this.voteService.voteType? '' : currentVotes,
+                    }
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
+        });
+
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe((event) => {
+            console.log(event);
+            if (event === 'done') {
+                setTimeout(() => {
+                    this.aService.refreshFromChain(false).then(() => {
+                        this.voteOption(this.voteService.voteType);
+                        this.voteService.currentVoteType(voter.name);
+                        this.loadPlacedVotes(this.aService.selected.getValue());
+                        this.setCheckListVote(this.aService.selected.getValue().name);
+                    }).catch(err => {
+                        console.log('Refresh From Chain Error:', err);
+                    });
+                    // this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
+                }, 1500);
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
+
     }
 
     modalVote(pass) {

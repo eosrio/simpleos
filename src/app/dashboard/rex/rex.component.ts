@@ -124,6 +124,7 @@ export class RexComponent implements OnDestroy {
 	public total_unlent = 0.0;
 	public total_lent = 0.0;
 	public total_rent = 0.0;
+	private mode = 'local';
 
 	static asset2Float(asset) {
 		return parseFloat(asset.split(' ')[0]);
@@ -756,6 +757,7 @@ export class RexComponent implements OnDestroy {
 
 	async fundLoan(type: string, amount: number, loan_num: number) {
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const messageHTML = `
 		<h5 class="white mb-0">Adding <span class="blue" style="font-weight: bold">${amount.toFixed(4)}</span> ${sym} to ${type} loan #${loan_num} renewal fund</h5>
@@ -798,7 +800,8 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'fund ' + type + ' loan',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -815,6 +818,7 @@ export class RexComponent implements OnDestroy {
 
 	async defundLoan(type: string, amount: number, loan_num: number) {
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const messageHTML = `
 		<h5 class="white mb-0">Removing <span class="blue" style="font-weight: bold">${amount.toFixed(4)}</span> ${sym} from ${type} loan #${loan_num} renewal fund</h5>
@@ -848,7 +852,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'defund ' + type + ' loan',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -866,6 +870,7 @@ export class RexComponent implements OnDestroy {
 	async moveToSavings(amount) {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const messageHTML = `
 		<h5 class="white mb-0">Moving <span class="blue" style="font-weight: bold">${amount.toFixed(4)}</span> REX to savings</h5>
 		`;
@@ -889,7 +894,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'REX transfer to savings',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -907,6 +912,7 @@ export class RexComponent implements OnDestroy {
 	async moveFromSavings(amount) {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const messageHTML = `
 		<h5 class="white mb-0">Unstaking <span class="blue" style="font-weight: bold">${amount.toFixed(4)}</span> REX from savings</h5>
 		`;
@@ -930,7 +936,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'REX transfer from savings',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -972,6 +978,7 @@ export class RexComponent implements OnDestroy {
 	async sellRex() {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const amount = parseFloat(this.sellForm.get('REXamount').value);
 		const estimated = `${(amount * this.rexPrice).toFixed(4)} ${sym}`;
@@ -1017,7 +1024,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'selling REX',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -1039,6 +1046,7 @@ export class RexComponent implements OnDestroy {
 	async withdraw() {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const amount = this.rexFund;
 		const messageHTML = `<h5 class="white mb-0">Transferring <span class="blue" style="font-weight: bold">${amount.toFixed(4)}</span> ${sym} from the REX fund back to <span class="blue" style="font-weight: bold">${auth.actor}</span></h5>`;
@@ -1063,7 +1071,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'withdraw',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -1081,6 +1089,7 @@ export class RexComponent implements OnDestroy {
 	async buyRex() {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const _actions = [];
 
@@ -1156,7 +1165,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'REX purchase',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -1181,6 +1190,7 @@ export class RexComponent implements OnDestroy {
 
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		this.trxFactory.modalData.next({
 			termsHTML: '',
 			actionTitle: 'vote on proxy',
@@ -1203,7 +1213,7 @@ export class RexComponent implements OnDestroy {
 				]
 			}
 		});
-		this.trxFactory.launcher.emit(true);
+		this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 		const subs = this.trxFactory.status.subscribe((event) => {
 			if (event === 'done') {
 				setTimeout(async () => {
@@ -1323,6 +1333,7 @@ export class RexComponent implements OnDestroy {
 	async borrowResources() {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const sym = this.aService.activeChain['symbol'];
 		const _actions = [];
 
@@ -1415,7 +1426,7 @@ export class RexComponent implements OnDestroy {
 				actionTitle: 'renting resources',
 				termsHTML: ''
 			});
-			this.trxFactory.launcher.emit(true);
+			this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 			const subs = this.trxFactory.status.subscribe((event) => {
 				console.log(event);
 				if (event === 'done') {
@@ -1433,6 +1444,7 @@ export class RexComponent implements OnDestroy {
 	async updaterex() {
 		// Transaction Signature
 		const [auth, publicKey] = this.trxFactory.getAuth();
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
 		const messageHTML = `<h5 class="white mb-0">Updating REX Balances for <span class="blue" style="font-weight: bold">${auth.actor}</span></h5>`;
 
 		this.trxFactory.modalData.next({
@@ -1453,7 +1465,7 @@ export class RexComponent implements OnDestroy {
 			actionTitle: 'update rex',
 			termsHTML: ''
 		});
-		this.trxFactory.launcher.emit(true);
+		this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
 		const subs = this.trxFactory.status.subscribe((event) => {
 			console.log(event);
 			if (event === 'done') {

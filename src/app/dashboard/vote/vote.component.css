@@ -1,10 +1,3 @@
-.info-card {
-    background-color: var(--info-card-background);
-    border-radius: 5px;
-    border: 0;
-    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-}
-
 .total {
     font-size: 23px;
     margin-bottom: 19px;
@@ -22,7 +15,6 @@
 
 .instruction {
     font-size: 16px;
-    color: var(--text-title-color);
 }
 
 /*meterial's slider*/

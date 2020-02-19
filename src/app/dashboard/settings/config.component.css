@@ -1,26 +1,17 @@
-.info-card {
-    background-color: var(--info-card-background);
-    border-radius: 5px;
-    border: 0;
-    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-}
-
 .title {
-    color: var(--text-title-color);
     font-size: 21px;
     border-bottom: 0;
     margin-bottom: 10px;
-    padding-bottom: 0px;
+    padding-bottom: 0;
+    padding-top: 25px;
 }
 
 .info {
-    color: var(--text-title-color);
     margin-bottom: 20px;
 }
 
 .info2 {
     font-size: 17px;
-    color: var(--text-title-color);
 }
 
 .chains-card {

@@ -28,80 +28,28 @@
 }
 
 :root{
-	--main-background: #272727;
-	--background-gd: linear-gradient(to right, #232526, #414345);
-	--background-gd-webkit: -webkit-linear-gradient(to right, #232526, #414345);
-	--header-background: #313131;
-	--header-title-color: #9a9a9a;
-	--header-icon-color: #fafafa;
-	--theme-icon-color: #fafafa;
-	--theme-icon-color-hover: #c0c0c0;
+	/*dark theme colors*/
+	--black-sidenav: '#191919';
+	--black-background: '#272727';
+	--black-card: '#333333';
+	--dark-hover: '#1f1f1f';
+	--blue-color: '#0094d2';
+	--blue-darker: '#0078a3';
+	--white-color: '#ffffff';
+	--gray-lighter: '#e3e3e3'; /*modal title, tab/sidenav text selected or hover, for example*/
+	--gray-lightmedium: '#b1b1b1'; /*input*/
+	--gray-medium: '#a4a4a4'; /*text card, text modal, for example*/
+	--gray-darker: '#696969'; /*subtitles, faded information*/
+	--red-color: '#fb3c2c';
 
-	/*landing*/
-	--slogan-special-color: 'inherit';
-	--landing-background: 'url("./assets/fundosimpleos.png")';
-	/*--landing-image-background:url("./assets/fundosimpleos.png");*/
-
-	--dashboard-animation-display: block;
-	--dashboard-img-display: none;
-
-	/*sidenav*/
-	--sidenav-background: #191919;
-	--sidenav-color: #b1b1b1;
-	--sidenav-option-color: #525a60;
-	--sidenav-active-background: #272727;
-	--sidenav-active-color: #e3e3e3;
-	--sidenav-active-border-color1: #272727;
-	--sidenav-active-border-color2: #535353;
-
-	/*tabs*/
-	--mat-tab-active: #3b3b3b;
-	--tab-active-background: #333333;
-	--mat-tab-bar-active: #0094d2;
-	--mat-tab-bar-height: 2px;
-	/*toolbar*/
-	--top-btn-backgorund: #1f1f1f;
-	--top-btn-color: #f8f8f8;
-
-	/*tokens panel*/
-	--tokens-panel-background: #191919;
-	--destaque-color-token: #0094d2;
-	--token-title-color: #b1b1b1;
-	--token-price-color:#696969;
-
-	/*contacts panel*/
-	--letter-divider: #3f3f3f;
-	--contact-hover-color: #b1b1b1;
-
-	--accordion-hover-background: #0078a3;
-	--accordion-a-color: #eeeeee;
-	--accordion-color: #eeeeee;
-	--accordion-color-hover: #eeeeee;
-
-	--info-card-background: #333333;
-	--card-hover-backgorund: #3b3b3b;
-	--expand-background: #1c1c1c;
-
-	--text-calendar: #FFFFFF;
-	--text-disabled-calendar: #4d4d4d;
-
-	/*scrollbar*/
-	--scroll-track-background: #191919;
-	--scroll-background: #191919;
-	--scroll-thumb-background: #555555;
-
-	/*history table*/
-	--table-th-color: #cccccc;
-	--table-th-background: #333333;
-	--table-tr-background: transparent;
-	--table-tr-color: #b1b1b1;
-	--table-td-color: #b1b1b1;
-	--tr-even-backgorund: transparent;
-	--tr-odd-backgorund: transparent;
-	--tr-border-bottom-color:  1px solid #3f3f3f;
-
-	--verify-card-text-color: #696969;
-	--verify-card-backgound-color: rgba(162, 162, 162, 0.12);
+	/*concepts*/
+	--text-title-color: var(--gray-lighter);
+	--text-card-color: var(--gray-medium);
+	--text-highlight: var(--white-color);
+	--text-highlight-primary: var(--blue-color);
+	--text-highlight-accent: var(--blue-color);
+	--text-error: var(--red-color);
+	--text-faded: var(--gray-darker);
 
 	/*typography*/
 	--special-font-regular: inherit;
@@ -111,48 +59,120 @@
 	--special-font-weight: 'inherit';
 	--special-font-spacing: 'inherit';
 
-	--text-title-color: #a4a4a4;
+	/*main and body*/
+	--main-background: var(--black-background);
+	--background-gd: linear-gradient(to right, #232526, #414345);
+	--background-gd-webkit: -webkit-linear-gradient(to right, #232526, #414345);
+	--header-background: var(--black-background);
+	--header-title-color: var(--gray-medium);
+	--header-icon-color: var(--gray-lighter);
+	--theme-icon-color: var(--gray-lighter);
+	--theme-icon-color-hover: var(--gray-medium);
+
+	/*landing*/
+	--slogan-special-color: 'inherit';
+	--landing-background: 'url("./assets/fundosimpleos.png")';
+	/*--landing-image-background:url("./assets/fundosimpleos.png");*/
+
+	/*sidenav*/
+	--dashboard-animation-display: block;
+	--dashboard-img-display: none;
+	--sidenav-background: var(--black-sidenav);
+	--sidenav-color: var(--gray-lightmedium);
+	--sidenav-active-background: var(--black-background);
+	--sidenav-active-color: var(--gray-lighter);
+	--sidenav-active-border-color1: var(--black-background);
+	--sidenav-active-border-color2: var(--gray-darker);
+
+	/*toolbar*/
+	--top-btn-background: var(--dark-hover);
+	--top-btn-color: var(--gray-lighter);
+	/*tabs*/
+	--mat-tab-active: var(--black-card);
+	--mat-tab-bar-active: var(--blue-color);
+	--mat-tab-bar-height: 2px;
+
+	/*tokens panel*/
+	--tokens-panel-background: var(--black-sidenav);
+	--destaque-color-token: var(--blue-color);
+	--token-title-color: var(--gray-lightmedium);
+	--token-price-color: var(--gray-darker);
+
+	/*contacts panel*/
+	--letter-divider: var(--black-background);
+	--contact-hover-color: var(--gray-lightmedium);
+
+	/*history table*/
+	--table-th-color: #cccccc;
+	--table-th-background: var(--black-card);
+	--table-tr-background: transparent;
+	--table-tr-color: var(--gray-lightmedium);
+	--table-td-color: var(--gray-lightmedium);
+	--tr-even-backgorund: transparent;
+	--tr-odd-backgorund: transparent;
+	--expand-background: var(--dark-hover);
+	--tr-border-bottom-color:  1px solid #3f3f3f;
+
+	/*cards*/
+	--info-card-background: var(--black-card);
+
+	/*accordion*/
+	--accordion-header-color: var(--gray-lightmedium);
+	--accordion-content-color: var(--gray-lightmedium);
+	--accordion-header-color-hover: var(--gray-lighter);
+
+	/*calendar*/
+	--text-calendar: var(--white);
+	--text-disabled-calendar: var(--gray-darker);
+
+	/*scrollbar*/
+	--scroll-track-background: var(--black-sidenav);
+	--scroll-background: var(--black-sidenav);
+	--scroll-thumb-background: 'var(--gray-darker)';
+
+	--verify-card-text-color: #696969;
+	--verify-card-backgound-color: rgba(162, 162, 162, 0.12);
+
 	--text-white-color: #ffffff;
 	--text-btn-color-hover: #ffffff;
-	/*used a lot, but in wax its orange XD*/
-	--text-blue-color: #0094d2;
+	--text-blue-color: var(--blue-color); /*used a lot, but in wax its orange XD*/
 	--text-gray-color: #b1b1b1;
 	--text-gray2-color: #e9e9e9;
 	--text-gray3-color: #d6d6d6;
-	/*used only 1 time, below the logo, connected to ->CHAIN NAME<-*/
-	--text-destaque-color: #0094d2;
-	--text-error: #fb3c2c;
 	--made-with-love: #a4a4a4;
 
-	--a-link-color: #0094d2;
+	--a-link-color: var(--blue-color);
 
-	/*modal*/
-	--modal-background: #191919;
-	--modal-side-background: #272727;
+	/* modal / dialog / wizard */
+	--modal-background: var(--black-sidenav);
+	--modal-color: var(--gray-medium);
+	--modal-title-color: var(--gray-lighter);
+	--modal-side-title-color: var(--gray-lighter);
+	--modal-side-color: var(--gray-lighter);
+	--modal-side-background: var(--black-background);
 	--modal-step-background: #535353;
 	--modal-step-line-background: #535353;
-	--modal-step-off-background: #828181;
-	--modal-color: #858585;
-	--modal-title-color: #e3e3e3;
-	--modal-side-title-color: #e3e3e3;
-	--modal-side-color: #c2c2c2;
+	--modal-step-off-color: var(--gray-lightmedium);
 
-	--tr-resource-even-backgorund: #2C2C2C;
-	--tr-resource-odd-color: #ececec;
-	--tr-resource-odd-backgorund: #transparent;
-	--tr-hover: #1f1f1f;
+	/* lent resources table */
+	--tr-resource-even-backgorund: var(--black-background);
+	--tr-resource-odd-color: var(--gray-lighter);
+	--tr-resource-odd-backgorund: transparent;
+	--tr-hover: var(--dark-hover);
 
+	/*REX page*/
 	--rex-balance-title-color: #b1b1b1;
-	--rex-balance-info-color: #ffffff;
-	--rex-btn-color: #0094d2;
-	--rex-border-color: #0094d2;
+	--rex-balance-info-color: var(--white-color);
+	--rex-btn-color: var(--blue-color);
+	--rex-border-color: var(--blue-color);
 
-	--btn-border-color: #0094d2;
-	--btn-color: #0094d2;
+	--btn-border-color: var(--blue-color);
+	--btn-color: var(--blue-color);
 	--btn-success-color: #ffffff;
 	--btn-color-hover: #ffffff;
-	--btn-background-hover: #0077b7;
-	--btn-rev-color-hover: #0094d2;
+	/*--btn-background-hover: #0077b7;*/
+	--btn-background-hover: var(--blue-color);
+	--btn-rev-color-hover: var(--blue-color);
 	--btn-rev-background-hover: #ffffff;
 
 	--btn-primary-bg: #0079b8;
@@ -160,19 +180,19 @@
 
 	--btn-inverse-color: #ffffff;
 	--btn-inverse-background-hover: #ffffff;
-	--btn-inverse-color-hover: #0094d2;
+	--btn-inverse-color-hover: var(--blue-color);
 
 	--btn-inverse2-color: #ffffff;
 	--btn-inverse2-background-hover: #ffffff;
-	--btn-inverse2-color-hover: #0094d2;
+	--btn-inverse2-color-hover: var(--blue-color);
 
 	/*used in... refresh btn, open account on explorer, reload all proxys*/
-	--btn-link-color: #0094d2;
+	--btn-link-color: var(--blue-color);
 	--btn-link-background-hover: #ffffff;
 	--btn-link-color-hover: #0077b7;
 
 	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
-	--btn-link2-color: #0094d2;
+	--btn-link2-color: var(--blue-color);
 	--btn-link2-background-hover: #ffffff;
 	--btn-link2-color-hover: #0077b7;
 
@@ -184,7 +204,7 @@
 	--btn-link3-hover-border-color: #0079b8;
 
 	--update-box-background: #1f1f1f;
-	--chain-icon-bg: #c5c5c5;
+	--chain-icon-bg: var(--gray-lighter);
 }
 
 
@@ -214,6 +234,35 @@ body {
 	outline: -webkit-focus-ring-color auto 5px;
 	outline-color: -webkit-focus-ring-color;
 	outline-style: none;
+}
+
+.highlight {
+	color: var(--text-highlight) !important;
+}
+
+.highlight-primary {
+	color: var(--text-highlight-primary) !important;
+}
+
+.highlight-accent {
+	color: var(--text-highlight-accent) !important;
+}
+
+/*classes for cards*/
+.info-card {
+	background-color: var(--info-card-background);
+	border-radius: 5px;
+	border: 0;
+	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
+	color: var(--text-card-color);
+}
+
+.card-text-color {
+	color: var(--text-card-color);
+}
+
+.card-title-color {
+	color: var(--text-title-color);
 }
 
 .update-box-class {
@@ -489,9 +538,9 @@ body a.link-eosrio:hover{
 	color:  var(--text-title-color);
 }
 
-.black-white {
-	color: var(--text-title-color);
-}
+/*.black-white {*/
+/*	color: var(--text-title-color);*/
+/*}*/
 
 .gray {
 	color: var(--text-gray-color);
@@ -577,12 +626,13 @@ input:not([readonly]):focus {
 input:not([readonly]) {
 	background: none !important;
 }
-
 /*clarity's input end*/
 
+
+
 /*clarity's wizard*/
-.clr-wizard .modal-body {
-	color: var(--modal-color) !important;
+.clr-wizard .modal-body, .clr-wizard .modal-body p, .clr-wizard .modal-body h5, .clr-wizard .modal-body h4 {
+	color: var(--modal-color);
 }
 
 .clr-wizard .clr-wizard-stepnav-wrapper {
@@ -611,7 +661,7 @@ input:not([readonly]) {
 	color: var(--modal-side-color) !important;
 }
 .clr-wizard .clr-wizard-stepnav-item  .btn.btn-link:disabled {
-	color:  var(--modal-step-off-background) !important;
+	color:  var(--modal-step-off-color) !important;
 }
 
 .clr-wizard .clr-wizard-stepnav-item  .btn.btn-link:hover {
@@ -633,11 +683,16 @@ input:not([readonly]) {
 	color: #000 !important;
 }
 
+.wiz-subtitle {
+	font-size: .8rem;
+	letter-spacing: .01em;
+	line-height: 1.2rem;
+}
 /*clarity's wizard end*/
 
 /*texts hints below input*/
 .mat-hint {
-	color: #565656 !important;
+	color: var(--text-faded) !important;
 	font-size: 13px;
 }
 
@@ -679,7 +734,7 @@ input:not([readonly]) {
 	border: 0 !important;
 	border-top: 0 !important;
 	background-color: transparent !important;
-	color: var(--accordion-color) !important;
+	color: var(--accordion-content-color) !important;
 }
 
 .ui-accordion-header:focus {
@@ -709,10 +764,10 @@ input:not([readonly]) {
 .nohighlight-accordion .ui-accordion .ui-accordion-header a {
 	padding: 0.571em 1em;
 	border: 0 ;
-	color: var(--accordion-a-color) !important;
+	color: var(--accordion-header-color) !important;
 }
 .nohighlight-accordion .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
-	color: var(--accordion-a-color) !important;
+	color: var(--accordion-header-color) !important;
 }
 
 .ui-accordion .ui-state-default {
@@ -723,12 +778,12 @@ input:not([readonly]) {
 
 
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a .ui-accordion-toggle-icon {
-	color: var(--accordion-color-hover) !important;
+	color: var(--accordion-header-color-hover) !important;
 }
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
 	background-color: transparent!important;
 	border: 0!important;
-	color: var(--accordion-color-hover) !important;
+	color: var(--accordion-header-color-hover) !important;
 	border-radius: 0 0 5px 5px;
 	margin: 0;
 	text-decoration: none;
@@ -771,7 +826,7 @@ input:not([readonly]) {
 /*Prime's accordion end*/
 
 .modal-title {
-	color:  var(--text-white-color) !important;
+	color:  var(--modal-title-color) !important;
 }
 
 .ui-table .ui-sortable-column.ui-state-highlight {
