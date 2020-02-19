@@ -18,7 +18,7 @@ li {
 }
 
 li:hover {
-	background-color: var(--top-btn-backgorund);
+	background-color: var(--top-btn-background);
 	-webkit-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
 	-moz-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
 	box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
@@ -174,7 +174,6 @@ li:hover {
 }
 
 .title {
-	color: var(--text-title-color);
 	font-weight: 500;
 	margin-left: 10px;
 	display: inline-flex;

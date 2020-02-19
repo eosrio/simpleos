@@ -116,7 +116,7 @@
 
 .navbar-btn:hover {
     cursor: pointer;
-    background-color:  var(--top-btn-backgorund);
+    background-color:  var(--top-btn-background);
     color: #e3e3e3;
 }
 
@@ -202,7 +202,7 @@
 
 /*START LEDGER ACC LIST SELECTION */
 ::ng-deep .ledger-select .mat-pseudo-checkbox {
-    color: var(--text-title-color);
+    color: var(--text-card-color);
 }
 
 ::ng-deep .ledger-select .mat-primary .mat-pseudo-checkbox-checked, .mat-primary .mat-pseudo-checkbox-indeterminate {

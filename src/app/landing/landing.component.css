@@ -28,34 +28,16 @@
 	cursor: pointer !important;
 }
 
-.info-card {
-	background-color: var(--info-card-background);
-	border-radius: 5px;
-	border: 0;
-	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-}
-
 .title {
-	color: var(--text-title-color);
 	font-size: 21px;
 	border-bottom: 1px solid #4e4e4e;
 	margin-bottom: 10px;
 	padding-bottom: 0;
 }
 
-.info {
-	color: var(--verify-card-text-color);
-	margin-bottom: 20px;
-	font-size: 15px;
-}
-
 .info2 {
 	font-size: 17px;
-	color: var(--text-title-color);
-}
-
-.verify-mat-hint {
-	color: var(--verify-card-text-color) !important;
+	/*color: var(--text-title-color);*/
 }
 
 .chains-card {
@@ -157,14 +139,6 @@
 	font-weight: 500;
 }
 
-.check-card {
-	box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
-	border: none;
-	background-color:  var(--verify-card-backgound-color);
-	/*background-color: rgba(162, 162, 162, 0.12);*/
-	margin-top: 31px;
-}
-
 .public-input {
 	margin-top: 20px;
 	width: 335px;
@@ -251,11 +225,9 @@
 
 .advanced {
 	font-size: 14px;
-	color: var(--text-title-color);
 }
 
 .warn {
-	/*color: #ff3f32;*/
 	color: var(--text-error);
 }
 
