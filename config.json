@@ -9,6 +9,10 @@
       "network": "MAINNET",
       "firstApi": "https://hapi.eosrio.io",
       "historyApi": "https://api.eossweden.org/v2",
+      "hyperionApis": [
+        "https://api.eossweden.org/v2",
+        "https://mainnet.eosn.io/v2"
+      ],
       "forumTally": "https://s3.amazonaws.com/api.eosvotes.io/eosvotes/tallies/latest.json",
       "eosrioBP": "eosriobrazil",
       "proxyRegistry": "regproxyinfo",
@@ -139,11 +143,17 @@
       "historyApi": "https://wax.hyperion.eosrio.io/v2",
       "hyperionApis": [
         "https://wax.hyperion.eosrio.io/v2",
-        "https://api.waxsweden.org/v2"
+        "https://api.waxsweden.org/v2",
+        "https://wax.eosusa.news/v2",
+        "https://api.wax.alohaeos.com/v2",
+        "https://wax.eosphere.io/v2",
+        "https://wax.pink.gg/v2",
+        "https://api-wax.maltablock.org/v2",
+        "https://api.blokcrafters.io/v2"
       ],
       "forumTally": "",
       "eosrioBP": "eosriobrazil",
-      "proxyRegistry": "",
+      "proxyRegistry": "regproxyinfo",
       "lastNode": "",
       "logoSrc": "",
       "backdrop": "",
@@ -181,6 +191,46 @@
           "url": "https://api.waxsweden.org",
           "owner": "EOS Sweden - WAX",
           "latency": 0
+        },
+        {
+          "url": "https://api.wax.alohaeos.com",
+          "owner": "Alohaeos - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eu.eosamsterdam.net",
+          "owner": "Eosamsterdam - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://api.blokcrafters.io",
+          "owner": "Blokcrafters - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.greymass.com",
+          "owner": "Greymass - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eos.barcelona",
+          "owner": "EOS Barcelona - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eosdac.io",
+          "owner": "EOSDAC - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax-api.eosiomadrid.io",
+          "owner": "EOSio Madrid - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://api.wax.greeneosio.com",
+          "owner": "Greeneosio - WAX",
+          "latency": 0
         }
       ],
       "explorers": [
@@ -200,6 +250,11 @@
       "network": "MAINNET",
       "firstApi": "https://api.bos.eosrio.io",
       "historyApi": "https://bos.hyperion.eosrio.io/v2",
+      "hyperionApis": [
+        "https://api.bossweden.org/v2",
+        "https://bos.eosn.io/v2",
+        "https://bos.eosusa.news/v2"
+      ],
       "forumTally": "https://s3.amazonaws.com/bos.referendum/referendum/tallies/latest.json",
       "eosrioBP": "bosriobrasil",
       "proxyRegistry": "regproxyinfo",
@@ -280,6 +335,9 @@
       "network": "MAINNET",
       "firstApi": "https://fullnode.meet.one",
       "historyApi": "https://meetone.hyperion.eosrio.io/v2",
+      "hyperionApis": [
+        "https://api.meetsweden.org/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "",
       "proxyRegistry": "proxies.m",
@@ -342,6 +400,11 @@
       "network": "MAINNET",
       "firstApi": "https://api.tlos.goodblock.io",
       "historyApi": "https://telos.eosrio.io/v2",
+      "hyperionApis": [
+        "https://mainnet.telosusa.io/v2",
+        "https://telos.eosphere.io/v2",
+        "https://api-telos-21zephyr.maltablock.org/v2"
+      ],
       "eosrioBP": "eosriobrazil",
       "proxyRegistry": "tlsproxyinfo",
       "lastNode": "",
@@ -408,6 +471,9 @@
       "network": "MAINNET",
       "firstApi": "https://api.uos.network:7889",
       "historyApi": "https://hapi.uos.network/v2",
+      "hyperionApis": [
+        "https://hapi.uos.network/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "uosriobrazil",
       "proxyRegistry": "",
@@ -449,7 +515,10 @@
       "name": "WORBLI MAINNET",
       "network": "MAINNET",
       "firstApi": "https://api.worbli.eosrio.io",
-      "historyApi": "",
+      "historyApi": "https://api.worblisweden.org/v2",
+      "hyperionApis": [
+        "https://api.worblisweden.org/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "",
       "proxyRegistry": "",
@@ -514,6 +583,13 @@
       "network": "TESTNET",
       "firstApi": "https://jungle2.cryptolions.io:443",
       "historyApi": "https://jungle.hyperion.eosrio.io/v2",
+      "hyperionApis": [
+        "https://jungle.hyperion.eosrio.io/v2",
+        "https://jungle.eosusa.news/v2",
+        "https://junglehistory.cryptolions.io/v2",
+        "https://jungle.eosn.io/v2",
+        "https://jungle.eossweden.org/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "",
       "proxyRegistry": "",
@@ -565,7 +641,10 @@
       "name": "BOS TESTNET",
       "network": "TESTNET",
       "firstApi": "https://boscore.eosrio.io",
-      "historyApi": "",
+      "historyApi": "https://tst.bossweden.org/v2",
+      "hyperionApis": [
+        "https://tst.bossweden.org/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "bosriobrazil",
       "proxyRegistry": "",
@@ -619,7 +698,12 @@
       "name": "EOS KYLIN TESTNET",
       "network": "TESTNET",
       "firstApi": "https://api-kylin.eoslaomao.com",
-      "historyApi": "",
+      "historyApi": "https://kylin.eossweden.org/v2",
+      "hyperionApis": [
+        "https://kylin.eossweden.org/v2",
+        "https://kylin.eosusa.news/v2",
+        "https://kylin.eosn.io/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "eosriobrazil",
       "proxyRegistry": "",
@@ -677,6 +761,7 @@
       "network": "TESTNET",
       "firstApi": "https://liberland-test.eosio.se",
       "historyApi": "",
+      "hyperionApis": [],
       "forumTally": "",
       "eosrioBP": "",
       "proxyRegistry": "",
@@ -719,6 +804,9 @@
       "network": "TESTNET",
       "firstApi": "https://sidechain-test-history.meet.one",
       "historyApi": "https://meetone.hyperion.eosrio.io/v2",
+      "hyperionApis": [
+        "https://meetone.hyperion.eosrio.io/v2"
+      ],
       "forumTally": "",
       "eosrioBP": "",
       "proxyRegistry": "proxies.m",
