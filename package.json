@@ -48,7 +48,7 @@
 			"native.js",
 			"ng-dist",
 			"static",
-			"claim-rewards.js",
+			"electron_modules",
 			"node_modules/opn/index.js",
 			"node_modules/asn1-ber/index.js",
 			"node_modules/fcbuffer/lib/index.js",
