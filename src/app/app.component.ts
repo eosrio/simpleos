@@ -120,6 +120,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     ngOnInit(): void {
         // this.isMac = this._electronService.isMacOS;
+        this.connect.ipc.send('electronOS','request_os');
         console.log('Is MacOS?', this.isMac);
         this.cdr.detectChanges();
     }
