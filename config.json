@@ -791,6 +791,12 @@
           "owner": "EOS Sweden",
           "latency": 0,
           "version": "native"
+        },
+		{
+          "url": "https://staging.liberland.eosrio.io",
+          "owner": "EOS Rio",
+          "latency": 0,
+          "version": "native"
         }
       ],
       "explorers": []
