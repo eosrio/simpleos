@@ -85,7 +85,7 @@
                             <input matInput formControlName="alias" type="text" placeholder="Contact name">
                         </mat-form-field>
                     </ng-container>
-                    <button class="btn btn-block btn-info-outline special-font" (click)="newTransfer()"
+                    <button class="btn btn-block btn-info-outline" (click)="newTransfer()"
                             [disabled]="!sendForm.valid">
                         <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
                     </button>
@@ -119,10 +119,15 @@
                             <div class="clr-row justify-content-between">
                                 <div class="clr-col-lg-8 clr-col-sm-6 clr-col-md-7">
                                     <h5 class="token-title-color contact-hover mt-0">{{contact.name}}</h5>
-                                    <div class="black-white">{{contact.account}}</div>
+<!--                                    <div class="black-white">{{contact.account}}</div>-->
+                                    <div class="gray3">{{contact.account}}</div>
                                 </div>
                                 <div class="clr-col-lg-4 clr-col-sm-6 clr-col-md-5" style="text-align: right">
-                                    <button class="btn btn-info-outline editBtn"
+<!--                                    <button class="btn btn-info-outline editBtn"-->
+<!--                                            (click)="openEditContactModal(contact)">-->
+<!--                                        <fa-icon [icon]="['far', 'pencil']"></fa-icon>-->
+<!--                                    </button>-->
+                                    <button class="btn btn-inverse editBtn"
                                             (click)="openEditContactModal(contact)">
                                         <fa-icon [icon]="['far', 'pencil']"></fa-icon>
                                     </button>
@@ -137,7 +142,7 @@
                 </ng-container>
             </div>
             <div class="contacts-panel-footer">
-                <button class="btn btn-inverse btn-block newContactBtn special-font" (click)="newContactModal = true">
+                <button class="btn btn-inverse btn-block newContactBtn" (click)="newContactModal = true">
                     <fa-icon [icon]="['far', 'plus']"></fa-icon>&nbsp;&nbsp;NEW CONTACT
                 </button>
             </div>
@@ -210,7 +215,7 @@
         <form [formGroup]="contactForm">
             <mat-form-field>
                 <input matInput #addAccount type="text" formControlName="account"
-                       placeholder="{{aService.activeChain['symbol']}} Account name"
+                       placeholder="Account name"
                        class="text-lowercase" maxlength="12" (blur)="checkAccountModal()">
                 <mat-error align="start" *ngIf="adderrormsg !== ''">
                     {{adderrormsg}}
@@ -237,7 +242,7 @@
         <form [formGroup]="contactForm">
             <mat-form-field>
                 <input matInput type="text" formControlName="account"
-                       placeholder="{{aService.activeChain['symbol']}} Account name"
+                       placeholder="Account name"
                        class="text-lowercase" maxlength="12" readonly>
             </mat-form-field>
             <mat-form-field>
