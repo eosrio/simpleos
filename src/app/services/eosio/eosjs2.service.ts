@@ -460,6 +460,7 @@ export class Eosjs2Service {
     async getKeyAccountsMulti(key: string) {
         const accounts: Set<string> = new Set();
         const queue = [];
+        console.log(this.defaultChain);
         for (const api of this.defaultChain.endpoints) {
             queue.push(new Promise(async (resolve) => {
                 const tempRpc = new JsonRpc(api.url);
