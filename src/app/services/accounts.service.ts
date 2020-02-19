@@ -137,9 +137,9 @@ export class AccountsService {
         }
 
         const precisionRound = Math.pow(10, this.activeChain['precision']);
-        console.log('account',this.activeChain['name'].indexOf('LIBERLAND'));
-        console.log('account',acc['voter_info']['staked']);
-        if(this.activeChain['name'].indexOf('LIBERLAND') > -1){
+        console.log('account', this.activeChain['name'].indexOf('LIBERLAND'));
+        console.log('account', acc['voter_info']['staked']);
+        if (this.activeChain['name'].indexOf('LIBERLAND') > -1) {
             staked = acc['voter_info']['staked'] / precisionRound;
             balance += staked;
         }
@@ -673,12 +673,12 @@ export class AccountsService {
     async appendAccounts(accounts) {
         const chain_id = this.eos.chainID;
         let payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
-		if (!payload) {
-			payload = {
-				accounts: [],
-				updatedOn: new Date()
-			};
-		}
+        if (!payload) {
+            payload = {
+                accounts: [],
+                updatedOn: new Date()
+            };
+        }
         accounts.forEach((account) => {
             const idx = payload.accounts.findIndex((elem) => {
                 return elem.name === account.account_name || elem.account_name === account.account_name;
@@ -715,76 +715,92 @@ export class AccountsService {
                 }
             });
             this.select(0);
-            return await this.refreshFromChain();
-        } else {
-            return null;
+            await this.refreshFromChain(true);
         }
     }
 
-    async refreshFromChain() {
-        this.isRefreshing = true;
-        const PQ = [];
+    refreshAccountFactory(account): Promise<void> {
+        return new Promise(async (resolve) => {
+            const newdata = await this.eos.getAccountInfo(account['name']);
+            const tokens = await this.eos.getTokens(account['name']);
+            let balance = 0;
+            let ref_time = null;
+            let ref_cpu = 0;
+            let ref_net = 0;
+            let staked = 0;
+            const refund = newdata['refund_request'];
+            if (refund) {
+                ref_cpu = this.parseEOS(refund['cpu_amount']);
+                ref_net = this.parseEOS(refund['net_amount']);
+                balance += ref_net;
+                balance += ref_cpu;
+                const tempDate = refund['request_time'] + '.000Z';
+                ref_time = new Date(tempDate);
+            }
+            tokens.forEach((tk) => {
+                balance += this.parseEOS(tk);
+            });
 
-        this.accounts.forEach((account, idx) => {
-            // const tempPromise = new Promise(async (resolve, reject2) => {
-            const tempPromise = new Promise(async (resolve) => {
-                const newdata = await this.eos.getAccountInfo(account['name']);
-                const tokens = await this.eos.getTokens(account['name']);
-                let balance = 0;
-                let ref_time = null;
-                let ref_cpu = 0;
-                let ref_net = 0;
-                let staked = 0;
-                const refund = newdata['refund_request'];
-                if (refund) {
-                    ref_cpu = this.parseEOS(refund['cpu_amount']);
-                    ref_net = this.parseEOS(refund['net_amount']);
-                    balance += ref_net;
-                    balance += ref_cpu;
-                    const tempDate = refund['request_time'] + '.000Z';
-                    ref_time = new Date(tempDate);
-                }
-                tokens.forEach((tk) => {
-                    balance += this.parseEOS(tk);
-                });
-                let net = 0;
-                let cpu = 0;
-                if (newdata['self_delegated_bandwidth']) {
-                    net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
-                    cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
-                    staked = net + cpu;
-                    balance += net;
-                    balance += cpu;
-                }
+            let net = 0;
+            let cpu = 0;
 
-                const precisionRound = Math.pow(10, this.activeChain['precision']);
+            if (newdata['self_delegated_bandwidth']) {
+                net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
+                cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+                staked = net + cpu;
+                balance += net;
+                balance += cpu;
+            }
 
-                if(this.activeChain['name'].indexOf('LIBERLAND') > -1){
+            const precisionRound = Math.pow(10, this.activeChain['precision']);
+            if (!newdata['total_resources']) {
+                if (newdata['voter_info'] && newdata['voter_info']['staked']) {
                     staked = newdata['voter_info']['staked'] / precisionRound;
                     balance += staked;
                 }
+            }
 
-                this.accounts[idx].name = account['name'];
-                this.accounts[idx].full_balance = Math.round((balance) * precisionRound) / precisionRound;
-                this.accounts[idx].staked = staked;
-                this.accounts[idx].unstaking = ref_net + ref_cpu;
-                this.accounts[idx].unstakeTime = ref_time;
-                this.accounts[idx].details = newdata;
-                this.lastUpdate.next({
-                    account: account['name'],
-                    timestamp: new Date()
-                });
-                resolve();
+            account.name = account['name'];
+            account.full_balance = Math.round((balance) * precisionRound) / precisionRound;
+            account.staked = staked;
+            account.unstaking = ref_net + ref_cpu;
+            account.unstakeTime = ref_time;
+            account.details = newdata;
+            this.lastUpdate.next({
+                account: account['name'],
+                timestamp: new Date()
             });
-            PQ.push(tempPromise);
+            resolve();
         });
-        return await Promise.all(PQ).then(async () => {
-            await this.fetchTokens(this.selected.getValue().name);
-            const result = await this.eos.storeAccountData(this.accounts);
-            this.isRefreshing = false;
-            return result;
+    }
 
-        });
+    async refreshFromChain(refreshAll, refreshOthers?: string[]) {
+        console.log('refreshFromChain', new Error().stack);
+        if (this.isRefreshing) {
+            return;
+        }
+        this.isRefreshing = true;
+        const PQ = [];
+        if (refreshAll) {
+            for (const account of this.accounts) {
+                PQ.push(this.refreshAccountFactory(account));
+            }
+            await Promise.all(PQ);
+        } else {
+            await this.refreshAccountFactory(this.accounts[this.selectedIdx]);
+
+            if (refreshOthers) {
+                for (const accountName of refreshOthers) {
+                    const account = this.accounts.find((a) => a.name === accountName);
+                    if (account) {
+                        await this.refreshAccountFactory(account);
+                    }
+                }
+            }
+        }
+        await this.fetchTokens(this.selected.getValue().name);
+        await this.eos.storeAccountData(this.accounts);
+        this.isRefreshing = false;
     }
 
     fetchListings() {

@@ -505,7 +505,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const subs = this.trxFactory.status.subscribe((event) => {
             console.log(event);
             if (event === 'done') {
-                this.aService.refreshFromChain().catch(console.log);
+                this.aService.refreshFromChain(false).catch(console.log);
                 setTimeout(() => {
                     const sel = this.aService.selected.getValue();
                 }, 2000);
@@ -541,7 +541,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.showToast('success', 'Transaction broadcasted',
                         'Check your history for confirmation.');
                     setTimeout(() => {
-                        this.aService.refreshFromChain().then(() => {
+                        this.aService.refreshFromChain(false).then(() => {
                             this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
                             this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
                         });
@@ -922,7 +922,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                         this.wrongpass = '';
                         this.cdr.detectChanges();
                         setTimeout(() => {
-                            this.aService.refreshFromChain().then(() => {
+                            this.aService.refreshFromChain(false).then(() => {
                                 this.voteOption(this.voteService.voteType);
                                 this.voteService.currentVoteType(voter.name);
                                 this.loadPlacedVotes(this.aService.selected.getValue());

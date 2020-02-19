@@ -447,7 +447,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     this.externalActionModal = false;
                     this.aService.select(idx);
                     this.aService.reloadActions(account);
-                    await this.aService.refreshFromChain();
+                    await this.aService.refreshFromChain(false);
                     this.cdr.detectChanges();
                 }
             } catch (e) {
