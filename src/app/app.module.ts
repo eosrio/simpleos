@@ -156,6 +156,7 @@ import {MaterialDesignFrameworkModule} from '@ajsf/material';
 import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
 import { ImportModalComponent } from './import-modal/import-modal.component';
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 export function playerFactory() {
     return player;
@@ -222,6 +223,7 @@ export function playerFactory() {
             useCache: false
         }),
         FlexLayoutModule,
+        MatTooltipModule,
     ],
     providers: [
         EOSJSService,

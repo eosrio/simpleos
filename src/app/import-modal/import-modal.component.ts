@@ -10,6 +10,7 @@ import {compare2FormPasswords, contentStyle, handleErrorMessage} from "../helper
 import {ClrWizard} from "@clr/angular";
 import {LedgerService} from "../services/ledger/ledger.service";
 import {Eosjs2Service} from "../services/eosio/eosjs2.service";
+import {BodyOutputType, Toast, ToasterConfig, ToasterService} from "angular2-toaster";
 
 @Component({
     selector: 'app-import-modal',
@@ -57,6 +58,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     keysToImport: Map<any, any>;
     ledgerError = '';
     private ledgerEventsListener: Subscription;
+    displayPublicKeys = false;
+    private config: ToasterConfig;
 
     constructor(
         public eos: EOSJSService,
@@ -68,7 +71,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         private fb: FormBuilder,
         private router: Router,
         private zone: NgZone,
-        private cdr: ChangeDetectorRef
+        public cdr: ChangeDetectorRef,
+        private toaster: ToasterService
     ) {
         this.createForms();
         this.creatSubscriptions();
@@ -311,5 +315,34 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         if (this.passform.valid) {
             this.importwizard.next();
         }
+    }
+
+    private showToast(type: string, title: string, body: string) {
+        this.config = new ToasterConfig({
+            positionClass: 'toast-top-right',
+            timeout: 10000,
+            newestOnTop: true,
+            tapToDismiss: true,
+            preventDuplicates: false,
+            animation: 'slideDown',
+            limit: 1,
+        });
+        const toast: Toast = {
+            type: type,
+            title: title,
+            body: body,
+            timeout: 10000,
+            showCloseButton: true,
+            bodyOutputType: BodyOutputType.TrustedHtml,
+        };
+        this.toaster.popAsync(toast);
+    }
+
+    cc(text) {
+        window['navigator']['clipboard']['writeText'](text).then(() => {
+            this.showToast('success', 'Public key copied clipboard!', '');
+        }).catch(() => {
+            this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+        });
     }
 }
