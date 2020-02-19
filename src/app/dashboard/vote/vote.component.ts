@@ -1,20 +1,9 @@
-import {
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    OnDestroy,
-    OnInit,
-} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit,} from '@angular/core';
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {
-    BodyOutputType,
-    Toast,
-    ToasterConfig,
-    ToasterService,
-} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService,} from 'angular2-toaster';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {HttpClient} from '@angular/common/http';
@@ -90,10 +79,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     nbps: number;
     showAdvancedRatio = false;
 
-    echartsInstance: any;
     location: string[];
     country: string[];
-    // graphMerge: any;
     options: any;
 
     initOptions = {
@@ -137,6 +124,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     enableLinkAuth: boolean;
 
     precision = '';
+
+    mode = 'local';
 
     constructor(
         public voteService: VotingService,
@@ -291,6 +280,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
+        console.log(this.aService.activeChain['name'].indexOf('LIBERLAND'));
         this.subscriptions.push(
             this.aService.selected.asObservable().subscribe((selected: any) => {
                 this.totalStaked = 0;
@@ -298,9 +288,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.votedEOSDecay = 0;
                 if (selected && selected['name'] && this.selectedAccountName !==
                     selected['name']) {
-
+                    const precision = Math.pow(10, this.aService.activeChain['precision']);
                     this.precision = '1.0-' + this.aService.activeChain['precision'];
-                    if (this.aService.activeChain['name'] !== 'LIBERLAND TEST') {
+                    if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
                         this.voteService.currentVoteType(selected);
                         if (this.voteService.proxies.length === 0 ||
                             this.voteService.bps.length === 0) {
@@ -312,7 +302,11 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.fromAccount = selected.name;
                     this.selectedAccountName = selected.name;
                     this.totalBalance = selected.full_balance;
-                    this.stakedBalance = selected.staked;
+                    if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
+                        this.stakedBalance = selected.staked;
+                    } else {
+                        this.stakedBalance = selected.details.voter_info.staked / precision;
+                    }
                     this.unstaking = selected.unstaking;
                     this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
                     if (this.totalBalance > 0) {
@@ -324,7 +318,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                         this.percenttoStake = '0';
                     }
                     this.updateStakePercent();
-                    if (this.aService.activeChain['name'] !== 'LIBERLAND TEST') {
+                    if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
                         this.loadPlacedVotes(selected);
                         this.cpu_weight = selected.details.total_resources.cpu_weight;
                         this.net_weight = selected.details.total_resources.net_weight;
@@ -398,27 +392,112 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log(this.stakingRatio);
     }
 
-    get getValuetoStake(): number {
-        return parseFloat(this.valuetoStake);
-    }
-
     setStake() {
+        this.stakerr = '';
+        const precisionVal = this.aService.activeChain['precision'];
         const precision = Math.pow(10, this.aService.activeChain['precision']);
-        const prevStake = Math.round(
-            this.aService.selected.getValue().staked * precision);
+
+        const prevStake = Math.round(this.aService.selected.getValue().staked * precision);
+        console.log(this.aService.selected.getValue().details.voter_info.staked / precision);
         const nextStakeFloat = parseFloat(this.valuetoStake);
         const nextStakeInt = Math.round(nextStakeFloat * precision);
         const diff = nextStakeInt - prevStake;
         this.stakingDiff = diff;
-        this.stakingHRV = (Math.abs(this.stakingDiff) / precision) + ' ' +
-            this.aService.activeChain['symbol'];
+        this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
         this.wrongpass = '';
-        if (diff === 0) {
-            this.stakerr = 'Value has not changed';
+        console.log(diff);
+        if (diff !== 0) {
+            this.newSetStake().catch(console.log);
         } else {
-            this.stakeModal = true;
+            this.stakerr = 'Value has not changed';
         }
 
+    }
+
+    async newSetStake() {
+        this.busy = true;
+        this.wrongpass = '';
+        const account = this.aService.selected.getValue();
+        const precisionVal = this.aService.activeChain['precision'];
+        this.wrongpass = '';
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+
+        let actionTitle = ``;
+        let html = ``;
+        let action = '';
+        if (this.stakingDiff > 0) {
+            action = 'stake';
+            html = `<h5 class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>`;
+            actionTitle = `Stake <span class="blue">+${this.stakingHRV}</span> ?`;
+        } else if (this.stakingDiff < 0) {
+            action = 'unstake';
+            html = `<h5 class="mt-0">Your tokens will be free for transfers after 3 days.</h5>`;
+            actionTitle = `Unstake <span class="blue">${this.stakingHRV}</span> ?`;
+        }
+
+        const messageHTML = ` <h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precisionVal)}</span></h4>
+            <h4 class="text-white mt-0">Voting power will be: <span class="blue">${parseFloat(this.percenttoStake).toFixed(2)}%</span></h4>
+            ${html}`;
+
+        const [, permission] = this.aService.getStoredKey(account);
+        let trx = {};
+        if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
+            try {
+                const actions = await this.eosjs.changebw(
+                    account.name,
+                    permission,
+                    this.stakingDiff,
+                    this.aService.activeChain['symbol'],
+                    this.stakingRatio / 100,
+                    this.aService.activeChain['precision'],
+                );
+                trx = {actions: actions};
+                console.log(actions);
+            } catch (e) {
+                console.log(e);
+            }
+        } else {
+            trx = {
+                actions: [{
+                    account: 'eosio',
+                    name: action,
+                    authorization: [auth],
+                    data: {
+                        'acnt': account.name,
+                        'quantity': this.stakingHRV,
+                    }
+                }]
+            };
+        }
+
+        console.log(trx);
+        this.trxFactory.modalData.next({
+            transactionPayload: trx,
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: '',
+            termsHTML: ''
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe((event) => {
+            console.log(event);
+            if (event === 'done') {
+                this.aService.refreshFromChain(false).catch(console.log);
+                setTimeout(() => {
+                    // const sel = this.aService.selected.getValue();
+                }, 2000);
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
     }
 
     async callSetStake(password) {
@@ -445,7 +524,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.showToast('success', 'Transaction broadcasted',
                         'Check your history for confirmation.');
                     setTimeout(() => {
-                        this.aService.refreshFromChain().then(() => {
+                        this.aService.refreshFromChain(false).then(() => {
                             this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
                             this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
                         });
@@ -826,7 +905,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                         this.wrongpass = '';
                         this.cdr.detectChanges();
                         setTimeout(() => {
-                            this.aService.refreshFromChain().then(() => {
+                            this.aService.refreshFromChain(false).then(() => {
                                 this.voteOption(this.voteService.voteType);
                                 this.voteService.currentVoteType(voter.name);
                                 this.loadPlacedVotes(this.aService.selected.getValue());
@@ -909,10 +988,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             bodyOutputType: BodyOutputType.TrustedHtml,
         };
         this.toaster.popAsync(toast);
-    }
-
-    onChartInit(e: any) {
-        this.echartsInstance = e;
     }
 
     voteOption(ev) {
@@ -1137,6 +1212,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.showToast('success', 'GBM Rewards Claimed',
                     'Check your history for confirmation.');
             }
+            console.log(result);
             this.cdr.detectChanges();
         } catch (e) {
             if (e instanceof RpcError) {
@@ -1348,7 +1424,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             }
             const value1 = data1[event.field];
             const value2 = data2[event.field];
-            let result = null;
+            let result;
             if (value1 == null && value2 != null) {
                 result = -1;
             } else if (value1 != null && value2 == null) {

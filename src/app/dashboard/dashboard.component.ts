@@ -29,6 +29,7 @@ import {environment} from '../../environments/environment';
 import {AnimationOptions} from "ngx-lottie";
 import {LedgerService} from "../services/ledger/ledger.service";
 import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
+import {dashboardIcon} from "@clr/core/icon-shapes";
 
 
 @Component({
@@ -176,24 +177,29 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 pass2: ['', [Validators.required, Validators.minLength(10)]]
             })
         });
+
         this.delegateForm = this.fb.group({
             delegate_amount: [1, [Validators.required, Validators.min(1)]],
             delegate_transfer: [false, Validators.required],
             ram_amount: [4096, [Validators.required, Validators.min(4096)]],
             gift_amount: [0],
         });
+
         this.submitTXForm = this.fb.group({
             pass: ['', [Validators.required, Validators.minLength(10)]]
         });
+
         this.pvtform = this.fb.group({
             private_key: ['', Validators.required]
         });
+
         this.passform2 = this.fb.group({
             matchingPassword: this.fb.group({
                 pass1: ['', [Validators.required, Validators.minLength(10)]],
                 pass2: ['', [Validators.required, Validators.minLength(10)]]
             })
         });
+
         this.errormsg = '';
         this.importedAccounts = [];
 
@@ -238,6 +244,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
     }
 
+    ngOnInit() {
+        this.accounts = [];
+        this.eos.status.asObservable().subscribe((status) => {
+            if (status) {
+                this.loadStoredAccounts();
+            }
+        });
+    }
+
+    ngAfterViewInit() {
+        this.subscriptions.push(
+            this.aService.selected.asObservable().subscribe(() => {
+                this.selectedTab = this.aService.selectedIdx;
+            })
+        );
+        this.cdr.detectChanges();
+
+    }
+
 
     ngOnDestroy(): void {
         this.subscriptions.forEach(s => {
@@ -248,16 +273,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.ledgerEventsListener = null;
         }
     }
-
-    // verifyPrivateKey(input) {
-    //   if (input !== '') {
-    //     this.eos.checkPvtKey(input).then((results) => {
-    //       this.importedAccount = results.foundAccounts[0];
-    //     }).catch((e) => {
-    //       this.importedAccount = null;
-    //     });
-    //   }
-    // }
 
     getPermissionName(account, key) {
         return account.permissions.find(p => {
@@ -282,7 +297,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         if (input !== '') {
             this.busyActivekey = true;
-            this.eos.checkPvtKey(input.trim()).then((results) => {
+            this.eosjs.checkPvtKey(input.trim()).then((results) => {
                 this.publicEOS = results.publicKey;
                 this.importedPublicKey = results.publicKey;
                 this.importedAccounts = [];
@@ -322,7 +337,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
                     this.importedAccounts = [];
                     console.log(e);
-                    handleErrorMessage(e, this.errormsg);
+                    this.errormsg = handleErrorMessage(e);
                 });
             });
         }
@@ -381,6 +396,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     doRemoveAcc() {
+        // TODO: remove key
         // const [key] = this.aService.getStoredKey(this.aService.accounts[this.accRemovalIndex]);
         // const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
         // console.log(key);
@@ -397,7 +413,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.deleteAccModal = false;
             this.aService.select(0);
             this.selectedTab = 0;
-            this.aService.refreshFromChain().catch(console.log);
+            this.aService.refreshFromChain(true).catch(console.log);
         }
     }
 
@@ -440,7 +456,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     if (this.newAccOptions === 'newpk') {
                         if (this.generated && this.agreeKeys) {
                             setTimeout(() => {
-                                this.eos.checkPvtKey(this.activepk).then((results) => {
+                                this.eosjs.checkPvtKey(this.activepk).then((results) => {
                                     const pform = this.passform.value.matchingPassword;
                                     // Import private key
                                     if (pform.pass1 === pform.pass2) {
@@ -453,7 +469,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                                                 this.confirmationID = txdata['transaction_id'];
                                                 this.showToast('success', 'Account created', 'Check your history for confirmation.');
                                                 this.submitTXForm.reset();
-                                                this.aService.refreshFromChain().catch(console.log);
+                                                this.aService.refreshFromChain(true).catch(console.log);
                                             }).catch((err) => {
                                                 console.log(err);
                                             });
@@ -468,7 +484,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                             this.confirmationID = txdata['transaction_id'];
                             this.showToast('success', 'Account created', 'Check your history for confirmation.');
                             this.submitTXForm.reset();
-                            this.aService.refreshFromChain().catch(console.log);
+                            this.aService.refreshFromChain(true).catch(console.log);
                         }
                     } else if (this.newAccOptions === 'friend') {
 
@@ -522,26 +538,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    ngOnInit() {
-        this.accounts = [];
-        this.eos.status.asObservable().subscribe((status) => {
-            if (status) {
-                this.loadStoredAccounts();
-            }
-        });
-    }
-
-    ngAfterViewInit() {
-        this.subscriptions.push(
-            this.aService.selected.asObservable().subscribe(() => {
-                // this.aService.select(this.aService.selectedIdx.toString ());
-                this.selectedTab = this.aService.selectedIdx;
-            })
-        );
-        this.cdr.detectChanges();
-
-    }
-
     decodeAccountPayload(payload: string) {
         if (payload !== '') {
             if (payload.endsWith('=')) {
@@ -581,17 +577,29 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             account_names.forEach((name) => {
                 const acc = this.eos.accounts.getValue()[name];
                 let balance = 0;
+                let staked = 0;
                 acc['tokens'].forEach((tk) => {
                     balance += LandingComponent.parseEOS(tk);
                 });
-                const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-                const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-                balance += net;
-                balance += cpu;
+                if (acc['total_resources']) {
+                    const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+                    const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+                    balance += net;
+                    balance += cpu;
+                    staked = net + cpu;
+                }
+
+                const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
+                console.log('dashboard', this.aService.activeChain['name'].indexOf('LIBERLAND'));
+                if (this.aService.activeChain['name'].indexOf('LIBERLAND') > -1) {
+                    staked = acc['voter_info']['staked'] / precisionRound;
+                    balance += staked;
+                }
+
                 const accData = {
                     name: acc['account_name'],
-                    full_balance: Math.round((balance) * 10000) / 10000,
-                    staked: net + cpu,
+                    full_balance: Math.round((balance) * precisionRound) / precisionRound,
+                    staked: staked,
                     details: acc
                 };
                 this.accounts.push(accData);
@@ -599,7 +607,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             });
         }
         this.aService.initFirst();
-
     }
 
     cc(text) {

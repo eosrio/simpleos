@@ -4,8 +4,7 @@ import {EOSJSService} from './eosio/eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';
-import {TransactionFactoryService} from "./eosio/transaction-factory.service";
-import {CryptoService} from "./crypto/crypto.service";
+import {parseTokenValue} from "../helpers/aux_functions";
 
 @Injectable({
     providedIn: 'root'
@@ -19,10 +18,8 @@ export class AccountsService {
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
     public versionSys: string;
-    public accMode: string;
 
     usd_rate = 1;
-    cmcListings = [];
     tokens = [];
     actions = [];
     totalActions: number;
@@ -31,13 +28,10 @@ export class AccountsService {
     totalAssetsSum = 0;
     loading = true;
     isLedger = false;
-    hasAnyLedgerAccount = false;
     actionStore = {};
     private loadingTokens = false;
     private lastTkLoadTime = 0;
-
     public isRefreshing = false;
-
     defaultChains: any[];
 
     constructor(
@@ -116,32 +110,6 @@ export class AccountsService {
             return 0;
         }
     }
-
-    extendAccount(acc) {
-        let balance = 0;
-        if (acc.tokens) {
-            acc.tokens.forEach((tk) => {
-                balance += this.parseEOS(tk);
-            });
-        }
-        let net = 0;
-        let cpu = 0;
-        if (acc['self_delegated_bandwidth']) {
-            net = this.parseEOS(acc['self_delegated_bandwidth']['net_weight']);
-            cpu = this.parseEOS(acc['self_delegated_bandwidth']['cpu_weight']);
-            balance += net;
-            balance += cpu;
-        }
-
-        const precisionRound = Math.pow(10, this.activeChain['precision']);
-        return {
-            name: acc['account_name'],
-            full_balance: Math.round((balance) * precisionRound) / precisionRound,
-            staked: net + cpu,
-            details: acc
-        };
-    }
-
 
     registerSymbol(data) {
         const idx = this.tokens.findIndex((val) => {
@@ -243,17 +211,6 @@ export class AccountsService {
         }
     }
 
-    getTokenBalances() {
-        this.tokens.forEach((tk, index) => {
-            if (this.tokens[index]) {
-                this.fetchTokenPrice(tk.name).then((price) => {
-                    this.tokens[index]['price'] = price;
-                });
-            }
-        });
-    }
-
-
     processAction(act, id, block_num, date, account_action_seq) {
         const contract = act['account'];
         const action_name = act['name'];
@@ -287,6 +244,7 @@ export class AccountsService {
                     type = 'sent';
                 }
             }
+
             if (action_name === 'buyrambytes') {
                 amount = act['data']['bytes'];
                 symbol = 'bytes';
@@ -298,21 +256,26 @@ export class AccountsService {
                     type = 'bytes_out';
                 }
             }
+
             if (action_name === 'sellram') {
                 amount = act['data']['bytes'];
                 symbol = 'bytes';
                 user = act['data']['account'];
                 type = 'bytes_s';
             }
+
             if (contract === 'eosio' && action_name === 'voteproducer') {
                 votedProducers = act['data']['producers'];
                 proxy = act['data']['proxy'];
                 voter = act['data']['voter'];
                 type = 'vote';
             }
+
             if (contract === 'eosio' && action_name === 'undelegatebw') {
-                cpu = parseFloat(act['data']['unstake_cpu_quantity'].split(' ')[0]);
-                net = parseFloat(act['data']['unstake_net_quantity'].split(' ')[0]);
+
+                cpu = parseTokenValue(act['data']['unstake_cpu_quantity']);
+                net = parseTokenValue(act['data']['unstake_net_quantity']);
+
                 amount = cpu + net;
                 if (act['data']['from'] === act['data']['receiver']) {
                     user = act['data']['from'];
@@ -322,9 +285,10 @@ export class AccountsService {
                     type = 'unstaked_out';
                 }
             }
+
             if (contract === 'eosio' && action_name === 'delegatebw') {
-                cpu = parseFloat(act['data']['stake_cpu_quantity'].split(' ')[0]);
-                net = parseFloat(act['data']['stake_net_quantity'].split(' ')[0]);
+                cpu = parseTokenValue(act['data']['stake_cpu_quantity']);
+                net = parseTokenValue(act['data']['stake_net_quantity']);
                 amount = cpu + net;
                 if (act['data']['from'] === act['data']['receiver']) {
                     user = act['data']['from'];
@@ -343,9 +307,11 @@ export class AccountsService {
             if (act['data']['to'] === 'eosio.ram') {
                 type = 'buyram';
             }
+
             if (act['data']['from'] === 'eosio.ram') {
                 type = 'sellram';
             }
+
             if ((contract !== 'eosio' && contract !== 'eosio.token' && action_name !== 'transfer')) {
                 if (!act['data']['to'] && !act['data']['from']) {
                     type = 'other';
@@ -362,58 +328,68 @@ export class AccountsService {
                 }
 
             }
+
             if ((contract === 'eosio' && action_name === 'newaccount')) {
                 type = 'new';
                 user = act['data']['newact'];
                 memo = JSON.stringify(act['data']);
             }
+
             if ((contract === 'eosio' && action_name === 'mvtosavings')) {
                 type = 'mvtosavings';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'mvfrsavings')) {
                 type = 'mvfrsavings';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'unstaketorex')) {
                 type = 'unstaketorex';
-                cpu = parseFloat(act['data']['from_cpu'].split(' ')[0]);
-                net = parseFloat(act['data']['from_net'].split(' ')[0]);
+                cpu = parseTokenValue(act['data']['from_cpu']);
+                net = parseTokenValue(act['data']['from_net']);
                 amount = cpu + net;
             }
+
             if ((contract === 'eosio' && action_name === 'deposit')) {
                 type = 'deposit';
             }
+
             if ((contract === 'eosio' && action_name === 'buyrex')) {
                 type = 'buyrex';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'deposit')) {
                 type = 'deposit';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'withdraw')) {
                 type = 'withdraw';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'sellrex')) {
                 type = 'sellrex';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'rentcpu')) {
                 type = 'rentcpu';
                 user = act['data']['receiver'] === this.selected.getValue().name ? 'this account' : act['data']['receiver'];
-                amount = parseFloat(act['data']['loan_payment'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['loan_payment']);
             }
+
             if ((contract === 'eosio' && action_name === 'rentnet')) {
                 user = act['data']['receiver'] === this.selected.getValue().name ? 'this account' : act['data']['receiver'];
                 type = 'rentnet';
-                amount = parseFloat(act['data']['loan_payment'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['loan_payment']);
             }
-
         }
 
         const allowedActions = [
@@ -467,11 +443,9 @@ export class AccountsService {
 
     getAccActions(account) {
         const nActions = 100;
-
         if (account === null) {
             account = this.selected.getValue().name;
         }
-
         const store = localStorage.getItem('actionStore.' + this.activeChain['id']);
         if (store) {
             this.actionStore = JSON.parse(store.toString());
@@ -482,120 +456,131 @@ export class AccountsService {
                 actions: []
             };
         }
-
         if (this.activeChain.historyApi !== '') {
-            this.getActions(account, 12, 0);
+            this.getActions(account, 12, 0).catch(console.log);
         } else {
-            // console.log('Fetching actions', account, reload);
-
-
-            // Test if mongo is available
             const currentEndpoint = this.activeChain.endpoints.find((e) => e.url === this.eos.baseConfig.httpEndpoint);
             if (currentEndpoint['version']) {
                 if (currentEndpoint['version'] === 'mongo') {
-                    this.getActions(account, nActions, 0);
+                    this.getActions(account, nActions, 0).catch(console.log);
                 } else {
-                    this.getActions(account, -(nActions), -1);
+                    this.getActions(account, -(nActions), -1).catch(console.log);
                 }
             } else {
-                // Test API
-                this.getActions(account, nActions, 0);
+                this.getActions(account, nActions, 0).catch(console.log);
                 console.log('Starting history api test');
-
-
             }
         }
     }
 
-    getActions(account, offset, pos, filter?, after?, before?, parent?) {
+    private async getActionsHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
+        let result;
+        if (!this.activeChain.hyperionApis) {
+            return false;
+        }
+        for (const api of this.activeChain.hyperionApis) {
+            if (!result) {
+                let url = api + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
+                url = url + (filter !== '' && filter !== undefined ? filter : '');
+                url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
+                url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
+                url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
+                try {
+                    const response: any = await this.http.get(url).toPromise();
+                    if (response.actions && response.actions.length > 0) {
+                        result = response;
+                    }
+                } catch (e) {
+                    console.log(`failed to fetch actions: ${api}`);
+                }
+            }
+        }
+
+        if (result) {
+            this.actionStore[account]['actions'] = result['actions'];
+            const payload = JSON.stringify(this.actionStore);
+            localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+            for (const action of this.actionStore[account].actions) {
+                const act = action['act'];
+                const tx_id = action['trx_id'];
+                const blk_num = action['block_num'];
+                const blk_time = action['@timestamp'];
+                const seq = action['global_sequence'];
+                try {
+                    this.processAction(act, tx_id, blk_num, blk_time, seq);
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            this.totalActions = result['total']['value'];
+            this.accounts[this.selectedIdx]['actions'] = this.actions;
+            this.calcTotalAssets();
+            return true;
+        } else {
+            console.log('empty result history!');
+            this.actions = [];
+            this.totalActions = 0;
+            return false;
+        }
+    }
+
+    async getActions(account, offset, pos, filter?, after?, before?, parent?) {
         this.actions = [];
         this.totalActions = 0;
-        if (this.activeChain.historyApi !== '') {
-            let url = this.activeChain.historyApi + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
-            url = url + (filter !== '' && filter !== undefined ? filter : '');
-            url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
-            url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
-            url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
-            this.http.get(url).subscribe((result) => {
-                if (result['actions']) {
-                    if (result['actions'].length > 0) {
-                        this.actionStore[account]['actions'] = result['actions'];
-                        const payload = JSON.stringify(this.actionStore);
-                        localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
-                        this.actionStore[account]['actions'].forEach((action) => {
-                            const act = action['act'];
-                            const tx_id = action['trx_id'];
-                            const blk_num = action['block_num'];
-                            const blk_time = action['@timestamp'];
-                            const seq = action['global_sequence'];
-                            this.processAction(act, tx_id, blk_num, blk_time, seq);
-                        });
-                        this.totalActions = result['total']['value'];
-                        this.accounts[this.selectedIdx]['actions'] = this.actions;
-                        this.calcTotalAssets();
-                    } else {
-                        this.actionStore[account]['actions'] = {};
-                        this.actions = [];
-                    }
-                } else {
-                    console.log('empty result history!');
-                    this.actions = [];
-                    this.totalActions = 0;
-                }
-            }, (err) => {
-                console.log(err);
-            });
-        } else {
-            this.eos.getAccountActions(account, offset, pos).then(val => {
-                console.log(val);
-                const actions = val['actions'];
-                if (actions.length > 0) {
-                    this.actionStore[account]['actions'] = actions;
-                    const payload = JSON.stringify(this.actionStore);
-                    localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
-                }
-                this.actionStore[account]['actions'].forEach((action) => {
 
-                    let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
-                    if (action['action_trace']) {
-                        // native history api
-                        a_name = action['action_trace']['act']['name'];
-                        a_acct = action['action_trace']['act']['account'];
-                        a_recv = action['action_trace']['receipt']['receiver'];
-                        selAcc = this.selected.getValue().name;
-
-                        act = action['action_trace']['act'];
-                        tx_id = action['action_trace']['trx_id'];
-                        blk_num = action['block_num'];
-                        blk_time = action['block_time'];
-                        seq = action['account_action_seq'];
-
-                    } else {
-                        // mongo history api
-                        a_name = action['act']['name'];
-                        a_acct = action['act']['account'];
-                        a_recv = action['receipt']['receiver'];
-                        selAcc = this.selected.getValue().name;
-
-                        act = action['act'];
-                        tx_id = action['trx_id'];
-                        blk_num = action['block_num'];
-                        blk_time = action['block_time'];
-                        seq = action['receipt']['global_sequence'];
-                    }
-
-                    if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
-                        this.processAction(act, tx_id, blk_num, blk_time, seq);
-                    }
-                });
-
-                this.totalActions = this.actions.length;
-                this.accounts[this.selectedIdx]['actions'] = this.actions;
-                this.calcTotalAssets();
-            }).catch((err) => {
-                console.log(err);
-            });
+        const hyperionStatus = await this.getActionsHyperionMulti(account, offset, pos, filter, after, before, parent);
+        if (hyperionStatus) {
+            return;
         }
+
+        this.eos.getAccountActions(account, offset, pos).then(val => {
+            console.log(val);
+            const actions = val['actions'];
+            if (actions.length > 0) {
+                this.actionStore[account]['actions'] = actions;
+                const payload = JSON.stringify(this.actionStore);
+                localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+            }
+            this.actionStore[account]['actions'].forEach((action) => {
+
+                let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
+                if (action['action_trace']) {
+                    // native history api
+                    a_name = action['action_trace']['act']['name'];
+                    a_acct = action['action_trace']['act']['account'];
+                    a_recv = action['action_trace']['receipt']['receiver'];
+                    selAcc = this.selected.getValue().name;
+
+                    act = action['action_trace']['act'];
+                    tx_id = action['action_trace']['trx_id'];
+                    blk_num = action['block_num'];
+                    blk_time = action['block_time'];
+                    seq = action['account_action_seq'];
+
+                } else {
+                    // mongo history api
+                    a_name = action['act']['name'];
+                    a_acct = action['act']['account'];
+                    a_recv = action['receipt']['receiver'];
+                    selAcc = this.selected.getValue().name;
+
+                    act = action['act'];
+                    tx_id = action['trx_id'];
+                    blk_num = action['block_num'];
+                    blk_time = action['block_time'];
+                    seq = action['receipt']['global_sequence'];
+                }
+
+                if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
+                    this.processAction(act, tx_id, blk_num, blk_time, seq);
+                }
+            });
+            this.totalActions = this.actions.length;
+            this.accounts[this.selectedIdx]['actions'] = this.actions;
+            this.calcTotalAssets();
+        }).catch((err) => {
+            console.log(err);
+        });
     }
 
     reloadActions(account) {
@@ -663,12 +648,12 @@ export class AccountsService {
     async appendAccounts(accounts) {
         const chain_id = this.eos.chainID;
         let payload = JSON.parse(localStorage.getItem('simpleos.accounts.' + chain_id));
-		if (!payload) {
-			payload = {
-				accounts: [],
-				updatedOn: new Date()
-			};
-		}
+        if (!payload) {
+            payload = {
+                accounts: [],
+                updatedOn: new Date()
+            };
+        }
         accounts.forEach((account) => {
             const idx = payload.accounts.findIndex((elem) => {
                 return elem.name === account.account_name || elem.account_name === account.account_name;
@@ -693,102 +678,105 @@ export class AccountsService {
         return await this.loadLocalAccounts(payload.accounts);
     }
 
-    async loadLocalAccounts(data) {
+    async loadLocalAccounts(data: any[]) {
         if (data.length > 0) {
-            this.accounts = [];
-            data.forEach((acc_data) => {
-                acc_data.tokens = [];
-                if (!acc_data.details) {
-                    this.accounts.push(this.extendAccount(acc_data));
+            this.accounts = [...data.map(value => {
+                if (!value.details) {
+                    return {
+                        name: value['account_name']
+                    };
                 } else {
-                    this.accounts.push(acc_data);
+                    return value;
                 }
-            });
+            })];
             this.select(0);
-            return await this.refreshFromChain();
-        } else {
-            return null;
+            await this.refreshFromChain(true);
         }
     }
 
-    async refreshFromChain() {
+    refreshAccountFactory(account): Promise<void> {
+        return new Promise(async (resolve) => {
+            const newdata = await this.eos.getAccountInfo(account['name']);
+            const tokens = await this.eos.getTokens(account['name']);
+            let balance = 0;
+            let ref_time = null;
+            let ref_cpu = 0;
+            let ref_net = 0;
+            let staked = 0;
+            const refund = newdata['refund_request'];
+
+            if (refund) {
+                ref_cpu = this.parseEOS(refund['cpu_amount']);
+                ref_net = this.parseEOS(refund['net_amount']);
+                balance += ref_net;
+                balance += ref_cpu;
+                const tempDate = refund['request_time'] + '.000Z';
+                ref_time = new Date(tempDate);
+            }
+
+            tokens.forEach((tk) => {
+                balance += this.parseEOS(tk);
+            });
+
+            let net = 0;
+            let cpu = 0;
+
+            if (newdata['self_delegated_bandwidth']) {
+                net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
+                cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
+                staked = net + cpu;
+                balance += net;
+                balance += cpu;
+            }
+
+            const precisionRound = Math.pow(10, this.activeChain['precision']);
+            if (!newdata['total_resources']) {
+                if (newdata['voter_info'] && newdata['voter_info']['staked']) {
+                    staked = newdata['voter_info']['staked'] / precisionRound;
+                    balance += staked;
+                }
+            }
+
+            account.name = account['name'];
+            account.full_balance = Math.round((balance) * precisionRound) / precisionRound;
+            account.staked = staked;
+            account.unstaking = ref_net + ref_cpu;
+            account.unstakeTime = ref_time;
+            account.details = newdata;
+            this.lastUpdate.next({
+                account: account['name'],
+                timestamp: new Date()
+            });
+            resolve();
+        });
+    }
+
+    async refreshFromChain(refreshAll, refreshOthers?: string[]) {
+        // console.log('refreshFromChain', new Error().stack);
+        if (this.isRefreshing) {
+            return;
+        }
         this.isRefreshing = true;
         const PQ = [];
-
-        this.accounts.forEach((account, idx) => {
-            // const tempPromise = new Promise(async (resolve, reject2) => {
-            const tempPromise = new Promise(async (resolve) => {
-                const newdata = await this.eos.getAccountInfo(account['name']);
-                const tokens = await this.eos.getTokens(account['name']);
-                let balance = 0;
-                let ref_time = null;
-                let ref_cpu = 0;
-                let ref_net = 0;
-                const refund = newdata['refund_request'];
-                if (refund) {
-                    ref_cpu = this.parseEOS(refund['cpu_amount']);
-                    ref_net = this.parseEOS(refund['net_amount']);
-                    balance += ref_net;
-                    balance += ref_cpu;
-                    const tempDate = refund['request_time'] + '.000Z';
-                    ref_time = new Date(tempDate);
+        if (refreshAll) {
+            for (const account of this.accounts) {
+                PQ.push(this.refreshAccountFactory(account));
+            }
+            await Promise.all(PQ);
+        } else {
+            await this.refreshAccountFactory(this.accounts[this.selectedIdx]);
+            if (refreshOthers) {
+                for (const accountName of refreshOthers) {
+                    const account = this.accounts.find((a) => a.name === accountName);
+                    if (account) {
+                        await this.refreshAccountFactory(account);
+                    }
                 }
-                tokens.forEach((tk) => {
-                    balance += this.parseEOS(tk);
-                });
-                let net = 0;
-                let cpu = 0;
-                if (newdata['self_delegated_bandwidth']) {
-                    net = this.parseEOS(newdata['self_delegated_bandwidth']['net_weight']);
-                    cpu = this.parseEOS(newdata['self_delegated_bandwidth']['cpu_weight']);
-                    balance += net;
-                    balance += cpu;
-                }
-
-                const precisionRound = Math.pow(10, this.activeChain['precision']);
-
-                this.accounts[idx].name = account['name'];
-                this.accounts[idx].full_balance = Math.round((balance) * precisionRound) / precisionRound;
-                this.accounts[idx].staked = net + cpu;
-                this.accounts[idx].unstaking = ref_net + ref_cpu;
-                this.accounts[idx].unstakeTime = ref_time;
-                this.accounts[idx].details = newdata;
-                this.lastUpdate.next({
-                    account: account['name'],
-                    timestamp: new Date()
-                });
-                resolve();
-            });
-            PQ.push(tempPromise);
-        });
-        return await Promise.all(PQ).then(async () => {
-            await this.fetchTokens(this.selected.getValue().name);
-            const result = await this.eos.storeAccountData(this.accounts);
-            this.isRefreshing = false;
-            return result;
-
-        });
-    }
-
-    fetchListings() {
-        this.http.get('https://api.coinmarketcap.com/v2/listings/').subscribe((result: any) => {
-            this.cmcListings = result.data;
-        });
-    }
-
-    async fetchTokenPrice(symbol) {
-        let id = null;
-        for (let i = 0; i < this.cmcListings.length; i++) {
-            if (this.cmcListings[i].symbol === symbol) {
-                id = this.cmcListings[i].id;
             }
         }
-        if (id && symbol === 'EOSDAC') {
-            const result: any = await this.http.get('https://api.coinmarketcap.com/v2/ticker/' + id + '/').toPromise();
-            return parseFloat(result.data.quotes.USD['price']);
-        } else {
-            return null;
-        }
+        await this.fetchTokens(this.selected.getValue().name);
+        await this.eos.storeAccountData(this.accounts);
+        this.isRefreshing = false;
     }
 
     async fetchEOSprice() {
@@ -802,37 +790,5 @@ export class AccountsService {
             }
         }
         return null;
-    }
-
-    // checkLedgerAccounts() {
-    // 	let hasLedger = false;
-    // 	const stored_data = localStorage.getItem('eos_keys.' + this.eos.chainID);
-    // 	return new Promise(resolve => {
-    // 		this.accounts.forEach((acc) => {
-    // 			const pbk = acc.details.permissions[0].required_auth.keys[0];
-    // 			// if (stored_data[pbk]['private'] === 'ledger') {
-    // 			//   hasLedger = true;
-    // 			// }
-    // 		});
-    // 		this.hasAnyLedgerAccount = hasLedger;
-    // 		resolve(hasLedger);
-    // 	});
-    // }
-
-    injectLedgerSigner() {
-        console.log('Ledger mode: ' + this.isLedger);
-        if (this.isLedger) {
-            const store = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-            const pbk = this.selected.getValue().details['permissions'][0]['required_auth'].keys[0].key;
-            console.log('Publickey:', pbk);
-            console.log(store);
-            // if (store[pbk]['private'] === 'ledger') {
-            //   this.ledger.enableLedgerEOS(store[pbk]['slot']);
-            // } else {
-            //   this.eos.clearSigner();
-            // }
-        } else {
-            this.eos.clearSigner();
-        }
     }
 }

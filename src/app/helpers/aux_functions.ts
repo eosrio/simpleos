@@ -1,4 +1,15 @@
-export function handleErrorMessage(e: any, errormsg) {
+export function parseTokenValue(value: any): any {
+    if (typeof value === "number") {
+        return value;
+    } else if (typeof value === "string") {
+        return parseFloat(value.split(' ')[0]);
+    } else {
+        return value;
+    }
+}
+
+export function handleErrorMessage(e: any) {
+    let errormsg;
     if (e.message.includes('Invalid checksum')) {
         errormsg = 'invalid private key';
     } else if (e.message === 'no_account') {
@@ -7,7 +18,10 @@ export function handleErrorMessage(e: any, errormsg) {
         errormsg = 'This is not the active key. Please import the active key.';
     } else if (e.message === 'api_arror') {
         errormsg = 'API Unavailable, please try again with another endpoint.';
+    } else {
+        errormsg = e.message;
     }
+    return errormsg;
 }
 
 export function compare2FormPasswords(form) {
@@ -42,11 +56,11 @@ export function contentStyle(txt, color?) {
                 const linkName = line.match(/(\[.*?])+/g);
                 const linkImage = line.match(/(!\[.*?])+/g);
                 let newLine = line;
-                link.forEach((val, idx: number) => {
+                link.forEach((val: string, idx: number) => {
                     const newlink = val.replace('(', '').replace(')', '');
-                    let oldVal = val;
+                    let oldVal: string;
                     let newValName = newlink;
-                    let repVal = '';
+                    let repVal: string;
                     if (linkImage !== null) {
                         if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
                             newValName = linkImage[idx].replace('![', '').replace(']', '');

@@ -245,6 +245,7 @@
 	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
 		<button type="button" class="btn btn-info-outline" (click)="connectCustom(customEndpoint.value)">
 			Connect
+			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
 		</button>
 	</div>
 </clr-modal>
@@ -259,6 +260,7 @@
 		<button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
 		<button type="button" class="btn btn-info-outline" (click)="connectEndpoint()">
 			Connect
+			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
 		</button>
 	</div>
 </clr-modal>

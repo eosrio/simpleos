@@ -42,6 +42,13 @@ export class LockscreenComponent implements OnInit {
 		this.clearContacts = false;
 	}
 
+	toggleAnimation() {
+		if (this.anim) {
+			const duration = this.anim.getDuration(true);
+			this.anim.goToAndPlay(Math.round(duration / 3), true);
+		}
+	}
+
 	ngOnInit() {
 		if (!localStorage.getItem('simpleos-hash')) {
 			console.log('no hash saved.. navigating to landing page');
