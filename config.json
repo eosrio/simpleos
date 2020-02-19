@@ -145,6 +145,7 @@
         "https://wax.hyperion.eosrio.io/v2",
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
+        "https://api.wax.alohaeos.com/v2",
         "https://wax.eosphere.io/v2",
         "https://wax.pink.gg/v2",
         "https://api-wax.maltablock.org/v2",
@@ -189,6 +190,46 @@
         {
           "url": "https://api.waxsweden.org",
           "owner": "EOS Sweden - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://api.wax.alohaeos.com",
+          "owner": "Alohaeos - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eu.eosamsterdam.net",
+          "owner": "Eosamsterdam - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://api.blokcrafters.io",
+          "owner": "Blokcrafters - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.greymass.com",
+          "owner": "Greymass - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eos.barcelona",
+          "owner": "EOS Barcelona - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax.eosdac.io",
+          "owner": "EOSDAC - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://wax-api.eosiomadrid.io",
+          "owner": "EOSio Madrid - WAX",
+          "latency": 0
+        },
+        {
+          "url": "https://api.wax.greeneosio.com",
+          "owner": "Greeneosio - WAX",
           "latency": 0
         }
       ],
