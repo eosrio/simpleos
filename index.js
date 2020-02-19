@@ -9,6 +9,7 @@ const {
   protocol,
   shell,
   powerMonitor,
+  ipcMain
 } = require('electron');
 
 const path = require('path');
@@ -152,6 +153,7 @@ class SimpleosWallet {
     } else {
       this.launchApp();
       this.claimRW.autoClaimCheck();
+
       if (this.isEnableAutoClaim) {
         if (!(fs.existsSync(this.claimRW.lockAutoLaunchFile)) && productName ===
             'simpleos') {
@@ -219,6 +221,7 @@ class SimpleosWallet {
             message: 'launch',
             content: this.deepLink.url,
           });
+          this.win.webContents.send('electron',  {message:'type', content: process.platform});
         }, 5000);
       }
       callback();
@@ -347,9 +350,7 @@ class SimpleosWallet {
     });
 
     // win.removeMenu();
-    console.log(
 
-    );
     if (this.serve) {
       require('electron-reload')(__dirname, {
         electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
@@ -370,17 +371,18 @@ class SimpleosWallet {
 
     this.win.webContents.on('did-finish-load', () => {
       this.win.setTitle(productName);
+      this.win.webContents.send('electronOS',  {message:'type', content: process.platform})
     });
 
     this.win.on('closed', () => {
       this.win = null;
     });
+
   }
 }
 
 const wallet = new SimpleosWallet();
 wallet.init();
 wallet.run();
-
 
 
