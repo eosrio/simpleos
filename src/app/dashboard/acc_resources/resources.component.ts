@@ -11,6 +11,7 @@ import {RamService} from '../../services/ram.service';
 import {EOSJSService} from '../../services/eosio/eosjs.service';
 
 import * as moment from 'moment';
+import {TransactionFactoryService} from "../../services/eosio/transaction-factory.service";
 
 const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
     '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
@@ -102,6 +103,7 @@ export class ResourcesComponent implements OnInit {
         includeThousandsSeparator: false,
         decimalLimit: 4
     });
+    private mode = 'local';
 
     constructor(
         private eos: EOSJSService,
@@ -110,7 +112,8 @@ export class ResourcesComponent implements OnInit {
         private toaster: ToasterService,
         private fb: FormBuilder,
         public ramService: RamService,
-        private http: HttpClient
+        private http: HttpClient,
+        private trxFactory: TransactionFactoryService,
     ) {
         this.busy = false;
         this.dataDT = [];
@@ -543,102 +546,76 @@ export class ResourcesComponent implements OnInit {
 
     fillSell() {
         if (this.checkSellBytes()) {
-            this.passSellModal = true;
-            this.wrongpassbuy = '';
+            // this.passSellModal = true;
+            // this.wrongpassbuy = '';
             this.seller = this.aService.selected.getValue().name;
             this.bytessell = '' + (this.ramMarketFormSell.get('sellBytes').value * 1024);
+            this.newSell();
         }
     }
 
-    rtRefund() {
-        this.busy = true;
-        this.wrongpassrefund = '';
-        const account = this.aService.selected.getValue();
-        const namesel = this.aService.selected.getValue().name;
-        const password = this.passRefundForm.get('pass').value;
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        this.crypto.authenticate(password, pubkey).then((data) => {
-            if (data === true) {
-                this.eos.requestRefund(namesel, permission).then(() => {
-                    this.requestRefundModal = false;
+    newSell(){
+        let termsHeader = ``;
+        let termsHtml = ``;
+        const actionTitle = `<span class="blue">Password</span>`;
+        const messageHTML = ` <h3 class="modal-title text-white"><span class="blue">${ this.seller }</span> sell <span
+            class="blue">${this.bytesFilter(this.ramMarketFormSell.value.sellBytes * 1024)} </span></h3>
+        <h5>
+            <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
+            <span style="color:#bdbdbd;">RAM fee ${this.feeSell.toFixed(6)} ${this.aService.activeChain['symbol']} </span>
+        </h5>
+        `;
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the sellram Terms & Conditions';
+            termsHtml = `The sellram action sells unused RAM for tokens.
+                <br><br>
+                As an authorized party I <span class="blue">${this.seller}</span> wish to sell <span class="blue">${this.bytessell}</span> bytes of unused RAM from
+                account <span class="blue">${this.seller}</span>.`;
+        }
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
 
-                    this.showToast(
-                        'success',
-                        'Transation broadcasted',
-                        'Check your history for confirmation.');
-
-                    this.aService.refreshFromChain(false).catch(console.log);
-                    this.busy = false;
-                }).catch((error) => {
-                    if (typeof error === 'object') {
-                        if (error.json) {
-                            this.wrongpassrefund = 'Error: ' + error.json.error.details[0].message;
-                        } else {
-                            this.wrongpassrefund = 'Error: ' + error.error.details[0].message;
-                        }
-                    } else {
-                        if (error.json) {
-                            this.wrongpassrefund = 'Error: ' + JSON.parse(error).json.error.details[0].message;
-                        } else {
-                            this.wrongpassrefund = 'Error: ' + JSON.parse(error).error.details[0].message;
-                        }
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'sellram',
+                    authorization: [auth],
+                    data: {
+                        'account': this.seller,
+                        'bytes': this.bytessell
                     }
-                    this.busy = false;
-                });
-            }
-        }).catch(() => {
-            this.wrongpassrefund = 'Wrong password!';
-            this.busy = false;
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
         });
-
-    }
-
-    sell() {
-        this.busy = true;
-        this.wrongpasssell = '';
-        const account = this.aService.selected.getValue();
-        const password = this.passSellForm.get('pass').value;
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        this.crypto.authenticate(password, pubkey).then((data) => {
-            if (data === true) {
-                this.eos.ramSellBytes(this.seller, this.bytessell, permission).then(() => {
-                    this.passSellModal = false;
-
-                    this.showToast(
-                        'success',
-                        'Transation broadcasted',
-                        'Check your history for confirmation.');
-
-                    this.aService.refreshFromChain(false).catch(console.log);
-                    this.busy = false;
-                }).catch((error) => {
-                    if (typeof error === 'object') {
-                        if (error.json) {
-                            this.wrongpasssell = 'Error: ' + error.json.error.details[0].message;
-                        } else {
-                            this.wrongpasssell = 'Error: ' + error.error.details[0].message;
-                        }
-                    } else {
-                        if (error.json) {
-                            this.wrongpasssell = 'Error: ' + JSON.parse(error).json.error.details[0].message;
-                        } else {
-                            this.wrongpasssell = 'Error: ' + JSON.parse(error).error.details[0].message;
-                        }
-                    }
-                    this.busy = false;
-                });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe(async (event) => {
+            console.log(event);
+            if (event === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false);
+                } catch (e) {
+                    console.error(e);
+                }
+                subs.unsubscribe();
             }
-        }).catch(() => {
-            this.wrongpasssell = 'Wrong password!';
-            this.busy = false;
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
         });
-
     }
 
     fillBuy() {
         if (this.checkBuyBytes()) {
-            this.passBuyModal = true;
-            this.wrongpassbuy = '';
+            // this.passBuyModal = true;
+            // this.wrongpassbuy = '';
             this.receiver = this.aService.selected.getValue().name;
             this.payer = this.aService.selected.getValue().name;
             this.bytesbuy = '' + (this.ramMarketFormBuy.get('buyBytes').value * 1024);
@@ -646,47 +623,137 @@ export class ResourcesComponent implements OnInit {
             if (accountBuy === 'to another account') {
                 this.receiver = this.ramMarketFormBuy.get('anotherAcc').value;
             }
+            this.newBuy();
         }
     }
 
-    buy() {
-        this.busy = true;
-        this.wrongpassbuy = '';
-        const account = this.aService.selected.getValue();
-        const password = this.passBuyForm.get('pass').value;
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        this.crypto.authenticate(password, pubkey).then((data) => {
-            if (data === true) {
-                this.eos.ramBuyBytes(this.payer, this.receiver, this.bytesbuy, permission).then(() => {
-                    this.passBuyModal = false;
+    newBuy(){
+        let termsHeader = ``;
+        let termsHtml = ``;
+        const actionTitle = `<span class="blue">Password</span>`;
+        const messageHTML = `<h3 class="modal-title text-white"><span class="blue">${this.payer}</span> buy <span
+            class="blue">${this.bytesFilter(this.ramMarketFormBuy.value.buyBytes * 1024)} </span> to ${this.receiver}
+        </h3>
+        <h5>
+            <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
+            <span style="color:#bdbdbd;">RAM fee ${this.feeBuy.toFixed(6)} ${this.aService.activeChain['symbol']} </span>
+        </h5>
+        `;
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the buyrambytes Terms & Conditions';
+            termsHtml = `This action will attempt to reserve about <span class="blue">${this.bytesbuy}</span> bytes of RAM on behalf of <span class="blue">${this.receiver}</span>.
+                <br><br>
+                <span class="blue">${this.payer}</span> authorizes this contract to transfer sufficient EOS tokens to buy the RAM based upon the
+                current
+                price as determined by the market maker algorithm.
+                <br><br>
+                {{payer}} accepts that a 0.5% fee will be charged on the amount spent and that the actual RAM received
+                may be
+                slightly less than expected due to the approximations necessary to enable this service. <span class="blue">${this.payer}</span>
+                accepts that
+                a 0.5% fee will be charged if and when they sell the RAM received. <span class="blue">${this.payer}</span> accepts that rounding
+                errors
+                resulting from limits of computational precision may result in less RAM being allocated. <span class="blue">${this.payer}</span>
+                acknowledges
+                that the supply of RAM may be increased at any time up to the limits of off-the-shelf computer equipment
+                and
+                that this may result in RAM selling for less than purchase price. <span class="blue">${this.payer}</span> acknowledges that the price
+                of RAM
+                may increase or decrease over time according to supply and demand. <span class="blue">${this.payer}</span> acknowledges that RAM is
+                non-transferrable. <span class="blue">${this.payer}</span> acknowledges RAM currently in use by their account cannot be sold until it
+                is
+                freed and that freeing RAM may be subject to terms of other contracts.`;
+        }
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
 
-                    this.showToast(
-                        'success',
-                        'Transation broadcasted',
-                        'Check your history for confirmation.');
-
-                    this.aService.refreshFromChain(false).catch(console.log);
-                    this.busy = false;
-                }).catch((error) => {
-                    if (typeof error === 'object') {
-                        if (error.json) {
-                            this.wrongpassbuy = 'Error: ' + error.json.error.details[0].message;
-                        } else {
-                            this.wrongpassbuy = 'Error: ' + error.error.details[0].message;
-                        }
-                    } else {
-                        if (error.json) {
-                            this.wrongpassbuy = 'Error: ' + JSON.parse(error).json.error.details[0].message;
-                        } else {
-                            this.wrongpassbuy = 'Error: ' + JSON.parse(error).error.details[0].message;
-                        }
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'rambuybytes',
+                    authorization: [auth],
+                    data: {
+                        'payer': this.payer,
+                        'receiver': this.receiver,
+                        'quantity': this.bytesbuy
                     }
-                    this.busy = false;
-                });
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe(async (event) => {
+            console.log(event);
+            if (event === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false);
+                } catch (e) {
+                    console.error(e);
+                }
+                subs.unsubscribe();
             }
-        }).catch(() => {
-            this.wrongpassbuy = 'Wrong password!';
-            this.busy = false;
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
+    }
+
+    newRefund(){
+        const namesel = this.aService.selected.getValue().name;
+        let termsHeader = ``;
+        let termsHtml = ``;
+        const actionTitle = `<span class="blue">Password</span>`;
+        const messageHTML = ` <h3 class="modal-title text-white">Request Refund to <span class="blue">${this.aService.selected.getValue().name}</span></h3>`;
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the refund Terms & Conditions';
+            termsHtml = ` The intent of the <span class="blue">refund</span> action is to return previously
+                unstaked tokens to an account after the unstaking period has elapsed.
+                <br><br>As an authorized party I <span class="blue">${this.aService.selected.getValue().name}</span> wish to
+                have the unstaked tokens of <span class="blue">${this.aService.selected.getValue().name}</span> returned.`;
+        }
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'refund',
+                    authorization: [auth],
+                    data: {
+                        'owner': namesel
+                    }
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe(async (event) => {
+            console.log(event);
+            if (event === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false);
+                } catch (e) {
+                    console.error(e);
+                }
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
         });
     }
 
@@ -695,57 +762,72 @@ export class ResourcesComponent implements OnInit {
         this.netUD = net;
         this.cpuUD = cpu;
         this.accNow = this.aService.selected.getValue().name;
-        this.wrongpassundelegate = '';
+        this.newUnDelegateRequest();
     }
 
-    unDelegateRequest() {
-        this.busy = true;
-        const account = this.aService.selected.getValue();
-        const password = this.passUnDelegateForm.get('pass').value;
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        this.crypto.authenticate(password, pubkey).then((data) => {
-            if (data === true) {
-                this.eos.unDelegate(
-                    this.accNow,
-                    this.fromUD,
-                    this.netUD,
-                    this.cpuUD,
-                    this.aService.activeChain['symbol'],
-                    permission
-                ).then(() => {
-                    this.fromUD = '';
-                    this.netUD = '';
-                    this.cpuUD = '';
-                    this.accNow = '';
-                    this.passUnDelegateModal = false;
+    newUnDelegateRequest(){
+        let termsHeader = ``;
+        let termsHtml = ``;
+        const actionTitle = `<span class="blue">Password</span>`;
+        const messageHTML = ` <h3 class="modal-title text-white">Are you sure you want to undelegate <span class="blue">NET</span> and <span
+            class="blue"> CPU</span> from <span class="blue">${ this.fromUD }</span></h3>
+            <div>This resources will be removed from <span class="blue">${ this.fromUD }</span> and will return to you.</div>
+            <div>Please make sure the account <span class="blue">${ this.fromUD }</span> has some eos staked, otherwise the account may lose all its
+                resources
+            </div>
+            `;
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the undelegatebw  Terms & Conditions';
+            termsHtml = ` The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
+                <br><br>
+                As an authorized party I <span class="blue">${ this.accNow }</span> wish to unstake <span class="blue">${ this.cpuUD }</span> EOS from CPU and
+                <span class="blue">${ this.netUD }</span> EOS from bandwidth from the tokens owned by <span class="blue">${ this.accNow }</span> previously delegated for
+                the use of delegatee <span class="blue">${ this.fromUD }</span>.
+                <br><br>
+                If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been
+                authorized to take this action by their beneficial owner(s).`;
+        }
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
 
-                    this.showToast(
-                        'success',
-                        'Transation broadcasted',
-                        'Check your history for confirmation.');
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'undelegatebw',
+                    authorization: [auth],
+                    data: {
+                        'from': this.accNow,
+                        'receiver': this.fromUD,
+                        'unstake_cpu_quantity': this.netUD + ' ' + this.aService.activeChain['symbol'],
+                        'unstake_net_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol']
 
-                }).catch((error) => {
-                    if (typeof error === 'object') {
-                        if (error.json) {
-                            this.wrongpassundelegate = 'Error: ' + error.json.error.details[0].message;
-                        } else {
-                            this.wrongpassundelegate = 'Error: ' + error.error.details[0].message;
-                        }
-                    } else {
-                        if (error.json) {
-                            this.wrongpassundelegate = 'Error: ' + JSON.parse(error).json.error.details[0].message;
-                        } else {
-                            this.wrongpassundelegate = 'Error: ' + JSON.parse(error).error.details[0].message;
-                        }
                     }
-                    this.busy = false;
-                });
-            }
-        }).catch(() => {
-            this.busy = false;
-            this.wrongpassundelegate = 'Wrong password!';
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
         });
-        this.wrongpassundelegate = '';
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe(async (event) => {
+            console.log(event);
+            if (event === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false);
+                } catch (e) {
+                    console.error(e);
+                }
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
     }
 
     checkEos(eosVal, val) {
@@ -776,7 +858,70 @@ export class ResourcesComponent implements OnInit {
         this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(this.aService.activeChain['precision']);
         this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(this.aService.activeChain['precision']);
         this.accNow = this.aService.selected.getValue().name;
+        this.newDelegateRequest();
 
+    }
+
+
+    newDelegateRequest(){
+        let termsHeader = ``;
+        let termsHtml = ``;
+        const actionTitle = `<span class="blue">Password</span>`;
+        const messageHTML = `<h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span
+            class="blue"> CPU</span> to <span class="blue">${ this.accTo }</span></h3> `;
+        if (this.aService.activeChain.name === 'EOS MAINNET') {
+            termsHeader = 'By submiting this transaction, you agree to the delegatebw Terms & Conditions';
+            termsHtml = ` The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer
+                ownership.
+                <br><br>
+                As an authorized party I <span class="blue">${ this.accNow }</span> wish to stake <span class="blue">${ this.cpuD }</span> EOS for CPU and <span class="blue">${ this.netD }</span> EOS for
+                bandwidth from the liquid tokens of <span class="blue">${ this.accNow }</span> for the use of delegatee <span class="blue">${ this.accTo }</span>.
+                <br><br>
+                As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve
+                been authorized to
+                take this action by their beneficial owner(s).`;
+        }
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        this.trxFactory.modalData.next({
+            transactionPayload: {
+                actions: [{
+                    account: 'eosio',
+                    name: 'delegatebw',
+                    authorization: [auth],
+                    data: {
+                        'from': this.accNow,
+                        'receiver': this.accTo,
+                        'stake_cpu_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
+                        'stake_net_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
+                        'transfer': 0
+                    }
+                }]
+            },
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: termsHeader,
+            termsHTML: termsHtml
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe(async (event) => {
+            console.log(event);
+            if (event === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false);
+                } catch (e) {
+                    console.error(e);
+                }
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
     }
 
     delegateRequest() {
