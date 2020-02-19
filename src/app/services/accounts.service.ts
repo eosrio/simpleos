@@ -20,7 +20,6 @@ export class AccountsService {
     public versionSys: string;
 
     usd_rate = 1;
-    cmcListings = [];
     tokens = [];
     actions = [];
     totalActions: number;
@@ -32,9 +31,7 @@ export class AccountsService {
     actionStore = {};
     private loadingTokens = false;
     private lastTkLoadTime = 0;
-
     public isRefreshing = false;
-
     defaultChains: any[];
 
     constructor(
@@ -113,42 +110,6 @@ export class AccountsService {
             return 0;
         }
     }
-
-    extendAccount(acc) {
-        let balance = 0;
-        let staked = 0;
-        console.log(acc);
-        if (acc.tokens) {
-            acc.tokens.forEach((tk) => {
-                balance += this.parseEOS(tk);
-            });
-        }
-        let net = 0;
-        let cpu = 0;
-        if (acc['self_delegated_bandwidth']) {
-            net = this.parseEOS(acc['self_delegated_bandwidth']['net_weight']);
-            cpu = this.parseEOS(acc['self_delegated_bandwidth']['cpu_weight']);
-            staked = net + cpu;
-            balance += net;
-            balance += cpu;
-        }
-
-        const precisionRound = Math.pow(10, this.activeChain['precision']);
-        console.log('account', this.activeChain['name'].indexOf('LIBERLAND'));
-        console.log('account', acc['voter_info']['staked']);
-        if (this.activeChain['name'].indexOf('LIBERLAND') > -1) {
-            staked = acc['voter_info']['staked'] / precisionRound;
-            balance += staked;
-        }
-
-        return {
-            name: acc['account_name'],
-            full_balance: Math.round((balance) * precisionRound) / precisionRound,
-            staked: staked,
-            details: acc
-        };
-    }
-
 
     registerSymbol(data) {
         const idx = this.tokens.findIndex((val) => {
@@ -249,17 +210,6 @@ export class AccountsService {
             return null;
         }
     }
-
-    getTokenBalances() {
-        this.tokens.forEach((tk, index) => {
-            if (this.tokens[index]) {
-                this.fetchTokenPrice(tk.name).then((price) => {
-                    this.tokens[index]['price'] = price;
-                });
-            }
-        });
-    }
-
 
     processAction(act, id, block_num, date, account_action_seq) {
         const contract = act['account'];
@@ -493,11 +443,9 @@ export class AccountsService {
 
     getAccActions(account) {
         const nActions = 100;
-
         if (account === null) {
             account = this.selected.getValue().name;
         }
-
         const store = localStorage.getItem('actionStore.' + this.activeChain['id']);
         if (store) {
             this.actionStore = JSON.parse(store.toString());
@@ -508,37 +456,25 @@ export class AccountsService {
                 actions: []
             };
         }
-
         if (this.activeChain.historyApi !== '') {
-            this.getActions(account, 12, 0);
+            this.getActions(account, 12, 0).catch(console.log);
         } else {
-            // console.log('Fetching actions', account, reload);
-
-
-            // Test if mongo is available
             const currentEndpoint = this.activeChain.endpoints.find((e) => e.url === this.eos.baseConfig.httpEndpoint);
             if (currentEndpoint['version']) {
                 if (currentEndpoint['version'] === 'mongo') {
-                    this.getActions(account, nActions, 0);
+                    this.getActions(account, nActions, 0).catch(console.log);
                 } else {
-                    this.getActions(account, -(nActions), -1);
+                    this.getActions(account, -(nActions), -1).catch(console.log);
                 }
             } else {
-                // Test API
-                this.getActions(account, nActions, 0);
+                this.getActions(account, nActions, 0).catch(console.log);
                 console.log('Starting history api test');
-
-
             }
         }
     }
 
-    private async getActionHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
+    private async getActionsHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
         let result;
-        this.activeChain.hyperionApis = [
-            "https://wax.hyperion.eosrio.io/v2",
-            "https://api.waxsweden.org/v2"
-        ];
         if (!this.activeChain.hyperionApis) {
             return false;
         }
@@ -555,7 +491,7 @@ export class AccountsService {
                         result = response;
                     }
                 } catch (e) {
-                    console.log('fetch error', e);
+                    console.log(`failed to fetch actions: ${api}`);
                 }
             }
         }
@@ -592,7 +528,7 @@ export class AccountsService {
         this.actions = [];
         this.totalActions = 0;
 
-        const hyperionStatus = await this.getActionHyperionMulti(account, offset, pos, filter, after, before, parent);
+        const hyperionStatus = await this.getActionsHyperionMulti(account, offset, pos, filter, after, before, parent);
         if (hyperionStatus) {
             return;
         }
@@ -745,18 +681,14 @@ export class AccountsService {
     async loadLocalAccounts(data: any[]) {
         if (data.length > 0) {
             this.accounts = [...data.map(value => {
-                return {
-                    name: value['account_name']
-                };
+                if (!value.details) {
+                    return {
+                        name: value['account_name']
+                    };
+                } else {
+                    return value;
+                }
             })];
-            // data.forEach((acc_data) => {
-            //     acc_data.tokens = [];
-            //     if (!acc_data.details) {
-            //         this.accounts.push(this.extendAccount(acc_data));
-            //     } else {
-            //         this.accounts.push(acc_data);
-            //     }
-            // });
             this.select(0);
             await this.refreshFromChain(true);
         }
@@ -847,27 +779,6 @@ export class AccountsService {
         this.isRefreshing = false;
     }
 
-    fetchListings() {
-        this.http.get('https://api.coinmarketcap.com/v2/listings/').subscribe((result: any) => {
-            this.cmcListings = result.data;
-        });
-    }
-
-    async fetchTokenPrice(symbol) {
-        let id = null;
-        for (let i = 0; i < this.cmcListings.length; i++) {
-            if (this.cmcListings[i].symbol === symbol) {
-                id = this.cmcListings[i].id;
-            }
-        }
-        if (id && symbol === 'EOSDAC') {
-            const result: any = await this.http.get('https://api.coinmarketcap.com/v2/ticker/' + id + '/').toPromise();
-            return parseFloat(result.data.quotes.USD['price']);
-        } else {
-            return null;
-        }
-    }
-
     async fetchEOSprice() {
         if (this.activeChain['name'] === 'EOS MAINNET') {
             try {
@@ -879,37 +790,5 @@ export class AccountsService {
             }
         }
         return null;
-    }
-
-    // checkLedgerAccounts() {
-    // 	let hasLedger = false;
-    // 	const stored_data = localStorage.getItem('eos_keys.' + this.eos.chainID);
-    // 	return new Promise(resolve => {
-    // 		this.accounts.forEach((acc) => {
-    // 			const pbk = acc.details.permissions[0].required_auth.keys[0];
-    // 			// if (stored_data[pbk]['private'] === 'ledger') {
-    // 			//   hasLedger = true;
-    // 			// }
-    // 		});
-    // 		this.hasAnyLedgerAccount = hasLedger;
-    // 		resolve(hasLedger);
-    // 	});
-    // }
-
-    injectLedgerSigner() {
-        console.log('Ledger mode: ' + this.isLedger);
-        if (this.isLedger) {
-            const store = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-            const pbk = this.selected.getValue().details['permissions'][0]['required_auth'].keys[0].key;
-            console.log('Publickey:', pbk);
-            console.log(store);
-            // if (store[pbk]['private'] === 'ledger') {
-            //   this.ledger.enableLedgerEOS(store[pbk]['slot']);
-            // } else {
-            //   this.eos.clearSigner();
-            // }
-        } else {
-            this.eos.clearSigner();
-        }
     }
 }

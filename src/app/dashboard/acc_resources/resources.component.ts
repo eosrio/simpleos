@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
@@ -12,6 +12,11 @@ import {EOSJSService} from '../../services/eosio/eosjs.service';
 
 import * as moment from 'moment';
 
+const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
+    '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
+    '8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,' +
+    '24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z';
+
 @Component({
     selector: 'app-ram-market',
     templateUrl: './resources.component.html',
@@ -24,16 +29,10 @@ export class ResourcesComponent implements OnInit {
     passDelegateModal: boolean;
     requestRefundModal: boolean;
 
-    myRamAlloc = 0;
-    totalRamAlloc = 0;
     ramPriceEOS = 0;
-    amountbytes = 1024;
     total_ram_bytes_reserved = 0;
     total_ram_stake = 0;
     max_ram_size = 0;
-    rm_base = 0;
-    rm_quote = 0;
-    rm_supply = 0;
 
     feeBuy = 0;
     feeSell = 0;
@@ -60,8 +59,6 @@ export class ResourcesComponent implements OnInit {
     delegateForm: FormGroup;
     passDelegateForm: FormGroup;
     passRefundForm: FormGroup;
-
-    currentSelAccountName: string;
 
     ram_quota = 0;
     ram_usage = 0;
@@ -90,7 +87,6 @@ export class ResourcesComponent implements OnInit {
     info: any[];
 
     busy: boolean;
-    ramActionModal = false;
     wrongpassbuy = '';
     wrongpasssell = '';
     wrongpassundelegate = '';
@@ -99,10 +95,6 @@ export class ResourcesComponent implements OnInit {
     errormsg = '';
     errormsg2 = '';
     errormsgeos = '';
-    handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
-        '8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z';
-
-    sellValue = 0;
 
     numberMask = createNumberMask({
         prefix: '',
@@ -110,9 +102,6 @@ export class ResourcesComponent implements OnInit {
         includeThousandsSeparator: false,
         decimalLimit: 4
     });
-
-    ramLoaderInterval: any;
-
 
     constructor(
         private eos: EOSJSService,
@@ -206,7 +195,8 @@ export class ResourcesComponent implements OnInit {
                 },
                 formatter: function (params) {
                     params = params[0];
-                    return moment(params.name).format('HH:mm[\n]DD/MM/YYYY') + ' : ' + params.value.toFixed(6);
+                    return moment(params.name)
+                        .format('HH:mm[\n]DD/MM/YYYY') + ' : ' + params.value.toFixed(6);
                 },
             },
             xAxis: {
@@ -252,7 +242,7 @@ export class ResourcesComponent implements OnInit {
                 realtime: true,
                 start: 60,
                 end: 100,
-                handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                handleIcon: _handleIcon,
                 handleSize: '80%',
                 handleStyle: {
                     color: '#fff',
@@ -263,7 +253,7 @@ export class ResourcesComponent implements OnInit {
                 }, textStyle: {
                     color: '#FFFFFF',
                 },
-                labelFormatter: function (params, out) {
+                "labelFormatter": function (params, out) {
                     return moment(out).format('HH:mm[\n]DD/MM');
                 },
                 dataBackground: {
@@ -412,7 +402,7 @@ export class ResourcesComponent implements OnInit {
         }
     }
 
-    bytesFilter(bytes, precision?) {
+    bytesFilter(bytes) {
         if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) {
             return '-';
         }
@@ -423,10 +413,6 @@ export class ResourcesComponent implements OnInit {
 
     feeCalculator(eosprice: number) {
         return eosprice * .005;
-    }
-
-    openRamModal() {
-        this.ramActionModal = true;
     }
 
     updateChart() {
@@ -443,8 +429,7 @@ export class ResourcesComponent implements OnInit {
     loadHistory() {
         let i = 0;
         this.http.get('https://hapi.eosrio.io/ram/history1D').subscribe((data: any[]) => {
-            const arr = data;
-            arr.reverse();
+            data.reverse();
             data.forEach((val) => {
                 this.dataDT.push(val.time);
                 this.dataVAL.push(val.price);
@@ -567,7 +552,6 @@ export class ResourcesComponent implements OnInit {
 
     rtRefund() {
         this.busy = true;
-        console.log(this.busy);
         this.wrongpassrefund = '';
         const account = this.aService.selected.getValue();
         const namesel = this.aService.selected.getValue().name;
@@ -575,9 +559,14 @@ export class ResourcesComponent implements OnInit {
         const [pubkey, permission] = this.aService.getStoredKey(account);
         this.crypto.authenticate(password, pubkey).then((data) => {
             if (data === true) {
-                this.eos.requestRefund(namesel, permission).then((e) => {
+                this.eos.requestRefund(namesel, permission).then(() => {
                     this.requestRefundModal = false;
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+
+                    this.showToast(
+                        'success',
+                        'Transation broadcasted',
+                        'Check your history for confirmation.');
+
                     this.aService.refreshFromChain(false).catch(console.log);
                     this.busy = false;
                 }).catch((error) => {
@@ -612,9 +601,14 @@ export class ResourcesComponent implements OnInit {
         const [pubkey, permission] = this.aService.getStoredKey(account);
         this.crypto.authenticate(password, pubkey).then((data) => {
             if (data === true) {
-                this.eos.ramSellBytes(this.seller, this.bytessell, permission).then((e) => {
+                this.eos.ramSellBytes(this.seller, this.bytessell, permission).then(() => {
                     this.passSellModal = false;
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+
+                    this.showToast(
+                        'success',
+                        'Transation broadcasted',
+                        'Check your history for confirmation.');
+
                     this.aService.refreshFromChain(false).catch(console.log);
                     this.busy = false;
                 }).catch((error) => {
@@ -663,9 +657,14 @@ export class ResourcesComponent implements OnInit {
         const [pubkey, permission] = this.aService.getStoredKey(account);
         this.crypto.authenticate(password, pubkey).then((data) => {
             if (data === true) {
-                this.eos.ramBuyBytes(this.payer, this.receiver, this.bytesbuy, permission).then((e) => {
+                this.eos.ramBuyBytes(this.payer, this.receiver, this.bytesbuy, permission).then(() => {
                     this.passBuyModal = false;
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+
+                    this.showToast(
+                        'success',
+                        'Transation broadcasted',
+                        'Check your history for confirmation.');
+
                     this.aService.refreshFromChain(false).catch(console.log);
                     this.busy = false;
                 }).catch((error) => {
@@ -706,13 +705,25 @@ export class ResourcesComponent implements OnInit {
         const [pubkey, permission] = this.aService.getStoredKey(account);
         this.crypto.authenticate(password, pubkey).then((data) => {
             if (data === true) {
-                this.eos.unDelegate(this.accNow, this.fromUD, this.netUD, this.cpuUD, this.aService.activeChain['symbol'], permission).then((e) => {
+                this.eos.unDelegate(
+                    this.accNow,
+                    this.fromUD,
+                    this.netUD,
+                    this.cpuUD,
+                    this.aService.activeChain['symbol'],
+                    permission
+                ).then(() => {
                     this.fromUD = '';
                     this.netUD = '';
                     this.cpuUD = '';
                     this.accNow = '';
                     this.passUnDelegateModal = false;
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+
+                    this.showToast(
+                        'success',
+                        'Transation broadcasted',
+                        'Check your history for confirmation.');
+
                 }).catch((error) => {
                     if (typeof error === 'object') {
                         if (error.json) {
@@ -730,7 +741,7 @@ export class ResourcesComponent implements OnInit {
                     this.busy = false;
                 });
             }
-        }).catch((q) => {
+        }).catch(() => {
             this.busy = false;
             this.wrongpassundelegate = 'Wrong password!';
         });
@@ -776,14 +787,25 @@ export class ResourcesComponent implements OnInit {
         const [pubkey, permission] = this.aService.getStoredKey(account);
         this.crypto.authenticate(password, pubkey).then((data) => {
             if (data === true) {
-                this.eos.delegateBW(this.accNow, this.accTo, this.netD, this.cpuD, this.aService.activeChain['symbol'], permission).then((e) => {
+                this.eos.delegateBW(
+                    this.accNow,
+                    this.accTo,
+                    this.netD,
+                    this.cpuD,
+                    this.aService.activeChain['symbol'],
+                    permission
+                ).then(() => {
                     this.accTo = '';
                     this.netD = '';
                     this.cpuD = '';
                     this.accNow = '';
                     this.busy = false;
                     this.passDelegateModal = false;
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
+
+                    this.showToast(
+                        'success',
+                        'Transation broadcasted',
+                        'Check your history for confirmation.');
                 }).catch((error) => {
                     console.log(error);
                     this.busy = false;
@@ -802,7 +824,7 @@ export class ResourcesComponent implements OnInit {
                     }
                 });
             }
-        }).catch((q) => {
+        }).catch(() => {
             this.busy = false;
             this.wrongpassundelegate = 'Wrong password!';
         });

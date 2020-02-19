@@ -1,5 +1,3 @@
-import {type} from "os";
-
 export function parseTokenValue(value: any): any {
     if (typeof value === "number") {
         return value;
@@ -58,11 +56,11 @@ export function contentStyle(txt, color?) {
                 const linkName = line.match(/(\[.*?])+/g);
                 const linkImage = line.match(/(!\[.*?])+/g);
                 let newLine = line;
-                link.forEach((val, idx: number) => {
+                link.forEach((val: string, idx: number) => {
                     const newlink = val.replace('(', '').replace(')', '');
-                    let oldVal = val;
+                    let oldVal: string;
                     let newValName = newlink;
-                    let repVal = '';
+                    let repVal: string;
                     if (linkImage !== null) {
                         if (linkImage[idx] !== null && linkImage[idx] !== '![]') {
                             newValName = linkImage[idx].replace('![', '').replace(']', '');

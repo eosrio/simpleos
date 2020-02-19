@@ -1,20 +1,9 @@
-import {
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    OnDestroy,
-    OnInit,
-} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit,} from '@angular/core';
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {
-    BodyOutputType,
-    Toast,
-    ToasterConfig,
-    ToasterService,
-} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService,} from 'angular2-toaster';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {HttpClient} from '@angular/common/http';
@@ -90,10 +79,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     nbps: number;
     showAdvancedRatio = false;
 
-    echartsInstance: any;
     location: string[];
     country: string[];
-    // graphMerge: any;
     options: any;
 
     initOptions = {
@@ -405,10 +392,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log(this.stakingRatio);
     }
 
-    get getValuetoStake(): number {
-        return parseFloat(this.valuetoStake);
-    }
-
     setStake() {
         this.stakerr = '';
         const precisionVal = this.aService.activeChain['precision'];
@@ -424,7 +407,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.wrongpass = '';
         console.log(diff);
         if (diff !== 0) {
-           this.newSetStake();
+            this.newSetStake().catch(console.log);
         } else {
             this.stakerr = 'Value has not changed';
         }
@@ -472,7 +455,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.stakingRatio / 100,
                     this.aService.activeChain['precision'],
                 );
-                trx = { actions: actions};
+                trx = {actions: actions};
                 console.log(actions);
             } catch (e) {
                 console.log(e);
@@ -507,7 +490,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             if (event === 'done') {
                 this.aService.refreshFromChain(false).catch(console.log);
                 setTimeout(() => {
-                    const sel = this.aService.selected.getValue();
+                    // const sel = this.aService.selected.getValue();
                 }, 2000);
                 subs.unsubscribe();
             }
@@ -1007,10 +990,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.toaster.popAsync(toast);
     }
 
-    onChartInit(e: any) {
-        this.echartsInstance = e;
-    }
-
     voteOption(ev) {
         this.busyList = true;
         this.voteService.voteType = ev;
@@ -1233,6 +1212,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.showToast('success', 'GBM Rewards Claimed',
                     'Check your history for confirmation.');
             }
+            console.log(result);
             this.cdr.detectChanges();
         } catch (e) {
             if (e instanceof RpcError) {
@@ -1444,7 +1424,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             }
             const value1 = data1[event.field];
             const value2 = data2[event.field];
-            let result = null;
+            let result;
             if (value1 == null && value2 != null) {
                 result = -1;
             } else if (value1 != null && value2 == null) {

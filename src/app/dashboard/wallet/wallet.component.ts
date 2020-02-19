@@ -46,17 +46,12 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     blockTracker: any;
     tokens: any[];
     loading: boolean;
-    memoAccOwner = {};
-    memoAccActive = {};
-    memoAccNew = '';
-    memoCreator = '';
     lottieConfig: Object;
     actionsFilter = [];
-    anim: any;
     selectedAccountName = '';
     actionMarked = '';
-    dateAfter: string; // new FormControl(moment());
-    dateBefore: string; // new FormControl(moment());
+    dateAfter: string;
+    dateBefore: string;
     minDate = new Date('2018-06-02T00:00:00.000Z');
     launchDate = new Date('2018-06-02T00:00:00.000Z');
     maxDate = new Date();
@@ -64,11 +59,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     frmFilters: FormGroup;
     private selectedAccountSubscription: Subscription;
     private lastUpdateSubscription: Subscription;
-
-
-    static openExplorer(accountName, explorer) {
-        window['shell']['openExternal'](explorer.account_url + accountName);
-    }
 
     constructor(
         public aService: AccountsService,
@@ -113,12 +103,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-
-    handleAnimation(anim: any) {
-        this.anim = anim;
-        this.anim['setSpeed'](0.8);
-    }
-
     getInfo() {
         this.eos['eos']['getInfo']({}).then((info) => {
             this.headBlock = info['head_block_num'];
@@ -160,7 +144,14 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         const pos = e !== 0 ? e['first'] : 0;
         const account = this.aService.selected.getValue().name;
         if (this.aService.activeChain['historyApi'] !== '') {
-            this.aService.getActions(account, 12, pos, this.actionMarked, this.dateAfter, this.dateBefore);
+            this.aService.getActions(
+                account,
+                12,
+                pos,
+                this.actionMarked,
+                this.dateAfter,
+                this.dateBefore
+            ).catch(console.log);
             this.aService.totalActions = 1000;
         }
 
@@ -198,7 +189,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
     ngAfterViewInit() {
         this.selectedAccountSubscription = this.aService.selected.asObservable().subscribe((sel) => {
-            console.log(`A:${sel['name']} B: ${this.selectedAccountName}`);
+            // console.log(`A:${sel['name']} B: ${this.selectedAccountName}`);
             if (sel['name']) {
                 if (this.selectedAccountName !== sel['name']) {
                     this.selectedAccountName = sel['name'];
@@ -240,30 +231,10 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    dateSort(ev) {
-        ev.field.forEach(data => {
-            console.log(data);
-        });
-    }
-
     memoCreatorAccName(info) {
         const creator = JSON.stringify(JSON.parse(info)['creator']).replace(new RegExp('\"', 'g'), '');
         return creator === this.aService.selected.getValue().name ? 'this account' : creator;
     }
-
-
-    // loadHistoryLazy(LazyLoadEvent) {
-    //   console.log(LazyLoadEvent);
-    //   let order = 'desc';
-    //   if (LazyLoadEvent.sortField === 'date') {
-    //     if (LazyLoadEvent.sortOrder === 1) {
-    //       order = 'asc';
-    //     }
-    //   }
-    //
-    //   this.aService.getAccActions(null, LazyLoadEvent.first, LazyLoadEvent.rows, order);
-    //   this.loading = false;
-    // }
 
     updateBalances() {
         const sel = this.aService.selected.getValue();

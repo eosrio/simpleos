@@ -3,7 +3,6 @@ import {AccountsService} from './accounts.service';
 import {EOSJSService} from './eosio/eosjs.service';
 import {Router} from '@angular/router';
 
-import * as Eos from '../../assets/eos.js';
 import {BehaviorSubject} from 'rxjs';
 import {CryptoService} from './crypto/crypto.service';
 import {VotingService} from './voting.service';
@@ -23,25 +22,9 @@ export interface Endpoint {
 })
 export class NetworkService {
 
-    publicEndpoints: Endpoint[];
     eos: any;
-
     public mainnetId: string;
-
     public: string;
-    genesistx = 'ad77575a8b4f52e477682e712b1cbd884299468db6a94d909f90c6961cea9b02';
-    voteref = 'b23f537e8ab29fbcec8b533081ef7e12b146899ca42a3fc9eb608258df9983d9';
-    accountez = 'EOS7WdCcva3WtsJRckJWodnHLof5B7qwAyfJSaMZmfn7Dgn6TQDBu';
-    txrefBlock = 191;
-    voterefBlock = 572278;
-    baseConfig = {
-        httpEndpoint: '',
-        expireInSeconds: 60,
-        broadcast: true,
-        debug: false,
-        sign: true,
-        chainId: '',
-    };
     validEndpoints: Endpoint[];
     status: string;
     connectionTimeout: any;
@@ -102,7 +85,6 @@ export class NetworkService {
     }
 
     connect(automatic: boolean) {
-        // console.log('analyzing endpoints...');
         this.autoMode = automatic;
         this.status = '';
         this.mainnetId = '';
@@ -181,37 +163,13 @@ export class NetworkService {
         return this.eosjs.baseConfig.httpEndpoint;
     }
 
-    filterCheck(server: Endpoint) {
-        console.log('Starting filter check for ' + server.url);
-        const config = this.baseConfig;
-        config.httpEndpoint = server.url;
-        config.chainId = this.mainnetId;
-        const eosCK = Eos(config);
-        const pq = [];
-        const getkeyAcc = eosCK['getKeyAccounts'](this.accountez).then(info => {
-            if (info.length > 0 || info['account_names'].length > 0) {
-                this.publicEndpoints.find(ep => ep.url === server.url).filters.push({eosio: 'history'});
-                return true;
-            } else {
-                console.log('eosio:history filter is disabled on ' + server.url);
-            }
-        }).catch(err => {
-            console.log(err);
-            return false;
-        });
-        pq.push(getkeyAcc);
-        return Promise.all(pq);
-    }
-
     apiCheck(server: Endpoint) {
-        console.log('Starting latency check for ' + server.url);
         return new Promise((resolve) => {
             const refTime = new Date().getTime();
             const tempTimer = setTimeout(() => {
                 server.latency = -1;
                 resolve();
             }, 2000);
-
             this.http.get(`${server.url}/v1/chain/get_info`).toPromise().then((data: any) => {
                 if (data['chain_id'] === this.activeChain.id) {
                     server.latency = ((new Date().getTime()) - refTime);
@@ -224,14 +182,13 @@ export class NetworkService {
                     }
                     resolve();
                 } else {
-                    console.log(
-                        `API ${server.url} is serving a different chain id! expected: ${this.activeChain.id}, got: ${data['chain_id']}`);
+                    console.log(`API ${server.url} is serving a different chain id!
+                        expected: ${this.activeChain.id}, got: ${data['chain_id']}`);
                 }
             }).catch(() => {
                 server.latency = -1;
                 resolve();
             });
-
         });
     }
 
@@ -243,7 +200,6 @@ export class NetworkService {
     }
 
     async startup(url) {
-        // console.log(`startup - url:${url}`);
         if (this.isStarting) {
             return;
         } else {
@@ -252,18 +208,17 @@ export class NetworkService {
         let endpoint = url;
         if (!url) {
             endpoint = this.selectedEndpoint.getValue().url;
-            // console.log('switcing to saved endpoint:', endpoint);
+            console.log('using saved endpoint:', endpoint);
         } else {
             this.status = '';
-            console.log('startup called - url: ', url);
+            console.log('startup called on: ', url);
         }
+
         this.networkingReady.next(false);
         this.eosjs.online.next(false);
         this.startTimeout();
-
         // prevent double load after quick connection mode
         if (endpoint !== this.lastEndpoint || this.autoMode === true) {
-
             this.eosjs2.initRPC(endpoint, this.activeChain.id);
             let savedAccounts: any[];
             try {
@@ -275,7 +230,6 @@ export class NetworkService {
             if (!savedAccounts) {
                 return;
             }
-
             this.lastEndpoint = endpoint;
             this.autoMode = false;
             this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
@@ -292,7 +246,6 @@ export class NetworkService {
                     await this.router['navigate'](['dashboard', 'wallet']);
                     this.networkingReady.next(true);
                     this.isStarting = false;
-
                 } else {
                     this.networkingReady.next(true);
                     this.isStarting = false;
