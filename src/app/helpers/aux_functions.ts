@@ -1,4 +1,17 @@
-export function handleErrorMessage(e: any, errormsg) {
+import {type} from "os";
+
+export function parseTokenValue(value: any): any {
+    if (typeof value === "number") {
+        return value;
+    } else if (typeof value === "string") {
+        return parseFloat(value.split(' ')[0]);
+    } else {
+        return value;
+    }
+}
+
+export function handleErrorMessage(e: any) {
+    let errormsg;
     if (e.message.includes('Invalid checksum')) {
         errormsg = 'invalid private key';
     } else if (e.message === 'no_account') {
@@ -7,7 +20,10 @@ export function handleErrorMessage(e: any, errormsg) {
         errormsg = 'This is not the active key. Please import the active key.';
     } else if (e.message === 'api_arror') {
         errormsg = 'API Unavailable, please try again with another endpoint.';
+    } else {
+        errormsg = e.message;
     }
+    return errormsg;
 }
 
 export function compare2FormPasswords(form) {

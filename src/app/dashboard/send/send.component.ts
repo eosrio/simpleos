@@ -1,8 +1,8 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosio/eosjs.service';
-import {Observable} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {ToasterConfig, ToasterService} from 'angular2-toaster';
@@ -27,7 +27,8 @@ export interface Contact {
     templateUrl: './send.component.html',
     styleUrls: ['./send.component.css'],
 })
-export class SendComponent implements OnInit {
+export class SendComponent implements OnInit, OnDestroy {
+
     contacts: Contact[];
     sendForm: FormGroup;
     contactForm: FormGroup;
@@ -75,6 +76,9 @@ export class SendComponent implements OnInit {
         'gateiowallet', 'eosusrwallet', 'binancecleos',
         'novadaxstore', 'floweosaccnt', 'coinwwallet1'];
     memoMsg = 'optional';
+
+    private selectedAccountName = '';
+    private subscriptions: Subscription[] = [];
 
     constructor(private fb: FormBuilder,
                 public aService: AccountsService,
@@ -141,6 +145,10 @@ export class SendComponent implements OnInit {
 
     }
 
+    ngOnDestroy(): void {
+        this.subscriptions.forEach(s => s.unsubscribe());
+    }
+
     filter(val: string, indexed): Contact[] {
         return this.contacts.filter(contact => {
             if (contact.type === 'contact') {
@@ -191,17 +199,23 @@ export class SendComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
-            if (sel) {
-                this.fullBalance = sel.full_balance;
-                this.staked = sel.staked;
-                this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-                this.unstaking = sel.unstaking;
-                this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
-                this.cdr.detectChanges();
+
+        this.subscriptions.push(this.aService.selected.asObservable().subscribe(async (sel) => {
+            if (sel['name']) {
+                if (this.selectedAccountName !== sel['name']) {
+                    this.selectedAccountName = sel['name'];
+                    this.fullBalance = sel.full_balance;
+                    this.staked = sel.staked;
+                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                    this.unstaking = sel.unstaking;
+                    this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
+                    await this.aService.refreshFromChain(false);
+                    this.cdr.detectChanges();
+                }
             }
-        });
-        this.sendForm.get('token').valueChanges.subscribe((symbol) => {
+        }));
+
+        this.subscriptions.push(this.sendForm.get('token').valueChanges.subscribe((symbol) => {
             this.sendForm.patchValue({
                 amount: ''
             });
@@ -217,17 +231,15 @@ export class SendComponent implements OnInit {
             } else {
                 this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
             }
-        });
+        }));
+
         this.precision = '1.' + this.aService.activeChain['precision'];
         this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
         this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
-        this.onChanges();
-    }
 
-    onChanges(): void {
-        this.sendForm.get('add').valueChanges.subscribe(val => {
+        this.subscriptions.push(this.sendForm.get('add').valueChanges.subscribe(val => {
             this.add = val;
-        });
+        }));
     }
 
     checkContact(value) {

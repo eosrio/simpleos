@@ -150,63 +150,6 @@
     </div>
 </div>
 
-
-<clr-modal [(clrModalOpen)]="sendModal" (clrModalOpenChange)="confirmForm.reset();">
-    <h3 class="modal-title text-white"><span class="blue">{{ fromAccount }}</span> sends <span
-            class="blue">{{ sendForm.value.amount | number : '1.2-' + aService.activeChain['precision'] }} {{sendForm.value.token}}</span>
-        to
-    </h3>
-    <div class="modal-body">
-        <h3 class="blue">{{ sendForm.value.to }}</h3>
-        <h5 class="mt-0" *ngIf="sendForm.value.alias !== ''">{{ sendForm.value.alias }}</h5>
-        <p-accordion *ngIf="sendForm.value.token === 'EOS' && aService.activeChain.name === 'EOS MAINNET'">
-            <p-accordionTab header="By submiting this transaction, you agree to the EOS Transfer Terms & Conditions">
-                I, {{fromAccount}}, certify the following to be true to the best of my knowledge:
-                <br><br>
-                &#9; 1. I certify that {{sendForm.value.amount | number : '1.2-4'}} EOS is not the proceeds of
-                fraudulent or
-                violent activities.<br>
-                2. I certify that, to the best of my knowledge, {{sendForm.value.to}} is not supporting initiation of
-                violence
-                against others.<br>
-                3. I have disclosed any contractual terms & conditions with respect
-                to {{sendForm.value.amount | number :
-                '1.2-4'}} EOS to {{sendForm.value.to}}.<br>
-                4. I understand that funds transfers are not reversible after the seconds or other delay as configured
-                by
-                {{fromAccount}}'s permissions.<br>
-                <br><br>
-                If this action fails to be irreversibly confirmed after receiving goods or services from
-                '{{sendForm.value.to}}', I agree to either return the goods or services or
-                resend {{sendForm.value.amount |
-                number : '1.2-4'}} EOS in a timely manner.
-            </p-accordionTab>
-        </p-accordion>
-    </div>
-    <div class="modal-footer">
-        <div fxLayout="column" style="display:flex;">
-            <div dir="ltr" fxLayoutGap="20px">
-                <form [formGroup]="confirmForm" class="confirmForm">
-                    <mat-form-field>
-                        <input matInput #pass type="password" (keyup.enter)="transfer()" placeholder="Password"
-                               formControlName="pass">
-                        <br clear="all"/>
-                    </mat-form-field>
-                    <button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="transfer()"
-                            [disabled]="!confirmForm.valid || busy">
-                        Confirm
-                        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-                    </button>
-
-                </form>
-            </div>
-            <div class="error" style="display:flex;" *ngIf="wrongpass !== ''">
-                {{wrongpass}}
-            </div>
-        </div>
-    </div>
-</clr-modal>
-
 <clr-modal [(clrModalOpen)]="newContactModal" [clrModalSize]="'sm'">
     <h3 class="modal-title text-white">
         <fa-icon [icon]="['far', 'user-plus']"></fa-icon>&nbsp;&nbsp;New contact

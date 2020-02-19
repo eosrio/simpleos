@@ -1,6 +1,8 @@
 import {EventEmitter, Injectable} from '@angular/core';
 import {Eosjs2Service} from "../eosio/eosjs2.service";
 import {ConnectService} from "../connect.service";
+import {AccountsService} from "../accounts.service";
+import {JsonRpc} from "eosjs/dist";
 
 declare let window: any;
 
@@ -58,7 +60,8 @@ export class LedgerService {
 
     constructor(
         private eos: Eosjs2Service,
-        private connect: ConnectService
+        private connect: ConnectService,
+        private aService: AccountsService
     ) {
         console.log('Loading ledger service...');
         this.slots = [];
@@ -182,16 +185,15 @@ export class LedgerService {
 
     private async lookupAccounts(data: any) {
         const key = data.address;
-
         try {
-            const results = await this.eos.rpc.history_get_key_accounts(key);
+            const account_names = await this.eos.getKeyAccountsMulti(key);
             const obj = {
                 key: key,
                 slot: data.slot,
                 accounts: []
             };
-            if (results.account_names) {
-                for (const account of results.account_names) {
+            if (account_names) {
+                for (const account of account_names) {
                     const acc_data: any = await this.eos.rpc.get_account(account);
                     obj.accounts.push({
                         key: key,

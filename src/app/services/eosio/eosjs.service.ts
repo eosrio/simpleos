@@ -273,54 +273,6 @@ export class EOSJSService {
 		return this.format['encodeName'](name);
 	}
 
-	loadPublicKey(pubkey) {
-		return new Promise((resolve, reject2) => {
-			if (this.ecc['isValidPublic'](pubkey)) {
-				const tempAccData = [];
-				this.getKeyAccounts(pubkey).then((data) => {
-					// console.log('load', data);
-					if (data['account_names'].length > 0) {
-						const promiseQueue = [];
-						data['account_names'].forEach((acc) => {
-							const tempPromise = new Promise((resolve1, reject1) => {
-								this.getAccountInfo(acc).then((acc_data) => {
-									tempAccData.push(acc_data);
-									this.getTokens(acc_data['account_name']).then((tokens) => {
-										acc_data['tokens'] = tokens;
-										this.accounts[acc] = acc_data;
-										resolve1(acc_data);
-									}).catch((err) => {
-										console.log(err);
-										reject1();
-									});
-								});
-							});
-							promiseQueue.push(tempPromise);
-						});
-						Promise.all(promiseQueue).then((results) => {
-							resolve({
-								foundAccounts: results,
-								publicKey: pubkey
-							});
-						}).catch(() => {
-							reject2({
-								message: 'non_active',
-								accounts: tempAccData
-							});
-						});
-					} else {
-						reject2({message: 'no_account'});
-					}
-				}).catch((api_error) => {
-					console.log(api_error);
-					reject2({message: 'api_error'});
-				});
-			} else {
-				reject2({message: 'invalid'});
-			}
-		});
-	}
-
 	async storeAccountData(accounts) {
 		if (accounts) {
 			if (accounts.length > 0) {
@@ -432,18 +384,6 @@ export class EOSJSService {
 					});
 				});
 			}
-		}
-	}
-
-	checkPvtKey(k): Promise<any> {
-		try {
-			const pubkey = this.ecc['privateToPublic'](k);
-			return this.loadPublicKey(pubkey);
-		} catch (e) {
-			console.log(e);
-			return new Promise((resolve, reject) => {
-				reject(e);
-			});
 		}
 	}
 

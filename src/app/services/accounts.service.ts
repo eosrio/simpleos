@@ -4,8 +4,7 @@ import {EOSJSService} from './eosio/eosjs.service';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';
-import {TransactionFactoryService} from "./eosio/transaction-factory.service";
-import {CryptoService} from "./crypto/crypto.service";
+import {parseTokenValue} from "../helpers/aux_functions";
 
 @Injectable({
     providedIn: 'root'
@@ -19,7 +18,6 @@ export class AccountsService {
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
     public versionSys: string;
-    public accMode: string;
 
     usd_rate = 1;
     cmcListings = [];
@@ -31,7 +29,6 @@ export class AccountsService {
     totalAssetsSum = 0;
     loading = true;
     isLedger = false;
-    hasAnyLedgerAccount = false;
     actionStore = {};
     private loadingTokens = false;
     private lastTkLoadTime = 0;
@@ -297,6 +294,7 @@ export class AccountsService {
                     type = 'sent';
                 }
             }
+
             if (action_name === 'buyrambytes') {
                 amount = act['data']['bytes'];
                 symbol = 'bytes';
@@ -308,21 +306,26 @@ export class AccountsService {
                     type = 'bytes_out';
                 }
             }
+
             if (action_name === 'sellram') {
                 amount = act['data']['bytes'];
                 symbol = 'bytes';
                 user = act['data']['account'];
                 type = 'bytes_s';
             }
+
             if (contract === 'eosio' && action_name === 'voteproducer') {
                 votedProducers = act['data']['producers'];
                 proxy = act['data']['proxy'];
                 voter = act['data']['voter'];
                 type = 'vote';
             }
+
             if (contract === 'eosio' && action_name === 'undelegatebw') {
-                cpu = parseFloat(act['data']['unstake_cpu_quantity'].split(' ')[0]);
-                net = parseFloat(act['data']['unstake_net_quantity'].split(' ')[0]);
+
+                cpu = parseTokenValue(act['data']['unstake_cpu_quantity']);
+                net = parseTokenValue(act['data']['unstake_net_quantity']);
+
                 amount = cpu + net;
                 if (act['data']['from'] === act['data']['receiver']) {
                     user = act['data']['from'];
@@ -332,9 +335,10 @@ export class AccountsService {
                     type = 'unstaked_out';
                 }
             }
+
             if (contract === 'eosio' && action_name === 'delegatebw') {
-                cpu = parseFloat(act['data']['stake_cpu_quantity'].split(' ')[0]);
-                net = parseFloat(act['data']['stake_net_quantity'].split(' ')[0]);
+                cpu = parseTokenValue(act['data']['stake_cpu_quantity']);
+                net = parseTokenValue(act['data']['stake_net_quantity']);
                 amount = cpu + net;
                 if (act['data']['from'] === act['data']['receiver']) {
                     user = act['data']['from'];
@@ -353,9 +357,11 @@ export class AccountsService {
             if (act['data']['to'] === 'eosio.ram') {
                 type = 'buyram';
             }
+
             if (act['data']['from'] === 'eosio.ram') {
                 type = 'sellram';
             }
+
             if ((contract !== 'eosio' && contract !== 'eosio.token' && action_name !== 'transfer')) {
                 if (!act['data']['to'] && !act['data']['from']) {
                     type = 'other';
@@ -372,58 +378,68 @@ export class AccountsService {
                 }
 
             }
+
             if ((contract === 'eosio' && action_name === 'newaccount')) {
                 type = 'new';
                 user = act['data']['newact'];
                 memo = JSON.stringify(act['data']);
             }
+
             if ((contract === 'eosio' && action_name === 'mvtosavings')) {
                 type = 'mvtosavings';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'mvfrsavings')) {
                 type = 'mvfrsavings';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'unstaketorex')) {
                 type = 'unstaketorex';
-                cpu = parseFloat(act['data']['from_cpu'].split(' ')[0]);
-                net = parseFloat(act['data']['from_net'].split(' ')[0]);
+                cpu = parseTokenValue(act['data']['from_cpu']);
+                net = parseTokenValue(act['data']['from_net']);
                 amount = cpu + net;
             }
+
             if ((contract === 'eosio' && action_name === 'deposit')) {
                 type = 'deposit';
             }
+
             if ((contract === 'eosio' && action_name === 'buyrex')) {
                 type = 'buyrex';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'deposit')) {
                 type = 'deposit';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'withdraw')) {
                 type = 'withdraw';
-                amount = parseFloat(act['data']['amount'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['amount']);
             }
+
             if ((contract === 'eosio' && action_name === 'sellrex')) {
                 type = 'sellrex';
-                amount = parseFloat(act['data']['rex'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['rex']);
                 symbol = 'REX';
             }
+
             if ((contract === 'eosio' && action_name === 'rentcpu')) {
                 type = 'rentcpu';
                 user = act['data']['receiver'] === this.selected.getValue().name ? 'this account' : act['data']['receiver'];
-                amount = parseFloat(act['data']['loan_payment'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['loan_payment']);
             }
+
             if ((contract === 'eosio' && action_name === 'rentnet')) {
                 user = act['data']['receiver'] === this.selected.getValue().name ? 'this account' : act['data']['receiver'];
                 type = 'rentnet';
-                amount = parseFloat(act['data']['loan_payment'].split(' ')[0]);
+                amount = parseTokenValue(act['data']['loan_payment']);
             }
-
         }
 
         const allowedActions = [
@@ -517,95 +533,118 @@ export class AccountsService {
         }
     }
 
-    getActions(account, offset, pos, filter?, after?, before?, parent?) {
+    private async getActionHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
+        let result;
+        this.activeChain.hyperionApis = [
+            "https://wax.hyperion.eosrio.io/v2",
+            "https://api.waxsweden.org/v2"
+        ];
+        if (!this.activeChain.hyperionApis) {
+            return false;
+        }
+        for (const api of this.activeChain.hyperionApis) {
+            if (!result) {
+                let url = api + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
+                url = url + (filter !== '' && filter !== undefined ? filter : '');
+                url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
+                url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
+                url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
+                try {
+                    const response: any = await this.http.get(url).toPromise();
+                    if (response.actions && response.actions.length > 0) {
+                        result = response;
+                    }
+                } catch (e) {
+                    console.log('fetch error', e);
+                }
+            }
+        }
+
+        if (result) {
+            this.actionStore[account]['actions'] = result['actions'];
+            const payload = JSON.stringify(this.actionStore);
+            localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+            for (const action of this.actionStore[account].actions) {
+                const act = action['act'];
+                const tx_id = action['trx_id'];
+                const blk_num = action['block_num'];
+                const blk_time = action['@timestamp'];
+                const seq = action['global_sequence'];
+                try {
+                    this.processAction(act, tx_id, blk_num, blk_time, seq);
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            this.totalActions = result['total']['value'];
+            this.accounts[this.selectedIdx]['actions'] = this.actions;
+            this.calcTotalAssets();
+            return true;
+        } else {
+            console.log('empty result history!');
+            this.actions = [];
+            this.totalActions = 0;
+            return false;
+        }
+    }
+
+    async getActions(account, offset, pos, filter?, after?, before?, parent?) {
         this.actions = [];
         this.totalActions = 0;
-        if (this.activeChain.historyApi !== '') {
-            let url = this.activeChain.historyApi + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
-            url = url + (filter !== '' && filter !== undefined ? filter : '');
-            url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
-            url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
-            url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
-            this.http.get(url).subscribe((result) => {
-                if (result['actions']) {
-                    if (result['actions'].length > 0) {
-                        this.actionStore[account]['actions'] = result['actions'];
-                        const payload = JSON.stringify(this.actionStore);
-                        localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
-                        this.actionStore[account]['actions'].forEach((action) => {
-                            const act = action['act'];
-                            const tx_id = action['trx_id'];
-                            const blk_num = action['block_num'];
-                            const blk_time = action['@timestamp'];
-                            const seq = action['global_sequence'];
-                            this.processAction(act, tx_id, blk_num, blk_time, seq);
-                        });
-                        this.totalActions = result['total']['value'];
-                        this.accounts[this.selectedIdx]['actions'] = this.actions;
-                        this.calcTotalAssets();
-                    } else {
-                        this.actionStore[account]['actions'] = {};
-                        this.actions = [];
-                    }
-                } else {
-                    console.log('empty result history!');
-                    this.actions = [];
-                    this.totalActions = 0;
-                }
-            }, (err) => {
-                console.log(err);
-            });
-        } else {
-            this.eos.getAccountActions(account, offset, pos).then(val => {
-                console.log(val);
-                const actions = val['actions'];
-                if (actions.length > 0) {
-                    this.actionStore[account]['actions'] = actions;
-                    const payload = JSON.stringify(this.actionStore);
-                    localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
-                }
-                this.actionStore[account]['actions'].forEach((action) => {
 
-                    let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
-                    if (action['action_trace']) {
-                        // native history api
-                        a_name = action['action_trace']['act']['name'];
-                        a_acct = action['action_trace']['act']['account'];
-                        a_recv = action['action_trace']['receipt']['receiver'];
-                        selAcc = this.selected.getValue().name;
-
-                        act = action['action_trace']['act'];
-                        tx_id = action['action_trace']['trx_id'];
-                        blk_num = action['block_num'];
-                        blk_time = action['block_time'];
-                        seq = action['account_action_seq'];
-
-                    } else {
-                        // mongo history api
-                        a_name = action['act']['name'];
-                        a_acct = action['act']['account'];
-                        a_recv = action['receipt']['receiver'];
-                        selAcc = this.selected.getValue().name;
-
-                        act = action['act'];
-                        tx_id = action['trx_id'];
-                        blk_num = action['block_num'];
-                        blk_time = action['block_time'];
-                        seq = action['receipt']['global_sequence'];
-                    }
-
-                    if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
-                        this.processAction(act, tx_id, blk_num, blk_time, seq);
-                    }
-                });
-
-                this.totalActions = this.actions.length;
-                this.accounts[this.selectedIdx]['actions'] = this.actions;
-                this.calcTotalAssets();
-            }).catch((err) => {
-                console.log(err);
-            });
+        const hyperionStatus = await this.getActionHyperionMulti(account, offset, pos, filter, after, before, parent);
+        if (hyperionStatus) {
+            return;
         }
+
+        this.eos.getAccountActions(account, offset, pos).then(val => {
+            console.log(val);
+            const actions = val['actions'];
+            if (actions.length > 0) {
+                this.actionStore[account]['actions'] = actions;
+                const payload = JSON.stringify(this.actionStore);
+                localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+            }
+            this.actionStore[account]['actions'].forEach((action) => {
+
+                let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
+                if (action['action_trace']) {
+                    // native history api
+                    a_name = action['action_trace']['act']['name'];
+                    a_acct = action['action_trace']['act']['account'];
+                    a_recv = action['action_trace']['receipt']['receiver'];
+                    selAcc = this.selected.getValue().name;
+
+                    act = action['action_trace']['act'];
+                    tx_id = action['action_trace']['trx_id'];
+                    blk_num = action['block_num'];
+                    blk_time = action['block_time'];
+                    seq = action['account_action_seq'];
+
+                } else {
+                    // mongo history api
+                    a_name = action['act']['name'];
+                    a_acct = action['act']['account'];
+                    a_recv = action['receipt']['receiver'];
+                    selAcc = this.selected.getValue().name;
+
+                    act = action['act'];
+                    tx_id = action['trx_id'];
+                    blk_num = action['block_num'];
+                    blk_time = action['block_time'];
+                    seq = action['receipt']['global_sequence'];
+                }
+
+                if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
+                    this.processAction(act, tx_id, blk_num, blk_time, seq);
+                }
+            });
+            this.totalActions = this.actions.length;
+            this.accounts[this.selectedIdx]['actions'] = this.actions;
+            this.calcTotalAssets();
+        }).catch((err) => {
+            console.log(err);
+        });
     }
 
     reloadActions(account) {
@@ -703,17 +742,21 @@ export class AccountsService {
         return await this.loadLocalAccounts(payload.accounts);
     }
 
-    async loadLocalAccounts(data) {
+    async loadLocalAccounts(data: any[]) {
         if (data.length > 0) {
-            this.accounts = [];
-            data.forEach((acc_data) => {
-                acc_data.tokens = [];
-                if (!acc_data.details) {
-                    this.accounts.push(this.extendAccount(acc_data));
-                } else {
-                    this.accounts.push(acc_data);
-                }
-            });
+            this.accounts = [...data.map(value => {
+                return {
+                    name: value['account_name']
+                };
+            })];
+            // data.forEach((acc_data) => {
+            //     acc_data.tokens = [];
+            //     if (!acc_data.details) {
+            //         this.accounts.push(this.extendAccount(acc_data));
+            //     } else {
+            //         this.accounts.push(acc_data);
+            //     }
+            // });
             this.select(0);
             await this.refreshFromChain(true);
         }
@@ -729,6 +772,7 @@ export class AccountsService {
             let ref_net = 0;
             let staked = 0;
             const refund = newdata['refund_request'];
+
             if (refund) {
                 ref_cpu = this.parseEOS(refund['cpu_amount']);
                 ref_net = this.parseEOS(refund['net_amount']);
@@ -737,6 +781,7 @@ export class AccountsService {
                 const tempDate = refund['request_time'] + '.000Z';
                 ref_time = new Date(tempDate);
             }
+
             tokens.forEach((tk) => {
                 balance += this.parseEOS(tk);
             });
@@ -775,7 +820,7 @@ export class AccountsService {
     }
 
     async refreshFromChain(refreshAll, refreshOthers?: string[]) {
-        console.log('refreshFromChain', new Error().stack);
+        // console.log('refreshFromChain', new Error().stack);
         if (this.isRefreshing) {
             return;
         }
@@ -788,7 +833,6 @@ export class AccountsService {
             await Promise.all(PQ);
         } else {
             await this.refreshAccountFactory(this.accounts[this.selectedIdx]);
-
             if (refreshOthers) {
                 for (const accountName of refreshOthers) {
                     const account = this.accounts.find((a) => a.name === accountName);

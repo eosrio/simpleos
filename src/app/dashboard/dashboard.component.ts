@@ -274,16 +274,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    // verifyPrivateKey(input) {
-    //   if (input !== '') {
-    //     this.eos.checkPvtKey(input).then((results) => {
-    //       this.importedAccount = results.foundAccounts[0];
-    //     }).catch((e) => {
-    //       this.importedAccount = null;
-    //     });
-    //   }
-    // }
-
     getPermissionName(account, key) {
         return account.permissions.find(p => {
             return p.required_auth.keys[0].key === key;
@@ -307,7 +297,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         if (input !== '') {
             this.busyActivekey = true;
-            this.eos.checkPvtKey(input.trim()).then((results) => {
+            this.eosjs.checkPvtKey(input.trim()).then((results) => {
                 this.publicEOS = results.publicKey;
                 this.importedPublicKey = results.publicKey;
                 this.importedAccounts = [];
@@ -347,7 +337,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
                     this.importedAccounts = [];
                     console.log(e);
-                    handleErrorMessage(e, this.errormsg);
+                    this.errormsg = handleErrorMessage(e);
                 });
             });
         }
@@ -466,7 +456,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     if (this.newAccOptions === 'newpk') {
                         if (this.generated && this.agreeKeys) {
                             setTimeout(() => {
-                                this.eos.checkPvtKey(this.activepk).then((results) => {
+                                this.eosjs.checkPvtKey(this.activepk).then((results) => {
                                     const pform = this.passform.value.matchingPassword;
                                     // Import private key
                                     if (pform.pass1 === pform.pass2) {
@@ -617,7 +607,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             });
         }
         this.aService.initFirst();
-
     }
 
     cc(text) {

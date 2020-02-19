@@ -9,6 +9,7 @@ import {Subscription} from "rxjs";
 import {compare2FormPasswords, contentStyle, handleErrorMessage} from "../helpers/aux_functions";
 import {ClrWizard} from "@clr/angular";
 import {LedgerService} from "../services/ledger/ledger.service";
+import {Eosjs2Service} from "../services/eosio/eosjs2.service";
 
 @Component({
     selector: 'app-import-modal',
@@ -22,7 +23,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     // boolean flags
     passmatch = true;
     lockscreen = false;
-    pvtImportReady = false;
+
     busyActivekey = false;
     noPIN = true;
 
@@ -59,6 +60,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
 
     constructor(
         public eos: EOSJSService,
+        public eosjs: Eosjs2Service,
         public ledger: LedgerService,
         public aService: AccountsService,
         public network: NetworkService,
@@ -76,7 +78,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         if (this.usingLedger) {
             this.loadSelectedLedgerAccts(ledgerAccounts).catch(console.log);
         } else {
-            this.verifyPrivateKey(null, true);
+            this.verifyPrivateKey(this.pvtform.get('private_key').value, true);
         }
     }
 
@@ -132,9 +134,11 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                 value = value.trim();
                 if (value.length === 51) {
                     this.verifyPrivateKey(value, false);
-                } else {
-                    this.pvtImportReady = false;
                 }
+            } else {
+                this.importedAccounts = [];
+                this.pvtform.controls['private_key'].setErrors(null);
+                this.errormsg = '';
             }
         }));
     }
@@ -154,6 +158,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         this.importwizard.reset();
         this.usingLedger = false;
         this.accountsToImport = [];
+        this.importedAccounts = [];
         this.ledger.ledgerAccounts = [];
     }
 
@@ -235,55 +240,45 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     verifyPrivateKey(input, auto) {
-        if (this.pvtImportReady) {
-            this.zone.run(() => {
-                this.importwizard.forceNext();
-                this.errormsg = '';
-                this.apierror = '';
-            });
-        } else {
-            if (input !== '') {
-                this.busyActivekey = true;
-                this.eos.checkPvtKey(input.trim()).then((results) => {
-                    this.publicEOS = results.publicKey;
-                    this.importedAccounts = [];
-                    this.importedAccounts = [...results.foundAccounts];
-                    this.importedAccounts.forEach((item) => {
-                        // console.log(item);
-                        item['permission'] = item.permissions.find(p => {
-                            return p.required_auth.keys[0].key === results.publicKey;
-                        })['perm_name'];
-                        if (item['refund_request']) {
-                            const tempDate = item['refund_request']['request_time'] + '.000Z';
-                            const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-                            const now = new Date().getTime();
-                            if (now > refundTime) {
-                                this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
-                                    console.log(tx);
-                                });
-                            } else {
-                                console.log('Refund not ready!');
-                            }
+        if (input !== '') {
+            this.busyActivekey = true;
+            this.eosjs.checkPvtKey(input.trim()).then((results) => {
+                this.publicEOS = results.publicKey;
+                this.importedAccounts = [];
+                this.importedAccounts = [...results.foundAccounts];
+                this.importedAccounts.forEach((item) => {
+                    // console.log(item);
+                    item['permission'] = item.permissions.find(p => {
+                        return p.required_auth.keys[0].key === results.publicKey;
+                    })['perm_name'];
+                    if (item['refund_request']) {
+                        const tempDate = item['refund_request']['request_time'] + '.000Z';
+                        const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
+                        const now = new Date().getTime();
+                        if (now > refundTime) {
+                            this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
+                                console.log(tx);
+                            });
+                        } else {
+                            console.log('Refund not ready!');
                         }
-                    });
-                    this.pvtform.controls['private_key'].setErrors(null);
-                    this.pvtImportReady = true;
-                    this.zone.run(() => {
-                        if (auto) {
-                            this.importwizard.forceNext();
-                        }
-                        this.errormsg = '';
-                        this.apierror = '';
-                    });
-                }).catch((e) => {
-                    this.pvtImportReady = false;
-                    this.zone.run(() => {
-                        this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-                        this.importedAccounts = [];
-                        handleErrorMessage(e, this.errormsg);
-                    });
+                    }
                 });
-            }
+                this.pvtform.controls['private_key'].setErrors(null);
+                this.zone.run(() => {
+                    if (auto) {
+                        this.importwizard.forceNext();
+                    }
+                    this.errormsg = '';
+                    this.apierror = '';
+                });
+            }).catch((e) => {
+                this.zone.run(() => {
+                    this.pvtform.controls['private_key'].setErrors({'incorrect': true});
+                    this.importedAccounts = [];
+                    this.errormsg = handleErrorMessage(e);
+                });
+            });
         }
     }
 
@@ -309,5 +304,12 @@ export class ImportModalComponent implements OnInit, OnDestroy {
 
     tick() {
         this.cdr.detectChanges();
+    }
+
+    nextPage() {
+        this.passCompare();
+        if (this.passform.valid) {
+            this.importwizard.next();
+        }
     }
 }

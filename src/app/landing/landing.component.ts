@@ -18,6 +18,7 @@ import {AnimationOptions} from "ngx-lottie";
 import {AnimationItem} from 'lottie-web';
 import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
 import {ImportModalComponent} from "../import-modal/import-modal.component";
+import {Eosjs2Service} from "../services/eosio/eosjs2.service";
 
 interface simpleosExtendedWindow {
     filesystem: any;
@@ -151,6 +152,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     constructor(
         public eos: EOSJSService,
+        public eosjs: Eosjs2Service,
         public ledgerService: LedgerService,
         private voting: VotingService,
         private crypto: CryptoService,
@@ -480,67 +482,12 @@ export class LandingComponent implements OnInit, OnDestroy {
         this.anim['setSpeed'](0.8);
     }
 
-    // verifyPrivateKey(input, auto) {
-    //     if (this.pvtImportReady) {
-    //         this.zone.run(() => {
-    //             this.exisitswizard.forceNext();
-    //             this.errormsg = '';
-    //             this.apierror = '';
-    //         });
-    //     } else {
-    //         if (input !== '') {
-    //             this.busyActivekey = true;
-    //             this.eos.checkPvtKey(input.trim()).then((results) => {
-    //                 this.publicEOS = results.publicKey;
-    //                 this.importedAccounts = [];
-    //                 this.importedAccounts = [...results.foundAccounts];
-    //                 this.importedAccounts.forEach((item) => {
-    //                     // console.log(item);
-    //                     item['permission'] = item.permissions.find(p => {
-    //                         return p.required_auth.keys[0].key === results.publicKey;
-    //                     })['perm_name'];
-    //                     if (item['refund_request']) {
-    //                         const tempDate = item['refund_request']['request_time'] + '.000Z';
-    //                         const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-    //                         const now = new Date().getTime();
-    //                         if (now > refundTime) {
-    //                             this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
-    //                                 console.log(tx);
-    //                             });
-    //                         } else {
-    //                             console.log('Refund not ready!');
-    //                         }
-    //                     }
-    //                 });
-    //                 this.pvtform.controls['private_key'].setErrors(null);
-    //                 this.pvtImportReady = true;
-    //                 this.zone.run(() => {
-    //                     if (auto) {
-    //                         this.exisitswizard.forceNext();
-    //                     }
-    //                     this.errormsg = '';
-    //                     this.apierror = '';
-    //                 });
-    //             }).catch((e) => {
-    //                 this.pvtImportReady = false;
-    //                 this.zone.run(() => {
-    //                     this.dropReady = true;
-    //                     this.exodusValid = false;
-    //                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-    //                     this.importedAccounts = [];
-    //                     handleErrorMessage(e, this.errormsg);
-    //                 });
-    //             });
-    //         }
-    //     }
-    // }
-
     // Verify public key - step 1
     checkAccount() {
         if (this.eos.ready) {
             this.check = true;
             this.accounts = [];
-            this.eos.loadPublicKey(this.publicEOS.trim()).then((account_data: any) => {
+            this.eosjs.loadPublicKey(this.publicEOS.trim()).then((account_data: any) => {
                 // console.log(account_data);
                 this.processCheckAccount(account_data.foundAccounts);
             }).catch((err) => {

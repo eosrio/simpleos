@@ -6,6 +6,8 @@ import {
 import {Api, JsonRpc} from 'eosjs';
 import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
 import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
+import ecc from 'eosjs-ecc'
+import {EOSJSService} from "./eosjs.service";
 
 export class SimpleosSigProvider implements SignatureProvider {
     localRPC: JsonRpc;
@@ -52,12 +54,15 @@ export class SimpleosSigProvider implements SignatureProvider {
 })
 export class Eosjs2Service {
 
-    constructor() {
+    constructor(
+        private oldEOS: EOSJSService
+    ) {
         this.rpc = null;
         this.textDecoder = new TextDecoder();
         this.textEncoder = new TextEncoder();
     }
 
+    public ecc: any;
     rpc: JsonRpc;
     textEncoder: TextEncoder;
     textDecoder: TextDecoder;
@@ -392,6 +397,87 @@ export class Eosjs2Service {
 
     static convertFraction(diff, div, fr) {
         return ((Math.abs(diff)) / div).toFixed(fr);
+    }
+
+    checkPvtKey(k): Promise<any> {
+        try {
+            const pubkey = ecc['privateToPublic'](k);
+            return this.loadPublicKey(pubkey);
+        } catch (e) {
+            console.log(e);
+            return new Promise((resolve, reject) => {
+                reject(e);
+            });
+        }
+    }
+
+    async loadPublicKey(pubkey) {
+        return new Promise(async (resolve, reject2) => {
+            if (ecc['isValidPublic'](pubkey)) {
+                const tempAccData = [];
+                const account_names = await this.getKeyAccountsMulti(pubkey);
+                if (account_names.length > 0) {
+                    const promiseQueue = [];
+                    account_names.forEach((acc) => {
+                        const tempPromise = new Promise((resolve1, reject1) => {
+                            this.rpc.get_account(acc)
+                            this.rpc.get_account(acc).then((acc_data) => {
+                                tempAccData.push(acc_data);
+                                this.rpc.get_currency_balance('eosio.token', acc).then((tokens) => {
+                                    acc_data['tokens'] = tokens;
+                                    this.oldEOS.accounts[acc] = acc_data;
+                                    resolve1(acc_data);
+                                }).catch((err) => {
+                                    console.log(err);
+                                    reject1();
+                                });
+                            });
+                        });
+                        promiseQueue.push(tempPromise);
+                    });
+                    Promise.all(promiseQueue)
+                        .then((results) => {
+                            resolve({
+                                foundAccounts: results,
+                                publicKey: pubkey
+                            });
+                        })
+                        .catch(() => {
+                            reject2({
+                                message: 'non_active',
+                                accounts: tempAccData
+                            });
+                        });
+                } else {
+                    reject2({message: 'no_account'});
+                }
+            } else {
+                reject2({message: 'invalid'});
+            }
+        });
+    }
+
+    async getKeyAccountsMulti(key: string) {
+        const accounts: Set<string> = new Set();
+        const queue = [];
+        for (const api of this.defaultChain.endpoints) {
+            queue.push(new Promise(async (resolve) => {
+                const tempRpc = new JsonRpc(api.url);
+                try {
+                    const result = await tempRpc.history_get_key_accounts(key)
+                    if (result.account_names) {
+                        for (const account of result.account_names) {
+                            accounts.add(account);
+                        }
+                    }
+                } catch (e) {
+                    console.log(e);
+                }
+                resolve();
+            }));
+        }
+        await Promise.all(queue);
+        return [...accounts];
     }
 
     async changebw(account, permission, amount, symbol, ratio, fr) {
