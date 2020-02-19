@@ -1,10 +1,10 @@
 {
-	"name": "simpleos",
+	"name": "liberland-wallet",
 	"version": "0.9.5",
-	"productName": "simpleos",
-	"appId": "io.eosrio.simpleos",
-	"compilerVersion": "DEFAULT",
-	"description": "EOSIO Blockchain Interface & Wallet",
+	"productName": "Liberland Wallet",
+	"appId": "io.eosrio.liberland-wallet",
+	"compilerVersion": "LIBERLAND",
+	"description": "Liberland Blockchain Wallet",
 	"author": {
 		"name": "EOS Rio",
 		"email": "contact@eosrio.io"
@@ -31,15 +31,13 @@
 		"dist": "electron-builder",
 		"release:default": "npm run config:default && npm run build:prod && electron-builder",
 		"release:liberland": "npm run config:liberland && npm run build:prod && electron-builder",
-		"postinstall": "electron-builder install-app-deps",
-		"postinstall2": "node scripts/patch.js && electron-builder install-app-deps",
-		"postinstall:web": "node scripts/postinstall-web.js",
+		"postinstall": "electron-builder install-app-deps && npm run postinstall:electron",
 		"postinstall:electron": "node scripts/postinstall.js"
 	},
 	"private": true,
 	"main": "index.js",
 	"build": {
-		"appId": "simpleos",
+		"appId": "liberland-wallet",
 		"directories": {
 			"buildResources": "build"
 		},
@@ -60,10 +58,10 @@
 				"dmg",
 				"zip"
 			],
-			"icon": "other_assets/icon.png"
+			"icon": "other_assets/liberland518x518.png"
 		},
 		"dmg": {
-			"icon": "src/assets/icons/256x256.icns",
+			"icon": "src/assets/icons/liberland256x256.icns",
 			"format": "UDZO"
 		},
 		"linux": {
@@ -71,7 +69,7 @@
 				"appImage",
 				"deb"
 			],
-			"icon": "other_assets/256x256.png",
+			"icon": "other_assets/liberland256x256.png",
 			"category": "Network"
 		},
 		"win": {
@@ -85,7 +83,7 @@
 					"repo": "simpleos"
 				}
 			],
-			"icon": "src/favicon.ico"
+			"icon": "src/assets/liberland_256_LdC_icon.ico"
 		},
 		"appx": {
 			"backgroundColor": "#232526",
