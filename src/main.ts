@@ -45,14 +45,14 @@ function angularBoot() {
     }
 
     try {
-		if(jsonBody) {
-			const payload = {lastUpdate: new Date(), config: jsonBody};
-			localStorage.setItem('configSimpleos', JSON.stringify(payload));
-		}
-	} catch (e) {
-		console.log('error saving to localStorage');
-	}
+        if (jsonBody) {
+            const payload = {lastUpdate: new Date(), config: jsonBody};
+            localStorage.setItem('configSimpleos', JSON.stringify(payload));
+        }
+    } catch (e) {
+        console.log('error saving to localStorage');
+    }
 
-	// Launch Main Application
+    // Launch Main Application
     angularBoot();
 })();

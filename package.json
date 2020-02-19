@@ -43,7 +43,6 @@
 		},
 		"files": [
 			"index.js",
-			"native.js",
 			"ng-dist",
 			"static",
 			"electron_modules",
