@@ -59,7 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private fullTrxData: any;
     private replyEvent: any;
 
-    public isMac = false;
+    public isMac:boolean;
     private _maximized: boolean;
 
     public transitEventHandler: any;
@@ -114,14 +114,14 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.loadingTRX = false;
 
         this.busy = false;
-
         this.ledger.startListener();
         this.startIPCListeners();
     }
 
     ngOnInit(): void {
-        this.isMac = this._electronService.isMacOS;
-        console.log('Is MacOS?', this._electronService.isMacOS);
+        // this.isMac = this._electronService.isMacOS;
+        this.connect.ipc.send('electronOS','request_os');
+        console.log('Is MacOS?', this.isMac);
         this.cdr.detectChanges();
     }
 
@@ -153,7 +153,16 @@ export class AppComponent implements OnInit, AfterViewInit {
             // Bind transit api requests
             this.onTransitApiMessage = this.onTransitApiMessage.bind(this);
             this.connect.ipc.on('request', this.onTransitApiMessage);
+
+            // Bind transit api requests
+            this.onElectron = this.onElectron.bind(this);
+            this.connect.ipc.on('electronOS', this.onElectron);
         }
+    }
+
+    private onElectron(event,payload){
+        this.isMac = payload.content === 'darwin';
+        this.cdr.detectChanges();
     }
 
     private onTransitApiMessage(event, payload) {

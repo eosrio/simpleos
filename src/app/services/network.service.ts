@@ -8,6 +8,7 @@ import {CryptoService} from './crypto/crypto.service';
 import {VotingService} from './voting.service';
 import {Eosjs2Service} from './eosio/eosjs2.service';
 import {HttpClient} from '@angular/common/http';
+import {localConfig} from '../../config';
 
 export interface Endpoint {
     url: string;
@@ -15,6 +16,11 @@ export interface Endpoint {
     latency: number;
     filters: any[];
     chain: string;
+}
+
+const defaultCompilerIds = {
+    DEFAULT: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+    LIBERLAND: 'cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a'
 }
 
 @Injectable({
@@ -63,8 +69,23 @@ export class NetworkService {
         private voting: VotingService,
         private crypto: CryptoService,
     ) {
-        const configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
-        this.defaultChains = configSimpleos['config']['chains'];
+        this.initChainsConfig();
+        this.validEndpoints = [];
+        this.status = '';
+        this.connectionTimeout = null;
+    }
+
+    initChainsConfig() {
+
+        let configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
+        if (!configSimpleos) {
+            console.log('failed to load updated config');
+            configSimpleos = {
+                config: localConfig
+            };
+        }
+
+        this.defaultChains = configSimpleos.config.chains;
         const groupChain = NetworkService.groupBy(this.defaultChains, chain => chain.network);
         const mainnet = groupChain.get('MAINNET');
         const testenet = groupChain.get('TESTNET');
@@ -78,10 +99,22 @@ export class NetworkService {
                 'chains': testenet,
             },
         ];
-        this.activeChain = this.aService.activeChain;
-        this.validEndpoints = [];
-        this.status = '';
-        this.connectionTimeout = null;
+
+        const savedChainId = localStorage.getItem('simplEOS.activeChainID');
+        const EOS_MAINNET_ID = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
+        if (savedChainId) {
+            this.activeChain = this.defaultChains.find((chain) => chain.id === savedChainId);
+            if (!this.activeChain) {
+                this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
+                localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
+            }
+        } else {
+            this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
+            localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
+        }
+        this.aService.activeChain = this.activeChain;
+        this.aService.defaultChains = this.defaultChains;
+        this.aService.init();
     }
 
     connect(automatic: boolean) {

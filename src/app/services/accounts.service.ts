@@ -41,30 +41,15 @@ export class AccountsService {
         private toaster: ToasterService,
         // private ledger: LedgerHWService
     ) {
-        const configSimpleos = JSON.parse(localStorage.getItem('configSimpleos'));
-
-        this.defaultChains = configSimpleos['config']['chains'];
-        const savedChainId = localStorage.getItem('simplEOS.activeChainID');
-        const EOS_MAINNET_ID = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
-
-        if (savedChainId) {
-            this.activeChain = this.defaultChains.find((chain) => chain.id === savedChainId);
-            if (!this.activeChain) {
-                this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
-                localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
-            }
-        } else {
-            this.activeChain = this.defaultChains.find((chain) => chain.id === EOS_MAINNET_ID);
-            localStorage.setItem('simplEOS.activeChainID', EOS_MAINNET_ID);
-        }
-
         this.accounts = [];
         this.usd_rate = 10.00;
         this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
+    }
+
+    init() {
         this.fetchEOSprice().catch((err) => {
             console.log(err);
         });
-
         this.eos.online.asObservable().subscribe(value => {
             if (value) {
                 const store = localStorage.getItem('actionStore.' + this.eos.chainID);
@@ -534,7 +519,6 @@ export class AccountsService {
         }
 
         this.eos.getAccountActions(account, offset, pos).then(val => {
-            console.log(val);
             const actions = val['actions'];
             if (actions.length > 0) {
                 this.actionStore[account]['actions'] = actions;

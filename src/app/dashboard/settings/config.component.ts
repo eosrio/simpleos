@@ -172,9 +172,6 @@ export class ConfigComponent implements OnInit {
             });
         }
         this.localKeys = [...this.keysaccounts.keys()];
-        for (const key of this.localKeys) {
-            console.log(this.keysaccounts.get(key));
-        }
     }
 
     private showToast(type: string, title: string, body: string) {

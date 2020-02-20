@@ -1,4 +1,4 @@
-<clr-wizard #importwizard [(clrWizardOpen)]="isOpen" [clrWizardSize]="'md'">
+<clr-wizard #importwizard [(clrWizardOpen)]="isOpen" [clrWizardSize]="'lg'">
     <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
     <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -67,10 +67,14 @@
                 Account<span *ngIf="importedAccounts.length > 1">s</span>
             </div>
 
-            <!--		ledger accounts-->
-            <div *ngIf="ledger.ledgerAccounts.length > 0"
+            <div *ngIf="ledger.ledgerAccounts.length > 0 && ledger.ledgerPublicKeys.length === 0"
                  style="margin-top: 20px;">
                 Select the accounts to import:
+            </div>
+
+            <div *ngIf="ledger.ledgerAccounts.length === 0 && ledger.ledgerPublicKeys.length > 0"
+                 style="margin-top: 20px;">
+                No accounts detected with this {{ledger.deviceName}} public keys
             </div>
 
         </ng-container>
@@ -87,6 +91,24 @@
                 </mat-list-option>
             </ng-container>
         </mat-selection-list>
+
+        <button *ngIf="ledger.ledgerPublicKeys.length > 0 && !displayPublicKeys"
+                (click)="displayPublicKeys = !displayPublicKeys; cdr.detectChanges()"
+                class="btn btn-primary btn-sm" [disabled]="ledger.reading">VIEW
+            PUBLIC KEYS
+        </button>
+
+        <ng-container *ngIf="displayPublicKeys">
+            <div style="margin-top: 20px;">
+                Ledger public keys:
+            </div>
+            <mat-list role="list">
+                <mat-list-item role="listitem" matTooltip="click to copy" *ngFor="let key of ledger.ledgerPublicKeys">
+                    <span style="font-family: 'SourceCodePro',monospace; font-size: smaller">{{key.address}}</span>
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="ml-4 copy" (click)="cc(key.address)"></fa-icon>
+                </mat-list-item>
+            </mat-list>
+        </ng-container>
 
         <ng-container *ngIf="pvtform.get('private_key').pristine">
             <div *ngIf="sLAc.selectedOptions.selected.length > 0" style="margin-top:10px;">
