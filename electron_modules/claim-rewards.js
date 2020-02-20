@@ -208,7 +208,7 @@ class ClaimRewardsService {
 	writeLog(msg) {
 		const now = moment().format('YYYY-MM-DD HH:mm:ss');
 		msg = '[' + now + '] - ' + msg;
-		console.log(msg);
+		// console.log(msg);
 		fs.appendFileSync(this.logFile, msg + '\n');
 	}
 

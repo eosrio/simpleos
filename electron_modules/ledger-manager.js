@@ -8,6 +8,12 @@ const {Api, JsonRpc, RpcError, Serialize} = require('eosjs');
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
+const sudo = require('sudo-prompt');
+
+const options = {
+    name: 'SimplEOS Wallet'
+};
+
 const errorCodes = {
     26628: 'Device is not ready, please unlock',
     28160: 'EOS App is not ready, please open the eos app on your ledger',
@@ -116,10 +122,12 @@ class LedgerManager {
 
     async init() {
         const hid_status = await Transport.isSupported();
+        console.log(hid_status);
         if (!hid_status) {
             console.log('HID Supported:', hid_status);
             process.exit();
         }
+
         ipcMain.on('ledger', async (event, args) => {
             if (args.event === 'sign_trx') {
                 const results = await this.signTransaction(
@@ -292,15 +300,50 @@ class LedgerManager {
         });
     }
 
+    setTransport(t) {
+        this.transport = t;
+        console.log('transport ready');
+    }
+
     async openTransport() {
         return new Promise((resolve, reject) => {
             if (this.deviceDescriptor) {
-                console.log('deviceDescriptor', this.deviceDescriptor);
-                Transport.open(this.deviceDescriptor).then((t) => {
-                    this.transport = t;
-                    console.log('transport ready');
-                    resolve();
-                });
+                console.log('attempting to open descriptor: ' + this.deviceDescriptor);
+                try {
+                    Transport.open(this.deviceDescriptor).then((t) => {
+                        this.setTransport(t);
+                        resolve();
+                    }).catch((err) => {
+                        console.log('Failed to open transport with: ' + this.deviceDescriptor);
+                        console.log(err);
+                        if (!this.rootRequested) {
+                            this.rootRequested = true;
+                            // setup permissions on usb port
+                            const command = `chown $USER:root ${this.deviceDescriptor}`;
+                            console.log(`Running "${command}" as root`);
+                            sudo.exec(`chown $USER:root ${this.deviceDescriptor}`, {
+                                name: 'SimplEOS Wallet'
+                            }, (error, stdout, stderr) => {
+                                if (error) {
+                                    console.log(error, stdout, stderr);
+                                    reject(stderr);
+                                } else {
+                                    console.log('permissions updated');
+                                    this.rootRequested = false;
+                                    Transport.open(this.deviceDescriptor).then((t) => {
+                                        this.setTransport(t);
+                                        resolve();
+                                    });
+                                }
+                            });
+                        } else {
+                            reject('permissions already requested');
+                        }
+                    });
+                } catch (e) {
+                    reject();
+                    console.log(e);
+                }
             } else {
                 reject();
             }

@@ -8,10 +8,22 @@ conf.appId = "io.eosrio.simpleos";
 conf.productName = 'simpleos';
 conf.description = 'EOSIO Blockchain Interface & Wallet';
 conf.build.appId = 'simpleos';
-conf.build.win.icon = "src/favicon.ico";
-conf.build.mac.icon = "other_assets/icon.png";
-conf.build.dmg.icon = "src/assets/icons/256x256.icns";
-conf.build.linux.icon = "other_assets/256x256.png";
+
+// icons
+conf.build.win.icon = "icons/simpleos";
+conf.build.mac.icon = "icons/simpleos";
+conf.build.linux.icon = "icons/simpleos";
+conf.build.linux.executableName = "simpleos";
+conf.build.linux.desktop = {
+    "Name": "SimplEOS",
+    "GenericName": "SimplEOS Wallet",
+    "X-GNOME-FullName": "simpleos",
+    "Comment": "SimplEOS Blockchain Wallet",
+    "Type": "Application",
+    "Terminal": "false",
+    "StartupNotify": "false",
+    "Categories": "Network;"
+};
 
 fs.writeFileSync('./package.json', JSON.stringify(conf, null, "\t"));
 
