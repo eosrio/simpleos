@@ -1541,6 +1541,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     processLiberlandVotes() {
-        //go to website
+        window['shell']['openExternal']("https://vote.liberland.org");
     }
 }

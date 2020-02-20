@@ -23,14 +23,14 @@
 				<div class="slogan" *ngIf="app.compilerVersion==='LIBERLAND'">To live and let live</div>
 			</div>
 			<div class="clr-col-md-auto text-center">
-                <div class="card check-card">
+                <div class="card info-card">
                     <div class="card-block fit-content text-center">
                         <div class="text-center"> Enter your pin to unlock
                         </div>
                         <mat-form-field class="public-input">
                             <input matInput #pin2 type="password" autocomplete="off" placeholder="Pin"
                                    (keyup.enter)="unlock()" [(ngModel)]="pin" [autofocus]="true" >
-                            <button mat-button matSuffix mat-icon-button class="btn btn-outline btn-sm btn-max"
+                            <button mat-button matSuffix mat-icon-button class="btn btn-info-outline btn-sm btn-max"
                                     (click)="unlock()" [disabled]="pin2.value.length === 0">
                                 Unlock
                             </button>
@@ -46,7 +46,7 @@
 			</div>
 			<div class="clr-col-md-12 text-center">
                 <div class="made-with-love" style="margin-top: 5px;">Forgot your pin?
-                    <a class="btn btn-sm btn-link2" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
+                    <a class="btn btn-sm btn-link btn-accent-link" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
                         Clear all data and logout
                         <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
                     </a>

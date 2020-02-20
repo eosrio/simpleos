@@ -56,7 +56,9 @@
 		"afterSign": "electron-builder-notarize",
 		"mac": {
 			"hardenedRuntime": true,
+
 			"entitlements": "scripts/entitlements.mac.plist",
+
 			"category": "public.app-category.finance",
 			"target": [
 				"dmg"
@@ -93,7 +95,7 @@
 			"target": [
 				"nsis"
 			],
-			"icon": "icons/liberland"
+			"icon": "icons/liberland/icon.ico"
 		},
 		"appx": {
 			"backgroundColor": "#232526",

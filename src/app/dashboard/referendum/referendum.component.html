@@ -2,18 +2,18 @@
 	<div class="clr-row limit-container">
 
 		<div class="clr-col-lg-12">
-			<div class="card header-card animate">
+			<div class="card info-card animate">
 				<div class="clr-row flex-items-xs-around">
 					<div class="clr-col-lg-4 clr-col-md-5 text-left">
 						<h4 class="title card-title-color">Referendum &nbsp;
 							<a role="doc-noteref" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-								<fa-icon [icon]="['far','question-circle']" class="blue"
+								<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 										 style="font-size: 16px;"></fa-icon>
 								<span class="tooltip-content">For a proposal to pass, it needs to have 15% of tokens (around 150MM {{aService.activeChain['symbol']}}
 									) voted on it and 10% more YES than NO need to be sustained for 30 days within a 120 day period.</span>
 							</a>
 						</h4>
-						<h5 class="subtitle mt-0">vote for proposals on the {{aService.activeChain['name']}}</h5>
+						<h5 class="subtitle card-text-color mt-0">vote for proposals on the {{aService.activeChain['name']}}</h5>
 					</div>
 					<div class="clr-col-lg-3 clr-col-md-6 text-right offset-lg-1">
 						<mat-form-field class="searchbar">
@@ -222,7 +222,7 @@
 			<div class="clr-col-lg-6 animate" *ngIf="!isExpired(p['proposal']['expires_at'])">
 				<div class="card proposal-card" (click)="openLargeView(p)">
 					<div class="proposal-body">
-							<span class="blue" style="font-weight: 500;"
+							<span class="highlight-primary" style="font-weight: 500;"
 								  [innerHTML]="'#' + p['fuseJsHighlighted']['proposal']['proposal_name']"></span>
 
 						<span class="boxExpires {{ isExpired(p.proposal.expires_at) ? 'expired' : 'expires'}}">
@@ -343,13 +343,13 @@
 
 	<h3 class="modal-title text-white">
 		{{sMTitle}}<br/>
-		<span class="blue">
+		<span class="highlight-primary">
 			<b>
 				#{{sMProposer_name}}
 			</b>
 		</span>
 		proposed by
-		<span class="blue">
+		<span class="highlight-primary">
 			{{sMProposer}}
 		</span>
 	</h3>
@@ -416,7 +416,7 @@
 
 	<h3 *ngIf="selProposal" class="modal-title text-white">
 		Confirm vote
-		<span class="blue">
+		<span class="highlight-primary">
 			{{vtProposal}}
 		</span>
 		<ng-container *ngIf="(
@@ -425,24 +425,24 @@
 		(selProposal.proposal.json_data.type==='referendum-v1') ||
 		(selProposal.proposal.json_data.type==='simple')
 		)">
-			<span class="blue" *ngIf="vtProposal === 0">
+			<span class="highlight-primary" *ngIf="vtProposal === 0">
 				 - NO
 			</span>
-			<span class="blue" *ngIf="vtProposal === 1">
+			<span class="highlight-primary" *ngIf="vtProposal === 1">
 				 - YES
 			</span>
-			<span class="blue" *ngIf="vtProposal === 2">
+			<span class="highlight-primary" *ngIf="vtProposal === 2">
 				 - ABSTAIN
 			</span>
 		</ng-container>
 		to
-		<span class="blue">
+		<span class="highlight-primary">
 			<b>
 				{{selProposal.proposal.proposal_name}}
 			</b>
 		</span>
 		proposed by
-		<span class="blue">
+		<span class="highlight-primary">
 			{{selProposal.proposal.proposer}}
 		</span>
 	</h3>
@@ -477,8 +477,8 @@
 
 <clr-modal [(clrModalOpen)]="unvoteModal">
 	<h3 *ngIf="selProposal" class="modal-title text-white">Confirm unvote to <span
-		class="blue"><b>{{selProposal.proposal.proposal_name}}</b></span> proposal by <span
-		class="blue">{{selProposal.proposal.proposer}}</span>
+		class="highlight-primary"><b>{{selProposal.proposal.proposal_name}}</b></span> proposal by <span
+		class="highlight-primary">{{selProposal.proposal.proposer}}</span>
 	</h3>
 
 	<div class="modal-footer">
@@ -505,12 +505,12 @@
 <clr-modal [(clrModalOpen)]="proposalModal">
 	<div class="modal-title">
 		<h3 class="text-white">Create <span
-			class="blue">{{createProposalForm.get('title').value}} <b>(#{{createProposalForm.get('id').value}}
+			class="highlight-primary">{{createProposalForm.get('title').value}} <b>(#{{createProposalForm.get('id').value}}
 			)</b></span> proposal by <span
-			class="blue">{{aService.selected.getValue().name}}</span>
+			class="highlight-primary">{{aService.selected.getValue().name}}</span>
 		</h3>
 		<h5 class=" text-white">
-			Expires <span class="blue">{{getExpiretimeProposal()}}</span>
+			Expires <span class="highlight-primary">{{getExpiretimeProposal()}}</span>
 		</h5>
 	</div>
 

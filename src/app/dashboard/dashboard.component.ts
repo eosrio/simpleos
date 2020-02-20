@@ -1,20 +1,10 @@
-import {
-    Component,
-    OnInit,
-    NgZone,
-    ViewChild,
-    OnDestroy,
-    AfterViewInit,
-    ChangeDetectorRef
-} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {EOSJSService} from '../services/eosio/eosjs.service';
 import {AccountsService} from '../services/accounts.service';
 import {LandingComponent} from '../landing/landing.component';
 import {ClrWizard} from '@clr/angular';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
-
-import * as moment from 'moment';
 import {CryptoService} from '../services/crypto/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
@@ -27,9 +17,8 @@ import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 
 import {environment} from '../../environments/environment';
 import {AnimationOptions} from "ngx-lottie";
-import {LedgerService} from "../services/ledger/ledger.service";
 import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
-import {dashboardIcon} from "@clr/core/icon-shapes";
+import {ImportModalComponent} from "../import-modal/import-modal.component";
 
 
 @Component({
@@ -42,6 +31,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('newAccountWizard', {static: true}) wizardaccount: ClrWizard;
     @ViewChild('importAccountWizard', {static: true}) importwizard: ClrWizard;
 
+    @ViewChild(ImportModalComponent)
+    private importModal: ImportModalComponent;
+
     lottieConfig: AnimationOptions = {
         path: 'assets/logoanim2.json',
         autoplay: false,
@@ -52,7 +44,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     busy = false;
 
     accounts: any;
-    importedAccount: any;
     appVersion: string;
 
     // New account
@@ -60,14 +51,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     newAccountModal: boolean;
     importKeyModal: boolean;
     deleteAccModal: boolean;
+
     newAccountData = {
         t: 0,
         n: '',
         o: '',
         a: ''
     };
-    payloadError = false;
-    newAccountPayload = '';
+
     newAccOptions = 'thispk';
     accountname = '';
     accountname_valid = false;
@@ -80,7 +71,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     pvtform: FormGroup;
     passform2: FormGroup;
-    passmatch2 = false;
     errormsg: string;
     importedAccounts: any[];
 
@@ -137,19 +127,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     validOwnerPubKey: boolean = false;
     validActivePubKey: boolean = false;
     private ledgerEventsListener: Subscription;
-    usingLedger = false;
-    ledgerError = '';
-    accountsToImport: any[] = [];
-    keysToImport: Map<any, any>;
-
-    static extOpen(value) {
-        window['shell'].openExternal(value).catch(console.log);
-    }
 
     constructor(
         public eos: EOSJSService,
         public eosjs: Eosjs2Service,
-        public ledgerService: LedgerService,
         private fb: FormBuilder,
         public aService: AccountsService,
         private toaster: ToasterService,
@@ -280,14 +261,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })['perm_name'];
     }
 
-    importKeys(ledgerAccounts) {
-        if (this.usingLedger) {
-            this.loadSelectedLedgerAccts(ledgerAccounts).catch(console.log);
-        } else {
-            this.verifyPrivateKey(null, true);
-        }
-    }
-
     verifyPrivateKey(privateKey, auto) {
         let input;
         if (!privateKey) {
@@ -342,51 +315,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             });
         }
         // }
-    }
-
-
-    doCancel(): void {
-        this.importwizard.close();
-        this.usingLedger = false;
-        this.accountsToImport = [];
-        this.ledgerService.ledgerAccounts = [];
-    }
-
-    resetImport() {
-        this.passform2.reset();
-        this.importwizard.reset();
-        this.pvtform.reset();
-    }
-
-    importAccounts() {
-        if (this.usingLedger) {
-            this.completeLedgerImport().then(() => {
-                this.usingLedger = false;
-                this.ledgerService.ledgerAccounts = [];
-                this.accountsToImport = [];
-            }).finally(() => {
-                this.resetImport();
-            });
-        } else {
-            const mp = this.passform2.value.matchingPassword;
-            const p1 = mp.pass1;
-            const p2 = mp.pass2;
-            const pbk = this.importedPublicKey;
-            if (p1 === p2) {
-                this.crypto.initKeys(pbk, p1).then(() => {
-                    this.crypto.encryptAndStore(this.pvtform.value.private_key, pbk)
-                        .then(() => {
-                            this.aService.appendAccounts(this.importedAccounts).catch(console.log);
-                        })
-                        .catch((err) => {
-                            console.log(err);
-                        })
-                        .finally(() => {
-                            this.resetImport();
-                        });
-                });
-            }
-        }
     }
 
     openRemoveAccModal(index, account) {
@@ -536,28 +464,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.wrongwalletpass = 'Wrong password!';
             this.success = false;
         });
-    }
-
-    decodeAccountPayload(payload: string) {
-        if (payload !== '') {
-            if (payload.endsWith('=')) {
-                try {
-                    const accountObj = JSON.parse(atob(payload));
-                    accountObj.t = moment(accountObj.t);
-                    console.log(accountObj);
-                    this.newAccountData = accountObj;
-                    this.final_name = accountObj.n;
-                    this.final_active = accountObj.a;
-                    this.final_owner = accountObj.o;
-                    this.final_creator = this.aService.selected.getValue().name;
-                    this.payloadError = false;
-                } catch (e) {
-                    this.payloadError = true;
-                }
-            } else {
-                this.payloadError = true;
-            }
-        }
     }
 
     handleAnimation(anim: any) {
@@ -714,19 +620,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.passmatch = compare2FormPasswords(this.passform);
     }
 
-    importedPassCompare() {
-        const pForm = this.passform2.value.matchingPassword;
-        if (pForm.pass1 && pForm.pass2) {
-            if (pForm.pass1 === pForm.pass2) {
-                this.passform2['controls'].matchingPassword['controls']['pass2'].setErrors(null);
-                this.passmatch2 = true;
-            } else {
-                this.passform2['controls'].matchingPassword['controls']['pass2'].setErrors({'incorrect': true});
-                this.passmatch2 = false;
-            }
-        }
-    }
-
     generateKeys() {
         this.generating = true;
         setTimeout(() => {
@@ -766,44 +659,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.toaster.popAsync(toast);
     }
 
-    loadLedgerAccounts() {
-        this.usingLedger = true;
-        this.ledgerError = '';
-        console.log('reading ledger slots...');
-        this.ledgerService.readSlots(0, 5);
-        if (!this.ledgerEventsListener) {
-            this.ledgerEventsListener = this.ledgerService.ledgerEvents.subscribe((value) => {
-                if (value.event === 'new_account') {
-                    this.cdr.detectChanges();
-                }
-                if (value.event === 'error') {
-                    this.ledgerError = 'error reading accounts from device! make sure the EOS app is open on your ' + this.ledgerService.deviceName;
-                }
-                if (value.event === 'finished_reading') {
-                    this.cdr.detectChanges();
-                }
-            });
-        }
-    }
-
     tick() {
         this.cdr.detectChanges();
     }
 
-    async loadSelectedLedgerAccts(items) {
-        this.accountsToImport = [];
-        this.keysToImport = new Map();
-        for (const item of items) {
-            this.keysToImport.set(item.value.key, item.value.slot);
-            this.accountsToImport.push(item.value.data);
-        }
-        this.importwizard.next();
-    }
-
-    async completeLedgerImport() {
-        this.keysToImport.forEach((slot, key) => {
-            this.crypto.storeLedgerAccount(key, slot, this.ledgerService.deviceName);
-        });
-        await this.aService.appendAccounts(this.accountsToImport);
+    openImportModal() {
+        this.importModal.openModal();
     }
 }

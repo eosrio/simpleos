@@ -41,7 +41,7 @@
                     <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try
                         again
                     </div>
-                    <button (click)="retryConn()" class="btn btn-link2">
+                    <button (click)="retryConn()" class="btn btn-link btn-accent-link">
                         <fa-icon [icon]="['far', 'undo']"></fa-icon>
                         &nbsp;RETRY
                     </button>
@@ -53,10 +53,10 @@
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer" *ngFor="let account of accounts">
                                 <span style="float: left;">You have: <span
-                                        class="blue">{{account.full_balance}} {{network.activeChain['symbol']}}</span></span>
+                                        class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span></span>
                                 <!--CSTAM-->
                                 <span style="float: right;">Account name: <span
-                                        class="blue">{{account.name}}</span></span>
+                                        class="highlight-primary">{{account.name}}</span></span>
                             </div>
                         </ng-container>
                         <div class="card-footer" *ngIf="checkerr === 'invalid'">
@@ -95,7 +95,7 @@
                                     <div class="text-left advanced"><span class="error">Advanced Option:</span> you can
                                         also try
                                         to connect to
-                                        another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                        another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                     </div>
 
                                     <mat-form-field class="public-input" style="overflow: inherit;">
@@ -121,35 +121,27 @@
 
                         <div class="clr-row" style="justify-content: center;">
                             <div class="clr-col-md-12 clr-col-lg-6">
-                                <button class="btn btn-inverse btn-block" (click)="openImportModal()">
+                                <button class="btn btn-inverse-outline btn-block" (click)="openImportModal()">
                                     Import existing key
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="importBKP = true">
+                                <button class="btn btn-inverse-outline btn-block" (click)="importBKP = true">
                                     Import Backup
                                 </button>
                             </div>
                             <div class="clr-col-md-12 clr-col-lg-6">
-                                <button class="btn btn-inverse btn-block"
+                                <button class="btn btn-inverse-outline btn-block"
                                         *ngIf="network.activeChain['name'] === 'EOS MAINNET'"
                                         (click)="newWallet = true">
                                     Request New Account
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="verifyPanel = !verifyPanel">
+                                <button class="btn btn-inverse-outline btn-block" (click)="verifyPanel = !verifyPanel">
                                     Verify Account
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="newKeys = true">
+                                <button class="btn btn-inverse-outline btn-block" (click)="newKeys = true">
                                     Generate Keys
                                 </button>
                             </div>
                         </div>
-
-                        <!--						<div class="clr-row" style="justify-content: center;">-->
-                        <!--							<div class="clr-col-md-12 clr-col-lg-6">-->
-                        <!--								<button class="btn btn-inverse btn-block" (click)="newKeys = true">-->
-                        <!--									Generate Keys-->
-                        <!--								</button>-->
-                        <!--							</div>-->
-                        <!--						</div>-->
 
                     </div>
 
@@ -171,9 +163,9 @@
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer black-white" *ngFor="let account of accounts">
                                 <span style="float: left;">Account:
-									<span class="blue">{{account.name}}</span>
+									<span class="highlight-primary">{{account.name}}</span>
 									- balance:
-									<span class="blue">{{account.full_balance}} {{network.activeChain['symbol']}}</span>
+									<span class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span>
 								</span>
                             </div>
                         </ng-container>
@@ -220,17 +212,16 @@
                                         <div class="text-left advanced"><span class="warn">Advanced Option:</span> you
                                             can also try
                                             to connect to
-                                            another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                            another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                         </div>
                                         <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
                                             <fa-layers class="mt-2 mb-1">
-                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-                                                         style="color:#0094d2;"></fa-icon>
+                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" class="highlight-primary"></fa-icon>
                                             </fa-layers>
                                         </div>
                                         <div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
                                              style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
-                                            <span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
+                                            <span style="padding-left: 17px; font-size: 18px;" class="highlight-primary">Connecting...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -243,7 +234,7 @@
                          *ngIf="app.compilerVersion === 'DEFAULT'">
                     <div class="credits made-with-love">Made with
                         <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-                        by <span style="color: var(--btn-link2-color)">EOS Rio</span>
+                        by <span class="highlight-primary">EOS Rio</span>
                     </div>
                     <div class="version made-with-love">v{{aService.versionSys}}</div>
                     <br>
@@ -406,7 +397,7 @@
                 <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
                          (click)="cc(activepk, 'Key', 'Please save it on a safe place.')"></fa-icon>
             </mat-form-field>
-            <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys on a safe place</mat-checkbox>
+            <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys in a safe place</mat-checkbox>
         </ng-container>
     </clr-wizard-page>
     <clr-wizard-page>
@@ -439,7 +430,7 @@
                 Payment
             </ng-container>
             <ng-container *ngIf="relayMethod">
-                <span class="blue" style="font-weight: 500">Alternative Method</span>
+                <span class="highlight-primary" style="font-weight: 500">Alternative Method</span>
             </ng-container>
             &nbsp;
         </ng-template>
@@ -488,7 +479,7 @@
                 Binance) or if the transaction fails for any reason <a class="highlight-primary" (click)="relayMethod = true"
                                                                        style="cursor: pointer">click
                     here to try our ALTERNATIVE METHOD</a></h5>
-            <!--<h5>Need help? Check our <span class="blue"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
+            <!--<h5>Need help? Check our <span class="highlight-primary"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
         </ng-container>
         <ng-container *ngIf="relayMethod">
 
@@ -591,7 +582,7 @@
         <ng-template clrPageTitle>New Keys</ng-template>
         <h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
         <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-        <h5>Please click the <span style="cursor:pointer;" class="blue"> Generate Key Pair </span> button.
+        <h5>Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
         </h5>
         <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
@@ -614,7 +605,7 @@
         </fa-layers>
         <br/>
         <ng-container *ngIf="generated2" style="clear:both;">
-            <mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys on a safe place</mat-checkbox>
+            <mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys in a safe place</mat-checkbox>
         </ng-container>
     </clr-wizard-page>
 </clr-wizard>

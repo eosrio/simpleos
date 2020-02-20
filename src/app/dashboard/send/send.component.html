@@ -17,14 +17,14 @@
                     </ng-container>
                 </div>
                 <ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
-                    <div class="eos highlight-primary">{{unstaked | number : precision}} {{aService.activeChain['symbol']}}</div>
+                    <div class="eos highlight-primary">{{unstaked | number :'1.0-' + this.aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</div>
                     <div *ngIf="unstaking > 0" class="highlight">
                         <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
                         '1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}
                     </div>
                 </ng-container>
                 <ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
-                    <div class="eos highlight-primary">{{token_balance | number : precision}} {{sendForm.value.token}}</div>
+                    <div class="eos highlight-primary">{{token_balance | number :  precision}} {{sendForm.value.token}}</div>
                 </ng-container>
                 <form [formGroup]="sendForm">
                     <div>
@@ -126,7 +126,7 @@
 <!--                                            (click)="openEditContactModal(contact)">-->
 <!--                                        <fa-icon [icon]="['far', 'pencil']"></fa-icon>-->
 <!--                                    </button>-->
-                                    <button class="btn btn-inverse editBtn"
+                                    <button class="btn btn-accent-outline editBtn"
                                             (click)="openEditContactModal(contact)">
                                         <fa-icon [icon]="['far', 'pencil']"></fa-icon>
                                     </button>

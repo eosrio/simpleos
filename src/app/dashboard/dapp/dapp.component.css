@@ -10,7 +10,7 @@ ul {
 }
 
 li {
-	background-color: var(--info-card-background);
+	background-color: var(--tokens-panel-background);
 	color: var(--text-gray-color) !important;
 	border-radius: 3px;
 	padding: 20px;
@@ -19,7 +19,7 @@ li {
 }
 
 li:hover {
-	background-color: var(--top-btn-background);
+	background-color: var(--tokens-panel-hover);
 	-webkit-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
 	-moz-box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
 	box-shadow: 3px 3px 3px 0 rgba(0, 0, 0, 0.5);
@@ -28,6 +28,10 @@ li:hover {
 
 li:hover .gray{
 	color: var(--text-btn-color-hover) !important;
+}
+
+.tokens-pad * {
+	color: var(--token-title-color);
 }
 
 .mat-error {
@@ -97,4 +101,73 @@ div#formAction > mat-form-field > input {
 	margin-left: auto;
 	margin-right: auto;
 	max-width: 1104px;
+}
+
+::ng-deep .mat-raised-button.mat-primary {
+	background-color: var(--btn-primary-bg);
+	color: var(--btn-primary-color);
+	border-color: var(--btn-primary-bg);
+	padding: 0 17px;
+	cursor: pointer;
+	display: inline-block;
+	-webkit-appearance: none!important;
+	border-radius: .15rem;
+	/*border-radius: var(--clr-btn-border-radius, 0.15rem);*/
+	border-width: .05rem;
+	/*border-width: var(--clr-btn-border-width, 0.05rem);*/
+	border-style: solid;
+	min-width: 72px;
+	max-width: 18rem;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+	vertical-align: middle;
+	line-height: 36px;
+	/*line-height: var(--clr-btn-appearance-form-line-height, 1.8rem);*/
+	letter-spacing: 1.44px;
+	font-size: 12px;
+	/*font-size: var(--clr-btn-appearance-form-font-size, 0.6rem);*/
+	font-weight: 500;
+	/*font-weight: var(--clr-btn-appearance-form-font-weight, 500);*/
+	height: 36px;
+}
+
+::ng-deep .mat-raised-button.mat-primary:hover {
+	background-color: var(--btn-primary-hover);
+	border-color: var(--btn-primary-hover);
+}
+
+/*.mat-form-field-appearance-standard .mat-form-field-underline {*/
+/*	background-color: rgba(0,0,0,.42);*/
+/*}*/
+
+/deep/ .tokenModal .mat-form-field-appearance-standard .mat-form-field-label {
+	color:  var(--text-card-title-color);
+}
+
+/deep/ .tokenModal .mat-form-field.mat-focused .mat-form-field-label {
+	color: var(--text-highlight-primary) !important;
+}
+
+/deep/ .tokenModal .mat-form-field-appearance-standard .mat-form-field-underline {
+	background-color: var(--text-gray-color) !important;
+}
+
+/deep/ .tokenModal .mat-form-field-wrapper .mat-form-field-ripple {
+	background-color: var(--text-highlight-primary) !important;
+}
+
+/deep/ .tokenModal .mat-form-field-wrapper .mat-input-element {
+	caret-color: var(--text-highlight)!important;
+}
+
+/deep/ .tokenModal .mat-form-field-wrapper .mat-form-field-autofill-control {
+	color: var(--text-highlight) !important;
+}
+
+/deep/ .tokenModal .mat-form-field {
+	padding: 0 20px 0 0 !important;
 }

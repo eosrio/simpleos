@@ -293,7 +293,7 @@ export class DappComponent implements OnInit, AfterViewInit {
             this.schemaJSON = {
                 'schema': {
                     'type': 'object',
-                    'title': 'ACTION - ' + actionType.toUpperCase(),
+                    'title': 'ACTION: ' + actionType.toUpperCase(),
                     'properties': SchemaJSON
                 }
 
@@ -390,13 +390,13 @@ export class DappComponent implements OnInit, AfterViewInit {
                 let typeABI;
                 if (intArr.includes(field.type)) {
                     // typeABI = "number";
-                    typeABI = '"widget": "text", "type": "number","htmlClass":"mat-my-class"';
+                    typeABI = '"widget": "text", "type": "number","htmlClass":"actions-class"';
                 } else if (arr) {
                     // typeABI = "array";
-                    typeABI = '"type": "array", "items": { "widget": "text", "type":"text", "title": "' + field.name.toUpperCase() + '","htmlClass":"mat-my-class" } ';
+                    typeABI = '"type": "array", "items": { "widget": "text", "type":"text", "title": "' + field.name.toUpperCase() + '","htmlClass":"actions-class" } ';
                 } else {
                     // typeABI = "string";
-                    typeABI = '"widget": "text", "type": "text","htmlClass":"mat-my-class"';
+                    typeABI = '"widget": "text", "type": "text","htmlClass":"actions-class"';
                 }
                 if (name !== '' && name !== undefined) {
                     out.push(JSON.parse('{"title": "' + field.name + '","key": "' + name + '[].' + field.name + '",' + typeABI + '}'));
