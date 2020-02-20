@@ -1,22 +1,22 @@
 <div class="container" style="height: 100%">
 	<ng-container *ngIf="app.compilerVersion === 'DEFAULT'">
   		<div class="clr-row animate" style="padding-top: 15px;">
-    <div class="clr-col-lg-6">
-      <h1><span class="white">About </span><span class="blue">EOS Rio</span></h1>
-      <h5 *ngIf="aService.activeChain.features.vote&&aService.activeChain.eosrioBP!==''" style="margin-top: 10px;">Producer name: <span class="blue">{{aService.activeChain.eosrioBP}}</span></h5>
-      <p class="paragraph">EOS Rio is a Block Producer based in Rio de Janeiro.</p>
-      <p class="paragraph">Located in Brazil, EOS Rio contributes to the geographical and cultural distribution of the
+    <div class="clr-col-lg-6 card-title-color">
+      <h1><span class="highlight">About </span><span class="highlight-primary">EOS Rio</span></h1>
+      <h5 *ngIf="aService.activeChain.features.vote&&aService.activeChain.eosrioBP!==''" style="margin-top: 10px;">Producer name: <span class="highlight-primary">{{aService.activeChain.eosrioBP}}</span></h5>
+      <p class="p card-text-color">EOS Rio is a Block Producer based in Rio de Janeiro.</p>
+      <p class="p card-text-color">Located in Brazil, EOS Rio contributes to the geographical and cultural distribution of the
         EOS network,
         which is an important feature of a reliable and robust Delegated Proof of Stake (DPoS) network.</p>
-      <p class="paragraph">We are a team of crypto-enthusiasts and EOS supporters who have been following EOS.IO
+      <p class="p card-text-color">We are a team of crypto-enthusiasts and EOS supporters who have been following EOS.IO
         development since its first release, contributing with discussion, tests, and offering open-source tools for the
         community, such as Hyperion, a scalable Full History API for EOSIO based blockchains, and SimplEOS :)</p>
-      <p class="paragraph">For more information, visit <a (click)="extOpen('https://eosrio.io')"
-                                                                          class="website blue" style="cursor: pointer">eosrio.io</a></p>
-      <p class="paragraph"><strong class="text-white">Help us continue funding these projects by voting on us
+      <p class="p card-text-color">For more information, visit <a (click)="extOpen('https://eosrio.io')"
+                                                                          class="website highlight-primary" style="cursor: pointer">eosrio.io</a></p>
+      <p class="p"><strong class="highlight">Help us continue funding these projects by voting on us
         :)</strong></p>
       <p>
-		<p class="paragraph"><strong class="text-white">Go to SimplEOS FAQ for any <span class="blue" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>. <br> Our beloved Telegram BOT can also help you: <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
+		<p class="p"><strong class="highlight">Go to SimplEOS FAQ for any <span class="highlight-primary" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>. <br> Our beloved Telegram BOT can also help you: <span class="highlight-primary" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
       <p>
         <a (click)="extOpen('https://steemit.com/@eosrio')" class="social-icon" pTooltip="steemit.com/@eosrio">
           <img [src]="theme.currentTheme === 'dark' ? 'assets/steemit.png' : 'assets/steemit3.png'" class="steemit">
@@ -39,15 +39,15 @@
 	</ng-container>
 	<ng-container *ngIf="app.compilerVersion === 'LIBERLAND'">
 		<div class="clr-row animate" style="padding-top: 15px;">
-			<div class="clr-col-lg-7">
-				<h1><span class="white">About </span><span class="blue">Liberland</span></h1>
-				<p class="paragraph">Free Republic of Liberland is a sovereign state located between Croatia and Serbia. It is a 7km2 land referred to as “Gornja Siga.”</p>
-				<p class="paragraph">Liberland is a constitutional republic with elements of direct democracy. The language is English.</p>
-				<p class="paragraph">The Liberland Merit is the currency of Liberland. The country's motto is: To live and let live.</p>
-				<p class="paragraph">For more information, visit <a (click)="extOpen('https://liberland.org/en/')"
-																	class="website blue" style="cursor: pointer">liberland.org</a></p>
-				<p class="paragraph"><strong class="text-white">
-					For any doubts on Liberland features, please join their telegram <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/liberlanders')">t.me/liberlanders</span>.</strong>
+			<div class="clr-col-lg-7 card-title-color">
+				<h1><span class="highlight">About </span><span class="highlight-primary">Liberland</span></h1>
+				<p class="p card-text-color">Free Republic of Liberland is a sovereign state located between Croatia and Serbia. It is a 7km2 land referred to as “Gornja Siga.”</p>
+				<p class="p card-text-color">Liberland is a constitutional republic with elements of direct democracy. The language is English.</p>
+				<p class="p card-text-color">The Liberland Merit is the currency of Liberland. The country's motto is: To live and let live.</p>
+				<p class="p card-text-color">For more information, visit <a (click)="extOpen('https://liberland.org/en/')"
+																	class="website highlight-primary" style="cursor: pointer">liberland.org</a></p>
+				<p class="p"><strong class="highlight">
+					For any doubts on Liberland features, please join their telegram <span class="highlight-primary" style="cursor:pointer" (click)="extOpen('https://t.me/liberlanders')">t.me/liberlanders</span>.</strong>
 				</p>
 				<p>
 					<a (click)="extOpen('https://t.me/liberlanders')" class="social-icon" style="margin-left: 10px" pTooltip="t.me/liberlanders" tooltipPosition="top">
@@ -58,11 +58,11 @@
 					</a>
 				</p>
 
-				<h1><span class="white">About </span><span class="blue">SimplEOS</span></h1>
-				<p class="paragraph">Liberland wallet is powered by SimplEOS, an open source wallet developed by EOS Rio. </p>
-				<p class="paragraph">EOS Rio is a block producer dedicated to eosio chains and member of the Ghostbusters tech colletive.</p>
-				<p class="paragraph"><strong class="text-white">Go to SimplEOS FAQ for any <span class="blue" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>.</strong></p>
-				<p class="paragraph"><strong class="text-white">Our beloved Telegram BOT can also help you: <span class="blue" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
+				<h1><span class="highlight">About </span><span class="highlight-primary">SimplEOS</span></h1>
+				<p class="p card-text-color">Liberland wallet is powered by SimplEOS, an open source wallet developed by EOS Rio. </p>
+				<p class="p card-text-color">EOS Rio is a block producer dedicated to eosio chains and member of the Ghostbusters tech colletive.</p>
+				<p class="p card-text-color"><strong class="highlight">Go to SimplEOS FAQ for any <span class="highlight-primary" style="cursor:pointer" (click)="extOpen('https://eosrio.io/faq_home/')">HELP</span>.</strong></p>
+				<p class="p card-text-color"><strong class="highlight">Our beloved Telegram BOT can also help you: <span class="highlight-primary" style="cursor:pointer" (click)="extOpen('https://t.me/simpleos_bot')">@simpleos_bot</span>. </strong> </p>
 				<p>
 					<a (click)="extOpen('https://t.me/eosrio')" class="social-icon" style="margin-left: 10px" pTooltip="t.me/eosrio">
 						<fa-icon [icon]="['fab', 'telegram-plane']" size="2x"></fa-icon>

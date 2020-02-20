@@ -4,7 +4,7 @@
 
         <div class="clr-col-6 text-center animate" style="align-self: center;">
             <div class="content-area" style="padding-top: 0; overflow-x: hidden;">
-                <div class="balance">
+                <div class="balance free-title">
                     <div *ngIf="sendForm.value.token === aService.activeChain['symbol']" class="infos">
                         <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;FREE
                         <ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
@@ -17,14 +17,14 @@
                     </ng-container>
                 </div>
                 <ng-container *ngIf="sendForm.value.token === aService.activeChain['symbol']">
-                    <div class="eos">{{unstaked | number : precision}} {{aService.activeChain['symbol']}}</div>
-                    <div *ngIf="unstaking > 0" style="color: white">
+                    <div class="eos highlight-primary">{{unstaked | number : precision}} {{aService.activeChain['symbol']}}</div>
+                    <div *ngIf="unstaking > 0" class="highlight">
                         <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;Will be {{(unstaked + unstaking) | number :
                         '1.2-4'}} {{aService.activeChain['symbol']}} {{unstakeTime}}
                     </div>
                 </ng-container>
                 <ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
-                    <div class="eos">{{token_balance | number : precision}} {{sendForm.value.token}}</div>
+                    <div class="eos highlight-primary">{{token_balance | number : precision}} {{sendForm.value.token}}</div>
                 </ng-container>
                 <form [formGroup]="sendForm">
                     <div>
@@ -76,10 +76,10 @@
                     </div>
                     <ng-container
                             *ngIf="errormsg === '' && sendForm.value.to !== '' && !contactExist">
-                        <div class="gray" style="margin-top: 6px">This account is not yet in your contacts</div>
-                        <clr-toggle-wrapper class="text-left">
+                        <div class="main-text mt-3 mb-1">This account is not yet in your contacts</div>
+                        <clr-toggle-wrapper class="text-left  mt-2 mb-3">
                             <input clrToggle type="checkbox" id="addtoContacts" formControlName="add">
-                            <label for="addtoContacts" class="gray">Add to contacts?</label>
+                            <label for="addtoContacts" class="main-text">Add to contacts?</label>
                         </clr-toggle-wrapper>
                         <mat-form-field class="alias" *ngIf="add">
                             <input matInput formControlName="alias" type="text" placeholder="Contact name">
@@ -118,9 +118,8 @@
                         <li class="contacts-pad" [class.last-item]="last">
                             <div class="clr-row justify-content-between">
                                 <div class="clr-col-lg-8 clr-col-sm-6 clr-col-md-7">
-                                    <h5 class="token-title-color contact-hover mt-0">{{contact.name}}</h5>
-<!--                                    <div class="black-white">{{contact.account}}</div>-->
-                                    <div class="gray3">{{contact.account}}</div>
+                                    <h5 class="token-title-color mt-0">{{contact.name}}</h5>
+                                    <div class="account-color">{{contact.account}}</div>
                                 </div>
                                 <div class="clr-col-lg-4 clr-col-sm-6 clr-col-md-5" style="text-align: right">
 <!--                                    <button class="btn btn-info-outline editBtn"-->
@@ -142,7 +141,7 @@
                 </ng-container>
             </div>
             <div class="contacts-panel-footer">
-                <button class="btn btn-inverse btn-block newContactBtn" (click)="newContactModal = true">
+                <button class="btn btn-block newcontact-btn" (click)="newContactModal = true">
                     <fa-icon [icon]="['far', 'plus']"></fa-icon>&nbsp;&nbsp;NEW CONTACT
                 </button>
             </div>
@@ -151,7 +150,7 @@
 </div>
 
 <clr-modal [(clrModalOpen)]="newContactModal" [clrModalSize]="'sm'">
-    <h3 class="modal-title text-white">
+    <h3 class="modal-title">
         <fa-icon [icon]="['far', 'user-plus']"></fa-icon>&nbsp;&nbsp;New contact
     </h3>
     <div class="modal-body">
@@ -178,7 +177,7 @@
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="editContactModal" [clrModalSize]="'sm'">
-    <h3 class="modal-title text-white">
+    <h3 class="modal-title">
         <fa-icon [icon]="['far', 'user-edit']"></fa-icon>&nbsp;&nbsp;Edit contact
     </h3>
     <div class="modal-body">
@@ -202,12 +201,12 @@
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="deleteContactModal" [clrModalSize]="'sm'">
-    <h3 class="modal-title text-white">
-        <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="blue">Delete</span> contact
+    <h3 class="modal-title">
+        <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="highlight-primary">Delete</span> contact
     </h3>
     <div class="modal-body">
         <p style="margin-bottom: 20px;">Are you sure you want do delete the contact <span
-                class="blue">{{selectedDeleteContact['name']}}</span>?</p>
+                class="highlight-primary">{{selectedDeleteContact['name']}}</span>?</p>
     </div>
     <div class="modal-footer">
         <button class="btn btn-danger-outline" (click)="deleteContactModal = false">Cancel</button>

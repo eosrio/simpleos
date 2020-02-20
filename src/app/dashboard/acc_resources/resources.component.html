@@ -5,9 +5,9 @@
             <div class="card info-card special-font">
                 <div class="card-block">
                     <div class="title">RAM price</div>
-                    <!--<div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                    <!--<div class="highlight-primary resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
                     <div
-                            class="blue resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
+                            class="highlight-primary resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
                         /KB
                     </div>
                 </div>
@@ -25,14 +25,14 @@
                     </div>
                     <div class="title">your RAM
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
                             <span
                                     class="tooltip-content">RAM is a resource used to store information on your account<br>
               				</span>
                         </a>
                     </div>
-                    <div class="resource"><span class="blue">Used {{ram_usage / (1024) | number: '1.2-2'}}
-                        KB</span><span style="color: #8d8d8d"> / {{ram_quota / (1024) | number:
+                    <div class="resource"><span class="highlight-primary">Used {{ram_usage / (1024) | number: '1.2-2'}}
+                        KB</span><span class="text-faded"> / {{ram_quota / (1024) | number:
                         '1.2-2'}} KB</span>
                     </div>
                 </div>
@@ -41,7 +41,7 @@
             <div class="card info-card special-font">
                 <div class="card-block" style="height: auto;">
                     <form [formGroup]="ramMarketFormBuy">
-                        <div class="title white">Buy RAM</div>
+                        <div class="title">Buy RAM</div>
                         <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
                             <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
                                    [textMask]="{mask: numberMask}" formControlName="buyBytes"
@@ -54,7 +54,7 @@
                                    [textMask]="{mask: numberMask}" formControlName="buyEos"
                                    (keyup)="(errormsg2='');convertToBytes()"/>
                         </mat-form-field>
-                        <!--						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>-->
+                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
                         <mat-error align="start" *ngIf="errormsg2 !== ''">
                             {{errormsg2}}
                         </mat-error>
@@ -87,7 +87,7 @@
                         </div>
                     </form>
                     <form [formGroup]="ramMarketFormSell">
-                        <div class="title white" style="margin-top: 40px;">Sell RAM</div>
+                        <div class="title" style="margin-top: 40px;">Sell RAM</div>
                         <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
                             <input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
                                    placeholder="RAM amount (KB)" formControlName="sellBytes"
@@ -99,7 +99,7 @@
                                    placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
                                    (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
                         </mat-form-field>
-                        <!--						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>-->
+                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
                         <mat-error align="start" *ngIf="errormsgeos !== ''">
                             {{errormsgeos}}
                         </mat-error>
@@ -115,7 +115,7 @@
                 <div class="card-block">
                     <div class="title">Refund Stake
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
                             <span
                                     class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
               				</span>
@@ -141,8 +141,8 @@
                     <span class="title">NET Bandwidth</span>
                     <span class="resource"
                           style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-                    <div class="resource"><span class="blue">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
-                        KB </span><span style="color: #8d8d8d">/ {{net_limit.max / (1024)
+                    <div class="resource"><span class="highlight-primary">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
+                        KB </span><span class="text-faded">/ {{net_limit.max / (1024)
                         | number: '1.2-2'}} KB</span>
                     </div>
                 </div>
@@ -155,14 +155,14 @@
                     </div>
                     <span class="title">CPU Bandwidth
 			  <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-              	<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+              	<fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
               	<span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
 			  </a>
 		  </span>
                     <span class="resource"
                           style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-                    <div class="blue resource"><span class="blue">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
-                        ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
+                    <div class="highlight-primary resource"><span class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
+                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
                         | number: '1.2-2'}} ms</span>
                     </div>
                 </div>
@@ -172,23 +172,23 @@
                 <div style="padding: .5rem .75rem;">
                     <div class="title">Delegated Resources
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
                             <span class="tooltip-content">Resources you lent to other accounts <br>
               </span>
                         </a>
                     </div>
-                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
                     <div class="card-text" style="margin-bottom: 0px !important;"><span
-                            class="blue">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                            class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
                         |
                         <span
-                                class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
                     </div>
 
 
                     <div style="height: auto; margin-bottom: 0px !important;">
                         <form [formGroup]="delegateForm">
-                            <!--div class="title" style="color: white;">Delegate to</div-->
+                            <!--div class="title">Delegate to</div-->
 
                             <mat-form-field
                                     style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
@@ -232,12 +232,12 @@
                         </form>
                     </div>
 
-                    <div *ngIf="delegations.length === 0" class="black-white"> You have no external delegated
+                    <div *ngIf="delegations.length === 0"> You have no external delegated
                         resources
                     </div>
                 </div>
                 <div class="card-block" style="padding: 0">
-                    <table class="table table-noborder white" style="color: #ececec;" *ngIf="delegations.length > 0">
+                    <table class="table table-noborder" *ngIf="delegations.length > 0">
                         <thead>
                         <tr>
                             <th class="left">Account</th>
