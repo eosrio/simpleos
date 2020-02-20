@@ -27,7 +27,7 @@
                 </fa-layers>
                 <br>
 
-                <div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
+                <div class="highlight-primary" style="padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
             </ng-container>
         </div>
     </div>
@@ -38,11 +38,11 @@
                     <li *ngFor="let token of tokens" class="tokens-pad"
                         (click)="tokenModal = true;loadTokenInfo(token);">
                         <div>
-                            <h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">
+                            <h5 class="mt-0" pTooltip="Contract: {{token.contract}}">
                                 <span *ngIf="token.name !== null">{{token.name}}</span>
                                 <span *ngIf="token.name == null">{{token.contract}}</span>
                             </h5>
-                            <div style="color: var(--text-blue-color);">{{token.balance}}</div>
+                            <div class="highlight-primary">{{token.balance}}</div>
                             <ng-container *ngIf="token.balance">
                 <span *ngIf="token.price !== null" style="color: #696969">
                   ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
@@ -61,27 +61,27 @@
 
 <clr-modal [(clrModalOpen)]="tokenModal" [clrModalSize]="'md'" class="tokenModal">
 
-    <!--h3 class="modal-title text-white">Contract: <span class="blue">{{contract}}</span></h3-->
+    <!--h3 class="modal-title text-white">Contract: <span class="highlight-primary">{{contract}}</span></h3-->
     <div class="modal-body" style="overflow-y: auto!important;">
         <img *ngIf="logo!==''"
              style="position:relative !important; top:0px !important; right:0px !important; float: right! important; width:120px !important; height:120px !important; margin:10px 0 0 10px !important;"
              src="{{logo}}"/>
-        <h3 class="modal-title text-white">Contract: <span class="blue">{{contract}}</span></h3>
-        <h4 *ngIf="balance !== null && balance !== undefined" class="text-white">Balance: <span
-                class="blue">{{balance| number: '1.4-4'}} {{name}}</span>
+        <h3 class="modal-title">Contract: <span class="highlight-primary">{{contract}}</span></h3>
+        <h4 *ngIf="balance !== null && balance !== undefined">Balance: <span
+                class="highlight-primary">{{balance| number: '1.4-4'}} {{name}}</span>
         </h4>
         <div *ngIf="price !== null && price !== undefined">
-            <h4 class="text-white">Price: <span class="blue">{{price| number: '1.4-4'}}</span></h4>
+            <h4>Price: <span class="highlight-primary">{{price| number: '1.4-4'}}</span></h4>
             ${{(balance * price) | number:'1.2-2'}} @{{price | number: '1.2-2'}}
         </div>
 
         <div>
-            <h4 *ngIf="description!==''" class="blue">Description: <span class="text-white">{{description}}</span></h4>
+            <h4 *ngIf="description!==''" class="highlight-primary">Description: <span class="highlight">{{description}}</span></h4>
         </div>
 
         <!--hr style="border:0px !important;border-bottom:1px solid #0094d2 !important;" /-->
-        <h4><span class="blue">Contract Actions:</span></h4>
-        <!--h4 class="text-white mt-0">Voting power will be: <span class="blue">{{21212 | number}}%</span></h4-->
+        <h4>Contract Actions:</h4>
+        <!--h4 class="text-white mt-0">Voting power will be: <span class="highlight-primary">{{21212 | number}}%</span></h4-->
         <br/>
         <!--mat-button-toggle-group name="alignment">
             <mat-button-toggle value="left" *ngFor="let action of abiSmartContractActions" class="btn btn-outline btn-info-outline"
@@ -95,7 +95,7 @@
                 style="margin-top: 15px; padding:0px 17px !important;">
             {{action.name}}
         </button>
-        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        <fa-icon class="highlight-primary" [icon]="['far','spinner']" [spin]="true" *ngIf="busy" size="lg"></fa-icon>
 
         <br/>
         <div class="my-mat-class">
@@ -116,10 +116,10 @@
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="sendModal">
-    <h3 class="modal-title text-white"><span class="blue">Confirm Action</span></h3>
-    <h4 class="modal-title text-white"><span class="blue">{{contract}}::{{action}}</span></h4>
+    <h3 class="modal-title text-white"><span class="highlight-primary">Confirm Action</span></h3>
+    <h4 class="modal-title text-white"><span class="highlight-primary">{{contract}}::{{action}}</span></h4>
     <div class="modal-body">
-        <h5 class="modal-title text-white"><span class="blue">Form(JSON)</span></h5>
+        <h5 class="modal-title text-white"><span class="highlight-primary">Form(JSON)</span></h5>
         <ngx-json-viewer width="300" [json]="formVal" [expanded]="true"></ngx-json-viewer>
     </div>
     <div class="modal-footer">
@@ -131,7 +131,7 @@
                                formControlName="pass">
                         <br clear="all"/>
                     </mat-form-field>
-                    <button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
+                    <button type="button" class="btn btn-info-outline" style="margin-top: 12px; padding: 5px;"
                             (click)="pushAction()"
                             [disabled]="!confirmForm.valid || busy">
                         Confirm

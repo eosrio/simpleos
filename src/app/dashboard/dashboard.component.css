@@ -181,7 +181,6 @@
 
 .deleteteacc {
   font-size: 1.5em !important;
-
 }
 
 .deleteteacc:hover {
@@ -200,32 +199,4 @@
 	padding-right: 13px;
 }
 
-/*START LEDGER ACC LIST SELECTION */
-::ng-deep .ledger-select .mat-pseudo-checkbox {
-    color: var(--text-card-color);
-}
 
-::ng-deep .ledger-select .mat-primary .mat-pseudo-checkbox-checked, .mat-primary .mat-pseudo-checkbox-indeterminate {
-    background: var(--btn-primary-bg);
-}
-
-::ng-deep .ledger-select .mat-list-option:hover, .mat-list-option:focus, .mat-nav-list .mat-list-item:hover, .mat-nav-list .mat-list-item:focus, .mat-action-list .mat-list-item:hover, .mat-action-list .mat-list-item:focus {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-::ng-deep .ledger-select .mat-list-text {
-    color: var(--modal-title-color);
-}
-
-::ng-deep .ledger-select.mat-list-base {
-    padding-top: 0;
-    border: 1px solid var(--btn-primary-bg);
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-::ng-deep .ledger-select .mat-list-option {
-    font-family: Metropolis, sans-serif;
-    font-size: 15px;
-}
-/*END LEDGER ACC LIST SELECTION */

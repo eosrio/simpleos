@@ -141,12 +141,8 @@ li:hover {
 }
 
 /*domi's css*/
-.header-card {
-	background-color: var(--info-card-background);
+.info-card {
 	border-radius: 5px 5px 0 0;
-	border: 0;
-	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-	color: #cccccc;
 	padding: .5rem .75rem;
 }
 
@@ -182,7 +178,6 @@ li:hover {
 .subtitle {
 	display: inline-flex;
 	margin-left: 10px;
-	color: #999999;
 }
 
 .searchbar {

@@ -47,7 +47,8 @@ form {
 }
 
 .letter {
-    color: var(--text-card-title-color);
+    /*color: var(--text-card-title-color);*/
+    color: var(--letter-color);
 	padding: 5px 0 2px 0.5rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -60,7 +61,7 @@ li {
 }
 
 li:hover {
-    background-color: var(--tr-hover);
+    background-color: var(--tokens-panel-hover);
     color: var(--sidenav-active-color);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
@@ -109,6 +110,7 @@ li:hover .contact-hover {
 
 .newcontact-btn:hover {
     background-color: var(--newcontact-btn-bg-hover);
+    color: var(--newcontact-btn-color-hover);
 }
 /*contact's panel end*/
 

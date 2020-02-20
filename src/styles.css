@@ -57,19 +57,27 @@
 	--btn-primary-bg: var(--blue-color);
 	--btn-primary-hover: var(--blue-darker);
 	--btn-primary-color: var(--white-color);
-	/*outline*/
+	/*outline info*/
 	--btn-info-outline: var(--blue-color);
 	--btn-info-outline-hover: var(--blue-color);
 	--btn-info-outline-color-hover: var(--white-color);
+	/*outline inverse*/
+	--btn-inverse-outline: var(--white-color);
+	--btn-inverse-outline-hover: var(--blue-color);
+	--btn-inverse-outline-color-hover: var(--white-color);
+	/*outline accent*/
+	--btn-accent-outline: var(--blue-color);
+	--btn-accent-outline-hover: var(--blue-color);
+	--btn-accent-outline-color-hover: var(--white-color);
 	/*link*/
 	/*used in... refresh btn, open account on explorer, reload all proxys*/
 	--btn-primary-link-color: var(--blue-color);
-	--btn-primary-link-color-hover: #0077b7;
-	--btn-primary-link-bg-hover: #ffffff;
+	--btn-primary-link-color-hover: var(--blue-darker);
+	--btn-primary-link-bg-hover: var(--white-color);
 	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
 	--btn-accent-link-color: var(--blue-color);
-	--btn-accent-link-color-hover: #0077b7;
-	--btn-accent-link-bg-hover: #ffffff;
+	--btn-accent-link-color-hover: var(--blue-darker);
+	--btn-accent-link-bg-hover: var(--white-color);
 
 	/*typography*/
 	--special-font-regular: inherit;
@@ -112,6 +120,11 @@
 	--mat-tab-bar-active: var(--blue-color);
 	--mat-tab-bar-height: 2px;
 
+	/*vote tabs AND rex tabs*/
+	--vote-tab-color: var(--gray-darker);
+	--vote-tab-active: var(--black-card);
+	--vote-tab-active-color: var(--gray-lighter);
+
 	/*tokens panel*/
 	--tokens-panel-background: var(--black-sidenav);
 	--destaque-color-token: var(--blue-color);
@@ -121,11 +134,13 @@
 
 	/*contacts panel*/
 	--letter-divider: var(--black-background);
+	--letter-color: var(--gray-lighter);
 	--contact-hover-color: var(--gray-lightmedium);
 	--newcontact-btn-bg: transparent;
 	--newcontact-btn-color: var(--white-color);
 	--newcontact-btn-bordertop: var(--white-color);
 	--newcontact-btn-bg-hover: var(--blue-color);
+	--newcontact-btn-color-hover: var(--white-color);
 
 	/*history table*/
 	--table-th-color: #cccccc;
@@ -155,9 +170,6 @@
 	--scroll-background: var(--black-sidenav);
 	--scroll-thumb-background: 'var(--gray-darker)';
 
-	--verify-card-text-color: #696969;
-	--verify-card-backgound-color: rgba(162, 162, 162, 0.12);
-
 	--text-white-color: #ffffff;
 	--text-btn-color-hover: #ffffff;
 	--text-blue-color: var(--blue-color); /*used a lot, but in wax its orange XD*/
@@ -186,10 +198,7 @@
 	--tr-hover: var(--dark-hover);
 
 	/*REX page*/
-	--rex-balance-title-color: #b1b1b1;
-	--rex-balance-info-color: var(--white-color);
-	--rex-btn-color: var(--blue-color);
-	--rex-border-color: var(--blue-color);
+	--rex-border-color: var(--black-background);
 
 	--btn-border-color: var(--blue-color);
 	--btn-color: var(--blue-color);
@@ -199,10 +208,6 @@
 	--btn-background-hover: var(--blue-color);
 	--btn-rev-color-hover: var(--blue-color);
 	--btn-rev-background-hover: #ffffff;
-
-	--btn-inverse-color: #ffffff;
-	--btn-inverse-background-hover: #ffffff;
-	--btn-inverse-color-hover: var(--blue-color);
 
 	--btn-inverse2-color: #ffffff;
 	--btn-inverse2-background-hover: #ffffff;
@@ -279,16 +284,27 @@ body {
 .text-faded {
 	color: var(--text-faded);
 }
+
+.text-warn {
+	color: var(--text-error);
+}
+
+.error {
+	color: var(--text-error) !important;
+	font-weight: 600;
+}
 /*classes for colors end*/
 
 /*buttons*/
 .btn-primary {
-	background-color: var(--btn-primary-bg);
-	color: var(--btn-primary-color);
+	background-color: var(--btn-primary-bg) !important;
+	color: var(--btn-primary-color) !important;
+	border-color: var(--btn-primary-bg) !important;
 }
 
 .btn-primary:hover {
-	background-color: var(--btn-primary-hover);
+	background-color: var(--btn-primary-hover) !important;
+	border-color: var(--btn-primary-hover) !important;
 }
 
 .btn-info-outline {
@@ -300,6 +316,44 @@ body {
 .btn-info-outline:hover {
 	background-color: var(--btn-info-outline-hover) !important;
 	color: var(--btn-info-outline-color-hover) !important;
+}
+
+.btn-inverse-outline {
+	border-color: var(--btn-inverse-outline) !important;
+	background-color: transparent;
+	color: var(--btn-inverse-outline) !important;
+}
+
+.btn-inverse-outline:hover {
+	background-color: var(--btn-inverse-outline-hover) !important;
+	color: var(--btn-inverse-outline-color-hover) !important;
+}
+
+.btn-accent-outline {
+	border-color: var(--btn-accent-outline) !important;
+	background-color: transparent;
+	color: var(--btn-accent-outline) !important;
+}
+
+.btn-accent-outline:hover {
+	background-color: var(--btn-accent-outline-hover) !important;
+	color: var(--btn-accent-outline-color-hover) !important;
+}
+
+.btn-primary-link {
+	color: var(--btn-primary-link-color) !important;
+}
+
+.btn-primary-link:hover {
+	color: var(--btn-primary-link-color-hover) !important;
+}
+
+.btn-accent-link {
+	color: var(--btn-accent-link-color) !important;
+}
+
+.btn-accent-link:hover {
+	color: var(--btn-accent-link-color-hover) !important;
 }
 /*buttons end*/
 
@@ -482,48 +536,25 @@ body a.link-eosrio:hover{
 /*material's autocomplete end*/
 
 /*material's input*/
-.mat-my-class .mat-form-field-wrapper .mat-form-field-label {
-	color:  var(--text-gray-color) !important;
-}
 
 .mat-form-field-appearance-legacy .mat-form-field-label {
 	color:  var(--text-gray-color);
-}
-
-.mat-my-class .mat-form-field-wrapper .mat-focused .mat-form-field-label {
-	color: var(--text-blue-color) !important;
 }
 
 .mat-form-field.mat-focused .mat-form-field-label {
 	color: var(--text-blue-color);
 }
 
-.mat-my-class .mat-form-field-wrapper .mat-form-field-underline {
-	background-color:  var(--text-gray-color) !important;
-}
-
 .mat-form-field-appearance-legacy .mat-form-field-underline {
 	background-color: var(--text-gray-color);
-}
-
-.mat-my-class .mat-form-field-wrapper .mat-form-field-ripple {
-	background-color: var(--text-blue-color) !important;
 }
 
 .mat-form-field.mat-focused .mat-form-field-ripple {
 	background-color: var(--text-blue-color);
 }
 
-.mat-my-class .mat-form-field-wrapper .mat-input-element {
-	caret-color: var(--text-blue-color)!important;
-}
-
 .mat-input-element {
 	caret-color: var(--text-blue-color);
-}
-
-.mat-my-class .mat-form-field-wrapper .mat-form-field-autofill-control {
-	color: var(--text-blue-color);
 }
 
 .mat-form-field-autofill-control {
@@ -540,11 +571,6 @@ body a.link-eosrio:hover{
 	transition-property: color, background-color;
 	cursor: pointer;
 }
-
-/*.btn-info-outline:hover {*/
-/*	 background-color: #0077b7 !important;*/
-/*	 color: white !important;*/
-/* }*/
 
 .btn-danger-outline:hover {
 	background-color: #c92100 !important;
@@ -578,6 +604,10 @@ body a.link-eosrio:hover{
 /*clarity's modal*/
 .modal-dialog .modal-content {
 	background-color: var(--modal-background) !important;
+}
+
+.modal-body div, .modal-body h4, .modal-body h5, .modal-body p {
+	color: var(--modal-color);
 }
 
 .close:focus {
@@ -709,14 +739,15 @@ input:not([readonly]) {
 }
 
 .clr-wizard-btn.btn-success {
-	/*border-color: var(--text-title-color) !important;*/
-	background-color: transparent !important;
-	color: var(--btn-success-color) !important;
+	border-color: var(--btn-primary-bg) !important;
+	background-color: var(--btn-primary-bg) !important;
+	color: var(--btn-primary-color) !important;
 }
 
 .clr-wizard-btn.btn-success:hover {
-	background-color: #d8d8d8 !important;
-	color: #000 !important;
+	background-color: var(--btn-primary-hover) !important;
+	color: var(--btn-primary-color) !important;
+	border-color: var(--btn-primary-hover) !important;
 }
 
 .wiz-subtitle {
@@ -738,18 +769,24 @@ input:not([readonly]) {
 
 /*texts hints below input below*/
 
+/*material checkbox*/
 .mat-checkbox-frame {
-	border-color: var(--text-blue-color);
+	border-color: var(--text-highlight-primary);
 }
 
 .mat-checkbox-label {
 	font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif !important;
-	color:  var(--text-blue-color);
+	color:  var(--text-highlight-primary);
 }
 
 .mat-checkbox-checked.mat-accent .mat-checkbox-background {
-	background-color: var(--text-blue-color);
+	background-color: var(--text-highlight-primary);
 }
+
+.mat-primary .mat-pseudo-checkbox-checked, .mat-primary .mat-pseudo-checkbox-indeterminate {
+	background: var(--text-highlight-primary);
+}
+/*material checkbox primary*/
 
 .copy {
 	margin-bottom: 8px;
@@ -758,11 +795,6 @@ input:not([readonly]) {
 .copy:hover {
 	cursor: pointer;
 	color: var(--text-gray3-color);
-}
-
-.error {
-	color: var(--text-error) !important;
-	font-weight: 600;
 }
 
 /*Prime's accordion*/
@@ -853,6 +885,10 @@ input:not([readonly]) {
 	/*color:  var(--text-title-color);*/
 }
 
+.ui-accordion .ui-accordion-header a:focus {
+	box-shadow: none !important;
+}
+
 /*.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {*/
 /*	border-color: #0094d2 !important;;*/
 /*	background-color: #0094d2 !important;*/
@@ -868,6 +904,10 @@ input:not([readonly]) {
 .ui-table .ui-sortable-column.ui-state-highlight {
 	background-color: transparent !important;
 	color: #0094d2 !important;
+}
+
+.ui-table .ui-sortable-column.ui-state-highlight .ui-sortable-column-icon {
+	color: var(--text-highlight) !important;
 }
 
 
@@ -1059,3 +1099,34 @@ input:not([readonly]) {
 .made-with-love {
 	color: var(--made-with-love);
 }
+
+/*START LEDGER ACC LIST SELECTION */
+.ledger-select .mat-pseudo-checkbox {
+	color: var(--modal-color);
+}
+
+.ledger-select .mat-primary .mat-pseudo-checkbox-checked, .mat-primary .mat-pseudo-checkbox-indeterminate {
+	background: var(--btn-primary-bg);
+}
+
+.ledger-select .mat-list-option:hover, .mat-list-option:focus, .mat-nav-list .mat-list-item:hover, .mat-nav-list .mat-list-item:focus, .mat-action-list .mat-list-item:hover, .mat-action-list .mat-list-item:focus {
+	background: var(--tr-hover);
+	border-radius: 8px;
+}
+
+.ledger-select .mat-list-text {
+	color: var(--modal-title-color);
+}
+
+.ledger-select.mat-list-base {
+	padding-top: 0;
+	border: 1px solid var(--btn-primary-bg);
+	border-radius: 8px;
+	margin-top: 10px;
+}
+
+.ledger-select .mat-list-option {
+	font-family: Metropolis, sans-serif;
+	font-size: 15px;
+}
+/*END LEDGER ACC LIST SELECTION */

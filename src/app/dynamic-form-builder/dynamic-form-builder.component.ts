@@ -5,36 +5,7 @@ import {EOSJSService} from '../services/eosio/eosjs.service';
 
 
 @Component({
-	template:
-		'<form [formGroup]="form" >' +
-		'	<span *ngIf="description!==\'\'" class="text-white" style="border:0.5px solid #0094d2; padding:8px; -webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px; margin-bottom: 20px;" >{{description}}</span>' +
-		'	<div *ngFor="let field of fields"  class="col-md-7">' +
-		// '		<div>' +
-		'			<app-field-builder *ngIf="!field.struct" style="margin-top:10px;" [field]="field.fields[0]" [form]="form" ></app-field-builder>' +
-		// '		</div>' +
-		// '		<div   class="col-md-7">' +
-	'				<mat-accordion *ngIf="field.struct">' +
-		'				<mat-expansion-panel>' +
-		'					<mat-expansion-panel-header>' +
-		'						<mat-panel-title style="text-transform: uppercase;">' +
-		'							{{field.name}}' +
-		'						</mat-panel-title>' +
-		'						<mat-panel-description >' +
-		'							Type: {{field.typeField}}' +
-		'						</mat-panel-description>' +
-		'					</mat-expansion-panel-header>' +
-		'					<div *ngFor="let f of field.fields" >' +
-		'						<app-field-builder [field]="f" [form]="form"></app-field-builder>' +
-		'					</div>' +
-		'				</mat-expansion-panel>' +
-		'			</mat-accordion>' +
-		// '		</div>' +
-		'	</div>' +
-		'	<div class="col-md-7">' +
-		'		<button type="submit" [disabled]="!form.valid" (click)="pushFormAction(this.form)" class="btn btn-info-outline" style="margin-top: 20px;">PUSH ACTION</button>' +
-		'		<strong >{{errormsg}}</strong>' +
-		'	</div>' +
-		'</form>',
+	templateUrl: 'dynamic-form-builder.component.html',
 	selector: 'app-dynamic-form-builder',
 	styles: [' .box-struct{} ' +
 	'/deep/.mat-expansion-indicator::after { border-width: 0 3px 3px 0 !important; padding: 4px !important; color: rgba(0,121,184,.54) !important;} ' +

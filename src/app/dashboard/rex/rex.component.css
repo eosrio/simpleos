@@ -1,9 +1,3 @@
-.white-rex{
-	color: var(--rex-balance-info-color) !important;
-}
-.gray-rex{
-	color: var(--rex-balance-title-color) !important;
-}
 .rex-chart {
 	height: 200px !important;
 	margin-right: 53px;
@@ -42,7 +36,8 @@
 }
 
 .upper-buycard {
-	border-bottom: 1px solid var(--sidenav-active-border-color1) !important;
+	border-bottom: 1px solid var(--rex-border-color) !important;
+	padding-bottom: 14px;
 }
 
 .card-block {
@@ -55,14 +50,12 @@
 	border-bottom: 1px solid var(--sidenav-active-border-color1);
 	border-top: 1px solid var(--sidenav-active-border-color1);
 	margin-top: 10px;
-	color:var(--tr-resource-odd-color);
 }
 
 .rex-balances {
 	background-color: var(--tr-resource-even-backgorund);
 	padding: 5px 0 5px 12px;
 	border-bottom: 1px solid var(--sidenav-active-border-color1);
-	color:var(--tr-resource-odd-color);
 }
 
 .warning-text {
@@ -172,12 +165,18 @@
 }
 
 /deep/ #rex-tabs .mat-tab-label .mat-tab-label-content {
-	font-size: 17px !important
+	font-size: 17px !important;
+	color: var(--vote-tab-color);
 }
 
 /deep/  #rex-tabs .mat-tab-label-active {
-	background-color: var(--mat-tab-active);
+	background-color: var(--vote-tab-active);
 }
+
+/deep/  #rex-tabs .mat-tab-label-active .mat-tab-label-content {
+	color: var(--vote-tab-active-color);
+}
+
 
 /deep/ .time-selector .mat-select-value {
 	color: var(--text-blue-color);

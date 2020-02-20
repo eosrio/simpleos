@@ -25,6 +25,33 @@ export const DefaultTheme = {
 	'--text-error': 'var(--red-color)',
 	'--text-faded': 'var(--gray-darker)',
 
+	/*buttons*/
+	/*solid*/
+	'--btn-primary-bg': 'var(--blue-color)',
+	'--btn-primary-hover': 'var(--blue-darker)',
+	'--btn-primary-color': 'var(--white-color)',
+	/*outline info*/
+	'--btn-info-outline': 'var(--blue-color)',
+	'--btn-info-outline-hover': 'var(--blue-color)',
+	'--btn-info-outline-color-hover': 'var(--white-color)',
+	/*outline inverse*/
+	'--btn-inverse-outline': 'var(--white-color)',
+	'--btn-inverse-outline-hover': 'var(--blue-color)',
+	'--btn-inverse-outline-color-hover': 'var(--white-color)',
+	/*outline accent*/
+	'--btn-accent-outline': 'var(--blue-color)',
+	'--btn-accent-outline-hover': 'var(--blue-color)',
+	'--btn-accent-outline-color-hover': 'var(--white-color)',
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys*/
+	'--btn-primary-link-color': 'var(--blue-color)',
+	'--btn-primary-link-color-hover': 'var(--blue-darker)',
+	'--btn-primary-link-bg-hover': 'var(--white-color)',
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
+	'--btn-accent-link-color': 'var(--blue-color)',
+	'--btn-accent-link-color-hover': 'var(--blue-darker)',
+	'--btn-accent-link-bg-hover': 'var(--white-color)',
+
 	/*typography*/
 	'--special-font': 'inherit',
 	'--special-font-regular': 'inherit',
@@ -64,6 +91,11 @@ export const DefaultTheme = {
 	'--mat-tab-bar-active': 'var(--blue-color)',
 	'--mat-tab-bar-height': '2px',
 
+	/*vote tabs*/
+	'--vote-tab-color': 'var(--gray-darker)',
+	'--vote-tab-active': 'var(--black-card)',
+	'--vote-tab-active-color': 'var(--gray-lighter)',
+
 	/*tokens panel*/
 	'--tokens-panel-background': 'var(--black-sidenav)',
 	'--destaque-color-token': 'var(--blue-color)',
@@ -73,11 +105,13 @@ export const DefaultTheme = {
 
 	/*contacts panel*/
 	'--letter-divider': 'var(--black-background)',
+	'--letter-color': 'var(--gray-lighter)',
 	'--contact-hover-color': 'var(--gray-lightmedium)',
 	'--newcontact-btn-bg': 'transparent',
 	'--newcontact-btn-color': 'var(--white-color)',
 	'--newcontact-btn-bordertop': 'var(--white-color)',
 	'--newcontact-btn-bg-hover': 'var(--blue-color)',
+	'--newcontact-btn-color-hover': 'var(--white-color)',
 
 	/*history table*/
 	'--table-th-color': 'var(--gray-lighter)',
@@ -125,10 +159,7 @@ export const DefaultTheme = {
 	'--tr-hover': 'var(--dark-hover)',
 
 	/*REX page*/
-	'--rex-balance-title-color': 'var(--gray-lightmedium)',
-	'--rex-balance-info-color': 'var(--white-color)',
-	'--rex-btn-color': 'var(--blue-color)',
-	'--rex-border-color': 'var(--blue-color)',
+	'--rex-border-color': 'var(--black-background)',
 
 	'--text-btn-color-hover': 'var(--white-color)',
 	'--text-gray-color': 'var(--gray-lightmedium)',
@@ -147,12 +178,7 @@ export const DefaultTheme = {
 	'--btn-background-hover': 'var(--blue-color)',
 	'--btn-rev-color-hover': 'var(--blue-color)',
 
-	'--btn-primary-bg': 'var(--blue-color)',
-	'--btn-primary-hover': 'var(--blue-darker)',
 
-	'--btn-inverse-color': 'var(--white-color)',
-	'--btn-inverse-background-hover': 'var(--blue-color)',
-	'--btn-inverse-color-hover': 'var(--white-color)',
 
 	'--btn-inverse2-color': 'var(--white-color)',
 	'--btn-inverse2-background-hover': 'var(--white-color)',
@@ -171,106 +197,178 @@ export const DefaultTheme = {
 };
 
 export const LiberlandTheme = {
-	'--main-background': '#EDEDEC',
-	'--background-gd': 'linear-gradient(to right, #EDEDEC, #F8F8F8)',
-	'--background-gd-webkit': '-webkit-linear-gradient(to right, #EDEDEC, #F8F8F8)',
-	'--header-background': '#D1D1D1',
-	'--header-title-color': '#292929',
-	'--header-icon-color': '#20202095',
-	'--theme-icon-color': '#20202095',
-	'--theme-icon-color-hover': '#292929',
+	/*light theme colors*/
+	'--light-bg': '#EDEDEC',
+	'--light-card': '#F8F8F8',
+	'--white-color': '#ffffff',
+	'--blue-color': '#0094d2',
+	'--blue-darker': '#0081bf',
+	'--liberland-blue': '#2a566f',
+	'--liberland-blue-darker': '#0f3a53',
+	'--yellow-color': '#FCD215',
+	'--yellow-darker': '#ebc115',
+	'--black-color': '#000000', /*modal, card titles*/
+	'--gray-dark': '#232323',
+	'--gray-darkmedium': '#404040', /*text card, text modal, for example*/
+	'--gray-medium': '#585858',
+	'--gray-lightmedium': '#adadad', /*subtitles, faded information*/
+	'--gray-light': '#D6D6D6',
+	'--red-color': '#ff4237',
+
+	/*concepts*/
+	'--text-card-title-color': 'var(--black-color)',
+	'--text-free-title-color': 'var(--gray-lightmedium)',
+	'--text-card-color': 'var(--gray-dark)',
+	'--text-highlight': 'var(--black-color)',
+	'--text-highlight-primary': 'var(--blue-color)',
+	'--text-highlight-accent': 'var(--yellow-color)',
+	'--text-error': 'var(--red-color)',
+	'--text-faded': 'var(--gray-medium)',
+
+	/*buttons*/
+	/*solid*/
+	'--btn-primary-bg': 'var(--liberland-blue)',
+	'--btn-primary-hover': 'var(--liberland-blue-darker)',
+	'--btn-primary-color': 'var(--white-color)',
+	/*outline info*/
+	'--btn-info-outline': 'var(--liberland-blue)',
+	'--btn-info-outline-hover': 'var(--liberland-blue)',
+	'--btn-info-outline-color-hover': 'var(--white-color)',
+	/*outline inverse*/
+	'--btn-inverse-outline': 'var(--white-color)',
+	'--btn-inverse-outline-hover': 'var(--yellow-color)',
+	'--btn-inverse-outline-color-hover': 'var(--liberland-blue)',
+	/*outline accent*/
+	'--btn-accent-outline': 'var(--yellow-color)',
+	'--btn-accent-outline-hover': 'var(--yellow-color)',
+	'--btn-accent-outline-color-hover': 'var(--white-color)',
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys*/
+	'--btn-primary-link-color': 'var(--blue-color)',
+	'--btn-primary-link-color-hover': 'var(--blue-darker)',
+	'--btn-primary-link-bg-hover': 'var(--white-color)',
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
+	'--btn-accent-link-color': 'var(--yellow-color)',
+	'--btn-accent-link-color-hover': 'var(--yellow-darker)',
+	'--btn-accent-link-bg-hover': 'var(--white-color)',
+
+	/*typography*/
 	'--special-font-regular': 'Lora',
 	'--special-font-bold': 'Lora-Bold',
 	'--special-font-italic': 'Lora-Italic',
 	'--special-font-bolditalic': 'Lora-BoldItalic',
 	'--special-font-weight': 'bold',
 	'--special-font-spacing': '1.3px',
-	'--slogan-special-color': '#ffffff61',
 
+	/*main and body*/
+	'--main-background': 'var(--light-bg)',
+	'--background-gd': 'linear-gradient(to right, #EDEDEC, #F8F8F8)',
+	'--background-gd-webkit': '-webkit-linear-gradient(to right, #EDEDEC, #F8F8F8)',
+	'--header-background': 'var(--gray-light)',
+	'--header-title-color': 'var(--gray-dark)',
+	'--header-icon-color': 'var(--gray-dark)',
+	'--theme-icon-color': 'var(--gray-medium)',
+	'--theme-icon-color-hover': 'var(--gray-dark)',
+
+	/*landing*/
+	'--slogan-special-color': '#ffffff61',
 	'--landing-background': 'url("./assets/cover-liberland4.png")',
 
-	'--sidenav-background': '#2a566f',
+	/*sidenav*/
+	'--sidenav-background': 'var(--liberland-blue)',
 	'--sidenav-color': '#D6D6D6',
-	'--sidenav-active-background': '#EDEDEC',
-	'--sidenav-active-color': '#2a566f',
-	'--sidenav-active-border-color1': '#EDEDEC',
+	'--sidenav-active-background': 'var(--light-bg)',
+	'--sidenav-active-color': 'var(--liberland-blue)',
+	'--sidenav-active-border-color1': 'var(--light-bg)',
+	'--sidenav-active-border-color2': 'var(var(--liberland-blue-darker))',
 
-	'--top-btn-backgorund': '#0f3a53',
-	'--top-btn-color': '#f8f8f8',
-
-	'--mat-tab-active': '#0f3a53',
-	'--mat-tab-bar-active': '#FCD215',
+	/*toolbar*/
+	'--top-btn-background': 'var(--liberland-blue-darker)',
+	'--top-btn-color': 'var(--white-color)',
+	'--mat-tab-active': 'var(--liberland-blue-darker)',
+	'--mat-tab-bar-active': 'var(--yellow-color)',
 	'--mat-tab-bar-height': '4px',
 
-	'--tokens-panel-background': '#2a566f',
-	'--destaque-color-token': '#FCD215',
-	'--token-title-color': '#f8f8f8',
-	'--token-price-color': '#D6D6D6',
-	'--tokens-panel-hover': 'var(--gray-lighter)',
+	/*vote tabs*/
+	'--vote-tab-color': 'var(--gray-lightmedium)',
+	'--vote-tab-active': 'var(--light-card)',
+	'--vote-tab-active-color': 'var(--liberland-blue)',
 
-	'--letter-divider': '#FCD215',
-	'--contact-hover-color': '#292929',
+	/*tokens panel*/
+	'--tokens-panel-background': 'var(--liberland-blue)',
+	'--destaque-color-token': 'var(--yellow-color)',
+	'--token-title-color': 'var(--light-card)',
+	'--token-price-color': 'var(--gray-light)',
+	'--tokens-panel-hover': 'var(--liberland-blue-darker)',
 
+	/*contacts panel*/
+	'--letter-divider': 'var(--liberland-blue-darker)',
+	'--letter-color': 'var(--white-color)',
+	'--contact-hover-color': 'var(--liberland-blue-darker)',
+	'--newcontact-btn-bg': 'var(--liberland-blue-darker)',
+	'--newcontact-btn-color': 'var(--white-color)',
+	'--newcontact-btn-bordertop': 'var(--white-color)',
+	'--newcontact-btn-bg-hover': 'var(--yellow-color)',
+	'--newcontact-btn-color-hover': 'var(--liberland-blue-darker)',
+
+	/*history table*/
+	'--table-th-color': 'var(--liberland-blue)',
+	'--table-th-background': 'var(--light-card)',
+	'--table-tr-background': 'var(--white-color)',
+	'--table-tr-color': 'var(--gray-darkmedium)',
+	'--table-td-color': 'var(--gray-darkmedium)',
+	'--tr-even-backgorund': 'var(--white-color)',
+	'--tr-odd-backgorund': 'var(--white-color)',
+	'--expand-background': 'var(--light-card)',
+	'--tr-border-bottom-color': '1px solid #cccccc',
+
+	/*cards*/
+	'--info-card-background': 'var(--light-card)',
+
+	/*accordion*/
 	'--accordion-content-color': '#707070',
 	'--accordion-header-color': '#707070',
-	'--accordion-header-color-hover': '#404040',
+	'--accordion-header-color-hover': 'var(--gray-darkmedium)',
 
-	'--info-card-background': '#F8F8F8',
-	'--card-hover-backgorund': '#ececec',
-	'--expand-background': '#FAFAFA',
+	/*calendar*/
+	'--text-calendar': 'var(--gray-darkmedium)',
+	'--text-disabled-calendar': 'var(--gray-light)',
 
-	'--text-calendar': '#404040',
-	'--text-disabled-calendar': '#d6d6d6',
-
+	/*scrollbar*/
 	'--scroll-track-background': '#f1f1f1',
 	'--scroll-background': '#f1f1f1',
-	'--scroll-thumb-background': '#D6D6D6',
+	'--scroll-thumb-background': 'var(--gray-light)',
 
-	'--table-th-color': '#2a566f',
-	'--table-th-background': '#f8f8f8',
-	'--table-tr-background': '#ffffff',
-	'--table-tr-color': '#404040',
-	'--table-td-color': '#404040',
+	/* modal / dialog / wizard */
+	'--modal-background': 'var(--light-card)',
+	'--modal-color': '#707070',
+	'--modal-title-color': 'var(--gray-darkmedium)',
+	'--modal-side-title-color': 'var(--light-card)',
+	'--modal-side-color': 'var(--gray-light)',
+	'--modal-side-background': 'var(--liberland-blue)',
+	'--modal-step-background': 'var(--liberland-blue-darker)',
+	'--modal-step-line-background': 'var(--liberland-blue-darker)',
+	'--modal-step-off-color': 'var(--white-color)',
 
-	'--verify-card-text-color': '#404040',
-	'--verify-card-backgound-color': '#f8f8f8',
+	/* lent resources table */
+	'--tr-resource-even-backgorund': 'var(--white-color)',
+	'--tr-resource-odd-color': '#202020',
+	'--tr-resource-odd-backgorund': 'transparent',
+	'--tr-hover': 'var(--gray-light)',
 
-	'--text-title-color': '#404040',
+	/*REX page*/
+	'--rex-border-color': 'var(--light-bg)',
+
 	'--text-white-color': '#202020',
 	'--text-btn-color-hover': '#f8f8f8',
 	'--text-gray-color': '#404040',
 	'--text-gray2-color': '#707070',
 	'--text-gray3-color': '#a8a8a8',
-	'--text-destaque-color': '#FCD215',
+	'--text-destaque-color': 'var(--yellow-color)',
 	'--text-blue-color': '#2a566f',
-	'--text-error': '#ff4237',
 	'--made-with-love': '#ffffff',
 
 	'--a-link-color': '#F8F8F8',
-
-	'--modal-background': '#F8F8F8',
-	'--modal-color': '#707070',
-	'--modal-title-color': '#404040',
-	'--modal-side-title-color': '#F8F8F8',
-	'--modal-side-color': '#d6d6d6',
-	'--modal-side-background': '#2a566f',
-	'--modal-step-background': '#0f3a53',
-	'--modal-step-line-background': '#0f3a53',
-	'--modal-step-off-color': '#ffffff',
-
-	'--tr-even-backgorund': '#ffffff',
-	'--tr-odd-backgorund': '#ffffff',
-	'--tr-border-bottom-color': '1px solid #cccccc',
-
-	'--tr-resource-even-backgorund': '#2a566f',
-	'--tr-resource-odd-color': '#202020',
-	'--tr-resource-odd-backgorund': 'transparent',
-	'--tr-hover': '#d2d2d2',
-
-	'--rex-balance-title-color': '#cccccc',
-	'--rex-balance-info-color': '#f8f8f8',
-	'--rex-btn-color': '#ffffff',
-	'--rex-border-color': '#ffffff',
 
 	'--btn-border-color': '#2a566f',
 	'--btn-color': '#2a566f',
@@ -278,9 +376,6 @@ export const LiberlandTheme = {
 	'--btn-color-hover': '#ffffff',
 	'--btn-background-hover': '#2a566f',
 	'--btn-rev-color-hover': '#2a566f',
-
-	'--btn-primary-bg': '#2a566f',
-	'--btn-primary-hover': '#0f3a53',
 
 	'--btn-inverse-color': '#ffffff',
 	'--btn-inverse-background-hover': '#ffffff',
@@ -335,6 +430,33 @@ export const LightTheme = {
 	'--text-error': 'var(--red-color)',
 	'--text-faded': 'var(--gray-medium)',
 
+	/*buttons*/
+	/*solid*/
+	'--btn-primary-bg': 'var(--blue-color)',
+	'--btn-primary-hover': 'var(--blue-darker)',
+	'--btn-primary-color': 'var(--white-color)',
+	/*outline info*/
+	'--btn-info-outline': 'var(--blue-color)',
+	'--btn-info-outline-hover': 'var(--blue-color)',
+	'--btn-info-outline-color-hover': 'var(--white-color)',
+	/*outline inverse*/
+	'--btn-inverse-outline': 'var(--gray-dark)',
+	'--btn-inverse-outline-hover': 'var(--blue-color)',
+	'--btn-inverse-outline-color-hover': 'var(--white-color)',
+	/*outline accent*/
+	'--btn-accent-outline': 'var(--blue-color)',
+	'--btn-accent-outline-hover': 'var(--blue-color)',
+	'--btn-accent-outline-color-hover': 'var(--white-color)',
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys*/
+	'--btn-primary-link-color': 'var(--blue-color)',
+	'--btn-primary-link-color-hover': 'var(--blue-darker)',
+	'--btn-primary-link-bg-hover': 'var(--white-color)',
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
+	'--btn-accent-link-color': 'var(--blue-color)',
+	'--btn-accent-link-color-hover': 'var(--blue-darker)',
+	'--btn-accent-link-bg-hover': 'var(--white-color)',
+
 	/*typography*/
 	'--special-font': 'inherit',
 	'--special-font-regular': 'inherit',
@@ -375,6 +497,11 @@ export const LightTheme = {
 	'--mat-tab-bar-active': 'var(--yellow-color)',
 	'--mat-tab-bar-height': '4px',
 
+	/*vote tabs*/
+	'--vote-tab-color': 'var(--gray-lightmedium)',
+	'--vote-tab-active': 'var(--light-card)',
+	'--vote-tab-active-color': 'var(--blue-color)',
+
 	/*tokens panel*/
 	'--tokens-panel-background': 'var(--light-card)',
 	'--destaque-color-token': 'var(--blue-color)',
@@ -384,11 +511,13 @@ export const LightTheme = {
 
 	/*contacts panel*/
 	'--letter-divider': 'var(--gray-lightmedium)',
+	'--letter-color': 'var(--black-color)',
 	'--contact-hover-color': 'var(--gray-light)',
 	'--newcontact-btn-bg': 'var(--gray-light)',
-	'--newcontact-btn-color': 'var(--black-color)',
-	'--newcontact-btn-bordertop': 'var(--black-color)',
+	'--newcontact-btn-color': 'var(--blue-color)',
+	'--newcontact-btn-bordertop': 'var(--blue-color)',
 	'--newcontact-btn-bg-hover': 'var(--blue-color)',
+	'--newcontact-btn-color-hover': 'var(--white-color)',
 
 	/*history table*/
 	'--table-th-color': 'var(--gray-dark)',
@@ -436,10 +565,7 @@ export const LightTheme = {
 	'--tr-resource-odd-backgorund': 'var(--light-card)',
 
 	/*REX page*/
-	'--rex-balance-title-color': '#e9e9e9',
-	'--rex-balance-info-color': '#f8f8f8',
-	'--rex-btn-color': '#ffffff',
-	'--rex-border-color': '#ffffff',
+	'--rex-border-color': 'var(--gray-lightmedium)',
 
 	// '--text-title-color': '#404040',
 	'--text-white-color': '#202020',
@@ -458,13 +584,6 @@ export const LightTheme = {
 	'--btn-color-hover': '#ffffff',
 	'--btn-background-hover': '#0094d2',
 	'--btn-rev-color-hover': '#0094d2',
-
-	'--btn-primary-bg': '#0079b8',
-	'--btn-primary-hover': '#004d8a',
-
-	'--btn-inverse-color': '#0094d2',
-	'--btn-inverse-background-hover': '#0094d2',
-	'--btn-inverse-color-hover': '#ffffff',
 
 	'--btn-inverse2-color': '#404040',
 	'--btn-inverse2-background-hover': '#ffffff',

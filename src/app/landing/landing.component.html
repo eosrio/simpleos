@@ -41,7 +41,7 @@
                     <div class="error mt-2">Couldn't connect to the blockchain, check your internet connection and try
                         again
                     </div>
-                    <button (click)="retryConn()" class="btn btn-link2">
+                    <button (click)="retryConn()" class="btn btn-link btn-accent-link">
                         <fa-icon [icon]="['far', 'undo']"></fa-icon>
                         &nbsp;RETRY
                     </button>
@@ -121,35 +121,27 @@
 
                         <div class="clr-row" style="justify-content: center;">
                             <div class="clr-col-md-12 clr-col-lg-6">
-                                <button class="btn btn-inverse btn-block" (click)="openImportModal()">
+                                <button class="btn btn-inverse-outline btn-block" (click)="openImportModal()">
                                     Import existing key
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="importBKP = true">
+                                <button class="btn btn-inverse-outline btn-block" (click)="importBKP = true">
                                     Import Backup
                                 </button>
                             </div>
                             <div class="clr-col-md-12 clr-col-lg-6">
-                                <button class="btn btn-inverse btn-block"
+                                <button class="btn btn-inverse-outline btn-block"
                                         *ngIf="network.activeChain['name'] === 'EOS MAINNET'"
                                         (click)="newWallet = true">
                                     Request New Account
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="verifyPanel = !verifyPanel">
+                                <button class="btn btn-inverse-outline btn-block" (click)="verifyPanel = !verifyPanel">
                                     Verify Account
                                 </button>
-                                <button class="btn btn-inverse btn-block" (click)="newKeys = true">
+                                <button class="btn btn-inverse-outline btn-block" (click)="newKeys = true">
                                     Generate Keys
                                 </button>
                             </div>
                         </div>
-
-                        <!--						<div class="clr-row" style="justify-content: center;">-->
-                        <!--							<div class="clr-col-md-12 clr-col-lg-6">-->
-                        <!--								<button class="btn btn-inverse btn-block" (click)="newKeys = true">-->
-                        <!--									Generate Keys-->
-                        <!--								</button>-->
-                        <!--							</div>-->
-                        <!--						</div>-->
 
                     </div>
 
@@ -224,13 +216,12 @@
                                         </div>
                                         <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
                                             <fa-layers class="mt-2 mb-1">
-                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-                                                         style="color:#0094d2;"></fa-icon>
+                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" class="highlight-primary"></fa-icon>
                                             </fa-layers>
                                         </div>
                                         <div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
                                              style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
-                                            <span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
+                                            <span style="padding-left: 17px; font-size: 18px;" class="highlight-primary">Connecting...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -243,7 +234,7 @@
                          *ngIf="app.compilerVersion === 'DEFAULT'">
                     <div class="credits made-with-love">Made with
                         <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-                        by <span style="color: var(--btn-link2-color)">EOS Rio</span>
+                        by <span class="highlight-primary">EOS Rio</span>
                     </div>
                     <div class="version made-with-love">v{{aService.versionSys}}</div>
                     <br>

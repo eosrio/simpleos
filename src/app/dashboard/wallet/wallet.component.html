@@ -39,14 +39,14 @@
                     <div class="clr-col-6">
 							<span style="width: 212px; float: left;"
                                   *ngIf="aService.activeChain['explorers'].length !== 0">
-								<a class="btn btn-sm btn-link" style="max-width: none;" (click)="openAccount()">
+								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;" (click)="openAccount()">
 									Open <strong class="main-text">{{aService.selected.getValue().name}}</strong> on a block explorer
 								</a>
 							</span>
                     </div>
                     <div class="clr-col-6">
 							<span (click)="refresh()" style="width: 100px; float: right">
-								<a class="btn btn-sm btn-link" style="max-width: none; font-weight: 600;"
+								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none; font-weight: 600;"
                                    (click)="refresh()">
 									<fa-icon [icon]="['far', 'undo']"></fa-icon>
 									Refresh

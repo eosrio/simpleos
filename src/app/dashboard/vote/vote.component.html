@@ -4,38 +4,38 @@
         <div class="clr-col-lg-6">
             <div class="card info-card">
                 <div class="card-block text-center">
-                    <div class="total" style="color: #b0b0b7">TOTAL
+                    <div class="total free-title">TOTAL
                         <ng-container *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
                             | ${{(totalBalance * aService.usd_rate) | number: '1.2-2'}}
                         </ng-container>
                     </div>
-                    <div class="blue eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
+                    <div class="highlight-primary eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
                         number: '1.2-4') + "K" : ((totalBalance) | number: precision) }} {{aService.activeChain['symbol']}}
                     </div>
                 </div>
             </div>
             <div class="card info-card">
                 <div class="card-block text-center">
-                    <div class="total" style="color: #b0b0b7">STAKED
+                    <div class="total free-title">STAKED
                         <ng-container *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
                             | ${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}}
                         </ng-container>
                     </div>
-                    <div class="blue eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
+                    <div class="highlight-primary eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
                         number: '1.2-4') + "K" : ((stakedBalance) | number: precision) }} {{aService.activeChain['symbol']}}
                     </div>
                     <div *ngIf="aService.activeChain['features']['rex']&&!hasRex"
-                         style="color: #b0b0b7;font-size: 16px;">
-                        STAKED + REX: <span class="blue">{{(totalStaked) | number :
+                         style="font-size: 16px;" class="free-title">
+                        STAKED + REX: <span class="highlight-primary">{{(totalStaked) | number :
                         '1.2-4'}} {{aService.activeChain['symbol']}} </span>
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
                             <span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
                         </a>
                     </div>
                     <div *ngIf="aService.activeChain['features']['vote']&&hasVote"
-                         style="color: #b0b0b7;font-size: 16px;">
-                        VOTE DECAY: <span [ngStyle]="{color:(votedDecay > 0.0000  ? '#e12200' : '#b0b0b7')}">
+                         style="font-size: 16px;" class="free-title">
+                        VOTE DECAY: <span [ngClass]="votedDecay > 0.0000  ? 'text-warn' : 'text-faded'">
 							{{(votedEOSDecay) | number : '1.2-4'}} {{aService.activeChain['symbol']}}
 
                         <fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']"></fa-icon>
@@ -51,7 +51,7 @@
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction card-title-color expandable special-font">Stake your {{aService.activeChain['symbol']}}
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
                             <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
                         </a>
                     </div>
@@ -94,7 +94,7 @@
                         <div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}"
                              style="margin-top: 12px;">
                             <div>
-                                <div class="clr-row" style="color: #b0b0b7">
+                                <div class="clr-row">
                                     <div class="clr-col-lg-4"></div>
                                     <div class="clr-col-lg-2 text-center">
                                         BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
@@ -105,7 +105,7 @@
 									</span>
                                     </div>
                                 </div>
-                                <div class="clr-row" style="color: #b0b0b7">
+                                <div class="clr-row">
                                     <div class="clr-col-lg-2 text-right">
                                         NET FOCUS
                                     </div>
@@ -125,7 +125,7 @@
                                         CPU FOCUS
                                     </div>
                                 </div>
-                                <span style="color: #b0b0b7">
+                                <span>
 								<span class="font-weight-bold">Attention:</span> If you have an unstaking in progress, your staking ratio might be limited by your unstaking balance. SimplEOS will attemp to use the selected ratio.
 							If that is not possible, SimplEOS will try to get close as possible to the desired ratio.
 						</span>
@@ -147,13 +147,13 @@
 								</span>
                                 </a>
                             </div>
-                            <div class="clr-col-lg-7 text-right" style="align-self: flex-end; color: #b0b0b7">
+                            <div class="clr-col-lg-7 text-right" style="align-self: flex-end;">
 
-                                <span class="text-white" style="font-weight: 600">CPU: </span>
+                                <span class="highlight" style="font-weight: 600">CPU: </span>
                                 <span class=" special-font"
                                       *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
                                 <span *ngIf="valuetoStake === ''">50% </span> /
-                                <span class="text-white" style="font-weight: 600">NET: </span>
+                                <span class="highlight" style="font-weight: 600">NET: </span>
                                 <span class=" special-font"
                                       *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
                                 <span *ngIf="valuetoStake === ''">50%</span>
@@ -170,7 +170,7 @@
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
                             <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
                         </a>
                     </div>
@@ -207,7 +207,7 @@
                     </div>
                     <div class="clr-row">
                         <div class="clr-col-lg-5">
-                            <button (click)="setStake()" class="btn btn-outline btn-info-outline"
+                            <button (click)="setStake()" class="btn btn-info-outline"
                                     style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
                             </button>
                             <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
@@ -224,12 +224,12 @@
                 <div class="card-block" style="padding-left: 1.75rem;">
                     <div class="gbm-title ">WAX GBM Rewards
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
                             <span
                                     class="tooltip-content">Genesis block member Rewards. For memebers that claimed their WAX tokens on the period of June 30 to August 30, 2019.
 							</span>
                         </a>
-                        <button class="btn btn-outline btn-info-outline" (click)="claimGBMrewards()"
+                        <button class="btn btn-info-outline" (click)="claimGBMrewards()"
                                 style="margin-left: 10px; font-weight: 700;">Claim rewards
                         </button>
                         <div class="error" *ngIf="this.claimError !== ''">{{this.claimError}}</div>
@@ -238,7 +238,7 @@
                          style="background-color:  var(--tr-resource-odd-backgorund);"><span
                             class="gray-rex">Balance: {{gbmBalance}} WAX</span>
                     </div>
-                    <div class="rex-balances white">
+                    <div class="rex-balances highlight">
 						<span
                                 class="gray">Estimated rewards per day: {{(gbmEstimatedDaily + voteRewardsDaily).toFixed(2)}}
                             WAX </span>
@@ -258,16 +258,16 @@
                          style="background-color:  var(--tr-resource-odd-backgorund);"><span
                             class="gray-rex">Last claim: {{gbmLastClaim}}</span>
                     </div>
-                    <div class="rex-balances white" *ngIf="!claimReady"><span
+                    <div class="rex-balances highlight" *ngIf="!claimReady"><span
                             class="gray-rex">Next claim ready {{gbmNextClaim}}</span>
                     </div>
-                    <div class="rex-balances white" *ngIf="claimReady"><span
+                    <div class="rex-balances highlight" *ngIf="claimReady"><span
                             style="color: var(--mat-tab-bar-active)">You can claim now!</span>
                     </div>
                     <div *ngIf="enableAutoClaim && (!autoClaimStatus && claimSetupWarning === '')" class="black-white"
                          style="margin-top: 6px">
                         Do you want to set a custom permission to automatically claim your rewards?
-                        <button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+                        <button class="btn btn-info-outline" (click)="createClaimPermission()"
                                 style="margin-left: 10px; font-weight: 700;">Set auto-claim
                         </button>
                         <mat-checkbox [checked]="enableLinkAuth" (change)="toggleLinkAuth()">
@@ -283,10 +283,10 @@
                     </div>
                     <div *ngIf="enableAutoClaim && autoClaimStatus" class="black-white" style="margin-top: 6px">
                         Auto-claim setup verified. All good.
-                        <button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+                        <button class="btn btn-info-outline" (click)="createClaimPermission()"
                                 style="margin-left: 10px; font-weight: 700;">Renew claim key
                         </button>
-                        <button class="btn btn-outline btn-info-outline" (click)="claimDirect(true)"
+                        <button class="btn btn-info-outline" (click)="claimDirect(true)"
                                 style="margin-left: 10px; font-weight: 700;">Force vote recast
                         </button>
 
@@ -294,7 +294,7 @@
                     <div *ngIf="enableAutoClaim  && (!autoClaimStatus && claimSetupWarning !== '')" class="black-white"
                          style="margin-top: 6px">
                         {{claimSetupWarning}}
-                        <button class="btn btn-outline btn-info-outline" (click)="createClaimPermission()"
+                        <button class="btn btn-info-outline" (click)="createClaimPermission()"
                                 style="margin-left: 10px; font-weight: 700;">Renew claim key
                         </button>
                     </div>
@@ -357,12 +357,12 @@
                     <div class="clr-row flex-items-xs-between vote-sub-header">
 
                         <div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="!voteService.voteType">
-                            <h4 class="title">Vote for Block Producers! </h4>
-                            <h5 class="subtitle mt-0">You can vote for up to 30</h5>
+                            <h4 class="title card-title-color">Vote for Block Producers! </h4>
+                            <h5 class="subtitle card-text-color mt-0">You can vote for up to 30</h5>
                         </div>
                         <div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="voteService.voteType">
-                            <h4 class="title">Vote through a Proxy! </h4>
-                            <h5 class="subtitle mt-0">Choose a proxy to vote for block producers on your behalf</h5>
+                            <h4 class="title card-title-color">Vote through a Proxy! </h4>
+                            <h5 class="subtitle card-text-color mt-0">Choose a proxy to vote for block producers on your behalf</h5>
                         </div>
                         <div class="clr-col-lg-3 clr-col-md-6  text-right mt-3" *ngIf="voteService.hasList">
                             <mat-form-field class="searchbar">
@@ -374,7 +374,7 @@
                         <div class="clr-col-lg{{!voteService.hasList ? '' : '-3 clr-col-md-6'}} text-center mt-3"
                              *ngIf="!voteService.hasList">
                             <form [formGroup]="frmForProxy">
-                                <mat-form-field class="searchbar" class="input">
+                                <mat-form-field class="searchbar input">
                                     <input matInput #proxyName type="text" formControlName="proxyName"
                                            placeholder="Vote for {{voteService.voteType?'Proxy':'Producer(s)'}}"
                                            (keyup.enter)="validateProxy(proxyName.value)">
@@ -383,7 +383,7 @@
                                         <ng-container
                                                 *ngIf="isValidAccount && (aService.selected.getValue().details['voter_info']&&aService.selected.getValue().details['voter_info']['proxy']!=='')">
                                             Current vote <span
-                                                class="blue">{{aService.selected.getValue().details['voter_info']['proxy']}}</span>
+                                                class="highlight-primary">{{aService.selected.getValue().details['voter_info']['proxy']}}</span>
                                         </ng-container>
                                         <ng-container *ngIf="!isValidAccount">
                                             Input a valid proxy account name
@@ -447,8 +447,7 @@
                         <td class="text-right" colspan="8">
                             <div class="clr-col-auto" style="margin: 0 auto; text-align: center;">
                                 <fa-layers class="mt-2 mb-1">
-                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-                                             style="color:#0094d2;"></fa-icon>
+                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" class="highlight-primary"></fa-icon>
                                 </fa-layers>
                             </div>
                         </td>
@@ -459,7 +458,7 @@
                         *ngIf="!busyList && voteService.hasList">
                         <td class="text-right expandable" [pRowToggler]="item">
                             <fa-icon [icon]="['fal', expanded ? 'search-minus' : 'search-plus']"
-                                     size="lg" class="blue">
+                                     size="lg" class="highlight-primary">
                             </fa-icon>
                         </td>
                         <td class="text-center" [pRowToggler]="item" style="padding-left: 20px">
@@ -467,7 +466,7 @@
                         </td>
                         <td *ngIf="voteService.voteType" class="text-center" [pRowToggler]="item">
                             <fa-icon *ngIf="item.reg === true || item.reg === 'Registered'" [icon]="['far', 'check']"
-                                     size="lg" class="blue"></fa-icon>
+                                     size="lg" class="highlight-primary"></fa-icon>
                         </td>
                         <td class="text-center" [pRowToggler]="item">
                             {{item.name}}
@@ -542,45 +541,45 @@
                                 </div>
                                 <div class="clr-col-{{voteService.voteType ? '9' : '6'}}">
                                     <div *ngIf="item.code">
-										<span class="blue">
+										<span class="highlight-primary">
 											<a (click)="extOpen(item.code)" style="cursor: pointer;">Code of conduct</a>
 										</span>
                                     </div>
                                     <div *ngIf="item.slogan" style="margin-top: 10px;">
-										<span class="blue" style="font-size: 32px;">
+										<span class="highlight-primary" style="font-size: 32px;">
 											{{item.slogan}}
 										</span>
                                     </div>
                                     <div *ngIf="voteService.voteType && listProxyVote" class="text-left">
-                                        <h3 class="blue">Voting For ({{listProxyVote.length}})
+                                        <h3 class="highlight-primary">Voting For ({{listProxyVote.length}})
                                             Producer{{listProxyVote.length === 1 ? '' : 's'}}:</h3>
                                         <span *ngFor="let producer of listProxyVote"
-                                              class="{{producer === 'eosriobrazil' ? 'blue text-bold' : 'white'}}"
+                                              class="{{producer === 'eosriobrazil' ? 'highlight-primary text-bold' : 'highlight'}}"
                                               style="clear:both; margin:0 5px;">
 											{{producer}}
 										</span>
                                     </div>
                                     <div *ngIf="item.philosophy">
-                                        <h3 class="blue">Philosophy:</h3>
+                                        <h3 class="highlight-primary">Philosophy:</h3>
                                         <span>
 											{{item.philosophy}}
 										</span>
                                     </div>
                                     <div *ngIf="item.background">
-                                        <h3 class="blue">Background:</h3>
+                                        <h3 class="highlight-primary">Background:</h3>
                                         <span>
 											{{item.background}}
 										</span>
                                     </div>
                                     <div *ngIf="item.website">
-                                        <span class="blue">Website: </span>
+                                        <span class="highlight-primary">Website: </span>
                                         <a (click)="extOpen(item.website)" class="a-white">{{item.website}}</a>
                                     </div>
                                     <div *ngIf="item.email">
-                                        <span class="blue">Email:</span> {{item.email}}
+                                        <span class="highlight-primary">Email:</span> {{item.email}}
                                     </div>
                                     <div style="margin-top: 10px">
-                                        <span class="blue" *ngIf="item.social">All social media:</span>
+                                        <span class="highlight-primary" *ngIf="item.social">All social media:</span>
                                     </div>
                                     <div style="margin-top: 5px;">
                                         <ul>
@@ -648,7 +647,7 @@
                     <div class="ui-helper-clearfix" *ngIf="voteService.hasList">
 						<span *ngIf="voteService.voteType" (click)="voteService.reloadAllProxies()"
                               style="float: left">
-								<a class="blue btn btn-sm btn-link" style="max-width: none;"
+								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;"
                                    (click)="voteService.reloadAllProxies()">
 									<fa-icon [spin]="voteService.busy"
                                              [icon]="['far', 'sync']"></fa-icon>
@@ -669,11 +668,11 @@
 </div>
 
 <clr-modal [(clrModalOpen)]="stakeModal">
-    <h3 *ngIf="stakingDiff > 0" class="modal-title text-white">Stake <span class="blue">+{{stakingHRV}}</span> ?</h3>
-    <h3 *ngIf="stakingDiff < 0" class="modal-title text-white">Unstake <span class="blue">{{stakingHRV}}</span> ?</h3>
+    <h3 *ngIf="stakingDiff > 0" class="modal-title highlight">Stake <span class="highlight-primary">+{{stakingHRV}}</span> ?</h3>
+    <h3 *ngIf="stakingDiff < 0" class="modal-title highlight">Unstake <span class="highlight-primary">{{stakingHRV}}</span> ?</h3>
     <div class="modal-body">
-        <h4 class="text-white">Total staked will be: <span class="blue">{{valuetoStake | number: precision}}</span></h4>
-        <h4 class="text-white mt-0">Voting power will be: <span class="blue">{{percenttoStake | number}}%</span></h4>
+        <h4 class="highlight">Total staked will be: <span class="highlight-primary">{{valuetoStake | number: precision}}</span></h4>
+        <h4 class="highlight mt-0">Voting power will be: <span class="highlight-primary">{{percenttoStake | number}}%</span></h4>
         <h5 *ngIf="stakingDiff > 0" class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>
         <h5 *ngIf="stakingDiff < 0" class="mt-0">Your tokens will be free for transfers after 3 days.</h5>
     </div>
@@ -702,9 +701,9 @@
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="voteModal" [clrModalStaticBackdrop]="true">
-    <h3 class="modal-title text-white">Confirm <span class="blue">vote</span></h3>
+    <h3 class="modal-title">Confirm <span class="highlight-primary">vote</span></h3>
     <div class="modal-body">
-        <h4 class="text-white">Do you confirm voting on the following {{voteService.voteType ? 'Proxy' : 'BPs'}}?</h4>
+        <h4 class="highlight">Do you confirm voting on the following {{voteService.voteType ? 'Proxy' : 'BPs'}}?</h4>
         <h5 class="mt-0">{{selectedVotes.join(', ')}}</h5>
         <p-accordion *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
             <p-accordionTab header="By submiting this action, you agree to the voteproducer Terms & Conditions">

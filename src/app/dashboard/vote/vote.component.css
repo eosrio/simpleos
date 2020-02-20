@@ -116,7 +116,6 @@
     background: #0094d2;
     color: #ffffff;
 }
-/*prime's table end*/
 
 .expandable fa-icon:hover {
     color: #39c5ff;
@@ -145,9 +144,9 @@
     margin-left: 0;
     margin-right: 0;
 }
+/*prime's table end*/
 
 .title {
-    color: var(--text-gray-color);
     font-weight: 500;
     margin-left: 10px;
     display: inline-flex;
@@ -249,18 +248,24 @@ a:visited {
 	display: none;
 }
 
+/*tabs*/
 /deep/ #vote-tabs .mat-tab-header {
 	background-color: var(--info-card-background);
 }
 
 /deep/ #vote-tabs .mat-tab-label .mat-tab-label-content {
-	font-size:17px !important
+	font-size:17px !important;
+    color: var(--vote-tab-color);
 }
 
 /deep/  #vote-tabs .mat-tab-label-active {
-	background-color: var(--mat-tab-active);
+	background-color: var(--vote-tab-active);
 }
 
+/deep/  #vote-tabs .mat-tab-label-active .mat-tab-label-content {
+    color: var(--vote-tab-active-color);
+}
+/*tabs end*/
 
 /deep/ .bps-table .ui-table-caption, .ui-table-summary {
 	padding: 0 0 .25em 0;
@@ -322,3 +327,4 @@ mat-option:not(.last) {
 /deep/ .red-checkbox .mat-checkbox-checked.mat-accent .mat-checkbox-background {
 	background-color: var(--text-error) !important;
 }
+

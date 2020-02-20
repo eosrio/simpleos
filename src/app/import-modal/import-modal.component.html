@@ -16,7 +16,7 @@
         <ng-template clrPageTitle>Import Key</ng-template>
 
         <ng-container *ngIf="!usingLedger">
-            <h5 class="black-white">Insert your existing private key below (ACTIVE key recommended)</h5>
+            <h5>Insert your existing private key below (ACTIVE key recommended)</h5>
 
             <form [formGroup]="pvtform">
                 <mat-form-field class="mt-3" style="width: 100%;">
@@ -43,7 +43,7 @@
             <br>
 
             <!--		standart accounts-->
-            <div *ngFor="let importedAccount of importedAccounts" class="gray3">
+            <div *ngFor="let importedAccount of importedAccounts">
             <span class="label label-blue" style="font-size: medium">
                 {{importedAccount['account_name']}}@{{importedAccount['permission']}}
             </span>
@@ -57,17 +57,17 @@
 
             <p *ngIf="ledgerError !== ''" class="error">{{ledgerError}}</p>
 
-            <fa-layers *ngIf="ledger.reading" class="blue fa-fw">
+            <fa-layers *ngIf="ledger.reading" class="highlight-primary fa-fw">
                 <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
             </fa-layers>
 
             <p *ngIf="ledger.reading">Reading slot: {{ledger.currentSlot}}</p>
 
-            <div *ngIf="importedAccounts.length > 0" style="margin-top: 10px" class="gray3">
+            <div *ngIf="importedAccounts.length > 0" style="margin-top: 10px">
                 Account<span *ngIf="importedAccounts.length > 1">s</span>
             </div>
 
-            <div *ngIf="ledger.ledgerAccounts.length > 0 && ledger.ledgerPublicKeys.length === 0"
+            <div *ngIf="ledger.ledgerAccounts.length > 0"
                  style="margin-top: 20px;">
                 Select the accounts to import:
             </div>
@@ -94,12 +94,12 @@
 
         <button *ngIf="ledger.ledgerPublicKeys.length > 0 && !displayPublicKeys"
                 (click)="displayPublicKeys = !displayPublicKeys; cdr.detectChanges()"
-                class="btn btn-primary btn-sm" [disabled]="ledger.reading">VIEW
-            PUBLIC KEYS
+                class="btn btn-primary btn-sm mt-2" [disabled]="ledger.reading">
+            VIEW PUBLIC KEYS
         </button>
 
         <ng-container *ngIf="displayPublicKeys">
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 20px;" class="highlight">
                 Ledger public keys:
             </div>
             <mat-list role="list">
@@ -126,9 +126,9 @@
         <ng-template clrPageTitle>Password</ng-template>
 
         <form [formGroup]="passform">
-            <h5 class="black-white">Define your password. This will be used to <strong> confirm all
+            <h5>Define your password. This will be used to <strong> confirm all
                 transactions.</strong></h5>
-            <mat-form-field class="mt-1">
+            <mat-form-field class="mt-3" style="display: flex;">
                 <input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
                        [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
                 <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
@@ -140,7 +140,7 @@
                 </mat-hint>
                 <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
             </mat-form-field>
-            <mat-form-field style="margin-top: 19px">
+            <mat-form-field style="margin-top: 19px; display: flex;">
                 <input matInput (keyup.enter)="nextPage()" #pass2 type="password"
                        placeholder="Confirm password" (blur)="passCompare()"
                        [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
@@ -168,15 +168,15 @@
     <!--    LOCKSCREEN SETUP PAGE-->
     <clr-wizard-page *ngIf="noPIN" (clrWizardPageOnCommit)="importAccounts()">
         <ng-template clrPageTitle>Lockscreen</ng-template>
-        <h5 style="margin-bottom: 15px;" class="black-white">
-            <span style="font-weight: 700;" class="blue">Lockscreen pin.</span>
+        <h5 style="margin-bottom: 15px;">
+            <span style="font-weight: 700;" class="highlight-primary">Lockscreen pin.</span>
             Do you want to define a small privacy pin used to unlock the screen next time you enter SimplEOS?
         </h5>
-        <h5 style="margin-bottom: 18px; color: #636363;">*This <span style="font-weight: 700;">does not</span> replace
+        <h5 style="margin-bottom: 18px;" class="text-faded">*This <span style="font-weight: 700;">does not</span> replace
             your password used to confirm
             transactions</h5>
         <mat-checkbox [(ngModel)]="lockscreen">Set lockscreen</mat-checkbox>
-        <mat-form-field class="mt-1" *ngIf="lockscreen">
+        <mat-form-field class="mt-3" *ngIf="lockscreen" style="display: flex;">
             <input matInput #pin1 type="password" placeholder="Lockscreen pin" [(ngModel)]="pin">
             <fa-icon matSuffix *ngIf="pin1.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
                      (click)="pin1.type = 'text'"></fa-icon>

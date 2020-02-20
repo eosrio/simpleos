@@ -72,13 +72,11 @@
     animation-fill-mode: both;
 }
 
-.check-card {
+.info-card {
     box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
     border: none;
-    background-color: var(--info-card-background);
     margin-top: 31px;
     width: 350px;
-	color: var(--text-title-color) !important;
 }
 
 .info {
