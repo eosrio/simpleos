@@ -11,7 +11,7 @@ conf.build.appId = 'simpleos';
 
 // icons
 conf.build.win.icon = "icons/simpleos";
-conf.build.mac.icon = "icons/simpleos";
+conf.build.mac.icon = "icons/simpleos/icon.icns";
 conf.build.linux.icon = "icons/simpleos";
 conf.build.linux.executableName = "simpleos";
 conf.build.linux.desktop = {
