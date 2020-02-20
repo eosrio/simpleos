@@ -1,6 +1,6 @@
 {
 	"name": "liberland-wallet",
-	"version": "0.9.5",
+	"version": "1.0.1",
 	"productName": "Liberland Wallet",
 	"appId": "io.eosrio.liberland-wallet",
 	"compilerVersion": "LIBERLAND",
@@ -16,15 +16,15 @@
 		"config:liberland": "node configurations/build-liberland.js",
 		"electron:start": "npm run postinstall:electron && npm-run-all -p ng:serve electron:serve",
 		"electron:serve": "wait-on http-get://localhost:7777/ && electron index.js --serve --devtools",
-		"start:electron-dev": "electron index.js --devtools",
+		"start:electron-dev": "electron index.js --devtools --debug",
 		"start:electron-prod": "electron index.js",
 		"start:electron-prod-automode": "electron index.js --autostart",
 		"build": "ng build",
 		"build:prod": "ng build --prod",
-		"build:mac": "electron-builder build --mac",
-		"build:win": "electron-builder build --win",
-		"build:linux": "electron-builder build --linux",
-		"build:linux-snap": "electron-builder build --linux snap",
+		"build:mac": "electron-builder build --mac --publish=never",
+		"build:win": "electron-builder build --win --publish=never",
+		"build:linux": "electron-builder build --linux --publish=never",
+		"build:linux-snap": "electron-builder build --linux snap --publish=never",
 		"ng": "ng",
 		"ng:serve": "ng serve --port 7777",
 		"pack": "electron-builder --dir",
@@ -34,11 +34,16 @@
 		"postinstall": "electron-builder install-app-deps && npm run postinstall:electron",
 		"postinstall:electron": "node scripts/postinstall.js"
 	},
+	"engines": {
+		"node": ">= 13.0.0",
+		"npm": ">= 6.0.0"
+	},
 	"private": true,
 	"main": "index.js",
 	"build": {
 		"appId": "liberland-wallet",
 		"directories": {
+			"output": "dist",
 			"buildResources": "build"
 		},
 		"files": [
@@ -46,10 +51,7 @@
 			"ng-dist",
 			"static",
 			"electron_modules",
-			"node_modules/opn/index.js",
-			"node_modules/asn1-ber/index.js",
-			"node_modules/fcbuffer/lib/index.js",
-			"node_modules/@ledgerhq/hw-transport-node-hid/lib/TransportNodeHid.js"
+			"build/icons/**/*"
 		],
 		"mac": {
 			"category": "public.app-category.finance",
@@ -57,32 +59,36 @@
 				"dmg",
 				"zip"
 			],
-			"icon": "other_assets/liberland518x518.png"
-		},
-		"dmg": {
-			"icon": "src/assets/icons/liberland256x256.icns",
-			"format": "UDZO"
+			"icon": "icons/liberland"
 		},
 		"linux": {
+			"executableName": "liberland-wallet",
 			"target": [
 				"appImage",
 				"deb"
 			],
-			"icon": "other_assets/liberland256x256.png",
-			"category": "Network"
+			"icon": "icons/liberland",
+			"category": "Network",
+			"desktop": {
+				"Name": "Liberland Wallet",
+				"GenericName": "Liberland Wallet",
+				"X-GNOME-FullName": "liberland-wallet",
+				"Comment": "Liberland Blockchain Wallet",
+				"Type": "Application",
+				"Terminal": "false",
+				"StartupNotify": "false",
+				"Categories": "Network;"
+			}
+		},
+		"snap": {
+			"confinement": "classic",
+			"grade": "stable"
 		},
 		"win": {
 			"target": [
 				"nsis"
 			],
-			"publish": [
-				{
-					"provider": "github",
-					"owner": "eosrio",
-					"repo": "simpleos"
-				}
-			],
-			"icon": "src/assets/liberland_256_LdC_icon.ico"
+			"icon": "icons/liberland"
 		},
 		"appx": {
 			"backgroundColor": "#232526",
@@ -222,6 +228,7 @@
 		"quill": "^2.0.0-dev.3",
 		"socket.io": "^2.3.0",
 		"socket.io-client": "^2.3.0",
+		"sudo-prompt": "^9.1.1",
 		"tar": "^6.0.1",
 		"tslib": "^1.10.0"
 	}

@@ -1,6 +1,9 @@
 const args = process.argv.slice(1);
 process.defaultApp = true;
 
+const systemVersion = process.getSystemVersion();
+console.log(systemVersion);
+
 const {
     app,
     BrowserWindow,
@@ -9,11 +12,12 @@ const {
     protocol,
     shell,
     powerMonitor,
-    ipcMain
+    ipcMain,
+    webContents
 } = require('electron');
 
 const path = require('path');
-const {version, productName, name} = require('./package.json');
+const {version, productName, name, compilerVersion} = require('./package.json');
 const url = require('url');
 const {spawn} = require('child_process');
 const contextMenu = require('electron-context-menu');
@@ -41,8 +45,11 @@ class SimpleosWallet {
 
     // chrome window object
     win;
+    webContents;
+
     devtools;
     serve;
+    debug;
     isAutoLaunch;
     deepLink;
     isEnableAutoClaim = false;
@@ -77,6 +84,7 @@ class SimpleosWallet {
         app.getVersion = () => version;
 
         this.devtools = args.some(val => val === '--devtools');
+        this.debug = args.some(val => val === '--debug');
         this.serve = args.some(val => val === '--serve');
 
         this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
@@ -87,8 +95,9 @@ class SimpleosWallet {
         );
 
         this.simpleosAutoLauncher.opts.appPath += ' --autostart';
+
         this.simpleosAutoLauncher.isEnabled().then((status) => {
-            console.log('STATUS:', status);
+            console.log('AUTO_LAUNCH:', status);
             if (status) {
                 console.log('Auto launch already enabled!');
                 return;
@@ -109,47 +118,51 @@ class SimpleosWallet {
         contextMenu();
     }
 
+    runAutoLaunchMode() {
+        // check if another agent is running
+        app.on('second-instance', (event, argv) => {
+            if (argv[1] === '--autostart') {
+                this.claimRW.writeLog(`Force quit agent in second instance...`);
+                app.quit();
+            }
+        });
+
+        app.on('quit', () => {
+            this.claimRW.writeLog(`Quitting Agent...`);
+            this.claimRW.unlinkLALock();
+        });
+
+        app.on('ready', () => {
+            this.claimRW.unlinkLALock();
+            this.appendLock();
+            this.claimRW.autoClaimCheck();
+            console.log('READY!');
+            if (this.isEnableAutoClaim && productName === 'simpleos') {
+                this.claimRW.addTrayIcon();
+                this.claimRW.runAutoClaim();
+                if (process.platform === 'darwin') {
+                    app.dock.hide();
+                }
+            } else {
+                this.claimRW.writeLog(`Quitting disabled auto claim...`);
+                app.quit();
+            }
+            powerMonitor.on('suspend', () => {
+                this.claimRW.rescheduleAutoClaim();
+            });
+            powerMonitor.on('resume', () => {
+                this.claimRW.rescheduleAutoClaim();
+            });
+            powerMonitor.on('lock-screen', () => {
+                this.claimRW.rescheduleAutoClaim();
+            });
+        });
+    }
+
     run() {
         // Main startup logic
         if (this.isAutoLaunch) {
-            // check if another agent is running
-            app.on('second-instance', (event, argv) => {
-                if (argv[1] === '--autostart') {
-                    this.claimRW.writeLog(`Force quit agent in second instance...`);
-                    app.quit();
-                }
-            });
-
-            app.on('quit', () => {
-                this.claimRW.writeLog(`Quitting Agent...`);
-                this.claimRW.unlinkLALock();
-            });
-
-            app.on('ready', () => {
-                this.claimRW.unlinkLALock();
-                this.appendLock();
-                this.claimRW.autoClaimCheck();
-                console.log('READY!');
-                if (this.isEnableAutoClaim && productName === 'simpleos') {
-                    this.claimRW.addTrayIcon();
-                    this.claimRW.runAutoClaim();
-                    if (process.platform === 'darwin') {
-                        app.dock.hide();
-                    }
-                } else {
-                    this.claimRW.writeLog(`Quitting disabled auto claim...`);
-                    app.quit();
-                }
-                powerMonitor.on('suspend', () => {
-                    this.claimRW.rescheduleAutoClaim();
-                });
-                powerMonitor.on('resume', () => {
-                    this.claimRW.rescheduleAutoClaim();
-                });
-                powerMonitor.on('lock-screen', () => {
-                    this.claimRW.rescheduleAutoClaim();
-                });
-            });
+            this.runAutoLaunchMode();
         } else {
             this.launchApp();
             this.claimRW.autoClaimCheck();
@@ -232,7 +245,6 @@ class SimpleosWallet {
         const gotTheLock = app.requestSingleInstanceLock();
         this.claimRW.writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
             this.claimRW.lockLaunchFile))} | The LOCK: ${gotTheLock}`);
-
         if (fs.existsSync(this.claimRW.lockLaunchFile)) {
             if (gotTheLock) {
                 this.claimRW.unlinkLLock();
@@ -242,8 +254,6 @@ class SimpleosWallet {
                 return;
             }
         }
-
-        console.log('Not gotTheLock');
 
         this.appendLock();
 
@@ -258,7 +268,7 @@ class SimpleosWallet {
         });
 
         app.on('ready', () => {
-            console.log('ready');
+            console.log('Electron ready');
             this.launchServices();
             this.createWindow().catch(console.log);
         });
@@ -282,7 +292,6 @@ class SimpleosWallet {
                 console.log(url);
             });
         });
-
     }
 
     notifyTrx(title, body, autoClose, trx_id) {
@@ -291,11 +300,9 @@ class SimpleosWallet {
             body: body,
         });
         notification.show();
-
         notification.on('click', () => {
             shell.openExternal('https://wax.bloks.io/transaction/' + trx_id).catch(console.log);
         });
-
         if (autoClose > 0) {
             setTimeout(() => {
                 notification.close();
@@ -322,20 +329,29 @@ class SimpleosWallet {
     }
 
     async createWindow() {
+
         this.regURI();
-        let _icon = path.join(__dirname, 'src/assets/icons/ico/simpleos.ico');
+
+        let _icon = path.join(__dirname, 'build/icons/simpleos/icon.png');
         let _bgColor = '#222222';
-        if (name === 'liberland-wallet') {
-            _icon = path.join(__dirname, 'src/assets/icons/ico/ll.ico');
+        if (compilerVersion === 'LIBERLAND') {
+            _icon = path.join(__dirname, 'build/icons/liberland/icon.png');
             _bgColor = '#2a566f';
         }
+
+        if (!fs.existsSync(_icon)) {
+            console.log('failed to load icon file');
+        }
+
         this.win = new BrowserWindow({
             title: productName,
+            show: false,
+            paintWhenInitiallyHidden: true,
             titleBarStyle: 'hiddenInset',
             webPreferences: {
                 nodeIntegration: true,
                 webSecurity: !this.serve,
-                devTools: true,
+                devTools: this.devtools,
             },
             darkTheme: true,
             width: 1440,
@@ -344,12 +360,34 @@ class SimpleosWallet {
             minHeight: 600,
             backgroundColor: _bgColor,
             frame: false,
-            icon: _icon,
             enableRemoteModule: false,
+        });
+
+        this.webContents = this.win.webContents;
+
+        this.webContents.on('did-finish-load', (e) => {
+            console.log('did-finish-load');
+            this.win.setTitle(productName);
+            this.win.setIcon(_icon);
+            ipcMain.on('electronOS', (event, args) => {
+                if (args === 'request_os') {
+                    this.win.webContents.send('electronOS', {message: 'type', content: process.platform});
+                }
+            });
+        });
+
+        this.win.once('ready-to-show', () => {
+            console.log('window ready to show');
+            this.win.show();
+        });
+
+        this.win.on('app-command', (e, cmd) => {
+            console.log(this.webContents.history);
         });
 
         // win.removeMenu();
 
+        console.log('SERVE:', this.serve);
         if (this.serve) {
             require('electron-reload')(__dirname, {
                 electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
@@ -364,18 +402,25 @@ class SimpleosWallet {
             }));
         }
 
-        if (this.devtools) {
-            this.win.webContents['openDevTools']();
+        // catch console logs from angular app
+        if (this.debug) {
+            this.webContents.on('console-message', (e, level, msg, line) => {
+                if (level === 1) {
+                    console.log(`Log [${line}]: ${msg}`);
+                }
+            });
         }
 
-        this.win.webContents.on('did-finish-load', () => {
-            this.win.setTitle(productName);
-            ipcMain.on('electronOS', (event, args) => {
-              if(args === 'request_os'){
-                this.win.webContents.send('electronOS', {message: 'type', content: process.platform});
-              }
+
+        console.log('DEVTOOLS:', this.devtools);
+        if (this.devtools) {
+            this.webContents.openDevTools();
+        } else {
+            this.webContents.on('devtools-opened', () => {
+                console.log('devtools opened');
+                this.webContents.closeDevTools();
             });
-        });
+        }
 
         this.win.on('closed', () => {
             this.win = null;

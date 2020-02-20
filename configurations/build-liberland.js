@@ -7,10 +7,22 @@ conf.appId = "io.eosrio.liberland-wallet";
 conf.productName = 'Liberland Wallet';
 conf.description = 'Liberland Blockchain Wallet';
 conf.build.appId = 'liberland-wallet';
-conf.build.win.icon = "src/assets/liberland_256_LdC_icon.ico";
-conf.build.dmg.icon = "src/assets/icons/liberland256x256.icns";
-conf.build.mac.icon = "other_assets/liberland518x518.png";
-conf.build.linux.icon = "other_assets/liberland256x256.png";
+
+// icons
+conf.build.win.icon = "icons/liberland";
+conf.build.mac.icon = "icons/liberland";
+conf.build.linux.icon = "icons/liberland";
+conf.build.linux.executableName = "liberland-wallet";
+conf.build.linux.desktop = {
+    "Name": "Liberland Wallet",
+    "GenericName": "Liberland Wallet",
+    "X-GNOME-FullName": "liberland-wallet",
+    "Comment": "Liberland Blockchain Wallet",
+    "Type": "Application",
+    "Terminal": "false",
+    "StartupNotify": "false",
+    "Categories": "Network;"
+};
 
 fs.writeFileSync('./package.json', JSON.stringify(conf, null, "\t"));
 

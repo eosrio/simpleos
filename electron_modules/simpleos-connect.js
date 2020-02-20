@@ -48,7 +48,7 @@ class SimpleosConnectService {
     startServer(port = 5000) {
         try {
             this.httpServer.listen(port, '127.0.0.1', () => {
-                console.log('listening on 127.0.0.1:' + port);
+                console.log('simpleos connect api listening on port' + port);
             });
         } catch (error) {
             console.log(error);
