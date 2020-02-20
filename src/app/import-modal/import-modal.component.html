@@ -8,7 +8,7 @@
 
     <clr-wizard-page
             [clrWizardPageNextDisabled]="!(pvtform.valid ||
-            (usingLedger && sLAc.selectedOptions.selected.length > 0))"
+            (usingLedger && sLAc.selectedOptions.selected.length > 0 && ledger.ledgerAccounts.length > 0))"
             (clrWizardPageOnCommit)="importKeys(sLAc.selectedOptions.selected)"
             [clrWizardPagePreventDefault]="true"
             (clrWizardPageOnCancel)="doCancel()">
@@ -172,7 +172,8 @@
             <span style="font-weight: 700;" class="highlight-primary">Lockscreen pin.</span>
             Do you want to define a small privacy pin used to unlock the screen next time you enter SimplEOS?
         </h5>
-        <h5 style="margin-bottom: 18px;" class="text-faded">*This <span style="font-weight: 700;">does not</span> replace
+        <h5 style="margin-bottom: 18px;" class="text-faded">*This <span style="font-weight: 700;">does not</span>
+            replace
             your password used to confirm
             transactions</h5>
         <mat-checkbox [(ngModel)]="lockscreen">Set lockscreen</mat-checkbox>

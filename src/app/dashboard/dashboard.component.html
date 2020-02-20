@@ -4,12 +4,10 @@
     <div class="content-container">
         <div class="content-area">
             <div class="clr-row row-top-background" style="margin-right: 0; ">
-
                 <div class="clr-col-10" style="padding-right: 0">
                     <div class="clr-row" style="margin-right: 0;">
-                        <div
-                                class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
-                                style="padding-right: 0; ">
+                        <div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
+                             style="padding-right: 0; ">
                             <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
                                            [selectedIndex]="selectedTab">
                                 <mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
@@ -30,7 +28,7 @@
 
                         <div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
                              style="padding-left: 0; padding-right: 0"
-                             (click)="importKeyModal = true;importedAccounts = [];pvtform.reset();">
+                             (click)="openImportModal()">
                             <div class="text-center navbar-btn newaccount">
                                 <div style="padding-top: 16px">
                                     <fa-icon [icon]="['far', 'user-plus']" size="lg"></fa-icon>
@@ -367,157 +365,158 @@
 
 </clr-wizard>
 
+<app-import-modal></app-import-modal>
 
 <!--IMPORT ONE MORE EXISTING WALLET-->
-<clr-wizard #importAccountWizard [(clrWizardOpen)]="importKeyModal" [clrWizardSize]="'md'">
-    <clr-wizard-title>Import one more existing account</clr-wizard-title>
+<!--<clr-wizard #importAccountWizard [(clrWizardOpen)]="importKeyModal" [clrWizardSize]="'md'">-->
+<!--    <clr-wizard-title>Import one more existing account</clr-wizard-title>-->
 
-    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+<!--    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
+<!--    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
+<!--    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
+<!--    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
 
-    <clr-wizard-page
-            [clrWizardPageNextDisabled]="!(pvtform.valid ||
-            (usingLedger && sLAc.selectedOptions.selected.length > 0))"
-            (clrWizardPageOnCommit)="importKeys(sLAc.selectedOptions.selected)"
-            [clrWizardPagePreventDefault]="true"
-            (clrWizardPageOnCancel)="doCancel()">
-        <ng-template clrPageTitle>Step 1</ng-template>
+<!--    <clr-wizard-page-->
+<!--            [clrWizardPageNextDisabled]="!(pvtform.valid ||-->
+<!--            (usingLedger && sLAc.selectedOptions.selected.length > 0))"-->
+<!--            (clrWizardPageOnCommit)="importKeys(sLAc.selectedOptions.selected)"-->
+<!--            [clrWizardPagePreventDefault]="true"-->
+<!--            (clrWizardPageOnCancel)="doCancel()">-->
+<!--        <ng-template clrPageTitle>Step 1</ng-template>-->
 
-        <ng-container *ngIf="!usingLedger">
-            <h5>Insert your existing private key below (ACTIVE key recommended)</h5>
+<!--        <ng-container *ngIf="!usingLedger">-->
+<!--            <h5>Insert your existing private key below (ACTIVE key recommended)</h5>-->
 
-            <form [formGroup]="pvtform">
-                <mat-form-field class="mt-3" style="width: 100%;">
-                    <input #pkField matInput type="password" formControlName="private_key"
-                           placeholder="{{network.activeChain['name']}} Active Private key">
-                    <fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg"
-                             class="copy"
-                             (click)="pkField.type = 'text'"></fa-icon>
-                    <fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
-                             class="copy"
-                             (click)="pkField.type = 'password'"></fa-icon>
-                    <mat-hint align="start">
-                        ctrl c + ctrl v to copy & paste
-                    </mat-hint>
-                    <mat-error *ngIf="!pvtform.valid">
-                        {{errormsg}}
-                    </mat-error>
-                    <mat-error>
-                        {{apierror}}
-                    </mat-error>
-                </mat-form-field>
-            </form>
+<!--            <form [formGroup]="pvtform">-->
+<!--                <mat-form-field class="mt-3" style="width: 100%;">-->
+<!--                    <input #pkField matInput type="password" formControlName="private_key"-->
+<!--                           placeholder="{{network.activeChain['name']}} Active Private key">-->
+<!--                    <fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="pkField.type = 'text'"></fa-icon>-->
+<!--                    <fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="pkField.type = 'password'"></fa-icon>-->
+<!--                    <mat-hint align="start">-->
+<!--                        ctrl c + ctrl v to copy & paste-->
+<!--                    </mat-hint>-->
+<!--                    <mat-error *ngIf="!pvtform.valid">-->
+<!--                        {{errormsg}}-->
+<!--                    </mat-error>-->
+<!--                    <mat-error>-->
+<!--                        {{apierror}}-->
+<!--                    </mat-error>-->
+<!--                </mat-form-field>-->
+<!--            </form>-->
 
-            <br>
+<!--            <br>-->
 
-            <!--		standart accounts-->
-            <div *ngFor="let importedAccount of importedAccounts">
-            <span class="label label-blue" style="font-size: medium">
-                {{importedAccount['account_name']}}@{{importedAccount['permission']}}
-            </span>
-            </div>
-        </ng-container>
+<!--            &lt;!&ndash;		standart accounts&ndash;&gt;-->
+<!--            <div *ngFor="let importedAccount of importedAccounts">-->
+<!--            <span class="label label-blue" style="font-size: medium">-->
+<!--                {{importedAccount['account_name']}}@{{importedAccount['permission']}}-->
+<!--            </span>-->
+<!--            </div>-->
+<!--        </ng-container>-->
 
-        <ng-container *ngIf="pvtform.get('private_key').pristine">
-            <p *ngIf="!usingLedger">OR</p>
+<!--        <ng-container *ngIf="pvtform.get('private_key').pristine">-->
+<!--            <p *ngIf="!usingLedger">OR</p>-->
 
-            <button class="btn btn-primary" (click)="loadLedgerAccounts()">USE HARDWARE WALLET</button>
+<!--            <button class="btn btn-primary" (click)="loadLedgerAccounts()">USE HARDWARE WALLET</button>-->
 
-            <p *ngIf="ledgerError !== ''" class="error">{{ledgerError}}</p>
+<!--            <p *ngIf="ledgerError !== ''" class="error">{{ledgerError}}</p>-->
 
-            <fa-layers *ngIf="ledgerService.reading" class="highlight-primary fa-fw">
-                <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
-            </fa-layers>
+<!--            <fa-layers *ngIf="ledgerService.reading" class="highlight-primary fa-fw">-->
+<!--                <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>-->
+<!--            </fa-layers>-->
 
-            <p *ngIf="ledgerService.reading">Reading slot: {{ledgerService.currentSlot}}</p>
+<!--            <p *ngIf="ledgerService.reading">Reading slot: {{ledgerService.currentSlot}}</p>-->
 
-            <div *ngIf="importedAccounts.length > 0" style="margin-top: 10px">
-                Account<span *ngIf="importedAccounts.length > 1">s</span>
-            </div>
+<!--            <div *ngIf="importedAccounts.length > 0" style="margin-top: 10px">-->
+<!--                Account<span *ngIf="importedAccounts.length > 1">s</span>-->
+<!--            </div>-->
 
-            <!--		ledger accounts-->
-            <div *ngIf="ledgerService.ledgerAccounts.length > 0"
-                 style="margin-top: 20px;">
-                Select the accounts to import:
-            </div>
+<!--            &lt;!&ndash;		ledger accounts&ndash;&gt;-->
+<!--            <div *ngIf="ledgerService.ledgerAccounts.length > 0"-->
+<!--                 style="margin-top: 20px;">-->
+<!--                Select the accounts to import:-->
+<!--            </div>-->
 
-        </ng-container>
+<!--        </ng-container>-->
 
-        <mat-selection-list [ngStyle]="{'display': usingLedger ? 'inherit':'none'}"
-                            #sLAc
-                            class="ledger-select">
-            <ng-container *ngFor="let elem of ledgerService.ledgerAccounts">
-                <mat-list-option *ngFor="let acct of elem.accounts"
-                                 color="primary"
-                                 (click)="tick()"
-                                 [value]="acct">
-                    {{acct.actor}}@{{acct.permission}}
-                </mat-list-option>
-            </ng-container>
-        </mat-selection-list>
+<!--        <mat-selection-list [ngStyle]="{'display': usingLedger ? 'inherit':'none'}"-->
+<!--                            #sLAc-->
+<!--                            class="ledger-select">-->
+<!--            <ng-container *ngFor="let elem of ledgerService.ledgerAccounts">-->
+<!--                <mat-list-option *ngFor="let acct of elem.accounts"-->
+<!--                                 color="primary"-->
+<!--                                 (click)="tick()"-->
+<!--                                 [value]="acct">-->
+<!--                    {{acct.actor}}@{{acct.permission}}-->
+<!--                </mat-list-option>-->
+<!--            </ng-container>-->
+<!--        </mat-selection-list>-->
 
-        <ng-container *ngIf="pvtform.get('private_key').pristine">
-            <div *ngIf="sLAc.selectedOptions.selected.length > 0" style="margin-top:10px;">
-                {{sLAc.selectedOptions.selected.length}} accounts selected
-            </div>
-        </ng-container>
+<!--        <ng-container *ngIf="pvtform.get('private_key').pristine">-->
+<!--            <div *ngIf="sLAc.selectedOptions.selected.length > 0" style="margin-top:10px;">-->
+<!--                {{sLAc.selectedOptions.selected.length}} accounts selected-->
+<!--            </div>-->
+<!--        </ng-container>-->
 
-    </clr-wizard-page>
+<!--    </clr-wizard-page>-->
 
-    <clr-wizard-page [clrWizardPageNextDisabled]="!(passform2.valid ||
-            (usingLedger && accountsToImport.length > 0))"
-                     (clrWizardPageOnCommit)="importAccounts()">
-        <ng-template clrPageTitle>Step 2</ng-template>
+<!--    <clr-wizard-page [clrWizardPageNextDisabled]="!(passform2.valid ||-->
+<!--            (usingLedger && accountsToImport.length > 0))"-->
+<!--                     (clrWizardPageOnCommit)="importAccounts()">-->
+<!--        <ng-template clrPageTitle>Step 2</ng-template>-->
 
-        <ng-container *ngIf="!usingLedger">
-            <form [formGroup]="passform2">
-                <h5>Define your password. This will be used to <strong>transactions confirmations.</strong></h5>
-                <mat-form-field class="mt-2">
-                    <input matInput #importedpass type="password" placeholder="Password" (blur)="importedPassCompare()"
-                           [formControl]="passform2['controls'].matchingPassword['controls']['pass1']">
-                    <fa-icon matSuffix *ngIf="importedpass.type === 'password'" [icon]="['far', 'eye']" size="lg"
-                             class="copy"
-                             (click)="importedpass.type = 'text'"></fa-icon>
-                    <fa-icon matSuffix *ngIf="importedpass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
-                             class="copy"
-                             (click)="importedpass.type = 'password'"></fa-icon>
-                    <mat-hint align="start">
-                        Min 10 characters
-                    </mat-hint>
-                    <mat-hint align="end">{{importedpass.value.length}} / 10+</mat-hint>
-                </mat-form-field>
-                <mat-form-field class="mt-3">
-                    <input matInput #importedpass2 type="password" placeholder="Confirm password"
-                           (blur)="importedPassCompare()"
-                           [formControl]="passform2['controls'].matchingPassword['controls']['pass2']">
+<!--        <ng-container *ngIf="!usingLedger">-->
+<!--            <form [formGroup]="passform2">-->
+<!--                <h5>Define your password. This will be used to <strong>transactions confirmations.</strong></h5>-->
+<!--                <mat-form-field class="mt-2">-->
+<!--                    <input matInput #importedpass type="password" placeholder="Password" (blur)="importedPassCompare()"-->
+<!--                           [formControl]="passform2['controls'].matchingPassword['controls']['pass1']">-->
+<!--                    <fa-icon matSuffix *ngIf="importedpass.type === 'password'" [icon]="['far', 'eye']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="importedpass.type = 'text'"></fa-icon>-->
+<!--                    <fa-icon matSuffix *ngIf="importedpass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="importedpass.type = 'password'"></fa-icon>-->
+<!--                    <mat-hint align="start">-->
+<!--                        Min 10 characters-->
+<!--                    </mat-hint>-->
+<!--                    <mat-hint align="end">{{importedpass.value.length}} / 10+</mat-hint>-->
+<!--                </mat-form-field>-->
+<!--                <mat-form-field class="mt-3">-->
+<!--                    <input matInput #importedpass2 type="password" placeholder="Confirm password"-->
+<!--                           (blur)="importedPassCompare()"-->
+<!--                           [formControl]="passform2['controls'].matchingPassword['controls']['pass2']">-->
 
-                    <fa-icon matSuffix *ngIf="importedpass2.type === 'password'" [icon]="['far', 'eye']" size="lg"
-                             class="copy"
-                             (click)="importedpass2.type = 'text'"></fa-icon>
-                    <fa-icon matSuffix *ngIf="importedpass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
-                             class="copy"
-                             (click)="importedpass2.type = 'password'"></fa-icon>
+<!--                    <fa-icon matSuffix *ngIf="importedpass2.type === 'password'" [icon]="['far', 'eye']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="importedpass2.type = 'text'"></fa-icon>-->
+<!--                    <fa-icon matSuffix *ngIf="importedpass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"-->
+<!--                             class="copy"-->
+<!--                             (click)="importedpass2.type = 'password'"></fa-icon>-->
 
-                    <mat-error *ngIf="!passmatch2">
-                        Passwords do not match!
-                    </mat-error>
-                </mat-form-field>
-            </form>
-        </ng-container>
+<!--                    <mat-error *ngIf="!passmatch2">-->
+<!--                        Passwords do not match!-->
+<!--                    </mat-error>-->
+<!--                </mat-form-field>-->
+<!--            </form>-->
+<!--        </ng-container>-->
 
-        <ng-container *ngIf="usingLedger">
-            Confirm import for:
-            <div *ngFor="let acc of accountsToImport">
-            <span class="label label-blue">
-                {{acc['account_name']}}
-            </span>
-            </div>
-        </ng-container>
+<!--        <ng-container *ngIf="usingLedger">-->
+<!--            Confirm import for:-->
+<!--            <div *ngFor="let acc of accountsToImport">-->
+<!--            <span class="label label-blue">-->
+<!--                {{acc['account_name']}}-->
+<!--            </span>-->
+<!--            </div>-->
+<!--        </ng-container>-->
 
-    </clr-wizard-page>
-</clr-wizard>
+<!--    </clr-wizard-page>-->
+<!--</clr-wizard>-->
 <!--IMPORT ONE MORE EXISTING WALLET END-->
 
 <!--REMOVE ACCOUNT-->
