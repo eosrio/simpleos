@@ -90,7 +90,7 @@
 			"target": [
 				"nsis"
 			],
-			"icon": "icons/liberland"
+			"icon": "icons/liberland/icon.ico"
 		},
 		"appx": {
 			"backgroundColor": "#232526",
