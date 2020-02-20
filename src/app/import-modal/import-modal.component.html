@@ -67,10 +67,14 @@
                 Account<span *ngIf="importedAccounts.length > 1">s</span>
             </div>
 
-            <!--		ledger accounts-->
-            <div *ngIf="ledger.ledgerAccounts.length > 0"
+            <div *ngIf="ledger.ledgerAccounts.length > 0 && ledger.ledgerPublicKeys.length === 0"
                  style="margin-top: 20px;">
                 Select the accounts to import:
+            </div>
+
+            <div *ngIf="ledger.ledgerAccounts.length === 0 && ledger.ledgerPublicKeys.length > 0"
+                 style="margin-top: 20px;">
+                No accounts detected with this {{ledger.deviceName}} public keys
             </div>
 
         </ng-container>
