@@ -10,7 +10,7 @@ ul {
 }
 
 li {
-	background-color: var(--info-card-background);
+	background-color: var(--tokens-panel-background);
 	color: var(--text-gray-color) !important;
 	border-radius: 3px;
 	padding: 20px;

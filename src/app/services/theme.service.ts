@@ -217,7 +217,7 @@ export const LiberlandTheme = {
 
 	/*concepts*/
 	'--text-card-title-color': 'var(--black-color)',
-	'--text-free-title-color': 'var(--gray-lightmedium)',
+	'--text-free-title-color': 'var(--gray-medium)',
 	'--text-card-color': 'var(--gray-dark)',
 	'--text-highlight': 'var(--black-color)',
 	'--text-highlight-primary': 'var(--blue-color)',
@@ -320,7 +320,8 @@ export const LiberlandTheme = {
 	'--tr-even-backgorund': 'var(--white-color)',
 	'--tr-odd-backgorund': 'var(--white-color)',
 	'--expand-background': 'var(--light-card)',
-	'--tr-border-bottom-color': '1px solid #cccccc',
+	'--tr-border-bottom-color': '1px solid var(--gray-light)',
+	'--tr-hover': 'var(--light-bg)',
 
 	/*cards*/
 	'--info-card-background': 'var(--light-card)',
@@ -354,7 +355,6 @@ export const LiberlandTheme = {
 	'--tr-resource-even-backgorund': 'var(--white-color)',
 	'--tr-resource-odd-color': '#202020',
 	'--tr-resource-odd-backgorund': 'transparent',
-	'--tr-hover': 'var(--gray-light)',
 
 	/*REX page*/
 	'--rex-border-color': 'var(--light-bg)',
@@ -369,37 +369,6 @@ export const LiberlandTheme = {
 	'--made-with-love': '#ffffff',
 
 	'--a-link-color': '#F8F8F8',
-
-	'--btn-border-color': '#2a566f',
-	'--btn-color': '#2a566f',
-	'--btn-success-color': 'white',
-	'--btn-color-hover': '#ffffff',
-	'--btn-background-hover': '#2a566f',
-	'--btn-rev-color-hover': '#2a566f',
-
-	'--btn-inverse-color': '#ffffff',
-	'--btn-inverse-background-hover': '#ffffff',
-	'--btn-inverse-color-hover': '#084577',
-
-	'--btn-inverse2-color': '#202020',
-	'--btn-inverse2-background-hover': '#ffffff',
-	'--btn-inverse2-color-hover': '#084577',
-
-	// '--btn-link2-color': '#FCD215',
-	'--btn-link2-color': '#efc718',
-	'--btn-link2-background-hover': '#ffffff',
-	'--btn-link2-color-hover': '#c39d13',
-
-	'--btn-link3-color': '#2a566f',
-	'--btn-link3-background': '#ffffff',
-	'--btn-link3-background-hover': '#2a566f',
-	'--btn-link3-color-hover': '#FCD215',
-	'--btn-link3-hover-border-color': '#2a566f',
-
-	'--btn-link-color': '#0094d2',
-	// '--btn-link-color': '#1577C6',
-	'--btn-link-background-hover': '#ffffff',
-	'--btn-link-color-hover': '#084577',
 
 	'--update-box-background': '#0d3352',
 	'--chain-icon-bg': '#c5c5c5',

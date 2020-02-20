@@ -20,13 +20,13 @@
                 <div class="infos free-title">
                     <span style="padding-right: 15px">
                       <fa-icon
-                              [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked <span
-                            class="special-font-regular">{{staked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
+                              [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked
+                        <span>{{staked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
                     </span>
                     |
                     <span style="padding-left: 15px">
 							  <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked
-                        <span class="special-font-regular">
+                        <span>
                             {{unstaked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
                         </span>
                         <span *ngIf="unstaking > 0"

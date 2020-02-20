@@ -47,7 +47,6 @@ form {
 }
 
 .letter {
-    /*color: var(--text-card-title-color);*/
     color: var(--letter-color);
 	padding: 5px 0 2px 0.5rem;
     font-weight: 500;

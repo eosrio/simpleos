@@ -200,33 +200,6 @@
 	/*REX page*/
 	--rex-border-color: var(--black-background);
 
-	--btn-border-color: var(--blue-color);
-	--btn-color: var(--blue-color);
-	--btn-success-color: #ffffff;
-	--btn-color-hover: #ffffff;
-	/*--btn-background-hover: #0077b7;*/
-	--btn-background-hover: var(--blue-color);
-	--btn-rev-color-hover: var(--blue-color);
-	--btn-rev-background-hover: #ffffff;
-
-	--btn-inverse2-color: #ffffff;
-	--btn-inverse2-background-hover: #ffffff;
-	--btn-inverse2-color-hover: var(--blue-color);
-
-
-
-	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
-	--btn-link2-color: var(--blue-color);
-	--btn-link2-background-hover: #ffffff;
-	--btn-link2-color-hover: #0077b7;
-
-	/*not used yet...*/
-	--btn-link3-color: #0079b8;
-	--btn-link3-background: #ffffff;
-	--btn-link3-background-hover: #0079b8;
-	--btn-link3-color-hover: #FCD215;
-	--btn-link3-hover-border-color: #0079b8;
-
 	--update-box-background: #1f1f1f;
 	--chain-icon-bg: var(--gray-lighter);
 }
