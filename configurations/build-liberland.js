@@ -9,7 +9,7 @@ conf.description = 'Liberland Blockchain Wallet';
 conf.build.appId = 'liberland-wallet';
 
 // icons
-conf.build.win.icon = "icons/liberland";
+conf.build.win.icon = "icons/liberland/icon.ico";
 conf.build.mac.icon = "icons/liberland/icon.icns";
 conf.build.linux.icon = "icons/liberland";
 conf.build.linux.executableName = "liberland-wallet";
