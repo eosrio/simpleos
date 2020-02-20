@@ -16,7 +16,8 @@ export const DefaultTheme = {
 	'--red-color': '#fb3c2c',
 
 	/*concepts*/
-	'--text-title-color': 'var(--gray-lighter)',
+	'--text-card-title-color': 'var(--gray-lighter)',
+	'--text-free-title-color': 'var(--gray-lighter)',
 	'--text-card-color': 'var(--gray-medium)',
 	'--text-highlight': 'var(--white-color)',
 	'--text-highlight-primary': 'var(--blue-color)',
@@ -68,10 +69,15 @@ export const DefaultTheme = {
 	'--destaque-color-token': 'var(--blue-color)',
 	'--token-title-color': 'var(--gray-lightmedium)',
 	'--token-price-color': 'var(--gray-darker)',
+	'--tokens-panel-hover': 'var(--dark-hover)',
 
 	/*contacts panel*/
 	'--letter-divider': 'var(--black-background)',
 	'--contact-hover-color': 'var(--gray-lightmedium)',
+	'--newcontact-btn-bg': 'transparent',
+	'--newcontact-btn-color': 'var(--white-color)',
+	'--newcontact-btn-bordertop': 'var(--white-color)',
+	'--newcontact-btn-bg-hover': 'var(--blue-color)',
 
 	/*history table*/
 	'--table-th-color': 'var(--gray-lighter)',
@@ -200,6 +206,8 @@ export const LiberlandTheme = {
 	'--destaque-color-token': '#FCD215',
 	'--token-title-color': '#f8f8f8',
 	'--token-price-color': '#D6D6D6',
+	'--tokens-panel-hover': 'var(--gray-lighter)',
+
 	'--letter-divider': '#FCD215',
 	'--contact-hover-color': '#292929',
 
@@ -318,7 +326,8 @@ export const LightTheme = {
 	'--red-color': '#f44336',
 
 	/*concepts*/
-	'--text-title-color': 'var(--black-color)',
+	'--text-card-title-color': 'var(--black-color)',
+	'--text-free-title-color': 'var(--gray-lightmedium)',
 	'--text-card-color': 'var(--gray-dark)',
 	'--text-highlight': 'var(--black-color)',
 	'--text-highlight-primary': 'var(--blue-color)',
@@ -371,10 +380,15 @@ export const LightTheme = {
 	'--destaque-color-token': 'var(--blue-color)',
 	'--token-title-color': 'var(--black-color)',
 	'--token-price-color': 'var(--gray-medium)',
+	'--tokens-panel-hover': 'var(--gray-light)',
 
 	/*contacts panel*/
 	'--letter-divider': 'var(--gray-lightmedium)',
-	'--contact-hover-color': 'var(var(--gray-light))',
+	'--contact-hover-color': 'var(--gray-light)',
+	'--newcontact-btn-bg': 'var(--gray-light)',
+	'--newcontact-btn-color': 'var(--black-color)',
+	'--newcontact-btn-bordertop': 'var(--black-color)',
+	'--newcontact-btn-bg-hover': 'var(--blue-color)',
 
 	/*history table*/
 	'--table-th-color': 'var(--gray-dark)',

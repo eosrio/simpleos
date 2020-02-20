@@ -43,13 +43,33 @@
 	--red-color: '#fb3c2c';
 
 	/*concepts*/
-	--text-title-color: var(--gray-lighter);
+	--text-card-title-color: var(--gray-lighter);
+	--text-free-title-color: var(--gray-lighter);
 	--text-card-color: var(--gray-medium);
 	--text-highlight: var(--white-color);
 	--text-highlight-primary: var(--blue-color);
 	--text-highlight-accent: var(--blue-color);
 	--text-error: var(--red-color);
 	--text-faded: var(--gray-darker);
+
+	/*buttons*/
+	/*solid*/
+	--btn-primary-bg: var(--blue-color);
+	--btn-primary-hover: var(--blue-darker);
+	--btn-primary-color: var(--white-color);
+	/*outline*/
+	--btn-info-outline: var(--blue-color);
+	--btn-info-outline-hover: var(--blue-color);
+	--btn-info-outline-color-hover: var(--white-color);
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys*/
+	--btn-primary-link-color: var(--blue-color);
+	--btn-primary-link-color-hover: #0077b7;
+	--btn-primary-link-bg-hover: #ffffff;
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
+	--btn-accent-link-color: var(--blue-color);
+	--btn-accent-link-color-hover: #0077b7;
+	--btn-accent-link-bg-hover: #ffffff;
 
 	/*typography*/
 	--special-font-regular: inherit;
@@ -97,10 +117,15 @@
 	--destaque-color-token: var(--blue-color);
 	--token-title-color: var(--gray-lightmedium);
 	--token-price-color: var(--gray-darker);
+	--tokens-panel-hover: var(--dark-hover);
 
 	/*contacts panel*/
 	--letter-divider: var(--black-background);
 	--contact-hover-color: var(--gray-lightmedium);
+	--newcontact-btn-bg: transparent;
+	--newcontact-btn-color: var(--white-color);
+	--newcontact-btn-bordertop: var(--white-color);
+	--newcontact-btn-bg-hover: var(--blue-color);
 
 	/*history table*/
 	--table-th-color: #cccccc;
@@ -175,9 +200,6 @@
 	--btn-rev-color-hover: var(--blue-color);
 	--btn-rev-background-hover: #ffffff;
 
-	--btn-primary-bg: #0079b8;
-	--btn-primary-hover: #004d8a;
-
 	--btn-inverse-color: #ffffff;
 	--btn-inverse-background-hover: #ffffff;
 	--btn-inverse-color-hover: var(--blue-color);
@@ -186,10 +208,7 @@
 	--btn-inverse2-background-hover: #ffffff;
 	--btn-inverse2-color-hover: var(--blue-color);
 
-	/*used in... refresh btn, open account on explorer, reload all proxys*/
-	--btn-link-color: var(--blue-color);
-	--btn-link-background-hover: #ffffff;
-	--btn-link-color-hover: #0077b7;
+
 
 	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, view on github (on update)*/
 	--btn-link2-color: var(--blue-color);
@@ -236,6 +255,7 @@ body {
 	outline-style: none;
 }
 
+/*classes for colors*/
 .highlight {
 	color: var(--text-highlight) !important;
 }
@@ -247,6 +267,41 @@ body {
 .highlight-accent {
 	color: var(--text-highlight-accent) !important;
 }
+
+.free-title {
+	color: var(--text-free-title-color);
+}
+
+.main-text {
+	color: var(--text-card-color);
+}
+
+.text-faded {
+	color: var(--text-faded);
+}
+/*classes for colors end*/
+
+/*buttons*/
+.btn-primary {
+	background-color: var(--btn-primary-bg);
+	color: var(--btn-primary-color);
+}
+
+.btn-primary:hover {
+	background-color: var(--btn-primary-hover);
+}
+
+.btn-info-outline {
+	border-color: var(--btn-info-outline) !important;
+	background-color: transparent;
+	color: var(--btn-info-outline) !important;
+}
+
+.btn-info-outline:hover {
+	background-color: var(--btn-info-outline-hover) !important;
+	color: var(--btn-info-outline-color-hover) !important;
+}
+/*buttons end*/
 
 /*classes for cards*/
 .info-card {
@@ -262,8 +317,9 @@ body {
 }
 
 .card-title-color {
-	color: var(--text-title-color);
+	color: var(--text-card-title-color);
 }
+/*classes for cards ends*/
 
 .update-box-class {
 	visibility: hidden;
@@ -318,7 +374,7 @@ body a.link-eosrio:hover{
 }
 .header, .header.header-1, header, header.header-1 {
 	background-color: var(--header-background) !important;
-	color: var(--text-title-color) !important;
+	/*color: var(--text-title-color) !important;*/
 	-webkit-transition-duration: 0.3s;
 	transition-duration: 0.3s;
 	-webkit-transition-property: color, background-color;
@@ -354,10 +410,6 @@ body a.link-eosrio:hover{
 .content-page{
 	height: calc(100vh - 1.7rem) !important;
 	width: 100vw;
-}
-
-.destaque-color-token{
-	color: var(--destaque-color-token);
 }
 
 /*material's tabs*/
@@ -416,7 +468,15 @@ body a.link-eosrio:hover{
 }
 
 .mat-option {
-	color: var(--text-gray-color);
+	color: var(--text-card-color);
+}
+
+.mat-option:hover:not(.mat-option-disabled), .mat-option:focus:not(.mat-option-disabled) {
+	background: rgba(0, 0, 0, 0.12);
+}
+
+.mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover):not(.mat-option-disabled) {
+	color: var(--text-highlight);
 }
 
 /*material's autocomplete end*/
@@ -506,7 +566,7 @@ body a.link-eosrio:hover{
 .clr-toggle-wrapper .clr-control-label {
 	font-weight: 500;
 	font-size: 15px;
-	color: #b1b1b1;
+	color: var(--text-card-color);
 }
 
 .clr-toggle-wrapper > input:focus {
@@ -525,30 +585,6 @@ body a.link-eosrio:hover{
 }
 
 /*clarity's modal end*/
-
-.blue {
-	color: var(--text-blue-color);
-}
-
-.white {
-	color:  var(--text-title-color);
-}
-
-.text-white {
-	color:  var(--text-title-color);
-}
-
-/*.black-white {*/
-/*	color: var(--text-title-color);*/
-/*}*/
-
-.gray {
-	color: var(--text-gray-color);
-}
-
-.gray3 {
-	color: var(--text-gray3-color);
-}
 
 .token-title-color {
 	color: var(--token-title-color);
@@ -673,7 +709,7 @@ input:not([readonly]) {
 }
 
 .clr-wizard-btn.btn-success {
-	border-color: var(--text-title-color) !important;
+	/*border-color: var(--text-title-color) !important;*/
 	background-color: transparent !important;
 	color: var(--btn-success-color) !important;
 }
@@ -798,23 +834,23 @@ input:not([readonly]) {
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
 	border:0 !important;
 	background-color: transparent !important;
-	color:  var(--text-title-color) !important;
+	/*color:  var(--text-title-color) !important;*/
 }
 .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active:hover a {
 	border:0 !important;
 	background-color:transparent !important;
-	color: var(--text-title-color);
+	/*color: var(--text-title-color);*/
 }
 .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a {
 	background-color:transparent !important;
 	border:0 !important;
-	color:  var(--text-title-color);
+	/*color:  var(--text-title-color);*/
 }
 
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
 	background-color: var(--accordion-hover-background);
 	border: 1px solid #494949;
-	color:  var(--text-title-color);
+	/*color:  var(--text-title-color);*/
 }
 
 /*.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {*/
@@ -880,158 +916,138 @@ input:not([readonly]) {
 	color: #ffffff;
 }
 
-.btn-info-outline .btn, .btn-outline .btn, .btn-inverse .btn, .btn.btn-info-outline, .btn.btn-outline, .btn.btn-inverse, .btn.btn-outline .btn, .btn.btn-outline-info {
-	border-color: var(--btn-border-color) !important;
-	background-color: transparent;
-	color: var(--btn-color) !important;
-}
-.btn-info-outline .btn:hover, .btn-outline .btn:hover, .btn-inverse .btn:hover, .btn.btn-info-outline:hover, .btn.btn-outline:hover, .btn.btn-inverse:hover, .btn.btn-outline .btn:hover, .btn.btn-outline-info:hover {
-	color: var(--btn-color-hover) !important;
-	background-color: var(--btn-background-hover) !important;
-}
-.btn-info-outline .btn:visited, .btn-outline .btn:visited, .btn-inverse .btn:visited, .btn.btn-info-outline:visited, .btn.btn-outline:visited, .btn.btn-inverse:visited, .btn.btn-outline .btn:visited, .btn.btn-outline-info:visited {
-	color: var(--btn-color-hover) !important;
-	background-color: var(--btn-background-hover) !important;
-}
-.btn-info-outline .btn:active, .btn-outline .btn:active, .btn-inverse .btn:active, .btn.btn-info-outline:active, .btn.btn-outline:active, .btn.btn-inverse:active, .btn.btn-outline .btn:active, .btn.btn-outline-info:active {
-	color: var(--btn-color-hover) !important;
-	background-color: var(--btn-background-hover) !important;
-	-webkit-box-shadow: 0 2px 0 0 var(--btn-background-hover) inset !important;
-	box-shadow: 0 2px 0 0 var(--btn-background-hover) inset !important;
-}
+/*.btn.btn-info-outline.btn-rex{*/
+/*	border-color: var(--rex-border-color) !important;*/
+/*	color: var(--rex-btn-color) !important;*/
+/*}*/
+/*.btn.btn-info-outline.btn-rex:hover{*/
+/*	color: var(--btn-color-hover) !important;*/
+/*}*/
 
-.btn.btn-info-outline.btn-rex{
-	border-color: var(--rex-border-color) !important;
-	color: var(--rex-btn-color) !important;
-}
-.btn.btn-info-outline.btn-rex:hover{
-	color: var(--btn-color-hover) !important;
-}
-
-.btn.btn-info-outline.btn-white{
-	border-color: var(--btn-rev-color-hover) !important;
-	color: var(--btn-color-hover) !important;
-}
-.btn.btn-info-outline.btn-white:hover{
-	background-color: var(--btn-rev-background-hover) !important;
-	color: var(--btn-rev-color-hover) !important;
-}
-.btn.btn-link:hover{
-	color: var(--btn-rev-color-hover) !important;
-}
+/*.btn.btn-info-outline.btn-white{*/
+/*	border-color: var(--btn-rev-color-hover) !important;*/
+/*	color: var(--btn-color-hover) !important;*/
+/*}*/
+/*.btn.btn-info-outline.btn-white:hover{*/
+/*	background-color: var(--btn-rev-background-hover) !important;*/
+/*	color: var(--btn-rev-color-hover) !important;*/
+/*}*/
+/*.btn.btn-link:hover{*/
+/*	color: var(--btn-rev-color-hover) !important;*/
+/*}*/
 
 
-.btn-inverse .btn, .btn.btn-inverse {
-	border-color: var(--btn-inverse-color) !important;
-	background-color: transparent;
-	color: var(--btn-inverse-color) !important;
-}
-.btn-inverse .btn:hover, .btn.btn-inverse:hover {
-	color: var(--btn-inverse-color-hover) !important;
-	background-color: var(--btn-inverse-background-hover) !important;
-}
-.btn-inverse .btn:visited, .btn.btn-inverse:visited {
-	color: var(--btn-rev-color-hover) !important;
-	background-color: var(--btn-inverse-background-hover) !important;
-}
-.btn-inverse .btn:active, .btn.btn-inverse:active {
-	color: var(--btn-inverse-color-hover) !important;
-	background-color: var(--btn-inverse-background-hover) !important;
-	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;
-	box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;
-}
+/*.btn-inverse .btn, .btn.btn-inverse {*/
+/*	border-color: var(--btn-inverse-color) !important;*/
+/*	background-color: transparent;*/
+/*	color: var(--btn-inverse-color) !important;*/
+/*}*/
+/*.btn-inverse .btn:hover, .btn.btn-inverse:hover {*/
+/*	color: var(--btn-inverse-color-hover) !important;*/
+/*	background-color: var(--btn-inverse-background-hover) !important;*/
+/*}*/
+/*.btn-inverse .btn:visited, .btn.btn-inverse:visited {*/
+/*	color: var(--btn-rev-color-hover) !important;*/
+/*	background-color: var(--btn-inverse-background-hover) !important;*/
+/*}*/
+/*.btn-inverse .btn:active, .btn.btn-inverse:active {*/
+/*	color: var(--btn-inverse-color-hover) !important;*/
+/*	background-color: var(--btn-inverse-background-hover) !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;*/
+/*	box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;*/
+/*}*/
 
-.btn-inverse2 .btn, .btn.btn-inverse2 {
-	border-color: var(--btn-inverse2-color) !important;
-	background-color: transparent;
-	color: var(--btn-inverse2-color) !important;
-}
-.btn-inverse2 .btn:hover, .btn.btn-inverse2:hover {
-	color: var(--btn-inverse2-color-hover) !important;
-	background-color: var(--btn-inverse2-background-hover) !important;
-}
-.btn-inverse2 .btn:visited, .btn.btn-inverse2:visited {
-	color: var(--btn-inverse2-color-hover) !important;
-	background-color: var(--btn-inverse2-background-hover) !important;
-}
-.btn-inverse2 .btn:active, .btn.btn-inverse2:active {
-	color: var(--btn-inverse2-color-hover) !important;
-	background-color: var(--btn-inverse2-background-hover) !important;
-	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;
-	box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;
-}
+/*.btn-inverse2 .btn, .btn.btn-inverse2 {*/
+/*	border-color: var(--btn-inverse2-color) !important;*/
+/*	background-color: transparent;*/
+/*	color: var(--btn-inverse2-color) !important;*/
+/*}*/
+/*.btn-inverse2 .btn:hover, .btn.btn-inverse2:hover {*/
+/*	color: var(--btn-inverse2-color-hover) !important;*/
+/*	background-color: var(--btn-inverse2-background-hover) !important;*/
+/*}*/
+/*.btn-inverse2 .btn:visited, .btn.btn-inverse2:visited {*/
+/*	color: var(--btn-inverse2-color-hover) !important;*/
+/*	background-color: var(--btn-inverse2-background-hover) !important;*/
+/*}*/
+/*.btn-inverse2 .btn:active, .btn.btn-inverse2:active {*/
+/*	color: var(--btn-inverse2-color-hover) !important;*/
+/*	background-color: var(--btn-inverse2-background-hover) !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;*/
+/*	box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;*/
+/*}*/
 
-.btn-link .btn, .btn.btn-link {
-	border-color: transparent !important;
-	background-color: transparent;
-	color: var(--btn-link-color) !important;
-}
-.btn-link .btn:hover, .btn.btn-link:hover {
-	color: var(--btn-link-color-hover) !important;
-	background-color: transparent !important;
-}
-.btn-link .btn:visited, .btn.btn-link:visited {
-	color: var(--btn-link-color-hover) !important;
-	background-color: transparent !important;
-}
-.btn-link .btn:active, .btn.btn-link:active {
-	color: var(--btn-link-color-hover) !important;
-	background-color: transparent !important;
-	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
-	box-shadow: 0 2px 0 0 transparent inset !important;
-}
+/*.btn-link .btn, .btn.btn-link {*/
+/*	border-color: transparent !important;*/
+/*	background-color: transparent;*/
+/*	color: var(--btn-link-color) !important;*/
+/*}*/
+/*.btn-link .btn:hover, .btn.btn-link:hover {*/
+/*	color: var(--btn-link-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*}*/
+/*.btn-link .btn:visited, .btn.btn-link:visited {*/
+/*	color: var(--btn-link-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*}*/
+/*.btn-link .btn:active, .btn.btn-link:active {*/
+/*	color: var(--btn-link-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*}*/
 
-.btn-link2 .btn, .btn.btn-link2 {
-	border-color: transparent !important;
-	background-color: transparent;
-	color: var(--btn-link2-color) !important;
-}
-.btn-link2 .btn:hover, .btn.btn-link2:hover {
-	color: var(--btn-link2-color-hover) !important;
-	background-color: transparent !important;
-}
-.btn-link2 .btn:visited, .btn.btn-link2:visited {
-	color: var(--btn-link2-color-hover) !important;
-	background-color: transparent !important;
-}
-.btn-link2 .btn:active, .btn.btn-link2:active {
-	color: var(--btn-link2-color-hover) !important;
-	background-color: transparent !important;
-	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
-	box-shadow: 0 2px 0 0 transparent inset !important;
-}
+/*.btn-link2 .btn, .btn.btn-link2 {*/
+/*	border-color: transparent !important;*/
+/*	background-color: transparent;*/
+/*	color: var(--btn-link2-color) !important;*/
+/*}*/
+/*.btn-link2 .btn:hover, .btn.btn-link2:hover {*/
+/*	color: var(--btn-link2-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*}*/
+/*.btn-link2 .btn:visited, .btn.btn-link2:visited {*/
+/*	color: var(--btn-link2-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*}*/
+/*.btn-link2 .btn:active, .btn.btn-link2:active {*/
+/*	color: var(--btn-link2-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*}*/
 
-.btn-link3 .btn, .btn.btn-link3 {
-	border-color: var(--btn-link3-background) !important;
-	background-color: var(--btn-link3-background);
-	color: var(--btn-link3-color) !important;
-	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
-	box-shadow: 0 2px 0 0 transparent inset !important;
-}
-.btn-link3 .btn:hover, .btn.btn-link3:hover {
-	color: var(--btn-link3-color-hover) !important;
-	border-color: var(--btn-link3-hover-border-color) !important;
-	background-color: var(--btn-link3-background-hover) !important;
-}
-.btn-link3 .btn:visited, .btn.btn-link3:visited {
-	color: var(--btn-link3-color-hover) !important;
-	background-color: transparent !important;
-}
-.btn-link3 .btn:active, .btn.btn-link3:active {
-	color: var(--btn-link3-color-hover) !important;
-	background-color: var(--btn-link3-background-hover) !important;
-	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;
-	box-shadow: 0 2px 0 0 transparent inset !important;
-}
+/*.btn-link3 .btn, .btn.btn-link3 {*/
+/*	border-color: var(--btn-link3-background) !important;*/
+/*	background-color: var(--btn-link3-background);*/
+/*	color: var(--btn-link3-color) !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*}*/
+/*.btn-link3 .btn:hover, .btn.btn-link3:hover {*/
+/*	color: var(--btn-link3-color-hover) !important;*/
+/*	border-color: var(--btn-link3-hover-border-color) !important;*/
+/*	background-color: var(--btn-link3-background-hover) !important;*/
+/*}*/
+/*.btn-link3 .btn:visited, .btn.btn-link3:visited {*/
+/*	color: var(--btn-link3-color-hover) !important;*/
+/*	background-color: transparent !important;*/
+/*}*/
+/*.btn-link3 .btn:active, .btn.btn-link3:active {*/
+/*	color: var(--btn-link3-color-hover) !important;*/
+/*	background-color: var(--btn-link3-background-hover) !important;*/
+/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
+/*}*/
 
-.btn-primary .btn, .btn.btn-primary {
-	border-color: var(--btn-primary-bg) !important;
-	background-color: var(--btn-primary-bg) !important;
-}
+/*.btn-primary .btn, .btn.btn-primary {*/
+/*	border-color: var(--btn-primary-bg) !important;*/
+/*	background-color: var(--btn-primary-bg) !important;*/
+/*}*/
 
-.btn.btn-primary:hover {
-	background-color: var(--btn-primary-hover) !important;
-}
+/*.btn.btn-primary:hover {*/
+/*	background-color: var(--btn-primary-hover) !important;*/
+/*}*/
 
 .chain-icon {
 	margin-right: 5px;

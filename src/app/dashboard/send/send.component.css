@@ -5,13 +5,11 @@
 .balance {
     font-size: 21px;
     margin-bottom: 19px;
-	color: var(--text-gray3-color);
 }
 
 .eos {
     font-size: 46px;
     margin-bottom: 19px;
-    color: var(--text-blue-color);
 	font-family:  var(--special-font-bold);
 	/*font-weight: var(--special-font-weight);*/
 }
@@ -49,7 +47,7 @@ form {
 }
 
 .letter {
-    color: #e3e3e3;
+    color: var(--text-card-title-color);
 	padding: 5px 0 2px 0.5rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -98,14 +96,19 @@ li:hover .contact-hover {
     overflow-x: hidden;
 }
 
-.newContactBtn {
-    background-color: #21212126;
+.newcontact-btn {
+    background-color: var(--newcontact-btn-bg);
     border-bottom: 0;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
-    border-top: 1px solid #3f3f3f;
+    border-top: 1px solid var(--newcontact-btn-bordertop);
+    color: var(--newcontact-btn-color);
     margin-bottom: 0;
+}
+
+.newcontact-btn:hover {
+    background-color: var(--newcontact-btn-bg-hover);
 }
 /*contact's panel end*/
 
@@ -173,4 +176,8 @@ mat-option:not(.last) {
 
 /deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
 	background-color: var(--destaque-color-token);
+}
+
+.account-color {
+    color: var(--token-price-color);
 }
