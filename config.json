@@ -802,6 +802,49 @@
       "explorers": []
     },
     {
+		"id": "7f3f5ae1a73d7c14a72f65f257d41397b966ffcd95c588c50d5081eaa354984c",
+		"symbol": "LLC",
+		"icon": "liberland.png",
+		"precision": 8,
+		"name": "LIBERLAND TEST LEGACY",
+		"network": "TESTNET",
+		"firstApi": "https://liberland.eossweden.org",
+		"historyApi": "",
+		"hyperionApis": [],
+		"forumTally": "",
+		"eosrioBP": "",
+		"proxyRegistry": "",
+		"lastNode": "",
+		"logoSrc": "",
+		"backdrop": "",
+		"features": {
+			"history": true,
+			"send": true,
+			"resource": false,
+			"vote": false,
+			"staking": true,
+			"dapps": true,
+			"addAcc": true,
+			"newAcc": false,
+			"forum": false,
+			"rex": false
+		},
+		"system": [
+			"eosio",
+			"eosio.token",
+			"eosio.msig"
+		],
+		"endpoints": [
+			{
+				"url": "https://liberland.eossweden.org",
+				"owner": "EOS Sweden",
+				"latency": 0,
+				"version": "native"
+			}
+		],
+		"explorers": []
+	},
+    {
       "id": "7136e3e32a458bb99cf6973ab5055869d25830607b9e78593769e1be52fb6f20",
       "symbol": "MEETONE",
       "icon": "meetone.png",
