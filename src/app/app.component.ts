@@ -22,6 +22,7 @@ export interface LedgerSlot {
     account: string;
 }
 
+// @ts-ignore
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -121,7 +122,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     ngOnInit(): void {
         // this.isMac = this._electronService.isMacOS;
         this.connect.ipc.send('electronOS','request_os');
-        console.log('Is MacOS?', this.isMac);
+        // console.log('Is MacOS?', this.isMac);
         this.cdr.detectChanges();
     }
 
@@ -161,6 +162,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     private onElectron(event,payload){
+        console.log('type OS:', payload.content);
         this.isMac = payload.content === 'darwin';
         this.cdr.detectChanges();
     }
