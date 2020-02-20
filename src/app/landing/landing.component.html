@@ -53,10 +53,10 @@
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer" *ngFor="let account of accounts">
                                 <span style="float: left;">You have: <span
-                                        class="blue">{{account.full_balance}} {{network.activeChain['symbol']}}</span></span>
+                                        class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span></span>
                                 <!--CSTAM-->
                                 <span style="float: right;">Account name: <span
-                                        class="blue">{{account.name}}</span></span>
+                                        class="highlight-primary">{{account.name}}</span></span>
                             </div>
                         </ng-container>
                         <div class="card-footer" *ngIf="checkerr === 'invalid'">
@@ -95,7 +95,7 @@
                                     <div class="text-left advanced"><span class="error">Advanced Option:</span> you can
                                         also try
                                         to connect to
-                                        another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                        another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                     </div>
 
                                     <mat-form-field class="public-input" style="overflow: inherit;">
@@ -163,9 +163,9 @@
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer black-white" *ngFor="let account of accounts">
                                 <span style="float: left;">Account:
-									<span class="blue">{{account.name}}</span>
+									<span class="highlight-primary">{{account.name}}</span>
 									- balance:
-									<span class="blue">{{account.full_balance}} {{network.activeChain['symbol']}}</span>
+									<span class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span>
 								</span>
                             </div>
                         </ng-container>
@@ -212,7 +212,7 @@
                                         <div class="text-left advanced"><span class="warn">Advanced Option:</span> you
                                             can also try
                                             to connect to
-                                            another endpoint <span class="clicked blue" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                            another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                         </div>
                                         <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
                                             <fa-layers class="mt-2 mb-1">
@@ -430,7 +430,7 @@
                 Payment
             </ng-container>
             <ng-container *ngIf="relayMethod">
-                <span class="blue" style="font-weight: 500">Alternative Method</span>
+                <span class="highlight-primary" style="font-weight: 500">Alternative Method</span>
             </ng-container>
             &nbsp;
         </ng-template>
@@ -479,7 +479,7 @@
                 Binance) or if the transaction fails for any reason <a class="highlight-primary" (click)="relayMethod = true"
                                                                        style="cursor: pointer">click
                     here to try our ALTERNATIVE METHOD</a></h5>
-            <!--<h5>Need help? Check our <span class="blue"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
+            <!--<h5>Need help? Check our <span class="highlight-primary"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
         </ng-container>
         <ng-container *ngIf="relayMethod">
 
@@ -582,7 +582,7 @@
         <ng-template clrPageTitle>New Keys</ng-template>
         <h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
         <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-        <h5>Please click the <span style="cursor:pointer;" class="blue"> Generate Key Pair </span> button.
+        <h5>Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
         </h5>
         <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">

@@ -171,27 +171,6 @@ export const DefaultTheme = {
 
 	'--a-link-color': 'var(--blue-color)',
 
-	'--btn-border-color': 'var(--blue-color)',
-	'--btn-color': 'var(--blue-color)',
-	'--btn-success-color': 'var(--white-color)',
-	'--btn-color-hover': 'var(--white-color)',
-	'--btn-background-hover': 'var(--blue-color)',
-	'--btn-rev-color-hover': 'var(--blue-color)',
-
-
-
-	'--btn-inverse2-color': 'var(--white-color)',
-	'--btn-inverse2-background-hover': 'var(--white-color)',
-	'--btn-inverse2-color-hover': 'var(--blue-color)',
-
-	'--btn-link2-color': 'var(--blue-color)',
-	'--btn-link2-background-hover': 'var(--white-color)',
-	'--btn-link2-color-hover': 'var(--blue-darker)',
-
-	'--btn-link-color': 'var(--blue-color)',
-	'--btn-link-background-hover': 'var(--white-color)',
-	'--btn-link-color-hover': 'var(--blue-darker)',
-
 	'--update-box-background': '#1f1f1f',
 	'--chain-icon-bg': 'var(--gray-lighter)',
 };
@@ -546,25 +525,6 @@ export const LightTheme = {
 	'--made-with-love': '#404040',
 
 	'--a-link-color': 'var(--yellow)',
-
-	'--btn-border-color': '#0094d2',
-	'--btn-color': '#0094d2',
-	'--btn-success-color': '#303030',
-	'--btn-color-hover': '#ffffff',
-	'--btn-background-hover': '#0094d2',
-	'--btn-rev-color-hover': '#0094d2',
-
-	'--btn-inverse2-color': '#404040',
-	'--btn-inverse2-background-hover': '#ffffff',
-	'--btn-inverse2-color-hover': '#0094d2',
-
-	'--btn-link2-color': '#0079b8',
-	'--btn-link2-background-hover': '#ffffff',
-	'--btn-link2-color-hover': '#0066a6',
-
-	'--btn-link-color': '#0094d2',
-	'--btn-link-background-hover': '#ffffff',
-	'--btn-link-color-hover': '#0077b7',
 
 	'--update-box-background': '#a4a4a4',
 	'--chain-icon-bg': '#c5c5c5',
