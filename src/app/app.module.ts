@@ -148,6 +148,7 @@ import {FlexLayoutModule} from "@angular/flex-layout";
 import {AccordionModule} from 'primeng/accordion';
 import {TableModule} from 'primeng/table';
 import {TooltipModule} from 'primeng/tooltip';
+import {PaginatorModule} from 'primeng/paginator';
 
 // JSON Schema Form
 import {MaterialDesignFrameworkModule} from '@ajsf/material';
@@ -224,6 +225,7 @@ export function playerFactory() {
         }),
         FlexLayoutModule,
         MatTooltipModule,
+        PaginatorModule,
     ],
     providers: [
         EOSJSService,

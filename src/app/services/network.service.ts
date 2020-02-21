@@ -266,6 +266,7 @@ export class NetworkService {
             this.lastEndpoint = endpoint;
             this.autoMode = false;
             this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;
+
             if (savedAccounts) {
                 if (savedAccounts.length > 0) {
                     await this.aService.loadLocalAccounts(savedAccounts);
@@ -276,6 +277,9 @@ export class NetworkService {
                     } else {
                         this.aService.initFirst();
                     }
+
+                    await this.aService.getAccActions(this.aService.selected.getValue().name);
+                    console.log('goto wallet page');
                     await this.router['navigate'](['dashboard', 'wallet']);
                     this.networkingReady.next(true);
                     this.isStarting = false;

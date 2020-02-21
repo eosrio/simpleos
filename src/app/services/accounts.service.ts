@@ -592,6 +592,7 @@ export class AccountsService {
     }
 
     select(index) {
+        console.log('selecting accont');
         const sel = this.accounts[index];
         this.loading = true;
         this.tokens = [];

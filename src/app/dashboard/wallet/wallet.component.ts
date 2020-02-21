@@ -1,4 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSJSService} from '../../services/eosio/eosjs.service';
 
@@ -9,6 +9,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/
 
 import * as moment from 'moment';
 import {Subscription} from 'rxjs';
+import {Paginator} from "primeng/paginator";
 
 export const MY_FORMATS = {
     parse: {
@@ -40,8 +41,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     unstaking: 0;
     unstakeTime: string;
     moment: any;
-    actions: any[];
-    totalActions: number;
+    actions: any[] = [];
+    totalActions: number = 0;
     headBlock: number;
     LIB: number;
     blockTracker: any;
@@ -61,6 +62,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     private selectedAccountSubscription: Subscription;
     private lastUpdateSubscription: Subscription;
 
+    @ViewChild('paginator', {static: false}) paginator: Paginator;
+
     constructor(
         public aService: AccountsService,
         public eos: EOSJSService,
@@ -70,8 +73,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.moment = moment;
         this.tokens = [];
-        this.actions = [];
-        this.totalActions = 0;
+        this.totalActions = this.aService.totalActions;
+        this.actions = this.aService.actions;
         this.headBlock = 0;
         this.staked = 0;
         this.unstaked = 0;
@@ -156,14 +159,12 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         );
         this.totalActions = this.aService.totalActions;
         this.actions = this.aService.actions;
-        console.log(this.actions,this.totalActions);
-        this.cdr.detectChanges();
+        this.paginator.changePage(e);
+        // this.cdr.detectChanges();
 
     }
 
     ngOnInit() {
-        // console.log('here', this.aService.totalActions);
-        // console.log('Action', this.aService.actions);
         this.actionsFilter = [];
         this.lastUpdateSubscription = this.aService.lastUpdate.asObservable().subscribe(value => {
             if (value.account === this.aService.selected.getValue().name) {
@@ -173,11 +174,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         setTimeout(() => {
             this.getInfo();
         }, 5000);
-        if (!this.blockTracker) {
-            // this.blockTracker = setInterval(() => {
-            // 	this.getInfo();
-            // }, 10000);
-        }
 
         this.loading = true;
     }
@@ -193,7 +189,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
     ngAfterViewInit() {
         this.selectedAccountSubscription = this.aService.selected.asObservable().subscribe((sel) => {
-            // console.log(`A:${sel['name']} B: ${this.selectedAccountName}`);
             if (sel['name']) {
                 if (this.selectedAccountName !== sel['name']) {
                     this.selectedAccountName = sel['name'];
@@ -228,6 +223,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
                         {name: 'RENT CPU', filter: '&filter=*:rentcpu'},
                         {name: 'RENT NET', filter: '&filter=*:rentnet'}
                     ];
+
 
                 }
             }
