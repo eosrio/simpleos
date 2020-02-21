@@ -446,13 +446,14 @@ export class AppComponent implements OnInit, AfterViewInit {
                 if (result) {
                     if (this.transitMode) {
                         this.signResponse({
-                            sigs: result.signatures,
+                            sigs: result.packedTransaction.signatures,
                         });
                     } else {
                         this.signResponse({
                             status: 'OK',
-                            content: result
-                        })
+                            content: result.result,
+                            packed: result.packedTransaction
+                        });
                     }
                     this.wrongpass = '';
                     this.busy = false;
@@ -478,7 +479,8 @@ export class AppComponent implements OnInit, AfterViewInit {
                 if (result) {
                     this.signResponse({
                         status: 'OK',
-                        content: result
+                        content: result.result,
+                        packed: result.packedTransaction
                     });
                     this.wrongpass = '';
                     this.busy = false;
