@@ -441,7 +441,7 @@ export class AccountsService {
                 actions: []
             };
         }
-        if (this.activeChain.historyApi !== '') {
+        if (this.activeChain.hyperionApis.lenght > 0) {
             this.getActions(account, 12, 0).catch(console.log);
         } else {
             const currentEndpoint = this.activeChain.endpoints.find((e) => e.url === this.eos.baseConfig.httpEndpoint);
