@@ -142,7 +142,7 @@ export class ConfirmModalComponent {
             );
             if (result) {
                 console.log(result);
-                const trxId = result['transaction_id'];
+                const trxId = result['result']['transaction_id'];
 
                 setTimeout(() => {
                     this.aService.refreshFromChain(false).catch(e => {
