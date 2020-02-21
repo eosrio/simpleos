@@ -130,6 +130,25 @@ export class AccountsService {
         this.totalAssetsSum = totalSum;
     }
 
+    async getTokenHyperionMulti(account): Promise<any> {
+        if (!this.activeChain.hyperionApis) {
+            return;
+        }
+        for (const api of this.activeChain.hyperionApis) {
+                let url = api + '/state/get_tokens?account=' + account;
+                try {
+                    const response: any = await this.http.get(url).toPromise();
+                    if (response.actions && response.actions.length > 0) {
+                        return response;
+                    }
+                } catch (e) {
+                    console.log(`failed to fetch actions: ${api}`);
+                }
+        }
+        return;
+    }
+
+
     async fetchTokens(account) {
         // console.log(this.sessionTokens[this.selectedIdx]);
         // console.log('loadingTokens', this.loadingTokens);
@@ -155,9 +174,10 @@ export class AccountsService {
                 this.loadingTokens = false;
                 return this.accounts;
             } else {
-                if (this.activeChain.historyApi !== '') {
-                    // Load with hyperion
-                    const data = await this.http.get(this.activeChain.historyApi + '/state/get_tokens?account=' + account).toPromise();
+                // Load with hyperion multi
+                this.lastTkLoadTime = Date.now();
+                const data = await this.getTokenHyperionMulti(account);
+                if (data) {
                     const tokens = data['tokens'];
                     for (const token of tokens) {
                         if (token.symbol !== this.activeChain['symbol']) {
