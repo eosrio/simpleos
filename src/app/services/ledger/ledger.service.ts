@@ -104,7 +104,7 @@ export class LedgerService {
         });
     }
 
-    async sign(transaction: any, slotNumber: number, rpcEndpoint: string) {
+    async sign(transaction: any, slotNumber: number, rpcEndpoint: string): Promise<any> {
         return new Promise((resolve, reject) => {
             // send to main process
             this.connect.ipc.send('ledger', {
@@ -242,7 +242,7 @@ export class LedgerService {
         return new Promise(async (resolve, reject) => {
             try {
                 const pushResults = await this.eos.rpc.push_transaction(data);
-                resolve(pushResults);
+                resolve({result: pushResults, packedTransaction: data});
             } catch (e) {
                 reject(e.json.error.details[0].message);
             }

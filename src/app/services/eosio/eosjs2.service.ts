@@ -138,13 +138,20 @@ export class Eosjs2Service {
         }, 5000);
     }
 
-    signTrx(trx: any, shouldBroadcast: boolean) {
-        return this.api.transact(trx, {
+    async signTrx(trx: any, shouldBroadcast: boolean) {
+        const packedTransaction = await this.api.transact(trx, {
             blocksBehind: 3,
             expireSeconds: 30,
-            broadcast: shouldBroadcast,
+            broadcast: false,
             sign: true,
         });
+
+        if (shouldBroadcast) {
+            const result = await this.api.pushSignedTransaction(packedTransaction);
+            return {result, packedTransaction};
+        } else {
+            return {packedTransaction};
+        }
     }
 
     transact(trx) {

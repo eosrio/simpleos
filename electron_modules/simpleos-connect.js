@@ -140,8 +140,6 @@ class SimpleosConnectService {
     onTransact(transaction, callback) {
         console.log('onTransact');
 
-        console.log(transaction);
-
         this.sendMessage('sc_request', {
             message: 'sign',
             content: transaction,
