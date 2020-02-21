@@ -136,6 +136,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
                     console.log(`Remote Version: ${remoteVersionNum}`);
                     console.log(`Local Version: ${currentVersionNum}`);
+                    // TODO: change back to currentVersionNum
                     if (remoteVersionNum > 92) {
                         this.update = true;
                     }

@@ -41,6 +41,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     unstakeTime: string;
     moment: any;
     actions: any[];
+    totalActions: number;
     headBlock: number;
     LIB: number;
     blockTracker: any;
@@ -68,8 +69,9 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     ) {
 
         this.moment = moment;
-        this.actions = [];
         this.tokens = [];
+        this.actions = [];
+        this.totalActions = 0;
         this.headBlock = 0;
         this.staked = 0;
         this.unstaked = 0;
@@ -114,8 +116,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
     choosedAction(val) {
         this.actionMarked = val;
-        this.loadActionsLazy(0);
-        this.cdr.detectChanges();
+        this.loadActionsLazy(0).catch(console.log);
+
     }
 
     choosedAfterDate(val) {
@@ -126,7 +128,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
             millisecond: 0
         }).format() : '';
         this.minDate = new Date(val);
-        this.loadActionsLazy(0);
+        this.loadActionsLazy(0).catch(console.log);
     }
 
     choosedBeforeDate(val) {
@@ -137,23 +139,25 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
             millisecond: 0
         }).format() : '';
         this.maxDate = new Date(val);
-        this.loadActionsLazy(0);
+        this.loadActionsLazy(0).catch(console.log);
     }
 
-    loadActionsLazy(e?) {
+
+    async loadActionsLazy(e?) {
         const pos = e !== 0 ? e['first'] : 0;
         const account = this.aService.selected.getValue().name;
-        if (this.aService.activeChain['historyApi'] !== '') {
-            this.aService.getActions(
-                account,
-                12,
-                pos,
-                this.actionMarked,
-                this.dateAfter,
-                this.dateBefore
-            ).catch(console.log);
-            this.aService.totalActions = 1000;
-        }
+        await this.aService.getActions(
+            account,
+            12,
+            pos,
+            this.actionMarked,
+            this.dateAfter,
+            this.dateBefore
+        );
+        this.totalActions = this.aService.totalActions;
+        this.actions = this.aService.actions;
+        console.log(this.actions,this.totalActions);
+        this.cdr.detectChanges();
 
     }
 
@@ -199,7 +203,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.unstaked = this.fullBalance - this.staked - this.unstaking;
                     this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
                     this.tokens = [];
-                    this.aService.reloadActions(sel['name']);
+                    this.loadActionsLazy(0).catch(console.log);
                     this.aService.refreshFromChain(false).catch(console.log);
                     this.frmFilters.patchValue({
                         selectAction: '',
