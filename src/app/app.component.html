@@ -1,7 +1,7 @@
 <div class="main-container">
     <header class="header-1" style="-webkit-app-region: drag; height: 1.7rem;flex-basis: 1.7rem;">
         <div class="branding"
-             [ngStyle]="{'padding':'0 s10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
+             [ngStyle]="{'padding':'0 10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
             <a class="nav-link" [ngStyle]="{'margin':(!isMac?'0 0':'0 auto')}">
 				<span *ngIf="compilerVersion === 'DEFAULT'" class="title-header"
                       style="color: #9a9a9a; font-size: 14px;">SimplEOS Wallet {{version}}</span>
@@ -48,25 +48,25 @@
 </div>
 
 <clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onLoginModalClose($event)">
-    <h3 class="modal-title text-white">
+    <h3 class="modal-title">
         Connect to
-        <div class="blue" style="margin-top: 8px;">{{dapp_name}}</div>
+        <div class="highlight-primary" style="margin-top: 8px;">{{dapp_name}}</div>
     </h3>
     <div class="modal-body" *ngIf="aService.accounts.length > 0">
-        <p style="margin-bottom: 20px;" class="black-white">Choose the account you want to connect:</p>
-        <div class="card chains-card black-white">
+        <p style="margin-bottom: 20px;">Choose the account you want to connect:</p>
+        <div class="card chains-card">
             <ng-container *ngFor="let acc of aService.accounts; let i = index">
                 <div class="card-block chain-section" (click)="selectAccount(acc,i)">
                     {{acc.name}}
-                    <span class="blue connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
+                    <span class="highlight-primary connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
                             [icon]="['far', 'angle-right']"></fa-icon></span>
                 </div>
             </ng-container>
         </div>
-        <div style="margin: 10px 0;" class="black-white">*This doesn't let the dapp do actions on your behalf</div>
+        <div style="margin: 10px 0;" class="text-faded">*This doesn't let the dapp do actions on your behalf</div>
     </div>
     <div class="modal-body" *ngIf="aService.accounts.length === 0">
-        <p style="margin-bottom: 20px;" class="black-white"><strong>No account found.</strong> Please, close this window
+        <p style="margin-bottom: 20px;"><strong>No account found.</strong> Please, close this window
             and
             import your account to continue.</p>
     </div>
@@ -75,7 +75,7 @@
 <clr-modal [(clrModalOpen)]="loadingTRX" [clrModalSize]="'md'">
 
     <h3 class="modal-title">
-        <span class="blue">Loading transaction...</span>
+        <span class="highlight-primary">Loading transaction...</span>
     </h3>
 
     <div class="modal-body">
@@ -87,13 +87,13 @@
 <clr-modal [(clrModalOpen)]="externalActionModal" [clrModalSize]="'md'" (clrModalOpenChange)="onSignModalClose($event)">
 
     <h3 class="modal-title">
-        <span class="blue">Confirm transaction</span>
+        <span class="highlight-primary">Confirm transaction</span>
     </h3>
 
     <div class="modal-body">
 
-        <h5 class="gray mt-0">Account: {{external_signer}}</h5>
-        <h5 class="text-white">Are you sure you want to perform the following actions ?</h5>
+        <h5 class="mt-0">Account: {{external_signer}}</h5>
+        <h5 class="highlight">Are you sure you want to perform the following actions ?</h5>
 
         <div *ngIf="updateauthWarning" class="alert alert-danger" role="alert"
              style="margin-top: 10px; font-size: 15px">
@@ -102,7 +102,7 @@
                     <div class="alert-icon-wrapper">
                         <clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
                     </div>
-                    <span class="alert-text" style="color: #c92100;"><strong>CAUTION !</strong></span>
+                    <span class="alert-text text-warn"><strong>CAUTION !</strong></span>
                 </div>
                 <div class="alert-item static">
                     <div class="alert-icon-wrapper">
@@ -178,7 +178,7 @@
 <!--<clr-wizard-page>-->
 <!--<ng-template clrPageTitle>Step 1</ng-template>-->
 <!--<h5 style="color: #a7a7a7;">Ledger indentified-->
-<!--<fa-icon class="blue" [icon]="['fas', 'check']"></fa-icon>-->
+<!--<fa-icon class="highlight-primary" [icon]="['fas', 'check']"></fa-icon>-->
 <!--</h5>-->
 <!--&lt;!&ndash;<button type="button" class="btn btn-info-outline" (click)="scanPublicKeys()" style="margin-top:20px;"&ndash;&gt;-->
 <!--&lt;!&ndash;[disabled]="busy">&ndash;&gt;-->
@@ -189,11 +189,11 @@
 <!--<div class="card accounts-card">-->
 <!--<ng-container *ngFor="let slot of accSlots; let i = index">-->
 <!--<div *ngIf="slot.account !== null || showAll" class="card-block accounts-section">-->
-<!--<div class="blue">Slot {{i}}</div>-->
+<!--<div class="highlight-primary">Slot {{i}}</div>-->
 <!--<mat-form-field class="mt-8" style="width: 100%; margin-top: 5px">-->
 <!--<input matInput type="text" placeholder="Public Key" [value]="slot.publicKey" readonly>-->
 <!--</mat-form-field>-->
-<!--<div>Account: <span class="blue">{{slot.account || 'No account associated'}}</span></div>-->
+<!--<div>Account: <span class="highlight-primary">{{slot.account || 'No account associated'}}</span></div>-->
 <!--<button *ngIf="slot.account !== null" (click)="selectSlot(slot,i)" class="btn btn-sm btn-info-outline"-->
 <!--style="margin: 5px;">Load-->
 <!--</button>-->
@@ -233,12 +233,12 @@
 
 <!--LEDGER MODAL-->
 
-<div id="update-box" class="update-box-class" style="float:right;" [ngClass]="update ? 'show' : ''"
+<div id="update-box" class="update-box card-title-color" style="float:right;" [ngClass]="update ? 'show' : ''"
      *ngIf="compilerVersion=='DEFAULT'">
-    <div style="position:relative;float:right; right:-1px;margin:5px;cursor:pointer;" (click)="update=false;">X</div>
+    <div style="position:relative; float:right; right:-5px; top:-13px; margin:5px; cursor:pointer;" (click)="update=false;">X</div>
     <div>There is a new version available!<br/> Want to update?</div>
     <div></div>
-    <button class="btn-white btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes
+    <button class="btn btn-info-outline btn-sm" style="margin-right: 5px;" (click)="performUpdate()">Yes
     </button>
-    <a class="btn btn-link2 btn-sm" (click)="openGithub()">View on Github</a>
+    <a class="btn btn-link btn-primary-link btn-sm" (click)="openGithub()">View on Github</a>
 </div>

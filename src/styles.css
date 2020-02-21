@@ -168,7 +168,7 @@
 	/*scrollbar*/
 	--scroll-track-background: var(--black-sidenav);
 	--scroll-background: var(--black-sidenav);
-	--scroll-thumb-background: 'var(--gray-darker)';
+	--scroll-thumb-background: var(--gray-darker);
 
 	--text-white-color: #ffffff;
 	--text-btn-color-hover: #ffffff;
@@ -201,6 +201,7 @@
 	--rex-border-color: var(--black-background);
 
 	--update-box-background: #1f1f1f;
+	--update-box-border: var(--black-card);
 	--chain-icon-bg: var(--gray-lighter);
 }
 
@@ -348,15 +349,15 @@ body {
 }
 /*classes for cards ends*/
 
-.update-box-class {
+.update-box {
 	visibility: hidden;
 	max-width: 13rem;
 	min-width: 9rem;
 	width: 18%;
 	background-color: var(--update-box-background);
-	color: #fff;
 	text-align: center;
-	border: 1px solid #343434;
+	border: 1px solid var(--update-box-border);
+	/*border: 1px solid #343434;*/
 	padding: 16px;
 	position: fixed;
 	z-index: 1;
@@ -374,7 +375,7 @@ body {
 	display: var(--dashboard-img-display);
 }
 
-.update-box-class.show {
+.update-box.show {
 	visibility: visible;
 	-webkit-animation: fadein 1.8s;
 	animation: fadein 1.8s;
@@ -928,139 +929,6 @@ input:not([readonly]) {
 	background-color: var(--text-blue-color)!important;
 	color: #ffffff;
 }
-
-/*.btn.btn-info-outline.btn-rex{*/
-/*	border-color: var(--rex-border-color) !important;*/
-/*	color: var(--rex-btn-color) !important;*/
-/*}*/
-/*.btn.btn-info-outline.btn-rex:hover{*/
-/*	color: var(--btn-color-hover) !important;*/
-/*}*/
-
-/*.btn.btn-info-outline.btn-white{*/
-/*	border-color: var(--btn-rev-color-hover) !important;*/
-/*	color: var(--btn-color-hover) !important;*/
-/*}*/
-/*.btn.btn-info-outline.btn-white:hover{*/
-/*	background-color: var(--btn-rev-background-hover) !important;*/
-/*	color: var(--btn-rev-color-hover) !important;*/
-/*}*/
-/*.btn.btn-link:hover{*/
-/*	color: var(--btn-rev-color-hover) !important;*/
-/*}*/
-
-
-/*.btn-inverse .btn, .btn.btn-inverse {*/
-/*	border-color: var(--btn-inverse-color) !important;*/
-/*	background-color: transparent;*/
-/*	color: var(--btn-inverse-color) !important;*/
-/*}*/
-/*.btn-inverse .btn:hover, .btn.btn-inverse:hover {*/
-/*	color: var(--btn-inverse-color-hover) !important;*/
-/*	background-color: var(--btn-inverse-background-hover) !important;*/
-/*}*/
-/*.btn-inverse .btn:visited, .btn.btn-inverse:visited {*/
-/*	color: var(--btn-rev-color-hover) !important;*/
-/*	background-color: var(--btn-inverse-background-hover) !important;*/
-/*}*/
-/*.btn-inverse .btn:active, .btn.btn-inverse:active {*/
-/*	color: var(--btn-inverse-color-hover) !important;*/
-/*	background-color: var(--btn-inverse-background-hover) !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;*/
-/*	box-shadow: 0 2px 0 0 var(--btn-inverse-background-hover) inset !important;*/
-/*}*/
-
-/*.btn-inverse2 .btn, .btn.btn-inverse2 {*/
-/*	border-color: var(--btn-inverse2-color) !important;*/
-/*	background-color: transparent;*/
-/*	color: var(--btn-inverse2-color) !important;*/
-/*}*/
-/*.btn-inverse2 .btn:hover, .btn.btn-inverse2:hover {*/
-/*	color: var(--btn-inverse2-color-hover) !important;*/
-/*	background-color: var(--btn-inverse2-background-hover) !important;*/
-/*}*/
-/*.btn-inverse2 .btn:visited, .btn.btn-inverse2:visited {*/
-/*	color: var(--btn-inverse2-color-hover) !important;*/
-/*	background-color: var(--btn-inverse2-background-hover) !important;*/
-/*}*/
-/*.btn-inverse2 .btn:active, .btn.btn-inverse2:active {*/
-/*	color: var(--btn-inverse2-color-hover) !important;*/
-/*	background-color: var(--btn-inverse2-background-hover) !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;*/
-/*	box-shadow: 0 2px 0 0 var(--btn-inverse2-background-hover) inset !important;*/
-/*}*/
-
-/*.btn-link .btn, .btn.btn-link {*/
-/*	border-color: transparent !important;*/
-/*	background-color: transparent;*/
-/*	color: var(--btn-link-color) !important;*/
-/*}*/
-/*.btn-link .btn:hover, .btn.btn-link:hover {*/
-/*	color: var(--btn-link-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*}*/
-/*.btn-link .btn:visited, .btn.btn-link:visited {*/
-/*	color: var(--btn-link-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*}*/
-/*.btn-link .btn:active, .btn.btn-link:active {*/
-/*	color: var(--btn-link-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*}*/
-
-/*.btn-link2 .btn, .btn.btn-link2 {*/
-/*	border-color: transparent !important;*/
-/*	background-color: transparent;*/
-/*	color: var(--btn-link2-color) !important;*/
-/*}*/
-/*.btn-link2 .btn:hover, .btn.btn-link2:hover {*/
-/*	color: var(--btn-link2-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*}*/
-/*.btn-link2 .btn:visited, .btn.btn-link2:visited {*/
-/*	color: var(--btn-link2-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*}*/
-/*.btn-link2 .btn:active, .btn.btn-link2:active {*/
-/*	color: var(--btn-link2-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*}*/
-
-/*.btn-link3 .btn, .btn.btn-link3 {*/
-/*	border-color: var(--btn-link3-background) !important;*/
-/*	background-color: var(--btn-link3-background);*/
-/*	color: var(--btn-link3-color) !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*}*/
-/*.btn-link3 .btn:hover, .btn.btn-link3:hover {*/
-/*	color: var(--btn-link3-color-hover) !important;*/
-/*	border-color: var(--btn-link3-hover-border-color) !important;*/
-/*	background-color: var(--btn-link3-background-hover) !important;*/
-/*}*/
-/*.btn-link3 .btn:visited, .btn.btn-link3:visited {*/
-/*	color: var(--btn-link3-color-hover) !important;*/
-/*	background-color: transparent !important;*/
-/*}*/
-/*.btn-link3 .btn:active, .btn.btn-link3:active {*/
-/*	color: var(--btn-link3-color-hover) !important;*/
-/*	background-color: var(--btn-link3-background-hover) !important;*/
-/*	-webkit-box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*	box-shadow: 0 2px 0 0 transparent inset !important;*/
-/*}*/
-
-/*.btn-primary .btn, .btn.btn-primary {*/
-/*	border-color: var(--btn-primary-bg) !important;*/
-/*	background-color: var(--btn-primary-bg) !important;*/
-/*}*/
-
-/*.btn.btn-primary:hover {*/
-/*	background-color: var(--btn-primary-hover) !important;*/
-/*}*/
 
 .chain-icon {
 	margin-right: 5px;

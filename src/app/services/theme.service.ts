@@ -171,7 +171,9 @@ export const DefaultTheme = {
 
 	'--a-link-color': 'var(--blue-color)',
 
+	// '--update-box-background': '#1f1f1f',
 	'--update-box-background': '#1f1f1f',
+	'--update-box-border': 'var(--black-card)',
 	'--chain-icon-bg': 'var(--gray-lighter)',
 };
 
@@ -349,7 +351,8 @@ export const LiberlandTheme = {
 
 	'--a-link-color': '#F8F8F8',
 
-	'--update-box-background': '#0d3352',
+	'--update-box-background': 'var(--light-card)',
+	'--update-box-border': 'var(--liberland-blue-darker)',
 	'--chain-icon-bg': '#c5c5c5',
 };
 
@@ -526,35 +529,101 @@ export const LightTheme = {
 
 	'--a-link-color': 'var(--yellow)',
 
-	'--update-box-background': '#a4a4a4',
+	'--update-box-background': 'var(--white-color)',
+	'--update-box-border': 'var(--gray-lightmedium)',
 	'--chain-icon-bg': '#c5c5c5',
 
 };
 
 export const WaxLandingTheme = {
+	/*wax theme colors*/
+	'--white-color': '#ffffff',
+	'--blue-card': '#002731',
+	'--blue-card-darker': '#001d24',
+	'--blue-color': '#0094d2',
+	'--blue-darker': '#0081bf',
+	'--orange-color': '#F78E1E',
+	'--orange-darker': '#e8964a',
+	'--black-color': '#000000', /*modal, card titles*/
+	'--gray-dark': '#232323',
+	'--gray-darkmedium': '#404040', /*text card, text modal, for example*/
+	'--gray-medium': '#585858',
+	'--gray-lightmedium': '#c0c0c0', /*subtitles, faded information*/
+	'--gray-light': '#e3e3e3',
+	'--red-color': '#ff5346',
+
+	/*concepts*/
+	'--text-card-title-color': 'var(--white-color)',
+	// '--text-free-title-color': 'var(--gray-lightmedium)',
+	'--text-card-color': 'var(--gray-light)',
+	'--text-highlight': 'var(--white-color)',
+	'--text-highlight-primary': 'var(--orange-color)',
+	'--text-highlight-accent': 'var(--orange-color)',
+	'--text-error': 'var(--red-color)',
+	'--text-faded': 'var(--gray-lightmedium)',
+
+	/*buttons*/
+	/*solid*/
+	'--btn-primary-bg': 'var(--orange-color)',
+	'--btn-primary-hover': 'var(--orange-color)',
+	'--btn-primary-color': 'var(--white-color)',
+	/*outline info*/
+	'--btn-info-outline': 'var(--orange-color)',
+	'--btn-info-outline-hover': 'var(--orange-color)',
+	'--btn-info-outline-color-hover': 'var(--white-color)',
+	/*outline inverse*/
+	'--btn-inverse-outline': 'var(--white-color)',
+	'--btn-inverse-outline-hover': 'var(--orange-color)',
+	'--btn-inverse-outline-color-hover': 'var(--white-color)',
+	/*outline accent*/
+	// '--btn-accent-outline': 'var(--blue-color)',
+	// '--btn-accent-outline-hover': 'var(--blue-color)',
+	// '--btn-accent-outline-color-hover': 'var(--white-color)',
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys, view on github (on update)*/
+	'--btn-primary-link-color': 'var(--orange-color)',
+	'--btn-primary-link-color-hover': 'var(--orange-color)',
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, */
+	'--btn-accent-link-color': 'var(--orange-color)',
+	'--btn-accent-link-color-hover': 'var(--orange-darker)',
+
+	/*main and body*/
+	'--header-background': 'var(--gray-darkmedium)',
+	'--header-title-color': 'var(--gray-light)',
+	'--header-icon-color': 'var(---gray-light)',
+	'--theme-icon-color': 'var(--gray-light)',
+	'--theme-icon-color-hover': 'var(--white-color)',
+
+	/*landing*/
+	'--slogan-special-color': 'var(--gray-lightmedium)',
 	'--landing-background': 'url("./assets/cover-wax.jpg")',
-	'--info-card-background': '#002731',
-	'--btn-inverse-background-hover': '#F78E1E',
+
+	/*cards*/
+	'--info-card-background': 'var(--blue-card)',
+
+	/*scrollbar*/
+	'--scroll-track-background': 'var(var(--blue-card))',
+	'--scroll-background': '(var(--blue-card)',
+	'--scroll-thumb-background': 'var(--gray-medium)',
+
+	/* modal / dialog / wizard */
+	'--modal-background': 'var(--blue-card)',
+	'--modal-color': 'var(--gray-light)',
+	'--modal-title-color': 'var(--white-color)',
+	'--modal-side-title-color': 'var(--white-color)',
+	'--modal-side-color': 'var(--gray-light)',
+	// '--modal-side-color': '#d6d6d6',
+	'--modal-side-background': 'var(--blue-card-darker)',
+	'--modal-step-background': 'var(--orange-color)',
+	'--modal-step-line-background': 'var(--orange-color)',
+	'--modal-step-off-color': 'var(--white-color)',
+
 	'--text-title-color': '#d0d0d0',
-	'--text-blue-color': '#F78E1E',
-	'--update-box-background': '#002731',
-	'--btn-link-color': '#F78E1E',
-	'--btn-link-color-hover': '#e8964a',
-	'--btn-link2-color': '#F78E1E',
-	'--btn-rev-color-hover': '#F78E1E',
-	'--modal-background': '#002731',
-	'--btn-border-color': '#F78E1E',
-	'--btn-color': '#F78E1E',
-	'--btn-background-hover': '#F78E1E',
-	'--modal-side-background': '#001d24',
-	'--modal-step-off-color': '#ffffff',
-	'--btn-primary-bg': '#c56907',
-	'--btn-primary-hover': '#8f4c05',
-	'--chain-icon-bg': 'white',
-	'--text-error': '#ec4d40',
+
+	'--chain-icon-bg': 'var(--white-color)',
 	'--made-with-love': '#bfbfbf',
-	'--modal-title-color': '#ffffff',
-	'--text-gray-color': '#b1b1b1',
+
+	'--update-box-background': 'var(--blue-card)',
 };
 
 @Injectable({providedIn: 'root'})
