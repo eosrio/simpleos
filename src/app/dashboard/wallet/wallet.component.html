@@ -117,9 +117,9 @@
             <!--HISTORY TABLE-->
             <div class="table-flex history-table" style="max-height: 100%; ">
 
-                <p-table #tableHistory [value]="aService.actions"
+                <p-table #tableHistory [value]="actions"
                          [responsive]="true"
-                         [totalRecords]="aService.totalActions"
+                         [totalRecords]="totalActions"
                          dataKey="seq"
                          class="overview-table flex-column"
                          sortField="date"
