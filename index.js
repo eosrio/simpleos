@@ -369,18 +369,19 @@ class SimpleosWallet {
             console.log('did-finish-load');
             this.win.setTitle(productName);
             this.win.setIcon(_icon);
-
-        });
-
-        this.win.once('ready-to-show', () => {
-            console.log('window ready to show');
-            this.win.show();
             ipcMain.on('electronOS', (event, args) => {
                 console.log(args);
                 if (args === 'request_os') {
                     this.win.webContents.send('electronOS', {message: 'type', content: process.platform});
                 }
             });
+
+        });
+
+        this.win.once('ready-to-show', () => {
+            console.log('window ready to show');
+            this.win.show();
+
         });
 
         this.win.on('app-command', (e, cmd) => {

@@ -56,9 +56,7 @@
 		"afterSign": "electron-builder-notarize",
 		"mac": {
 			"hardenedRuntime": true,
-
 			"entitlements": "scripts/entitlements.mac.plist",
-
 			"category": "public.app-category.finance",
 			"target": [
 				"dmg"
