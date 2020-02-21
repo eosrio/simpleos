@@ -243,7 +243,8 @@ export class EOSJSService {
     getConstitution() {
         this.eos['getAbi']('eosio').then((data) => {
             const temp = data['abi']['ricardian_clauses'][0]['body'];
-            this.constitution = temp.replace(/(?:\r\n|\r|\n)/g, '<br>');
+            // this.constitution = temp.replace(/(?:\r\n|\r|\n)/g, '<br>');
+            this.constitution = temp;
         });
     }
 

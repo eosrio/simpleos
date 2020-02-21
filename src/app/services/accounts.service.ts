@@ -592,7 +592,6 @@ export class AccountsService {
     }
 
     select(index) {
-        console.log('selecting accont');
         const sel = this.accounts[index];
         this.loading = true;
         this.tokens = [];
@@ -608,10 +607,6 @@ export class AccountsService {
             this.selected.next(sel);
             this.fetchTokens(sel.name).catch(console.log);
         }
-        // const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-        // if(this.isLedger){
-        //   this.isLedger = stored_data[pbk]['private'] === 'ledger';
-        // }
     }
 
     initFirst() {
