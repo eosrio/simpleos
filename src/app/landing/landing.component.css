@@ -1,6 +1,6 @@
 .wrap {
 	display: flex;
-	min-height: 100vh;
+	height: calc(100vh - 1.7rem);
 	flex-direction: column;
 	background: var(--landing-background);
 	/*background-image: var(--landing-image-background);*/
