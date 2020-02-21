@@ -87,7 +87,7 @@
 }
 
 /deep/ .maturing-table .ui-table .ui-table-tbody > tr {
-	color: var(--text-white-color);
+	color: var(--text-highlight);
 	background: transparent;
 }
 
@@ -122,7 +122,7 @@
 }
 
 /deep/ .maturing-table .ui-table .ui-table-tfoot > tr {
-	color: var(--text-white-color);
+	color: var(--text-highlight);
 	background: transparent;
 }
 

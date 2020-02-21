@@ -119,10 +119,6 @@ li:hover .contact-hover {
     padding: 30px 16px;
 }
 
-.name {
-    color: var(--text-white-color);
-}
-
 .account {
     font-size: 14px;
 }

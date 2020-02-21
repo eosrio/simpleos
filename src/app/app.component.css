@@ -225,7 +225,7 @@
 
 /*JSON formatter*/
 /deep/ .segment-key {
-	color: var(--text-white-color) !important;
+	color: var(--text-highlight) !important;
 }
 
 /deep/ .transit-json .ngx-json-viewer {

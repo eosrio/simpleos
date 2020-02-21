@@ -52,7 +52,7 @@
                             <mat-autocomplete #auto="matAutocomplete">
                                 <mat-option *ngFor="let contact of filteredContacts | async; let last = last"
                                             [value]="contact.account" [class.last]="last">
-                                    <div class="name">{{ contact.name }}</div>
+                                    <div class="name highlight">{{ contact.name }}</div>
                                     <div class="account">{{ contact.account }}</div>
                                 </mat-option>
                             </mat-autocomplete>

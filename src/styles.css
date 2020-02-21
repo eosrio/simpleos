@@ -100,6 +100,7 @@
 	/*landing*/
 	--slogan-special-color: 'inherit';
 	--landing-background: 'url("./assets/fundosimpleos.png")';
+	--text-on-cover: #a4a4a4;
 	/*--landing-image-background:url("./assets/fundosimpleos.png");*/
 
 	/*sidenav*/
@@ -170,14 +171,6 @@
 	--scroll-track-background: var(--black-sidenav);
 	--scroll-background: var(--black-sidenav);
 	--scroll-thumb-background: var(--gray-darker);
-
-	--text-white-color: #ffffff;
-	--text-blue-color: var(--blue-color); /*used a lot, but in wax its orange XD*/
-	--text-gray2-color: #e9e9e9;
-	--text-gray3-color: #d6d6d6;
-	--made-with-love: #a4a4a4;
-
-	--a-link-color: var(--blue-color);
 
 	/* modal / dialog / wizard */
 	--modal-background: var(--black-sidenav);
@@ -268,6 +261,10 @@ body {
 .error {
 	color: var(--text-error) !important;
 	font-weight: 600;
+}
+
+.text-on-cover {
+	color: var(--text-on-cover);
 }
 /*classes for colors end*/
 
@@ -382,13 +379,7 @@ body {
 	-webkit-animation: fadein 1.8s;
 	animation: fadein 1.8s;
 }
-body a.link-eosrio{
-	color: var(--a-link-color);
-}
-body a.link-eosrio:hover{
-	color: var(--a-link-color);
-	cursor: pointer;
-}
+
 .special-font{
 	font-family:  var(--special-font-bold) !important;
 	/*font-weight: bold;*/
@@ -770,7 +761,7 @@ input:not([readonly]) {
 
 .copy:hover {
 	cursor: pointer;
-	color: var(--text-gray3-color);
+	color: var(--text-highlight);
 }
 
 /*Prime's accordion*/
@@ -937,10 +928,6 @@ input:not([readonly]) {
 	background-color: var(--chain-icon-bg);
 	padding: 3px;
 	border-radius: 30px;
-}
-
-.made-with-love {
-	color: var(--made-with-love);
 }
 
 /*START LEDGER ACC LIST SELECTION */

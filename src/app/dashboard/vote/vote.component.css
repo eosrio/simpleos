@@ -153,7 +153,6 @@
 }
 
 .gbm-title {
-	color: var(--text-white-color);
 	font-size: 16px;
 }
 
@@ -198,7 +197,7 @@ a:visited {
 }
 
 .social-icon fa-icon:hover {
-    color: var(--text-white-color);
+    color: var(--text-highlight);
     cursor: pointer;
 }
 

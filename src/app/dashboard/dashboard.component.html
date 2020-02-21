@@ -148,12 +148,12 @@
             <section class="placeholder border-r" *ngIf="app.compilerVersion === 'DEFAULT'">
                 <div class="credits">Made with
                     <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-                    by <a class="link-eosrio" [routerLink]="['about']">EOS Rio</a>
+                    by <a class="highlight-accent" [routerLink]="['about']">EOS Rio</a>
                 </div>
                 <div class="version">v{{aService.versionSys}}</div>
             </section>
             <section class="placeholder border-r" *ngIf="app.compilerVersion === 'LIBERLAND'">
-                <div class="credits">Powered by <a class="link-eosrio" [routerLink]="['about']">SimplEOS</a></div>
+                <div class="credits">Powered by <a class="highlight-accent" [routerLink]="['about']">SimplEOS</a></div>
                 <div class="version">v{{aService.versionSys}}</div>
             </section>
         </nav>

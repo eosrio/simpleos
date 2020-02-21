@@ -303,7 +303,7 @@ export class RexComponent implements OnDestroy {
 				this.updateGlobalRexData();
 			}
 		}));
-		const color = document.documentElement.style.getPropertyValue('--text-white-color') !== '' ? document.documentElement.style.getPropertyValue('--text-white-color') : '#ffffff';
+		const color = document.documentElement.style.getPropertyValue('--text-highlight') !== '' ? document.documentElement.style.getPropertyValue('--text-highlight') : '#ffffff';
 
 		// Setup Charts
 		this.rex_price_chart = {

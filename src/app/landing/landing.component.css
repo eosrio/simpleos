@@ -131,7 +131,6 @@
 }
 
 .bold {
-	color: var(--text-gray3-color);
 	font-weight: 500;
 }
 

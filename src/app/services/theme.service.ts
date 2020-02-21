@@ -165,14 +165,7 @@ export const DefaultTheme = {
 	/*REX page*/
 	'--rex-border-color': 'var(--black-background)',
 
-	'--text-btn-color-hover': 'var(--white-color)',
-	'--text-gray2-color': '#e9e9e9',
-	'--text-gray3-color': '#d6d6d6',
-	'--text-white-color': 'var(--white-color)',
-	'--text-blue-color': 'var(--blue-color)',
 	'--made-with-love': 'var(--gray-medium)',
-
-	'--a-link-color': 'var(--blue-color)',
 
 	// '--update-box-background': '#1f1f1f',
 	'--update-box-background': '#1f1f1f',
@@ -257,6 +250,7 @@ export const LiberlandTheme = {
 	/*landing*/
 	'--slogan-special-color': '#ffffff61',
 	'--landing-background': 'url("./assets/cover-liberland4.png")',
+	'--text-on-cover': 'var(--gray-light)',
 
 	/*sidenav*/
 	'--sidenav-background': 'var(--liberland-blue)',
@@ -347,15 +341,6 @@ export const LiberlandTheme = {
 	/*REX page*/
 	'--rex-border-color': 'var(--light-bg)',
 
-	'--text-white-color': '#202020',
-	'--text-gray2-color': '#707070',
-	'--text-gray3-color': '#a8a8a8',
-	'--text-destaque-color': 'var(--yellow-color)',
-	'--text-blue-color': '#2a566f',
-	'--made-with-love': '#ffffff',
-
-	'--a-link-color': '#F8F8F8',
-
 	'--update-box-background': 'var(--light-card)',
 	'--update-box-border': 'var(--liberland-blue-darker)',
 	'--chain-icon-bg': '#c5c5c5',
@@ -435,6 +420,7 @@ export const LightTheme = {
 	'--slogan-special-color': 'var(--gray-medium)',
 	'--landing-background': 'url("./assets/fundosimpleoslight.png")',
 	// '--landing-image-background': 'url("../../assets/fundosimpleoslight.png")',
+	'--text-on-cover': 'var(--gray-medium)',
 
 	/*sidenav*/
 	'--dashboard-animation-display': 'none',
@@ -527,14 +513,7 @@ export const LightTheme = {
 	/*REX page*/
 	'--rex-border-color': 'var(--gray-lightmedium)',
 
-	'--text-white-color': '#202020',
-	'--text-btn-color-hover': '#f8f8f8',
-	'--text-gray2-color': '#707070',
-	'--text-gray3-color': '#b1b1b1',
-	'--text-blue-color': '#0094d2',
 	'--made-with-love': '#404040',
-
-	'--a-link-color': 'var(--yellow)',
 
 	'--update-box-background': 'var(--white-color)',
 	'--update-box-border': 'var(--gray-lightmedium)',
@@ -604,6 +583,7 @@ export const WaxLandingTheme = {
 	/*landing*/
 	'--slogan-special-color': 'var(--gray-lightmedium)',
 	'--landing-background': 'url("./assets/cover-wax.jpg")',
+	'--text-on-cover': 'var(--gray-lightmedium)',
 
 	/*cards*/
 	'--info-card-background': 'var(--blue-card)',
@@ -702,6 +682,7 @@ export const TelosLandingTheme = {
 	/*landing*/
 	'--slogan-special-color': 'var(--gray-lightmedium)',
 	'--landing-background': 'url("./assets/cover-telos.jpg")',
+	'--text-on-cover': 'var(--gray-lightmedium)',
 
 	/*cards*/
 	'--info-card-background': 'var(--light-card)',

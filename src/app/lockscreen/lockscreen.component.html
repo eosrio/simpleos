@@ -45,23 +45,23 @@
                 </div>
 			</div>
 			<div class="clr-col-md-12 text-center">
-                <div class="made-with-love" style="margin-top: 5px;">Forgot your pin?
+                <div class="text-on-cover" style="margin-top: 5px;">Forgot your pin?
                     <a class="btn btn-sm btn-link btn-accent-link" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
                         Clear all data and logout
                         <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
                     </a>
                 </div>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion === 'DEFAULT'">
-					<div class="credits made-with-love">Made with
+				<section class="placeholder border-r text-on-cover" style="margin-top:20px;" *ngIf="app.compilerVersion === 'DEFAULT'">
+					<div class="credits">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
 						by <span class="highlight-primary">EOS Rio</span>
 					</div>
-					<div class="version made-with-love">v{{aService.versionSys}}</div>
+					<div class="version">v{{aService.versionSys}}</div>
 					<br>
 				</section>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion !== 'DEFAULT'">
-					<div class="credits">Powered by</div>
-					<div class="version">SimplEOS v{{aService.versionSys}}</div>
+				<section class="placeholder border-r text-on-cover" style="margin-top:20px;" *ngIf="app.compilerVersion !== 'DEFAULT'">
+					<span class="credits">Powered by </span>
+					<span class="version">SimplEOS v{{aService.versionSys}}</span>
 					<br>
 				</section>
             </div>
@@ -70,8 +70,8 @@
 </div>
 
 <clr-modal [(clrModalOpen)]="logoutModal" [clrModalSize]="'sm'">
-    <h3 class="modal-title text-white">
-        Are you <span class="blue">sure</span> ?
+    <h3 class="modal-title">
+        Are you <span class="highlight-primary">sure</span> ?
     </h3>
     <div class="modal-body">
         <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your
@@ -84,7 +84,7 @@
             <button type="button" class="btn btn-info-outline" (click)="logout()">
                 Yes
             </button>
-            <div class="text-center">*SimplEOS will <br> be restarted</div>
+            <div class="text-center text-faded mt-1">*SimplEOS will <br> be restarted</div>
         </div>
     </div>
 </clr-modal>
