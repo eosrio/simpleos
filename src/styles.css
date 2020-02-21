@@ -155,6 +155,7 @@
 
 	/*cards*/
 	--info-card-background: var(--black-card);
+	--info-card-bg-hover: #3b3b3b;
 
 	/*accordion*/
 	--accordion-header-color: var(--gray-lightmedium);
@@ -171,9 +172,7 @@
 	--scroll-thumb-background: var(--gray-darker);
 
 	--text-white-color: #ffffff;
-	--text-btn-color-hover: #ffffff;
 	--text-blue-color: var(--blue-color); /*used a lot, but in wax its orange XD*/
-	--text-gray-color: #b1b1b1;
 	--text-gray2-color: #e9e9e9;
 	--text-gray3-color: #d6d6d6;
 	--made-with-love: #a4a4a4;
@@ -190,6 +189,9 @@
 	--modal-step-background: #535353;
 	--modal-step-line-background: #535353;
 	--modal-step-off-color: var(--gray-lightmedium);
+
+	/*  input */
+	--input-label: var(--gray-lightmedium);
 
 	/* lent resources table */
 	--tr-resource-even-backgorund: var(--black-background);
@@ -260,7 +262,7 @@ body {
 }
 
 .text-warn {
-	color: var(--text-error);
+	color: var(--text-error) !important;
 }
 
 .error {
@@ -476,7 +478,7 @@ body a.link-eosrio:hover{
 }
 
 .mat-tab-header-pagination-chevron {
-	border-color:  var(--text-gray-color);
+	border-color:  var(--input-label);
 }
 
 .mat-tab-label .mat-tab-label-content {
@@ -512,27 +514,27 @@ body a.link-eosrio:hover{
 /*material's input*/
 
 .mat-form-field-appearance-legacy .mat-form-field-label {
-	color:  var(--text-gray-color);
+	color:  var(--input-label);
 }
 
 .mat-form-field.mat-focused .mat-form-field-label {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 }
 
 .mat-form-field-appearance-legacy .mat-form-field-underline {
-	background-color: var(--text-gray-color);
+	background-color: var(--input-label);
 }
 
 .mat-form-field.mat-focused .mat-form-field-ripple {
-	background-color: var(--text-blue-color);
+	background-color: var(--text-highlight-primary);
 }
 
 .mat-input-element {
-	caret-color: var(--text-blue-color);
+	caret-color: var(--text-highlight-primary);
 }
 
 .mat-form-field-autofill-control {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 }
 
 /*material's input end*/
@@ -926,7 +928,7 @@ input:not([readonly]) {
 	border: 0 !important;
 }
 .ui-paginator .ui-paginator-pages .ui-paginator-page.ui-state-active {
-	background-color: var(--text-blue-color)!important;
+	background-color: var(--text-highlight-primary)!important;
 	color: #ffffff;
 }
 

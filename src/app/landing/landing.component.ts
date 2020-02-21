@@ -293,6 +293,11 @@ export class LandingComponent implements OnInit, OnDestroy {
                 this.theme.waxTheme();
                 break;
             }
+            case 'TELOS MAINNET': {
+                // this.theme.defaultTheme();
+                this.theme.telosTheme();
+                break;
+            }
             case 'LIBERLAND TESTNET': {
                 // this.theme.defaultTheme();
                 this.theme.liberlandTheme();

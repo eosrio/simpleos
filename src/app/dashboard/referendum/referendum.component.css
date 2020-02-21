@@ -43,7 +43,7 @@ li:hover {
 	min-width:200px!important;
 }
 /deep/.text-muted {
-	color: var(--text-gray-color)!important;
+	color: var(--text-faded) !important;
 }
 /deep/h4.text-muted2 {
 	color:#dedede !important;
@@ -233,7 +233,8 @@ li:hover {
 }
 
 /deep/ .pagination-row .ngx-pagination a {
-	color: var(--text-gray2-color);
+	/*color: var(--text-gray2-color);*/
+	color: var(--text-highlight);
 }
 
 /deep/ .pagination-row .ngx-pagination a:hover {
@@ -247,7 +248,7 @@ li:hover {
 
 .proposal-card:hover {
 	cursor: pointer;
-	background-color: var(--card-hover-backgorund);;
+	background-color: var(--info-card-bg-hover);;
 }
 
 /deep/ .create-proposal {
@@ -327,10 +328,10 @@ input::placeholder {
 
 
 /*Markdown INICIO*/
-markdown ::ng-deep h4{ color: var(--text-blue-color); }
-markdown ::ng-deep h3{ color: var(--text-calendar); }
-markdown ::ng-deep h2{ color: var(--text-blue-color); }
-markdown ::ng-deep h1{ color: var(--text-blue-color); }
-markdown ::ng-deep p{ color: var(--text-gray2-color);}
-markdown ::ng-deep li{ color: var(--text-gray-color); }
+markdown ::ng-deep h4{ color: var(--text-highlight-primary); }
+markdown ::ng-deep h3{ color: var(--text-card-title-color); }
+markdown ::ng-deep h2{ color: var(--text-highlight-primary); }
+markdown ::ng-deep h1{ color: var(--text-highlight-primary); }
+markdown ::ng-deep p{ color: var(--text-card-color);}
+markdown ::ng-deep li{ color: var(--text-faded); }
 /*Markdown FIM*/

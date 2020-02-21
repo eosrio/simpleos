@@ -21,7 +21,7 @@
 
 
 /deep/ .action-selector .mat-select-value {
-	color: #0094d2;
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
@@ -37,15 +37,15 @@
 }
 
 /deep/ .mat-primary .action-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: #0094d2;
+	color: var(--text-highlight-primary);
 }
 
 /deep/ .mat-select-arrow {
-	color: rgb(177, 177, 177);
+	color: var(--text-card-color);
 }
 
 /deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: #0094d2 !important;
+	color: var(--text-highlight-primary) !important;
 }
 
 .expandRow {

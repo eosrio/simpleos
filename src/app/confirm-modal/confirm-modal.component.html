@@ -1,8 +1,8 @@
 <clr-modal [(clrModalOpen)]="visibility" [clrModalStaticBackdrop]="true" (clrModalOpenChange)="onClose()">
-    <h3 class="modal-title text-white" style="display: contents;" >Confirm <span [innerHTML]="modalData.actionTitle"></span></h3>
+    <h3 class="modal-title" style="display: contents;" >Confirm <span [innerHTML]="modalData.actionTitle"></span></h3>
     <div class="modal-body">
-        <h5 class="gray mt-0">Account: {{modalData.signerAccount}}</h5>
-        <h4 class="text-white" [innerHTML]="modalData.labelHTML"></h4>
+        <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
+        <h4 [innerHTML]="modalData.labelHTML"></h4>
         <h5 class="mt-0"></h5>
         <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
             <p-accordion>

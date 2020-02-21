@@ -4,13 +4,13 @@
 }
 
 .website:visited {
-    color: #0094d2;
+    color: var(--text-highlight-primary);
     text-decoration: none;
 }
 
 
 .website:link {
-    color: #0094d2;
+    color: var(--text-highlight-primary);
     text-decoration: none;
 }
 

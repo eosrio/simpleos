@@ -179,7 +179,7 @@
 
 
 /deep/ .time-selector .mat-select-value {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -194,7 +194,7 @@
 }
 
 /deep/ .mat-primary .time-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 }
 
 /deep/ .time-selector .mat-select-arrow {
@@ -202,7 +202,7 @@
 }
 
 /deep/ .time-selector.mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: var(--text-blue-color) !important;
+	color: var(--text-highlight-primary) !important;
 }
 
 .rexpage-row {

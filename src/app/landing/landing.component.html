@@ -234,7 +234,9 @@
                          *ngIf="app.compilerVersion === 'DEFAULT'">
                     <div class="credits made-with-love">Made with
                         <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-                        by <span class="highlight-primary">EOS Rio</span>
+                        by <span [ngClass]="aService.activeChain['name'] === 'TELOS MAINNET' ? 'highlight-accent' : 'highlight-primary'">
+                            EOS Rio
+                        </span>
                     </div>
                     <div class="version made-with-love">v{{aService.versionSys}}</div>
                     <br>

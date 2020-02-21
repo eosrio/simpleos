@@ -126,6 +126,7 @@ export const DefaultTheme = {
 
 	/*cards*/
 	'--info-card-background': 'var(--black-card)',
+	'--info-card-bg-hover': '#3b3b3b',
 
 	/*accordion*/
 	'--accordion-header-color': 'var(--gray-lightmedium)',
@@ -152,6 +153,9 @@ export const DefaultTheme = {
 	'--modal-step-line-background': '#535353',
 	'--modal-step-off-color': 'var(--gray-lightmedium)',
 
+	/*  input */
+	'--input-label': 'var(--gray-lightmedium)',
+
 	/* lent resources table */
 	'--tr-resource-even-backgorund': 'var(--black-background)',
 	'--tr-resource-odd-color': 'var(--gray-lighter)',
@@ -162,7 +166,6 @@ export const DefaultTheme = {
 	'--rex-border-color': 'var(--black-background)',
 
 	'--text-btn-color-hover': 'var(--white-color)',
-	'--text-gray-color': 'var(--gray-lightmedium)',
 	'--text-gray2-color': '#e9e9e9',
 	'--text-gray3-color': '#d6d6d6',
 	'--text-white-color': 'var(--white-color)',
@@ -306,6 +309,7 @@ export const LiberlandTheme = {
 
 	/*cards*/
 	'--info-card-background': 'var(--light-card)',
+	'--info-card-bg-hover': 'var(--gray-light)',
 
 	/*accordion*/
 	'--accordion-content-color': '#707070',
@@ -332,6 +336,9 @@ export const LiberlandTheme = {
 	'--modal-step-line-background': 'var(--liberland-blue-darker)',
 	'--modal-step-off-color': 'var(--white-color)',
 
+	/*  input */
+	'--input-label': 'var(--gray-darkmedium)',
+
 	/* lent resources table */
 	'--tr-resource-even-backgorund': 'var(--white-color)',
 	'--tr-resource-odd-color': '#202020',
@@ -341,8 +348,6 @@ export const LiberlandTheme = {
 	'--rex-border-color': 'var(--light-bg)',
 
 	'--text-white-color': '#202020',
-	'--text-btn-color-hover': '#f8f8f8',
-	'--text-gray-color': '#404040',
 	'--text-gray2-color': '#707070',
 	'--text-gray3-color': '#a8a8a8',
 	'--text-destaque-color': 'var(--yellow-color)',
@@ -484,6 +489,7 @@ export const LightTheme = {
 
 	/*cards*/
 	'--info-card-background': 'var(--light-card)',
+	'--info-card-bg-hover': 'var(--gray-light)',
 
 	/*accordion*/
 	'--accordion-header-color': '#707070',
@@ -510,6 +516,9 @@ export const LightTheme = {
 	'--modal-step-line-background': 'var(--blue-darker)',
 	'--modal-step-off-color': 'var(--white-color)',
 
+	/*  input */
+	'--input-label': 'var(--gray-darkmedium)',
+
 	/* lent resources table */
 	'--tr-resource-even-backgorund': 'var(--white-color)',
 	'--tr-resource-odd-color': '#202020',
@@ -518,10 +527,8 @@ export const LightTheme = {
 	/*REX page*/
 	'--rex-border-color': 'var(--gray-lightmedium)',
 
-	// '--text-title-color': '#404040',
 	'--text-white-color': '#202020',
 	'--text-btn-color-hover': '#f8f8f8',
-	'--text-gray-color': '#404040',
 	'--text-gray2-color': '#707070',
 	'--text-gray3-color': '#b1b1b1',
 	'--text-blue-color': '#0094d2',
@@ -618,12 +625,116 @@ export const WaxLandingTheme = {
 	'--modal-step-line-background': 'var(--orange-color)',
 	'--modal-step-off-color': 'var(--white-color)',
 
+	/*  input */
+	'--input-label': 'var(--gray-light)',
+	// '--input-label': '#b1b1b1',
+
 	'--text-title-color': '#d0d0d0',
 
 	'--chain-icon-bg': 'var(--white-color)',
 	'--made-with-love': '#bfbfbf',
 
 	'--update-box-background': 'var(--blue-card)',
+};
+
+export const TelosLandingTheme = {
+	/*telos theme colors*/
+	'--white-color': '#ffffff',
+	'--light-card': '#f9f9f9',
+	'--purple-bg': '#030039',
+	'--blue-card-darker': '#001d24',
+	'--blue-color': '#0094d2',
+	'--blue-darker': '#0081bf',
+	'--telos-purple': '#571AFF',
+	'--telos-purple-darker': '#3D12B2',
+	'--yellow-color':'#FFD75E',
+	'--yellow-darker':'#eec65a',
+	'--black-color': '#000000', /*modal, card titles*/
+	'--gray-dark': '#232323',
+	'--gray-darkmedium': '#404040', /*text card, text modal, for example*/
+	'--gray-medium': '#585858',
+	'--gray-lightmedium': '#c0c0c0', /*subtitles, faded information*/
+	'--gray-light': '#e3e3e3',
+	'--red-color': '#ff1301',
+
+	/*concepts*/
+	'--text-card-title-color': 'var(--black-color)',
+	// '--text-free-title-color': 'var(--gray-lightmedium)',
+	'--text-card-color': 'var(--gray-dark)',
+	'--text-highlight': 'var(--black-color)',
+	'--text-highlight-primary': 'var(--telos-purple)',
+	'--text-highlight-accent': 'var(--yellow-color)',
+	'--text-error': 'var(--red-color)',
+	'--text-faded': 'var(--gray-medium)',
+
+	/*buttons*/
+	/*solid*/
+	'--btn-primary-bg': 'var(--telos-purple)',
+	'--btn-primary-hover': 'var(--telos-purple-darker)',
+	'--btn-primary-color': 'var(--white-color)',
+	/*outline info*/
+	'--btn-info-outline': 'var(--telos-purple)',
+	'--btn-info-outline-hover': 'var(--telos-purple)',
+	'--btn-info-outline-color-hover': 'var(--white-color)',
+	/*outline inverse*/
+	'--btn-inverse-outline': 'var(--white-color)',
+	'--btn-inverse-outline-hover': 'var(--telos-purple)',
+	'--btn-inverse-outline-color-hover': 'var(--white-color)',
+	/*outline accent*/
+	// '--btn-accent-outline': 'var(--blue-color)',
+	// '--btn-accent-outline-hover': 'var(--blue-color)',
+	// '--btn-accent-outline-color-hover': 'var(--white-color)',
+	/*link*/
+	/*used in... refresh btn, open account on explorer, reload all proxys, view on github (on update)*/
+	'--btn-primary-link-color': 'var(--telos-purple)',
+	'--btn-primary-link-color-hover': 'var(--telos-purple-darker)',
+	/*used in... retry connect, clear all data and logout, made with love by ->EOS Rio<-, */
+	'--btn-accent-link-color': 'var(--yellow-color)',
+	'--btn-accent-link-color-hover': 'var(--telos-purple)',
+
+	/*main and body*/
+	'--header-background': 'var(--gray-darkmedium)',
+	'--header-title-color': 'var(--gray-light)',
+	'--header-icon-color': 'var(---gray-light)',
+	'--theme-icon-color': 'var(--gray-light)',
+	'--theme-icon-color-hover': 'var(--white-color)',
+
+	/*landing*/
+	'--slogan-special-color': 'var(--gray-lightmedium)',
+	'--landing-background': 'url("./assets/cover-telos.jpg")',
+
+	/*cards*/
+	'--info-card-background': 'var(--light-card)',
+	'--info-card-bg-hover': 'var(--gray-light)',
+
+	/*calendar*/
+	'--text-calendar': 'var(--gray-medium)',
+
+	/*scrollbar*/
+	'--scroll-track-background': 'var(--blue-card)',
+	'--scroll-background': 'var(--blue-card)',
+	'--scroll-thumb-background': 'var(--gray-medium)',
+
+	/* modal / dialog / wizard */
+	'--modal-background': 'var(--light-card)',
+	'--modal-color': 'var(--gray-dark)',
+	'--modal-title-color': 'var(--black-color)',
+	'--modal-side-title-color': 'var(--white-color)',
+	'--modal-side-color': 'var(--gray-light)',
+	'--modal-side-background': 'var(--purple-bg)',
+	'--modal-step-background': 'var(--telos-purple)',
+	'--modal-step-line-background': 'var(-telos-purple)',
+	'--modal-step-off-color': 'var(--white-color)',
+
+	/*  input */
+	'--input-label': 'var(--gray-darkmedium)',
+
+	'--text-title-color': '#d0d0d0',
+
+	'--chain-icon-bg': 'var(--white-color)',
+	'--made-with-love': '#bfbfbf',
+
+	'--update-box-background': 'var(--light-card)',
 };
 
 @Injectable({providedIn: 'root'})
@@ -633,6 +744,11 @@ export class ThemeService {
 	defaultTheme() {
 		this.currentTheme = 'dark';
 		this.setTheme(DefaultTheme);
+	}
+
+	lightTheme() {
+		this.currentTheme = 'light';
+		this.setTheme(LightTheme);
 	}
 
 	liberlandTheme() {
@@ -645,9 +761,9 @@ export class ThemeService {
 		this.setTheme(WaxLandingTheme);
 	}
 
-	lightTheme() {
-		this.currentTheme = 'light';
-		this.setTheme(LightTheme);
+	telosTheme() {
+		this.currentTheme = 'telos';
+		this.setTheme(TelosLandingTheme);
 	}
 
 	private setTheme(theme: {}) {

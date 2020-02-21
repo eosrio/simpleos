@@ -29,8 +29,7 @@
                         <span>
                             {{unstaked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
                         </span>
-                        <span *ngIf="unstaking > 0"
-                              style="color: #616161;">(+{{(unstaking) | number :'1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
+                        <span *ngIf="unstaking > 0">(+{{(unstaking) | number :'1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
                         </span>
                     </span>
                 </div>
@@ -565,11 +564,11 @@
 
                         <fa-layers class="mt-2 mb-1">
                             <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-                                     style="color:#0094d2;"></fa-icon>
+                                     class="highlight-accent"></fa-icon>
                         </fa-layers>
                         <br>
 
-                        <div class="highlight-primary" style="padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...
+                        <div class="highlight-accent" style="padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...
                         </div>
                     </ng-container>
                 </div>

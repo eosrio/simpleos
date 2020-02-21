@@ -9,7 +9,7 @@
 }
 
 .clicked:hover {
-	border-bottom: 1px solid var(--text-blue-color) !important;
+	border-bottom: 1px solid var(--text-highlight-primary) !important;
 }
 
 .clicked {
@@ -57,8 +57,9 @@
 }
 
 .chain-section:not(.selected):hover {
-	background-color: var(--mat-tab-active);
+	background-color: var(--info-card-bg-hover);
 	cursor: pointer;
+	color: var(--text-card-title-color);
 }
 
 .container-fluid {
@@ -69,11 +70,6 @@
 .anim-logo {
 	/*margin-top: 80px;*/
 	margin-top: 30px;
-}
-
-.selected {
-	background-color: var(--text-blue-color) !important;
-	color: white;
 }
 
 .sloganWallet {
@@ -242,24 +238,24 @@
 
 .settings-card {
 	background-color: transparent;
-	border: 1px solid #0079b8;
+	border: 1px solid var(--text-highlight-primary);
 	box-shadow: none;
 	color: #ffffff;
 }
 
 .mt-OTHER {
-	margin-top: 0px !important;
+	margin-top: 0 !important;
 	margin-bottom: 1rem !important;
 }
 
 /deep/ .chain-selector .mat-select-value {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
 /deep/ .mat-optgroup-label  {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 14px !important;
 	line-height: 2.5em!important;
@@ -277,19 +273,19 @@
 }
 
 /deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 }
 
 /deep/ .mat-select-arrow {
-	color: rgb(177, 177, 177);
+	color: var(--text-card-color);
 }
 
 /deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: #0094d2 !important;
+	color: var(--text-highlight-primary) !important;
 }
 
 .selected {
-	background-color: #0077b7;
+	background-color: var(--text-highlight-primary);
 	color: white;
 }
 
