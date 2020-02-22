@@ -961,3 +961,22 @@ input:not([readonly]) {
 	font-size: 15px;
 }
 /*END LEDGER ACC LIST SELECTION */
+
+/*Confirm transaction error footer modal*/
+.error-modal-footer {
+	padding: 14px 27px 17px;
+	background-color: var(--error-bg);
+	border-top: 1px solid;
+}
+
+@media screen and (min-width: 577px) {
+	.error-modal-footer {
+		margin: 20px -27px -27px;
+	}
+}
+@media screen and (max-width: 576px) {
+	.error-modal-footer {
+		margin: 20px -51px -23px -27px;
+	}
+}
+/*Confirm transaction error footer modal END*/
