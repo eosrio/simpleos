@@ -752,12 +752,56 @@
         }
       ]
     },
+	  {
+      "id": "cc1e1e603f6ce192256579ce72f118c52127e6cf1b88783cbd73ea1e6aaa5731",
+      "symbol": "LLM",
+      "icon": "liberland.png",
+      "precision": 8,
+      "name": "LIBERLAND TESTNET",
+      "network": "TESTNET",
+      "firstApi": "https://liberland-staging.eosio.se",
+      "historyApi": "",
+      "hyperionApis": [],
+      "forumTally": "",
+      "eosrioBP": "",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": false,
+        "vote": false,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": false,
+        "forum": false,
+        "rex": false
+      },
+      "system": [
+        "eosio",
+		"eosio.init",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+        {
+          "url": "https://liberland-staging.eosio.se",
+          "owner": "EOS Sweden",
+          "latency": 0,
+          "version": "native"
+        }
+      ],
+      "explorers": []
+    },
     {
       "id": "cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a",
       "symbol": "LLM",
       "icon": "liberland.png",
       "precision": 8,
-      "name": "LIBERLAND TESTNET",
+      "name": "LIBERLAND T2",
       "network": "TESTNET",
       "firstApi": "https://liberland-test.eosio.se",
       "historyApi": "",
@@ -782,6 +826,7 @@
       },
       "system": [
         "eosio",
+		"eosio.init",
         "eosio.token",
         "eosio.msig"
       ],
