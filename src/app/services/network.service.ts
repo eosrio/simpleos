@@ -252,7 +252,7 @@ export class NetworkService {
         this.startTimeout();
         // prevent double load after quick connection mode
         if (endpoint !== this.lastEndpoint || this.autoMode === true) {
-            this.eosjs2.initRPC(endpoint, this.activeChain.id);
+            this.eosjs2.initRPC(endpoint, this.activeChain.id, this.activeChain.endpoints);
             let savedAccounts: any[];
             try {
                 savedAccounts = await this.eosjs.init(endpoint, this.activeChain.id);

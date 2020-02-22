@@ -69,8 +69,8 @@ export class Eosjs2Service {
     textDecoder: TextDecoder;
     public localSigProvider: SimpleosSigProvider;
     public activeEndpoint: string;
+    public alternativeEndpoints: any[];
     public chainId: string;
-
     private JsSigProvider: SignatureProvider;
     private api: Api;
 
@@ -118,9 +118,10 @@ export class Eosjs2Service {
         };
     }
 
-    initRPC(endpoint, chainID) {
+    initRPC(endpoint, chainID, allEndpoints) {
         this.activeEndpoint = endpoint;
         this.chainId = chainID;
+        this.alternativeEndpoints = allEndpoints;
         this.rpc = new JsonRpc(this.activeEndpoint);
         this.localSigProvider = new SimpleosSigProvider(this.rpc);
     }
@@ -409,7 +410,7 @@ export class Eosjs2Service {
 
     checkPvtKey(k): Promise<any> {
         try {
-            const pubkey = ecc['privateToPublic'](k);
+            const pubkey = ecc.privateToPublic(k);
             return this.loadPublicKey(pubkey);
         } catch (e) {
             console.log(e);
@@ -421,7 +422,7 @@ export class Eosjs2Service {
 
     async loadPublicKey(pubkey) {
         return new Promise(async (resolve, reject2) => {
-            if (ecc['isValidPublic'](pubkey)) {
+            if (ecc.isValidPublic(pubkey)) {
                 const tempAccData = [];
                 const account_names = await this.getKeyAccountsMulti(pubkey);
                 if (account_names.length > 0) {
@@ -468,22 +469,37 @@ export class Eosjs2Service {
     async getKeyAccountsMulti(key: string) {
         const accounts: Set<string> = new Set();
         const queue = [];
-        for (const api of this.defaultChain.endpoints) {
-            const tempRpc = new JsonRpc(api.url);
-            queue.push(new Promise(async (resolve) => {
-                try {
-                    const result = await tempRpc.history_get_key_accounts(key);
-                    if (result && result.account_names) {
-                        for (const account of result.account_names) {
-                            accounts.add(account);
-                        }
-                    }
-                } catch (e) {
-                    console.log(api.url, e.message);
-                }
-                resolve();
-            }));
+
+        // check on selected endpoint first
+        try {
+            const result = await this.rpc.history_get_key_accounts(key);
+            if (result && result.account_names) {
+                return result.account_names;
+            }
+        } catch (e) {
+            console.log(this.rpc.endpoint, e.message);
         }
+
+        // fallback to others
+        for (const api of this.alternativeEndpoints) {
+            if (api.url !== this.rpc.endpoint) {
+                const tempRpc = new JsonRpc(api.url);
+                queue.push(new Promise(async (resolve) => {
+                    try {
+                        const result = await tempRpc.history_get_key_accounts(key);
+                        if (result && result.account_names) {
+                            for (const account of result.account_names) {
+                                accounts.add(account);
+                            }
+                        }
+                    } catch (e) {
+                        console.log(api.url, e.message);
+                    }
+                    resolve();
+                }));
+            }
+        }
+
         await Promise.all(queue);
         return [...accounts];
     }
