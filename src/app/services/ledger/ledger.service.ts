@@ -57,11 +57,11 @@ export class LedgerService {
     public deviceName = 'Ledger';
     private readCount = 0;
     private tempTrx: any;
+    private appVerificationAttempts = 0;
 
     constructor(
         private eos: Eosjs2Service,
-        private connect: ConnectService,
-        private aService: AccountsService
+        private connect: ConnectService
     ) {
         console.log('Loading ledger service...');
         this.slots = [];
@@ -106,17 +106,21 @@ export class LedgerService {
 
     async sign(transaction: any, slotNumber: number, rpcEndpoint: string): Promise<any> {
         return new Promise((resolve, reject) => {
-            // send to main process
-            this.connect.ipc.send('ledger', {
+
+            const ledgerSignatureRequest = {
                 event: 'sign_trx',
                 data: transaction,
                 slot: slotNumber,
                 endpoint: rpcEndpoint
-            });
+            };
+            console.log(ledgerSignatureRequest);
+
+            // listen for response
             this.connect.ipc.once('ledger_reply', async (event, args) => {
                 if (args.data) {
                     if (args.event === 'sign_trx') {
                         try {
+                            console.log(args.data);
                             const trxResult = await this.pushSignedTrx(args.data);
                             resolve(trxResult);
                         } catch (e) {
@@ -128,32 +132,39 @@ export class LedgerService {
                 }
             });
 
+            // emit payload
+            this.connect.ipc.send('ledger', ledgerSignatureRequest);
         });
     }
 
     checkEosApp() {
         if (!this.appReady) {
-            console.log('Requesting eos app check for ledger device');
             this.checkingApp = true;
-            this.connect.ipc.send('ledger', {
-                event: 'check_app'
-            });
+
+            // listen for check response
             this.connect.ipc.once('ledger_reply', (event, args) => {
-                console.log(event, args);
-                this.checkingApp = false;
-                this.appReady = args.data;
-                if (!this.appReady) {
-                    setTimeout(() => {
-                        this.checkEosApp();
-                    }, 2000);
+                if (args.event === 'check_app') {
+                    console.log(args);
+                    this.checkingApp = false;
+                    this.appReady = args.data;
+                    if (!this.appReady) {
+                        this.appVerificationAttempts++;
+                        if (this.appVerificationAttempts < 5) {
+                            setTimeout(this.checkEosApp, 2000);
+                        }
+                    } else {
+                        this.appVerificationAttempts = 0;
+                    }
                 }
             });
+
+            // emit request
+            this.connect.ipc.send('ledger', {event: 'check_app'});
         }
     }
 
 
     handleIpcMessage(event, payload) {
-        console.log(event, payload);
         if (payload.event === 'listener_event') {
             if (payload.data.type === 'add') {
                 this.deviceName = payload.data.deviceModel.productName;
@@ -237,7 +248,9 @@ export class LedgerService {
     }
 
     async pushSignedTrx(data: any) {
+        console.log(data);
         // store transaction for eventual resubmission
+        await this.eos.deserializeTrx(data);
         this.tempTrx = data;
         return new Promise(async (resolve, reject) => {
             try {

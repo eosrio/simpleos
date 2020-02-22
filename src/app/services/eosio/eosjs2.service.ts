@@ -8,6 +8,7 @@ import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
 import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
 import ecc from 'eosjs-ecc'
 import {EOSJSService} from "./eosjs.service";
+import has = Reflect.has;
 
 export class SimpleosSigProvider implements SignatureProvider {
     localRPC: JsonRpc;
@@ -467,19 +468,18 @@ export class Eosjs2Service {
     async getKeyAccountsMulti(key: string) {
         const accounts: Set<string> = new Set();
         const queue = [];
-        console.log(this.defaultChain);
         for (const api of this.defaultChain.endpoints) {
+            const tempRpc = new JsonRpc(api.url);
             queue.push(new Promise(async (resolve) => {
-                const tempRpc = new JsonRpc(api.url);
                 try {
-                    const result = await tempRpc.history_get_key_accounts(key)
-                    if (result.account_names) {
+                    const result = await tempRpc.history_get_key_accounts(key);
+                    if (result && result.account_names) {
                         for (const account of result.account_names) {
                             accounts.add(account);
                         }
                     }
                 } catch (e) {
-                    console.log(e);
+                    console.log(api.url, e.message);
                 }
                 resolve();
             }));
@@ -589,11 +589,16 @@ export class Eosjs2Service {
                     cpu_v, false, symbol));
         }
         return _actions;
-        // return this.api.transact({
-        //     actions: _actions,
-        // }, {
-        //     blocksBehind: 3,
-        //     expireSeconds: 30,
-        // });
+    }
+
+    async deserializeTrx(data: any) {
+        this.api = new Api({
+            rpc: this.rpc,
+            signatureProvider: this.JsSigProvider,
+            textDecoder: new TextDecoder(),
+            textEncoder: new TextEncoder(),
+        });
+        const originalTrx = await this.api.deserializeTransactionWithActions(data.serializedTransaction);
+        console.log(originalTrx);
     }
 }

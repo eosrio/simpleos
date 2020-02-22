@@ -50,7 +50,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     publicEOS = '';
 
     private subscriptions: Subscription[] = [];
-    isOpen = false;
 
     // ledger info
     usingLedger = false;
@@ -74,8 +73,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         public cdr: ChangeDetectorRef,
         private toaster: ToasterService
     ) {
-        this.createForms();
-        this.creatSubscriptions();
     }
 
     importKeys(ledgerAccounts) {
@@ -148,6 +145,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.createForms();
+        this.creatSubscriptions();
     }
 
     ngOnDestroy(): void {
@@ -157,13 +156,21 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     doCancel(): void {
-        this.pvtform.reset();
-        this.importwizard.close();
-        this.importwizard.reset();
-        this.usingLedger = false;
+        console.log('modal cancelled!');
         this.accountsToImport = [];
         this.importedAccounts = [];
-        this.ledger.ledgerAccounts = [];
+        this.pvtform.reset();
+        this.importwizard.reset();
+        this.importwizard.close();
+        Promise.resolve(null).then(() => {
+            this.ledger.ledgerAccounts = [];
+        });
+    }
+
+    openModal() {
+        this.usingLedger = false;
+        this.cdr.detectChanges();
+        this.importwizard.open();
     }
 
     getConstitution() {
@@ -296,10 +303,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
 
     passCompare() {
         this.passmatch = compare2FormPasswords(this.passform);
-    }
-
-    openModal() {
-        this.importwizard.open();
     }
 
     reset() {
