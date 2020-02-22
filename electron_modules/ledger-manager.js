@@ -9,7 +9,10 @@ const util = require('util');
 const textDecoder = new util.TextDecoder();
 const textEncoder = new util.TextEncoder();
 
-const encoderOptions = {textEncoder: new util.TextEncoder(), textDecoder: new util.TextDecoder()};
+const codecs = {
+    textEncoder: new util.TextEncoder(),
+    textDecoder: new util.TextDecoder()
+};
 
 const sudo = require('sudo-prompt');
 
@@ -39,9 +42,9 @@ const serializeEosjs = (api, transaction) => {
     const types = {};
     api.abiTypes.forEach((value, key) => types[key] = value);
     api.transactionTypes.forEach((value, key) => types[key] = value);
-    Object.keys(types).map(key => {
-        types[key].prepare = raw => {
-            const buf = new Serialize.SerialBuffer(encoderOptions);
+    Object.keys(types).map((key) => {
+        types[key].prepare = (raw) => {
+            const buf = new Serialize.SerialBuffer(codecs);
             const aliasKey = (() => {
                 switch (key) {
                     case 'account_name':
