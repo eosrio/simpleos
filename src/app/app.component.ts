@@ -32,7 +32,8 @@ export interface LedgerSlot {
 export class AppComponent implements OnInit, AfterViewInit {
 
     confirmForm: FormGroup;
-    wrongpass: string;
+    wrongpass = '';
+    txerror = '';
     transitconnect = false;
     externalActionModal = false;
     dapp_name = '';
@@ -122,10 +123,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit(): void {
-        // this.isMac = this._electronService.isMacOS;
-        this.connect.ipc.send('electronOS', 'request_os');
-        // console.log('Is MacOS?', this.isMac);
-        this.cdr.detectChanges();
+        this.connect.ipc.send('electron', 'request_os');
     }
 
     ngAfterViewInit() {
@@ -160,14 +158,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 
             // Bind transit api requests
             this.onElectron = this.onElectron.bind(this);
-            this.connect.ipc.on('electronOS', this.onElectron);
+            this.connect.ipc.on('electron', this.onElectron);
         }
     }
 
     private onElectron(event, payload) {
-        console.log('type OS:', payload.content);
-        this.isMac = payload.content === 'darwin';
-        this.cdr.detectChanges();
+        if (event) {
+            if (payload.event === 'platform_reply') {
+                console.log('Platform:', payload.content);
+                this.isMac = payload.content === 'darwin';
+                this.cdr.detectChanges();
+            }
+        }
     }
 
     private onTransitApiMessage(event, payload) {
@@ -430,10 +432,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     async signExternalAction() {
         this.wrongpass = '';
+        this.txerror = '';
         this.busy = true;
 
         if (this.mode === 'local') {
-
             console.log('signing in local mode');
 
             const account = this.aService.accounts.find(a => a.name === this.external_signer);
@@ -468,6 +470,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                         });
                     }
                     this.wrongpass = '';
+                    this.txerror = '';
                     this.busy = false;
                     this.externalActionModal = false;
                     this.aService.select(idx);
@@ -476,7 +479,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     this.cdr.detectChanges();
                 }
             } catch (e) {
-                this.wrongpass = e;
+                this.txerror = e;
                 console.log(e);
                 this.busy = false;
             }
@@ -495,6 +498,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                         packed: result.packedTransaction
                     });
                     this.wrongpass = '';
+                    this.txerror = '';
                     this.busy = false;
                     this.externalActionModal = false;
                     this.cdr.detectChanges();
@@ -504,7 +508,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     status: 'ERROR',
                     reason: e
                 });
-                this.wrongpass = e;
+                this.txerror = e;
                 console.log(e);
                 this.busy = false;
             }
