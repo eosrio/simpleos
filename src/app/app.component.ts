@@ -553,22 +553,25 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     async simpleosConnectSign(event, payload) {
-        console.log('new signature proposal', payload.content);
         this.fullTrxData = payload.content;
         this.loadingTRX = true;
         try {
             this.updateauthWarning = false;
             this.confirmForm.reset();
+
             this.processSigners();
-            this.action_json = this.fullTrxData.actions;
+            this.extendActionJson();
             this.checkSignerMode();
+
+            // assign reply event
+            this.replyEvent = event;
+
             this.zone.run(() => {
                 this.wrongpass = '';
                 this.loadingTRX = false;
                 this.externalActionModal = true;
                 this.eventFired = false;
             });
-            this.replyEvent = event;
         } catch (e) {
             console.log(e);
             this.loadingTRX = false;
@@ -586,5 +589,23 @@ export class AppComponent implements OnInit, AfterViewInit {
             device: this.crypto.requiredLedgerDevice,
             slot: this.crypto.requiredLedgerSlot
         };
+    }
+
+    private extendActionJson() {
+        // deep clone transaction data for display
+        this.action_json = JSON.parse(JSON.stringify(this.fullTrxData.actions));
+        for (const act of this.action_json) {
+            if (act.data) {
+                for (const k in act.data) {
+                    if (act.data.hasOwnProperty(k)) {
+                        try {
+                            act.data[k] = JSON.parse(act.data[k]);
+                        } catch (e) {
+
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -599,6 +599,6 @@ export class Eosjs2Service {
             textEncoder: new TextEncoder(),
         });
         const originalTrx = await this.api.deserializeTransactionWithActions(data.serializedTransaction);
-        console.log(originalTrx);
+        console.log('signed TRX:', originalTrx);
     }
 }
