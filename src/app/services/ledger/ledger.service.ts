@@ -247,27 +247,7 @@ export class LedgerService {
     }
 
     async pushSignedTrx(data: any) {
-        console.log(data);
-
-        // convert packed trx to hex string
-        const ptrx = data.serializedTransaction;
-        const arr = [];
-
-        for (const val in ptrx) {
-            if (ptrx.hasOwnProperty(val)) {
-                arr.push(ptrx[val]);
-            }
-        }
-
-        const uint8Array = new Uint8Array(arr);
-        const serializedTrx = Array.from(uint8Array).map(b => {
-            return b.toString(16).padStart(2, '0');
-        }).join('');
-
-        console.log(serializedTrx);
-
         // store transaction for eventual resubmission
-        await this.eos.deserializeTrx(data);
         this.tempTrx = data;
         return new Promise(async (resolve, reject) => {
             try {
