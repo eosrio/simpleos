@@ -41,15 +41,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     accountChange: Subscription;
     ledgerOpen: boolean;
     update: boolean;
-    ipc: any;
     busy: boolean;
     action_json: any[];
-    pksForm: FormGroup;
     accSlots: LedgerSlot[];
     selectedSlot: LedgerSlot;
     selectedSlotIndex: number;
-    showAll = false;
-    agreeConstitution = false;
     dnSet = false;
     activeChain = null;
 
@@ -63,7 +59,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     private replyEvent: any;
 
     public isMac: boolean;
-    private _maximized: boolean;
 
     public transitEventHandler: any;
     private eventFired: boolean;
@@ -104,7 +99,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             pass: ['', Validators.required],
         });
 
-        // countdown 30 seconds to automatic backup
+        // wait 30 seconds to automatic backup
         this.autobackup.startTimeout();
 
         this.accSlots = [];
