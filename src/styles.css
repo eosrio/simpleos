@@ -182,6 +182,7 @@
 	--modal-step-background: #535353;
 	--modal-step-line-background: #535353;
 	--modal-step-off-color: var(--gray-lightmedium);
+	--error-bg: #fbbdbd;
 
 	/*  input */
 	--input-label: var(--gray-lightmedium);

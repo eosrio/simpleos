@@ -12,6 +12,7 @@
     margin-bottom: 19px;
 	font-family:  var(--special-font-bold);
 	/*font-weight: var(--special-font-weight);*/
+    line-height: 44px;
 }
 
 .dollar {

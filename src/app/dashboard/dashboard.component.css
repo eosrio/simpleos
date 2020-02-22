@@ -45,6 +45,7 @@
     color: var(--sidenav-color);
     margin: 0;
     padding: 20px 0 20px 25px;
+    border-radius: 0;
 }
 
 .sidenav .sidenav-content>.nav-link.active {

@@ -68,6 +68,7 @@ export const DefaultTheme = {
 	'--header-icon-color': 'var(--gray-lighter)',
 	'--theme-icon-color': 'var(--gray-lighter)',
 	'--theme-icon-color-hover': 'var(--gray-medium)',
+	'--error-bg': '#fbbdbd',
 
 	/*landing*/
 	'--landing-background': 'url("./assets/fundosimpleos.png")',
@@ -329,6 +330,7 @@ export const LiberlandTheme = {
 	'--modal-step-background': 'var(--liberland-blue-darker)',
 	'--modal-step-line-background': 'var(--liberland-blue-darker)',
 	'--modal-step-off-color': 'var(--white-color)',
+	'--error-bg': '#f7e2e2',
 
 	/*  input */
 	'--input-label': 'var(--gray-darkmedium)',
@@ -501,6 +503,7 @@ export const LightTheme = {
 	'--modal-step-background': 'var(--blue-darker)',
 	'--modal-step-line-background': 'var(--blue-darker)',
 	'--modal-step-off-color': 'var(--white-color)',
+	'--error-bg': '#f7e2e2',
 
 	/*  input */
 	'--input-label': 'var(--gray-darkmedium)',

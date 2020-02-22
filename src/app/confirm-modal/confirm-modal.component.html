@@ -1,5 +1,5 @@
 <clr-modal [(clrModalOpen)]="visibility" [clrModalStaticBackdrop]="true" (clrModalOpenChange)="onClose()">
-    <h3 class="modal-title" style="display: contents;" >Confirm <span [innerHTML]="modalData.actionTitle"></span></h3>
+    <h3 class="modal-title" style="display: contents;" >Confirm <span class="highlight-primary" [innerHTML]="modalData.actionTitle"></span></h3>
     <div class="modal-body">
         <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
         <h4 [innerHTML]="modalData.labelHTML"></h4>
@@ -14,38 +14,37 @@
                 </p-accordionTab>
             </p-accordion>
         </ng-container>
-
     </div>
-    <div class="modal-footer">
-        <div fxLayout="column" style="display:flex;">
-            <div dir="ltr" fxLayoutGap="20px">
-                <ng-container *ngIf="mode === 'local'">
-                    <form [formGroup]="confirmationForm" style="float:right">
 
-                        <mat-form-field>
+    <div class="modal-footer">
+        <div fxLayout="column" style="width: 100%; padding: 0 .15rem;" >
+            <div>
+                <ng-container *ngIf="mode === 'local'">
+                    <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
+
+                        <mat-form-field style="margin-top: 15px;">
                             <input matInput #pass type="password" formControlName="pass"
                                    (keyup.enter)="executeAction(pass.value);"
                                    placeholder="Password">
                         </mat-form-field>
-                        <button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
+                        <button type="button" class="btn btn-info-outline"
                                 (click)="executeAction(pass.value);" [disabled]="busy">
                             Confirm
                             <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
                         </button>
                     </form>
                 </ng-container>
-                <ng-container *ngIf="mode === 'ledger'">
-                    <span>device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
+                <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" *ngIf="mode === 'ledger'">
+                    <span class="text-faded">device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
                     <button type="button" class="btn btn-info-outline"
                             style="margin-top: 12px;" (click)="signLedger()" >
                         sign with ledger
                         <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
                     </button>
-
-                </ng-container>
+                </div>
             </div>
-            <div class="error" style="display:flex;" *ngIf="errormsg !== ''">
-                {{errormsg}}
+            <div class="error error-modal-footer" *ngIf="errormsg !== ''">
+                <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon> Error: {{errormsg}} transaction declares authority auth, but does not have signatures for it under a provided delay of 0 ms, provided permissions provided_permissions, provided keys provided_keys, and a delay max limit of 3888000000 ms
             </div>
         </div>
     </div>

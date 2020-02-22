@@ -97,16 +97,18 @@
 				<div class="card-header title card-title-color special-font">
 					Logout Options
 				</div>
-				<div class="card-block borderb" *ngIf="app.compilerVersion === 'DEFAULT'">
+				<div class="card-block borderb">
 					<button class="btn btn-info-outline" (click)="logoutModal = true"
-							style="font-weight: 700">Logout from all chains
+							style="font-weight: 700">Logout from
+						<span *ngIf="app.compilerVersion === 'DEFAULT'">all chains</span>
+						<span *ngIf="app.compilerVersion !== 'DEFAULT'">{{aService.activeChain['name']}}</span>
 					</button>
 					<div class="info">*All your data will be cleared from this PC. Should you want to login again, you
 						will
 						have to import your private key again.
 					</div>
 				</div>
-				<div class="card-block">
+				<div class="card-block" *ngIf="app.compilerVersion === 'DEFAULT'">
 					<button class="btn btn-info-outline" (click)="logoutChainModal = true"
 							style="font-weight: 700">Logout from {{aService.activeChain['name']}}
 					</button>
@@ -205,8 +207,8 @@
 			<button type="button" class="btn btn-info-outline" (click)="logout()">
 				Yes
 			</button>
-			<div class="text-center text-faded" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be restarted</div>
-			<div class="text-center text-faded" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be restarted</div>
+			<div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be restarted</div>
+			<div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be restarted</div>
 		</div>
 	</div>
 </clr-modal>
@@ -228,8 +230,7 @@
 			<button type="button" class="btn btn-info-outline" (click)="logoutByCahin()">
 				Yes
 			</button>
-			<div class="text-center text-faded" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be restarted</div>
-			<div class="text-center text-faded" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be restarted</div>
+			<div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be restarted</div>
 		</div>
 	</div>
 </clr-modal>
