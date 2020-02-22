@@ -236,3 +236,7 @@
 	color: #f34d4d !important;
 }
 /*JSON formatter end*/
+
+.header-actions a {
+	padding: 0;
+}
