@@ -59,6 +59,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     private ledgerEventsListener: Subscription;
     displayPublicKeys = false;
     private config: ToasterConfig;
+    busyVerifying = false;
 
     constructor(
         public eos: EOSJSService,
@@ -251,8 +252,15 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     verifyPrivateKey(input, auto) {
-        if (input !== '') {
+        if (auto && this.importedAccounts.length > 0) {
+            this.zone.run(() => {
+                this.importwizard.forceNext();
+            });
+            return;
+        }
+        if (input !== '' && !this.busyVerifying) {
             this.busyActivekey = true;
+            this.busyVerifying = true;
             this.eosjs.checkPvtKey(input.trim()).then((results) => {
                 this.publicEOS = results.publicKey;
                 this.importedAccounts = [];
@@ -277,6 +285,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                 });
                 this.pvtform.controls['private_key'].setErrors(null);
                 this.zone.run(() => {
+                    this.busyVerifying = false;
                     if (auto) {
                         this.importwizard.forceNext();
                     }
@@ -285,6 +294,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                 });
             }).catch((e) => {
                 this.zone.run(() => {
+                    this.busyVerifying = false;
                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
                     this.importedAccounts = [];
                     this.errormsg = handleErrorMessage(e);

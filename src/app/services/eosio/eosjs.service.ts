@@ -97,22 +97,6 @@ export class EOSJSService {
         return this.eos['getAccount'](name);
     }
 
-    getAccountActions(account, offset, position): Promise<any> {
-        return new Promise((resolve2, reject2) => {
-            this.eos['getActions']({
-                account_name: account,
-                offset: offset,
-                pos: position
-            }).then(data => {
-                resolve2(data);
-                // console.log(data);
-            }).catch(error => {
-                reject2(error);
-                // console.log(error);
-            });
-        });
-    }
-
     getChainInfo(): Promise<any> {
         if (this.eos) {
             return this.eos['getTableRows']({
@@ -340,9 +324,9 @@ export class EOSJSService {
         console.log(proxy);
         const options = {authorization: voter + '@' + permission};
 
-        if(!this.eosio) {
+        if (!this.eosio) {
             this.eosio = await this.eos['contract']('eosio');
-		}
+        }
 
         return this.eosio['voteproducer'](voter, type ? proxy : '', type ? '' : currentVotes, options).then(data => {
             return JSON.stringify(data);

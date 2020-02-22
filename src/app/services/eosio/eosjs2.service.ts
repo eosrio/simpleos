@@ -8,7 +8,6 @@ import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
 import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
 import ecc from 'eosjs-ecc'
 import {EOSJSService} from "./eosjs.service";
-import has = Reflect.has;
 
 export class SimpleosSigProvider implements SignatureProvider {
     localRPC: JsonRpc;
@@ -186,16 +185,6 @@ export class Eosjs2Service {
         });
     }
 
-    async getEOSMainnetTableRows(_code: string, _scope: string,
-                                 _table: string) {
-        const tempRpc = new JsonRpc(this.EOStMainnetEndpoint);
-        return tempRpc.get_table_rows({
-            code: _code,
-            scope: _scope,
-            table: _table,
-        });
-    }
-
     async getRexPool(): Promise<any> {
         const rexpool = await this.rpc.get_table_rows({
             json: true,
@@ -231,6 +220,10 @@ export class Eosjs2Service {
             rexbal: rexbal_data,
             rexfund: rexfund_data,
         };
+    }
+
+    async getAccountActions(account, offset, position): Promise<any> {
+        return this.rpc.history_get_actions(account,offset,position);
     }
 
     async recursiveFetchTableRows(array: any[], _code: string, _scope: string,
@@ -466,42 +459,59 @@ export class Eosjs2Service {
         });
     }
 
-    async getKeyAccountsMulti(key: string) {
-        const accounts: Set<string> = new Set();
-        const queue = [];
+    async getKeyAccountsMulti(key: string): Promise<string[]> {
+        return new Promise(async (resolve) => {
+            const accounts: Set<string> = new Set();
+            const queue = [];
 
-        // check on selected endpoint first
-        try {
-            const result = await this.rpc.history_get_key_accounts(key);
-            if (result && result.account_names) {
-                return result.account_names;
+            // check on selected endpoint first
+            try {
+                const result = await this.rpc.history_get_key_accounts(key);
+                if (result && result.account_names) {
+                    resolve(result.account_names)
+                    return;
+                }
+            } catch (e) {
+                console.log(this.rpc.endpoint, e.message);
             }
-        } catch (e) {
-            console.log(this.rpc.endpoint, e.message);
-        }
 
-        // fallback to others
-        for (const api of this.alternativeEndpoints) {
-            if (api.url !== this.rpc.endpoint) {
-                const tempRpc = new JsonRpc(api.url);
-                queue.push(new Promise(async (resolve) => {
-                    try {
-                        const result = await tempRpc.history_get_key_accounts(key);
-                        if (result && result.account_names) {
-                            for (const account of result.account_names) {
-                                accounts.add(account);
+            // fallback to others
+            for (const api of this.alternativeEndpoints) {
+                if (api.url !== this.rpc.endpoint && !api.failed) {
+                    const tempRpc = new JsonRpc(api.url);
+                    queue.push(new Promise(async (innerResolve) => {
+                        try {
+                            const result = await tempRpc.history_get_key_accounts(key);
+                            if (result && result.account_names) {
+                                for (const account of result.account_names) {
+                                    console.log(api.url, account);
+                                    accounts.add(account);
+                                }
                             }
+                        } catch (e) {
+                            console.log(api.url, e.message);
+                            api.failed = true;
                         }
-                    } catch (e) {
-                        console.log(api.url, e.message);
-                    }
-                    resolve();
-                }));
+                        innerResolve();
+                    }));
+                }
             }
-        }
 
-        await Promise.all(queue);
-        return [...accounts];
+            // 5 second timeout if any account has returned, otherwise we wait for all edpoints to return
+
+            let expired;
+            const timeout = setTimeout(() => {
+                if (accounts.size > 0) {
+                    expired = true;
+                    resolve([...accounts]);
+                }
+            }, 5000);
+            await Promise.all(queue);
+            if (!expired) {
+                clearTimeout(timeout);
+                resolve([...accounts]);
+            }
+        });
     }
 
     async changebw(account, permission, amount, symbol, ratio, fr) {

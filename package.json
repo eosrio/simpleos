@@ -1,6 +1,6 @@
 {
 	"name": "simpleos",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"productName": "simpleos",
 	"appId": "io.eosrio.simpleos",
 	"compilerVersion": "DEFAULT",

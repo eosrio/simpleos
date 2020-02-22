@@ -7,7 +7,7 @@
     <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
 
     <clr-wizard-page
-            [clrWizardPageNextDisabled]="!(pvtform.valid ||
+            [clrWizardPageNextDisabled]="!((pvtform.valid && !busyVerifying) ||
             (usingLedger && sLAc.selectedOptions.selected.length > 0 && ledger.ledgerAccounts.length > 0))"
             (clrWizardPageOnCommit)="importKeys(sLAc.selectedOptions.selected)"
             [clrWizardPagePreventDefault]="true"
@@ -42,7 +42,12 @@
 
             <br>
 
-            <!--		standart accounts-->
+            <p *ngIf="busyVerifying">
+                Searching for accounts...
+                <fa-icon [icon]="['far','spinner']" [spin]="true"></fa-icon>
+            </p>
+
+            <!--		standard accounts-->
             <div *ngFor="let importedAccount of importedAccounts">
             <span class="label label-blue" style="font-size: medium">
                 {{importedAccount['account_name']}}@{{importedAccount['permission']}}

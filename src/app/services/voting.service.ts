@@ -60,6 +60,7 @@ export class VotingService {
                     if (this.lastAcc !== sA['name'] || this.lastChain !== this.aService.activeChain.name) {
                         this.lastAcc = sA['name'];
                         this.lastChain = this.aService.activeChain.name;
+                        console.log(sA);
                         this.callLoader();
                     }
                 }
@@ -165,16 +166,19 @@ export class VotingService {
             const total_votes = this.totalProducerVoteWeight;
             // Pass 1 - Add accounts
             const myAccount = this.aService.selected.getValue();
+            console.log('account', myAccount);
             this.bps = [];
             this.hasList = producers.rows.length > 0;
             producers.rows.forEach((prod: any, idx) => {
                 const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
                 let voted;
-                if (myAccount.details['voter_info']) {
+
+                if (myAccount.details && myAccount.details['voter_info']) {
                     voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
                 } else {
                     voted = false;
                 }
+
                 const _total = this.convertVotes(prod['total_votes']);
                 const producerMetadata = {
                     name: prod['owner'],

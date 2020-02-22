@@ -146,8 +146,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
 
-    async loadActionsLazy(e?) {
-        const pos = e !== 0 ? e['first'] : 0;
+    async loadActionsLazy(e?: any) {
+        const pos = e !== 0 ? e.first : 0;
         const account = this.aService.selected.getValue().name;
         await this.aService.getActions(
             account,
@@ -161,7 +161,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         this.actions = this.aService.actions;
         this.paginator.changePage(e);
         // this.cdr.detectChanges();
-
     }
 
     ngOnInit() {

@@ -447,7 +447,6 @@ export class AccountsService {
     }
 
     getAccActions(account) {
-        const nActions = 100;
         if (account === null) {
             account = this.selected.getValue().name;
         }
@@ -461,21 +460,7 @@ export class AccountsService {
                 actions: []
             };
         }
-        if (this.activeChain.hyperionApis.lenght > 0) {
-            this.getActions(account, 12, 0).catch(console.log);
-        } else {
-            const currentEndpoint = this.activeChain.endpoints.find((e) => e.url === this.eos.baseConfig.httpEndpoint);
-            if (currentEndpoint['version']) {
-                if (currentEndpoint['version'] === 'mongo') {
-                    this.getActions(account, nActions, 0).catch(console.log);
-                } else {
-                    this.getActions(account, -(nActions), -1).catch(console.log);
-                }
-            } else {
-                this.getActions(account, nActions, 0).catch(console.log);
-                console.log('Starting history api test');
-            }
-        }
+        this.getActions(account, -1, -10).catch(console.log);
     }
 
     private async getActionsHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
@@ -508,9 +493,8 @@ export class AccountsService {
         }
 
         if (result) {
-            this.actionStore[account]['actions'] = result['actions'];
-            const payload = JSON.stringify(this.actionStore);
-            localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+            this.updateActionStore(account, result['actions']);
+
             for (const action of this.actionStore[account].actions) {
                 const act = action['act'];
                 const tx_id = action['trx_id'];
@@ -539,24 +523,22 @@ export class AccountsService {
         this.actions = [];
         this.totalActions = 0;
 
+        // check history using hyperion
         const hyperionStatus = await this.getActionsHyperionMulti(account, offset, pos, filter, after, before, parent);
         if (hyperionStatus) {
             return;
         }
 
-        this.eos.getAccountActions(account, offset, pos).then(val => {
+        // fallback to native
+        this.eosjs.getAccountActions(account, offset, pos).then((val) => {
+            console.log(account, offset, pos);
+            console.log(new Error().stack);
+            console.log(val);
             const actions = val['actions'];
             if (actions.length > 0) {
-                if (this.actionStore[account]) {
-                    this.actionStore[account].actions = actions;
-                } else {
-                    this.actionStore[account] = {actions};
-                }
-                const payload = JSON.stringify(this.actionStore);
-                localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
+                this.updateActionStore(account, actions);
             }
             this.actionStore[account]['actions'].forEach((action) => {
-
                 let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
                 if (action['action_trace']) {
                     // native history api
@@ -570,7 +552,6 @@ export class AccountsService {
                     blk_num = action['block_num'];
                     blk_time = action['block_time'];
                     seq = action['account_action_seq'];
-
                 } else {
                     // mongo history api
                     a_name = action['act']['name'];
@@ -584,7 +565,6 @@ export class AccountsService {
                     blk_time = action['block_time'];
                     seq = action['receipt']['global_sequence'];
                 }
-
                 if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
                     this.processAction(act, tx_id, blk_num, blk_time, seq);
                 }
@@ -693,7 +673,8 @@ export class AccountsService {
             this.accounts = [...data.map(value => {
                 if (!value.details) {
                     return {
-                        name: value['account_name']
+                        name: value['account_name'],
+                        details: value
                     };
                 } else {
                     return value;
@@ -800,5 +781,17 @@ export class AccountsService {
             }
         }
         return null;
+    }
+
+    private updateActionStore(account: any, resultElement: any) {
+        if (!this.actionStore[account]) {
+            this.actionStore[account] = {
+                actions: resultElement
+            }
+        } else {
+            this.actionStore[account]['actions'] = resultElement;
+        }
+        const payload = JSON.stringify(this.actionStore);
+        localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
     }
 }
