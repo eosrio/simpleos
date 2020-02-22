@@ -254,7 +254,6 @@ class SimpleosWallet {
                 return;
             }
         }
-
         this.appendLock();
 
         app.on('second-instance', () => {
@@ -369,16 +368,19 @@ class SimpleosWallet {
             console.log('did-finish-load');
             this.win.setTitle(productName);
             this.win.setIcon(_icon);
-            ipcMain.on('electronOS', (event, args) => {
-                console.log(args);
-                if (args === 'request_os') {
-                    this.win.webContents.send('electronOS', {message: 'type', content: process.platform});
-                }
-            });
+        });
+
+        ipcMain.on('electron', (event, args) => {
+            if (args === 'request_os') {
+                this.win.webContents.send('electron', {
+                    event: 'platform_reply',
+                    content: process.platform
+                });
+            }
         });
 
         this.win.once('ready-to-show', () => {
-            console.log('window ready to show');
+            console.log('window is ready to show');
             this.win.show();
         });
 
