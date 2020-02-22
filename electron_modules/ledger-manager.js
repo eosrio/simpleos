@@ -56,20 +56,24 @@ const serializeEosjs = (api, transaction) => {
             return Buffer.from(buf.asUint8Array());
         };
     });
-    console.log(types.action.fields);
-
-    const serializedData = serialize(api.chainId, transaction, types).toString('hex');
-    return Buffer.from(serializedData, 'hex');
+    return serializeTransaction(api.chainId, transaction, types).buffer
 };
 
-const serialize = (chainId, transaction, types) => {
+const serializeTransaction = (chainId, transaction, types) => {
     const writer = new asn1.BerWriter();
+
     encode(writer, types.checksum256.prepare(chainId));
+
     encode(writer, types.time_point_sec.prepare(transaction.expiration));
+
     encode(writer, types.uint16.prepare(transaction.ref_block_num));
+
     encode(writer, types.uint32.prepare(transaction.ref_block_prefix));
+
     encode(writer, types.varuint32.prepare(transaction.max_net_usage_words));
+
     encode(writer, types.uint8.prepare(transaction.max_cpu_usage_ms));
+
     encode(writer, types.varuint32.prepare(transaction.delay_sec));
 
     // context free actions
@@ -84,21 +88,28 @@ const serialize = (chainId, transaction, types) => {
 
         // auth array size
         encode(writer, types.uint8.prepare(act.authorization.length));
+
+        // push auths
         for (const auth of act.authorization) {
             encode(writer, types.name.prepare(auth.actor));
             encode(writer, types.name.prepare(auth.permission));
         }
+
         if (act.data) {
+            // push serialized action data
             const data = Buffer.from(act.data, 'hex');
             encode(writer, types.varuint32.prepare(data.length));
             encode(writer, data);
+
         } else {
+
             try {
-                encode(writer, types.uint8.prepare(0));
+                encode(writer, types.varuint32.prepare(0));
                 encode(writer, Buffer.alloc(0));
             } catch (e) {
                 console.log('err', e);
             }
+
         }
     }
 
@@ -107,7 +118,8 @@ const serialize = (chainId, transaction, types) => {
 
     // checksum
     encode(writer, types.checksum256.prepare(Buffer.alloc(32, 0).toString('hex')));
-    return writer.buffer;
+
+    return writer;
 };
 
 const CHUNK_LIMIT = 128;
@@ -115,31 +127,12 @@ const CHUNK_LIMIT = 128;
 function splitPayload(rawTx, slot) {
     const path = `44'/194'/0'/0/${slot}`;
     const paths = bippath.fromString(path).toPathArray();
-    console.log('paths', paths);
-    console.log(typeof rawTx);
-    console.log('raw trx', rawTx);
     const chunks = [];
     let offset = 0;
     const inputDataLength = 1 + (paths.length * 4);
-    console.log('rawTx.length:', rawTx.length);
     while (offset !== rawTx.length) {
-
-        let maxChunkSize;
-        if (offset === 0) {
-            maxChunkSize = CHUNK_LIMIT - inputDataLength;
-        } else {
-            maxChunkSize = CHUNK_LIMIT;
-        }
-        console.log('max chunk size:', maxChunkSize);
-
-        let chunkSize;
-        if (offset + maxChunkSize > rawTx.length) {
-            chunkSize = rawTx.length - offset;
-        } else {
-            chunkSize = maxChunkSize;
-        }
-        console.log('chunk size:', chunkSize);
-
+        const maxChunkSize = (offset === 0) ? CHUNK_LIMIT - inputDataLength : CHUNK_LIMIT
+        const chunkSize = (offset + maxChunkSize > rawTx.length) ? rawTx.length - offset : maxChunkSize;
         let buffer;
         if (offset === 0) {
             buffer = Buffer.alloc(inputDataLength + chunkSize);
@@ -150,8 +143,6 @@ function splitPayload(rawTx, slot) {
             buffer = Buffer.alloc(chunkSize);
             rawTx.copy(buffer, 0, offset, offset + chunkSize);
         }
-        console.log('buffer:', buffer);
-
         chunks.push(buffer);
         offset += chunkSize;
     }
