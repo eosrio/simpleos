@@ -4,7 +4,7 @@ const bippath = require('bip32-path');
 const fetch = require('node-fetch');
 const asn1 = require('asn1-ber');
 const ecc = require('eosjs-ecc');
-const {Api, JsonRpc, RpcError, Serialize} = require('eosjs');
+const {Api, JsonRpc, Serialize} = require('eosjs');
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
@@ -362,6 +362,11 @@ class LedgerManager {
         const path = `44'/194'/0'/0/${slot}`;
         const paths = bippath.fromString(path).toPathArray();
 
+        for (const action of trxdata.actions) {
+            console.log('---------- ACTION ----------');
+            console.log(action);
+        }
+
         let result;
         try {
             result = await api.transact(trxdata, {
@@ -375,8 +380,12 @@ class LedgerManager {
             this.errormsg = e.message;
             return null;
         }
-        const decTrx = await api.deserializeTransaction(
-            result.serializedTransaction);
+
+        const decTrx = await api.deserializeTransaction(result.serializedTransaction);
+
+        const hexValue = Buffer.from(result.serializedTransaction).toString('hex');
+        console.log(hexValue);
+
         const rawTx = serializeEosjs(api, decTrx);
         const toSend = [];
         let offset = 0;
@@ -418,7 +427,9 @@ class LedgerManager {
             const v = response.slice(0, 1).toString('hex');
             const r = response.slice(1, 33).toString('hex');
             const s = response.slice(33, 65).toString('hex');
-            result.signatures.push(ecc.Signature.fromHex(v + r + s).toString());
+            const signature = ecc.Signature.fromHex(v + r + s).toString();
+            result.signatures.push(signature);
+            console.log(result);
             return result;
         } else {
             return null;

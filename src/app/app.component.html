@@ -1,26 +1,22 @@
 <div class="main-container">
     <header class="header-1" style="-webkit-app-region: drag; height: 1.7rem;flex-basis: 1.7rem;">
         <div class="branding"
-             [ngStyle]="{'padding':'0 10px','text-align':'left','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
+             [ngStyle]="{'padding':'0 10px','text-align':'left','min-width':'8.5rem','width':(!isMac?'8.5rem':'95%'),'height': '1.7rem'}">
             <a class="nav-link" [ngStyle]="{'margin':(!isMac?'0 0':'0 auto')}">
 				<span *ngIf="compilerVersion === 'DEFAULT'" class="title-header"
                       style="color: #9a9a9a; font-size: 14px;">SimplEOS Wallet {{version}}</span>
                 <span *ngIf="compilerVersion === 'LIBERLAND'" class="title-header"
                       style="color: #9a9a9a; font-size: 14px;">LIBERLAND Wallet {{version}}</span>
             </a>
-
         </div>
-<!--        <div style="align-self:end;width:auto;height: 1.7rem;" *ngIf="compilerVersion === 'DEFAULT' && (theme.currentTheme !== 'wax' && theme.currentTheme !== 'liberland')">-->
         <div style="align-self:end;width:auto;height: 1.7rem;" *ngIf="compilerVersion === 'DEFAULT'">
             <a class="nav-link nav-icon other-icon">
                 <clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
-                          style="height: auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+                          style="height: auto;width: 23px;margin-top: 6px;-webkit-app-region: no-drag;float:right;"></clr-icon>
                 <clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon"
-                          style="height:auto;width: 23px;margin:8px;-webkit-app-region: no-drag;float:right;"></clr-icon>
+                          style="height:auto;width: 23px;margin-top:6px;-webkit-app-region: no-drag;float:right;"></clr-icon>
             </a>
         </div>
-
-
         <div class="header-actions" style="width:auto;height:1.7rem;" *ngIf="!isMac">
             <a (click)="minimizeWindow()" style="-webkit-app-region: no-drag;"
                class="nav-link nav-icon other-icon icon-header">

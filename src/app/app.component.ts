@@ -16,6 +16,7 @@ import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
 import {LedgerService} from './services/ledger/ledger.service';
+import {BodyOutputType, Toast, ToasterService} from "angular2-toaster";
 
 export interface LedgerSlot {
     publicKey: string;
@@ -60,7 +61,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private fullTrxData: any;
     private replyEvent: any;
 
-    public isMac:boolean;
+    public isMac: boolean;
     private _maximized: boolean;
 
     public transitEventHandler: any;
@@ -85,6 +86,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         private cdr: ChangeDetectorRef,
         private _electronService: ElectronService,
         public theme: ThemeService,
+        private toaster: ToasterService
     ) {
         if (this.compilerVersion === 'LIBERLAND') {
             this.titleService.setTitle('Liberland Wallet v' + this.version);
@@ -121,7 +123,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     ngOnInit(): void {
         // this.isMac = this._electronService.isMacOS;
-        this.connect.ipc.send('electronOS','request_os');
+        this.connect.ipc.send('electronOS', 'request_os');
         // console.log('Is MacOS?', this.isMac);
         this.cdr.detectChanges();
     }
@@ -162,7 +164,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
     }
 
-    private onElectron(event,payload){
+    private onElectron(event, payload) {
         console.log('type OS:', payload.content);
         this.isMac = payload.content === 'darwin';
         this.cdr.detectChanges();
@@ -279,14 +281,24 @@ export class AppComponent implements OnInit, AfterViewInit {
                 break;
             }
             case 'authorizations': {
-                event.sender.send('authorizationsResponse', this.aService.accounts.map(a => {
+                const toast: Toast = {
+                    type: 'info',
+                    title: 'wallet connection',
+                    body: 'external application requested public account info',
+                    timeout: 3000,
+                    showCloseButton: true,
+                    bodyOutputType: BodyOutputType.TrustedHtml,
+                };
+                this.toaster.popAsync(toast);
+                const accountMap = this.aService.accounts.map(a => {
                     const [publicKey, perm] = this.aService.getStoredKey(a);
                     return {
                         actor: a.name,
                         permission: perm,
                         key: publicKey,
                     };
-                }));
+                });
+                event.sender.send('authorizationsResponse', accountMap);
                 break;
             }
             case 'sign': {

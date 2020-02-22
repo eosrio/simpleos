@@ -1,4 +1,4 @@
-<clr-wizard #importwizard [(clrWizardOpen)]="isOpen" [clrWizardSize]="'lg'">
+<clr-wizard #importwizard [clrWizardSize]="'lg'">
     <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
     <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -161,7 +161,10 @@
     <clr-wizard-page [clrWizardPageNextDisabled]="!agree"
                      *ngIf="network.activeChain.name === 'EOS MAINNET'">
         <ng-template clrPageTitle>EOS User Agreement</ng-template>
-        <div class="constitution" [innerHTML]="processContentStyle(eos.constitution,'text-muted')"></div>
+        <div class="constitution">
+            <markdown id="markdown" style="color: white;"
+                      [data]="eos.constitution"></markdown>
+        </div>
         <mat-checkbox [(ngModel)]="agree">I agree</mat-checkbox>
     </clr-wizard-page>
 

@@ -56,7 +56,7 @@
 
                 <div class="clr-row" style="margin-bottom: 1px;">
                     <div class="clr-col-12">
-                        <div class="card info-card" *ngIf="aService.activeChain['historyApi'] !==  ''">
+                        <div class="card info-card" *ngIf="aService.activeChain['hyperionApis'].length > 0 ">
                             <div class="card-block">
                                 <form [formGroup]="frmFilters">
                                     <div class="clr-row flex-items-xs-between">
@@ -118,16 +118,14 @@
 
                 <p-table #tableHistory [value]="actions"
                          [responsive]="true"
-                         [totalRecords]="totalActions"
                          dataKey="seq"
                          class="overview-table flex-column"
                          sortField="date"
                          sortMode="single"
                          [sortOrder]="-1"
                          [rows]="12"
-                         [paginator]="true"
                          rowExpandMode="single"
-                         (onPage)="loadActionsLazy($event)" [scrollable]="true" scrollHeight="100%">
+                         [scrollable]="true" scrollHeight="100%">
                     <ng-template pTemplate="header">
                         <tr>
                             <th style="width: 70px;">
@@ -537,7 +535,11 @@
                             </td>
                         </tr>
                     </ng-template>
+                    <ng-template pTemplate="footer">
+                        <p-paginator #paginator [rows]="12"  [totalRecords]="totalActions" (onPageChange)="loadActionsLazy($event)"></p-paginator>
+                    </ng-template>
                 </p-table>
+
 
 
             </div>

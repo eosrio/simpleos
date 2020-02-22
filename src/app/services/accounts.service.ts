@@ -135,15 +135,15 @@ export class AccountsService {
             return;
         }
         for (const api of this.activeChain.hyperionApis) {
-                let url = api + '/state/get_tokens?account=' + account;
-                try {
-                    const response: any = await this.http.get(url).toPromise();
-                    if (response.actions && response.actions.length > 0) {
-                        return response;
-                    }
-                } catch (e) {
-                    console.log(`failed to fetch actions: ${api}`);
+            let url = api + '/state/get_tokens?account=' + account;
+            try {
+                const response: any = await this.http.get(url).toPromise();
+                if (response.actions && response.actions.length > 0) {
+                    return response;
                 }
+            } catch (e) {
+                console.log(`failed to fetch actions: ${api}`);
+            }
         }
         return;
     }
@@ -480,9 +480,15 @@ export class AccountsService {
 
     private async getActionsHyperionMulti(account: any, offset: any, pos: any, filter?: any, after?: any, before?: any, parent?: any): Promise<boolean> {
         let result;
+
         if (!this.activeChain.hyperionApis) {
             return false;
         }
+
+        if (this.activeChain.hyperionApis.length === 0) {
+            return false;
+        }
+
         for (const api of this.activeChain.hyperionApis) {
             if (!result) {
                 let url = api + '/history/get_actions?account=' + account + '&limit=' + offset + '&skip=' + pos;
@@ -522,7 +528,7 @@ export class AccountsService {
             this.calcTotalAssets();
             return true;
         } else {
-            console.log('empty result history!');
+            console.log('no action history from hyperion endpoints');
             this.actions = [];
             this.totalActions = 0;
             return false;
@@ -541,7 +547,11 @@ export class AccountsService {
         this.eos.getAccountActions(account, offset, pos).then(val => {
             const actions = val['actions'];
             if (actions.length > 0) {
-                this.actionStore[account]['actions'] = actions;
+                if (this.actionStore[account]) {
+                    this.actionStore[account].actions = actions;
+                } else {
+                    this.actionStore[account] = {actions};
+                }
                 const payload = JSON.stringify(this.actionStore);
                 localStorage.setItem('actionStore.' + this.activeChain['id'], payload);
             }
@@ -607,10 +617,6 @@ export class AccountsService {
             this.selected.next(sel);
             this.fetchTokens(sel.name).catch(console.log);
         }
-        // const stored_data = JSON.parse(localStorage.getItem('eos_keys.' + this.eos.chainID));
-        // if(this.isLedger){
-        //   this.isLedger = stored_data[pbk]['private'] === 'ledger';
-        // }
     }
 
     initFirst() {

@@ -142,7 +142,7 @@ export class ConfirmModalComponent {
             );
             if (result) {
                 console.log(result);
-                const trxId = result['transaction_id'];
+                const trxId = result['result']['transaction_id'];
 
                 setTimeout(() => {
                     this.aService.refreshFromChain(false).catch(e => {
@@ -180,8 +180,13 @@ export class ConfirmModalComponent {
             showCloseButton: true,
             clickHandler: (data) => {
                 if (data.data['id']) {
-                    // Open explorer
-                    window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + data.data['id']);
+                    // Open block explorer on browser
+                    if (this.aService.activeChain.explorers) {
+                        if (this.aService.activeChain.explorers.length > 0) {
+                            const txBase = this.aService.activeChain.explorers[0].tx_url;
+                            window['shell']['openExternal'](txBase + data.data.id);
+                        }
+                    }
                 }
                 return true;
             },

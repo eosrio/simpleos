@@ -375,17 +375,11 @@ class SimpleosWallet {
                     this.win.webContents.send('electronOS', {message: 'type', content: process.platform});
                 }
             });
-
         });
 
         this.win.once('ready-to-show', () => {
             console.log('window ready to show');
             this.win.show();
-
-        });
-
-        this.win.on('app-command', (e, cmd) => {
-            console.log(this.webContents.history);
         });
 
         // win.removeMenu();
