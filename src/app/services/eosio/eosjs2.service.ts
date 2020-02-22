@@ -590,15 +590,4 @@ export class Eosjs2Service {
         }
         return _actions;
     }
-
-    async deserializeTrx(data: any) {
-        this.api = new Api({
-            rpc: this.rpc,
-            signatureProvider: this.JsSigProvider,
-            textDecoder: new TextDecoder(),
-            textEncoder: new TextEncoder(),
-        });
-        const originalTrx = await this.api.deserializeTransactionWithActions(data.serializedTransaction);
-        console.log(originalTrx);
-    }
 }

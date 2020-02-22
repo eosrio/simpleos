@@ -120,7 +120,6 @@ export class LedgerService {
                 if (args.data) {
                     if (args.event === 'sign_trx') {
                         try {
-                            console.log(args.data);
                             const trxResult = await this.pushSignedTrx(args.data);
                             resolve(trxResult);
                         } catch (e) {
@@ -248,9 +247,7 @@ export class LedgerService {
     }
 
     async pushSignedTrx(data: any) {
-        console.log(data);
         // store transaction for eventual resubmission
-        await this.eos.deserializeTrx(data);
         this.tempTrx = data;
         return new Promise(async (resolve, reject) => {
             try {

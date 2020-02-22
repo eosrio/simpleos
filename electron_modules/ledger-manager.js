@@ -5,14 +5,13 @@ const fetch = require('node-fetch');
 const asn1 = require('asn1-ber');
 const ecc = require('eosjs-ecc');
 const {Api, JsonRpc, Serialize} = require('eosjs');
-const textDecoder = new TextDecoder();
-const textEncoder = new TextEncoder();
+const util = require('util');
+const textDecoder = new util.TextDecoder();
+const textEncoder = new util.TextEncoder();
+
+const encoderOptions = {textEncoder: new util.TextEncoder(), textDecoder: new util.TextDecoder()};
 
 const sudo = require('sudo-prompt');
-
-const options = {
-    name: 'SimplEOS Wallet'
-};
 
 const errorCodes = {
     26628: 'Device is not ready, please unlock',
@@ -42,10 +41,7 @@ const serializeEosjs = (api, transaction) => {
     api.transactionTypes.forEach((value, key) => types[key] = value);
     Object.keys(types).map(key => {
         types[key].prepare = raw => {
-            const buf = new Serialize.SerialBuffer({
-                textEncoder: this.textEncoder,
-                textDecoder: this.textDecoder,
-            });
+            const buf = new Serialize.SerialBuffer(encoderOptions);
             const aliasKey = (() => {
                 switch (key) {
                     case 'account_name':
@@ -60,54 +56,98 @@ const serializeEosjs = (api, transaction) => {
             return Buffer.from(buf.asUint8Array());
         };
     });
-    const serializedData = serialize(api.chainId, transaction, types).toString('hex');
-    return Buffer.from(serializedData, 'hex');
+    return serializeTransaction(api.chainId, transaction, types).buffer
 };
 
-const serialize = (chainId, transaction, types) => {
+const serializeTransaction = (chainId, transaction, types) => {
     const writer = new asn1.BerWriter();
-    const _temp = [
-        types.checksum256.prepare(chainId),
-        types.time_point_sec.prepare(transaction.expiration),
-        types.uint16.prepare(transaction.ref_block_num),
-        types.uint32.prepare(transaction.ref_block_prefix),
-        types.uint8.prepare(0),
-        types.uint8.prepare(transaction.max_cpu_usage_ms),
-        types.uint8.prepare(transaction.delay_sec),
-        types.uint8.prepare(0),
-        types.uint8.prepare(transaction.actions.length),
-    ];
-    for (const t of _temp) {
-        encode(writer, t);
-    }
-    for (let i = 0; i < transaction.actions.length; i += 1) {
-        const action = transaction.actions[i];
-        encode(writer, types.name.prepare(action.account));
-        encode(writer, types.name.prepare(action.name));
-        encode(writer, types.uint8.prepare(action.authorization.length));
-        for (let i = 0; i < action.authorization.length; i += 1) {
-            const authorization = action.authorization[i];
-            encode(writer, types.name.prepare(authorization.actor));
-            encode(writer, types.name.prepare(authorization.permission));
+
+    encode(writer, types.checksum256.prepare(chainId));
+
+    encode(writer, types.time_point_sec.prepare(transaction.expiration));
+
+    encode(writer, types.uint16.prepare(transaction.ref_block_num));
+
+    encode(writer, types.uint32.prepare(transaction.ref_block_prefix));
+
+    encode(writer, types.varuint32.prepare(transaction.max_net_usage_words));
+
+    encode(writer, types.uint8.prepare(transaction.max_cpu_usage_ms));
+
+    encode(writer, types.varuint32.prepare(transaction.delay_sec));
+
+    // context free actions
+    encode(writer, types.uint8.prepare(0));
+
+    // action list size
+    encode(writer, types.uint8.prepare(transaction.actions.length));
+
+    for (const act of transaction.actions) {
+        encode(writer, types.name.prepare(act.account));
+        encode(writer, types.name.prepare(act.name));
+
+        // auth array size
+        encode(writer, types.uint8.prepare(act.authorization.length));
+
+        // push auths
+        for (const auth of act.authorization) {
+            encode(writer, types.name.prepare(auth.actor));
+            encode(writer, types.name.prepare(auth.permission));
         }
-        if (action.data) {
-            const data = Buffer.from(action.data, 'hex');
-            encode(writer, types.uint8.prepare(data.length));
+
+        if (act.data) {
+            // push serialized action data
+            const data = Buffer.from(act.data, 'hex');
+            encode(writer, types.varuint32.prepare(data.length));
             encode(writer, data);
+
         } else {
+
             try {
-                encode(writer, types.uint8.prepare(0));
+                encode(writer, types.varuint32.prepare(0));
                 encode(writer, Buffer.alloc(0));
             } catch (e) {
                 console.log('err', e);
             }
+
         }
     }
+
+    // transaction extensions
     encode(writer, types.uint8.prepare(0));
-    encode(writer,
-        types.checksum256.prepare(Buffer.alloc(32, 0).toString('hex')));
-    return writer.buffer;
+
+    // checksum
+    encode(writer, types.checksum256.prepare(Buffer.alloc(32, 0).toString('hex')));
+
+    return writer;
 };
+
+const CHUNK_LIMIT = 128;
+
+function splitPayload(rawTx, slot) {
+    const path = `44'/194'/0'/0/${slot}`;
+    const paths = bippath.fromString(path).toPathArray();
+    const chunks = [];
+    let offset = 0;
+    const inputDataLength = 1 + (paths.length * 4);
+    while (offset !== rawTx.length) {
+        const maxChunkSize = (offset === 0) ? CHUNK_LIMIT - inputDataLength : CHUNK_LIMIT
+        const chunkSize = (offset + maxChunkSize > rawTx.length) ? rawTx.length - offset : maxChunkSize;
+        let buffer;
+        if (offset === 0) {
+            buffer = Buffer.alloc(inputDataLength + chunkSize);
+            buffer[0] = paths.length;
+            paths.forEach((element, index) => buffer.writeUInt32BE(element, 1 + 4 * index));
+            rawTx.copy(buffer, 1 + 4 * paths.length, offset, offset + chunkSize);
+        } else {
+            buffer = Buffer.alloc(chunkSize);
+            rawTx.copy(buffer, 0, offset, offset + chunkSize);
+        }
+        chunks.push(buffer);
+        offset += chunkSize;
+    }
+    return chunks;
+}
 
 class LedgerManager {
 
@@ -352,21 +392,11 @@ class LedgerManager {
 
     async signTransaction(trxdata, slot, endpoint) {
         const localRpc = new JsonRpc(endpoint, {fetch});
-
         const api = new Api({
             rpc: localRpc,
             textDecoder: textDecoder,
             textEncoder: textEncoder,
         });
-
-        const path = `44'/194'/0'/0/${slot}`;
-        const paths = bippath.fromString(path).toPathArray();
-
-        for (const action of trxdata.actions) {
-            console.log('---------- ACTION ----------');
-            console.log(action);
-        }
-
         let result;
         try {
             result = await api.transact(trxdata, {
@@ -380,56 +410,25 @@ class LedgerManager {
             this.errormsg = e.message;
             return null;
         }
-
         const decTrx = await api.deserializeTransaction(result.serializedTransaction);
-
-        const hexValue = Buffer.from(result.serializedTransaction).toString('hex');
-        console.log(hexValue);
-
         const rawTx = serializeEosjs(api, decTrx);
-        const toSend = [];
-        let offset = 0;
-        while (offset !== rawTx.length) {
-            const maxChunkSize = offset === 0 ? 150 - 1 - paths.length * 4 : 150;
-            const chunkSize = offset + maxChunkSize > rawTx.length ?
-                rawTx.length - offset :
-                maxChunkSize;
-            const buffer = Buffer.alloc(
-                offset === 0 ? 1 + (paths.length * 4) + chunkSize : chunkSize);
-            if (offset === 0) {
-                buffer[0] = paths.length;
-                paths.forEach(
-                    (element, index) => buffer.writeUInt32BE(element, 1 + 4 * index));
-                rawTx.copy(buffer, 1 + 4 * paths.length, offset, offset + chunkSize);
-            } else {
-                rawTx.copy(buffer, 0, offset, offset + chunkSize);
-            }
-            toSend.push(buffer);
-            offset += chunkSize;
-        }
-        console.log(`Array size: ${toSend.length}`);
+        const chunks = splitPayload(rawTx, slot);
         let response;
-        for (let i = 0; i < toSend.length; i++) {
+        for (let i = 0; i < chunks.length; i++) {
             try {
-                console.log(`Sending part ${i}...`);
-                response = await this.transport.send(
-                    LC.CLA,
-                    LC.SIGN, i === 0 ? LC.FIRST : LC.MORE,
-                    0x00,
-                    toSend[i],
-                );
+                console.log(`Sending chunk ${i} with ${chunks[i].length} bytes...`);
+                response = await this.transport.send(LC.CLA, LC.SIGN, i === 0 ? LC.FIRST : LC.MORE, 0x00, chunks[i]);
             } catch (e) {
                 this.handleError(e);
                 return null;
             }
         }
-        if (response.length > 64) {
+        if (response.length >= 64) {
             const v = response.slice(0, 1).toString('hex');
             const r = response.slice(1, 33).toString('hex');
             const s = response.slice(33, 65).toString('hex');
             const signature = ecc.Signature.fromHex(v + r + s).toString();
             result.signatures.push(signature);
-            console.log(result);
             return result;
         } else {
             return null;
