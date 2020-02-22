@@ -144,7 +144,7 @@
                 </ng-container>
 
                 <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" *ngIf="mode === 'ledger'">
-                    <span>device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
+                    <span class="text-faded">device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
                     <button type="button" class="btn btn-info-outline"
                             style="margin-top: 12px;" (click)="signExternalAction()">
                         sign with ledger
