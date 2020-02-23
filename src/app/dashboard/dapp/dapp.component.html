@@ -51,7 +51,7 @@
                         </div>
                     </li>
                 </ul>
-                <div *ngIf="aService.tokens.length === 0" class="card-text-color"  style="margin-top: 20px">Your other tokens, such as Airdrops, will appear here.
+                <div *ngIf="aService.tokens.length === 0" class="card-text-color" style="margin-top: 20px">Your other tokens, such as Airdrops, will appear here.
                 </div>
             </div>
         </div>
@@ -140,9 +140,10 @@
 
                 </form>
             </div>
-            <div class="error" style="display:flex;" *ngIf="wrongpass !== ''">
-                {{wrongpass}}
-            </div>
+        </div>
+        <div class="error error-modal-footer" *ngIf="wrongpass !== ''">
+            <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
+            {{wrongpass}}
         </div>
     </div>
 </clr-modal>

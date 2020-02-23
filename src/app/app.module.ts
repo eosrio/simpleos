@@ -117,7 +117,6 @@ import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
 
 /* SERVICES */
 import {ChainService} from './services/chain.service';
-import {EOSJSService} from './services/eosio/eosjs.service';
 import {Eosjs2Service} from './services/eosio/eosjs2.service';
 import {NetworkService} from './services/network.service';
 import {CryptoService} from './services/crypto/crypto.service';
@@ -228,7 +227,6 @@ export function playerFactory() {
         PaginatorModule,
     ],
     providers: [
-        EOSJSService,
         Eosjs2Service,
         ChainService,
         AccountsService,

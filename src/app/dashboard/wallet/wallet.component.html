@@ -1,12 +1,7 @@
 <div class="container-fluid" style=" overflow:hidden;">
-
-
     <div class="clr-row flex-items-xs-between" style="height: calc(100vh - 6.2rem);">
-
         <!--<div >-->
-        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;"
-             *ngIf="aService.selected.getValue().name">
-
+        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;" *ngIf="aService.selected.getValue().name">
             <div>
                 <div class="balance free-title">
                     BALANCE
@@ -15,21 +10,25 @@
                     </ng-container>
                 </div>
                 <div class="eos highlight-primary special-font font-weight-bold">
-                    {{fullBalance | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                    {{fullBalance | number: '1.0-' +
+                aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
                 </div>
                 <div class="infos free-title">
                     <span style="padding-right: 15px">
                       <fa-icon
                               [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked
-                        <span>{{staked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
+                        <span>{{staked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
                     </span>
                     |
                     <span style="padding-left: 15px">
 							  <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked
                         <span>
-                            {{unstaked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                            {{unstaked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
                         </span>
-                        <span *ngIf="unstaking > 0">(+{{(unstaking) | number :'1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
+                        <span *ngIf="unstaking > 0">(+{{(unstaking) | number :'1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
                         </span>
                     </span>
                 </div>
@@ -38,15 +37,16 @@
                     <div class="clr-col-6">
 							<span style="width: 212px; float: left;"
                                   *ngIf="aService.activeChain['explorers'].length !== 0">
-								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;" (click)="openAccount()">
+								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;"
+                                   (click)="openAccount()">
 									Open <strong class="main-text">{{aService.selected.getValue().name}}</strong> on a block explorer
 								</a>
 							</span>
                     </div>
                     <div class="clr-col-6">
 							<span (click)="refresh()" style="width: 100px; float: right">
-								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none; font-weight: 600;"
-                                   (click)="refresh()">
+								<a class="btn btn-sm btn-link btn-primary-link"
+                                   style="max-width: none; font-weight: 600;">
 									<fa-icon [icon]="['far', 'undo']"></fa-icon>
 									Refresh
 								</a>
@@ -98,12 +98,19 @@
                                             </mat-form-field>
 
                                         </div>
-                                        <!--											<div class="clr-col-lg-3">-->
-                                        <!--												<mat-checkbox class="spam-checkbox" (change)="hideSpan()" ngDefaultControl>Hide spam</mat-checkbox>-->
-                                        <!--											</div>-->
-                                        <!--											<div class="clr-col-lg-3">-->
-                                        <!--												<button class="btn btn-info-outline btn-sm" style="margin-right: 5px;margin-top: 20px;" (click)="clearFilter()">CLEAR FILTERS</button>-->
-                                        <!--											</div>-->
+
+                                        <!--                                        <div class="clr-col-lg-3">-->
+                                        <!--                                            <mat-checkbox class="spam-checkbox" (change)="hideSpan()" ngDefaultControl>-->
+                                        <!--                                                Hide spam-->
+                                        <!--                                            </mat-checkbox>-->
+                                        <!--                                        </div>-->
+                                        <!--                                        <div class="clr-col-lg-3">-->
+                                        <!--                                            <button class="btn btn-info-outline btn-sm"-->
+                                        <!--                                                    style="margin-right: 5px;margin-top: 20px;" (click)="clearFilter()">-->
+                                        <!--                                                CLEAR FILTERS-->
+                                        <!--                                            </button>-->
+                                        <!--                                        </div>-->
+
                                     </div>
                                 </form>
                             </div>
@@ -116,16 +123,26 @@
             <!--HISTORY TABLE-->
             <div class="table-flex history-table" style="max-height: 100%; ">
 
-                <p-table #tableHistory [value]="actions"
+                <p-table [value]="aService.actions"
                          [responsive]="true"
+                         [scrollable]="true"
+                         [sortOrder]="-1"
+                         [rows]="maxRows"
                          dataKey="seq"
                          class="overview-table flex-column"
                          sortField="date"
                          sortMode="single"
-                         [sortOrder]="-1"
-                         [rows]="12"
                          rowExpandMode="single"
-                         [scrollable]="true" scrollHeight="100%">
+                         scrollHeight="100%">
+
+                    <ng-template pTemplate="footer">
+                        <p-paginator #paginator
+                                     [rows]="maxRows"
+                                     [totalRecords]="aService.totalActions"
+                                     (onPageChange)="loadActionsLazy($event)">
+                        </p-paginator>
+                    </ng-template>
+
                     <ng-template pTemplate="header">
                         <tr>
                             <th style="width: 70px;">
@@ -148,6 +165,7 @@
                             </th>
                         </tr>
                     </ng-template>
+
                     <ng-template pTemplate="body" let-item let-expanded="expanded">
 
                         <tr [pSelectableRow]="item" [pRowToggler]="item"
@@ -203,7 +221,8 @@
 											</span>
                                     <ng-container *ngIf="item.symbol === aService.activeChain['symbol']">
 										<span
-                                                *ngIf="aService.activeChain['name'] === 'EOS MAINNET'"> (${{item.amount * aService.usd_rate | number}}
+                                                *ngIf="aService.activeChain['name'] === 'EOS MAINNET'"> (${{item.amount *
+                                        aService.usd_rate | number}}
                                             )</span>
                                     </ng-container>
                                 </ng-container>
@@ -386,10 +405,13 @@
 											to <span class="highlight-primary">this account</span>
 										</span>
 
-                                <span *ngIf="item.type === 'mvtosavings'" class="highlight-primary">STAKED (Savings)</span>
-                                <span *ngIf="item.type === 'mvfrsavings'" class="highlight-primary">UNSTAKED (Maturing)</span>
+                                <span *ngIf="item.type === 'mvtosavings'"
+                                      class="highlight-primary">STAKED (Savings)</span>
+                                <span *ngIf="item.type === 'mvfrsavings'"
+                                      class="highlight-primary">UNSTAKED (Maturing)</span>
 
-                                <span *ngIf="item.type === 'unstaketorex'" class="highlight-primary">UNSTAKED (To REX)</span>
+                                <span *ngIf="item.type === 'unstaketorex'"
+                                      class="highlight-primary">UNSTAKED (To REX)</span>
 
                                 <span *ngIf="item.type === 'buyrex'">
 											<span class="highlight-primary">bought REX</span>
@@ -468,6 +490,7 @@
 
                         </tr>
                     </ng-template>
+
                     <ng-template pTemplate="rowexpansion" let-item>
                         <tr class="tr-expanded">
                             <td colspan="6">
@@ -528,6 +551,7 @@
                             </td>
                         </tr>
                     </ng-template>
+
                     <ng-template pTemplate="emptymessage" let-columns>
                         <tr>
                             <td [attr.colspan]="6">
@@ -535,13 +559,8 @@
                             </td>
                         </tr>
                     </ng-template>
-                    <ng-template pTemplate="footer">
-                        <p-paginator #paginator [rows]="12"  [totalRecords]="totalActions" (onPageChange)="loadActionsLazy($event)"></p-paginator>
-                    </ng-template>
+
                 </p-table>
-
-
-
             </div>
         </div>
 
@@ -552,7 +571,7 @@
                     <ng-container *ngIf="aService.totalAssetsSum !== 0">
                         <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" style="font-size: 16px;">Total:
                             ${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
-                                '1.2-2'}}
+                              '1.2-2'}}
                         </div>
                         <div *ngIf="aService.activeChain.name !== 'EOS MAINNET'" style="font-size: 16px;">Total:
                             {{ fullBalance | number: '1.2-2'}}
@@ -570,7 +589,8 @@
                         </fa-layers>
                         <br>
 
-                        <div class="highlight-accent" style="padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...
+                        <div class="highlight-accent" style="padding-left: 17px; font-size: 18px; margin-top: 10px">
+                            LOADING...
                         </div>
                     </ng-container>
                 </div>

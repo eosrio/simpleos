@@ -1,7 +1,6 @@
-import {Component, ComponentFactoryResolver, ChangeDetectorRef, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators, FormArray} from '@angular/forms';
+import {ChangeDetectorRef, Component, ComponentFactoryResolver, OnInit} from '@angular/core';
+import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {Proposal} from '../../interfaces/proposal';
@@ -10,7 +9,7 @@ import {HttpClient} from '@angular/common/http';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
-import {utc} from 'moment';
+import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 
 
 @Component({
@@ -69,7 +68,7 @@ export class ReferendumComponent implements OnInit {
 
 
 	constructor(public aService: AccountsService,
-				public eos: EOSJSService,
+				public eosjs: Eosjs2Service,
 				private http: HttpClient,
 				private fb: FormBuilder,
 				private componentFactoryResolver: ComponentFactoryResolver,
@@ -464,7 +463,7 @@ export class ReferendumComponent implements OnInit {
 					vote: this.vtProposal,
 					vote_json: ''
 				};
-				this.eos.pushActionContract('eosio.forum', 'vote', form, accountName, permission).then((info) => {
+				this.eosjs.pushActionContract('eosio.forum', 'vote', form, accountName, permission).then((info) => {
 					this.voteModal = false;
 					if (this.seeMore) {
 						this.seeMore = !this.seeMore;
@@ -503,7 +502,7 @@ export class ReferendumComponent implements OnInit {
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				const form = {voter: accountName, proposal_name: this.selProposal.proposal.proposal_name};
-				this.eos.pushActionContract('eosio.forum', 'unvote', form, accountName, permission).then((info) => {
+				this.eosjs.pushActionContract('eosio.forum', 'unvote', form, accountName, permission).then((info) => {
 					this.unvoteModal = false;
 					this.busy = false;
 					if (this.seeMore) {
@@ -603,7 +602,7 @@ export class ReferendumComponent implements OnInit {
 		this.crypto.authenticate(password, pubkey).then((data) => {
 			if (data === true) {
 				console.log(formVal);
-				const val = this.eos.pushActionContract(contract, action, formVal, accountName, permission).then((info) => {
+				const val = this.eosjs.pushActionContract(contract, action, formVal, accountName, permission).then((info) => {
 					console.log(info);
 					this.busy = false;
 					this.proposalModal = false;

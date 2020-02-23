@@ -1,18 +1,17 @@
 import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
-import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {Observable, Subscription} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {EOSAccount} from '../../interfaces/account';
-import {LedgerService} from "../../services/ledger/ledger.service";
-import {NetworkService} from "../../services/network.service";
+import {LedgerService} from '../../services/ledger/ledger.service';
+import {NetworkService} from '../../services/network.service';
 
 import * as moment from 'moment';
-import {TransactionFactoryService} from "../../services/eosio/transaction-factory.service";
+import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
+import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 
 
 export interface Contact {
@@ -82,7 +81,7 @@ export class SendComponent implements OnInit, OnDestroy {
 
     constructor(private fb: FormBuilder,
                 public aService: AccountsService,
-                public eos: EOSJSService,
+                public eosjs: Eosjs2Service,
                 private crypto: CryptoService,
                 private toaster: ToasterService,
                 private cdr: ChangeDetectorRef,
@@ -274,11 +273,11 @@ export class SendComponent implements OnInit, OnDestroy {
     checkAccountName() {
         if (this.sendForm.value.to !== '') {
             try {
-                this.eos.checkAccountName(this.sendForm.value.to.toLowerCase());
+                this.eosjs.checkAccountName(this.sendForm.value.to.toLowerCase());
                 // this.sendForm.controls[ 'to' ].setErrors ( null );
                 // this.errormsg = '';
                 console.log(this.sendForm.value.to.toLowerCase());
-                this.eos.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
+                this.eosjs.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
                     this.sendForm.controls['to'].setErrors(null);
                     this.checkExchangeAccount();
                     this.errormsg = '';
@@ -298,10 +297,10 @@ export class SendComponent implements OnInit, OnDestroy {
     checkAccountModal() {
         if (this.contactForm.value.account !== '') {
             try {
-                this.eos.checkAccountName(this.contactForm.value.account.toLowerCase());
+                this.eosjs.checkAccountName(this.contactForm.value.account.toLowerCase());
                 this.contactForm.controls['account'].setErrors(null);
                 this.adderrormsg = '';
-                this.eos.getAccountInfo(this.contactForm.value.account.toLowerCase()).then(() => {
+                this.eosjs.getAccountInfo(this.contactForm.value.account.toLowerCase()).then(() => {
                     this.contactForm.controls['account'].setErrors(null);
                     this.adderrormsg = '';
                 }).catch(() => {
@@ -381,8 +380,8 @@ export class SendComponent implements OnInit, OnDestroy {
 
     addContact() {
         try {
-            this.eos.checkAccountName(this.contactForm.value.account.toLowerCase());
-            this.eos.getAccountInfo(this.contactForm.value.account.toLowerCase()).then(() => {
+            this.eosjs.checkAccountName(this.contactForm.value.account.toLowerCase());
+            this.eosjs.getAccountInfo(this.contactForm.value.account.toLowerCase()).then(() => {
                 this.insertNewContact({
                     type: 'contact',
                     name: this.contactForm.value.name,
@@ -415,8 +414,8 @@ export class SendComponent implements OnInit, OnDestroy {
     // TODO: implementar
     addContactOnSend() {
         try {
-            this.eos.checkAccountName(this.sendForm.value.to.toLowerCase());
-            this.eos.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
+            this.eosjs.checkAccountName(this.sendForm.value.to.toLowerCase());
+            this.eosjs.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
                 this.insertNewContact({
                     type: 'contact',
                     name: this.sendForm.value['alias'],

@@ -1,7 +1,6 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
-import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {AccountsService} from '../../services/accounts.service';
 import {NetworkService} from '../../services/network.service';
 import {CryptoService} from '../../services/crypto/crypto.service';
@@ -92,7 +91,6 @@ export class ConfigComponent implements OnInit {
     constructor(private fb: FormBuilder,
                 public network: NetworkService,
                 private router: Router,
-                private eos: EOSJSService,
                 private crypto: CryptoService,
                 public aService: AccountsService,
                 private toaster: ToasterService,
@@ -516,7 +514,7 @@ export class ConfigComponent implements OnInit {
                 if (result) {
                     this.showpk = true;
                     this.showpkForm.reset();
-                    this.tempPK = this.eos.baseConfig.keyProvider;
+                    this.tempPK = this.eosjs.baseConfig.keyProvider;
                     this.timeoutpk = setInterval(() => {
                         this.timetoclose -= 1;
                         if (this.timetoclose <= 0) {
@@ -544,18 +542,12 @@ export class ConfigComponent implements OnInit {
         }
     }
 
-    generateNKeys() {
+    async generateNKeys() {
         this.generating2 = true;
-        setTimeout(() => {
-            this.eos.ecc.initialize().then(() => {
-                this.eos.ecc['randomKey'](64).then((privateKey) => {
-                    this.ownerpk2 = privateKey;
-                    this.ownerpub2 = this.eos.ecc['privateToPublic'](this.ownerpk2);
-                    this.generating2 = false;
-                    this.generated2 = true;
-                });
-            });
-        }, 100);
+        this.ownerpk2 = await this.eosjs.ecc.randomKey(64);
+        this.ownerpub2 = this.eosjs.ecc.privateToPublic(this.ownerpk2);
+        this.generating2 = false;
+        this.generated2 = true;
     }
 
 }

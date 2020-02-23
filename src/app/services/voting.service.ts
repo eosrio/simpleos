@@ -1,6 +1,5 @@
 import {ApplicationRef, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {EOSJSService} from './eosio/eosjs.service';
 import {Subject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import * as moment from 'moment';
@@ -19,7 +18,6 @@ export class VotingService {
 
     constructor(
         private eosjs: Eosjs2Service,
-        private eos: EOSJSService,
         private http: HttpClient,
         private aService: AccountsService,
         private ref: ApplicationRef
@@ -41,7 +39,7 @@ export class VotingService {
         this.lastAcc = '';
 
         // EOSJS Status watcher
-        this.eos.online.asObservable().subscribe(value => {
+        this.eosjs.online.asObservable().subscribe(value => {
             this.isOnline = value;
             if (value !== this.lastState) {
                 this.lastState = value;
@@ -160,9 +158,13 @@ export class VotingService {
         }
         if (!this.initList && !this.loadingProds && this.aService.selected.getValue().name) {
             this.loadingProds = true;
-            const producers = await this.eos.listProducers();
-            const global_data = await this.eos.getChainInfo();
+
+            const producers = await this.eosjs.listProducers();
+
+            const global_data = await this.eosjs.getChainInfo();
+
             this.totalProducerVoteWeight = parseFloat(global_data.rows[0]['total_producer_vote_weight']);
+
             const total_votes = this.totalProducerVoteWeight;
             // Pass 1 - Add accounts
             const myAccount = this.aService.selected.getValue();

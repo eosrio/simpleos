@@ -1,16 +1,16 @@
 import {ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {AccountsService} from "../services/accounts.service";
-import {CryptoService} from "../services/crypto/crypto.service";
-import {EOSJSService} from "../services/eosio/eosjs.service";
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
-import {NetworkService} from "../services/network.service";
-import {Router} from "@angular/router";
-import {Subscription} from "rxjs";
-import {compare2FormPasswords, contentStyle, handleErrorMessage} from "../helpers/aux_functions";
-import {ClrWizard} from "@clr/angular";
-import {LedgerService} from "../services/ledger/ledger.service";
-import {Eosjs2Service} from "../services/eosio/eosjs2.service";
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from "angular2-toaster";
+import {AccountsService} from '../services/accounts.service';
+import {CryptoService} from '../services/crypto/crypto.service';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {NetworkService} from '../services/network.service';
+import {Router} from '@angular/router';
+import {Subscription} from 'rxjs';
+import {compare2FormPasswords, handleErrorMessage} from '../helpers/aux_functions';
+import {ClrWizard} from '@clr/angular';
+import {LedgerService} from '../services/ledger/ledger.service';
+import {Eosjs2Service} from '../services/eosio/eosjs2.service';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {environment} from '../../environments/environment';
 
 @Component({
     selector: 'app-import-modal',
@@ -50,6 +50,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     publicEOS = '';
 
     private subscriptions: Subscription[] = [];
+    public compilerVersion = environment.COMPILERVERSION;
 
     // ledger info
     usingLedger = false;
@@ -62,7 +63,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     busyVerifying = false;
 
     constructor(
-        public eos: EOSJSService,
         public eosjs: Eosjs2Service,
         public ledger: LedgerService,
         public aService: AccountsService,
@@ -121,8 +121,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     createForms() {
         this.passform = this.fb.group({
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]]
             })
         });
         this.pvtform = this.fb.group({
@@ -172,12 +172,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         this.usingLedger = false;
         this.cdr.detectChanges();
         this.importwizard.open();
-    }
-
-    getConstitution() {
-        if (this.network.activeChain['name'] === 'EOS MAINNET') {
-            this.eos.getConstitution();
-        }
     }
 
     resetImport() {
@@ -261,7 +255,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         if (input !== '' && !this.busyVerifying) {
             this.busyActivekey = true;
             this.busyVerifying = true;
-            this.eosjs.checkPvtKey(input.trim()).then((results) => {
+            const pkey = input.trim();
+            this.eosjs.checkPvtKey(pkey).then((results) => {
                 this.publicEOS = results.publicKey;
                 this.importedAccounts = [];
                 this.importedAccounts = [...results.foundAccounts];
@@ -275,7 +270,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                         const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
                         const now = new Date().getTime();
                         if (now > refundTime) {
-                            this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
+                            this.eosjs.claimRefunds(item.account_name, pkey, item['permission']).then((tx) => {
                                 console.log(tx);
                             });
                         } else {
@@ -305,10 +300,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
 
     setPin() {
         this.crypto.createPIN(this.pin);
-    }
-
-    processContentStyle(constitution: string, textMuted: string) {
-        contentStyle(constitution, textMuted);
     }
 
     passCompare() {

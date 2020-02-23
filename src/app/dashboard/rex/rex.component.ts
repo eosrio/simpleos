@@ -5,7 +5,6 @@ import {EOSAccount} from '../../interfaces/account';
 import {AbstractControl, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {EOSJSService} from '../../services/eosio/eosjs.service';
 import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
@@ -15,7 +14,7 @@ import {ModalStateService} from '../../services/modal-state.service';
 import {NetworkService} from '../../services/network.service';
 import * as moment from 'moment';
 import {HttpClient} from '@angular/common/http';
-import {DecimalPipe, formatNumber} from '@angular/common';
+import {formatNumber} from '@angular/common';
 
 interface Loan {
 	balance: string;
@@ -150,7 +149,6 @@ export class RexComponent implements OnDestroy {
 		public network: NetworkService,
 		private router: Router,
 		private mds: ModalStateService,
-		public eos: EOSJSService,
 		private eosjs: Eosjs2Service,
 		public crypto: CryptoService,
 		private toaster: ToasterService,
@@ -298,12 +296,17 @@ export class RexComponent implements OnDestroy {
 				}
 			}
 		}));
-		this.subscriptions.push(this.eos.online.subscribe(state => {
+
+		this.subscriptions.push(this.eosjs.online.subscribe(state => {
 			if (state) {
 				this.updateGlobalRexData();
 			}
 		}));
-		const color = document.documentElement.style.getPropertyValue('--text-highlight') !== '' ? document.documentElement.style.getPropertyValue('--text-highlight') : '#ffffff';
+
+		let color = document.documentElement.style.getPropertyValue('--text-highlight');
+		if (color === '') {
+			color = '#ffffff';
+		}
 
 		// Setup Charts
 		this.rex_price_chart = {

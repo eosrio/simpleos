@@ -1,7 +1,5 @@
 import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {EOSJSService} from '../services/eosio/eosjs.service';
 import {AccountsService} from '../services/accounts.service';
-import {LandingComponent} from '../landing/landing.component';
 import {ClrWizard} from '@clr/angular';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
@@ -16,9 +14,9 @@ import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 
 import {environment} from '../../environments/environment';
-import {AnimationOptions} from "ngx-lottie";
-import {compare2FormPasswords, handleErrorMessage} from "../helpers/aux_functions";
-import {ImportModalComponent} from "../import-modal/import-modal.component";
+import {AnimationOptions} from 'ngx-lottie';
+import {compare2FormPasswords} from '../helpers/aux_functions';
+import {ImportModalComponent} from '../import-modal/import-modal.component';
 
 
 @Component({
@@ -112,15 +110,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     selectedAccRem = null;
     accRemovalIndex = null;
     selectedTab = 0;
-    importedPublicKey = '';
 
-
-    dropReady: boolean;
-    publicEOS: string;
-    busyActivekey = false;
-    apierror = '';
     private subscriptions: Subscription[] = [];
-    private pvtImportReady: boolean;
 
     compilerVersion = environment.COMPILERVERSION;
 
@@ -129,7 +120,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private ledgerEventsListener: Subscription;
 
     constructor(
-        public eos: EOSJSService,
         public eosjs: Eosjs2Service,
         private fb: FormBuilder,
         public aService: AccountsService,
@@ -190,19 +180,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             loop: false
         };
 
-
-        this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
-            if (value) {
-                if (value.length === 51) {
-                    this.verifyPrivateKey(value.trim(), false);
-                } else {
-                    this.pvtImportReady = false;
-                }
-            }
-        }));
-
         document.onkeydown = (e) => {
-
             // next account
             if (e.ctrlKey && e.key === 'ArrowRight') {
                 if (this.aService.selectedIdx < this.aService.accounts.length) {
@@ -210,7 +188,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.cdr.detectChanges();
                 }
             }
-
             // previous account
             if (e.ctrlKey && e.key === 'ArrowLeft') {
                 if (this.aService.selectedIdx > 0) {
@@ -226,12 +203,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.accounts = [];
-        this.eos.status.asObservable().subscribe((status) => {
-            if (status) {
-                this.loadStoredAccounts();
-            }
-        });
+        // this.accounts = [];
+        // this.eosjs.status.asObservable().subscribe((status) => {
+        //     if (status) {
+        //         this.loadStoredAccounts();
+        //     }
+        // });
     }
 
     ngAfterViewInit() {
@@ -255,67 +232,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    getPermissionName(account, key) {
-        return account.permissions.find(p => {
-            return p.required_auth.keys[0].key === key;
-        })['perm_name'];
-    }
-
-    verifyPrivateKey(privateKey, auto) {
-        let input;
-        if (!privateKey) {
-            input = this.pvtform.get('private_key').value;
-        } else {
-            input = privateKey;
-        }
-        if (input !== '') {
-            this.busyActivekey = true;
-            this.eosjs.checkPvtKey(input.trim()).then((results) => {
-                this.publicEOS = results.publicKey;
-                this.importedPublicKey = results.publicKey;
-                this.importedAccounts = [];
-                this.importedAccounts = [...results.foundAccounts];
-                this.importedAccounts.forEach((item) => {
-                    console.log(item);
-
-                    item['permission'] = this.getPermissionName(item, results.publicKey);
-
-                    if (item['refund_request']) {
-                        const tempDate = item['refund_request']['request_time'] + '.000Z';
-                        const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
-                        const now = new Date().getTime();
-                        if (now > refundTime) {
-                            this.eos.claimRefunds(item.account_name, input.trim(), item['permission']).then((tx) => {
-                                console.log(tx);
-                            });
-                        } else {
-                            console.log('Refund not ready!');
-                        }
-                    }
-                });
-                this.pvtform.controls['private_key'].setErrors(null);
-                // this.pvtform.reset();
-                this.pvtImportReady = true;
-                this.zone.run(() => {
-                    if (auto) {
-                        this.importwizard.forceNext();
-                    }
-                    this.errormsg = '';
-                    this.apierror = '';
-                });
-            }).catch((e) => {
-                this.pvtImportReady = false;
-                this.zone.run(() => {
-                    this.dropReady = true;
-                    this.pvtform.controls['private_key'].setErrors({'incorrect': true});
-                    this.importedAccounts = [];
-                    console.log(e);
-                    this.errormsg = handleErrorMessage(e);
-                });
-            });
-        }
-        // }
-    }
+    // getPermissionName(account, key) {
+    //     return account.permissions.find(p => {
+    //         return p.required_auth.keys[0].key === key;
+    //     })['perm_name'];
+    // }
 
     openRemoveAccModal(index, account) {
         this.selectedAccRem = account;
@@ -424,8 +345,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                         this.submitTXForm.reset();
                     } else if (this.newAccOptions === 'thispk') {
                         setTimeout(() => {
-                            this.eos.getAccountInfo(this.final_name).then((acc_data) => {
-                                this.eos.getTokens(acc_data['account_name']).then((tokens) => {
+                            this.eosjs.getAccountInfo(this.final_name).then((acc_data) => {
+                                this.eosjs.getTokens(acc_data['account_name']).then((tokens) => {
                                     acc_data['tokens'] = tokens;
                                     this.aService.appendNewAccount(acc_data).catch(console.log);
                                     this.wrongwalletpass = '';
@@ -477,43 +398,43 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
-    loadStoredAccounts() {
-        const account_names = Object.keys(this.eos.accounts.getValue());
-        if (account_names.length > 0) {
-            account_names.forEach((name) => {
-                const acc = this.eos.accounts.getValue()[name];
-                let balance = 0;
-                let staked = 0;
-                acc['tokens'].forEach((tk) => {
-                    balance += LandingComponent.parseEOS(tk);
-                });
-                if (acc['total_resources']) {
-                    const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-                    const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-                    balance += net;
-                    balance += cpu;
-                    staked = net + cpu;
-                }
-
-                const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
-                console.log('dashboard', this.aService.activeChain['name'].indexOf('LIBERLAND'));
-                if (this.aService.activeChain['name'].indexOf('LIBERLAND') > -1) {
-                    staked = acc['voter_info']['staked'] / precisionRound;
-                    balance += staked;
-                }
-
-                const accData = {
-                    name: acc['account_name'],
-                    full_balance: Math.round((balance) * precisionRound) / precisionRound,
-                    staked: staked,
-                    details: acc
-                };
-                this.accounts.push(accData);
-                this.aService.accounts.push(accData);
-            });
-        }
-        this.aService.initFirst();
-    }
+    // loadStoredAccounts() {
+    //     const account_names = Object.keys(this.eos.accounts.getValue());
+    //     if (account_names.length > 0) {
+    //         account_names.forEach((name) => {
+    //             const acc = this.eosjs.accounts.getValue()[name];
+    //             let balance = 0;
+    //             let staked = 0;
+    //             acc['tokens'].forEach((tk) => {
+    //                 balance += LandingComponent.parseEOS(tk);
+    //             });
+    //             if (acc['total_resources']) {
+    //                 const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
+    //                 const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
+    //                 balance += net;
+    //                 balance += cpu;
+    //                 staked = net + cpu;
+    //             }
+    //
+    //             const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
+    //             console.log('dashboard', this.aService.activeChain['name'].indexOf('LIBERLAND'));
+    //             if (this.aService.activeChain['name'].indexOf('LIBERLAND') > -1) {
+    //                 staked = acc['voter_info']['staked'] / precisionRound;
+    //                 balance += staked;
+    //             }
+    //
+    //             const accData = {
+    //                 name: acc['account_name'],
+    //                 full_balance: Math.round((balance) * precisionRound) / precisionRound,
+    //                 staked: staked,
+    //                 details: acc
+    //             };
+    //             this.accounts.push(accData);
+    //             this.aService.accounts.push(accData);
+    //         });
+    //     }
+    //     this.aService.initFirst();
+    // }
 
     cc(text) {
         window['navigator']['clipboard']['writeText'](text).then(() => {
@@ -528,7 +449,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log(creator);
         try {
             this.accountname_valid = false;
-            const res = this.eos.checkAccountName(this.accountname);
+            const res = this.eosjs.checkAccountName(this.accountname);
             // const regexName = new RegExp('^([a-z]|[1-5])+$');
             if (res !== 0) {
                 if (this.accountname.length < 12 && creator.length === 12) {
@@ -546,7 +467,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     }
                 }
 
-                this.eos.getAccountInfo(this.accountname).then(() => {
+                this.eosjs.getAccountInfo(this.accountname).then(() => {
                     this.accountname_err = 'This account name is not available. Please try another.';
                     this.accountname_valid = false;
                 }).catch(() => {
@@ -620,22 +541,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.passmatch = compare2FormPasswords(this.passform);
     }
 
-    generateKeys() {
+    async generateKeys() {
         this.generating = true;
-        setTimeout(() => {
-            this.eos.ecc.initialize().then(() => {
-                this.eos.ecc['randomKey'](128).then((privateKey) => {
-                    this.ownerpk = privateKey;
-                    this.ownerpub = this.eos.ecc['privateToPublic'](this.ownerpk);
-                    this.eos.ecc['randomKey'](128).then((privateKey2) => {
-                        this.activepk = privateKey2;
-                        this.activepub = this.eos.ecc['privateToPublic'](this.activepk);
-                        this.generating = false;
-                        this.generated = true;
-                    });
-                });
-            });
-        }, 100);
+
+        this.ownerpk = await this.eosjs.ecc.randomKey(64);
+        this.ownerpub = this.eosjs.ecc.privateToPublic(this.ownerpk);
+
+        this.activepk = await this.eosjs.ecc.randomKey(64);
+        this.activepub = this.eosjs.ecc.privateToPublic(this.activepk);
+
+        this.generating = false;
+        this.generated = true;
     }
 
     private showToast(type: string, title: string, body: string) {

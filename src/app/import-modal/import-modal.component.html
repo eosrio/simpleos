@@ -124,9 +124,7 @@
     </clr-wizard-page>
 
     <!--    PASSWORD ENCRYPTION PAGE-->
-    <clr-wizard-page *ngIf="!usingLedger"
-                     [clrWizardPageNextDisabled]="!passform.valid"
-                     (clrWizardPageOnLoad)="getConstitution()">
+    <clr-wizard-page *ngIf="!usingLedger" [clrWizardPageNextDisabled]="!passform.valid">
 
         <ng-template clrPageTitle>Password</ng-template>
 
@@ -162,23 +160,12 @@
         </form>
     </clr-wizard-page>
 
-    <!--    CONSTITUTION PAGE-->
-    <clr-wizard-page [clrWizardPageNextDisabled]="!agree"
-                     *ngIf="network.activeChain.name === 'EOS MAINNET'">
-        <ng-template clrPageTitle>EOS User Agreement</ng-template>
-        <div class="constitution">
-            <markdown id="markdown" style="color: white;"
-                      [data]="eos.constitution"></markdown>
-        </div>
-        <mat-checkbox [(ngModel)]="agree">I agree</mat-checkbox>
-    </clr-wizard-page>
-
     <!--    LOCKSCREEN SETUP PAGE-->
     <clr-wizard-page *ngIf="noPIN" (clrWizardPageOnCommit)="importAccounts()">
         <ng-template clrPageTitle>Lockscreen</ng-template>
         <h5 style="margin-bottom: 15px;">
             <span style="font-weight: 700;" class="highlight-primary">Lockscreen pin.</span>
-            Do you want to define a small privacy pin used to unlock the screen next time you enter SimplEOS?
+            Do you want to define a small privacy pin used to unlock the screen next time you open the wallet?
         </h5>
         <h5 style="margin-bottom: 18px;" class="text-faded">*This <span style="font-weight: 700;">does not</span>
             replace
