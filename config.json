@@ -142,7 +142,6 @@
       "firstApi": "https://wax.eosrio.io",
       "historyApi": "https://wax.hyperion.eosrio.io/v2",
       "hyperionApis": [
-        "https://wax.hyperion.eosrio.io/v2",
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
         "https://api.wax.alohaeos.com/v2",
