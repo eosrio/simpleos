@@ -76,7 +76,7 @@ export class AccountsService {
       account.details.permissions.forEach((p) => {
         if (p.required_auth.keys.length > 0) {
           const _k = p.required_auth.keys[0].key;
-          if (keys.indexOf(_k) !== -1) {
+          if (keys.includes(_k)) {
             key = _k;
             _perm = p.perm_name;
           }
@@ -84,6 +84,26 @@ export class AccountsService {
       });
     }
     return [key, _perm];
+  }
+
+  getStoredAuths(account) {
+    const store = localStorage.getItem('eos_keys.' + this.activeChain.id);
+    const auths = [];
+    if (store) {
+      const keys = Object.keys(JSON.parse(store));
+      account.details.permissions.forEach((p) => {
+        if (p.required_auth.keys.length > 0) {
+          const _k = p.required_auth.keys[0].key;
+          if (keys.includes(_k)) {
+            auths.push({
+              key: _k,
+              perm_name: p.perm_name,
+            });
+          }
+        }
+      });
+    }
+    return auths;
   }
 
   parseEOS(tk_string) {
@@ -546,7 +566,9 @@ export class AccountsService {
 
       this.actionStore[account]['actions'].forEach((action) => {
         let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
+
         if (action['action_trace']) {
+
           // native history api
           a_name = action['action_trace']['act']['name'];
           a_acct = action['action_trace']['act']['account'];
@@ -558,7 +580,9 @@ export class AccountsService {
           blk_num = action['block_num'];
           blk_time = action['block_time'];
           seq = action['account_action_seq'];
+
         } else {
+
           // mongo history api
           a_name = action['act']['name'];
           a_acct = action['act']['account'];
@@ -570,6 +594,7 @@ export class AccountsService {
           blk_num = action['block_num'];
           blk_time = action['block_time'];
           seq = action['receipt']['global_sequence'];
+
         }
 
         this.processAction(act, tx_id, blk_num, blk_time, seq);
@@ -579,6 +604,7 @@ export class AccountsService {
         // } else {
         //   console.log(action);
         // }
+
       });
 
       this.accounts[this.selectedIdx]['actions'] = this.actions;

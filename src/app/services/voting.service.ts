@@ -58,7 +58,6 @@ export class VotingService {
                     if (this.lastAcc !== sA['name'] || this.lastChain !== this.aService.activeChain.name) {
                         this.lastAcc = sA['name'];
                         this.lastChain = this.aService.activeChain.name;
-                        console.log(sA);
                         this.callLoader();
                     }
                 }

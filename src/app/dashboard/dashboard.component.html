@@ -83,8 +83,8 @@
         <nav class="sidenav">
             <section class="sidenav-header">
                 <ng-container *ngIf="app.compilerVersion === 'DEFAULT'">
-                <img [src]="'./assets/chain-icons/' + network.activeChain.icon" width="40" height="40"
-                     class="chain-icon" style="position: absolute; top: 60px; left: 15px" />
+                    <img [src]="'./assets/chain-icons/' + network.activeChain.icon" width="40" height="40"
+                         class="chain-icon" style="position: absolute; top: 60px; left: 15px"/>
 
                     <ng-lottie [options]="lottieConfig"
                                containerClass="display-animation"
@@ -522,7 +522,8 @@
 <!--REMOVE ACCOUNT-->
 <clr-modal [(clrModalOpen)]="deleteAccModal" [clrModalSize]="'md'">
     <h3 class="modal-title text-white">
-        <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="highlight-primary">Remove</span> account?
+        <fa-icon [icon]="['far', 'user-minus']"></fa-icon>&nbsp;&nbsp;<span class="highlight-primary">Remove</span>
+        account?
     </h3>
     <div class="modal-body" *ngIf="selectedAccRem">
         <p style="margin-bottom: 20px; color: #b1b1b1;">Are you sure you want do remove the account <span

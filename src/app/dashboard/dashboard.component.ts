@@ -18,11 +18,10 @@ import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 
-
 @Component({
     selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
-    styleUrls: ['./dashboard.component.css']
+    styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -35,7 +34,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     lottieConfig: AnimationOptions = {
         path: 'assets/logoanim2.json',
         autoplay: false,
-        loop: false
+        loop: false,
     };
 
     anim: any;
@@ -54,7 +53,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         t: 0,
         n: '',
         o: '',
-        a: ''
+        a: '',
     };
 
     newAccOptions = 'thispk';
@@ -104,7 +103,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     intMask = createNumberMask({
         prefix: '',
         allowDecimal: false,
-        includeThousandsSeparator: false
+        includeThousandsSeparator: false,
     });
 
     selectedAccRem = null;
@@ -130,7 +129,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         private zone: NgZone,
         private theme: ThemeService,
         public app: AppComponent,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
     ) {
 
         this.newAccountModal = false;
@@ -145,8 +144,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.passform = this.fb.group({
             matchingPassword: this.fb.group({
                 pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
-            })
+                pass2: ['', [Validators.required, Validators.minLength(10)]],
+            }),
         });
 
         this.delegateForm = this.fb.group({
@@ -157,18 +156,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         this.submitTXForm = this.fb.group({
-            pass: ['', [Validators.required, Validators.minLength(10)]]
+            pass: ['', [Validators.required, Validators.minLength(10)]],
         });
 
         this.pvtform = this.fb.group({
-            private_key: ['', Validators.required]
+            private_key: ['', Validators.required],
         });
 
         this.passform2 = this.fb.group({
             matchingPassword: this.fb.group({
                 pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
-            })
+                pass2: ['', [Validators.required, Validators.minLength(10)]],
+            }),
         });
 
         this.errormsg = '';
@@ -177,7 +176,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.lottieConfig = {
             path: 'assets/logoanim2.json',
             autoplay: true,
-            loop: false
+            loop: false,
         };
 
         document.onkeydown = (e) => {
@@ -215,12 +214,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.subscriptions.push(
             this.aService.selected.asObservable().subscribe(() => {
                 this.selectedTab = this.aService.selectedIdx;
-            })
+            }),
         );
         this.cdr.detectChanges();
 
     }
-
 
     ngOnDestroy(): void {
         this.subscriptions.forEach(s => {
@@ -245,20 +243,24 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     doRemoveAcc() {
-        // TODO: remove key
-        // const [key] = this.aService.getStoredKey(this.aService.accounts[this.accRemovalIndex]);
-        // const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
-        // console.log(key);
-        // if (savedData) {
-        // 	const keystore = JSON.parse(savedData);
-        // 	delete keystore[key];
-        // 	// localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
-        // }
-        // console.log(' ID :',this.accRemovalIndex);
         if (!this.aService.isRefreshing) {
 
+            const auths = this.aService.getStoredAuths(this.aService.accounts[this.accRemovalIndex]);
+            const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
+            if (savedData) {
+                const keystore = JSON.parse(savedData);
+                for (const auth of auths) {
+                    if (keystore[auth.key]) {
+                        delete keystore[auth.key];
+                        console.log(`${auth.key} removed`);
+                    } else {
+                        console.log(`${auth.key} not found`);
+                    }
+                }
+                localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
+            }
+
             this.aService.accounts.splice(this.accRemovalIndex, 1);
-            // console.log(' Accounts left :',this.aService.accounts);
             this.deleteAccModal = false;
             this.aService.select(0);
             this.selectedTab = 0;

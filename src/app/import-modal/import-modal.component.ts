@@ -253,18 +253,33 @@ export class ImportModalComponent implements OnInit, OnDestroy {
             return;
         }
         if (input !== '' && !this.busyVerifying) {
+
             this.busyActivekey = true;
+
             this.busyVerifying = true;
+
             const pkey = input.trim();
+
             this.eosjs.checkPvtKey(pkey).then((results) => {
+
                 this.publicEOS = results.publicKey;
-                this.importedAccounts = [];
+
                 this.importedAccounts = [...results.foundAccounts];
+
                 this.importedAccounts.forEach((item) => {
-                    // console.log(item);
-                    item['permission'] = item.permissions.find(p => {
-                        return p.required_auth.keys[0].key === results.publicKey;
-                    })['perm_name'];
+
+                    const foundPermission = item.permissions.find(p => {
+                        if (p.required_auth.keys.length > 0) {
+                            return p.required_auth.keys[0].key === results.publicKey;
+                        } else {
+                            return false;
+                        }
+                    });
+
+                    if (foundPermission) {
+                        item['permission'] = foundPermission.perm_name;
+                    }
+
                     if (item['refund_request']) {
                         const tempDate = item['refund_request']['request_time'] + '.000Z';
                         const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
@@ -278,6 +293,10 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                         }
                     }
                 });
+
+                // filter out non-key authorities
+                this.importedAccounts = this.importedAccounts.filter(a => a.permission);
+
                 this.pvtform.controls['private_key'].setErrors(null);
                 this.zone.run(() => {
                     this.busyVerifying = false;
