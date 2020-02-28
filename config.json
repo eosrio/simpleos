@@ -578,10 +578,10 @@
       "symbol": "EOS",
       "icon": "jungle.png",
       "precision": 4,
-      "name": "EOS JUNGLE TESTNET",
+      "name": "EOS JUNGLE TESTNET 2",
       "network": "TESTNET",
-      "firstApi": "https://jungle2.cryptolions.io:443",
-      "historyApi": "https://jungle.hyperion.eosrio.io/v2",
+      "firstApi": "https://jungle.eossweden.org",
+      "historyApi": "https://jungle.eossweden.org/v2",
       "hyperionApis": [
         "https://jungle.hyperion.eosrio.io/v2",
         "https://jungle.eosusa.news/v2",
@@ -613,13 +613,18 @@
         "eosio.msig"
       ],
       "endpoints": [
-        {
-          "url": "https://jungle2.cryptolions.io:443",
-          "owner": "Jungle 2",
+		{
+          "url": "https://jungle.eossweden.org",
+          "owner": "EOS Sweden",
+          "latency": 0
+        },
+		{
+          "url": "https://jungle.eosusa.news",
+          "owner": "EOS USA",
           "latency": 0
         },
         {
-          "url": "http://jungle2.cryptolions.io:80",
+          "url": "https://jungle2.cryptolions.io",
           "owner": "Jungle 2",
           "latency": 0
         }
