@@ -1,10 +1,10 @@
 {
-	"name": "simpleos",
+	"name": "liberland-wallet",
 	"version": "1.0.2",
-	"productName": "simpleos",
-	"appId": "io.eosrio.simpleos",
-	"compilerVersion": "DEFAULT",
-	"description": "EOSIO Blockchain Interface & Wallet",
+	"productName": "Liberland Wallet",
+	"appId": "io.eosrio.liberland-wallet",
+	"compilerVersion": "LIBERLAND",
+	"description": "Liberland Blockchain Wallet",
 	"author": {
 		"name": "EOS Rio",
 		"email": "contact@eosrio.io"
@@ -41,7 +41,7 @@
 	"private": true,
 	"main": "index.js",
 	"build": {
-		"appId": "simpleos",
+		"appId": "liberland-wallet",
 		"directories": {
 			"output": "dist",
 			"buildResources": "build"
@@ -61,24 +61,24 @@
 			"target": [
 				"dmg"
 			],
-			"icon": "icons/simpleos/icon.icns"
+			"icon": "icons/liberland/icon.icns"
 		},
 		"dmg": {
 			"sign": false
 		},
 		"linux": {
-			"executableName": "simpleos",
+			"executableName": "liberland-wallet",
 			"target": [
 				"appImage",
 				"deb"
 			],
-			"icon": "icons/simpleos",
+			"icon": "icons/liberland",
 			"category": "Network",
 			"desktop": {
-				"Name": "SimplEOS",
-				"GenericName": "SimplEOS Wallet",
-				"X-GNOME-FullName": "simpleos",
-				"Comment": "SimplEOS Blockchain Wallet",
+				"Name": "Liberland Wallet",
+				"GenericName": "Liberland Wallet",
+				"X-GNOME-FullName": "liberland-wallet",
+				"Comment": "Liberland Blockchain Wallet",
 				"Type": "Application",
 				"Terminal": "false",
 				"StartupNotify": "false",
@@ -93,7 +93,7 @@
 			"target": [
 				"nsis"
 			],
-			"icon": "icons/simpleos/icon.ico"
+			"icon": "icons/liberland/icon.ico"
 		},
 		"appx": {
 			"backgroundColor": "#232526",

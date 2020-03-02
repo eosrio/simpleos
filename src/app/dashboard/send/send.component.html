@@ -107,7 +107,7 @@
                 </div>
             </div>
             <div class="contacts-panel-body">
-                <div class="contacts-pad" style="font-size: 17px;" *ngIf="contacts.length === 0">
+                <div class="contacts-pad token-title-color" style="font-size: 17px;" *ngIf="contacts.length === 0">
                     You don't have any contacts yet :(
                 </div>
                 <ng-container *ngFor="let contact of searchedContacts | async; let last = last">

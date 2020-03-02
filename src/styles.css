@@ -426,7 +426,7 @@ body {
 /*}*/
 
 .content {
-	height: calc(100% - 4.5rem);
+	height: calc(100% - 5.1rem) !important;
 }
 
 .content-page{

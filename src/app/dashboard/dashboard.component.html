@@ -3,78 +3,65 @@
 <div class="main-container content-page">
     <div class="content-container">
         <div class="content-area">
-            <div class="clr-row row-top-background" style="margin-right: 0; ">
-                <div class="clr-col-10" style="padding-right: 0">
-                    <div class="clr-row" style="margin-right: 0;">
-                        <div class="clr-col clr-col-md {{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}"
-                             style="padding-right: 0; ">
-                            <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
-                                           [selectedIndex]="selectedTab">
-                                <mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
-                                    <ng-template mat-tab-label>
-                                        <div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
-                                                *ngIf="aService.accounts.length > 1"
-                                                [icon]="['far', 'times-circle']"
-                                                class="deleteteacc"
-                                                (click)="openRemoveAccModal(i,account)"></fa-icon>
-                                        </div>
-                                        <div style="font-size: 17px;">{{account.name}}</div>
-                                        <div
-                                                class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
-                                    </ng-template>
-                                </mat-tab>
-                            </mat-tab-group>
-                        </div>
-
-                        <div *ngIf="network.activeChain.features['addAcc']" class="clr-col-auto clr-col-md-auto"
-                             style="padding-left: 0; padding-right: 0"
-                             (click)="openImportModal()">
-                            <div class="text-center navbar-btn newaccount">
-                                <div style="padding-top: 16px">
-                                    <fa-icon [icon]="['far', 'user-plus']" size="lg"></fa-icon>
+            <div fxLayout="row" fxLayoutAlign="space-between stretch" class="row-top-background" >
+                <!--tabs-->
+                <div class="{{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}">
+                    <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
+                                   [selectedIndex]="selectedTab">
+                        <mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
+                            <ng-template mat-tab-label>
+                                <div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
+                                        *ngIf="aService.accounts.length > 1"
+                                        [icon]="['far', 'times-circle']"
+                                        class="deleteteacc"
+                                        (click)="openRemoveAccModal(i,account)"></fa-icon>
                                 </div>
-                                <div style="font-size: 15px;">ADD</div>
-                                <div style="font-size: 15px;">ACCOUNT</div>
+                                <div style="font-size: 17px;">{{account.name}}</div>
+                                <div
+                                        class="value">{{account.full_balance}} {{network.activeChain['symbol']}}</div>
+                            </ng-template>
+                        </mat-tab>
+                    </mat-tab-group>
+                </div>
+
+                <div fxLayout="row">
+                    <!--add Acc btn-->
+                    <div *ngIf="network.activeChain.features['addAcc']" (click)="openImportModal()">
+                        <div class="text-center navbar-btn newaccount">
+                            <div style="padding-top: 16px">
+                                <fa-icon [icon]="['far', 'user-plus']" size="lg"></fa-icon>
                             </div>
+                            <div style="font-size: 15px;">ADD</div>
+                            <div style="font-size: 15px;">ACCOUNT</div>
                         </div>
+                    </div>
 
-                        <div *ngIf="network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
-                             style="padding-left: 0; padding-right: 0" (click)="newAccountModal = true;initNewAcc();">
-                            <div class="text-center navbar-btn newaccount">
-                                <div style="padding-top: 16px">
-                                    <fa-icon [icon]="['far', 'user-edit']" size="lg"></fa-icon>
-                                </div>
-                                <div style="font-size: 15px;">NEW</div>
-                                <div style="font-size: 15px;">ACCOUNT</div>
+                    <!--new Acc btn-->
+                    <div *ngIf="network.activeChain.features['newAcc']" (click)="newAccountModal = true;initNewAcc();">
+                        <div class="text-center navbar-btn newaccount">
+                            <div style="padding-top: 16px">
+                                <fa-icon [icon]="['far', 'user-edit']" size="lg"></fa-icon>
                             </div>
+                            <div style="font-size: 15px;">NEW</div>
+                            <div style="font-size: 15px;">ACCOUNT</div>
                         </div>
+                    </div>
 
-                        <!--For WORBLI-->
-                        <div *ngIf="!network.activeChain.features['newAcc']" class="clr-col-auto clr-col-md-auto"
-                             style="padding-left: 0; padding-right: 0;">
+                    <!--Settings btn-->
+                    <div class="text-center navbar-btn cog" [routerLink]="['config']">
+                        <div>
+                            <fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
                         </div>
+                    </div>
 
+                    <!--About btn-->
+                    <div class="text-center navbar-btn cog" [routerLink]="['about']">
+                        <div>
+                            <fa-icon [icon]="['far','question-circle']" size="2x"></fa-icon>
+                        </div>
                     </div>
                 </div>
 
-                <div class="clr-col-2">
-                    <div class="clr-row">
-                        <div class="clr-col-6" style="padding-left: 0; padding-right: 0">
-                            <div class="text-center navbar-btn cog" [routerLink]="['config']">
-                                <div>
-                                    <fa-icon [icon]="['fal', 'cog']" size="2x"></fa-icon>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="clr-col-6" style="padding-left: 0; padding-right: 0">
-                            <div class="text-center navbar-btn cog" [routerLink]="['about']">
-                                <div>
-                                    <fa-icon [icon]="['far','question-circle']" size="2x"></fa-icon>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="content">
                 <router-outlet></router-outlet>

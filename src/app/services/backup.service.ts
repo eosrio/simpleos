@@ -1,4 +1,5 @@
 import {Injectable} from '@angular/core';
+import {environment} from '../../environments/environment';
 
 @Injectable({
 	providedIn: 'root'
@@ -10,8 +11,14 @@ export class BackupService {
 	numberOfBackups = 5;
 	bkp_folder = '';
 	automatic: string;
+	prefix = 'simpleos';
 
 	constructor() {
+
+		if (environment.COMPILERVERSION !== 'DEFAULT') {
+			this.prefix = environment.COMPILERVERSION.toLowerCase();
+		}
+
 		this.automatic = localStorage.getItem('simplEOS.autosave');
 		if (this.automatic === '' || this.automatic === null) {
 			localStorage.setItem('simplEOS.autosave', 'true');
@@ -19,7 +26,7 @@ export class BackupService {
 		}
 		if (this.automatic === 'true') {
 			if (window['remote']) {
-				this.bkp_folder = window['remote']['app'].getPath('appData') + '/simpleosAutosave';
+				this.bkp_folder = window['remote']['app'].getPath('appData') + '/' + this.prefix + 'Autosave';
 				this.initDir();
 				this.listBackups();
 			}
@@ -47,7 +54,7 @@ export class BackupService {
 		this.past_backups = [];
 		window['filesystem']['readdir'](this.bkp_folder, (err, items) => {
 			for (let i = 0; i < items.length; i++) {
-				if (items[i].split('.')[1] === 'bkp' && items[i] !== 'simpleos.bkp') {
+				if (items[i].split('.')[1] === 'bkp' && items[i] !== this.prefix + '.bkp') {
 					this.past_backups.push(items[i]);
 				}
 			}
@@ -75,7 +82,7 @@ export class BackupService {
 					bkpArr.push({key: keyLS, value: valueLS});
 				}
 			}
-			const path = this.bkp_folder + '/simpleos_' + (new Date().getTime()) + '.bkp';
+			const path = this.bkp_folder + '/' + this.prefix + '_' + (new Date().getTime()) + '.bkp';
 			window['filesystem']['writeFile'](path, JSON.stringify(bkpArr), 'utf-8', (err, data) => {
 				if (!err) {
 					localStorage.setItem('simplEOS.lastBackupTime', new Date().getTime().toString());

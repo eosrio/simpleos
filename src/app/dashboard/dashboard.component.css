@@ -1,7 +1,7 @@
 .header {
     background-color: #191919;
-    flex: 0 0 4.5rem;
-    height: 4.5rem;
+    flex: 0 0 5rem;
+    height: 5rem;
 }
 
 .content-area {
@@ -91,15 +91,16 @@
 /*material's tabs*/
 /deep/ #header-tabs .mat-tab-header {
     background-color: var(--sidenav-background);
-    height: 4.5rem;
+    /*height: 4.5rem;*/
 }
 
 /deep/ #header-tabs .mat-tab-labels {
-    height: 4.5rem;
+    /*height: 4.5rem;*/
 }
 
 /deep/ #header-tabs .mat-tab-label {
-    height: 4.5rem !important;
+    height: 5.1rem !important;
+    /*height: 4.5rem !important;*/
 }
 
 /deep/ #header-tabs .mat-tab-body-wrapper {
@@ -109,7 +110,8 @@
 
 .navbar-btn {
     background-color: var(--sidenav-background);
-    height: 4.5rem;
+    height: 5.1rem;
+    /*height: 4.5rem;*/
     color: var(--sidenav-color);
     -webkit-transition-property: color, background-color;
     transition-property: color, background-color;
@@ -149,7 +151,7 @@
 }
 
 .max-width {
-    max-width: calc(100% - 192px);
+    max-width: calc(100% - 320px);
 }
 
 .max-width2 {

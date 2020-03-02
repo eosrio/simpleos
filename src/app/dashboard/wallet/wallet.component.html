@@ -1,5 +1,7 @@
-<div class="container-fluid" style=" overflow:hidden;">
-    <div class="clr-row flex-items-xs-between" style="height: calc(100vh - 6.2rem);">
+<div class="container-fluid" style="height: 100%;  overflow:hidden;">
+    <div class="clr-row flex-items-xs-between" style="height: 100%;">
+<!--         style="height: calc(100vh - 6.2rem);"-->
+
         <!--<div >-->
         <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;" *ngIf="aService.selected.getValue().name">
             <div>
@@ -220,10 +222,9 @@
                                                     class="highlight-primary">{{item.symbol}}</span>
 											</span>
                                     <ng-container *ngIf="item.symbol === aService.activeChain['symbol']">
-										<span
-                                                *ngIf="aService.activeChain['name'] === 'EOS MAINNET'"> (${{item.amount *
-                                        aService.usd_rate | number}}
-                                            )</span>
+										<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
+                                            (${{item.amount * aService.usd_rate | number: precision}})
+                                        </span>
                                     </ng-container>
                                 </ng-container>
 
