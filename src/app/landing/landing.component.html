@@ -47,9 +47,6 @@
                     </button>
 
                     <div class="card check-card">
-                        <!--<div class="card-block fit-content">-->
-                        <!---->
-                        <!--</div>-->
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer" *ngFor="let account of accounts">
                                 <span style="float: left;">You have: <span
@@ -70,9 +67,7 @@
                     <div class="clr-col-md-12">
                         <div class="card info-card">
 
-                            <div class="card-header title card-title-color"
-                                 *ngIf="app.compilerVersion === 'DEFAULT'"
-                                 [ngStyle]="{'display':(app.compilerVersion === 'DEFAULT' ? 'inherit' : 'none')}">
+                            <div class="card-header title card-title-color">
                                 Connected to
                                 <mat-form-field class="chain-selector example-full-width select-father"
                                                 style="width: 240px;">
@@ -92,10 +87,14 @@
                             <div class="card-block">
                                 <div class="clr-row" style="margin-left: 0;">
 
+                                    <button class="btn btn-primary" style="margin: 30px 0 20px;">CHANGE ENDPOINT</button>
+                                    <button class="btn btn-primary" style="margin: 30px 0 20px;">CUSTOM CHAIN</button>
+
                                     <div class="text-left advanced"><span class="error">Advanced Option:</span> you can
                                         also try
                                         to connect to
-                                        another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                        another endpoint <span class="clicked highlight-primary"
+                                                               (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                     </div>
 
                                     <mat-form-field class="public-input" style="overflow: inherit;">
@@ -146,6 +145,7 @@
                     </div>
 
                     <div class="card info-card" *ngIf="verifyPanel">
+
                         <div class="card-block">
                             <div>You can do a quick check of your account here</div>
                             <mat-form-field class="public-input">
@@ -155,33 +155,42 @@
                                     ctrl c + ctrl v to copy & paste
                                 </mat-hint>
                             </mat-form-field>
-                            <button class="btn btn-info-outline btn-check" style="margin-top: 10px" (click)="checkAccount()"
+                            <button class="btn btn-info-outline btn-check" style="margin-top: 10px"
+                                    (click)="checkAccount()"
                                     [disabled]="!publicEOS">
                                 Check
                             </button>
                         </div>
+
                         <ng-container *ngIf="checkerr === ''">
                             <div class="card-footer black-white" *ngFor="let account of accounts">
-                                <span style="float: left;">Account:
-									<span class="highlight-primary">{{account.name}}</span>
+                                <span style="float: left;">
+                                    Account:
+									<span class="highlight-primary">
+                                        {{account.name}}
+                                    </span>
 									- balance:
-									<span class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span>
+									<span class="highlight-primary">
+                                        {{account.full_balance}} {{network.activeChain['symbol']}}
+                                    </span>
 								</span>
                             </div>
                         </ng-container>
+
                         <div class="card-footer" *ngIf="checkerr === 'invalid'">
                             <span class="red">Invalid public key</span>
                         </div>
+
                         <div class="card-footer" *ngIf="checkerr === 'no_account'">
                             <span class="red">No account found :(</span>
                         </div>
+
                     </div>
+
                     <div class="clr-row" style="justify-content: center;">
                         <div class="clr-col-md-12">
                             <div class="card info-card">
-                                <div class="card-header title card-title-color"
-                                     *ngIf="app.compilerVersion === 'DEFAULT'"
-                                     [ngStyle]="{'display':(app.compilerVersion === 'LIBERLAND'?'none':'inherit')}">
+                                <div class="card-header title card-title-color">
                                     Connected to
                                     <mat-form-field class="chain-selector example-full-width select-father"
                                                     style="width: 240px;">
@@ -209,19 +218,34 @@
                                 </div>
                                 <div class="card-block">
                                     <div class="clr-row" style="margin-left: 0;">
+
+                                        <button class="btn btn-primary"
+                                                style="margin: 30px 0 20px;"
+                                                (click)="endpointModal=true;">
+                                            CHANGE ENDPOINT
+                                        </button>
+
+                                        <button class="btn btn-primary"
+                                                style="margin: 30px 0 20px;">
+                                            CUSTOM CHAIN
+                                        </button>
+
                                         <div class="text-left advanced"><span class="warn">Advanced Option:</span> you
                                             can also try
                                             to connect to
-                                            another endpoint <span class="clicked highlight-primary" (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                            another endpoint <span class="clicked highlight-primary"
+                                                                   (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
                                         </div>
                                         <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
                                             <fa-layers class="mt-2 mb-1">
-                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" class="highlight-primary"></fa-icon>
+                                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                                         class="highlight-primary"></fa-icon>
                                             </fa-layers>
                                         </div>
                                         <div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
                                              style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
-                                            <span style="padding-left: 17px; font-size: 18px;" class="highlight-primary">Connecting...</span>
+                                            <span style="padding-left: 17px; font-size: 18px;"
+                                                  class="highlight-primary">Connecting...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -234,7 +258,8 @@
                          *ngIf="app.compilerVersion === 'DEFAULT'">
                     <div class="credits">Made with
                         <fa-icon [icon]="['fas', 'heart']"></fa-icon>
-                        by <span [ngClass]="aService.activeChain['name'] === 'TELOS MAINNET' ? 'highlight-accent' : 'highlight-primary'">
+                        by <span
+                                [ngClass]="aService.activeChain['name'] === 'TELOS MAINNET' ? 'highlight-accent' : 'highlight-primary'">
                             EOS Rio
                         </span>
                     </div>
@@ -255,57 +280,6 @@
     </div>
 </div>
 
-
-<!--IMPORT LEDGER ACCOUNT-->
-<!--<clr-wizard #ledgerwizard [(clrWizardOpen)]="importFromLedger" [clrWizardSize]="'lg'">-->
-<!--	<clr-wizard-title>Ledger Access</clr-wizard-title>-->
-<!--	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>-->
-<!--	<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>-->
-<!--	<clr-wizard-button [type]="'next'">Next</clr-wizard-button>-->
-<!--	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>-->
-<!--	<clr-wizard-page [clrWizardPageNextDisabled]="ledgerService.deviceName === ''"-->
-<!--					 (clrWizardPageOnCommit)="checkLedgerReady()"-->
-<!--					 [clrWizardPagePreventDefault]="true">-->
-<!--		<ng-template clrPageTitle>Detect Device</ng-template>-->
-<!--		<ng-container *ngIf="ledgerService.deviceName !== ''">-->
-<!--			<h5 class="black-white">{{ledgerService.deviceName}}</h5>-->
-<!--			<ng-container *ngIf="!ledgerService.checkingApp">-->
-<!--				<h5 *ngIf="ledgerService.appReady" class="black-white">-->
-<!--					EOS App ready!-->
-<!--				</h5>-->
-<!--				<h5 *ngIf="!ledgerService.appReady" class="black-white">-->
-<!--					Please open the EOS app on your {{ledgerService.deviceName}}-->
-<!--				</h5>-->
-<!--			</ng-container>-->
-<!--		</ng-container>-->
-<!--		<ng-container *ngIf="ledgerService.deviceName === ''">-->
-<!--			<h5 class="black-white">device not found</h5>-->
-<!--		</ng-container>-->
-<!--	</clr-wizard-page>-->
-
-<!--	<clr-wizard-page (clrWizardPageOnLoad)="getSlots()">-->
-<!--		<ng-template clrPageTitle>Select Accounts</ng-template>-->
-<!--		<h5 class="black-white">Stored Accounts:</h5>-->
-<!--		<div *ngFor="let elem of ledgerService.ledgerAccounts">-->
-<!--			<span><strong>Slot {{elem.slot}}:</strong></span>-->
-<!--			<span>{{elem.key}}</span>-->
-<!--			<ng-container *ngIf="elem.accounts.length === 0">-->
-<!--				<span>No accounts found on this key</span>-->
-<!--			</ng-container>-->
-<!--			<ng-container *ngIf="elem.accounts.length > 0">-->
-<!--				<div *ngFor="let acct of elem.accounts">-->
-<!--					<span>{{acct}}</span>-->
-<!--				</div>-->
-<!--			</ng-container>-->
-<!--		</div>-->
-<!--		<div>-->
-<!--			Select custom slot <input placeholder="slot number">-->
-<!--			<button type="button">OK</button>-->
-<!--		</div>-->
-<!--	</clr-wizard-page>-->
-<!--</clr-wizard>-->
-<!--IMPORT LEDGER ACCOUNT END-->
-
 <!--IMPORT EXISTING WALLET-->
 <app-import-modal></app-import-modal>
 <!--IMPORT EXISTING WALLET END-->
@@ -325,7 +299,8 @@
         <h5>Create your eos account via a smart contract.</h5>
         <h5 class="highlight"><strong>How does it work?</strong></h5>
         <h5><span class="highlight-primary">1.</span> Send EOS from an exchange to our smart contract <a
-                class="highlight-primary" (click)="openGit()" style="cursor: pointer;">eosriosignup</a>. This smart contract
+                class="highlight-primary" (click)="openGit()" style="cursor: pointer;">eosriosignup</a>. This smart
+            contract
             is open source and anyone can verify its contents.</h5>
         <h5><span class="highlight-primary">2.</span> Our smart contract will create the account for you. No
             fees.</h5>
@@ -364,7 +339,8 @@
 
     <clr-wizard-page [clrWizardPageNextDisabled]="activepub === '' || ownerpub === '' || (generated?!agreeKeys:false)">
         <ng-template clrPageTitle>Define Keys</ng-template>
-        <h5 class="bold highlight">At this point, we recommend you <span class="error">disconnet from the internet</span></h5>
+        <h5 class="bold highlight">At this point, we recommend you <span
+                class="error">disconnet from the internet</span></h5>
         <h5>Selected account: <span class="highlight-primary">{{accountname.toLowerCase()}}</span></h5>
         <h5>Please enter your desired public keys or click the <span
                 class="highlight-primary" (click)="generateKeys()"> Generate Key Pairs </span>
@@ -420,7 +396,8 @@
         </div>
         <div style="border-bottom: 1px solid #0079b8; margin: 10px 0;"></div>
         <div><strong>Total Amount:</strong><span
-                class="highlight-primary"> {{1.25 + (ram.ramPriceEOS * (4096 / 1024)) * 1.05 | number: '1.0-4'}} EOS</span></div>
+                class="highlight-primary"> {{1.25 + (ram.ramPriceEOS * (4096 / 1024)) * 1.05 | number: '1.0-4'}}
+            EOS</span></div>
         <div style="margin-top: 5px;">*If you transfer more than this amount the difference will remain
             as liquid tokens in your new account
         </div>
@@ -471,13 +448,15 @@
                     </div>
                 </div>
             </div>
-            <h5><span class="highlight-primary">3.</span> After you make the transfer, check <a class="highlight-primary"
-                                                                                                           (click)="openTX(accountname.toLowerCase())"
-                                                                                                           style="cursor: pointer">{{accountname.toLowerCase()}}</a>
+            <h5><span class="highlight-primary">3.</span> After you make the transfer, check <a
+                    class="highlight-primary"
+                    (click)="openTX(accountname.toLowerCase())"
+                    style="cursor: pointer">{{accountname.toLowerCase()}}</a>
                 on a blockexplorer. After that, you can login in SimplEOS on the <strong>'IMPORT EXISTING KEY'</strong>
                 button</h5>
             <h5 style="border-top: 1px solid; padding-top: 14px;">If your exchange doesn't allow long memos (e.g.
-                Binance) or if the transaction fails for any reason <a class="highlight-primary" (click)="relayMethod = true"
+                Binance) or if the transaction fails for any reason <a class="highlight-primary"
+                                                                       (click)="relayMethod = true"
                                                                        style="cursor: pointer">click
                     here to try our ALTERNATIVE METHOD</a></h5>
             <!--<h5>Need help? Check our <span class="highlight-primary"><a (click)="openFaq()"> FAQ</a></span> !</h5>-->
@@ -598,7 +577,8 @@
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
-        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair</button>
+        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair
+        </button>
 
         <fa-layers *ngIf="generating2" class="highlight-primary fa-fw">
             <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
@@ -655,37 +635,37 @@
         <span class="highlight-primary">Network Options</span>
     </h3>
     <div class="modal-body">
-<!--        <div class="card info-card mat-elevation-z2">-->
-<!--            <div class="card-block">-->
-                <div class="info2">Connect to another endpoint.</div>
-                <div class="card chains-card">
-                    <ng-container *ngFor="let ep of network.validEndpoints">
-                        <div class="card-block chain-section {{network.selectedEP() === ep.url?'selected':''}}"
-                             (click)="setEndPoint(ep.url);"
-                             *ngIf="ep.latency !== -1">
-                            {{ep.url}}
-                            <span style="float:right">latency: {{ep.latency}} ms</span>
-                        </div>
-                    </ng-container>
+        <!--        <div class="card info-card mat-elevation-z2">-->
+        <!--            <div class="card-block">-->
+        <div class="info2">Connect to another endpoint.</div>
+        <div class="card chains-card">
+            <ng-container *ngFor="let ep of network.validEndpoints">
+                <div class="card-block chain-section {{network.selectedEP() === ep.url?'selected':''}}"
+                     (click)="setEndPoint(ep.url);"
+                     *ngIf="ep.latency !== -1">
+                    {{ep.url}}
+                    <span style="float:right">latency: {{ep.latency}} ms</span>
                 </div>
-                <a aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                    <button
-                            class="btn btn-info-outline mt-1" (click)="network.connect(true); endpointModal=false;">Auto
-                    </button>
-                    <span class="tooltip-content">Automatically connects on the<br> fastest endpoint for you</span>
-                </a>
+            </ng-container>
+        </div>
+        <a aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+            <button
+                    class="btn btn-info-outline mt-1" (click)="network.connect(true); endpointModal=false;">Auto
+            </button>
+            <span class="tooltip-content">Automatically connects on the<br> fastest endpoint for you</span>
+        </a>
 
-                <div>
-                    <mat-form-field class="public-input" style="overflow: inherit;">
-                        <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
-                    </mat-form-field>
-                    <button class="btn btn-info-outline btn-check" (click)="customConnect()" [disabled]="!endpoint"
-                            style="clear: both;">
-                        Connect
-                    </button>
-                </div>
-<!--            </div>-->
-<!--        </div>-->
+        <div>
+            <mat-form-field class="public-input" style="overflow: inherit;">
+                <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
+            </mat-form-field>
+            <button class="btn btn-info-outline btn-check" (click)="customConnect()" [disabled]="!endpoint"
+                    style="clear: both;">
+                Connect
+            </button>
+        </div>
+        <!--            </div>-->
+        <!--        </div>-->
     </div>
     <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
 
