@@ -12,12 +12,11 @@ const {
     protocol,
     shell,
     powerMonitor,
-    ipcMain,
-    webContents
+    ipcMain
 } = require('electron');
 
 const path = require('path');
-const {version, productName, name, compilerVersion} = require('./package.json');
+const {version, productName, compilerVersion} = require('./package.json');
 const url = require('url');
 const {spawn} = require('child_process');
 const contextMenu = require('electron-context-menu');
@@ -31,7 +30,7 @@ const {ClaimRewardsService} = require('./electron_modules/claim-rewards.js');
 
 class SimpleosWallet {
 
-    // wax auto claim manager
+    // wax auto claim manager (only loaded on DEFAULT compiler)
     claimRW;
 
     // ledger hardware wallet connector
@@ -54,14 +53,20 @@ class SimpleosWallet {
     deepLink;
     isEnableAutoClaim = false;
     PROTOCOL_PREFIX = 'simpleos';
-    simpleosAutoLauncher = new AutoLaunch({name: 'simpleos'});
+    simpleosAutoLauncher;
     devMode = process.mainModule.filename.indexOf('app.asar') === -1;
     loginOpts = app.getLoginItemSettings({
         args: ['--autostart'],
     });
 
     constructor() {
-        this.claimRW = new ClaimRewardsService(this);
+        if (compilerVersion === 'DEFAULT') {
+            this.simpleosAutoLauncher = new AutoLaunch({name: 'simpleos'});
+            this.claimRW = new ClaimRewardsService(this);
+        } else {
+            app.setLoginItemSettings({openAtLogin: false, args: ['--autostart']});
+            app.setLoginItemSettings({openAtLogin: false});
+        }
     }
 
     launchServices() {
@@ -82,39 +87,37 @@ class SimpleosWallet {
     init() {
         app.allowRendererProcessReuse = true;
         app.getVersion = () => version;
-
         this.devtools = args.some(val => val === '--devtools');
         this.debug = args.some(val => val === '--debug');
         this.serve = args.some(val => val === '--serve');
+        this.isAutoLaunch = this.loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
 
-        this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
-        console.log('Developer Mode:', this.devMode);
+        if (this.claimRW) {
+            this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
+            console.log('Developer Mode:', this.devMode);
+            this.claimRW.writeLog(
+                `Auto Launcher: ${JSON.stringify(this.simpleosAutoLauncher)}`,
+            );
+            this.simpleosAutoLauncher.opts.appPath += ' --autostart';
+            this.simpleosAutoLauncher.isEnabled().then((status) => {
+                console.log('AUTO_LAUNCH:', status);
+                if (status) {
+                    console.log('Auto launch already enabled!');
+                    return;
+                }
+                if (!this.devMode) {
+                    console.log('Enabling auto-launch!');
+                    this.simpleosAutoLauncher.enable();
+                }
+            }).catch(function (err) {
+                console.log(err);
+            });
+            app.setLoginItemSettings({
+                openAtLogin: !this.devMode,
+                args: ['--autostart'],
+            });
+        }
 
-        this.claimRW.writeLog(
-            `Auto Launcher: ${JSON.stringify(this.simpleosAutoLauncher)}`,
-        );
-
-        this.simpleosAutoLauncher.opts.appPath += ' --autostart';
-
-        this.simpleosAutoLauncher.isEnabled().then((status) => {
-            console.log('AUTO_LAUNCH:', status);
-            if (status) {
-                console.log('Auto launch already enabled!');
-                return;
-            }
-            if (!this.devMode) {
-                console.log('Enabling auto-launch!');
-                this.simpleosAutoLauncher.enable();
-            }
-        }).catch(function (err) {
-            console.log(err);
-        });
-        app.setLoginItemSettings({
-            openAtLogin: !this.devMode,
-            args: ['--autostart'],
-        });
-        this.isAutoLaunch = this.loginOpts.wasOpenedAtLogin ||
-            args.some(val => val === '--autostart');
         contextMenu();
     }
 
@@ -160,20 +163,20 @@ class SimpleosWallet {
     }
 
     run() {
-        // Main startup logic
-        if (this.isAutoLaunch) {
+        if (this.isAutoLaunch && this.claimRW) {
             this.runAutoLaunchMode();
         } else {
             this.launchApp();
-            this.claimRW.autoClaimCheck();
-
-            if (this.isEnableAutoClaim) {
-                if (!(fs.existsSync(this.claimRW.lockAutoLaunchFile)) && productName ===
-                    'simpleos') {
-                    spawn(process.execPath, ['--autostart'], {
-                        detached: true,
-                        stdio: ['ignore', 'ignore', 'ignore'],
-                    }).unref();
+            if (this.claimRW) {
+                this.claimRW.autoClaimCheck();
+                if (this.isEnableAutoClaim) {
+                    if (!(fs.existsSync(this.claimRW.lockAutoLaunchFile)) && productName ===
+                        'simpleos') {
+                        spawn(process.execPath, ['--autostart'], {
+                            detached: true,
+                            stdio: ['ignore', 'ignore', 'ignore'],
+                        }).unref();
+                    }
                 }
             }
         }
@@ -217,7 +220,9 @@ class SimpleosWallet {
                 break;
             }
             case 'darwin': {
-                this.claimRW.writeLog(`unfocus `);
+                if (this.claimRW) {
+                    this.claimRW.writeLog(`unfocus `);
+                }
                 Menu.sendActionToFirstResponder('hide:');
                 break;
             }
@@ -242,29 +247,32 @@ class SimpleosWallet {
     }
 
     launchApp() {
-        const gotTheLock = app.requestSingleInstanceLock();
-        this.claimRW.writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
-            this.claimRW.lockLaunchFile))} | The LOCK: ${gotTheLock}`);
-        if (fs.existsSync(this.claimRW.lockLaunchFile)) {
-            if (gotTheLock) {
-                this.claimRW.unlinkLLock();
-            } else {
-                console.log('quiting');
-                app.quit();
-                return;
-            }
-        }
-        this.appendLock();
-
-        app.on('second-instance', () => {
-            console.log('launching second instance...');
-            if (this.win) {
-                if (this.win.isMinimized()) {
-                    this.win.restore();
+        if (this.claimRW) {
+            const gotTheLock = app.requestSingleInstanceLock();
+            this.claimRW.writeLog(`On Launching File LAUNCH: ${(fs.existsSync(
+                this.claimRW.lockLaunchFile))} | The LOCK: ${gotTheLock}`);
+            if (fs.existsSync(this.claimRW.lockLaunchFile)) {
+                if (gotTheLock) {
+                    this.claimRW.unlinkLLock();
+                } else {
+                    console.log('quiting');
+                    app.quit();
+                    return;
                 }
-                this.win.focus();
             }
-        });
+
+            this.appendLock();
+
+            app.on('second-instance', () => {
+                console.log('launching second instance...');
+                if (this.win) {
+                    if (this.win.isMinimized()) {
+                        this.win.restore();
+                    }
+                    this.win.focus();
+                }
+            });
+        }
 
         app.on('ready', () => {
             console.log('Electron ready');
@@ -273,9 +281,11 @@ class SimpleosWallet {
         });
 
         app.on('window-all-closed', () => {
-            this.claimRW.writeLog(`Quitting Application...`);
-            this.claimRW.clearLock();
-            this.claimRW.unlinkLLock();
+            if (this.claimRW) {
+                this.claimRW.writeLog(`Quitting Application...`);
+                this.claimRW.clearLock();
+                this.claimRW.unlinkLLock();
+            }
             app.quit();
         });
 

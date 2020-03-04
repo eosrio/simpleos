@@ -1,9 +1,10 @@
 <div class="container-fluid" style="height: 100%;  overflow:hidden;">
     <div class="clr-row flex-items-xs-between" style="height: 100%;">
-<!--         style="height: calc(100vh - 6.2rem);"-->
+        <!--         style="height: calc(100vh - 6.2rem);"-->
 
         <!--<div >-->
-        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;" *ngIf="aService.selected.getValue().name">
+        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;"
+             *ngIf="aService.selected.getValue().name">
             <div>
                 <div class="balance free-title">
                     BALANCE
@@ -556,7 +557,13 @@
                     <ng-template pTemplate="emptymessage" let-columns>
                         <tr>
                             <td [attr.colspan]="6">
-                                No records found
+                                <fa-layers *ngIf="loading" class="mt-2 mb-1">
+                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                             class="highlight-accent"></fa-icon>
+                                </fa-layers>
+                                <span *ngIf="!loading">
+                                    No records found
+                                </span>
                             </td>
                         </tr>
                     </ng-template>
@@ -572,7 +579,7 @@
                     <ng-container *ngIf="aService.totalAssetsSum !== 0">
                         <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" style="font-size: 16px;">Total:
                             ${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
-                              '1.2-2'}}
+                                '1.2-2'}}
                         </div>
                         <div *ngIf="aService.activeChain.name !== 'EOS MAINNET'" style="font-size: 16px;">Total:
                             {{ fullBalance | number: '1.2-2'}}
