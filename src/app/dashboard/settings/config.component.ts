@@ -118,10 +118,10 @@ export class ConfigComponent implements OnInit {
         this.showpk = false;
         this.managerKeys = false;
         this.passForm = this.fb.group({
-            oldpass: ['', [Validators.required, Validators.minLength(10)]],
+            oldpass: ['', [Validators.required, Validators.minLength(4)]],
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]]
             })
         });
         this.pinForm = this.fb.group({

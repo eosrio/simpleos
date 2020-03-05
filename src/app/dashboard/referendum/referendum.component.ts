@@ -96,13 +96,13 @@ export class ReferendumComponent implements OnInit {
 		});
 
 		this.confirmvoteForm = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]]
+			pass: ['', [Validators.required, Validators.minLength(4)]]
 		});
 		this.confirmunvoteForm = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]]
+			pass: ['', [Validators.required, Validators.minLength(4)]]
 		});
 		this.confirmProposalForm = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]]
+			pass: ['', [Validators.required, Validators.minLength(4)]]
 		});
 
 		this.optionsV1 = 'Choose an option!';

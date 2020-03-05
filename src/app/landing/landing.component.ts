@@ -201,15 +201,15 @@ export class LandingComponent implements OnInit, OnDestroy {
 
         this.passform = this.fb.group({
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]]
             })
         });
 
         this.passformexodus = this.fb.group({
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]]
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]]
             })
         });
 

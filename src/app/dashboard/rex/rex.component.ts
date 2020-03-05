@@ -178,7 +178,7 @@ export class RexComponent implements OnDestroy {
 
 		// Setup Forms
 		this.passFormVote = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]]
+			pass: ['', [Validators.required, Validators.minLength(4)]]
 		});
 		this.buyForm = this.fb.group({
 			EOSamount: ['', Validators.min(0)],

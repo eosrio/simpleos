@@ -4,7 +4,7 @@
 		<div class="clr-col-lg-7">
 
 			<div class="card info-card">
-				<div class="card-header title card-title-color" style="padding-top: 12px">
+				<div class="card-header title card-title-color" style="padding-top: 12px; margin-bottom: -7px">
 					Connected to
 					<mat-form-field class="chain-selector example-full-width" style="width: 207px;">
 						<mat-select [value]="network.activeChain['id']"
@@ -18,6 +18,22 @@
 							</mat-optgroup>
 						</mat-select>
 					</mat-form-field>
+				</div>
+				<div class="card-block">
+					<div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="7px">
+						<div class="advanced text-faded">Advanced option:</div>
+						<div>
+							<a class="clicked highlight-primary">
+								CUSTOM CHAIN
+							</a>
+							<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+									 style="font-size: 15px;"
+									 [matTooltip]="'Connect to a custom EOSIO chain.' + '\n' +
+													'Option generally used by developers.'"
+									 matTooltipClass="black-tooltip">
+							</fa-icon>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -45,7 +61,8 @@
 						</div>
 						<div class="clr-col-auto">
 							<button class="btn btn-info-outline mt-1" (click)="network.connect(true)"
-									pTooltip="Automatically connects on the fastest endpoint for you"
+									matTooltip="Automatically connects on the fastest endpoint for you"
+									matTooltipClass="black-tooltip" matTooltipPosition="right"
 									style="font-weight: 700">Auto
 							</button>
 						</div>
@@ -286,9 +303,9 @@
 				<fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
 						 (click)="pass.type = 'password'"></fa-icon>
 				<mat-hint align="start">
-					Min 10 characters
+					Min 4 characters
 				</mat-hint>
-				<mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
+				<mat-hint align="end">{{pass.value.length}} / 4+</mat-hint>
 			</mat-form-field>
 			<mat-form-field style="margin-top: 19px" class="pass-input">
 				<input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
