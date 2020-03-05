@@ -55,8 +55,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     selectedVotes: any[];
     wrongpass: string;
     frmForProxy: FormGroup;
-    passForm: FormGroup;
-    passFormStake: FormGroup;
     config: ToasterConfig;
     numberMask = createNumberMask({
         prefix: '',
@@ -177,14 +175,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             name: '',
         };
         this.selectedVotes = [];
+
         this.frmForProxy = this.fb.group({
             proxyName: ['', [Validators.required]],
-        });
-        this.passForm = this.fb.group({
-            pass: ['', [Validators.required, Validators.minLength(10)]],
-        });
-        this.passFormStake = this.fb.group({
-            pass: ['', [Validators.required, Validators.minLength(10)]],
         });
 
         this.subscriptions.push(
