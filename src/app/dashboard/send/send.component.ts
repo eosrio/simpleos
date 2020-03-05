@@ -123,7 +123,7 @@ export class SendComponent implements OnInit, OnDestroy {
             search: ['']
         });
         this.confirmForm = this.fb.group({
-            pass: ['', [Validators.required, Validators.minLength(10)]]
+            pass: ['', [Validators.required, Validators.minLength(4)]]
         });
         this.contacts = [];
         this.loadContacts();

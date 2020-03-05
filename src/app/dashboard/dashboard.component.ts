@@ -143,8 +143,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.passform = this.fb.group({
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]],
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]],
             }),
         });
 
@@ -156,7 +156,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         this.submitTXForm = this.fb.group({
-            pass: ['', [Validators.required, Validators.minLength(10)]],
+            pass: ['', [Validators.required, Validators.minLength(4)]],
         });
 
         this.pvtform = this.fb.group({
@@ -165,8 +165,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.passform2 = this.fb.group({
             matchingPassword: this.fb.group({
-                pass1: ['', [Validators.required, Validators.minLength(10)]],
-                pass2: ['', [Validators.required, Validators.minLength(10)]],
+                pass1: ['', [Validators.required, Validators.minLength(4)]],
+                pass2: ['', [Validators.required, Validators.minLength(4)]],
             }),
         });
 

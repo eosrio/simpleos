@@ -46,24 +46,6 @@
                         &nbsp;RETRY
                     </button>
 
-                    <div class="card check-card">
-                        <ng-container *ngIf="checkerr === ''">
-                            <div class="card-footer" *ngFor="let account of accounts">
-                                <span style="float: left;">You have: <span
-                                        class="highlight-primary">{{account.full_balance}} {{network.activeChain['symbol']}}</span></span>
-                                <!--CSTAM-->
-                                <span style="float: right;">Account name: <span
-                                        class="highlight-primary">{{account.name}}</span></span>
-                            </div>
-                        </ng-container>
-                        <div class="card-footer" *ngIf="checkerr === 'invalid'">
-                            <span class="red">Invalid public key</span>
-                        </div>
-                        <div class="card-footer" *ngIf="checkerr === 'no_account'">
-                            <span class="red">No account found :(</span>
-                        </div>
-                    </div>
-
                     <div class="clr-col-md-12">
                         <div class="card info-card">
 
@@ -73,7 +55,6 @@
                                                 style="width: 240px;">
                                     <mat-select [value]="network.activeChain['id']"
                                                 (selectionChange)="changeChain($event)">
-                                        <!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
                                         <mat-option *ngFor="let chain of network.defaultChains" class="chain-option"
                                                     [value]="chain.id">
                                             <img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
@@ -85,27 +66,45 @@
                             </div>
 
                             <div class="card-block">
-                                <div class="clr-row" style="margin-left: 0;">
-
-                                    <button class="btn btn-primary" style="margin: 30px 0 20px;">CHANGE ENDPOINT</button>
-                                    <button class="btn btn-primary" style="margin: 30px 0 20px;">CUSTOM CHAIN</button>
-
-                                    <div class="text-left advanced"><span class="error">Advanced Option:</span> you can
-                                        also try
-                                        to connect to
-                                        another endpoint <span class="clicked highlight-primary"
-                                                               (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
-                                    </div>
-
-                                    <mat-form-field class="public-input" style="overflow: inherit;">
+                                <div class="clr-row" style="margin-left: 0; width: 100%;">
+                                    <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="10px">
+                                    <mat-form-field class="public-input" style="overflow: inherit;" fxFlex="grow">
                                         <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
                                     </mat-form-field>
 
-                                    <button class="btn btn-info-outline btn-check" (click)="customConnect()"
-                                            [disabled]="!endpoint"
-                                            style="clear: both;">
+                                    <button class="btn btn-info-outline" (click)="customConnect()" fxFlex="25"
+                                            [disabled]="!endpoint" style="margin-right: 5px;">
                                         Connect
                                     </button>
+                                    </div>
+
+                                    <div style="margin-top: -15px; margin-bottom: 20px;">
+                                        <a class="clicked highlight-primary"  (click)="endpointModal=true;">
+                                            ENDPOINT OPTIONS
+                                        </a>
+                                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                 style="font-size: 15px;"
+                                                 [matTooltip]="'Having trouble connecting?' + '\n' +
+                                                'Your connection is too slow?' + '\n' +
+                                                'Connect to another endpoint'"
+                                                 matTooltipClass="black-tooltip">
+                                        </fa-icon>
+                                    </div>
+
+                                    <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="10px">
+                                        <div class="text-left advanced error">Advanced Option:</div>
+                                        <div>
+                                            <a class="clicked highlight-primary">
+                                                CUSTOM CHAIN
+                                            </a>
+                                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                     style="font-size: 15px;"
+                                                     [matTooltip]="'Connect to a custom EOSIO chain.' + '\n' +
+                                                        'Option generally used by developers.'"
+                                                     matTooltipClass="black-tooltip">
+                                            </fa-icon>
+                                        </div>
+                                    </div>
 
                                 </div>
                             </div>
@@ -123,9 +122,6 @@
                                 <button class="btn btn-inverse-outline btn-block" (click)="openImportModal()">
                                     Import existing key
                                 </button>
-                                <button class="btn btn-inverse-outline btn-block" (click)="importBKP = true">
-                                    Import Backup
-                                </button>
                             </div>
                             <div class="clr-col-md-12 clr-col-lg-6">
                                 <button class="btn btn-inverse-outline btn-block"
@@ -133,9 +129,18 @@
                                         (click)="newWallet = true">
                                     Request New Account
                                 </button>
+                            </div>
+                            <div class="clr-col-md-12 clr-col-lg-6">
+                                <button class="btn btn-inverse-outline btn-block" (click)="importBKP = true">
+                                    Import Backup
+                                </button>
+                            </div>
+                            <div class="clr-col-md-12 clr-col-lg-6">
                                 <button class="btn btn-inverse-outline btn-block" (click)="verifyPanel = !verifyPanel">
                                     Verify Account
                                 </button>
+                            </div>
+                            <div class="clr-col-md-12 clr-col-lg-6">
                                 <button class="btn btn-inverse-outline btn-block" (click)="newKeys = true">
                                     Generate Keys
                                 </button>
@@ -148,18 +153,21 @@
 
                         <div class="card-block">
                             <div>You can do a quick check of your account here</div>
-                            <mat-form-field class="public-input">
-                                <input matInput type="text" placeholder="{{network.activeChain['name']}} Public key"
-                                       [(ngModel)]="publicEOS" (keyup.enter)="checkAccount()">
-                                <mat-hint align="start">
-                                    ctrl c + ctrl v to copy & paste
-                                </mat-hint>
-                            </mat-form-field>
-                            <button class="btn btn-info-outline btn-check" style="margin-top: 10px"
-                                    (click)="checkAccount()"
-                                    [disabled]="!publicEOS">
-                                Check
-                            </button>
+                            <div fxLayout="row" fxLayoutGap="10px" fxLayoutAlign="start center">
+                                <mat-form-field class="public-input" fxFlex="grow">
+                                    <input matInput type="text" placeholder="{{network.activeChain['name']}} Public key"
+                                           [(ngModel)]="publicEOS" (keyup.enter)="checkAccount()">
+                                    <mat-hint align="start">
+                                        ctrl c + ctrl v to copy & paste
+                                    </mat-hint>
+                                </mat-form-field>
+                                <div>
+                                    <button class="btn btn-info-outline btn-check" (click)="checkAccount()"
+                                            [disabled]="!publicEOS" style="margin-right: 0;">
+                                        Check
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <ng-container *ngIf="checkerr === ''">
@@ -207,34 +215,37 @@
                                                     {{ chain.name }}
                                                 </mat-option>
                                             </mat-optgroup>
-                                            <!--							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"-->
-                                            <!--										[value]="chain.id">-->
-                                            <!--								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"-->
-                                            <!--									 class="chain-icon"/>-->
-                                            <!--								{{ chain.name }}-->
-                                            <!--							</mat-option>-->
                                         </mat-select>
                                     </mat-form-field>
                                 </div>
                                 <div class="card-block">
-                                    <div class="clr-row" style="margin-left: 0;">
+                                    <div class="clr-row" style="margin-left: 0; width: 100%;">
 
-                                        <button class="btn btn-primary"
-                                                style="margin: 30px 0 20px;"
-                                                (click)="endpointModal=true;">
-                                            CHANGE ENDPOINT
-                                        </button>
-
-                                        <button class="btn btn-primary"
-                                                style="margin: 30px 0 20px;">
-                                            CUSTOM CHAIN
-                                        </button>
-
-                                        <div class="text-left advanced"><span class="warn">Advanced Option:</span> you
-                                            can also try
-                                            to connect to
-                                            another endpoint <span class="clicked highlight-primary"
-                                                                   (click)="endpointModal=true;">CLICK HERE FOR OPTIONS</span>
+                                        <div class="text-left advanced warn" >Advanced network Options:</div>
+                                        <div fxLayout="row" fxLayoutAlign="space-between center" fxFlex="grow" style="margin-top: 7px">
+                                            <div>
+                                                <a class="clicked highlight-primary"  (click)="endpointModal=true;">
+                                                CHANGE ENDPOINT
+                                                </a>
+                                                <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                         style="font-size: 15px;"
+                                                         [matTooltip]="'Having trouble connecting?' + '\n' +
+                                                'Your connection is too slow?' + '\n' +
+                                                'Connect to another endpoint'"
+                                                         matTooltipClass="black-tooltip">
+                                                </fa-icon>
+                                            </div>
+                                            <div>
+                                                <a class="clicked highlight-primary">
+                                                    CUSTOM CHAIN
+                                                </a>
+                                                <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                         style="font-size: 15px;"
+                                                         [matTooltip]="'Connect to a custom EOSIO chain.' + '\n' +
+                                                        'Option generally used by developers.'"
+                                                         matTooltipClass="black-tooltip">
+                                                </fa-icon>
+                                            </div>
                                         </div>
                                         <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
                                             <fa-layers class="mt-2 mb-1">

@@ -139,9 +139,9 @@
                 <fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
                          (click)="pass.type = 'password'"></fa-icon>
                 <mat-hint align="start">
-                    Min 10 characters
+                    Min 4 characters
                 </mat-hint>
-                <mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
+                <mat-hint align="end">{{pass.value.length}} / 4+</mat-hint>
             </mat-form-field>
             <mat-form-field style="margin-top: 19px; display: flex;">
                 <input matInput (keyup.enter)="nextPage()" #pass2 type="password"

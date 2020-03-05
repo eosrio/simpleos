@@ -180,10 +180,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 			proxyName: ['', [Validators.required]],
 		});
 		this.passForm = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]],
+			pass: ['', [Validators.required, Validators.minLength(4)]],
 		});
 		this.passFormStake = this.fb.group({
-			pass: ['', [Validators.required, Validators.minLength(10)]],
+			pass: ['', [Validators.required, Validators.minLength(4)]],
 		});
 
 		this.subscriptions.push(
