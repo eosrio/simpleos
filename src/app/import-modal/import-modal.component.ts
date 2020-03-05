@@ -11,6 +11,7 @@ import {LedgerService} from '../services/ledger/ledger.service';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
 import {environment} from '../../environments/environment';
+import {Numeric} from "eosjs/dist";
 
 @Component({
     selector: 'app-import-modal',
@@ -245,7 +246,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         }
     }
 
-    verifyPrivateKey(input, auto) {
+    async verifyPrivateKey(input, auto) {
         if (auto && this.importedAccounts.length > 0) {
             this.zone.run(() => {
                 this.importwizard.forceNext();
@@ -253,33 +254,28 @@ export class ImportModalComponent implements OnInit, OnDestroy {
             return;
         }
         if (input !== '' && !this.busyVerifying) {
-
             this.busyActivekey = true;
-
             this.busyVerifying = true;
-
             const pkey = input.trim();
+            try {
 
-            this.eosjs.checkPvtKey(pkey).then((results) => {
+                const results = await this.eosjs.checkPvtKey(pkey);
 
                 this.publicEOS = results.publicKey;
-
                 this.importedAccounts = [...results.foundAccounts];
-
                 this.importedAccounts.forEach((item) => {
-
+                    console.log(item);
                     const foundPermission = item.permissions.find(p => {
                         if (p.required_auth.keys.length > 0) {
-                            return p.required_auth.keys[0].key === results.publicKey;
+                            const convertedKey = Numeric.convertLegacyPublicKey(p.required_auth.keys[0].key);
+                            return convertedKey === results.publicKey;
                         } else {
                             return false;
                         }
                     });
-
                     if (foundPermission) {
                         item['permission'] = foundPermission.perm_name;
                     }
-
                     if (item['refund_request']) {
                         const tempDate = item['refund_request']['request_time'] + '.000Z';
                         const refundTime = new Date(tempDate).getTime() + (72 * 60 * 60 * 1000);
@@ -306,14 +302,17 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                     this.errormsg = '';
                     this.apierror = '';
                 });
-            }).catch((e) => {
+
+            } catch (e) {
+
                 this.zone.run(() => {
                     this.busyVerifying = false;
                     this.pvtform.controls['private_key'].setErrors({'incorrect': true});
                     this.importedAccounts = [];
                     this.errormsg = handleErrorMessage(e);
                 });
-            });
+
+            }
         }
     }
 

@@ -2,8 +2,7 @@ import {Injectable} from '@angular/core';
 import {SignatureProvider, SignatureProviderArgs} from 'eosjs/dist/eosjs-api-interfaces';
 import {Api, JsonRpc} from 'eosjs';
 import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
-import {JsSignatureProvider} from 'eosjs/dist/eosjs-jssig';
-import ecc from 'eosjs-ecc';
+import {JsSignatureProvider, PrivateKey, PublicKey} from 'eosjs/dist/eosjs-jssig';
 
 import {
     convertFraction,
@@ -369,7 +368,8 @@ export class Eosjs2Service {
 
     checkPvtKey(k): Promise<any> {
         try {
-            const pubkey = ecc.privateToPublic(k);
+            const pubkey = PrivateKey.fromString(k).getPublicKey();
+            console.log(pubkey.toString());
             return this.loadPublicKey(pubkey);
         } catch (e) {
             console.log(e);
@@ -379,14 +379,12 @@ export class Eosjs2Service {
         }
     }
 
-    async loadPublicKey(pubkey): Promise<any> {
+    async loadPublicKey(pubkey: PublicKey): Promise<any> {
         return new Promise(async (resolve, reject2) => {
-            if (ecc.isValidPublic(pubkey)) {
-
+            if (pubkey.validate()) {
                 const tempAccData = [];
-
-                const account_names = await this.getKeyAccountsMulti(pubkey);
-
+                const account_names = await this.getKeyAccountsMulti(pubkey.toString());
+                console.log(account_names);
                 if (account_names.length > 0) {
                     const promiseQueue = [];
                     account_names.forEach((acc) => {
@@ -412,7 +410,7 @@ export class Eosjs2Service {
                         .then((results: any[]) => {
                             resolve({
                                 foundAccounts: results,
-                                publicKey: pubkey,
+                                publicKey: pubkey.toString(),
                             });
                         })
                         .catch(() => {

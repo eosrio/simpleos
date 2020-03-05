@@ -2,7 +2,15 @@
     <h3 class="modal-title" style="display: contents;">Confirm <span class="highlight-primary" [innerHTML]="modalData.actionTitle"></span></h3>
     <div class="modal-body">
         <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
-        <h4 [innerHTML]="modalData.labelHTML"></h4>
+
+        <p-accordion *ngIf="modalData.labelHTML === ''">
+            <p-accordionTab *ngFor="let act of modalData.transactionPayload.actions; let i = index" header="{{act.name}} on {{act.account}}"
+                            [selected]="i === 0">
+                <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
+            </p-accordionTab>
+        </p-accordion>
+
+        <h4 *ngIf="modalData.labelHTML !== ''" [innerHTML]="modalData.labelHTML"></h4>
         <h5 class="mt-0"></h5>
         <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
             <p-accordion>

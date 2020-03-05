@@ -175,8 +175,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     openAccount(acct?: string) {
-        console.log('here!!!');
-        if (acct) {
+        if (acct && this.aService.activeChain['explorers'][0]) {
             window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + acct);
         } else {
             window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['account_url'] + this.aService.selected.getValue().name);
@@ -185,7 +184,6 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
 
     async getInfo() {
         const info = await this.eosjs.rpc.get_info();
-        console.log(info);
         this.headBlock = info.head_block_num;
         this.LIB = info.last_irreversible_block_num;
     }

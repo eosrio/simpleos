@@ -2,6 +2,11 @@ import {EventEmitter, Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {AccountsService} from '../accounts.service';
 import {CryptoService} from '../crypto/crypto.service';
+import {Action} from "eosjs/dist/eosjs-serialize";
+
+export interface TrxPayload {
+    actions: Action[]
+}
 
 export interface TrxModalData {
     labelHTML: string;
@@ -10,7 +15,7 @@ export interface TrxModalData {
     actionTitle: string;
     signerPublicKey: string;
     signerAccount: string;
-    transactionPayload: any;
+    transactionPayload: TrxPayload;
     errorFunc?: any;
 }
 
@@ -31,14 +36,33 @@ export class TransactionFactoryService {
         this.status = new EventEmitter<string>(true);
         this.modalData = new BehaviorSubject<TrxModalData>({
             labelHTML: '',
-
             termsHTML: '',
             termsHeader: '',
             actionTitle: '',
             signerPublicKey: '',
             signerAccount: '',
-            transactionPayload: {},
+            transactionPayload: {
+                actions: []
+            },
             errorFunc: null
+        });
+    }
+
+    async launch(publicKey: string): Promise<any> {
+        return new Promise((resolve) => {
+            this.launcher.emit({
+                visibility: true,
+                mode: this.crypto.getPrivateKeyMode(publicKey)
+            });
+            const subs = this.status.subscribe((event) => {
+                if (event === 'done') {
+                    subs.unsubscribe();
+                }
+                if (event === 'modal_closed') {
+                    subs.unsubscribe();
+                }
+                resolve(event);
+            });
         });
     }
 

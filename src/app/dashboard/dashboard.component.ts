@@ -202,12 +202,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit() {
-        // this.accounts = [];
-        // this.eosjs.status.asObservable().subscribe((status) => {
-        //     if (status) {
-        //         this.loadStoredAccounts();
-        //     }
-        // });
+        // request history for the first selected account
+        const sub = this.aService.selected.asObservable().subscribe((data) => {
+            if (data.name) {
+                this.aService.getAccActions(this.aService.selected.getValue().name).catch(console.log);
+                sub.unsubscribe();
+            }
+        });
     }
 
     ngAfterViewInit() {
@@ -217,7 +218,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             }),
         );
         this.cdr.detectChanges();
-
     }
 
     ngOnDestroy(): void {
@@ -399,44 +399,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.selectedTab = this.aService.selectedIdx;
         this.cdr.detectChanges();
     }
-
-    // loadStoredAccounts() {
-    //     const account_names = Object.keys(this.eos.accounts.getValue());
-    //     if (account_names.length > 0) {
-    //         account_names.forEach((name) => {
-    //             const acc = this.eosjs.accounts.getValue()[name];
-    //             let balance = 0;
-    //             let staked = 0;
-    //             acc['tokens'].forEach((tk) => {
-    //                 balance += LandingComponent.parseEOS(tk);
-    //             });
-    //             if (acc['total_resources']) {
-    //                 const net = LandingComponent.parseEOS(acc['total_resources']['net_weight']);
-    //                 const cpu = LandingComponent.parseEOS(acc['total_resources']['cpu_weight']);
-    //                 balance += net;
-    //                 balance += cpu;
-    //                 staked = net + cpu;
-    //             }
-    //
-    //             const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
-    //             console.log('dashboard', this.aService.activeChain['name'].indexOf('LIBERLAND'));
-    //             if (this.aService.activeChain['name'].indexOf('LIBERLAND') > -1) {
-    //                 staked = acc['voter_info']['staked'] / precisionRound;
-    //                 balance += staked;
-    //             }
-    //
-    //             const accData = {
-    //                 name: acc['account_name'],
-    //                 full_balance: Math.round((balance) * precisionRound) / precisionRound,
-    //                 staked: staked,
-    //                 details: acc
-    //             };
-    //             this.accounts.push(accData);
-    //             this.aService.accounts.push(accData);
-    //         });
-    //     }
-    //     this.aService.initFirst();
-    // }
 
     cc(text) {
         window['navigator']['clipboard']['writeText'](text).then(() => {

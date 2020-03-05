@@ -555,6 +555,11 @@ export class AccountsService {
 
     async getActions(account: string, pos: number, offset: number, skip: number, filter?, after?, before?, parent?) {
 
+        if (!account) {
+            console.log(new Error('no account'));
+            return;
+        }
+
         this.actions = [];
 
         // check history using hyperion
@@ -633,7 +638,7 @@ export class AccountsService {
     }
 
     reloadActions(account) {
-        this.getAccActions(account);
+        this.getAccActions(account).catch(console.log);
     }
 
     select(index) {
