@@ -51,7 +51,6 @@ export class ConfigComponent implements OnInit {
     config: ToasterConfig;
     infile = '';
     exfile = '';
-    choosedFil: string;
     disableEx: boolean;
     disableIm: boolean;
     chainConnected: any;
@@ -84,10 +83,11 @@ export class ConfigComponent implements OnInit {
     keysaccounts: Map<string, any[]>;
     localKeys: string[] = [];
     private fs: any;
+    wrongpass = false;
 
     static resetApp() {
-        window['remote']['app']['relaunch']();
-        window['remote']['app'].exit(0);
+        window.remote.app.relaunch();
+        window.remote.app.exit(0);
     }
 
     constructor(private fb: FormBuilder,
@@ -286,10 +286,21 @@ export class ConfigComponent implements OnInit {
     }
 
     async changePass() {
+        this.wrongpass = false;
         if (this.passmatch) {
+            const newpass = this.passForm.value.matchingPassword.pass2;
             const [publicKey] = this.aService.getStoredKey();
-            await this.crypto.authenticate(this.passForm.value.oldpass, publicKey);
-            await this.crypto.changePass(publicKey, this.passForm.value.matchingPassword.pass2);
+            const status = await this.crypto.authenticate(this.passForm.value.oldpass, publicKey);
+            if (status) {
+                if (status !== 'LEDGER') {
+                    await this.crypto.changePass(publicKey, newpass);
+                }
+                this.passForm.reset();
+                this.changePassModal = false;
+            } else {
+                this.passForm.get('oldpass').reset();
+                this.wrongpass = true;
+            }
         }
     }
 
