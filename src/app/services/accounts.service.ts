@@ -4,16 +4,18 @@ import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';
 import {parseTokenValue} from '../helpers/aux_functions';
-import {log} from "util";
+import {CryptoService} from "./crypto/crypto.service";
+import {Numeric} from "eosjs/dist";
+import {EOSAccount} from "../interfaces/account";
 
 @Injectable({
     providedIn: 'root',
 })
 export class AccountsService {
 
-    public accounts: any[];
+    public accounts: EOSAccount[];
     public activeChain: any;
-    public selected = new BehaviorSubject<any>({});
+    public selected = new BehaviorSubject<EOSAccount>(null);
     public lastAccount: any = null;
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
@@ -36,6 +38,7 @@ export class AccountsService {
     constructor(
         private http: HttpClient,
         private eosjs: Eosjs2Service,
+        private crypto: CryptoService,
         private toaster: ToasterService,
     ) {
         this.accounts = [];
@@ -68,7 +71,7 @@ export class AccountsService {
     }
 
     getStoredKey(account?: any) {
-        if(!account) {
+        if (!account) {
             account = this.selected.getValue();
         }
         const store = localStorage.getItem('eos_keys.' + this.activeChain.id);
@@ -78,9 +81,13 @@ export class AccountsService {
             const keys = Object.keys(JSON.parse(store));
             account.details.permissions.forEach((p) => {
                 if (p.required_auth.keys.length > 0) {
-                    const _k = p.required_auth.keys[0].key;
-                    if (keys.includes(_k)) {
-                        key = _k;
+                    const legacyKey = p.required_auth.keys[0].key;
+                    const newKey = Numeric.convertLegacyPublicKey(legacyKey);
+                    if (keys.includes(legacyKey)) {
+                        key = legacyKey;
+                        _perm = p.perm_name;
+                    } else if (keys.includes(newKey)) {
+                        key = newKey;
                         _perm = p.perm_name;
                     }
                 }
@@ -557,82 +564,46 @@ export class AccountsService {
     }
 
     async getActions(account: string, pos: number, offset: number, skip: number, filter?, after?, before?, parent?) {
-
         if (!account) {
             console.log(new Error('no account'));
             return;
         }
-
         this.actions = [];
-
         // check history using hyperion
         const hyperionStatus = await this.getActionsHyperionMulti(account, offset, skip, filter, after, before, parent);
         if (hyperionStatus) {
             return;
         }
-
         // fallback to native
         const _position = pos === 0 ? -1 : pos;
         const _offset = pos === 0 ? -offset : -(offset - 1);
         this.eosjs.getAccountActions(account, _position, _offset).then((val) => {
-
             const actions = val['actions'];
             actions.reverse();
-
-            console.log(actions.map(a => a.account_action_seq).join(','));
-
             if (actions.length > 0) {
                 if (pos === 0) {
                     this.totalActions = actions[0].account_action_seq + 1;
                 }
                 this.updateActionStore(account, actions);
             }
-
             console.log('Total Actions:' + this.totalActions);
-
             this.actionStore[account]['actions'].forEach((action) => {
-                let a_name, a_acct, a_recv, selAcc, act, tx_id, blk_num, blk_time, seq;
-
+                let act, tx_id, blk_num, blk_time, seq;
                 if (action['action_trace']) {
-
-                    // native history api
-                    a_name = action['action_trace']['act']['name'];
-                    a_acct = action['action_trace']['act']['account'];
-                    a_recv = action['action_trace']['receipt']['receiver'];
-                    selAcc = this.selected.getValue().name;
-
                     act = action['action_trace']['act'];
                     tx_id = action['action_trace']['trx_id'];
                     blk_num = action['block_num'];
                     blk_time = action['block_time'];
                     seq = action['account_action_seq'];
-
                 } else {
-
-                    // mongo history api
-                    a_name = action['act']['name'];
-                    a_acct = action['act']['account'];
-                    a_recv = action['receipt']['receiver'];
-                    selAcc = this.selected.getValue().name;
-
                     act = action['act'];
                     tx_id = action['trx_id'];
                     blk_num = action['block_num'];
                     blk_time = action['block_time'];
                     seq = action['receipt']['global_sequence'];
-
                 }
-
                 this.processAction(act, tx_id, blk_num, blk_time, seq);
-
-                // if (a_recv === selAcc || (a_recv === a_acct && a_name !== 'transfer')) {
-                //   this.processAction(act, tx_id, blk_num, blk_time, seq);
-                // } else {
-                //   console.log(action);
-                // }
-
             });
-
             this.accounts[this.selectedIdx]['actions'] = this.actions;
             this.calcTotalAssets();
         }).catch((err) => {
@@ -830,6 +801,7 @@ export class AccountsService {
             }
         }
         await this.fetchTokens(this.selected.getValue().name);
+        await this.classifySigProviders();
         await this.storeAccountData(this.accounts);
         this.isRefreshing = false;
     }
@@ -933,5 +905,20 @@ export class AccountsService {
         }
         this.sortProviders();
         console.log(this.activeChain.hyperionProviders);
+    }
+
+    private async classifySigProviders() {
+        for (const acc of this.accounts) {
+            console.log(acc);
+            const [key, perm] = this.getStoredKey(acc);
+            console.log(key, perm);
+            const mode = this.crypto.getPrivateKeyMode(key);
+            if (mode) {
+                acc.type = mode;
+                acc.storedKey = key;
+                acc.storedPerm = perm;
+            }
+            console.log(mode);
+        }
     }
 }
