@@ -92,7 +92,6 @@ export class LandingComponent implements OnInit, OnDestroy {
     agree: boolean;
     agree2: boolean;
     generating = false;
-    generating2 = false;
 
     passform: FormGroup;
     passformexodus: FormGroup;
@@ -393,13 +392,12 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     async generateKeys() {
         this.generating = true;
-
-        this.ownerpk = await this.eosjs.ecc.randomKey(64);
-        this.ownerpub = this.eosjs.ecc.privateToPublic(this.ownerpk);
-
-        this.activepk = await this.eosjs.ecc.randomKey(64);
-        this.activepub = this.eosjs.ecc.privateToPublic(this.activepk);
-
+        const activePair = this.crypto.generateKeyPair();
+        const ownerPair = this.crypto.generateKeyPair();
+        this.ownerpk = ownerPair.private;
+        this.ownerpub = ownerPair.public;
+        this.activepk = activePair.private;
+        this.activepub = activePair.public;
         this.generating = false;
         this.generated = true;
     }
