@@ -193,11 +193,13 @@ export class CryptoService {
         return [key, value];
     }
 
-    async authenticate(pass, publickey): Promise<boolean> {
+    async authenticate(pass, publickey): Promise<boolean | string> {
         const [key, value] = this.getLocalKey(publickey);
         if (value) {
             if (value.private !== 'ledger') {
                 await this.initKeys(key, pass);
+            } else {
+                return 'LEDGER';
             }
         }
         return await this.decryptKeys(key);
