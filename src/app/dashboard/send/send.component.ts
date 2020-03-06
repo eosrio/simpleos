@@ -544,23 +544,16 @@ export class SendComponent implements OnInit, OnDestroy {
             termsHeader: termsHeader,
             termsHTML: termsHtml
         });
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false, [to]);
-                    const sel = this.aService.selected.getValue();
-                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
-                } catch (e) {
-                    console.error(e);
-                }
-                subs.unsubscribe();
+        const result = await this.trxFactory.launch(publicKey);
+        if (result === 'done') {
+            try {
+                await this.aService.refreshFromChain(false, [to]);
+                const sel = this.aService.selected.getValue();
+                this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+            } catch (e) {
+                console.error(e);
             }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+        }
     }
 
     openEditContactModal(contact) {

@@ -67,7 +67,10 @@ export class AccountsService {
         });
     }
 
-    getStoredKey(account) {
+    getStoredKey(account?: any) {
+        if(!account) {
+            account = this.selected.getValue();
+        }
         const store = localStorage.getItem('eos_keys.' + this.activeChain.id);
         let key = '';
         let _perm = '';

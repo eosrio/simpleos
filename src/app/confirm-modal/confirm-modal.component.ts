@@ -81,6 +81,7 @@ export class ConfirmModalComponent {
     async executeAction(pass): Promise<any> {
         this.busy = true;
         this.errormsg = '';
+
         // Unlock Signer
         try {
             await this.crypto.authenticate(pass, this.modalData.signerPublicKey);
@@ -89,8 +90,9 @@ export class ConfirmModalComponent {
             this.trxFactory.status.emit('error');
             this.busy = false;
             this.showToast('error', 'Authentication fail', `Wrong password`, {});
+            return false;
         }
-        // Sign and push transaction
+
         console.log(this.modalData.transactionPayload);
         if (this.modalData.transactionPayload.actions.length === 0) {
             this.trxFactory.status.emit('done');
@@ -100,7 +102,13 @@ export class ConfirmModalComponent {
             this.cdr.detectChanges();
             return true;
         }
-        const [trxResult, err] = await this.processTransaction(this.modalData.transactionPayload, this.modalData.errorFunc);
+
+        // Sign and push transaction
+        const [trxResult, err] = await this.processTransaction(
+            this.modalData.transactionPayload,
+            this.modalData.errorFunc
+        );
+
         if (err) {
             this.errormsg = err;
             this.busy = false;

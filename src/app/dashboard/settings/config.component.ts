@@ -12,6 +12,8 @@ import {ElectronService} from 'ngx-electron';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
 
+declare const window: any;
+
 @Component({
     selector: 'app-config',
     templateUrl: './config.component.html',
@@ -47,9 +49,8 @@ export class ConfigComponent implements OnInit {
     passmatch: boolean;
     clearContacts: boolean;
     config: ToasterConfig;
-    infile: any;
-    exfile: any;
-    choosedDir: string;
+    infile = '';
+    exfile = '';
     choosedFil: string;
     disableEx: boolean;
     disableIm: boolean;
@@ -82,6 +83,7 @@ export class ConfigComponent implements OnInit {
 
     keysaccounts: Map<string, any[]>;
     localKeys: string[] = [];
+    private fs: any;
 
     static resetApp() {
         window['remote']['app']['relaunch']();
@@ -102,6 +104,8 @@ export class ConfigComponent implements OnInit {
     ) {
 
         this.keytar = this._electronService.remote.require('keytar');
+
+        this.fs = window.filesystem;
 
         this.timetoclose = this.pkExposureTime;
         this.endpointModal = false;
@@ -128,8 +132,7 @@ export class ConfigComponent implements OnInit {
             pin: ['', Validators.required],
         });
         this.exportForm = this.fb.group({
-            pass: ['', Validators.required],
-            customExportBK: ['', Validators.required],
+            pass: ['', Validators.required]
         });
         this.importForm = this.fb.group({
             pass: ['', Validators.required],
@@ -267,30 +270,26 @@ export class ConfigComponent implements OnInit {
         this.network.networkingReady.next(false);
         this.aService.lastAccount = this.aService.selected.getValue().name;
         this.busy = true;
-		await this.network.startup(null);
-		this.busy = false;
-		this.confirmModal = false;
+        await this.network.startup(null);
+        this.busy = false;
+        this.confirmModal = false;
     }
 
     async connectCustom(url) {
         this.network.selectedEndpoint.next({url: url, owner: 'Other', latency: 0, filters: [], chain: ''});
         this.network.networkingReady.next(false);
         this.aService.lastAccount = this.aService.selected.getValue().name;
-		this.busy = true;
-		await this.network.startup(url);
-		this.busy = false;
-		this.endpointModal = false;
+        this.busy = true;
+        await this.network.startup(url);
+        this.busy = false;
+        this.endpointModal = false;
     }
 
-    changePass() {
+    async changePass() {
         if (this.passmatch) {
-            const account = this.aService.selected.getValue();
-            const publicKey = account.details['permissions'][0]['required_auth'].keys[0].key;
-            this.crypto.authenticate(this.passForm.value.oldpass, publicKey).then(() => {
-                this.crypto.changePass(publicKey, this.passForm.value.matchingPassword.pass2).then(() => {
-                    ConfigComponent.resetApp();
-                });
-            });
+            const [publicKey] = this.aService.getStoredKey();
+            await this.crypto.authenticate(this.passForm.value.oldpass, publicKey);
+            await this.crypto.changePass(publicKey, this.passForm.value.matchingPassword.pass2);
         }
     }
 
@@ -324,78 +323,95 @@ export class ConfigComponent implements OnInit {
         this.pinModal = false;
     }
 
-
-    inputEXClick() {
-        this.customExportBK.nativeElement.click();
-    }
-
-    exportCheckBK(a) {
-        this.exfile = a.target.files[0];
-        const path = this.exfile.path;
-        if (path === '') {
-            this.showToast('error', 'Went some wrong, try again!', '');
-            this.exfile = '';
-            return false;
+    // select folder for backup export
+    async inputEXClick() {
+        const prefix = 'simpleos';
+        const filename = `${prefix}_${Date.now()}.bkp`;
+        const dirs = await this._electronService.remote.dialog.showOpenDialog({
+            properties: ['openDirectory']
+        });
+        if (dirs.filePaths.length > 0) {
+            const nodePath = this._electronService.remote.require('path');
+            this.exfile = nodePath.join(dirs.filePaths[0], filename);
         }
-        this.choosedDir = path;
     }
 
+    // export data to backup file
     exportBK() {
-        if (this.exfile) {
-            if (this.exfile !== '') {
-                this.disableEx = true;
-                this.busy = true;
-                const bkpArr = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    if (localStorage.key(i).length > 12) {
-                        const keyLS = localStorage.key(i);
-                        const valueLS = localStorage.getItem(localStorage.key(i));
-                        bkpArr.push({key: keyLS, value: valueLS});
-                    }
-                }
-                const pass = this.exportForm.value.pass;
-                let rp;
-                if (this.exportForm.value.pass !== '') {
-                    rp = this.crypto.encryptBKP(JSON.stringify(bkpArr), pass);
-                } else {
-                    rp = JSON.stringify(bkpArr);
-                }
-                const path = this.exfile.path + '/simpleos.bkp';
-                window['filesystem']['writeFile'](path, rp, 'utf-8', (err) => {
-                    if (!err) {
-                        this.showToast('success', 'Backup exported!', '');
-                        this.choosedDir = '';
-                        this.disableEx = false;
-                        this.busy = false;
-                        this.exportBKModal = false;
-                    }
-                });
-            } else {
-                this.showToast('error', 'Choose your backup directory and fill the password field!', '');
-                this.choosedDir = '';
-                this.disableEx = false;
+        this.disableEx = true;
+        this.busy = true;
+        const pass: string = this.exportForm.get('pass').value;
+        let rp = this.backup.createBackup();
+        if (pass !== '') {
+            rp = this.crypto.encryptBKP(rp, pass);
+        }
+        this.fs.writeFileSync(this.exfile, rp);
+        this.busy = false;
+        this.exfile = '';
+        this.disableEx = false;
+        this.exportBKModal = false;
+        this.showToast('success', 'Backup exported!', '');
+    }
+
+    // select backup file
+    async inputIMClick() {
+        const selected = await this._electronService.remote.dialog.showOpenDialog({
+            properties: ['openFile']
+        });
+        if (selected.filePaths.length > 0) {
+            this.infile = selected.filePaths[0];
+        }
+    }
+
+    // import data from backup
+    importBK() {
+        this.disableIm = true;
+        this.busy = true;
+        let data = this.fs.readFileSync(this.infile);
+        const pass = this.importForm.get('pass').value;
+
+        if (pass !== '') {
+            data = this.crypto.decryptBKP(data.toString(), pass);
+        }
+
+        let parsedData;
+        try {
+            parsedData = JSON.parse(data);
+        } catch (e) {
+            if (pass === '') {
+                this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
                 this.busy = false;
+                this.disableIm = false;
+                return;
+            } else {
+                this.showToast('error', 'Wrong password, please try again!', '');
+                this.busy = false;
+                this.disableIm = false;
+                return;
             }
-        } else {
-            this.showToast('error', 'Choose your backup directory and fill the password field!', '');
         }
-    }
 
-    inputIMClick() {
-        this.customImportBK.nativeElement.click();
-    }
-
-    importCheckBK(a) {
-        this.infile = a.target.files[0];
-        const name = this.infile.name;
-        if (name.split('.')[1] !== 'bkp') {
-            this.showToast('error', 'Wrong file!', '');
+        if (parsedData && parsedData.length > 0) {
+            for (const entry of parsedData) {
+                localStorage.setItem(entry.key, entry.value);
+            }
+            this.disableIm = false;
+            this.busy = false;
             this.infile = '';
-            return false;
+            this.importBKModal = false;
+            this.showToast('success', 'Backup imported successfully', 'the wallet will restart...');
+            setTimeout(() => {
+                ConfigComponent.resetApp();
+            }, 5000);
+        } else {
+            this.showToast('error', 'Invalid backup file!', 'Please try again');
+            this.infile = '';
+            this.disableIm = false;
+            this.busy = false;
         }
-        this.choosedFil = name;
     }
 
+    // opt in/out on the automatic backups
     toggleAutosave(event) {
         if (event.checked) {
             localStorage.setItem('simplEOS.autosave', 'true');
@@ -409,64 +425,7 @@ export class ConfigComponent implements OnInit {
         }
     }
 
-    importBK() {
-        this.disableIm = true;
-        this.busy = true;
-        if (this.infile && this.infile !== '') {
-            window['filesystem']['readFile'](this.infile.path, 'utf-8', (err, data) => {
-                if (!err) {
-                    const pass = this.importForm.value.pass;
-                    let arrLS = null;
-                    let decrypt = null;
-                    try {
-                        arrLS = JSON.parse(data);
-                    } catch (e) {
-                        // backup encrypted, password required
-                        if (pass !== '') {
-                            decrypt = this.crypto.decryptBKP(data, pass);
-                            try {
-                                arrLS = JSON.parse(decrypt);
-                            } catch (e) {
-                                this.showToast('error', 'Wrong password, please try again!', '');
-                                console.log('wrong file');
-                            }
-                        } else {
-                            this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
-                        }
-                    }
-
-                    if (arrLS) {
-                        arrLS.forEach(function (d) {
-                            localStorage.setItem(d['key'], d['value']);
-                        });
-
-                        this.showToast('success', 'Imported with success!', '');
-                        this.choosedFil = '';
-                        this.disableIm = false;
-                        this.busy = false;
-                        this.importBKModal = false;
-                        setTimeout(() => {
-                            ConfigComponent.resetApp();
-                        }, 1000);
-                    } else {
-                        this.choosedFil = '';
-                        this.disableIm = false;
-                        this.busy = false;
-                    }
-
-                } else {
-                    this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
-                    console.log('wrong entry');
-                }
-            });
-        } else {
-            this.showToast('error', 'Choose your backup file', '');
-            this.choosedFil = '';
-            this.disableIm = false;
-            this.busy = false;
-        }
-    }
-
+    // open modal to view the private for the selected account
     openPKModal() {
         this.selectedAccount = this.aService.selected.getValue().name;
         const [publicKey, permission] = this.aService.getStoredKey(this.aService.selected.getValue());
@@ -492,6 +451,7 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    // close private key modal
     closePkModal() {
         this.showpk = false;
         this.tempPK = '';
@@ -506,6 +466,7 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    // decode and temporarily display the private key for the selected account
     viewPK() {
         if (this.showpkForm.get('pass').value !== '') {
             const selAcc = this.aService.selected.getValue();
@@ -541,6 +502,7 @@ export class ConfigComponent implements OnInit {
             });
         }
     }
+
 
     async generateNKeys() {
         this.generating2 = true;
