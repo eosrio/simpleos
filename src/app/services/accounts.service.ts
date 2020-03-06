@@ -909,16 +909,13 @@ export class AccountsService {
 
     private async classifySigProviders() {
         for (const acc of this.accounts) {
-            console.log(acc);
             const [key, perm] = this.getStoredKey(acc);
-            console.log(key, perm);
             const mode = this.crypto.getPrivateKeyMode(key);
             if (mode) {
                 acc.type = mode;
                 acc.storedKey = key;
                 acc.storedPerm = perm;
             }
-            console.log(mode);
         }
     }
 }
