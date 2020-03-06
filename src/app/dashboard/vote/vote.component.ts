@@ -20,6 +20,7 @@ import {JsSignatureProvider, PrivateKey} from 'eosjs/dist/eosjs-jssig';
 import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
 import {Numeric} from "eosjs/dist";
+import {EOSAccount} from "../../interfaces/account";
 
 @Component({
     selector: 'app-vote',
@@ -98,7 +99,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     subscriptions: Subscription[] = [];
 
     private selectedProxy = '';
-    private ecc: any;
 
     private keytar: any;
     private fs: any;
@@ -137,16 +137,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         private cdr: ChangeDetectorRef,
         public app: AppComponent,
         public theme: ThemeService,
-        private _electronService: ElectronService,
-        // private ledger: LedgerHWService
+        private electron: ElectronService,
     ) {
 
-        this.ecc = this._electronService.remote.require('eosjs-ecc');
-        this.keytar = this._electronService.remote.require('keytar');
-        this.fs = this._electronService.remote.require('fs');
-
-        this.basePath = this._electronService.remote.app.getPath('appData') +
-            '/simpleos-config';
+        this.keytar = this.electron.remote.require('keytar');
+        this.fs = this.electron.remote.require('fs');
+        this.basePath = this.electron.remote.app.getPath('appData') + '/simpleos-config';
 
         this.isValidAccount = true;
         this.max = 100;
@@ -272,108 +268,89 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-
-
-        const sub = this.aService.selected.asObservable().subscribe((selected: any) => {
-
-            this.totalStaked = 0;
-            this.votedDecay = 0;
-            this.votedEOSDecay = 0;
-
-            if (selected && selected['name'] && this.selectedAccountName !==
-                selected['name']) {
-                const precision = Math.pow(10, this.aService.activeChain['precision']);
-                this.precision = '1.0-' + this.aService.activeChain['precision'];
-
-                if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
-                    this.voteService.currentVoteType(selected);
-                    if (this.voteService.proxies.length === 0 ||
-                        this.voteService.bps.length === 0) {
-                        // console.log('from subscriber', this.voteService.voteType);
-                        this.voteOption(this.voteService.voteType);
-                    }
-                }
-
-                this.fromAccount = selected.name;
-                this.selectedAccountName = selected.name;
-                this.totalBalance = selected.full_balance;
-
-                if (this.aService.activeChain['name'].startsWith('LIBERLAND')) {
-                    this.stakedBalance = selected.staked;
-                } else {
-                    this.stakedBalance = selected.details.voter_info.staked / precision;
-                }
-
-                this.unstaking = selected.unstaking;
-                this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
-                if (this.totalBalance > 0) {
-                    this.minToStake = 100 / this.totalBalance;
-                    this.valuetoStake = this.stakedBalance.toString();
-                } else {
-                    this.minToStake = 0;
-                    this.valuetoStake = '0';
-                    this.percenttoStake = '0';
-                }
-
-                this.updateStakePercent();
-
-                if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
-
-                    this.loadPlacedVotes(selected);
-
-                    this.cpu_weight = selected.details.total_resources.cpu_weight;
-                    this.net_weight = selected.details.total_resources.net_weight;
-                    const _cpu = RexComponent.asset2Float(this.cpu_weight);
-                    const _net = RexComponent.asset2Float(this.net_weight);
-                    this.cpu_weight_n = _cpu;
-                    this.net_weight_n = _net;
-                    this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
-
-
-                    if (selected.details.voter_info) {
-                        let weeks = 52;
-                        let block_timestamp_epoch = 946684800;
-                        let precision = Math.pow(10, this.aService.activeChain['precision']);
-
-                        if (this.aService.activeChain['symbol'] === 'WAX') {
-                            weeks = 13;
-                            block_timestamp_epoch = 946684800;
-                        }
-
-                        this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
-                        this.totalStaked = (selected.details.voter_info.staked / precision);
-                        const a = (moment().unix() - block_timestamp_epoch);
-                        const b = parseInt('' + (a / 604800), 10) / weeks;
-                        const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
-                        this.votedEOSDecay = this.totalStaked - decayEOS;
-                        if (selected.details.voter_info.last_vote_weight > 0) {
-                            this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
-                        }
-
-                    }
-                } else {
-                    this.hasVote = false;
-                }
-                this.getRexBalance(selected.name);
-                if (this.aService.activeChain['name'] === 'WAX MAINNET') {
-                    this.checkWaxGBMdata(selected.name).catch(console.log);
-                    this.checkVoterRewards(selected.name).catch(console.log);
-                    this.verifyAutoClaimSetup(selected).catch(console.log);
-                    this.enableAutoClaim = this.edAutoClaim(true);
-                }
-                if (!this.isDestroyed) {
-                    this.cdr.detectChanges();
-                }
-            }
-        });
-
+        const sub = this.aService.selected
+            .asObservable()
+            .subscribe((selected: any) => {
+                this.onAccountChanged(selected);
+            });
         this.subscriptions.push(sub);
+    }
 
-        setImmediate(() => {
-            if (this.voteService.proxies.length === 0 || this.voteService.bps.length === 0) {
-                this.voteOption(this.voteService.voteType);
+    onAccountChanged(selected: EOSAccount) {
+        this.totalStaked = 0;
+        this.votedDecay = 0;
+        this.votedEOSDecay = 0;
+        if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
+            const precision = Math.pow(10, this.aService.activeChain['precision']);
+            this.precision = '1.0-' + this.aService.activeChain['precision'];
+            if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+                this.voteService.currentVoteType(selected);
+                if (this.voteService.proxies.length === 0 ||
+                    this.voteService.bps.length === 0) {
+                    console.log('from subscriber', this.voteService.voteType);
+                    this.voteOption(this.voteService.voteType);
+                }
             }
-        });
+            this.fromAccount = selected.name;
+            this.selectedAccountName = selected.name;
+            this.totalBalance = selected.full_balance;
+            if (this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+                this.stakedBalance = selected.staked;
+            } else {
+                this.stakedBalance = selected.details.voter_info.staked / precision;
+            }
+            this.unstaking = selected.unstaking;
+            this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+            if (this.totalBalance > 0) {
+                this.minToStake = 100 / this.totalBalance;
+                this.valuetoStake = this.stakedBalance.toString();
+            } else {
+                this.minToStake = 0;
+                this.valuetoStake = '0';
+                this.percenttoStake = '0';
+            }
+            this.updateStakePercent();
+            if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+                this.loadPlacedVotes(selected);
+                this.cpu_weight = selected.details.total_resources.cpu_weight;
+                this.net_weight = selected.details.total_resources.net_weight;
+                const _cpu = RexComponent.asset2Float(this.cpu_weight);
+                const _net = RexComponent.asset2Float(this.net_weight);
+                this.cpu_weight_n = _cpu;
+                this.net_weight_n = _net;
+                this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+                if (selected.details.voter_info) {
+                    let weeks = 52;
+                    let block_timestamp_epoch = 946684800;
+                    let precision = Math.pow(10, this.aService.activeChain['precision']);
+                    if (this.aService.activeChain['symbol'] === 'WAX') {
+                        weeks = 13;
+                        block_timestamp_epoch = 946684800;
+                    }
+                    this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
+                    this.totalStaked = (selected.details.voter_info.staked / precision);
+                    const a = (moment().unix() - block_timestamp_epoch);
+                    const b = parseInt('' + (a / 604800), 10) / weeks;
+                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
+                    this.votedEOSDecay = this.totalStaked - decayEOS;
+                    if (selected.details.voter_info.last_vote_weight > 0) {
+                        this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
+                    }
+                }
+            } else {
+                this.hasVote = false;
+            }
+            this.getRexBalance(selected.name);
+            if (this.aService.activeChain['name'] === 'WAX MAINNET') {
+                this.checkWaxGBMdata(selected.name).catch(console.log);
+                this.checkVoterRewards(selected.name).catch(console.log);
+                this.verifyAutoClaimSetup(selected).catch(console.log);
+                this.enableAutoClaim = this.edAutoClaim(true);
+            }
+            if (!this.isDestroyed) {
+                this.cdr.detectChanges();
+            }
+        }
     }
 
     extOpen(value) {
@@ -497,58 +474,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 subs.unsubscribe();
             }
         });
-    }
-
-    async callSetStake(password) {
-        this.busy = true;
-        const account = this.aService.selected.getValue();
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        try {
-            const authData = await this.crypto.authenticate(password, pubkey);
-            if (authData === true) {
-                try {
-                    const trx = await this.eosjs.changebw(
-                        account.name,
-                        permission,
-                        this.stakingDiff,
-                        this.aService.activeChain['symbol'],
-                        this.stakingRatio / 100,
-                        this.aService.activeChain['precision'],
-                    );
-                    console.log(trx);
-                    this.busy = false;
-                    this.wrongpass = '';
-                    this.stakeModal = false;
-                    this.cdr.detectChanges();
-                    this.showToast('success', 'Transaction broadcasted',
-                        'Check your history for confirmation.');
-                    setTimeout(() => {
-                        this.aService.refreshFromChain(false).then(() => {
-                            this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
-                            this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
-                        });
-                    }, 1500);
-                } catch (error) {
-                    console.log(error.json.error.details[0].message);
-                    if (typeof error === 'object') {
-                        this.wrongpass = error.json.error.details[0].message;
-                    } else {
-                        if (JSON.parse(error).json.error.name === 'leeway_deadline_exception') {
-                            this.wrongpass = 'Not enough CPU bandwidth to perform transaction. Try again later.';
-                        } else {
-                            this.wrongpass = JSON.parse(error).json.error.details[0].message;
-                        }
-                    }
-                    this.busy = false;
-                }
-            } else {
-                this.wrongpass = 'Wrong password!';
-                this.busy = false;
-            }
-        } catch (e) {
-            this.busy = false;
-            this.wrongpass = 'Wrong password!';
-        }
     }
 
     updateBalances() {
@@ -1277,10 +1202,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		<br><br>This action doesn't expose your private key.  </h5>
 		`;
 
-        console.log('Generating new key pair...');
+        const keypair = this.crypto.generateKeyPair();
 
-        const private_key = await this.ecc.randomKey();
-        const public_key = this.ecc.privateToPublic(private_key);
+        const private_key = keypair.private;
+        const public_key = keypair.public;
 
         const _actions = [];
         let changeKey = true;

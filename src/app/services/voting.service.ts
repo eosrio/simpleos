@@ -148,7 +148,10 @@ export class VotingService {
     }
 
     async listProducers() {
-        if (this.aService.activeChain.name.includes('LIBERLAND')) {
+        if(this.loadingProds) {
+            return;
+        }
+        if (this.aService.activeChain.name.startsWith('LIBERLAND')) {
             return;
         }
         this.setWeightParams();
@@ -157,11 +160,8 @@ export class VotingService {
         }
         if (!this.initList && !this.loadingProds && this.aService.selected.getValue().name) {
             this.loadingProds = true;
-
             const producers = await this.eosjs.listProducers();
-
             const global_data = await this.eosjs.getChainInfo();
-
             this.totalProducerVoteWeight = parseFloat(global_data.rows[0]['total_producer_vote_weight']);
 
             const total_votes = this.totalProducerVoteWeight;
