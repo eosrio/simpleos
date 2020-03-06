@@ -3,13 +3,14 @@
 <div class="main-container content-page">
     <div class="content-container">
         <div class="content-area">
-            <div fxLayout="row" fxLayoutAlign="space-between stretch" class="row-top-background" >
+            <div fxLayout="row" fxLayoutAlign="space-between stretch" class="row-top-background">
                 <!--tabs-->
                 <div class="{{(!network.activeChain.features['addAcc']||!network.activeChain.features['newAcc'])?'max-width2':'max-width'}}">
                     <mat-tab-group id="header-tabs" (selectedIndexChange)="selectAccount($event)"
                                    [selectedIndex]="selectedTab">
                         <mat-tab #headerTabs *ngFor="let account of aService.accounts; let i = index">
                             <ng-template mat-tab-label>
+                                <div *ngIf="account.type !== 'local'" class="account-type-label">{{account.type}}</div>
                                 <div style="font-size: 10px;">ACCOUNT {{i + 1}}&nbsp;&nbsp;<fa-icon
                                         *ngIf="aService.accounts.length > 1"
                                         [icon]="['far', 'times-circle']"
