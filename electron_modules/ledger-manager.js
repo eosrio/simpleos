@@ -3,8 +3,9 @@ const {ipcMain} = require('electron');
 const bippath = require('bip32-path');
 const fetch = require('node-fetch');
 const asn1 = require('asn1-ber');
-const ecc = require('eosjs-ecc');
-const {Api, JsonRpc, Serialize} = require('eosjs');
+const {Api, JsonRpc, Serialize, Numeric} = require('eosjs');
+const {Signature} = require('eosjs/dist/eosjs-jssig');
+const {constructElliptic} = require('eosjs/dist/eosjs-key-conversions');
 const util = require('util');
 const textDecoder = new util.TextDecoder();
 const textEncoder = new util.TextEncoder();
@@ -427,11 +428,9 @@ class LedgerManager {
             }
         }
         if (response.length >= 64) {
-            const v = response.slice(0, 1).toString('hex');
-            const r = response.slice(1, 33).toString('hex');
-            const s = response.slice(33, 65).toString('hex');
-            const signature = ecc.Signature.fromHex(v + r + s).toString();
-            result.signatures.push(signature);
+            const K1 = Numeric.KeyType.k1;
+            const sig = new Signature({type: K1, data: response.slice(0, 65)}, constructElliptic(K1));
+            result.signatures.push(sig.toString());
             return result;
         } else {
             return null;

@@ -296,9 +296,6 @@ export class NetworkService {
 					this.aService.initFirst();
 				}
 
-				// request history for the selected account
-				await this.aService.getAccActions(this.aService.selected.getValue().name);
-
 				// navigate to the wallet page
 				await this.router['navigate'](['dashboard', 'wallet']);
 

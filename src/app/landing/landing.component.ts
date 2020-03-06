@@ -17,6 +17,8 @@ import {AnimationOptions} from 'ngx-lottie';
 import {AnimationItem} from 'lottie-web';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
+import {PublicKey} from "eosjs/dist/PublicKey";
+import {Numeric} from "eosjs/dist";
 
 interface simpleosExtendedWindow {
     filesystem: any;
@@ -25,6 +27,11 @@ interface simpleosExtendedWindow {
 }
 
 declare var window: Window & (typeof globalThis) & simpleosExtendedWindow;
+
+interface SimpleAccData {
+    name: string;
+    fullBalance: number;
+}
 
 @Component({
     selector: 'app-landing',
@@ -75,7 +82,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     publicEOS: string;
     checkerr: string;
     errormsg: string;
-    accounts: any[];
+    accounts: SimpleAccData[];
     dropReady: boolean;
     passmatch: boolean;
     passexodusmatch: boolean;
@@ -468,36 +475,39 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
 
     // Verify public key - step 1
-    checkAccount() {
+    async checkAccount() {
         if (this.network.networkingReady.getValue()) {
             this.check = true;
             this.accounts = [];
-            this.eosjs.loadPublicKey(this.publicEOS.trim()).then((account_data: any) => {
-                this.processCheckAccount(account_data.foundAccounts);
-            }).catch((err) => {
+            const convertedKey = Numeric.convertLegacyPublicKey(this.publicEOS.trim())
+            const publicKey = PublicKey.fromString(convertedKey);
+            try {
+                const results = await this.eosjs.loadPublicKey(publicKey);
+                await this.processCheckAccount(results.foundAccounts);
+            } catch (err) {
                 console.log('ERROR', err.message);
                 console.log('ACCOUNTS', err.accounts);
                 this.checkerr = err;
-                this.processCheckAccount(err.accounts);
-            });
+                await this.processCheckAccount(err.accounts);
+            }
         }
     }
 
     // Verify public key - step 2
-    processCheckAccount(foundAccounts) {
-        foundAccounts.forEach((acc) => {
-            // Parse tokens and calculate balance with system token
+    async processCheckAccount(accounts) {
+        console.log(accounts)
+        for (const acc of accounts) {
             if (acc['tokens']) {
                 this.processTokens(acc);
             } else {
-                this.eosjs.getTokens(acc['account_name']).then((tokens) => {
-                    acc['tokens'] = tokens;
+                try {
+                    acc['tokens'] = await this.eosjs.getTokens(acc['account_name']);
                     this.processTokens(acc);
-                }).catch((err) => {
+                } catch (err) {
                     console.log(err);
-                });
+                }
             }
-        });
+        }
         this.checkerr = '';
     }
 
@@ -507,22 +517,18 @@ export class LandingComponent implements OnInit, OnDestroy {
         acc['tokens'].forEach((tk) => {
             balance += this.parseSYMBOL(tk);
         });
-        // Add stake balance
-        if (acc['total_resources']) {
-            balance += this.parseSYMBOL(acc['total_resources']['cpu_weight']);
-            balance += this.parseSYMBOL(acc['total_resources']['net_weight']);
+        if (acc['self_delegated_bandwidth']) {
+            balance += this.parseSYMBOL(acc['self_delegated_bandwidth']['cpu_weight']);
+            balance += this.parseSYMBOL(acc['self_delegated_bandwidth']['net_weight']);
         }
-
         const precisionRound = Math.pow(10, this.aService.activeChain['precision']);
-        console.log('landing', this.aService.activeChain['name'].indexOf('LIBERLAND'));
-        if (this.aService.activeChain['name'].indexOf('LIBERLAND') > -1) {
+        if (this.aService.activeChain['name'].startsWith('LIBERLAND')) {
             const staked = acc['voter_info']['staked'] / precisionRound;
             balance += staked;
         }
-
         const accData = {
             name: acc['account_name'],
-            full_balance: Math.round((balance) * precisionRound) / precisionRound
+            fullBalance: Math.round((balance) * precisionRound) / precisionRound
         };
         this.accounts.push(accData);
     }
