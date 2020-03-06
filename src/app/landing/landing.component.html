@@ -1,5 +1,5 @@
 <toaster-container [toasterconfig]="config"></toaster-container>
-<div class="wrap" style="overflow-y: scroll; width:100vw;">
+<div class="wrap" style="overflow-y: auto; width:100vw;">
     <div class="container">
         <div class="clr-row animate fadeInDown">
             <div class="clr-col-md-8 clr-col-lg-6 text-center" style="width: 466px; margin: 0 auto;">
@@ -123,9 +123,8 @@
                                     Import existing key
                                 </button>
                             </div>
-                            <div class="clr-col-md-12 clr-col-lg-6">
+                            <div class="clr-col-md-12 clr-col-lg-6" *ngIf="network.activeChain['name'] === 'EOS MAINNET'">
                                 <button class="btn btn-inverse-outline btn-block"
-                                        *ngIf="network.activeChain['name'] === 'EOS MAINNET'"
                                         (click)="newWallet = true">
                                     Request New Account
                                 </button>
@@ -626,7 +625,7 @@
             <br/>
             <br/>
             <br/>
-            <span class="black-white">{{choosedFil}}</span>
+            <span class="text-faded">{{choosedFil}}</span>
             <input style="visibility:hidden;" type="file" placeholder="Backup file" (change)="importCheckBK($event)"
                    formControlName="customImportBK" #customImportBK>
         </form>

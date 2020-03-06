@@ -175,8 +175,10 @@
 					Backup&nbsp;
 					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 						<fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
-						<span
-							class="tooltip-content">Create a backup file that can only be imported back on SimplEOS. <br>Use your wallet with the same configuration at any device.
+						<span class="tooltip-content">
+							Create a backup file that can only be imported back on <span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS.</span>
+							<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet.</span>
+							<br>Use your wallet with the same configuration at any device.
               </span>
 					</a>
 				</div>
@@ -186,7 +188,13 @@
 						</mat-checkbox>
 						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
 							<fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
-							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the "simpleosAutosave" folder that is created on the same place that SimplEOS is installed.</span>
+							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the
+								<span *ngIf="app.compilerVersion === 'DEFAULT'">"simpleosAutosave"</span>
+								<span *ngIf="app.compilerVersion === 'LIBERLAND'">"liberlandAutosave"</span>
+								 folder that is created on the same place that
+								<span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span>
+								<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet</span>
+								is installed.</span>
 						</a>
 						<div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
 					</div>
@@ -212,8 +220,8 @@
 	<h3 class="modal-title">
 		Are you <span class="highlight-primary">sure</span> ?
 	</h3>
-	<div class="modal-body">
-		<p style="margin-bottom: 20px;">All your data will be cleared. If you want to login again you will have to
+	<div class="modal-body" style="overflow-y: hidden;">
+		<p style="padding-bottom: 20px;">All your data will be cleared. If you want to login again you will have to
 			import
 			your
 			private key again.</p>
@@ -235,7 +243,7 @@
 	<h3 class="modal-title">
 		Are you <span class="highlight-primary">sure</span> ?
 	</h3>
-	<div class="modal-body">
+	<div class="modal-body" style="overflow-y: hidden;">
 		<p style="margin-bottom: 20px;">Your <span class="highlight-primary">{{aService.activeChain['name']}}</span> data will be
 			cleared . If you want to login again you will have to import
 			your
@@ -322,7 +330,8 @@
 	</div>
 	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
 		<button type="submit" class="btn btn-info-outline" (click)="changePass()" [disabled]="!passForm.valid">
-			Change and Restart simplEOS
+			Change and Restart <span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span>
+			<span *ngIf="app.compilerVersion === 'LIBERLAND'">Wallet</span>
 		</button>
 	</div>
 </clr-modal>
@@ -402,7 +411,7 @@
 
 <clr-modal [(clrModalOpen)]="exportBKModal" [clrModalSize]="'md'">
 	<h3 class="modal-title">
-		Choose were to save your backup file:
+		Choose where to save your backup file:
 	</h3>
 	<div class="modal-body">
 		<form [formGroup]="exportForm" (keyup.enter)="exportBK()">
@@ -531,7 +540,7 @@
 	<h3 class="modal-title">
 		Key/Account Management
 	</h3>
-	<div class="modal-body">
+	<div class="modal-body" style="min-height: 30vh;">
 		<clr-tabs clrLayout="vertical">
 			<clr-tab *ngFor="let key of localKeys; let idx = index">
 				<button style="font-family: 'SourceCodePro',monospace" clrTabLink id="link1">Key {{idx + 1}}:
@@ -540,10 +549,30 @@
 					</span>
 				</button>
 				<clr-tab-content [id]="'content'+idx" *clrIfActive>
-					<div style="font-size: smaller" class="highlight-primary">PUBLIC KEY:</div>
-					<div class="highlight">{{key}}</div>
-					<div *ngFor="let a of keysaccounts.get(key)">
-						{{a.account.name}}@{{a.permission}}
+					<div style="font-weight: 600" class="highlight-primary">PUBLIC KEY:</div>
+					<div class="highlight">{{key}}
+						<button class="btn btn-sm btn-danger-outline">
+							<fa-icon [icon]="['far','trash-alt']"></fa-icon>
+							Remove key
+						</button>
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
+							<span class="tooltip-content">Remove all accounts associated with this private key from SimplEOS <br>
+							This will not delete your accounts from the blockchain, just remove them from SimplEOS</span>
+						</a>
+					</div>
+					<div style="margin-top: 20px; font-weight: 600" class="highlight-primary">Associated imported accounts:</div>
+					<div *ngFor="let a of keysaccounts.get(key)" fxLayout="row" fxLayoutAlign="start center">
+						<div fxFlex="29">{{a.account.name}}@{{a.permission}}</div>
+						<button class="btn btn-sm btn-danger-outline" style="min-width: unset; padding: 0 5px; margin-left: 7px">
+							<fa-icon [icon]="['far','trash-alt']"></fa-icon>
+						</button>
+						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+							<fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
+							<span class="tooltip-content">Remove this account from SimplEOS <br>
+							This will not delete your account from the <br>
+							blockchain, it will just remove it from SimplEOS</span>
+						</a>
 					</div>
 				</clr-tab-content>
 			</clr-tab>

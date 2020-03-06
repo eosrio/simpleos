@@ -82,11 +82,10 @@
 /deep/ .chain-option.mat-option{
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;
-	/*background-color: #333333;*/
 }
 
 /deep/ .mat-select-panel {
-	background: var(--table-th-background);
+	background: var(--info-card-background);
 }
 
 /deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
@@ -121,8 +120,8 @@
     background-color: black;
     font-size: .65rem;
     letter-spacing: normal;
-    /*line-height: .9rem;*/
     font-family: Metropolis, sans-serif;
     white-space: pre-line;
+    z-index: 5000;
 }
 

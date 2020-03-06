@@ -157,6 +157,7 @@ import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
 import { ImportModalComponent } from './import-modal/import-modal.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
+import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
 
 export function playerFactory() {
     return player;
@@ -309,7 +310,8 @@ export class AppModule {
             faUserPlus,
             faUserEdit,
             faPaperPlane,
-            faExternalLink
+            faExternalLink,
+            faTrashAlt
         ]);
 
         // fal light
