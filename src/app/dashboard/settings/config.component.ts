@@ -69,19 +69,11 @@ export class ConfigComponent implements OnInit {
 
     selectedEndpoint = null;
     autoBackup = false;
-    lastBackupTime: string;
     selectedAccount = '';
 
     claimKey = false;
     private keytar: any;
     claimPrivateKey = '';
-
-
-    generating2 = false;
-    ownerpk2 = '';
-    ownerpub2 = '';
-    generated2 = false;
-    agreeKeys2 = false;
 
     keysaccounts: Map<string, any[]>;
     localKeys: string[] = [];
@@ -99,7 +91,7 @@ export class ConfigComponent implements OnInit {
                 private crypto: CryptoService,
                 public aService: AccountsService,
                 private toaster: ToasterService,
-                private backup: BackupService,
+                public backup: BackupService,
                 public app: AppComponent,
                 private _electronService: ElectronService,
                 public eosjs: Eosjs2Service,
@@ -107,7 +99,6 @@ export class ConfigComponent implements OnInit {
     ) {
 
         this.keytar = this._electronService.remote.require('keytar');
-
         this.fs = window.filesystem;
 
         this.timetoclose = this.pkExposureTime;
@@ -151,12 +142,6 @@ export class ConfigComponent implements OnInit {
         this.disableIm = false;
 
         this.chainConnected = [];
-        const lastbkp = localStorage.getItem('simplEOS.lastBackupTime');
-        if (lastbkp === '' || lastbkp === null) {
-            this.lastBackupTime = '';
-        } else {
-            this.lastBackupTime = (new Date(parseInt(lastbkp, 10))).toLocaleString();
-        }
 
         this.populateAccounts();
     }
@@ -205,6 +190,7 @@ export class ConfigComponent implements OnInit {
     ngOnInit() {
         this.chainConnected = this.getChainConnected();
         this.autoBackup = this.backup.automatic === 'true';
+        this.backup.getLastBackupTime();
     }
 
     cc(text) {
@@ -368,6 +354,8 @@ export class ConfigComponent implements OnInit {
         this.disableEx = false;
         this.exportBKModal = false;
         this.showToast('success', 'Backup exported!', '');
+        this.backup.updateBackupTime();
+        this.backup.getLastBackupTime();
     }
 
     // select backup file
@@ -446,7 +434,6 @@ export class ConfigComponent implements OnInit {
     openPKModal() {
         this.selectedAccount = this.aService.selected.getValue().name;
         const [publicKey, permission] = this.aService.getStoredKey(this.aService.selected.getValue());
-        console.log(publicKey, permission);
         if (permission === 'claim' || publicKey === '') {
             this.eosjs.rpc.get_account(this.selectedAccount).then((accData) => {
                 const claim_key = accData.permissions.find(p => {
@@ -488,11 +475,11 @@ export class ConfigComponent implements OnInit {
         if (this.showpkForm.get('pass').value !== '') {
             const selAcc = this.aService.selected.getValue();
             const [publicKey] = this.aService.getStoredKey(selAcc);
-            this.crypto.authenticate(this.showpkForm.get('pass').value, publicKey).then((result) => {
+            this.crypto.authenticate(this.showpkForm.get('pass').value, publicKey, true).then(async (result) => {
                 if (result) {
                     this.showpk = true;
                     this.showpkForm.reset();
-                    this.tempPK = this.eosjs.baseConfig.keyProvider;
+                    this.tempPK = result;
                     this.timeoutpk = setInterval(() => {
                         this.timetoclose -= 1;
                         if (this.timetoclose <= 0) {
@@ -520,10 +507,12 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    // open key generation modal
     openKeyGenModal() {
         this.keygenModal.openModal();
     }
 
+    // remove a single account
     removeAccount(name: string, refresh: boolean) {
         const rmIdx = this.aService.accounts.findIndex(a => a.name === name);
         console.log('remove account', name);
@@ -535,6 +524,7 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    // parse saved keystore
     getKeyStore() {
         const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
         if (savedData) {
@@ -542,10 +532,12 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    // update saved keystore
     saveKeyStore(keystore) {
         localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
     }
 
+    // remove a key from the key store with all the associated accounts
     removeKey(key: string) {
         // remove accounts
         const accountsToRemove = this.keysaccounts.get(key);

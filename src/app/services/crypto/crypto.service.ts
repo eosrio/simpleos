@@ -208,7 +208,7 @@ export class CryptoService {
         return [key, value];
     }
 
-    async authenticate(pass, publickey): Promise<boolean | string> {
+    async authenticate(pass, publickey, exportKey?: boolean): Promise<boolean | string> {
         const [key, value] = this.getLocalKey(publickey);
         if (value) {
             if (value.private !== 'ledger') {
@@ -217,10 +217,10 @@ export class CryptoService {
                 return 'LEDGER';
             }
         }
-        return await this.decryptKeys(key);
+        return await this.decryptKeys(key, exportKey);
     }
 
-    async decryptKeys(publickey): Promise<boolean> {
+    async decryptKeys(publickey, exportKey?: boolean): Promise<boolean> {
         const [, value] = this.getLocalKey(publickey);
         if (value) {
             if (value.private === 'ledger') {
@@ -228,7 +228,11 @@ export class CryptoService {
             }
             const decryptedKey = await this.decryptPayload(value.private);
             this.eosjs.initAPI(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
-            return true;
+            if (exportKey) {
+                return decryptedKey;
+            } else {
+                return true;
+            }
         } else {
             return false;
         }

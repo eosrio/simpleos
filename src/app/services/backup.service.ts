@@ -14,13 +14,12 @@ export class BackupService {
     bkp_folder = '';
     automatic: string;
     prefix = 'simpleos';
+    lastBackupTime = '';
 
     constructor() {
-
         if (environment.COMPILERVERSION !== 'DEFAULT') {
             this.prefix = environment.COMPILERVERSION.toLowerCase();
         }
-
         this.automatic = localStorage.getItem('simplEOS.autosave');
         if (this.automatic === '' || this.automatic === null) {
             localStorage.setItem('simplEOS.autosave', 'true');
@@ -96,7 +95,22 @@ export class BackupService {
                     console.log(err);
                 }
                 this.running = false;
+                this.getLastBackupTime();
             });
         }
+    }
+
+    getLastBackupTime() {
+        const lastbkp = localStorage.getItem('simplEOS.lastBackupTime');
+        if (lastbkp === '' || lastbkp === null) {
+            this.lastBackupTime = '';
+        } else {
+            this.lastBackupTime = (new Date(parseInt(lastbkp, 10))).toLocaleString();
+        }
+        console.log(this.lastBackupTime);
+    }
+
+    updateBackupTime() {
+        localStorage.setItem('simplEOS.lastBackupTime', new Date().getTime().toString());
     }
 }

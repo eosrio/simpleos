@@ -209,7 +209,7 @@
 								<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet</span>
 								is installed.</span>
                         </a>
-                        <div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
+                        <div class="info" *ngIf="backup.lastBackupTime !== ''">* Last backup on {{backup.lastBackupTime}}</div>
                     </div>
                     <button class="btn btn-info-outline" (click)="exportBKModal = true"
                             style="font-weight: 700">EXPORT
@@ -478,6 +478,7 @@
     </div>
 </clr-modal>
 
+<!--VIEW PRIVATE KEY-->
 <clr-modal #pkModal [(clrModalOpen)]="viewPKModal" [clrModalSize]="'md'" (clrModalOpenChange)="closePkModal();">
     <h3 class="modal-title" style="color: var(--text-error) !important">
         Caution
@@ -486,7 +487,7 @@
     <div class="modal-body">
         <div *ngIf="claimKey">
             Saved claim private key
-            <mat-form-field style="width: 470px; margin-top: 25px;">
+            <mat-form-field style="width: 350px; margin-top: 25px;">
                 <input matInput placeholder="Claim private key"
                        [value]="claimPrivateKey" readonly>
                 <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
@@ -524,8 +525,10 @@
     </div>
 </clr-modal>
 
+<!--GENERATE KEYS-->
 <app-keygen-modal></app-keygen-modal>
 
+<!--MANAGE KEYS-->
 <clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
     <h3 class="modal-title">
         Key/Account Management
