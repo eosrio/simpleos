@@ -19,6 +19,7 @@ import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {PublicKey} from "eosjs/dist/PublicKey";
 import {Numeric} from "eosjs/dist";
+import {KeygenModalComponent} from "../keygen-modal/keygen-modal.component";
 
 interface simpleosExtendedWindow {
     filesystem: any;
@@ -42,11 +43,13 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     @ViewChild('ledgerwizard', {static: true}) ledgerwizard: ClrWizard;
     @ViewChild('wizardnew', {static: true}) wizardnew: ClrWizard;
-    @ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
     @ViewChild('customImportBK', {static: true}) customImportBK: ElementRef;
 
     @ViewChild(ImportModalComponent)
     private importModal: ImportModalComponent;
+
+    @ViewChild(KeygenModalComponent)
+    private keygenModal: KeygenModalComponent;
 
     lottieConfig: AnimationOptions = {
         path: 'assets/logoanim.json',
@@ -401,16 +404,6 @@ export class LandingComponent implements OnInit, OnDestroy {
         this.generated = true;
     }
 
-    async generateNKeys() {
-        this.generating2 = true;
-
-        this.ownerpk2 = await this.eosjs.ecc.randomKey(64);
-        this.ownerpub2 = this.eosjs.ecc.privateToPublic(this.ownerpk2);
-
-        this.generating2 = false;
-        this.generated2 = true;
-    }
-
     makePayload() {
         if (this.eosjs.ecc.isValidPublic(this.ownerpub) && this.eosjs.ecc.isValidPublic(this.activepub)) {
             console.log('Generating account payload');
@@ -613,5 +606,9 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     openImportModal() {
         this.importModal.openModal();
+    }
+
+    openKeyGenModal() {
+        this.keygenModal.openModal();
     }
 }

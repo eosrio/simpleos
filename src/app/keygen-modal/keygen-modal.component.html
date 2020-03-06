@@ -1,0 +1,40 @@
+<clr-wizard #wizardkeys clrWizardSize="lg">
+    <clr-wizard-title>Generate new keys</clr-wizard-title>
+    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+
+
+    <clr-wizard-page [clrWizardPageNextDisabled]="ownerpub === '' || ownerpk === '' || !agreeKeys">
+        <ng-template clrPageTitle>New Keys</ng-template>
+        <h5 class="bold highlight">We recommend you <span class="error">disconnet from the internet</span></h5>
+        <h5>Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
+        </h5>
+
+        <mat-form-field class="mt-3" style="width: 470px">
+            <input matInput placeholder="Public key" [(ngModel)]="ownerpub">
+            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+                     (click)="cc(ownerpub,'Key', 'Please save it on a safe place.')"></fa-icon>
+            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field class="mt-3" style="width: 470px">
+            <input matInput placeholder="Private key" [(ngModel)]="ownerpk">
+            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+                     (click)="cc(ownerpk, 'Key', 'Please save it on a safe place.')"></fa-icon>
+            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
+        </mat-form-field>
+
+        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair
+        </button>
+
+        <fa-layers *ngIf="generating" class="highlight-primary fa-fw">
+            <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
+        </fa-layers>
+        <br/>
+        <ng-container *ngIf="generated" style="clear:both;">
+            <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys in a safe place</mat-checkbox>
+        </ng-container>
+    </clr-wizard-page>
+</clr-wizard>

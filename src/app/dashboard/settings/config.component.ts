@@ -11,6 +11,7 @@ import {AppComponent} from '../../app.component';
 import {ElectronService} from 'ngx-electron';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
+import {KeygenModalComponent} from "../../keygen-modal/keygen-modal.component";
 
 declare const window: any;
 
@@ -25,7 +26,9 @@ export class ConfigComponent implements OnInit {
     @ViewChild('customImportBK') customImportBK: ElementRef;
     @ViewChild('pkModal') pkModal: ClrModal;
     @ViewChild('managepkModal') managepkModal: ClrModal;
-    @ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
+
+    @ViewChild(KeygenModalComponent)
+    private keygenModal: KeygenModalComponent;
 
     endpointModal: boolean;
     logoutModal: boolean;
@@ -514,13 +517,8 @@ export class ConfigComponent implements OnInit {
         }
     }
 
-
-    async generateNKeys() {
-        this.generating2 = true;
-        this.ownerpk2 = await this.eosjs.ecc.randomKey(64);
-        this.ownerpub2 = this.eosjs.ecc.privateToPublic(this.ownerpk2);
-        this.generating2 = false;
-        this.generated2 = true;
+    openKeyGenModal() {
+        this.keygenModal.openModal();
     }
 
 }

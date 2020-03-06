@@ -87,7 +87,7 @@
                 </div>
                 <div class="card-block">
                     <button class="btn btn-info-outline"
-                            (click)="newKeys = true"
+                            (click)="openKeyGenModal()"
                             style="font-weight: 700">
                         Key Generator
                     </button>
@@ -524,46 +524,7 @@
     </div>
 </clr-modal>
 
-<clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
-    <clr-wizard-title>Generate new keys</clr-wizard-title>
-    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
-
-
-    <clr-wizard-page [clrWizardPageNextDisabled]="ownerpub2 === '' || ownerpk2 === '' || !agreeKeys2">
-        <ng-template clrPageTitle>New Keys</ng-template>
-        <h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
-        <!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-        <h5 class="gray">Please click the <span style="cursor:pointer;"
-                                                class="highlight-primary"> Generate Key Pair </span>
-            button.</h5>
-        <mat-form-field class="mt-2" style="width: 470px">
-            <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpub2)"></fa-icon>
-            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-        </mat-form-field>
-
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpk2)"></fa-icon>
-            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-        </mat-form-field>
-
-        <button class="btn btn-primary" style="margin-top:25px;" (click)="generateNKeys()">Generate Key Pair</button>
-
-        <fa-layers *ngIf="generating2" class="highlight-primary fa-fw">
-            <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
-        </fa-layers>
-        <br/>
-        <ng-container *ngIf="generated2" style="clear:both;">
-            <mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys in a safe place</mat-checkbox>
-        </ng-container>
-    </clr-wizard-page>
-</clr-wizard>
+<app-keygen-modal></app-keygen-modal>
 
 <clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
     <h3 class="modal-title">

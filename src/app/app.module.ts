@@ -158,6 +158,7 @@ import player from 'lottie-web';
 import { ImportModalComponent } from './import-modal/import-modal.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
+import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
 
 export function playerFactory() {
     return player;
@@ -183,6 +184,7 @@ export function playerFactory() {
         ConfirmModalComponent,
         InputModalComponent,
         ImportModalComponent,
+        KeygenModalComponent,
     ],
     imports: [
         FormsModule,

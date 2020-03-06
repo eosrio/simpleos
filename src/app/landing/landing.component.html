@@ -68,18 +68,18 @@
                             <div class="card-block">
                                 <div class="clr-row" style="margin-left: 0; width: 100%;">
                                     <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="10px">
-                                    <mat-form-field class="public-input" style="overflow: inherit;" fxFlex="grow">
-                                        <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
-                                    </mat-form-field>
+                                        <mat-form-field class="public-input" style="overflow: inherit;" fxFlex="grow">
+                                            <input matInput type="text" placeholder="Endpoint" [(ngModel)]="endpoint">
+                                        </mat-form-field>
 
-                                    <button class="btn btn-info-outline" (click)="customConnect()" fxFlex="25"
-                                            [disabled]="!endpoint" style="margin-right: 5px;">
-                                        Connect
-                                    </button>
+                                        <button class="btn btn-info-outline" (click)="customConnect()" fxFlex="25"
+                                                [disabled]="!endpoint" style="margin-right: 5px;">
+                                            Connect
+                                        </button>
                                     </div>
 
                                     <div style="margin-top: -15px; margin-bottom: 20px;">
-                                        <a class="clicked highlight-primary"  (click)="endpointModal=true;">
+                                        <a class="clicked highlight-primary" (click)="endpointModal=true;">
                                             ENDPOINT OPTIONS
                                         </a>
                                         <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
@@ -123,7 +123,8 @@
                                     Import existing key
                                 </button>
                             </div>
-                            <div class="clr-col-md-12 clr-col-lg-6" *ngIf="network.activeChain['name'] === 'EOS MAINNET'">
+                            <div class="clr-col-md-12 clr-col-lg-6"
+                                 *ngIf="network.activeChain['name'] === 'EOS MAINNET'">
                                 <button class="btn btn-inverse-outline btn-block"
                                         (click)="newWallet = true">
                                     Request New Account
@@ -140,7 +141,7 @@
                                 </button>
                             </div>
                             <div class="clr-col-md-12 clr-col-lg-6">
-                                <button class="btn btn-inverse-outline btn-block" (click)="newKeys = true">
+                                <button class="btn btn-inverse-outline btn-block" (click)="openKeyGenModal()">
                                     Generate Keys
                                 </button>
                             </div>
@@ -220,11 +221,12 @@
                                 <div class="card-block">
                                     <div class="clr-row" style="margin-left: 0; width: 100%;">
 
-                                        <div class="text-left advanced warn" >Advanced network Options:</div>
-                                        <div fxLayout="row" fxLayoutAlign="space-between center" fxFlex="grow" style="margin-top: 7px">
+                                        <div class="text-left advanced warn">Advanced network Options:</div>
+                                        <div fxLayout="row" fxLayoutAlign="space-between center" fxFlex="grow"
+                                             style="margin-top: 7px">
                                             <div>
-                                                <a class="clicked highlight-primary"  (click)="endpointModal=true;">
-                                                CHANGE ENDPOINT
+                                                <a class="clicked highlight-primary" (click)="endpointModal=true;">
+                                                    CHANGE ENDPOINT
                                                 </a>
                                                 <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
                                                          style="font-size: 15px;"
@@ -560,45 +562,7 @@
 <!--CREATE NEW WALLET END-->
 
 <!--GENERATE KEYS-->
-<clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
-    <clr-wizard-title>Generate new keys</clr-wizard-title>
-    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
-
-
-    <clr-wizard-page [clrWizardPageNextDisabled]="ownerpub2 === '' || ownerpk2 === '' || !agreeKeys2">
-        <ng-template clrPageTitle>New Keys</ng-template>
-        <h5 class="bold highlight">We recommend you <span class="error">disconnet from the internet</span></h5>
-        <h5>Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
-        </h5>
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpub2,'Key', 'Please save it on a safe place.')"></fa-icon>
-            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-        </mat-form-field>
-
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpk2, 'Key', 'Please save it on a safe place.')"></fa-icon>
-            <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-        </mat-form-field>
-
-        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair
-        </button>
-
-        <fa-layers *ngIf="generating2" class="highlight-primary fa-fw">
-            <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
-        </fa-layers>
-        <br/>
-        <ng-container *ngIf="generated2" style="clear:both;">
-            <mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys in a safe place</mat-checkbox>
-        </ng-container>
-    </clr-wizard-page>
-</clr-wizard>
+<app-keygen-modal></app-keygen-modal>
 <!--GENERATE KEYS END-->
 
 <!--IMPORT BACKUP START-->
