@@ -244,7 +244,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     doRemoveAcc() {
         if (!this.aService.isRefreshing) {
-
             const auths = this.aService.getStoredAuths(this.aService.accounts[this.accRemovalIndex]);
             const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
             if (savedData) {
@@ -259,7 +258,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
             }
-
             this.aService.accounts.splice(this.accRemovalIndex, 1);
             this.deleteAccModal = false;
             this.aService.select(0);
@@ -508,11 +506,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async generateKeys() {
         this.generating = true;
 
-        this.ownerpk = await this.eosjs.ecc.randomKey(64);
-        this.ownerpub = this.eosjs.ecc.privateToPublic(this.ownerpk);
+        const activePair = this.crypto.generateKeyPair();
+        const ownerPair = this.crypto.generateKeyPair();
 
-        this.activepk = await this.eosjs.ecc.randomKey(64);
-        this.activepub = this.eosjs.ecc.privateToPublic(this.activepk);
+        this.ownerpk = ownerPair.private;
+        this.ownerpub = ownerPair.public;
+
+        this.activepk = activePair.private;
+        this.activepub = activePair.public;
 
         this.generating = false;
         this.generated = true;

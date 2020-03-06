@@ -203,13 +203,13 @@
             button.</h5>
         <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub"
-                   (blur)="validOwnerPubKey=(ownerpub.length==53);">
+                   (blur)="validOwnerPubKey = ownerpub.length === 53">
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
         <mat-form-field class="mt-3" style="width: 470px">
             <input matInput placeholder="Active Public key" [(ngModel)]="activepub"
-                   (blur)="validActivePubKey=(activepub.length==53);">
+                   (blur)="validActivePubKey = activepub.length === 53">
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
         </mat-form-field>
 

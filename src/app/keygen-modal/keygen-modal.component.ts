@@ -1,9 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {ClrWizard} from "@clr/angular";
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from "angular2-toaster";
-import {Numeric} from "eosjs/dist";
-import {constructElliptic, PrivateKey} from "eosjs/dist/eosjs-key-conversions";
-import {ElectronService} from "ngx-electron";
+import {CryptoService} from "../services/crypto/crypto.service";
 
 @Component({
     selector: 'app-keygen-modal',
@@ -20,15 +18,11 @@ export class KeygenModalComponent implements OnInit {
     private config: ToasterConfig;
     generating = false;
     generated = false;
-    private nodeCrypto: any;
-
-    keyType = Numeric.KeyType.k1;
 
     constructor(
         private toaster: ToasterService,
-        private _electronService: ElectronService,
+        private crypto: CryptoService
     ) {
-        this.nodeCrypto = this._electronService.remote.require('crypto');
     }
 
     ngOnInit(): void {
@@ -64,13 +58,10 @@ export class KeygenModalComponent implements OnInit {
     }
 
     async generateNKeys() {
-        console.log('generating keys...');
         this.generating = true;
-        const rawkey = this.nodeCrypto.randomBytes(32);
-        const key = {data: rawkey, type: this.keyType};
-        const privateKey = new PrivateKey(key, constructElliptic(this.keyType));
-        this.ownerpk = privateKey.toString();
-        this.ownerpub = privateKey.getPublicKey().toString();
+        const keypair = this.crypto.generateKeyPair();
+        this.ownerpk = keypair.private;
+        this.ownerpub = keypair.public;
         this.generating = false;
         this.generated = true;
     }

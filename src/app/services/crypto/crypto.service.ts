@@ -5,6 +5,8 @@ import * as CryptoJS from 'crypto-js';
 import {Router} from '@angular/router';
 import {Eosjs2Service} from '../eosio/eosjs2.service';
 import {Numeric} from "eosjs/dist";
+import {constructElliptic, PrivateKey} from "eosjs/dist/eosjs-key-conversions";
+import {ElectronService} from "ngx-electron";
 
 @Injectable({
     providedIn: 'root'
@@ -19,12 +21,25 @@ export class CryptoService {
     private lockChecked = false;
     requiredLedgerDevice = '';
     requiredLedgerSlot;
+    private nodeCrypto: any;
 
     constructor(
         private router: Router,
-        private eosjs: Eosjs2Service
+        private eosjs: Eosjs2Service,
+        private _electronService: ElectronService
     ) {
         this.checkLock();
+        this.nodeCrypto = this._electronService.remote.require('crypto');
+    }
+
+    generateKeyPair() {
+        const rawkey = this.nodeCrypto.randomBytes(32);
+        const key = {data: rawkey, type: Numeric.KeyType.k1};
+        const privateKey = new PrivateKey(key, constructElliptic(Numeric.KeyType.k1));
+        return {
+            private: privateKey.toString(),
+            public: privateKey.getPublicKey().toString()
+        };
     }
 
     checkLock() {
