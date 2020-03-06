@@ -590,11 +590,12 @@ export const WaxLandingTheme = {
 
 	/*cards*/
 	'--info-card-background': 'var(--blue-card)',
+	'--info-card-bg-hover': 'var(--blue-card-darker)',
 
 	/*scrollbar*/
-	'--scroll-track-background': 'var(var(--blue-card))',
-	'--scroll-background': '(var(--blue-card)',
-	'--scroll-thumb-background': 'var(--gray-medium)',
+	'--scroll-track-background': 'var(--blue-card-darker)',
+	'--scroll-background': '(var(--blue-card-darker)',
+	'--scroll-thumb-background': 'var(--gray-darkmedium)',
 
 	/* modal / dialog / wizard */
 	'--modal-background': 'var(--blue-card)',
@@ -695,9 +696,9 @@ export const TelosLandingTheme = {
 	'--text-calendar': 'var(--gray-medium)',
 
 	/*scrollbar*/
-	'--scroll-track-background': 'var(--blue-card)',
-	'--scroll-background': 'var(--blue-card)',
-	'--scroll-thumb-background': 'var(--gray-medium)',
+	'--scroll-track-background': 'var(--gray-light)',
+	'--scroll-background': 'var(--gray-light)',
+	'--scroll-thumb-background': 'var(--gray-lightmedium)',
 
 	/* modal / dialog / wizard */
 	'--modal-background': 'var(--light-card)',
