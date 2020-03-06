@@ -1,5 +1,5 @@
-import {Component, OnInit, AfterViewInit, ChangeDetectorRef} from '@angular/core';
-import {FormBuilder, FormGroup, FormControl, Validators} from '@angular/forms';
+import {AfterViewInit, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSAccount} from '../../interfaces/account';
 import {CryptoService} from '../../services/crypto/crypto.service';
@@ -491,52 +491,4 @@ export class DappComponent implements OnInit, AfterViewInit {
         const result = await this.trxFactory.launch(publicKey);
         console.log(result);
     }
-
-    pushAction2() {
-        this.busy = true;
-        this.busy2 = true;
-        this.wrongpass = '';
-        this.errormsg2 = '';
-
-        const account = this.aService.selected.getValue();
-        const accountName = this.aService.selected.getValue().name;
-        const password = this.confirmForm.get('pass').value;
-        const [pubkey, permission] = this.aService.getStoredKey(account);
-        console.log(pubkey, permission);
-
-        this.crypto.authenticate(password, pubkey).then((data) => {
-            if (data === true) {
-                console.log(this.formVal);
-                const val = this.eosjs.pushActionContract(this.contract, this.action, this.formVal, accountName, permission).then((info) => {
-                    this.tokenModal = false;
-                    this.busy2 = false;
-                    this.sendModal = false;
-                    console.log(info);
-                    this.showToast('success', 'Transation broadcasted', 'Check your history for confirmation.');
-                }).catch(error => {
-                    console.log(error);
-                    if (typeof error === 'object') {
-                        if (error.json) {
-                            this.wrongpass = 'Error: ' + error.json.error.details[0].message;
-                        } else {
-                            this.wrongpass = 'Error: ' + error.error.details[0].message;
-                        }
-                    } else {
-                        if (error.json) {
-                            this.wrongpass = 'Error: ' + JSON.parse(error).json.error.details[0].message;
-                        } else {
-                            this.wrongpass = 'Error: ' + JSON.parse(error).error.details[0].message;
-                        }
-                    }
-                    this.busy2 = false;
-                });
-                console.log(val['__zone_symbol__state']);
-            }
-        }).catch(error2 => {
-            console.log(error2);
-            this.wrongpass = 'Wrong password!';
-            this.busy = false;
-        });
-    }
-
 }
