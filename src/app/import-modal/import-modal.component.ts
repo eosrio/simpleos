@@ -135,8 +135,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         this.subscriptions.push(this.pvtform.get('private_key').valueChanges.subscribe((value) => {
             if (value) {
                 value = value.trim();
-                if (value.length === 51) {
-                    this.verifyPrivateKey(value, false);
+                if (value.length >= 51) {
+                    this.verifyPrivateKey(value, false).catch(console.log);
                 }
             } else {
                 this.importedAccounts = [];
