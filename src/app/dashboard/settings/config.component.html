@@ -163,9 +163,9 @@
                     Change Password &nbsp;
                     <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
                         <fa-icon [icon]="['far','question-circle']"
-								 class="highlight-primary"
+                                 class="highlight-primary"
                                  style="font-size: 16px;">
-						</fa-icon>
+                        </fa-icon>
                         <span class="tooltip-content">
 							Password used to <br> sign transactions / actions.
 						</span>
@@ -541,7 +541,7 @@
                 <clr-tab-content [id]="'content'+idx" *clrIfActive>
                     <div style="font-weight: 600" class="highlight-primary">PUBLIC KEY:</div>
                     <div class="highlight">{{key}}
-                        <button class="btn btn-sm btn-danger-outline">
+                        <button class="btn btn-sm btn-danger-outline" (click)="removeKey(key)">
                             <fa-icon [icon]="['far','trash-alt']"></fa-icon>
                             Remove key
                         </button>
@@ -557,7 +557,7 @@
                     </div>
                     <div *ngFor="let a of keysaccounts.get(key)" fxLayout="row" fxLayoutAlign="start center">
                         <div fxFlex="29">{{a.account.name}}@{{a.permission}}</div>
-                        <button class="btn btn-sm btn-danger-outline"
+                        <button (click)="removeAccount(a.account.name,true)" class="btn btn-sm btn-danger-outline"
                                 style="min-width: unset; padding: 0 5px; margin-left: 7px">
                             <fa-icon [icon]="['far','trash-alt']"></fa-icon>
                         </button>

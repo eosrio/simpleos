@@ -158,11 +158,11 @@ export class ConfigComponent implements OnInit {
             this.lastBackupTime = (new Date(parseInt(lastbkp, 10))).toLocaleString();
         }
 
-        this.keysaccounts = new Map();
         this.populateAccounts();
     }
 
     populateAccounts() {
+        this.keysaccounts = new Map();
         for (let i = 0; i < this.aService.accounts.length; i++) {
             const account = this.aService.accounts[i];
             const auth = this.aService.getStoredKey(account);
@@ -176,6 +176,9 @@ export class ConfigComponent implements OnInit {
             });
         }
         this.localKeys = [...this.keysaccounts.keys()];
+        if (this.localKeys.length === 0) {
+            this.router.navigateByUrl('/').catch(console.log);
+        }
     }
 
     private showToast(type: string, title: string, body: string) {
@@ -521,4 +524,49 @@ export class ConfigComponent implements OnInit {
         this.keygenModal.openModal();
     }
 
+    removeAccount(name: string, refresh: boolean) {
+        const rmIdx = this.aService.accounts.findIndex(a => a.name === name);
+        console.log('remove account', name);
+        console.log(rmIdx);
+        this.aService.accounts.splice(rmIdx, 1);
+        if (refresh) {
+            this.aService.refreshFromChain(true).catch(console.log);
+            this.populateAccounts();
+        }
+    }
+
+    getKeyStore() {
+        const savedData = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
+        if (savedData) {
+            return JSON.parse(savedData);
+        }
+    }
+
+    saveKeyStore(keystore) {
+        localStorage.setItem('eos_keys.' + this.aService.activeChain.id, JSON.stringify(keystore));
+    }
+
+    removeKey(key: string) {
+        // remove accounts
+        const accountsToRemove = this.keysaccounts.get(key);
+        for (const a of accountsToRemove) {
+            this.removeAccount(a.account.name, false);
+        }
+
+        this.aService.select(0);
+
+        // remove key
+        const keystore = this.getKeyStore();
+        if (keystore[key]) {
+            delete keystore[key];
+            console.log(`${key} removed`);
+        } else {
+            console.log(`${key} not found`);
+        }
+        this.saveKeyStore(keystore);
+
+        // refresh accounts
+        this.aService.refreshFromChain(true).catch(console.log);
+        this.populateAccounts();
+    }
 }
