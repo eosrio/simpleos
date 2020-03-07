@@ -1,5 +1,5 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {ClrWizard} from "@clr/angular";
+import {ClrModal} from "@clr/angular";
 import {BodyOutputType, Toast, ToasterConfig, ToasterService} from "angular2-toaster";
 import {CryptoService} from "../services/crypto/crypto.service";
 
@@ -10,10 +10,10 @@ import {CryptoService} from "../services/crypto/crypto.service";
 })
 export class KeygenModalComponent implements OnInit {
 
-    @ViewChild('wizardkeys', {static: true}) wizardkeys: ClrWizard;
+    @ViewChild('keygenModal', {static: true}) keygenModal: ClrModal;
 
-    ownerpub = '';
-    ownerpk = '';
+    prvKey = '';
+    pubKey = '';
     agreeKeys = false;
     private config: ToasterConfig;
     generating = false;
@@ -34,6 +34,10 @@ export class KeygenModalComponent implements OnInit {
         }).catch(() => {
             this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
         });
+    }
+
+    copy(text: string) {
+        this.cc(text, 'Key', 'Please save it on a safe place.');
     }
 
     private showToast(type: string, title: string, body: string) {
@@ -60,13 +64,20 @@ export class KeygenModalComponent implements OnInit {
     async generateNKeys() {
         this.generating = true;
         const keypair = this.crypto.generateKeyPair();
-        this.ownerpk = keypair.private;
-        this.ownerpub = keypair.public;
+        this.prvKey = keypair.private;
+        this.pubKey = keypair.public;
         this.generating = false;
         this.generated = true;
     }
 
     openModal() {
-        this.wizardkeys.open();
+        this.keygenModal.open();
+    }
+
+    onFinish() {
+        this.keygenModal.close();
+        this.prvKey = '';
+        this.pubKey = '';
+        this.agreeKeys = false;
     }
 }

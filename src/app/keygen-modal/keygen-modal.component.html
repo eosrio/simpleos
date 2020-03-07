@@ -1,40 +1,59 @@
-<clr-wizard #wizardkeys clrWizardSize="lg">
-    <clr-wizard-title>Generate new keys</clr-wizard-title>
-    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+<clr-modal #keygenModal [clrModalSize]="'lg'">
+    <h3 class="modal-title">
+        Generate new keys
+    </h3>
 
+    <div class="modal-body" style="min-height: 30vh;">
 
-    <clr-wizard-page [clrWizardPageNextDisabled]="ownerpub === '' || ownerpk === '' || !agreeKeys">
-        <ng-template clrPageTitle>New Keys</ng-template>
-        <h5 class="bold highlight">We recommend you <span class="error">disconnet from the internet</span></h5>
-        <h5>Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
+        <h5 class="bold highlight">
+            We recommend you <span class="error">disconnet from the internet</span>
         </h5>
 
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Public key" [(ngModel)]="ownerpub">
+        <h5>
+            Please click the <span style="cursor:pointer;" class="highlight-primary"> Generate Key Pair </span> button.
+        </h5>
+
+        <!--        PUBLIC KEY-->
+        <mat-form-field class="mt-3" style="width: 550px">
+            <label>
+                <input style="font-family: 'SourceCodePro',monospace" matInput placeholder="Public key" [(ngModel)]="pubKey">
+            </label>
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpub,'Key', 'Please save it on a safe place.')"></fa-icon>
+                     (click)="copy(pubKey)"></fa-icon>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Private key" [(ngModel)]="ownerpk">
+        <!--        PRIVATE KEY-->
+        <mat-form-field class="mt-3" style="width: 550px">
+            <label>
+                <input style="font-family: 'SourceCodePro',monospace" matInput placeholder="Private key" [(ngModel)]="prvKey">
+            </label>
             <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="cc(ownerpk, 'Key', 'Please save it on a safe place.')"></fa-icon>
+                     (click)="copy(prvKey)"></fa-icon>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
-        <button class="btn btn-primary" style="margin: 30px 0 20px;" (click)="generateNKeys()">Generate Key Pair
+        <br/>
+
+        <button class="btn btn-primary"
+                style="margin: 30px 0 20px;"
+                (click)="generateNKeys()">
+            Generate Key Pair
         </button>
 
         <fa-layers *ngIf="generating" class="highlight-primary fa-fw">
             <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
         </fa-layers>
-        <br/>
-        <ng-container *ngIf="generated" style="clear:both;">
+
+    </div>
+
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <div *ngIf="generated" style="clear:both;padding-top: 5px;">
             <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys in a safe place</mat-checkbox>
-        </ng-container>
-    </clr-wizard-page>
-</clr-wizard>
+        </div>
+        <button [disabled]="pubKey === '' || prvKey === '' || !agreeKeys" type="button" class="btn btn-info-outline"
+                (click)="onFinish()">
+            FINISH
+        </button>
+    </div>
+</clr-modal>
