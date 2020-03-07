@@ -60,7 +60,7 @@
                         <mat-form-field class="field-width">
                             <input matInput formControlName="amount" [textMask]="{mask: numberMask}" type="text"
                                    placeholder="Amount ({{selectedToken['name']}})" (blur)="checkAmount();">
-                            <button mat-button matSuffix mat-icon-button class="btn btn-info-outline btn-sm btn-max"
+                            <button type="button" mat-button matSuffix mat-icon-button class="btn btn-info-outline btn-sm btn-max"
                                     (click)="setMax()">
                                 MAX
                             </button>
@@ -85,7 +85,7 @@
                             <input matInput formControlName="alias" type="text" placeholder="Contact name">
                         </mat-form-field>
                     </ng-container>
-                    <button class="btn btn-block btn-info-outline" (click)="newTransfer()"
+                    <button type="submit" class="btn btn-block btn-info-outline" (click)="newTransfer()"
                             [disabled]="!sendForm.valid">
                         <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
                     </button>

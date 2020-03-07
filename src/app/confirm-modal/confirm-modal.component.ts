@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, NgZone, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {CryptoService} from '../services/crypto/crypto.service';
@@ -8,7 +8,8 @@ import {AccountsService} from '../services/accounts.service';
 import {TransactionFactoryService, TrxModalData} from '../services/eosio/transaction-factory.service';
 import {LedgerService} from "../services/ledger/ledger.service";
 import {NetworkService} from "../services/network.service";
-import {Subject, Subscription} from "rxjs";
+import {MatFormField} from "@angular/material/form-field";
+import {MatInput} from "@angular/material/input";
 
 @Component({
     selector: 'app-confirm-modal',
@@ -16,6 +17,8 @@ import {Subject, Subscription} from "rxjs";
     styleUrls: ['./confirm-modal.component.css']
 })
 export class ConfirmModalComponent {
+
+    @ViewChild('pass') pass: MatInput;
 
     public visibility = false;
     wasClosed = false;
@@ -37,21 +40,33 @@ export class ConfirmModalComponent {
         private trxFactory: TransactionFactoryService,
         public ledger: LedgerService,
         public network: NetworkService,
+        private zone: NgZone,
     ) {
+
         this.confirmationForm = this.fb.group({
             pass: ['', [Validators.required]]
         });
+
         this.trxFactory.launcher.subscribe((state) => {
             this.visibility = state.visibility;
             this.mode = state.mode;
             console.log(state.mode);
             if (this.visibility) {
+                this.confirmationForm.reset();
                 this.wasClosed = false;
+                this.setFocus();
             }
         });
+
         this.trxFactory.modalData.asObservable().subscribe((modalData) => {
             this.modalData = modalData;
         });
+    }
+
+    setFocus() {
+        setTimeout(() => {
+            this.pass.focus();
+        },100);
     }
 
     async processTransaction(trx, handler) {

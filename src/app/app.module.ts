@@ -159,6 +159,7 @@ import { ImportModalComponent } from './import-modal/import-modal.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
 import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
+import {A11yModule} from "@angular/cdk/a11y";
 
 export function playerFactory() {
     return player;
@@ -228,6 +229,7 @@ export function playerFactory() {
         FlexLayoutModule,
         MatTooltipModule,
         PaginatorModule,
+        A11yModule,
     ],
     providers: [
         Eosjs2Service,

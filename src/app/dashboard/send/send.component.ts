@@ -95,14 +95,10 @@ export class SendComponent implements OnInit, OnDestroy {
         this.fromAccount = '';
         this.busy = false;
 
-        //-----------------------------
-        // CHANGE BACK AMOUNT REQUIRED
-        //-----------------------------
-
         this.sendForm = this.fb.group({
             token: [aService.activeChain['symbol'], Validators.required],
             to: ['', Validators.required],
-            amount: [''],
+            amount: ['', Validators.required],
             memo: [''],
             add: [false],
             alias: [''],
