@@ -17,6 +17,7 @@ import {environment} from '../../environments/environment';
 import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
+import {Router} from "@angular/router";
 
 @Component({
     selector: 'app-dashboard',
@@ -130,6 +131,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         private theme: ThemeService,
         public app: AppComponent,
         private cdr: ChangeDetectorRef,
+        private router: Router
     ) {
 
         this.newAccountModal = false;
@@ -179,22 +181,70 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             loop: false,
         };
 
+        // dashboard key shortcuts
         document.onkeydown = (e) => {
-            // next account
-            if (e.ctrlKey && e.key === 'ArrowRight') {
-                if (this.aService.selectedIdx < this.aService.accounts.length) {
-                    this.aService.select(this.aService.selectedIdx + 1);
-                    this.cdr.detectChanges();
+            if (e.altKey) {
+                switch (e.key) {
+                    case 'v': {
+                        this.navigateTo('vote');
+                        break;
+                    }
+                    case 'r': {
+                        this.navigateTo('ram');
+                        break;
+                    }
+                    case 's': {
+                        this.navigateTo('send');
+                        break;
+                    }
+                    case 'h': {
+                        this.navigateTo('wallet');
+                        break;
+                    }
+                    case 'o': {
+                        this.navigateTo('config');
+                        break;
+                    }
+                    case 'a': {
+                        this.navigateTo('about');
+                        break;
+                    }
+                    case 'c': {
+                        this.navigateTo('dapp');
+                        break;
+                    }
                 }
             }
-            // previous account
-            if (e.ctrlKey && e.key === 'ArrowLeft') {
-                if (this.aService.selectedIdx > 0) {
-                    this.aService.select(this.aService.selectedIdx - 1);
-                    this.cdr.detectChanges();
+
+            if (e.ctrlKey) {
+                if (e.key === 'ArrowRight') {
+                    if (this.aService.selectedIdx < this.aService.accounts.length) {
+                        this.aService.select(this.aService.selectedIdx + 1);
+                        this.cdr.detectChanges();
+                    }
+                }
+                if (e.key === 'ArrowLeft') {
+                    if (this.aService.selectedIdx > 0) {
+                        this.aService.select(this.aService.selectedIdx - 1);
+                        this.cdr.detectChanges();
+                    }
+                }
+                if (e.key >= '1' && e.key <= '9') {
+                    console.log('select account ' + e.key);
+                    const accNum = parseInt(e.key);
+                    if (this.aService.accounts.length >= accNum) {
+                        this.aService.select(accNum - 1);
+                        this.cdr.detectChanges();
+                    }
                 }
             }
         };
+    }
+
+    navigateTo(page) {
+        this.zone.run(() => {
+            this.router.navigate(['dashboard', page]).catch(console.log);
+        });
     }
 
     openTX(value) {
