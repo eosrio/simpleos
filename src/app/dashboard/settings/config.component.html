@@ -529,7 +529,10 @@
 <app-keygen-modal></app-keygen-modal>
 
 <!--MANAGE KEYS-->
-<clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
+<clr-modal #managepkModal
+           [(clrModalOpen)]="managerKeys"
+           [clrModalSize]="'lg'"
+           (clrModalOpenChange)="populateAccounts()">
     <h3 class="modal-title">
         Key/Account Management
     </h3>
@@ -544,7 +547,7 @@
                 <clr-tab-content [id]="'content'+idx" *clrIfActive>
                     <div style="font-weight: 600" class="highlight-primary">PUBLIC KEY:</div>
                     <div class="highlight">{{key}}
-                        <button class="btn btn-sm btn-danger-outline" (click)="removeKey(key)">
+                        <button class="btn btn-sm btn-danger-outline" (click)="removeKey(key);">
                             <fa-icon [icon]="['far','trash-alt']"></fa-icon>
                             Remove key
                         </button>

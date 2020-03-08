@@ -81,7 +81,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         if (this.usingLedger) {
             this.loadSelectedLedgerAccts(ledgerAccounts).catch(console.log);
         } else {
-            this.verifyPrivateKey(this.pvtform.get('private_key').value, true);
+            this.verifyPrivateKey(this.pvtform.get('private_key').value, true).catch(console.log);
         }
     }
 
