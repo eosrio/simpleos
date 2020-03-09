@@ -75,8 +75,8 @@ export const DefaultTheme = {
 	'--slogan-special-color': 'inherit',
 
 	/*sidenav*/
-	'--dashboard-animation-display': 'block',
-	'--dashboard-img-display': 'none',
+	'--dashboard-animation-display': 'block', // for sidenav, landing and lockscreen logo
+	'--dashboard-img-display': 'none',  // for sidenav, landing and lockscreen logo
 	'--sidenav-background': 'var(--black-sidenav)',
 	'--sidenav-color': 'var(--gray-lightmedium)',
 	'--sidenav-active-background': 'var(--black-background)',
@@ -425,8 +425,8 @@ export const LightTheme = {
 	'--text-on-cover': 'var(--gray-medium)',
 
 	/*sidenav*/
-	'--dashboard-animation-display': 'none',
-	'--dashboard-img-display': 'block',
+	'--dashboard-animation-display': 'none', // for sidenav, landing and lockscreen logo
+	'--dashboard-img-display': 'block', // for sidenav, landing and lockscreen logo
 	'--sidenav-background': 'var(--blue-color)',
 	'--sidenav-color': 'var(--white-color)',
 	'--sidenav-active-background': 'var(--white-color)',
@@ -587,6 +587,8 @@ export const WaxLandingTheme = {
 	'--slogan-special-color': 'var(--gray-lightmedium)',
 	'--landing-background': 'url("./assets/cover-wax.jpg")',
 	'--text-on-cover': 'var(--gray-lightmedium)',
+	'--dashboard-animation-display': 'block', // for sidenav, landing and lockscreen logo
+	'--dashboard-img-display': 'none',  // for sidenav, landing and lockscreen logo
 
 	/*cards*/
 	'--info-card-background': 'var(--blue-card)',
@@ -611,7 +613,9 @@ export const WaxLandingTheme = {
 
 	/*  input */
 	'--input-label': 'var(--gray-light)',
-	// '--input-label': '#b1b1b1',
+
+	/*calendar*/
+	'--text-calendar': 'var(--white-color)',
 
 	'--text-title-color': '#d0d0d0',
 
@@ -687,6 +691,8 @@ export const TelosLandingTheme = {
 	'--slogan-special-color': 'var(--gray-lightmedium)',
 	'--landing-background': 'url("./assets/cover-telos.jpg")',
 	'--text-on-cover': 'var(--gray-lightmedium)',
+	'--dashboard-animation-display': 'block', // for sidenav, landing and lockscreen logo
+	'--dashboard-img-display': 'none',  // for sidenav, landing and lockscreen logo
 
 	/*cards*/
 	'--info-card-background': 'var(--light-card)',
