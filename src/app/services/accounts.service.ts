@@ -15,7 +15,7 @@ export class AccountsService {
 
     public accounts: EOSAccount[];
     public activeChain: any;
-    public selected = new BehaviorSubject<EOSAccount>(null);
+    public selected = new BehaviorSubject<EOSAccount>({} as EOSAccount);
     public lastAccount: any = null;
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
@@ -890,9 +890,9 @@ export class AccountsService {
                 if (response.actions && response.actions.length === 1) {
                     const lastTimestamp = new Date(response.actions[0]['@timestamp'] + 'Z').getTime();
                     const now = Date.now();
-                    console.log(api);
-                    console.log('time diff', (now - lastTimestamp) / 1000, 'seconds');
-                    console.log('latency', (now - tref), 'ms');
+                    // console.log(api);
+                    // console.log('time diff', (now - lastTimestamp) / 1000, 'seconds');
+                    // console.log('latency', (now - tref), 'ms');
                     this.activeChain.hyperionProviders.push({
                         url: api,
                         latency: (now - tref),
@@ -904,7 +904,6 @@ export class AccountsService {
             }
         }
         this.sortProviders();
-        console.log(this.activeChain.hyperionProviders);
     }
 
     private async classifySigProviders() {

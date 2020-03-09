@@ -272,8 +272,6 @@ export class NetworkService {
 		// prevent double load after quick connection mode
 		if (endpoint !== this.lastEndpoint || this.autoMode === true) {
 
-			console.log(endpoint);
-
 			// define endpoint and initialize rpc
 			this.eosjs.initRPC(endpoint, this.activeChain.id, this.activeChain.endpoints);
 			this.lastEndpoint = endpoint;

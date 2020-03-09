@@ -1,4 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, ViewChild} from '@angular/core';
 import {AccountsService} from '../services/accounts.service';
 import {ClrWizard} from '@clr/angular';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
@@ -24,7 +24,7 @@ import {Router} from "@angular/router";
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DashboardComponent implements AfterViewInit, OnDestroy {
 
     @ViewChild('newAccountWizard', {static: true}) wizardaccount: ClrWizard;
     @ViewChild('importAccountWizard', {static: true}) importwizard: ClrWizard;
@@ -251,20 +251,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         window['shell']['openExternal'](this.aService.activeChain['explorers'][0]['tx_url'] + value);
     }
 
-    ngOnInit() {
-        // request history for the first selected account
-        const sub = this.aService.selected.asObservable().subscribe((data) => {
-            if (data.name) {
-                this.aService.getAccActions(this.aService.selected.getValue().name).catch(console.log);
-                sub.unsubscribe();
-            }
-        });
-    }
-
     ngAfterViewInit() {
+        let loadedFirst = false;
         this.subscriptions.push(
-            this.aService.selected.asObservable().subscribe(() => {
+            this.aService.selected.asObservable().subscribe((data) => {
                 this.selectedTab = this.aService.selectedIdx;
+                if (data.name && !loadedFirst) {
+                    loadedFirst = true;
+                    this.aService.getAccActions(this.aService.selected.getValue().name).catch(console.log);
+                }
             }),
         );
         this.cdr.detectChanges();
