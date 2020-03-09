@@ -1,0 +1,7 @@
+.mat-radio-button ~ .mat-radio-button {
+    margin-left: 16px;
+}
+
+.mat-slide-toggle ~ .mat-slide-toggle {
+    margin-top: 5px;
+}

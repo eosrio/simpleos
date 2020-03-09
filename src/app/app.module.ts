@@ -160,6 +160,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
 import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
 import {A11yModule} from "@angular/cdk/a11y";
+import { CustomChainModalComponent } from './custom-chain-modal/custom-chain-modal.component';
 
 export function playerFactory() {
     return player;
@@ -186,6 +187,7 @@ export function playerFactory() {
         InputModalComponent,
         ImportModalComponent,
         KeygenModalComponent,
+        CustomChainModalComponent,
     ],
     imports: [
         FormsModule,
