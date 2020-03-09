@@ -23,7 +23,7 @@
                     <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="7px">
                         <div class="advanced text-faded">Advanced option:</div>
                         <div>
-                            <a class="clicked highlight-primary">
+                            <a (click)="network.openCustomChainModal()" class="clicked highlight-primary">
                                 CUSTOM CHAIN
                             </a>
                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"

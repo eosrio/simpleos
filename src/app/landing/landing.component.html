@@ -98,7 +98,8 @@
                                     <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="10px">
                                         <div class="text-left advanced error">Advanced Option:</div>
                                         <div>
-                                            <a class="clicked highlight-primary">
+                                            <a (click)="network.openCustomChainModal()"
+                                               class="clicked highlight-primary">
                                                 CUSTOM CHAIN
                                             </a>
                                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
@@ -207,6 +208,7 @@
                                     <mat-form-field class="chain-selector example-full-width select-father"
                                                     style="width: 240px;">
                                         <mat-select [value]="network.activeChain['id']"
+                                                    [disabled]="network.isStarting"
                                                     (selectionChange)="changeChain($event)">
                                             <!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
                                             <mat-optgroup *ngFor="let group of network.selectGroup"
@@ -241,7 +243,8 @@
                                                 </fa-icon>
                                             </div>
                                             <div>
-                                                <a class="clicked highlight-primary">
+                                                <a (click)="network.openCustomChainModal()"
+                                                   class="clicked highlight-primary">
                                                     CUSTOM CHAIN
                                                 </a>
                                                 <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
