@@ -291,16 +291,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.voteOption(this.voteService.voteType);
                 }
             }
+
             this.fromAccount = selected.name;
             this.selectedAccountName = selected.name;
             this.totalBalance = selected.full_balance;
-            if (this.aService.activeChain['name'].startsWith('LIBERLAND')) {
-                this.stakedBalance = selected.staked;
-            } else {
-                this.stakedBalance = selected.details.voter_info.staked / precision;
-            }
+            this.stakedBalance = selected.staked;
             this.unstaking = selected.unstaking;
             this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+
             if (this.totalBalance > 0) {
                 this.minToStake = 100 / this.totalBalance;
                 this.valuetoStake = this.stakedBalance.toString();
