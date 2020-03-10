@@ -403,7 +403,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
 
     makePayload() {
-        if (this.eosjs.ecc.isValidPublic(this.ownerpub) && this.eosjs.ecc.isValidPublic(this.activepub)) {
+        if (PublicKey.fromString(this.ownerpub).validate() && PublicKey.fromString(this.activepub).validate()) {
             console.log('Generating account payload');
             this.newAccountPayload = btoa(JSON.stringify({
                 n: this.accountname.toLowerCase(),
@@ -429,8 +429,7 @@ export class LandingComponent implements OnInit, OnDestroy {
             refund_memo: this.refundForm.get('memo').value
         };
         if (this.validateExchangeMemo(reqData.refund_account, reqData.refund_memo)) {
-            this.http.post('https://hapi.eosrio.io/account_creation_api/request_account', reqData).subscribe((data) => {
-                // console.log(data);
+            this.http.post('https://br.eosrio.io/account_creation_api/request_account', reqData).subscribe((data) => {
                 if (data['status'] === 'OK') {
                     this.requestId = data['requestId'];
                     this.requestError = '';

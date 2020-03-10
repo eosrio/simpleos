@@ -25,9 +25,9 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     // boolean flags
     passmatch = true;
     lockscreen = false;
+    hasPIN = false;
 
     busyActivekey = false;
-    noPIN = true;
 
     // constitution agreement
     agree = false;
@@ -75,6 +75,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         public cdr: ChangeDetectorRef,
         private toaster: ToasterService
     ) {
+
     }
 
     importKeys(ledgerAccounts) {
@@ -170,6 +171,8 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     openModal() {
+        const data: string = localStorage.getItem('simpleos-hash');
+        this.hasPIN = !!data;
         this.usingLedger = false;
         this.cdr.detectChanges();
         this.importwizard.open();
@@ -335,7 +338,9 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     nextPage() {
         this.passCompare();
         if (this.passform.valid) {
-            this.importwizard.next();
+            if (!this.hasPIN) {
+                this.importwizard.next();
+            }
         }
     }
 

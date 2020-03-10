@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {EventEmitter, Injectable} from '@angular/core';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
@@ -34,6 +34,7 @@ export class AccountsService {
     private lastTkLoadTime = 0;
     public isRefreshing = false;
     defaultChains: any[];
+    events: EventEmitter<any>;
 
     constructor(
         private http: HttpClient,
@@ -44,6 +45,7 @@ export class AccountsService {
         this.accounts = [];
         this.usd_rate = 10.00;
         this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
+        this.events = new EventEmitter<any>();
     }
 
     init() {
@@ -143,7 +145,11 @@ export class AccountsService {
                 price: price,
                 usd_value: usd_value,
             };
-            this.sessionTokens[this.selectedIdx].push(obj);
+            if (this.sessionTokens[this.selectedIdx]) {
+                this.sessionTokens[this.selectedIdx].push(obj);
+            } else {
+                this.sessionTokens[this.selectedIdx] = [];
+            }
             this.tokens.push(obj);
         }
     }
@@ -697,6 +703,7 @@ export class AccountsService {
             }
         });
         payload.updatedOn = new Date();
+        this.events.emit({event: 'imported_accounts', data: accounts});
         localStorage.setItem('simpleos.accounts.' + chain_id, JSON.stringify(payload));
         localStorage.setItem('simplEOS.init', 'true');
         return await this.loadLocalAccounts(payload.accounts);

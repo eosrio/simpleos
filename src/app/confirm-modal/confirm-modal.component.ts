@@ -65,8 +65,10 @@ export class ConfirmModalComponent {
 
     setFocus() {
         setTimeout(() => {
-            this.pass.focus();
-        },100);
+            if (this.pass) {
+                this.pass.focus();
+            }
+        }, 100);
     }
 
     async processTransaction(trx, handler) {

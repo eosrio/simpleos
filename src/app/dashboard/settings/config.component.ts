@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {AccountsService} from '../../services/accounts.service';
@@ -12,6 +12,7 @@ import {ElectronService} from 'ngx-electron';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
 import {KeygenModalComponent} from "../../keygen-modal/keygen-modal.component";
+import {Subscription} from "rxjs";
 
 declare const window: any;
 
@@ -20,7 +21,7 @@ declare const window: any;
     templateUrl: './config.component.html',
     styleUrls: ['./config.component.css']
 })
-export class ConfigComponent implements OnInit {
+export class ConfigComponent implements OnInit, OnDestroy {
 
     @ViewChild('customExportBK') customExportBK: ElementRef;
     @ViewChild('customImportBK') customImportBK: ElementRef;
@@ -79,6 +80,7 @@ export class ConfigComponent implements OnInit {
     localKeys: string[] = [];
     private fs: any;
     wrongpass = false;
+    private subscriptions: Subscription[];
 
     static resetApp() {
         window.remote.app.relaunch();
@@ -191,6 +193,18 @@ export class ConfigComponent implements OnInit {
         this.chainConnected = this.getChainConnected();
         this.autoBackup = this.backup.automatic === 'true';
         this.backup.getLastBackupTime();
+        this.subscriptions = [];
+        this.subscriptions.push(this.aService.selected.asObservable().subscribe(value => {
+            if (value) {
+                this.populateAccounts();
+            }
+        }));
+    }
+
+    ngOnDestroy() {
+        this.subscriptions.forEach((subs)=>{
+            subs.unsubscribe();
+        });
     }
 
     cc(text) {
@@ -518,6 +532,7 @@ export class ConfigComponent implements OnInit {
         console.log('remove account', name);
         console.log(rmIdx);
         this.aService.accounts.splice(rmIdx, 1);
+        this.showToast('success', 'Account Removed', `${name} removed`);
         if (refresh) {
             this.aService.refreshFromChain(true).catch(console.log);
             this.populateAccounts();
@@ -552,6 +567,7 @@ export class ConfigComponent implements OnInit {
         if (keystore[key]) {
             delete keystore[key];
             console.log(`${key} removed`);
+            this.showToast('success', 'Key removed', `${key} removed`);
         } else {
             console.log(`${key} not found`);
         }
