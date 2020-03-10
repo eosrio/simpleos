@@ -267,6 +267,10 @@ body {
 .text-on-cover {
 	color: var(--text-on-cover);
 }
+
+.bold {
+	font-weight: 500;
+}
 /*classes for colors end*/
 
 /*buttons*/
@@ -980,3 +984,26 @@ input:not([readonly]) {
 	}
 }
 /*Confirm transaction error footer modal END*/
+
+/*material Radio button START*/
+.mat-radio-button.mat-primary.mat-radio-checked .mat-radio-outer-circle {
+	border-color: var(--btn-primary-bg);
+}
+
+.mat-radio-button.mat-primary .mat-radio-inner-circle {
+	background-color: var(--btn-primary-bg);
+}
+
+.mat-radio-outer-circle {
+	border-color: var(--modal-color);
+}
+/*material Radio button END*/
+
+/*material slider / toggle START*/
+.mat-slide-toggle.mat-primary.mat-checked .mat-slide-toggle-thumb {
+	background-color: var(--btn-primary-bg);
+}
+
+.mat-slide-toggle.mat-primary.mat-checked .mat-slide-toggle-bar {
+	background-color: var(--btn-primary-hover);
+}

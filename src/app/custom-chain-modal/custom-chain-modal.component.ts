@@ -38,17 +38,32 @@ export class CustomChainModalComponent implements OnInit {
     toggleForum = false;
     toggleStake = true;
 
+    busy: boolean;
+    endpointErr: boolean;
+
     constructor(
         public network: NetworkService,
         private http: HttpClient,
         private electron: ElectronService
     ) {
         this.chainInfo = {} as GetInfoResult;
+        this.busy = false;
+        this.endpointErr = false;
     }
 
     async checkEndpoint() {
+        this.busy = true;
+        this.endpointErr = false;
         if (!this.apiUrl) {
             this.chainId = '';
+            this.precision = null;
+            this.symbol = null;
+            this.tokenContract = 'eosio.token';
+            this.hyperionUrl = '';
+            this.nativeHistoryStatus = false;
+            this.hyperionHistoryStatus = false;
+            this.busy = false;
+            this.endpointErr = false;
             return;
         }
         console.log(`testing ${this.apiUrl}`);
@@ -64,7 +79,16 @@ export class CustomChainModalComponent implements OnInit {
             await this.checkNativeHistory();
         } catch (e) {
             console.log(e);
+            this.chainId = '';
+            this.precision = null;
+            this.symbol = null;
+            this.tokenContract = 'eosio.token';
+            this.hyperionUrl = '';
+            this.nativeHistoryStatus = false;
+            this.hyperionHistoryStatus = false;
+            this.endpointErr = true;
         }
+        this.busy = false;
     }
 
     async lookupSystemToken() {

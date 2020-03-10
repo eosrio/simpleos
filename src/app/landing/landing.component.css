@@ -132,10 +132,6 @@
 	animation-fill-mode: both;
 }
 
-.bold {
-	font-weight: 500;
-}
-
 .public-input {
 	margin-top: 20px;
 	width: 335px;
