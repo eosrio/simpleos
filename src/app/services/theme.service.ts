@@ -730,6 +730,8 @@ export const TelosLandingTheme = {
 
 @Injectable({providedIn: 'root'})
 export class ThemeService {
+
+    lightMode = false;
 	public currentTheme: string;
 
 	defaultTheme() {
