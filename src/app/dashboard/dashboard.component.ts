@@ -140,7 +140,11 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         this.appVersion = window['appversion'];
 
         if (this.compilerVersion === 'DEFAULT') {
-            this.theme.defaultTheme();
+            if (this.theme.lightMode) {
+                this.theme.lightTheme();
+            } else {
+                this.theme.defaultTheme();
+            }
         }
 
         this.passform = this.fb.group({
@@ -305,8 +309,13 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
             }
             this.aService.accounts.splice(this.accRemovalIndex, 1);
             this.deleteAccModal = false;
-            this.aService.select(0);
-            this.selectedTab = 0;
+            if (this.accRemovalIndex === 0) {
+                this.aService.select(0);
+                this.selectedTab = 0;
+            } else {
+                this.aService.select(this.accRemovalIndex - 1);
+                this.selectedTab = this.accRemovalIndex - 1;
+            }
             this.aService.refreshFromChain(true).catch(console.log);
         }
     }

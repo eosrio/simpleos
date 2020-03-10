@@ -12,6 +12,7 @@ import {NetworkService} from '../../services/network.service';
 import * as moment from 'moment';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
+import {ElectronService} from "ngx-electron";
 
 
 export interface Contact {
@@ -88,6 +89,7 @@ export class SendComponent implements OnInit, OnDestroy {
                 private ledger: LedgerService,
                 private network: NetworkService,
                 private trxFactory: TransactionFactoryService,
+                private electron: ElectronService
     ) {
         this.sendModal = false;
         this.newContactModal = false;
@@ -210,6 +212,20 @@ export class SendComponent implements OnInit, OnDestroy {
             }
         }));
 
+        this.subscriptions.push(this.aService.events.asObservable().subscribe((ev) => {
+            if (ev.event === 'imported_accounts') {
+                for (const acc of ev.data) {
+                    this.insertNewContact({
+                        type: 'contact',
+                        name: acc.account_name,
+                        account: acc.account_name
+                    }, true);
+                }
+                this.addDividers();
+                this.storeContacts();
+            }
+        }));
+
         this.subscriptions.push(this.sendForm.get('token').valueChanges.subscribe((symbol) => {
             this.sendForm.patchValue({
                 amount: ''
@@ -324,7 +340,7 @@ export class SendComponent implements OnInit, OnDestroy {
             });
         } else {
             if (!silent) {
-                alert('duplicate entry');
+                this.electron.remote.dialog.showErrorBox('Error', 'duplicated entry');
             }
         }
     }
@@ -359,14 +375,9 @@ export class SendComponent implements OnInit, OnDestroy {
                         return item.name === letter;
                     });
                     if (index === -1) {
-                        this.contacts.push({
-                            type: 'letter',
-                            name: letter
-                        });
+                        this.contacts.push({type: 'letter', name: letter});
                         this.contactForm.reset();
-                        this.searchForm.patchValue({
-                            search: ''
-                        });
+                        this.searchForm.patchValue({search: ''});
                     }
                 }
             }
@@ -465,9 +476,8 @@ export class SendComponent implements OnInit, OnDestroy {
         const contacts = localStorage.getItem('simpleos.contacts.' + this.aService.activeChain['id']);
         if (contacts) {
             this.contacts = JSON.parse(contacts);
-        } else {
-            this.addAccountsAsContacts();
         }
+        this.addAccountsAsContacts();
     }
 
     async newTransfer() {
@@ -518,6 +528,14 @@ export class SendComponent implements OnInit, OnDestroy {
             If this action fails to be irreversibly confirmed after receiving goods or services from '${to}', 
             I agree to either return the goods or services or resend ${amount.toFixed(precision) + ' ' + tk_name} in a timely manner.`;
         }
+
+        this.insertNewContact({
+            type: 'contact',
+            name: this.sendForm.value['alias'],
+            account: this.sendForm.value.to.toLowerCase()
+        }, true);
+        this.addDividers();
+        this.storeContacts();
 
         this.trxFactory.modalData.next({
             transactionPayload: {

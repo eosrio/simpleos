@@ -313,5 +313,4 @@ export class CryptoService {
     decryptBKP(enval: string, pass: string) {
         return CryptoJS.AES.decrypt(enval, pass).toString(CryptoJS.enc.Utf8);
     }
-
 }

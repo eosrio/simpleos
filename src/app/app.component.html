@@ -11,9 +11,9 @@
         </div>
         <div style="align-self:end;width:auto;height: 1.7rem;" *ngIf="compilerVersion === 'DEFAULT'">
             <a class="nav-link nav-icon other-icon">
-                <clr-icon shape="moon" *ngIf="dnSet" (click)="see()" class="theme-icon"
+                <clr-icon shape="moon" *ngIf="dnSet" (click)="toggleDayNight()" class="theme-icon"
                           style="height: auto;width: 23px;margin-top: 6px;-webkit-app-region: no-drag;float:right;"></clr-icon>
-                <clr-icon shape="sun" *ngIf="!dnSet" (click)="see()" class="theme-icon"
+                <clr-icon shape="sun" *ngIf="!dnSet" (click)="toggleDayNight()" class="theme-icon"
                           style="height:auto;width: 23px;margin-top:6px;-webkit-app-region: no-drag;float:right;"></clr-icon>
             </a>
         </div>

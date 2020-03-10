@@ -1,4 +1,4 @@
-<clr-wizard #importwizard [clrWizardSize]="'lg'">
+<clr-wizard #importwizard [clrWizardSize]="'lg'" (clrWizardOnFinish)="importAccounts()">
     <clr-wizard-title>Use existing wallet</clr-wizard-title>
 
     <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
@@ -161,7 +161,7 @@
     </clr-wizard-page>
 
     <!--    LOCKSCREEN SETUP PAGE-->
-    <clr-wizard-page *ngIf="noPIN" (clrWizardPageOnCommit)="importAccounts()">
+    <clr-wizard-page *ngIf="!hasPIN" (clrWizardPageOnCommit)="importAccounts()">
         <ng-template clrPageTitle>Lockscreen</ng-template>
         <h5 style="margin-bottom: 15px;">
             <span style="font-weight: 700;" class="highlight-primary">Lockscreen pin.</span>

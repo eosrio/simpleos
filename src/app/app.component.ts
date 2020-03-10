@@ -126,6 +126,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
+
+        const dnSavedValue = localStorage.getItem('use_light_theme');
+        if (dnSavedValue && dnSavedValue === 'true') {
+            this.dnSet = true;
+            this.theme.lightMode = true;
+            this.theme.lightTheme();
+            this.cdr.detectChanges();
+        }
+
         setTimeout(() => {
             this.network.connect(false);
             setTimeout(async () => {
@@ -336,11 +345,15 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
     }
 
-    see() {
+    toggleDayNight() {
         this.dnSet = !this.dnSet;
         if (this.dnSet) {
+            localStorage.setItem('use_light_theme', 'true');
+            this.theme.lightMode = true;
             this.theme.lightTheme();
         } else {
+            localStorage.setItem('use_light_theme', 'false');
+            this.theme.lightMode = false;
             if (this.compilerVersion === 'LIBERLAND') {
                 this.theme.liberlandTheme();
             } else {
