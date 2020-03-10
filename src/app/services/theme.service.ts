@@ -253,7 +253,10 @@ export const LiberlandTheme = {
 	'--landing-background': 'url("./assets/cover-liberland4.png")',
 	'--text-on-cover': 'var(--gray-light)',
 
+
 	/*sidenav*/
+	'--dashboard-animation-display': 'block', // for sidenav, landing and lockscreen logo
+	'--dashboard-img-display': 'none',  // for sidenav, landing and lockscreen logo
 	'--sidenav-background': 'var(--liberland-blue)',
 	'--sidenav-color': '#D6D6D6',
 	'--sidenav-active-background': 'var(--light-bg)',
