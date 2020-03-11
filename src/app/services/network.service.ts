@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {EventEmitter, Injectable} from '@angular/core';
 import {AccountsService} from './accounts.service';
 import {Router} from '@angular/router';
 
@@ -47,6 +47,7 @@ export class NetworkService {
     isStarting = false;
 
     customChainModal = false;
+    events: EventEmitter<any>;
 
     static groupBy(list, keyGetter) {
         const map = new Map();
@@ -74,6 +75,7 @@ export class NetworkService {
         this.validEndpoints = [];
         this.status = '';
         this.connectionTimeout = null;
+        this.events = new EventEmitter(true);
     }
 
     openCustomChainModal() {
@@ -157,7 +159,7 @@ export class NetworkService {
         this.aService.init();
     }
 
-    connect(automatic: boolean) {
+    async connect(automatic: boolean) {
         this.autoMode = automatic;
         this.status = '';
         this.mainnetId = '';
@@ -173,11 +175,28 @@ export class NetworkService {
             this.extractValidNode();
         });
         this.startTimeout();
+        await new Promise(resolve => {
+            const evSub = this.events.asObservable().subscribe(value => {
+                if (value.event === 'connected' || value.event === 'timeout') {
+                    evSub.unsubscribe();
+                    resolve();
+                }
+            });
+        });
     }
 
-    changeChain(chainId) {
+    async changeChain(chainId) {
         this.activeChain = this.defaultChains.find((chain) => chain.id === chainId);
         if (this.activeChain) {
+
+            // send to landing page if no data was found
+            const lsKey = "simpleos.accounts." + chainId;
+            const savedAccountData = localStorage.getItem(lsKey);
+
+            if (!savedAccountData) {
+                await this.router.navigateByUrl('/');
+            }
+
             this.aService.activeChain = this.activeChain;
             this.aService.accounts = [];
             this.voting.clearMap();
@@ -185,7 +204,7 @@ export class NetworkService {
             this.voting.initList = false;
             this.aService.lastAccount = null;
             localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
-            this.connect(false);
+            await this.connect(false);
             console.log('Network switched to: ' + this.activeChain['name']);
         }
     }
@@ -193,15 +212,15 @@ export class NetworkService {
     startTimeout() {
         if (!this.connectionTimeout) {
             this.connectionTimeout = setTimeout(() => {
-                console.log('Timeout!');
                 if (!this.networkingReady.getValue()) {
                     this.status = 'timeout';
                     clearTimeout(this.connectionTimeout);
                     this.networkingReady.next(false);
+                    this.events.emit({event: 'timeout'});
                     this.connectionTimeout = null;
                     this.isStarting = false;
                 }
-            }, 10000);
+            }, 5000);
         }
     }
 
@@ -333,7 +352,7 @@ export class NetworkService {
             }
 
             this.networkingReady.next(true);
-
+            this.events.emit({event: 'connected'});
             if (this.connectionTimeout) {
                 clearTimeout(this.connectionTimeout);
                 this.isStarting = false;

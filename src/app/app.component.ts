@@ -138,9 +138,10 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
 
         setTimeout(() => {
-            this.network.connect(false);
-            setTimeout(async () => {
 
+            this.network.connect(false).catch(console.log);
+
+            setTimeout(async () => {
                 if (this.compilerVersion === 'DEFAULT') {
                     this.newVersion = await this.eosjs.checkSimpleosUpdate();
                 } else {
@@ -155,8 +156,6 @@ export class AppComponent implements OnInit, AfterViewInit {
                         this.newVersion = results[this.compilerVersion];
                     }
                 }
-
-
                 if (this.newVersion) {
                     const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
                     const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
@@ -167,7 +166,8 @@ export class AppComponent implements OnInit, AfterViewInit {
                     }
                 }
             }, 5000);
-        }, 900);
+
+        }, 500);
     }
 
     startIPCListeners() {

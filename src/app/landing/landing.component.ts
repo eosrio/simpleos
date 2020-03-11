@@ -449,8 +449,8 @@ export class LandingComponent implements OnInit, OnDestroy {
 		this.memo = this.accountname.toLowerCase() + '-' + this.ownerpub + '-' + this.activepub;
 	}
 
-	retryConn() {
-		this.network.connect(true);
+	async retryConn() {
+		await this.network.connect(true);
 	}
 
 	customConnect() {
