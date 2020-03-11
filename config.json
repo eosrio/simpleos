@@ -394,7 +394,7 @@
       "precision": 4,
       "name": "U°Community",
       "network": "MAINNET",
-      "firstApi": "https://api.uos.network:7889",
+      "firstApi": "https://api.uos.network",
       "historyApi": "https://hapi.uos.network/v2",
       "hyperionApis": [
         "https://hapi.uos.network/v2"
@@ -423,12 +423,8 @@
         "eosio.msig"
       ],
       "endpoints": [
-        {
-          "url": "https://history.uos.network:7889",
-          "owner": "UOS",
-          "latency": 0,
-          "version": "native"
-        }
+		{"url": "https://api.uos.network","owner": "UOS","latency": 0},
+        {"url": "https://history.uos.network","owner": "UOS","latency": 0}
       ],
       "explorers": []
     },
