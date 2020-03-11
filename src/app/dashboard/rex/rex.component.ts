@@ -232,6 +232,7 @@ export class RexComponent implements OnDestroy {
 				this.salesResult = 0;
 			}
 		}));
+
 		this.subscriptions.push(this.convertForm.get('EOSamount').valueChanges.subscribe(value => {
 			if (this.rexPrice !== 0) {
 				this.REXfromStake = value / this.rexPrice;
@@ -240,6 +241,7 @@ export class RexComponent implements OnDestroy {
 			}
 			this.checkTotal();
 		}));
+
 		this.subscriptions.push(this.advancedConvertForm.get('cpu').valueChanges.subscribe(val => {
 			if (val !== '') {
 				if (parseFloat(val) > this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0]) {
@@ -260,6 +262,7 @@ export class RexComponent implements OnDestroy {
 				this.REXfromCPU = 0;
 			}
 		}));
+
 		this.subscriptions.push(this.advancedConvertForm.get('net').valueChanges.subscribe(val => {
 			if (val !== '') {
 				if (parseFloat(val) > this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0]) {
@@ -280,6 +283,7 @@ export class RexComponent implements OnDestroy {
 				this.REXfromNET = 0;
 			}
 		}));
+
 		this.subscriptions.push(this.aService.selected.asObservable().subscribe((sel: EOSAccount) => {
 			if (Object.keys(sel).length > 0) {
 				const d = sel.details;
@@ -297,7 +301,7 @@ export class RexComponent implements OnDestroy {
 			}
 		}));
 
-		this.subscriptions.push(this.eosjs.online.subscribe(state => {
+		this.subscriptions.push(this.network.networkingReady.subscribe(state => {
 			if (state) {
 				this.updateGlobalRexData();
 			}
@@ -522,20 +526,21 @@ export class RexComponent implements OnDestroy {
 			this.totalRexBalance = 0;
 			if (rexdata.rexbal) {
 				this.totalRexBalance = RexComponent.asset2Float(rexdata.rexbal.rex_balance);
-				if (rexdata.rexbal.rex_maturities.length > 0) {
+				if (rexdata.rexbal.rex_maturities) {
+					console.log(rexdata.rexbal.rex_maturities);
 					for (const rexMat of rexdata.rexbal.rex_maturities) {
-						const maturityTime = (new Date(rexMat.first).getTime() - Date.now()) / (1000 * 60 * 60);
-						// console.log(rexMat, maturityTime);
+						const maturityTime = (new Date(rexMat.key).getTime() - Date.now()) / (1000 * 60 * 60);
+						console.log(rexMat, maturityTime);
 						if (maturityTime > 128) {
-							this.rexSavings = rexMat.second / 10000;
-							rexMat['amount'] = rexMat.second / 10000;
+							this.rexSavings = rexMat.value / 10000;
+							rexMat['amount'] = rexMat.value / 10000;
 							this.matBucket.push(rexMat);
 						} else if (maturityTime < 0) {
-							this.rexLiquid += rexMat.second / 10000;
+							this.rexLiquid += rexMat.value / 10000;
 						} else {
-							rexMat['unstakein'] = moment.utc(rexMat.first).fromNow();
-							rexMat['amount'] = rexMat.second / 10000;
-							rexMat['unstakedate'] = moment.utc(rexMat.first).local().format('DD/MM HH:mm');
+							rexMat['unstakein'] = moment.utc(rexMat.key).fromNow();
+							rexMat['amount'] = rexMat.value / 10000;
+							rexMat['unstakedate'] = moment.utc(rexMat.key).local().format('DD/MM HH:mm');
 							this.rexBuckets.push(rexMat);
 							this.rexMaturing += rexMat['amount'];
 						}
@@ -641,7 +646,7 @@ export class RexComponent implements OnDestroy {
 		const R1 = (S1 * R0) / S0;
 		const rex_amount = R1 - R0;
 		this.rexPrice = 1.0000 / rex_amount;
-		// console.log('REX PRICE', this.rexPrice);
+		console.log('REX PRICE', this.rexPrice);
 	}
 
 	calculateBorrowingCost(rexpool) {
