@@ -352,7 +352,9 @@ export class NetworkService {
             }
 
             this.networkingReady.next(true);
+
             this.events.emit({event: 'connected'});
+
             if (this.connectionTimeout) {
                 clearTimeout(this.connectionTimeout);
                 this.isStarting = false;
