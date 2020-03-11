@@ -17,6 +17,7 @@ import {Title} from '@angular/platform-browser';
 import {LedgerService} from './services/ledger/ledger.service';
 import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {EOSAccount} from "./interfaces/account";
+import {HttpClient, HttpHeaders} from "@angular/common/http";
 
 export interface LedgerSlot {
     publicKey: string;
@@ -81,7 +82,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         private cdr: ChangeDetectorRef,
         private _electronService: ElectronService,
         public theme: ThemeService,
-        private toaster: ToasterService
+        private toaster: ToasterService,
+        private http: HttpClient
     ) {
 
         if (this.compilerVersion === 'LIBERLAND') {
@@ -138,7 +140,23 @@ export class AppComponent implements OnInit, AfterViewInit {
         setTimeout(() => {
             this.network.connect(false);
             setTimeout(async () => {
-                this.newVersion = await this.eosjs.checkSimpleosUpdate();
+
+                if (this.compilerVersion === 'DEFAULT') {
+                    this.newVersion = await this.eosjs.checkSimpleosUpdate();
+                } else {
+                    const results = await this.http.get('https://raw.githubusercontent.com/eosrio/simpleos/master/latest.json', {
+                        headers: new HttpHeaders({
+                            'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        })
+                    }).toPromise();
+                    if (results && results[this.compilerVersion]) {
+                        this.newVersion = results[this.compilerVersion];
+                    }
+                }
+
+
                 if (this.newVersion) {
                     const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
                     const currentVersionNum = parseInt(this.version.replace(/[.]/g, ''));
