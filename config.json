@@ -200,7 +200,7 @@
       "name": "BOS MAINNET",
       "network": "MAINNET",
       "firstApi": "https://api.bos.eosrio.io",
-      "historyApi": "https://bos.hyperion.eosrio.io/v2",
+      "historyApi": "https://api.bossweden.org/v2",
       "hyperionApis": [
         "https://api.bossweden.org/v2",
         "https://bos.eosn.io/v2",
@@ -231,38 +231,13 @@
         "eosio.forum"
       ],
       "endpoints": [
-        {
-          "url": "https://hapi.bos.eosrio.io",
-          "owner": "BOS Rio",
-          "latency": 0,
-          "version": "native"
-        },
-        {
-          "url": "https://bos.eosargentina.io",
-          "owner": "EOS Argentina",
-          "latency": 0
-        },
-        {
-          "url": "https://api.bossweden.org",
-          "owner": "BOS Sweden",
-          "latency": 0,
-          "version": "native"
-        },
-        {
-          "url": "https://api.bos42.io",
-          "owner": "ESO42",
-          "latency": 0
-        },
-        {
-          "url": "http://bos.eosio.sg:8888",
-          "owner": "EOS SG",
-          "latency": 0
-        },
-        {
-          "url": "https://api-bos.oraclechain.io",
-          "owner": "Oracle Chain",
-          "latency": 0
-        }
+        {"url": "https://hapi.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+		{"url": "https://api.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+        {"url": "https://bos.eosargentina.io","owner": "EOS Argentina","latency": 0},
+        {"url": "https://api.bossweden.org","owner": "BOS Sweden","latency": 0},
+        {"url": "https://api.bos42.io","owner": "ESO42","latency": 0},
+        {"url": "http://bos.eosio.sg:8888","owner": "EOS SG","latency": 0},
+        {"url": "https://api-bos.oraclechain.io","owner": "Oracle Chain","latency": 0}
       ],
       "explorers": [
         {
@@ -596,9 +571,10 @@
       "precision": 4,
       "name": "BOS TESTNET",
       "network": "TESTNET",
-      "firstApi": "https://boscore.eosrio.io",
-      "historyApi": "https://tst.bossweden.org/v2",
+      "firstApi": "https://testnet.bos.eosrio.io",
+      "historyApi": "https://api-bostest.blockzone.net/v2",
       "hyperionApis": [
+		"https://api-bostest.blockzone.net/v2",
         "https://tst.bossweden.org/v2"
       ],
       "forumTally": "",
@@ -619,31 +595,14 @@
         "forum": false,
         "rex": true
       },
-      "system": [
-        "eosio",
-        "eosio.token",
-        "eosio.msig"
-      ],
+      "system": ["eosio","eosio.token","eosio.msig"],
       "endpoints": [
-        {
-          "url": "https://boscore.eosrio.io",
-          "owner": "BOS Rio",
-          "latency": 0,
-          "version": "mongo"
-        },
-        {
-          "url": "https://bostest.api.blockgo.vip",
-          "owner": "blockgo",
-          "latency": 0,
-          "version": ""
-        }
+        {"url": "https://testnet.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+		{"url": "https://tst.bossweden.org","owner": "BOS Sweden","latency": 0},
+        {"url": "https://api-bostest.blockzone.net/","owner": "Blockzone","latency": 0}
       ],
       "explorers": [
-        {
-          "name": "EOSX",
-          "account_url": "https://bos-test.eosx.io/account/",
-          "tx_url": "https://bos-test.eosx.io/tx/"
-        }
+        {"name": "EOSX","account_url": "https://bos-test.eosx.io/account/","tx_url": "https://bos-test.eosx.io/tx/"}
       ]
     },
     {
