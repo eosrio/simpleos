@@ -364,16 +364,22 @@
         <h5>Please enter your desired public keys or click the <span
                 class="highlight-primary" (click)="generateKeys()"> Generate Key Pairs </span>
             button.</h5>
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+        <mat-form-field class="mt-3" style="width: 503px">
+            <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub" style="font-family: 'SourceCodePro',monospace">
+            <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
+                <fa-icon [icon]="['far', 'clone']" size="lg" class="copy"
                      (click)="cc(ownerpub, 'Key', 'Please save it on a safe place.')"></fa-icon>
+                <span class="tooltip-content">Copy</span>
+            </a>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
-        <mat-form-field class="mt-3" style="width: 470px">
-            <input matInput placeholder="Active Public key" [(ngModel)]="activepub">
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+        <mat-form-field class="mt-3" style="width: 503px">
+            <input matInput placeholder="Active Public key" [(ngModel)]="activepub" style="font-family: 'SourceCodePro',monospace">
+            <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
+                <fa-icon [icon]="['far', 'clone']" size="lg" class="copy"
                      (click)="cc(activepub, 'Key', 'Please save it on a safe place.')"></fa-icon>
+                <span class="tooltip-content">Copy</span>
+            </a>
         </mat-form-field>
 
         <button class="btn btn-primary" (click)="generateKeys()">Generate Key Pairs</button>
@@ -383,15 +389,21 @@
         </fa-layers>
 
         <ng-container *ngIf="generated">
-            <mat-form-field class="mt-3" style="width: 470px">
-                <input matInput placeholder="Owner Private key" [(ngModel)]="ownerpk">
-                <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+            <mat-form-field class="mt-3" style="width: 503px">
+                <input matInput placeholder="Owner Private key" [(ngModel)]="ownerpk" style="font-family: 'SourceCodePro',monospace">
+                <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="copy"
                          (click)="cc(ownerpk, 'Key', 'Please save it on a safe place.')"></fa-icon>
+                    <span class="tooltip-content">Copy</span>
+                </a>
             </mat-form-field>
-            <mat-form-field class="mt-2" style="width: 470px">
-                <input matInput placeholder="Active Private key" [(ngModel)]="activepk">
-                <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+            <mat-form-field class="mt-2" style="width: 503px">
+                <input matInput placeholder="Active Private key" [(ngModel)]="activepk" style="font-family: 'SourceCodePro',monospace">
+                <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="copy"
                          (click)="cc(activepk, 'Key', 'Please save it on a safe place.')"></fa-icon>
+                    <span class="tooltip-content">Copy</span>
+                </a>
             </mat-form-field>
             <mat-checkbox [(ngModel)]="agreeKeys">I have saved all my keys in a safe place</mat-checkbox>
         </ng-container>

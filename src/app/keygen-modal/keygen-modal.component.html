@@ -18,8 +18,12 @@
             <label>
                 <input style="font-family: 'SourceCodePro',monospace" matInput placeholder="Public key" [(ngModel)]="pubKey">
             </label>
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-                     (click)="copy(pubKey)"></fa-icon>
+            <a matSuffix class="tooltip tooltip-xs tooltip-right">
+                <fa-icon  [icon]="['far', 'clone']" size="lg" class="copy"
+                         (click)="copy(pubKey)"></fa-icon>
+                <span class="tooltip-content">Copy</span>
+            </a>
+
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
@@ -28,8 +32,11 @@
             <label>
                 <input style="font-family: 'SourceCodePro',monospace" matInput placeholder="Private key" [(ngModel)]="prvKey">
             </label>
-            <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+            <a matSuffix class="tooltip tooltip-xs tooltip-right">
+                <fa-icon [icon]="['far', 'clone']" size="lg" class="copy"
                      (click)="copy(prvKey)"></fa-icon>
+                <span class="tooltip-content">Copy</span>
+            </a>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
 
