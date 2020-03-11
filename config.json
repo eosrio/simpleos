@@ -37,7 +37,6 @@
         {"url": "https://api.eossweden.org","owner": "sw/eden","latency": 0},
         {"url": "https://eos.greymass.com","owner": "Greymass","latency": 0},
         {"url": "https://nodes.get-scatter.com","owner": "Scatter","latency": 0},
-        {"url": "https://eu.eosdac.io","owner": "eosDAC","latency": 0},
 		{"url": "https://api.main.alohaeos.com","owner": "Aloha EOS","latency": 0},
 		{"url": "https://api.eoseoul.io","owner": "EOSeoul","latency": 0},
 		{"url": "https://api.eosn.io","owner": "EOS Nation","latency": 0},
