@@ -307,6 +307,7 @@ export class NetworkService {
             if (savedAccounts && savedAccounts.length > 0) {
 
                 // load saved accounts for this chain
+                console.log(`loading local data for ${savedAccounts.length} accounts...`);
                 await this.aService.loadLocalAccounts(savedAccounts);
 
                 if (this.aService.lastAccount) {
