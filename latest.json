@@ -1,0 +1,13 @@
+{
+  "link": "https://github.com/eosrio/simpleos/releases/tag/v0.9.3",
+  "version_number": "v0.9.3",
+  "binaries": [{
+    "checksum":"6fb0047d950a2c52bde578230de64ca1c250da0130049a17bf1f818ad6c5007f",
+    "binary_name": "win",
+    "binary_link": "https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos.Setup.0.9.3.exe"
+  },{
+    "checksum": "5adf82a509690c2bd08c5ed1cb36f114611ed6bbf13ef459a91427bcde13cb34",
+    "binary_name": "mac-dmg",
+    "binary_link": "https://github.com/eosrio/simpleos/releases/download/v0.9.3/simpleos-0.9.3.dmg"
+    }]
+}
