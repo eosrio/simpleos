@@ -50,7 +50,6 @@ export class ConfirmModalComponent {
         this.trxFactory.launcher.subscribe((state) => {
             this.visibility = state.visibility;
             this.mode = state.mode;
-            console.log(state.mode);
             if (this.visibility) {
                 this.confirmationForm.reset();
                 this.wasClosed = false;

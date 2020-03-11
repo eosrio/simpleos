@@ -66,24 +66,39 @@ export class TransactionFactoryService {
         });
     }
 
-    getAuth(account?: any) {
+    getAuth(account?: any): [{ actor: string, permission: string } | null, string | null] {
+
+        // get selected account if none was provided
         const actor = account ?? this.aService.selected.getValue();
+
+        // lookup active key
         let _permission = 'active';
-        let publicKey = actor.details['permissions'].find((p) => p.perm_name === 'active')['required_auth'].keys[0].key;
-        const validKey = this.crypto.checkPublicKey(publicKey);
+        let publicKey = '';
+        let validKey = false;
+        const activePerm = actor.details.permissions.find((p) => p.perm_name === _permission);
+        if (activePerm.required_auth.keys.length > 0) {
+            publicKey = activePerm.required_auth.keys[0].key;
+            validKey = this.crypto.checkPublicKey(publicKey);
+        }
+
+        // if the active key is not found
         if (!validKey) {
-            for (const perm of actor.details['permissions']) {
-                if (this.crypto.checkPublicKey(perm['required_auth'].keys[0].key)) {
-                    _permission = perm.perm_name;
-                    publicKey = perm['required_auth'].keys[0].key;
-                    break;
+            _permission = '';
+            for (const perm of actor.details.permissions) {
+                if (perm.required_auth.keys.length > 0) {
+                    if (this.crypto.checkPublicKey(perm.required_auth.keys[0].key)) {
+                        _permission = perm.perm_name;
+                        publicKey = perm.required_auth.keys[0].key;
+                        break;
+                    }
                 }
             }
-            console.log(`non-active permission selected: ${_permission}`);
         }
-        return [{
-            actor: actor.name,
-            permission: _permission
-        }, publicKey];
+
+        if (_permission !== '') {
+            return [{actor: actor.name, permission: _permission}, publicKey];
+        } else {
+            return [null, null];
+        }
     }
 }
