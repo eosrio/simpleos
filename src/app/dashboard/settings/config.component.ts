@@ -303,9 +303,11 @@ export class ConfigComponent implements OnInit, OnDestroy {
                 }
                 this.passForm.reset();
                 this.changePassModal = false;
+                this.showToast('success', 'Password changed!', '');
             } else {
                 this.passForm.get('oldpass').reset();
                 this.wrongpass = true;
+                this.showToast('error', 'Wrong password', 'please try again!');
             }
         }
     }
