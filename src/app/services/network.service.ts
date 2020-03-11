@@ -46,7 +46,7 @@ export class NetworkService {
     selectGroup: any[];
     isStarting = false;
 
-    customChainModal = true;
+    customChainModal = false;
 
     static groupBy(list, keyGetter) {
         const map = new Map();

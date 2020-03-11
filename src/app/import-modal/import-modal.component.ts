@@ -267,7 +267,6 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                 this.publicEOS = results.publicKey;
                 this.importedAccounts = [...results.foundAccounts];
                 this.importedAccounts.forEach((item) => {
-                    console.log(item);
                     const foundPermission = item.permissions.find(p => {
                         if (p.required_auth.keys.length > 0) {
                             const convertedKey = Numeric.convertLegacyPublicKey(p.required_auth.keys[0].key);

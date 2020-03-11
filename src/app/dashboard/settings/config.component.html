@@ -317,7 +317,7 @@
     <h3 class="modal-title">
         <fa-icon [icon]="['fas','key']"></fa-icon>&nbsp;&nbsp;Change Password
     </h3>
-    <div class="modal-body">
+    <div class="modal-body" style="min-height: 220px;">
         <form [formGroup]="passForm">
             <!--			OLD PASS-->
             <mat-form-field class="mt-1 pass-input">
@@ -329,7 +329,7 @@
             </mat-form-field>
 
             <!--			NEW PASS 1-->
-            <mat-form-field class="mt-1  pass-input">
+            <mat-form-field class="mt-3  pass-input">
                 <input matInput #pass type="password" placeholder="New password" (blur)="passCompare()"
                        [formControl]="passForm['controls'].matchingPassword['controls']['pass1']">
                 <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
@@ -516,8 +516,19 @@
             <mat-form-field style="width: 470px; margin-top: 25px;">
                 <input matInput placeholder="Active private key"
                        [value]="tempPK" readonly>
-                <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(tempPK)"></fa-icon>
+                <a matSuffix class="tooltip tooltip-xs tooltip-top-left">
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(tempPK)"></fa-icon>
+                    <span class="tooltip-content">Copy</span>
+                </a>
             </mat-form-field>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
+            <div class="error error-modal-footer" *ngIf="pkError !== ''">
+                <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
+                {{pkError}}
+            </div>
         </div>
     </div>
     <div class="modal-footer text-faded" *ngIf="showpk">

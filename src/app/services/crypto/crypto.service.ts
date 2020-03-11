@@ -223,7 +223,7 @@ export class CryptoService {
 		const [key, value] = this.getLocalKey(publickey);
 		if (value) {
 			if (value.private !== 'ledger') {
-				await this.initKeys(key, pass);
+					await this.initKeys(key, pass);
 			} else {
 				return 'LEDGER';
 			}
@@ -237,12 +237,16 @@ export class CryptoService {
 			if (value.private === 'ledger') {
 				return true;
 			}
-			const decryptedKey = await this.decryptPayload(value.private);
-			this.eosjs.initAPI(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
-			if (exportKey) {
-				return decryptedKey;
-			} else {
-				return true;
+			try {
+				const decryptedKey = await this.decryptPayload(value.private);
+				this.eosjs.initAPI(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
+				if (exportKey) {
+					return decryptedKey;
+				} else {
+					return true;
+				}
+			} catch (e) {
+				return false;
 			}
 		} else {
 			return false;

@@ -36,8 +36,8 @@
                             </button>
                             <mat-hint *ngIf="wrongpass" class="error">
                                 Wrong password.<br>{{nAttempts}} attempts left!
-                                <fa-icon [icon]="['far','exclamation-circle']"
-                                         pTooltip="Data will be cleared after the last attempt" class="error">
+                                <fa-icon [icon]="['far','exclamation-circle']" class="error"
+                                         matTooltip="Data will be cleared after the last attempt" matTooltipClass="black-tooltip" matTooltipPosition="right">
                                 </fa-icon>
                             </mat-hint>
                         </mat-form-field>

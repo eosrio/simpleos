@@ -158,11 +158,11 @@
     <clr-wizard-page [clrWizardPageNextDisabled]="newAccOptions === ''">
         <ng-template clrPageTitle>Select Method</ng-template>
         <h5 class="mb-3">Create new account</h5>
-        <mat-radio-group class="example-radio-group" [(ngModel)]="newAccOptions">
-            <mat-radio-button class="example-radio-button" value="thispk">
+        <mat-radio-group color="primary" [(ngModel)]="newAccOptions">
+            <mat-radio-button value="thispk" style="display: block">
                 Associated with this private key
             </mat-radio-button>
-            <mat-radio-button class="example-radio-button" value="newpk">
+            <mat-radio-button value="newpk" style="display: block">
                 Associated with new private key
             </mat-radio-button>
         </mat-radio-group>
@@ -201,7 +201,7 @@
         <h5>Please enter your desired public keys or click the <span
                 class="highlight-primary"> Generate Key Pairs </span>
             button.</h5>
-        <mat-form-field class="mt-3" style="width: 503px">
+        <mat-form-field class="mt-3" style="width: 100%">
             <input matInput placeholder="Owner Public key" [(ngModel)]="ownerpub" style="font-family: 'SourceCodePro',monospace">
             <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
                 <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpub)"></fa-icon>
@@ -209,7 +209,7 @@
             </a>
             <mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
         </mat-form-field>
-        <mat-form-field class="mt-3" style="width: 503px">
+        <mat-form-field class="mt-3" style="width: 100%">
             <input matInput placeholder="Active Public key" [(ngModel)]="activepub" style="font-family: 'SourceCodePro',monospace">
             <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
                 <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepub)"></fa-icon>
@@ -224,14 +224,14 @@
         </fa-layers>
 
         <ng-container *ngIf="generated">
-            <mat-form-field class="mt-3" style="width: 503px">
+            <mat-form-field class="mt-3" style="width: 100%">
                 <input matInput placeholder="Owner Private key" [(ngModel)]="ownerpk" style="font-family: 'SourceCodePro',monospace">
                 <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
                     <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(ownerpk)"></fa-icon>
                     <span class="tooltip-content">Copy</span>
                 </a>
             </mat-form-field>
-            <mat-form-field class="mt-2" style="width: 503px">
+            <mat-form-field class="mt-2" style="width: 100%">
                 <input matInput placeholder="Active Private key" [(ngModel)]="activepk" style="font-family: 'SourceCodePro',monospace">
                 <a matSuffix class="tooltip tooltip-xs tooltip-bottom-left">
                     <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(activepk)"></fa-icon>
@@ -339,7 +339,7 @@
             <mat-form-field>
                 <input matInput type="password" (keyup.enter)="executeTX()" placeholder="Password"
                        formControlName="pass">
-                <mat-hint class="error" align="start" *ngIf="wrongwalletpass !== ''">
+                <mat-hint class="text-warn bold" align="start" *ngIf="wrongwalletpass !== ''">
                     {{wrongwalletpass}}
                 </mat-hint>
                 <br clear="all"/>

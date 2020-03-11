@@ -1009,7 +1009,7 @@ input:not([readonly]) {
 }
 
 /*material tooltip*/
-::ng-deep .black-tooltip {
+.black-tooltip {
 	background-color: black;
 	font-size: .65rem;
 	letter-spacing: normal;
