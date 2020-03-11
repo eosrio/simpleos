@@ -148,6 +148,11 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         });
         this.precision = '1.2-' + this.aService.activeChain.precision;
         this.actionsFilter = this.buildHyperionFilters(sel['name']);
+        console.log(`get actions for ${sel.name}`);
+        this.loading = true;
+        this.aService.getAccActions(sel.name).then(() => {
+            this.loading = false;
+        }).catch(console.log);
     }
 
     buildHyperionFilters(name) {

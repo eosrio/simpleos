@@ -573,6 +573,7 @@ export class AccountsService {
     }
 
     async getActions(account: string, pos: number, offset: number, skip: number, filter?, after?, before?, parent?) {
+        console.log(`getActions`, account, pos, offset);
         if (!account) {
             console.log(new Error('no account'));
             return;
