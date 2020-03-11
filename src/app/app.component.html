@@ -46,20 +46,28 @@
 <clr-modal [(clrModalOpen)]="transitconnect" [clrModalSize]="'sm'" (clrModalOpenChange)="onLoginModalClose($event)">
     <h3 class="modal-title">
         Connect to
-        <div class="highlight-primary" style="margin-top: 8px;">{{dapp_name}}</div>
+        <div class="highlight-primary" style="margin-top: 8px;">
+            {{dapp_name}}
+        </div>
     </h3>
     <div class="modal-body" *ngIf="aService.accounts.length > 0">
-        <p style="margin-bottom: 20px;">Choose the account you want to connect:</p>
+        <p style="margin-bottom: 20px;">
+            Choose the account you want to connect:
+        </p>
         <div class="card chains-card">
             <ng-container *ngFor="let acc of aService.accounts; let i = index">
                 <div class="card-block chain-section" (click)="selectAccount(acc,i)">
                     {{acc.name}}
-                    <span class="highlight-primary connect-anim">&nbsp;&nbsp;&nbsp;connect <fa-icon
-                            [icon]="['far', 'angle-right']"></fa-icon></span>
+                    <span class="highlight-primary connect-anim">
+                        &nbsp;&nbsp;&nbsp;connect
+                        <fa-icon [icon]="['far', 'angle-right']"></fa-icon>
+                    </span>
                 </div>
             </ng-container>
         </div>
-        <div style="margin: 10px 0;" class="text-faded">*This doesn't let the dapp do actions on your behalf</div>
+        <div style="margin: 10px 0;" class="text-faded">
+            *This doesn't let the dapp do actions on your behalf
+        </div>
     </div>
     <div class="modal-body" *ngIf="aService.accounts.length === 0">
         <p style="margin-bottom: 20px;"><strong>No account found.</strong> Please, close this window

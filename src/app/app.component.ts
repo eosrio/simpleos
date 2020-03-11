@@ -421,25 +421,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     selectAccount(account_data, idx) {
-        const store = localStorage.getItem('eos_keys.' + this.aService.activeChain.id);
-        let key = '';
-        let _perm = '';
-        if (store) {
-            const keys = Object.keys(JSON.parse(store));
-            account_data.details.permissions.forEach((p) => {
-                if (p.required_auth.keys.length > 0) {
-                    const _k = p.required_auth.keys[0].key;
-                    if (keys.indexOf(_k) !== -1) {
-                        key = _k;
-                        _perm = p.perm_name;
-                    }
-                }
-            });
-        }
+        const [auth, key] = this.trxFactory.getAuth(account_data);
         if (key !== '') {
             const responseData = {
                 accountName: account_data.name,
-                permission: _perm,
+                permission: auth.permission,
                 publicKey: key,
             };
             this.selectedAccount.next(responseData);
