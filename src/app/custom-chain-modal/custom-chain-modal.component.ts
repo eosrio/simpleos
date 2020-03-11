@@ -40,6 +40,9 @@ export class CustomChainModalComponent implements OnInit {
 
     busy: boolean;
     endpointErr: boolean;
+    validated = false;
+    testing = false;
+    validatedChain: any;
 
     constructor(
         public network: NetworkService,
@@ -121,6 +124,20 @@ export class CustomChainModalComponent implements OnInit {
     }
 
     finish() {
+        // store custom chains
+        const savedData = localStorage.getItem('custom_chains');
+        if (savedData) {
+            try {
+                const chains = JSON.parse(savedData);
+                chains.push(this.validatedChain);
+                localStorage.setItem('custom_chains', JSON.stringify(chains));
+            } catch (e) {
+                console.log(e);
+            }
+        } else {
+            localStorage.setItem('custom_chains', JSON.stringify([this.validatedChain]));
+        }
+
         this.closeModal();
     }
 
@@ -159,6 +176,11 @@ export class CustomChainModalComponent implements OnInit {
     }
 
     testConnection() {
+        if (!this.chainId || !this.apiUrl) {
+            return;
+        }
+
+        this.testing = true;
         const customChain = {
             "id": this.chainId,
             "symbol": this.symbol,
@@ -194,23 +216,31 @@ export class CustomChainModalComponent implements OnInit {
             "explorers": [],
             "exchanges": {}
         }
+
+        const existingChainId = this.network.defaultChains.findIndex(c => c.id === customChain.id);
+        if (existingChainId !== -1) {
+            this.network.defaultChains.splice(existingChainId, 1);
+        }
         this.network.defaultChains.push(customChain);
         this.network.createGroups();
         this.network.changeChain(this.chainId);
 
-        // store custom chains
-        const savedData = localStorage.getItem('custom_chains');
-        if (savedData) {
-            try {
-                const chains = JSON.parse(savedData);
-                chains.push(customChain);
-                localStorage.setItem('custom_chains', JSON.stringify(chains));
-            } catch (e) {
-                console.log(e);
+        let readySubs = this.network.networkingReady.subscribe(value => {
+            console.log('networkingReady', value);
+            if (value) {
+                this.validated = true;
+                this.validatedChain = customChain;
+                readySubs.unsubscribe();
+                readySubs = null;
             }
-        } else {
-            localStorage.setItem('custom_chains', JSON.stringify([customChain]));
-        }
+        });
+
+        setTimeout(() => {
+            this.testing = false;
+            if (readySubs) {
+                readySubs.unsubscribe();
+            }
+        }, 5000);
     }
 
     async checkNativeHistory() {

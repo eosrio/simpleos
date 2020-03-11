@@ -165,12 +165,17 @@ export class Eosjs2Service {
 
     async getTableRows(_code: string, _scope: string, _table: string) {
         if (this.rpc) {
-            return this.rpc.get_table_rows({
-                json: true,
-                code: _code,
-                scope: _scope,
-                table: _table,
-            });
+            try {
+                return this.rpc.get_table_rows({
+                    json: true,
+                    code: _code,
+                    scope: _scope,
+                    table: _table,
+                });
+            } catch (e) {
+                console.log(e);
+                return null;
+            }
         }
     }
 

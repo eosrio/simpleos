@@ -1,12 +1,13 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ChainService {
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) {
+    }
 
     setRawGithub() {
         const expiration = (1000 * 60 * 60);
@@ -26,7 +27,14 @@ export class ChainService {
 
     async getRawGithub() {
         const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/config.json';
-        let result = await this.http.get(url, {responseType: 'json'}).toPromise();
+        let result = await this.http.get(url, {
+            headers: new HttpHeaders({
+                'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }),
+            responseType: 'json'
+        }).toPromise();
         const payload = {lastUpdate: new Date(), config: result};
         console.log(payload);
         localStorage.setItem('configSimpleos', JSON.stringify(payload));
