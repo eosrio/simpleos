@@ -114,14 +114,14 @@ li:hover .contact-hover {
 }
 /*contact's panel end*/
 
+.account {
+    font-size: 14px;
+}
+
 .mat-option {
     line-height: 24px;
     height: 54px;
     padding: 30px 16px;
-}
-
-.account {
-    font-size: 14px;
 }
 
 mat-option:not(.last) {
@@ -129,7 +129,12 @@ mat-option:not(.last) {
 }
 
 /deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-    background: #3a3a3a;
+    background: var(--info-card-bg-hover);
+}
+
+.mat-option.mat-active {
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--text-highlight);
 }
 
 .btn-max {
@@ -146,10 +151,6 @@ mat-option:not(.last) {
     display: flex;
     justify-content: flex-end;
     padding-top: 0;
-}
-
-.error {
-    color: #f44336 !important;
 }
 
 .deleteBtn, .editBtn {
