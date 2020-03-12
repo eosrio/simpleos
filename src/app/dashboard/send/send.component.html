@@ -24,21 +24,24 @@
                     </div>
                 </ng-container>
                 <ng-container *ngIf="sendForm.value.token !== aService.activeChain['symbol']">
-                    <div class="eos highlight-primary">{{token_balance | number :  precision}} {{sendForm.value.token}}</div>
+                    <div class="eos highlight-primary">{{token_balance | number :  precision}} {{selectedToken.name}}</div>
                 </ng-container>
                 <form [formGroup]="sendForm">
                     <div>
                         <mat-form-field class="example-full-width">
                             <input type="text" placeholder="Token" matInput formControlName="token"
-                                   [matAutocomplete]="auto1">
+                                   [matAutocomplete]="auto1" (blur)="formatTokenSymbol()">
                             <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
                             <mat-autocomplete #auto1="matAutocomplete">
+
                                 <mat-option value="{{aService.activeChain['symbol']}}">
                                     {{ aService.activeChain['symbol'] }}
                                 </mat-option>
-                                <mat-option *ngFor="let token of aService.tokens" [value]="token.name">
+
+                                <mat-option *ngFor="let token of filteredTokens | async" [value]="token.name">
                                     {{ token.name }}
                                 </mat-option>
+
                             </mat-autocomplete>
                         </mat-form-field>
                         <mat-form-field class="field-width" style="margin-top: 12px; margin-bottom: 12px">
