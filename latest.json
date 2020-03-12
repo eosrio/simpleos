@@ -17,6 +17,7 @@
    },
    "LIBERLAND":{
       "link":"https://github.com/eosrio/liberland-wallet/releases/tag/1.0.4",
+	  "homepage":"https://vote.liberland.org/",
       "version_number":"v1.0.4",
       "binaries":[
          {
