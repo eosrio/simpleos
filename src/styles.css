@@ -777,23 +777,20 @@ input:not([readonly]) {
 	color: var(--accordion-content-color) !important;
 }
 
-.ui-accordion-header:focus {
+.ui-accordion-header:focus, .ui-accordion-header a:focus {
 	outline: none;
+	box-shadow: none !important;
 }
 
-.ui-accordion-header a:focus {
-	outline: none;
-}
 .ui-accordion .ui-accordion-header {
 	margin-bottom: 0 !important;
+	margin-top: 11px !important;
 }
+
 .ui-accordion .ui-accordion-header a {
 	padding: 0.5em !important;
-
-}
-
-.ui-accordion .ui-accordion-header {
-	margin-top: 11px !important;
+	border: 0 !important;
+	background-color: transparent !important;
 }
 
 .nohighlight-accordion .ui-accordion .ui-state-default {
@@ -801,71 +798,62 @@ input:not([readonly]) {
 	background-color: transparent !important;
 	color: #eeeeee !important;
 }
+
 .nohighlight-accordion .ui-accordion .ui-accordion-header a {
 	padding: 0.571em 1em;
 	border: 0 ;
 	color: var(--accordion-header-color) !important;
 }
+
 .nohighlight-accordion .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
 	color: var(--accordion-header-color) !important;
 }
 
 .ui-accordion .ui-state-default {
 	border: 0 !important;
-	background-color: var(--mat-tab-active) !important;
-	color: #eeeeee !important;
+	background-color: var(--info-card-bg-hover) !important;
+	color: var(--accordion-header-color) !important;
 }
 
-
-.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a .ui-accordion-toggle-icon {
-	color: var(--accordion-header-color-hover) !important;
-}
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
-	background-color: transparent!important;
-	border: 0!important;
-	color: var(--accordion-header-color-hover) !important;
+	border: 0 !important;
 	border-radius: 0 0 5px 5px;
 	margin: 0;
 	text-decoration: none;
 }
 
-.ui-accordion .ui-accordion-header a {
-
-	border: 0!important;
-	background-color: transparent!important;
-}
-
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
-	border:0 !important;
-	background-color: transparent !important;
-	/*color:  var(--text-title-color) !important;*/
+	border: 0 !important;
+	background-color: var(--btn-primary-bg) !important;
+	color:  var(--accordion-header-color-hover) !important;
+	-webkit-transition-duration: 0.3s;
+	transition-duration: 0.3s;
+	-webkit-transition-property: background-color;
+	transition-property: background-color;
 }
+
 .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active:hover a {
-	border:0 !important;
-	background-color:transparent !important;
-	/*color: var(--text-title-color);*/
+	border: 0 !important;
 }
+
 .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a {
-	background-color:transparent !important;
-	border:0 !important;
-	/*color:  var(--text-title-color);*/
+	background-color: transparent !important;
+	border: 0 !important;
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
-	background-color: var(--accordion-hover-background);
-	border: 1px solid #494949;
-	/*color:  var(--text-title-color);*/
+.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a p-header > div {
+	color:  var(--accordion-header-color-hover);
 }
 
-.ui-accordion .ui-accordion-header a:focus {
-	box-shadow: none !important;
+/*arrow to the right - when closed*/
+body .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
+	color: var(--accordion-header-color);
 }
 
-/*.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {*/
-/*	border-color: #0094d2 !important;;*/
-/*	background-color: #0094d2 !important;*/
-/*	color: #ffffff !important;;*/
-/*}*/
+/*arrow to the bottom - when opened*/
+body .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a .ui-accordion-toggle-icon {
+	color: var(--accordion-header-color);
+}
 
 /*Prime's accordion end*/
 

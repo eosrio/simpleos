@@ -310,9 +310,9 @@ export const LiberlandTheme = {
 	'--info-card-bg-hover': 'var(--gray-light)',
 
 	/*accordion*/
-	'--accordion-content-color': '#707070',
-	'--accordion-header-color': '#707070',
-	'--accordion-header-color-hover': 'var(--gray-darkmedium)',
+	'--accordion-header-color': 'var(--gray-darkmedium)',
+	'--accordion-content-color': 'var(--black-color)',
+	'--accordion-header-color-hover': 'var(--white-color)',
 
 	/*calendar*/
 	'--text-calendar': 'var(--gray-darkmedium)',
@@ -483,9 +483,9 @@ export const LightTheme = {
 	'--info-card-bg-hover': 'var(--gray-light)',
 
 	/*accordion*/
-	'--accordion-header-color': '#707070',
-	'--accordion-content-color': '#707070',
-	'--accordion-header-color-hover': '#404040',
+	'--accordion-header-color': 'var(--gray-darkmedium)',
+	'--accordion-content-color': 'var(--black-color)',
+	'--accordion-header-color-hover': 'var(--white-color)',
 
 	/*calendar*/
 	'--text-calendar': 'var(--gray-darkmedium)',
