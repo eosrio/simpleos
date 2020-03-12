@@ -91,7 +91,7 @@
       "name": "WAX MAINNET",
       "network": "MAINNET",
       "firstApi": "https://wax.eosrio.io",
-      "historyApi": "https://wax.hyperion.eosrio.io/v2",
+      "historyApi": "https://api.waxsweden.org/v2",
       "hyperionApis": [
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
