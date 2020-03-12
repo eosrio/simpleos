@@ -7,7 +7,7 @@
       "precision": 4,
       "name": "EOS MAINNET",
       "network": "MAINNET",
-      "firstApi": "https://hapi.eosrio.io",
+      "firstApi": "https://api.eosrio.io",
       "historyApi": "https://api.eossweden.org/v2",
       "hyperionApis": [
         "https://api.eossweden.org/v2",
@@ -31,38 +31,17 @@
         "forum": true,
         "rex": true
       },
-      "system": [
-        "eosio",
-        "eosio.token",
-        "eosio.msig",
-        "eosio.forum"
-      ],
+      "system": ["eosio","eosio.token","eosio.msig","eosio.forum"],
       "endpoints": [
-        {
-          "url": "https://api.eossweden.org",
-          "owner": "sw/eden",
-          "latency": 0
-        },
-        {
-          "url": "https://eos.greymass.com",
-          "owner": "EOS Greymass",
-          "latency": 0
-        },
-        {
-          "url": "https://nodes.get-scatter.com",
-          "owner": "Scatter",
-          "latency": 0
-        },
-        {
-          "url": "https://eu.eosdac.io",
-          "owner": "eosDAC",
-          "latency": 0
-        },
-        {
-          "url": "https://proxy.eosnode.tools",
-          "owner": "Proxy Node",
-          "latency": 0
-        }
+		{"url": "https://api.eosrio.io","owner": "EOS Rio","latency": 0},
+        {"url": "https://api.eossweden.org","owner": "sw/eden","latency": 0},
+        {"url": "https://eos.greymass.com","owner": "Greymass","latency": 0},
+        {"url": "https://nodes.get-scatter.com","owner": "Scatter","latency": 0},
+		{"url": "https://api.main.alohaeos.com","owner": "Aloha EOS","latency": 0},
+		{"url": "https://api.eoseoul.io","owner": "EOSeoul","latency": 0},
+		{"url": "https://api.eosn.io","owner": "EOS Nation","latency": 0},
+		{"url": "https://bp.cryptolions.io","owner": "CryptoLions","latency": 0},
+		{"url": "https://eos.eosphere.io","owner": "EOSphere","latency": 0}
       ],
       "explorers": [
         {
@@ -92,44 +71,16 @@
         }
       ],
       "exchanges": {
-        "bitfinexdep1": {
-          "memo_size": 16,
-          "pattern": "^[a-f0-9]+$"
-        },
-        "krakenkraken": {
-          "memo_size": 10,
-          "pattern": "^[0-9]+$"
-        },
-        "binancecleos": {
-          "memo_size": 9,
-          "pattern": "^[0-9]+$"
-        },
-        "huobideposit": {
-          "pattern": "^[0-9]+$"
-        },
-        "poloniexeos1": {
-          "memo_size": 16,
-          "pattern": "^[a-f0-9]+$"
-        },
-        "gateiowallet": {
-          "memo_size": 16,
-          "pattern": "^[a-f0-9]+$"
-        },
-        "chainceoneos": {
-          "memo_size": 10,
-          "pattern": "^[a-z]+$"
-        },
-        "zbeoscharge1": {
-          "memo_size": 18,
-          "pattern": "^[0-9]+$"
-        },
-        "okbtothemoon": {
-          "pattern": "^[0-9]+$"
-        },
-        "eosusrwallet": {
-          "memo_size": 36,
-          "pattern": "^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$"
-        }
+        "bitfinexdep1": {"memo_size": 16,"pattern": "^[a-f0-9]+$"},
+        "krakenkraken": {"memo_size": 10,"pattern": "^[0-9]+$"},
+        "binancecleos": {"memo_size": 9,"pattern": "^[0-9]+$"},
+        "huobideposit": {"pattern": "^[0-9]+$"},
+        "poloniexeos1": {"memo_size": 16,"pattern": "^[a-f0-9]+$"},
+        "gateiowallet": {"memo_size": 16,"pattern": "^[a-f0-9]+$"},
+        "chainceoneos": {"memo_size": 10,"pattern": "^[a-z]+$"},
+        "zbeoscharge1": {"memo_size": 18,"pattern": "^[0-9]+$"},
+        "okbtothemoon": {"pattern": "^[0-9]+$"},
+        "eosusrwallet": {"memo_size": 36,"pattern": "^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$"}
       }
     },
     {
@@ -140,9 +91,8 @@
       "name": "WAX MAINNET",
       "network": "MAINNET",
       "firstApi": "https://wax.eosrio.io",
-      "historyApi": "https://wax.hyperion.eosrio.io/v2",
+      "historyApi": "https://api.waxsweden.org/v2",
       "hyperionApis": [
-        "https://wax.hyperion.eosrio.io/v2",
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
         "https://api.wax.alohaeos.com/v2",
@@ -249,7 +199,7 @@
       "name": "BOS MAINNET",
       "network": "MAINNET",
       "firstApi": "https://api.bos.eosrio.io",
-      "historyApi": "https://bos.hyperion.eosrio.io/v2",
+      "historyApi": "https://api.bossweden.org/v2",
       "hyperionApis": [
         "https://api.bossweden.org/v2",
         "https://bos.eosn.io/v2",
@@ -280,38 +230,13 @@
         "eosio.forum"
       ],
       "endpoints": [
-        {
-          "url": "https://hapi.bos.eosrio.io",
-          "owner": "BOS Rio",
-          "latency": 0,
-          "version": "native"
-        },
-        {
-          "url": "https://bos.eosargentina.io",
-          "owner": "EOS Argentina",
-          "latency": 0
-        },
-        {
-          "url": "https://api.bossweden.org",
-          "owner": "BOS Sweden",
-          "latency": 0,
-          "version": "native"
-        },
-        {
-          "url": "https://api.bos42.io",
-          "owner": "ESO42",
-          "latency": 0
-        },
-        {
-          "url": "http://bos.eosio.sg:8888",
-          "owner": "EOS SG",
-          "latency": 0
-        },
-        {
-          "url": "https://api-bos.oraclechain.io",
-          "owner": "Oracle Chain",
-          "latency": 0
-        }
+        {"url": "https://hapi.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+		{"url": "https://api.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+        {"url": "https://bos.eosargentina.io","owner": "EOS Argentina","latency": 0},
+        {"url": "https://api.bossweden.org","owner": "BOS Sweden","latency": 0},
+        {"url": "https://api.bos42.io","owner": "ESO42","latency": 0},
+        {"url": "http://bos.eosio.sg:8888","owner": "EOS SG","latency": 0},
+        {"url": "https://api-bos.oraclechain.io","owner": "Oracle Chain","latency": 0}
       ],
       "explorers": [
         {
@@ -469,7 +394,7 @@
       "precision": 4,
       "name": "U°Community",
       "network": "MAINNET",
-      "firstApi": "https://api.uos.network:7889",
+      "firstApi": "https://api.uos.network",
       "historyApi": "https://hapi.uos.network/v2",
       "hyperionApis": [
         "https://hapi.uos.network/v2"
@@ -498,12 +423,8 @@
         "eosio.msig"
       ],
       "endpoints": [
-        {
-          "url": "https://history.uos.network:7889",
-          "owner": "UOS",
-          "latency": 0,
-          "version": "native"
-        }
+		{"url": "https://api.uos.network","owner": "UOS","latency": 0},
+        {"url": "https://history.uos.network","owner": "UOS","latency": 0}
       ],
       "explorers": []
     },
@@ -579,10 +500,10 @@
       "symbol": "EOS",
       "icon": "jungle.png",
       "precision": 4,
-      "name": "EOS JUNGLE TESTNET",
+      "name": "EOS JUNGLE TESTNET 2",
       "network": "TESTNET",
-      "firstApi": "https://jungle2.cryptolions.io:443",
-      "historyApi": "https://jungle.hyperion.eosrio.io/v2",
+      "firstApi": "https://jungle.eossweden.org",
+      "historyApi": "https://jungle.eossweden.org/v2",
       "hyperionApis": [
         "https://jungle.hyperion.eosrio.io/v2",
         "https://jungle.eosusa.news/v2",
@@ -614,13 +535,18 @@
         "eosio.msig"
       ],
       "endpoints": [
-        {
-          "url": "https://jungle2.cryptolions.io:443",
-          "owner": "Jungle 2",
+		{
+          "url": "https://jungle.eossweden.org",
+          "owner": "EOS Sweden",
+          "latency": 0
+        },
+		{
+          "url": "https://jungle.eosusa.news",
+          "owner": "EOS USA",
           "latency": 0
         },
         {
-          "url": "http://jungle2.cryptolions.io:80",
+          "url": "https://jungle2.cryptolions.io",
           "owner": "Jungle 2",
           "latency": 0
         }
@@ -640,9 +566,10 @@
       "precision": 4,
       "name": "BOS TESTNET",
       "network": "TESTNET",
-      "firstApi": "https://boscore.eosrio.io",
-      "historyApi": "https://tst.bossweden.org/v2",
+      "firstApi": "https://testnet.bos.eosrio.io",
+      "historyApi": "https://api-bostest.blockzone.net/v2",
       "hyperionApis": [
+		"https://api-bostest.blockzone.net/v2",
         "https://tst.bossweden.org/v2"
       ],
       "forumTally": "",
@@ -663,31 +590,14 @@
         "forum": false,
         "rex": true
       },
-      "system": [
-        "eosio",
-        "eosio.token",
-        "eosio.msig"
-      ],
+      "system": ["eosio","eosio.token","eosio.msig"],
       "endpoints": [
-        {
-          "url": "https://boscore.eosrio.io",
-          "owner": "BOS Rio",
-          "latency": 0,
-          "version": "mongo"
-        },
-        {
-          "url": "https://bostest.api.blockgo.vip",
-          "owner": "blockgo",
-          "latency": 0,
-          "version": ""
-        }
+        {"url": "https://testnet.bos.eosrio.io","owner": "BOS Rio","latency": 0},
+		{"url": "https://tst.bossweden.org","owner": "BOS Sweden","latency": 0},
+        {"url": "https://api-bostest.blockzone.net/","owner": "Blockzone","latency": 0}
       ],
       "explorers": [
-        {
-          "name": "EOSX",
-          "account_url": "https://bos-test.eosx.io/account/",
-          "tx_url": "https://bos-test.eosx.io/tx/"
-        }
+        {"name": "EOSX","account_url": "https://bos-test.eosx.io/account/","tx_url": "https://bos-test.eosx.io/tx/"}
       ]
     },
     {
@@ -752,12 +662,56 @@
         }
       ]
     },
+	  {
+      "id": "cc1e1e603f6ce192256579ce72f118c52127e6cf1b88783cbd73ea1e6aaa5731",
+      "symbol": "LLM",
+      "icon": "liberland.png",
+      "precision": 8,
+      "name": "LIBERLAND TESTNET",
+      "network": "TESTNET",
+      "firstApi": "https://liberland-staging.eosio.se",
+      "historyApi": "",
+      "hyperionApis": [],
+      "forumTally": "",
+      "eosrioBP": "",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": false,
+        "vote": false,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": false,
+        "forum": false,
+        "rex": false
+      },
+      "system": [
+        "eosio",
+		"eosio.init",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+        {
+          "url": "https://liberland-staging.eosio.se",
+          "owner": "EOS Sweden",
+          "latency": 0,
+          "version": "native"
+        }
+      ],
+      "explorers": []
+    },
     {
       "id": "cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a",
       "symbol": "LLM",
       "icon": "liberland.png",
       "precision": 8,
-      "name": "LIBERLAND TESTNET",
+      "name": "LIBERLAND T2",
       "network": "TESTNET",
       "firstApi": "https://liberland-test.eosio.se",
       "historyApi": "",
@@ -782,6 +736,7 @@
       },
       "system": [
         "eosio",
+		"eosio.init",
         "eosio.token",
         "eosio.msig"
       ],
@@ -791,10 +746,59 @@
           "owner": "EOS Sweden",
           "latency": 0,
           "version": "native"
+        },
+		{
+          "url": "https://staging.liberland.eosrio.io",
+          "owner": "EOS Rio",
+          "latency": 0,
+          "version": "native"
         }
       ],
       "explorers": []
     },
+    {
+		"id": "7f3f5ae1a73d7c14a72f65f257d41397b966ffcd95c588c50d5081eaa354984c",
+		"symbol": "LLC",
+		"icon": "liberland.png",
+		"precision": 8,
+		"name": "LIBERLAND TEST LEGACY",
+		"network": "TESTNET",
+		"firstApi": "https://liberland.eossweden.org",
+		"historyApi": "",
+		"hyperionApis": [],
+		"forumTally": "",
+		"eosrioBP": "",
+		"proxyRegistry": "",
+		"lastNode": "",
+		"logoSrc": "",
+		"backdrop": "",
+		"features": {
+			"history": true,
+			"send": true,
+			"resource": false,
+			"vote": false,
+			"staking": true,
+			"dapps": true,
+			"addAcc": true,
+			"newAcc": false,
+			"forum": false,
+			"rex": false
+		},
+		"system": [
+			"eosio",
+			"eosio.token",
+			"eosio.msig"
+		],
+		"endpoints": [
+			{
+				"url": "https://liberland.eossweden.org",
+				"owner": "EOS Sweden",
+				"latency": 0,
+				"version": "native"
+			}
+		],
+		"explorers": []
+	},
     {
       "id": "7136e3e32a458bb99cf6973ab5055869d25830607b9e78593769e1be52fb6f20",
       "symbol": "MEETONE",
