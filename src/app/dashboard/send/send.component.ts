@@ -13,6 +13,7 @@ import * as moment from 'moment';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ElectronService} from "ngx-electron";
+import {start} from "repl";
 
 
 export interface Contact {
@@ -55,6 +56,7 @@ export class SendComponent implements OnInit, OnDestroy {
     search: string;
     filteredContacts: Observable<Contact[]>;
     searchedContacts: Observable<Contact[]>;
+    filteredTokens: Observable<any[]>;
     numberMask = createNumberMask({
         prefix: '',
         allowDecimal: true,
@@ -64,7 +66,7 @@ export class SendComponent implements OnInit, OnDestroy {
     config: ToasterConfig;
     fromAccount: string;
     token_balance = 0.0000;
-    selectedToken = {};
+    selectedToken = {} as any;
     selectedEditContact = null;
     selectedDeleteContact = null;
 
@@ -237,26 +239,36 @@ export class SendComponent implements OnInit, OnDestroy {
         }));
 
         this.subscriptions.push(this.sendForm.get('token').valueChanges.subscribe((symbol) => {
-            this.sendForm.patchValue({
-                amount: ''
-            });
-            console.log('this.selectedToken', symbol);
-            if (symbol !== this.aService.activeChain['symbol']) {
-                const tk_idx = this.aService.tokens.findIndex((val) => {
-                    return val.name === symbol;
-                });
-                if (tk_idx !== undefined) {
-                    this.selectedToken = this.aService.tokens[tk_idx];
-                    this.token_balance = this.selectedToken['balance'];
-                }
-            } else {
+            this.sendForm.patchValue({amount: ''});
+            if (this.aService.activeChain.symbol === symbol.toUpperCase()) {
                 this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
+            } else {
+                if (symbol !== '') {
+                    const token = this.aService.tokens.find(tk => tk.name === symbol.toUpperCase());
+                    if (token) {
+                        this.selectedToken = token;
+                    } else {
+                        this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
+                    }
+                } else {
+                    this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
+                }
+            }
+            if (this.selectedToken) {
+                this.token_balance = this.selectedToken.balance;
             }
         }));
 
         this.precision = '1.' + this.aService.activeChain['precision'];
         this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
         this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
+
+        this.filteredTokens = this.sendForm.get('token').valueChanges.pipe(startWith(''), map(tokenText => {
+            return this.aService.tokens.filter((value, index, array) => {
+                return value.name.includes(tokenText.toUpperCase());
+            });
+        }));
+
         this.subscriptions.push(this.sendForm.get('add').valueChanges.subscribe(val => {
             this.add = val;
         }));
@@ -295,11 +307,18 @@ export class SendComponent implements OnInit, OnDestroy {
         if (this.sendForm.value.to !== '') {
             try {
                 this.eosjs.checkAccountName(this.sendForm.value.to.toLowerCase());
-                // this.sendForm.controls[ 'to' ].setErrors ( null );
-                // this.errormsg = '';
-                console.log(this.sendForm.value.to.toLowerCase());
                 this.eosjs.getAccountInfo(this.sendForm.value.to.toLowerCase()).then(() => {
                     this.sendForm.controls['to'].setErrors(null);
+                    const token = this.aService.tokens.find((val) => val.name === this.sendForm.value.token);
+                    if (token) {
+                        this.eosjs.rpc.get_currency_balance(
+                            token.contract,
+                            this.sendForm.value.to.toLowerCase(),
+                            this.sendForm.value.token
+                        ).then((tokenData) => {
+                            console.log(tokenData);
+                        });
+                    }
                     this.checkExchangeAccount();
                     this.errormsg = '';
                 }).catch(() => {
@@ -601,5 +620,9 @@ export class SendComponent implements OnInit, OnDestroy {
         this.deleteContactModal = false;
         this.addDividers();
         this.storeContacts();
+    }
+
+    formatTokenSymbol() {
+        this.sendForm.get('token').setValue(this.sendForm.get('token').value.toUpperCase());
     }
 }
