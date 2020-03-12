@@ -13,6 +13,7 @@ import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
 import {KeygenModalComponent} from '../../keygen-modal/keygen-modal.component';
 import {Subscription} from 'rxjs';
+import {environment} from "../../../environments/environment";
 
 declare const window: any;
 
@@ -81,6 +82,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
     private fs: any;
     wrongpass = false;
     private subscriptions: Subscription[];
+
+    public compilerVersion = environment.COMPILERVERSION;
 
     static resetApp() {
         window.remote.app.relaunch();
@@ -344,7 +347,10 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
     // select folder for backup export
     async inputEXClick() {
-        const prefix = 'simpleos';
+        let prefix = 'simpleos';
+        if(this.compilerVersion === 'LIBERLAND') {
+            prefix = 'liberland';
+        }
         const filename = `${prefix}_${Date.now()}.bkp`;
         const dirs = await this._electronService.remote.dialog.showOpenDialog({
             properties: ['openDirectory']

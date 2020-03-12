@@ -172,6 +172,7 @@ export class AccountsService {
             let url = api + '/state/get_tokens?account=' + account;
             try {
                 const response: any = await this.http.get(url).toPromise();
+                console.log(response);
                 if (response.actions && response.actions.length > 0) {
                     return response;
                 }
