@@ -218,8 +218,7 @@
 				}
 			| orderBy: sortExpression : sortReverse : true : comparatorMethod
 			) | paginate: {itemsPerPage: 16,currentPage: page}'>
-
-			<div class="clr-col-lg-6 animate" *ngIf="!isExpired(p['proposal']['expires_at'])">
+			<div class="clr-col-lg-6 animate">
 				<div class="card proposal-card" (click)="openLargeView(p)">
 					<div class="proposal-body">
 							<span class="highlight-primary" style="font-weight: 500;"
