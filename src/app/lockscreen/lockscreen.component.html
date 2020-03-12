@@ -84,7 +84,8 @@
             <button type="button" class="btn btn-info-outline" (click)="logout()">
                 Yes
             </button>
-            <div class="text-center text-faded mt-1">*SimplEOS will <br> be restarted</div>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">>*SimplEOS will <br> be restarted</div>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be restarted</div>
         </div>
     </div>
 </clr-modal>
