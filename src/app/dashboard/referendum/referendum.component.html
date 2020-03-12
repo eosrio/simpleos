@@ -228,13 +228,13 @@
 										{{ getExpiretime(p.proposal.expires_at) }}!
 									</span>
 						<div style="clear: both;">
-							<h4 class="white mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
+							<h4 class="highlight mt-0" pTooltip="Proposer: {{p.proposal.proposer}}">
 								<div style="height: 100px"
 									 [innerHTML]="p['fuseJsHighlighted'].proposal.title"></div>
 							</h4>
 
 							<ng-container *ngIf="p.proposal.json_data">
-								<div class="gray text-justify proposal-content"
+								<div class="card-text-color text-justify proposal-content"
 									 [innerHTML]="p['fuseJsHighlighted'].proposal.json_data.content"></div>
 							</ng-container>
 						</div>
@@ -316,10 +316,10 @@
 										</span>
 							</ng-container>
 
-							<div class="text-white" [textMask]="{mask: numberMask}">
+							<div class="highlight" [textMask]="{mask: numberMask}">
 								{{(p.stats.staked['total'] / 10000) | number : '1.2-4' }} {{aService.activeChain['symbol']}}
 								voted
-								<span style="color: #989898;">
+								<span class="card-text-color">
 											({{p.stats.votes['total']}} voters)
 										</span>
 							</div>
@@ -340,7 +340,7 @@
 
 <clr-modal [(clrModalOpen)]="seeMore" [clrModalStaticBackdrop]="false">
 
-	<h3 class="modal-title text-white">
+	<h3 class="modal-title highlight">
 		{{sMTitle}}<br/>
 		<span class="highlight-primary">
 			<b>
@@ -354,7 +354,7 @@
 	</h3>
 
 	<div class="modal-body">
-		<div class="gray text-justify " (click)="clickEv($event)" [innerHTML]="newContent"></div>
+		<div class="card-text-color text-justify " (click)="clickEv($event)" [innerHTML]="newContent"></div>
 	</div>
 
 	<div class="modal-footer">
@@ -397,7 +397,7 @@
 
 			<button type="button" class="btn btn-outline btn-info-outline"
 					(click)="startMultiVote(selProposal, $event)"
-					style="margin-top: 9px;  padding:0px 17px !important;">
+					style="margin-top: 9px;  padding:0 17px !important;">
 				Vote
 			</button>
 		</div>
@@ -413,7 +413,7 @@
 
 <clr-modal [(clrModalOpen)]="voteModal">
 
-	<h3 *ngIf="selProposal" class="modal-title text-white">
+	<h3 *ngIf="selProposal" class="modal-title highlight">
 		Confirm vote
 		<span class="highlight-primary">
 			{{vtProposal}}
@@ -446,9 +446,9 @@
 		</span>
 	</h3>
 
-	<div *ngIf="selProposal" class="modal-body black-white">
+	<div *ngIf="selProposal" class="modal-body card-text-color">
 		Proposal Title
-		<h4 class="black-white">
+		<h4 class="highlight">
 			{{selProposal.proposal.title}}
 		</h4>
 	</div>
@@ -503,12 +503,12 @@
 
 <clr-modal [(clrModalOpen)]="proposalModal">
 	<div class="modal-title">
-		<h3 class="text-white">Create <span
+		<h3 class="highlight">Create <span
 			class="highlight-primary">{{createProposalForm.get('title').value}} <b>(#{{createProposalForm.get('id').value}}
 			)</b></span> proposal by <span
 			class="highlight-primary">{{aService.selected.getValue().name}}</span>
 		</h3>
-		<h5 class=" text-white">
+		<h5 class="highlight">
 			Expires <span class="highlight-primary">{{getExpiretimeProposal()}}</span>
 		</h5>
 	</div>
@@ -524,7 +524,7 @@
 				</mat-hint>
 				<br clear="all"/>
 			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
+			<button type="button" class="btn btn-info-outline" style="margin-top: 12px; padding: 5px;"
 					(click)="pushProposal()"
 					[disabled]="!confirmProposalForm.valid || busy">
 				Confirm

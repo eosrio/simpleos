@@ -363,13 +363,13 @@ export class ReferendumComponent implements OnInit {
             // console.log(line.length);
             if (line.length > 1) {
                 if (line.substr(0, 4) === '####') {
-                    newTxt += '<h3 class="blue"><b>' + line.replace('####', '') + '</b></h3>';
+                    newTxt += '<h3 class="highlight-primary"><b>' + line.replace('####', '') + '</b></h3>';
                 } else if (line.substr(0, 3) === '###') {
-                    newTxt += '<h5 class="text-muted2"><b>' + line.replace('###', '') + '</b></h5>';
+                    newTxt += '<h5 class="highlight"><b>' + line.replace('###', '') + '</b></h5>';
                 } else if (line.substr(0, 2) === '##') {
-                    newTxt += '<h4 class="blue"><b>' + line.replace('##', '') + '</b></h4>';
+                    newTxt += '<h4 class="highlight-primary"><b>' + line.replace('##', '') + '</b></h4>';
                 } else if (line.substr(0, 1) === '#') {
-                    newTxt += '<h3 class="blue"><b>' + line.replace('#', '') + '</b></h3>';
+                    newTxt += '<h3 class="highlight-primary"><b>' + line.replace('#', '') + '</b></h3>';
                 } else if (line.substr(0, 3) === '---' || line.substr(0, 3) === '___') {
                     newTxt += '<hr class="lineHR"/>';
                 } else if (line.match(/\(http(\w\S(.)*?)\)+/g)) {
@@ -425,7 +425,7 @@ export class ReferendumComponent implements OnInit {
         if (newTxt.match(/`(.*?)`+/g)) {
             const strong = newTxt.match(/`(.*?)`+/g);
             strong.forEach((val) => {
-                const newVal = '<span class="white">' + val.replace(new RegExp(/`+/g, 'g'), '') + '</span> ';
+                const newVal = '<span class="highlight">' + val.replace(new RegExp(/`+/g, 'g'), '') + '</span> ';
                 newTxt = newTxt.replace(val, newVal);
             });
         }
@@ -444,7 +444,7 @@ export class ReferendumComponent implements OnInit {
         this.sMexpires_at = p.proposal.expires_at;
         this.sMType = p.proposal.json_data.type;
         this.sMOption = p.proposal.json_data['options'];
-        this.newContent = this.sanitizer.bypassSecurityTrustHtml(this.contentStyle(this.sMContent, 'text-muted'));
+        this.newContent = this.sanitizer.bypassSecurityTrustHtml(this.contentStyle(this.sMContent, 'card-text-color'));
     }
 
     voteProposal() {
