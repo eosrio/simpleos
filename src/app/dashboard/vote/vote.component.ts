@@ -19,8 +19,8 @@ import {ElectronService} from 'ngx-electron';
 import {JsSignatureProvider, PrivateKey} from 'eosjs/dist/eosjs-jssig';
 import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
-import {Numeric} from "eosjs/dist";
-import {EOSAccount} from "../../interfaces/account";
+import {Numeric} from 'eosjs/dist';
+import {EOSAccount} from '../../interfaces/account';
 
 @Component({
     selector: 'app-vote',
@@ -591,48 +591,51 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         if (this.autoClaimConfig['enabled']) {
             if (this.autoClaimConfig['WAX-GBM']) {
-                const accJob = this.autoClaimConfig['WAX-GBM']['jobs'].find(
-                    j => j.account === selected.name);
+                const accJob = this.autoClaimConfig['WAX-GBM']['jobs'].find(j => j.account === selected.name);
                 if (accJob) {
-                    this.eosjs.rpc.get_account(selected.name).then(details => {
+                    const details = await this.eosjs.rpc.get_account(selected.name);
+                    if (details) {
                         const perms = details.permissions;
                         const claim_perm = perms.find(p => p.perm_name === 'claim');
                         if (claim_perm) {
-                            const claim_key = Numeric.convertLegacyPublicKey(claim_perm.required_auth.keys[0].key);
-                            this.keytar.getPassword('simpleos', claim_key).then((key: string) => {
-                                if (key) {
-                                    try {
-                                        const savedKey = PrivateKey.fromString(key).getPublicKey().toString();
-                                        if (claim_key === savedKey) {
-                                            this.checkLinkedAuth(selected.name).then((req_link) => {
-                                                if (req_link.length === 0) {
-                                                    this.autoClaimStatus = true;
-                                                    this.claimPublicKey = claim_key;
-                                                } else {
-                                                    this.claimSetupWarning = `Linkauth missing for (${req_link.join(', ')}). Please renew your claim key or set the permission links manually.`;
-                                                }
-                                            });
-                                        } else {
-                                            console.log('FATAL: Invalid key');
-                                        }
-                                    } catch (e) {
-                                        console.log('Key verification failed');
-                                    }
-                                } else {
-                                    console.log('no key saved');
+                            const claim_key = claim_perm.required_auth.keys[0].key;
+                            const new_claim_key = Numeric.convertLegacyPublicKey(claim_key);
+                            let privKey = await this.keytar.getPassword('simpleos', new_claim_key);
+                            if (!privKey) {
+                                privKey = await this.keytar.getPassword('simpleos', claim_key);
+                                if (privKey) {
+                                    this.keytar.setPassword('simpleos', new_claim_key, privKey);
                                 }
-                            }).catch((error) => {
-                                console.log(error);
-                            });
+                            }
+                            if (privKey) {
+                                try {
+                                    const savedKey = PrivateKey.fromString(privKey).getPublicKey().toString();
+                                    if (new_claim_key === savedKey) {
+                                        this.checkLinkedAuth(selected.name).then((req_link) => {
+                                            if (req_link.length === 0) {
+                                                this.autoClaimStatus = true;
+                                                this.claimPublicKey = new_claim_key;
+                                            } else {
+                                                this.claimSetupWarning = `Linkauth missing for (${req_link.join(', ')}). Please renew your claim key or set the permission links manually.`;
+                                            }
+                                        });
+                                    } else {
+                                        console.log('FATAL: Invalid key');
+                                    }
+                                } catch (e) {
+                                    console.log('Key verification failed');
+                                }
+                            } else {
+                                console.log('no key saved');
+                            }
                         } else {
                             console.log('Claim permission not defined');
                             this.claimSetupWarning = 'Claim permission not defined. Please try renewing your key.';
                         }
-                    });
+                    }
                 }
             }
         } else {
-            console.log('autoclaim disabled');
             this.enableAutoClaim = false;
             this.edAutoClaim(false);
         }
@@ -1351,6 +1354,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     processLiberlandVotes() {
-        window['shell']['openExternal']("https://vote.liberland.org");
+        window['shell']['openExternal']('https://vote.liberland.org');
     }
 }
