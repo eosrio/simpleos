@@ -13,6 +13,7 @@ import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ChainService} from '../../services/chain.service';
 import {KeygenModalComponent} from '../../keygen-modal/keygen-modal.component';
 import {Subscription} from 'rxjs';
+import {environment} from "../../../environments/environment";
 
 declare const window: any;
 
@@ -82,6 +83,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
     wrongpass = false;
     private subscriptions: Subscription[];
 
+    public compilerVersion = environment.COMPILERVERSION;
+
     static resetApp() {
         window.remote.app.relaunch();
         window.remote.app.exit(0);
@@ -117,6 +120,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.viewPKModal = false;
         this.showpk = false;
         this.managerKeys = false;
+
         this.passForm = this.fb.group({
             oldpass: ['', [Validators.required, Validators.minLength(4)]],
             matchingPassword: this.fb.group({
@@ -344,7 +348,10 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
     // select folder for backup export
     async inputEXClick() {
-        const prefix = 'simpleos';
+        let prefix = 'simpleos';
+        if(this.compilerVersion === 'LIBERLAND') {
+            prefix = 'liberland';
+        }
         const filename = `${prefix}_${Date.now()}.bkp`;
         const dirs = await this._electronService.remote.dialog.showOpenDialog({
             properties: ['openDirectory']
@@ -544,8 +551,6 @@ export class ConfigComponent implements OnInit, OnDestroy {
     // remove a single account
     removeAccount(name: string, refresh: boolean) {
         const rmIdx = this.aService.accounts.findIndex(a => a.name === name);
-        console.log('remove account', name);
-        console.log(rmIdx);
         this.aService.accounts.splice(rmIdx, 1);
         if (refresh) {
             this.showToast('success', 'Account Removed', `${name} removed`);
@@ -582,14 +587,13 @@ export class ConfigComponent implements OnInit, OnDestroy {
         const keystore = this.getKeyStore();
         if (keystore[key]) {
             delete keystore[key];
-            console.log(`${key} removed`);
             this.showToast('success', 'Key removed', `${key} removed`);
         } else {
             console.log(`${key} not found`);
         }
 
         this.saveKeyStore(keystore);
-        this.aService.storeAccountData(this.aService.accounts);
+        this.aService.storeAccountData(this.aService.accounts).catch(console.log);
 
         // refresh accounts
         this.aService.refreshFromChain(true).catch(console.log);

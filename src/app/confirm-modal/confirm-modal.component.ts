@@ -176,15 +176,15 @@ export class ConfirmModalComponent {
                     this.busy = false;
                     this.visibility = false;
                     this.cdr.detectChanges();
-                }, 1500);
+                }, 3000);
 
-                this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
-                    id: trxId
-                });
+                this.showToast(
+                    'success',
+                    'Transaction broadcasted',
+                    ` TRX ID: ${trxId} <br> Check your history for confirmation.`,
+                    {id: trxId}
+                );
                 this.errormsg = '';
-                this.busy = false;
-                this.visibility = false;
-                this.cdr.detectChanges();
             }
         } catch (e) {
             this.errormsg = e;
