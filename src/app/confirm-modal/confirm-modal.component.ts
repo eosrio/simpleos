@@ -176,7 +176,7 @@ export class ConfirmModalComponent {
                     this.busy = false;
                     this.visibility = false;
                     this.cdr.detectChanges();
-                }, 1500);
+                }, 3000);
 
                 this.showToast(
                     'success',
