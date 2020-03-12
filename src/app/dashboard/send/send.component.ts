@@ -146,13 +146,23 @@ export class SendComponent implements OnInit, OnDestroy {
         this.subscriptions.forEach(s => s.unsubscribe());
     }
 
+    compareContact(contact, text) {
+        return contact.name.toLowerCase().includes(text.toLowerCase()) || contact.account.toLowerCase().includes(text.toLowerCase());
+    }
+
     filter(val: string, indexed): Contact[] {
-        return this.contacts.filter(contact => {
+        return this.contacts.filter((contact, idx, arr) => {
             if (contact.type === 'contact') {
-                return contact.name.toLowerCase().includes(val.toLowerCase()) || contact.account.toLowerCase().includes(val.toLowerCase());
+                return this.compareContact(contact, val);
             } else {
                 if (indexed) {
-                    return contact.type === 'letter';
+                    if (arr[idx + 1]) {
+                        if (arr[idx + 1].type === 'contact') {
+                            return this.compareContact(arr[idx + 1], val);
+                        } else {
+                            return false;
+                        }
+                    }
                 } else {
                     return false;
                 }
@@ -247,7 +257,6 @@ export class SendComponent implements OnInit, OnDestroy {
         this.precision = '1.' + this.aService.activeChain['precision'];
         this.filteredContacts = this.sendForm.get('to').valueChanges.pipe(startWith(''), map(value => this.filter(value, false)));
         this.searchedContacts = this.searchForm.get('search').valueChanges.pipe(startWith(''), map(value => this.filter(value, true)));
-
         this.subscriptions.push(this.sendForm.get('add').valueChanges.subscribe(val => {
             this.add = val;
         }));
@@ -481,44 +490,33 @@ export class SendComponent implements OnInit, OnDestroy {
     }
 
     async newTransfer() {
-        this.busy = true;
-        this.wrongpass = '';
-        const selAcc = this.aService.selected.getValue();
-        const from = selAcc.name;
         const to = this.sendForm.get('to').value.toLowerCase();
-        const amount = parseFloat(this.sendForm.get('amount').value);
-        const memo = this.sendForm.get('memo').value;
+        const result = await this.trxFactory.transact(async (auth) => {
+            const selAcc = this.aService.selected.getValue();
+            const from = selAcc.name;
+            const amount = parseFloat(this.sendForm.get('amount').value);
+            const memo = this.sendForm.get('memo').value;
+            let contract = 'eosio.token';
+            let termsHeader = '';
+            let termsHtml = '';
+            const tk_name = this.sendForm.get('token').value;
+            let precision = this.aService.activeChain['precision'];
+            if (tk_name !== this.aService.activeChain['symbol']) {
+                const idx = this.aService.tokens.findIndex((val) => {
+                    return val.name === tk_name;
+                });
+                contract = this.aService.tokens[idx].contract;
+                precision = this.aService.tokens[idx].precision;
+            }
+            const actionTitle = `<span class="blue">Transfer</span>`;
+            const messageHTML = `
+                <h5 class="modal-title text-white"><span class="blue">${from}</span> sends <span
+                class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="blue">${to}</span></h5> 	
+		    `;
 
-        let contract = 'eosio.token';
-        let termsHeader = '';
-        let termsHtml = '';
-
-        const tk_name = this.sendForm.get('token').value;
-
-        let precision = this.aService.activeChain['precision'];
-
-        if (tk_name !== this.aService.activeChain['symbol']) {
-            const idx = this.aService.tokens.findIndex((val) => {
-                return val.name === tk_name;
-            });
-            contract = this.aService.tokens[idx].contract;
-            precision = this.aService.tokens[idx].precision;
-        }
-
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
-
-        this.mode = this.crypto.getPrivateKeyMode(publicKey);
-
-        const actionTitle = `<span class="blue">Transfer</span>`;
-        const messageHTML = `
-         <h5 class="modal-title text-white"><span class="blue">${from}</span> sends <span
-            class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="blue">${to}</span></h5> 	
-		`;
-
-        if (this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
-            termsHeader = 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions';
-            termsHtml = `I, ${from}, certify the following to be true to the best of my knowledge:<br><br>
+            if (this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the EOS Transfer Terms & Conditions';
+                termsHtml = `I, ${from}, certify the following to be true to the best of my knowledge:<br><br>
             &#9; 1. I certify that ${amount.toFixed(precision) + ' ' + tk_name} is not the proceeds of fraudulent or
             violent activities.<br>
             2. I certify that, to the best of my knowledge, ${to} is not supporting initiation of violence against others.<br>
@@ -527,39 +525,37 @@ export class SendComponent implements OnInit, OnDestroy {
             <br><br>
             If this action fails to be irreversibly confirmed after receiving goods or services from '${to}', 
             I agree to either return the goods or services or resend ${amount.toFixed(precision) + ' ' + tk_name} in a timely manner.`;
-        }
+            }
 
-        this.insertNewContact({
-            type: 'contact',
-            name: this.sendForm.value['alias'],
-            account: this.sendForm.value.to.toLowerCase()
-        }, true);
-        this.addDividers();
-        this.storeContacts();
+            this.insertNewContact({
+                type: 'contact',
+                name: this.sendForm.value['alias'],
+                account: this.sendForm.value.to.toLowerCase()
+            }, true);
+            this.addDividers();
+            this.storeContacts();
 
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: contract,
-                    name: 'transfer',
-                    authorization: [auth],
-                    data: {
-                        'from': from,
-                        'to': to,
-                        'quantity': amount.toFixed(precision) + ' ' + tk_name,
-                        'memo': memo
-                    }
-                }]
-            },
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: termsHeader,
-            termsHTML: termsHtml
+            return {
+                transactionPayload: {
+                    actions: [{
+                        account: contract,
+                        name: 'transfer',
+                        authorization: [auth],
+                        data: {
+                            'from': from,
+                            'to': to,
+                            'quantity': amount.toFixed(precision) + ' ' + tk_name,
+                            'memo': memo
+                        }
+                    }]
+                },
+                actionTitle: actionTitle,
+                labelHTML: messageHTML,
+                termsHeader: termsHeader,
+                termsHTML: termsHtml
+            }
         });
-        const result = await this.trxFactory.launch(publicKey);
-        if (result === 'done') {
+        if (result.status === 'done') {
             try {
                 await this.aService.refreshFromChain(false, [to]);
                 const sel = this.aService.selected.getValue();

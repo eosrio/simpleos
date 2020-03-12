@@ -2,7 +2,7 @@ import {EventEmitter, Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {AccountsService} from '../accounts.service';
 import {CryptoService} from '../crypto/crypto.service';
-import {Action} from "eosjs/dist/eosjs-serialize";
+import {Action, Authorization} from "eosjs/dist/eosjs-serialize";
 
 export interface TrxPayload {
     actions: Action[]
@@ -13,8 +13,8 @@ export interface TrxModalData {
     termsHTML: string;
     termsHeader: string;
     actionTitle: string;
-    signerPublicKey: string;
-    signerAccount: string;
+    signerPublicKey?: string;
+    signerAccount?: string;
     transactionPayload: TrxPayload;
     errorFunc?: any;
 }
@@ -48,7 +48,25 @@ export class TransactionFactoryService {
         });
     }
 
-    async launch(publicKey: string): Promise<any> {
+    async transact(builder: (auth: Authorization, publicKey: string) => Promise<TrxModalData | null>): Promise<any> {
+        const [auth, publicKey] = this.getAuth();
+        const modalData = await builder(auth, publicKey);
+        if (modalData) {
+            if (!modalData.signerPublicKey) {
+                modalData.signerPublicKey = publicKey;
+            }
+            if (!modalData.signerAccount) {
+                modalData.signerAccount = auth.actor;
+            }
+            const status = await this.launch(publicKey, modalData);
+            return {status, auth};
+        }
+    }
+
+    async launch(publicKey: string, modalData?: TrxModalData): Promise<any> {
+        if (modalData) {
+            this.modalData.next(modalData);
+        }
         return new Promise((resolve) => {
             this.launcher.emit({
                 visibility: true,
