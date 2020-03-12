@@ -271,11 +271,11 @@
                                 style="margin-left: 10px; font-weight: 700;">Set auto-claim
                         </button>
                         <mat-checkbox [checked]="enableLinkAuth" (change)="toggleLinkAuth()">
-                            Add linkauth
+                            Link actions
                         </mat-checkbox>
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right"
                            style="margin-left: 10px;">
-                            <fa-icon [icon]="['far','exclamation-circle']" class="info"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="info"></fa-icon>
                             <span class="tooltip-content">
 								Authorize your custom permission to execute these actions: <br>eosio::claimgbmvote,<br> eosio::claimgenesis,<br> eosio::voteproducer.
 							</span>

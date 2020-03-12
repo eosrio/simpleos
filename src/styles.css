@@ -791,6 +791,7 @@ input:not([readonly]) {
 	padding: 0.5em !important;
 	border: 0 !important;
 	background-color: transparent !important;
+	color: var(--accordion-header-color) !important;
 }
 
 .nohighlight-accordion .ui-accordion .ui-state-default {
@@ -820,6 +821,7 @@ input:not([readonly]) {
 	border-radius: 0 0 5px 5px;
 	margin: 0;
 	text-decoration: none;
+	color:  var(--accordion-header-color-hover);
 }
 
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
@@ -839,6 +841,7 @@ input:not([readonly]) {
 .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a {
 	background-color: transparent !important;
 	border: 0 !important;
+	color: var(--accordion-header-color) !important;
 }
 
 .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a p-header > div {
