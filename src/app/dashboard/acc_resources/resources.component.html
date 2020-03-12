@@ -1,474 +1,269 @@
 <div class="container-fluid" style="overflow-x: hidden; height: 100%">
-	<div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
 
-		<div class="clr-col-lg-4">
-			<div class="card info-card special-font">
-				<div class="card-block">
-					<div class="title">RAM price</div>
-					<!--<div class="blue resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-					<div
-						class="blue resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
-						/KB
-					</div>
-				</div>
-			</div>
-			<div *ngIf="aService.activeChain.name === 'EOS MAINNET'" echarts [options]="ram_chart"
-				 [merge]="ram_chartMerge" class="demo-chart"></div>
-		</div>
+        <div class="clr-col-lg-4">
+            <div class="card info-card special-font">
+                <div class="card-block">
+                    <div class="title">RAM price</div>
+                    <!--<div class="highlight-primary resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                    <div
+                            class="highlight-primary resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
+                        /KB
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" echarts [options]="ram_chart"
+                 [merge]="ram_chartMerge" class="demo-chart"></div>
+        </div>
 
-		<div class="clr-col-lg-3">
+        <div class="clr-col-lg-3">
 
-			<div class="card info-card special-font">
-				<div class="card-block">
-					<div class="progress bottom" [ngClass]="{'danger': (ram_usage/ram_quota) > 0.85}">
-						<progress [value]="ram_usage" [max]="ram_quota"></progress>
-					</div>
-					<div class="title">your RAM
-						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
-							<span
-								class="tooltip-content">RAM is a resource used to store information on your account<br>
+            <div class="card info-card special-font">
+                <div class="card-block">
+                    <div class="progress bottom" [ngClass]="{'danger': (ram_usage/ram_quota) > 0.85}">
+                        <progress [value]="ram_usage" [max]="ram_quota"></progress>
+                    </div>
+                    <div class="title">your RAM
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                            <span
+                                    class="tooltip-content">RAM is a resource used to store information on your account<br>
               				</span>
-						</a>
-					</div>
-					<div class="resource"><span class="blue">Used {{ram_usage / (1024) | number: '1.2-2'}}
-						KB</span><span style="color: #8d8d8d"> / {{ram_quota / (1024) | number:
+                        </a>
+                    </div>
+                    <div class="resource"><span class="highlight-primary">Used {{ram_usage / (1024) | number: '1.2-2'}}
+                        KB</span><span class="text-faded"> / {{ram_quota / (1024) | number:
                         '1.2-2'}} KB</span>
-					</div>
-				</div>
-			</div>
+                    </div>
+                </div>
+            </div>
 
-			<div class="card info-card special-font">
-				<div class="card-block" style="height: auto;">
-					<form [formGroup]="ramMarketFormBuy">
-						<div class="title white">Buy RAM</div>
-						<mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
-							<input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
-								   [textMask]="{mask: numberMask}" formControlName="buyBytes"
-								   (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
-						</mat-form-field>
-						<span style="margin: 0 12px;">=</span>
-						<mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
-							<input matInput type="text" #buyAmountEos
-								   placeholder="Price in {{aService.activeChain['symbol']}}"
-								   [textMask]="{mask: numberMask}" formControlName="buyEos"
-								   (keyup)="(errormsg2='');convertToBytes()"/>
-						</mat-form-field>
-						<!--						<span style="margin: 0 12px;"  class="black-white">{{aService.activeChain['symbol']}}</span>-->
-						<mat-error align="start" *ngIf="errormsg2 !== ''">
-							{{errormsg2}}
-						</mat-error>
-						<mat-form-field
-							style="width: 212px;  clear:both; display: inline-block !important; margin-top: 8px">
-							<input type="text" placeholder="Account" matInput #accountBuy formControlName="accountBuy"
-								   [matAutocomplete]="auto1">
-							<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
-							<mat-autocomplete #auto1="matAutocomplete">
-								<mat-option value="to this account">to this account</mat-option>
-								<mat-option value="to another account">to another account</mat-option>
-							</mat-autocomplete>
-						</mat-form-field>
+            <div class="card info-card special-font">
+                <div class="card-block" style="height: auto;">
+                    <form [formGroup]="ramMarketFormBuy">
+                        <div class="title">Buy RAM</div>
+                        <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
+                            <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
+                                   [textMask]="{mask: numberMask}" formControlName="buyBytes"
+                                   (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
+                        </mat-form-field>
+                        <span style="margin: 0 12px;">=</span>
+                        <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
+                            <input matInput type="text" #buyAmountEos
+                                   placeholder="Price in {{aService.activeChain['symbol']}}"
+                                   [textMask]="{mask: numberMask}" formControlName="buyEos"
+                                   (keyup)="(errormsg2='');convertToBytes()"/>
+                        </mat-form-field>
+                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
+                        <mat-error align="start" *ngIf="errormsg2 !== ''">
+                            {{errormsg2}}
+                        </mat-error>
+                        <mat-form-field
+                                style="width: 212px;  clear:both; display: inline-block !important; margin-top: 8px">
+                            <input type="text" placeholder="Account" matInput #accountBuy formControlName="accountBuy"
+                                   [matAutocomplete]="auto1">
+                            <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
+                            <mat-autocomplete #auto1="matAutocomplete">
+                                <mat-option value="to this account">to this account</mat-option>
+                                <mat-option value="to another account">to another account</mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
 
-						<mat-form-field *ngIf="ramMarketFormBuy.value.accountBuy=='to another account'"
-										style="width: 212px; clear:both; display: inline-block !important;  margin-top: 8px; margin-bottom: 10px;">
-							<input matInput #anotherAcc placeholder="Buy to (account name)" formControlName="anotherAcc"
-								   (blur)="checkAccountName()" maxlength="12" class="text-lowercase"/>
-							<mat-error align="start" *ngIf="errormsg !== ''">
-								{{errormsg}}
-							</mat-error>
-							<mat-hint align="end">{{anotherAcc.value.length}} / 12</mat-hint>
-						</mat-form-field>
-						<br>
-						<button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormBuy.valid"
-								(click)="fillBuy();" style="font-weight: 700;">Buy
-						</button>
-						<div class="progress dark" style="margin-top: 20px">
-							<progress value="0" max="100" style="height: 2px;"></progress>
-						</div>
-					</form>
-					<form [formGroup]="ramMarketFormSell">
-						<div class="title white" style="margin-top: 40px;">Sell RAM</div>
-						<mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
-							<input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
-								   placeholder="RAM amount (KB)" formControlName="sellBytes"
-								   (keyup)="(errormsgeos='');convertToEosSELL()" (blur)="checkSellBytes()"/>
-						</mat-form-field>
-						<span style="margin: 0 12px;">=</span>
-						<mat-form-field lass="mt-1" style="width: 80px; display: inline-block !important;">
-							<input matInput #sellEos type="text" [textMask]="{mask: numberMask}"
-								   placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
-								   (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
-						</mat-form-field>
-						<!--						<span style="margin: 0 12px;" class="black-white">{{aService.activeChain['symbol']}}</span>-->
-						<mat-error align="start" *ngIf="errormsgeos !== ''">
-							{{errormsgeos}}
-						</mat-error>
-						<br>
-						<button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormSell.valid"
-								(click)="fillSell();" style="font-weight: 700;">Sell
-						</button>
-					</form>
-				</div>
-			</div>
+                        <mat-form-field *ngIf="ramMarketFormBuy.value.accountBuy=='to another account'"
+                                        style="width: 212px; clear:both; display: inline-block !important;  margin-top: 8px; margin-bottom: 10px;">
+                            <input matInput #anotherAcc placeholder="Buy to (account name)" formControlName="anotherAcc"
+                                   (blur)="checkAccountName()" maxlength="12" class="text-lowercase"/>
+                            <mat-error align="start" *ngIf="errormsg !== ''">
+                                {{errormsg}}
+                            </mat-error>
+                            <mat-hint align="end">{{anotherAcc.value.length}} / 12</mat-hint>
+                        </mat-form-field>
+                        <br>
+                        <button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormBuy.valid"
+                                (click)="fillBuy();" style="font-weight: 700;">Buy
+                        </button>
+                        <div class="progress dark" style="margin-top: 20px">
+                            <progress value="0" max="100" style="height: 2px;"></progress>
+                        </div>
+                    </form>
+                    <form [formGroup]="ramMarketFormSell">
+                        <div class="title" style="margin-top: 40px;">Sell RAM</div>
+                        <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
+                            <input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
+                                   placeholder="RAM amount (KB)" formControlName="sellBytes"
+                                   (keyup)="(errormsgeos='');convertToEosSELL()" (blur)="checkSellBytes()"/>
+                        </mat-form-field>
+                        <span style="margin: 0 12px;">=</span>
+                        <mat-form-field lass="mt-1" style="width: 80px; display: inline-block !important;">
+                            <input matInput #sellEos type="text" [textMask]="{mask: numberMask}"
+                                   placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
+                                   (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
+                        </mat-form-field>
+                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
+                        <mat-error align="start" *ngIf="errormsgeos !== ''">
+                            {{errormsgeos}}
+                        </mat-error>
+                        <br>
+                        <button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormSell.valid"
+                                (click)="fillSell();" style="font-weight: 700;">Sell
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-			<div class="card info-card special-font">
-				<div class="card-block">
-					<div class="title">Refund Stake
-						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
-							<span
-								class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
+            <div class="card info-card special-font">
+                <div class="card-block">
+                    <div class="title">Refund Stake
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                            <span
+                                    class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
               				</span>
-						</a>
-						<button class="btn btn-outline btn-info-outline"
-								style="margin:15px auto; font-weight: 700; display: flex;"
-								(click)="requestRefundModal=true">Request
-						</button>
-					</div>
+                        </a>
+                        <button class="btn btn-outline btn-info-outline"
+                                style="margin:15px auto; font-weight: 700; display: flex;"
+                                (click)="newRefund()">Request
+                        </button>
+                    </div>
 
-				</div>
-			</div>
+                </div>
+            </div>
 
-		</div>
+        </div>
 
-		<div class="clr-col-lg-5">
+        <div class="clr-col-lg-5">
 
-			<div class="card info-card special-font">
-				<div class="card-block">
-					<div class="progress bottom" [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
-						<progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
-					</div>
-					<span class="title">NET Bandwidth</span>
-					<span class="resource"
-						  style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-					<div class="resource"><span class="blue">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
-						KB </span><span style="color: #8d8d8d">/ {{net_limit.max / (1024)
+            <div class="card info-card special-font">
+                <div class="card-block">
+                    <div class="progress bottom" [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
+                        <progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
+                    </div>
+                    <span class="title">NET Bandwidth</span>
+                    <span class="resource"
+                          style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                    <div class="resource"><span class="highlight-primary">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
+                        KB </span><span class="text-faded">/ {{net_limit.max / (1024)
                         | number: '1.2-2'}} KB</span>
-					</div>
-				</div>
-			</div>
+                    </div>
+                </div>
+            </div>
 
-			<div class="card info-card special-font">
-				<div class="card-block">
-					<div class="progress bottom" [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
-						<progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
-					</div>
-					<span class="title">CPU Bandwidth
+            <div class="card info-card special-font">
+                <div class="card-block">
+                    <div class="progress bottom" [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
+                        <progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
+                    </div>
+                    <span class="title">CPU Bandwidth
 			  <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-              	<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
+              	<fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
               	<span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
 			  </a>
 		  </span>
-					<span class="resource"
-						  style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-					<div class="blue resource"><span class="blue">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
-						ms </span><span style="color: #8d8d8d">/ {{cpu_limit.max / (1024)
+                    <span class="resource"
+                          style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                    <div class="highlight-primary resource"><span class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
+                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
                         | number: '1.2-2'}} ms</span>
-					</div>
-				</div>
-			</div>
+                    </div>
+                </div>
+            </div>
 
-			<div class="card info-card special-font">
-				<div style="padding: .5rem .75rem;">
-					<div class="title">Delegated Resources
-						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
-							<fa-icon [icon]="['far','question-circle']" class="blue"></fa-icon>
-							<span class="tooltip-content">Resources you lent to other accounts <br>
+            <div class="card info-card special-font">
+                <div style="padding: .5rem .75rem;">
+                    <div class="title">Delegated Resources
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                            <span class="tooltip-content">Resources you lent to other accounts <br>
               </span>
-						</a>
-					</div>
-					<!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="blue">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-					<div class="card-text" style="margin-bottom: 0px !important;"><span
-						class="blue">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span> |
-						<span
-							class="blue">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-					</div>
+                        </a>
+                    </div>
+                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                    <div class="card-text" style="margin-bottom: 0px !important;"><span
+                            class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                        |
+                        <span
+                                class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                    </div>
 
 
-					<div style="height: auto; margin-bottom: 0px !important;">
-						<form [formGroup]="delegateForm">
-							<!--div class="title" style="color: white;">Delegate to</div-->
+                    <div style="height: auto; margin-bottom: 0px !important;">
+                        <form [formGroup]="delegateForm">
+                            <!--div class="title">Delegate to</div-->
 
-							<mat-form-field
-								style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
-								<input matInput #receiverAcc placeholder="Delegate to (account name)"
-									   formControlName="receiverAcc" (blur)="checkAccName()" maxlength="12"
-									   class="text-lowercase"/>
-								<mat-error align="start" *ngIf="errormsgD !== ''">
-									{{errormsgD}}
-								</mat-error>
-								<mat-hint align="end">{{receiverAcc.value.length}} / 12</mat-hint>
-							</mat-form-field>
-							<br/>
+                            <mat-form-field
+                                    style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
+                                <input matInput #receiverAcc placeholder="Delegate to (account name)"
+                                       formControlName="receiverAcc" (blur)="checkAccName()" maxlength="12"
+                                       class="text-lowercase"/>
+                                <mat-error align="start" *ngIf="errormsgD !== ''">
+                                    {{errormsgD}}
+                                </mat-error>
+                                <mat-hint align="end">{{receiverAcc.value.length}} / 12</mat-hint>
+                            </mat-form-field>
+                            <br/>
 
-							<mat-form-field class="mt-1"
-											style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-								<input matInput type="text" #netAmountEos
-									   placeholder="NET ({{aService.activeChain['symbol']}})"
-									   [textMask]="{mask: numberMask}" formControlName="netEos"
-									   (keyup)="checkEos(netAmountEos.value,'net');"/>
-							</mat-form-field>
+                            <mat-form-field class="mt-1"
+                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                                <input matInput type="text" #netAmountEos
+                                       placeholder="NET ({{aService.activeChain['symbol']}})"
+                                       [textMask]="{mask: numberMask}" formControlName="netEos"
+                                       (keyup)="checkEos(netAmountEos.value,'net');"/>
+                            </mat-form-field>
 
-							<span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                            <span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
 
-							<mat-form-field class="mt-1"
-											style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-								<input matInput type="text" #cpuAmountEos
-									   placeholder="CPU ({{aService.activeChain['symbol']}})"
-									   [textMask]="{mask: numberMask}" formControlName="cpuEos"
-									   (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
-							</mat-form-field>
-							<mat-error align="start" *ngIf="errormsgD3 !== ''">
-								{{errormsgD3}}
-							</mat-error>
+                            <mat-form-field class="mt-1"
+                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                                <input matInput type="text" #cpuAmountEos
+                                       placeholder="CPU ({{aService.activeChain['symbol']}})"
+                                       [textMask]="{mask: numberMask}" formControlName="cpuEos"
+                                       (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
+                            </mat-form-field>
+                            <mat-error align="start" *ngIf="errormsgD3 !== ''">
+                                {{errormsgD3}}
+                            </mat-error>
 
-							<button class="btn btn-outline btn-info-outline"
-									[disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
-									(click)="passDelegateModal=true;fillDelegateRequest();" style="font-weight: 700;">
-								DELEGATE
-							</button>
+                            <button class="btn btn-outline btn-info-outline"
+                                    [disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
+                                    (click)="fillDelegateRequest();" style="font-weight: 700;">
+                                DELEGATE
+                            </button>
 
-						</form>
-					</div>
+                        </form>
+                    </div>
 
-					<div *ngIf="delegations.length === 0" class="black-white"> You have no external delegated
-						resources
-					</div>
-				</div>
-				<div class="card-block" style="padding: 0">
-					<table class="table table-noborder white" style="color: #ececec;" *ngIf="delegations.length > 0">
-						<thead>
-						<tr>
-							<th class="left">Account</th>
-							<th>NET</th>
-							<th>CPU</th>
-							<th></th>
-						</tr>
-						</thead>
-						<tbody>
-						<tr *ngFor="let item of delegations">
-							<td class="left">{{item.to}}
-							</td>
-							<td>{{item.net_weight}}</td>
-							<td>{{item.cpu_weight}}</td>
-							<td>
-								<button class="btn btn-icon btn-danger-outline deleteBtn btn-sm"
-										(click)="passUnDelegateModal = true; fillUnDelegateRequest(item.to, item.net_weight, item.cpu_weight)">
-									<fa-icon [icon]="['far', 'times']"></fa-icon>
-								</button>
-							</td>
-						</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-
-		<!--h5>Total Reserved RAM:
-          <span class="blue">{{total_ram_bytes_reserved / (1024 * 1024 * 1024) | number: '1.2-2'}} GB</span>
-        </h5>
-        <h5>Total RAM Stake:
-          <span class="blue">{{total_ram_stake / (10000) | number: '1.2-2'}} EOS</span>
-        </h5>
-        <h5>Max On-Chain RAM:
-          <span class="blue">{{max_ram_size / (1024 * 1024 * 1024) | number: '1.2-2'}} GB</span>
-        </h5>
-        <h5>RAM Price:
-          <span class="blue">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</span>
-        </h5-->
-	</div>
-	<br>
+                    <div *ngIf="delegations.length === 0"> You have no external delegated
+                        resources
+                    </div>
+                </div>
+                <div class="card-block" style="padding: 0">
+                    <table class="table table-noborder" *ngIf="delegations.length > 0">
+                        <thead>
+                        <tr>
+                            <th class="left">Account</th>
+                            <th>NET</th>
+                            <th>CPU</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr *ngFor="let item of delegations">
+                            <td class="left">{{item.to}}
+                            </td>
+                            <td>{{item.net_weight}}</td>
+                            <td>{{item.cpu_weight}}</td>
+                            <td>
+                                <button class="btn btn-icon btn-danger-outline deleteBtn btn-sm"
+                                        (click)="fillUnDelegateRequest(item.to, item.net_weight, item.cpu_weight)">
+                                    <fa-icon [icon]="['far', 'times']"></fa-icon>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
 </div>
-
-<clr-modal [(clrModalOpen)]="passBuyModal">
-	<h3 class="modal-title text-white">Confirm <span class="blue">Password</span></h3>
-	<h3 class="modal-title text-white"><span class="blue">{{ payer }}</span> buy <span
-		class="blue">{{bytesFilter(ramMarketFormBuy.value.buyBytes * 1024)}} </span>
-		to {{receiver}}
-	</h3>
-	<span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
-
-	<div class="modal-body">
-		<!--<span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-		<span style="color:#bdbdbd;">RAM fee {{feeBuy| number: '1.2-6'}} {{aService.activeChain['symbol']}} </span>
-	</div>
-	<div class="modal-body">
-		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this transaction, you agree to the buyrambytes Terms & Conditions">
-				This action will attempt to reserve about {{bytesbuy}} bytes of RAM on behalf of {{receiver}}.
-				<br><br>
-				{{payer}} authorizes this contract to transfer sufficient EOS tokens to buy the RAM based upon the
-				current
-				price as determined by the market maker algorithm.
-				<br><br>
-				{{payer}} accepts that a 0.5% fee will be charged on the amount spent and that the actual RAM received
-				may be
-				slightly less than expected due to the approximations necessary to enable this service. {{payer}}
-				accepts that
-				a 0.5% fee will be charged if and when they sell the RAM received. {{payer}} accepts that rounding
-				errors
-				resulting from limits of computational precision may result in less RAM being allocated. {{payer}}
-				acknowledges
-				that the supply of RAM may be increased at any time up to the limits of off-the-shelf computer equipment
-				and
-				that this may result in RAM selling for less than purchase price. {{payer}} acknowledges that the price
-				of RAM
-				may increase or decrease over time according to supply and demand. {{payer}} acknowledges that RAM is
-				non-transferrable. {{payer}} acknowledges RAM currently in use by their account cannot be sold until it
-				is
-				freed and that freeing RAM may be subject to terms of other contracts.
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<div class="modal-footer">
-		<form [formGroup]="passBuyForm" (keyup.enter)="buy()" class="modal-footer">
-			<mat-form-field>
-				<input matInput #pass type="password" formControlName="pass" placeholder="Password">
-				<mat-hint class="error" align="start" *ngIf="wrongpassbuy !== ''">
-					{{wrongpassbuy}}
-				</mat-hint>
-			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="buy()"
-					[disabled]="busy">
-				Confirm
-				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-			</button>
-		</form>
-	</div>
-</clr-modal>
-
-<clr-modal [(clrModalOpen)]="passSellModal">
-	<h3 class="modal-title text-white">Confirm <span class="blue">Password</span></h3>
-	<h3 class="modal-title text-white"><span class="blue">{{ seller }}</span> sell <span
-		class="blue">{{bytesFilter(ramMarketFormSell.value.sellBytes * 1024)}} </span></h3>
-	<div class="modal-body">
-		<span style="color:#bdbdbd;">* 1KB = 1024 bytes </span>
-	</div>
-	<div class="modal-body">
-		<!--<span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} EOS </span>&lt;!&ndash;CSTAM&ndash;&gt;-->
-		<span style="color:#bdbdbd;">RAM fee {{feeSell| number: '1.2-6'}} {{aService.activeChain['symbol']}} </span>
-	</div>
-	<div class="modal-body">
-		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this transaction, you agree to the sellram Terms & Conditions">
-				The sellram action sells unused RAM for tokens.
-				<br><br>
-				As an authorized party I {{seller}} wish to sell {{bytessell}} bytes of unused RAM from
-				account {{seller}}.
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<form [formGroup]="passSellForm" (keyup.enter)="sell()" class="modal-footer">
-		<mat-form-field>
-			<input matInput #pass type="password" formControlName="pass" placeholder="Password">
-			<mat-hint class="error" align="start" *ngIf="wrongpasssell !== ''">
-				{{wrongpasssell}}
-			</mat-hint>
-		</mat-form-field>
-		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="sell()" [disabled]="busy">
-			Confirm
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</form>
-</clr-modal>
-
-<clr-modal [(clrModalOpen)]="passDelegateModal">
-	<h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span
-		class="blue"> CPU</span> to <span class="blue">{{ accTo}}</span></h3>
-
-	<div class="modal-body">
-		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this transaction, you agree to the delegatebw Terms & Conditions">
-				The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer
-				ownership.
-				<br><br>
-				As an authorized party I {{ accNow }} wish to stake {{ cpuD }} EOS for CPU and {{ netD }} EOS for
-				bandwidth from the liquid tokens of {{ accNow }} for the use of delegatee {{ accTo }}.
-				<br><br>
-				As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve
-				been authorized to
-				take this action by their beneficial owner(s).
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<form [formGroup]="passDelegateForm" (keyup.enter)="delegateRequest()" class="modal-footer">
-		<mat-form-field>
-			<input matInput #pass type="password" formControlName="pass" placeholder="Password">
-			<mat-hint class="error" align="start" *ngIf="wrongpassdelegate !== ''">
-				{{wrongpassdelegate}}
-			</mat-hint>
-		</mat-form-field>
-		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="delegateRequest()"
-				[disabled]="busy">
-			Confirm
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</form>
-</clr-modal>
-
-<clr-modal [(clrModalOpen)]="passUnDelegateModal">
-	<h3 class="modal-title text-white">Are you sure you want to undelegate <span class="blue">NET</span> and <span
-		class="blue"> CPU</span> from <span class="blue">{{ fromUD }}</span></h3>
-
-	<div class="modal-body">
-		<div>This resources will be removed from {{ fromUD }} and will return to you.</div>
-		<div>Please make sure the account {{ fromUD }} has some eos staked, otherwise the account may lose all its
-			resources
-		</div>
-		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this transaction, you agree to the undelegatebw  Terms & Conditions">
-				The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
-				<br><br>
-				As an authorized party I {{ accNow }} wish to unstake {{ cpuUD }} EOS from CPU and
-				{{ netUD }} EOS from bandwidth from the tokens owned by {{ accNow }} previously delegated for
-				the use of delegatee {{ fromUD }}.
-				<br><br>
-				If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been
-				authorized to take this action by their beneficial owner(s).
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<form [formGroup]="passUnDelegateForm" (keyup.enter)="unDelegateRequest()" class="modal-footer">
-		<mat-form-field>
-			<input matInput #pass type="password" formControlName="pass" placeholder="Password">
-			<mat-hint class="error" align="start" *ngIf="wrongpassundelegate !== ''">
-				{{wrongpassundelegate}}
-			</mat-hint>
-		</mat-form-field>
-		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="unDelegateRequest()"
-				[disabled]="busy">
-			Confirm
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</form>
-</clr-modal>
-
-
-<clr-modal [(clrModalOpen)]="requestRefundModal">
-	<h3 class="modal-title text-white">Request Refund to <span class="blue">{{aService.selected.getValue().name}}</span>
-	</h3>
-
-	<div class="modal-body">
-		<p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-			<p-accordionTab header="By submiting this transaction, you agree to the refund Terms & Conditions">
-				The intent of the <span class="blue">refund</span> action is to return previously
-				unstaked tokens to an account after the unstaking period has elapsed.
-				<br><br>As an authorized party I <span class="blue">{{aService.selected.getValue().name}}</span> wish to
-				have the unstaked tokens of <span class="blue">{{aService.selected.getValue().name}}</span> returned.
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<form [formGroup]="passRefundForm" (keyup.enter)="unDelegateRequest()" class="modal-footer">
-		<mat-form-field>
-			<input matInput #pass type="password" formControlName="pass" placeholder="Password">
-			<mat-hint class="error" align="start" *ngIf="wrongpassrefund !== ''">
-				{{wrongpassrefund}}
-			</mat-hint>
-		</mat-form-field>
-		<button type="button" class="btn btn-info-outline" style="margin-top: 12px;" (click)="rtRefund()"
-				[disabled]="busy">
-			Confirm
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</form>
-</clr-modal>

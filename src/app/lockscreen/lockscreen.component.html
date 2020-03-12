@@ -1,41 +1,43 @@
-<div class="wrap" style="height:-webkit-fill-available;overflow-y: scroll; width:100vw;">
+<div class="wrap" style="overflow-y: scroll; width:100vw;">
     <div class="container-fluid">
         <div class="clr-row clr-justify-content-center animate fadeInDown">
 
             <div class="clr-col-md-12 text-center">
-                <div class="anim-logo">
-					<ng-container *ngIf="app.compilerVersion==='EOS MAINNET'">
-						<lottie-animation-view
-							[options]="lottieConfig"
-							[width]="300"
-							(animCreated)="handleAnimation($event)"  class="display-animation">
-						</lottie-animation-view>
+                <div class="anim-logo" (click)="toggleAnimation()">
+					<ng-container *ngIf="app.compilerVersion==='DEFAULT'">
+
+						<ng-lottie [options]="lottieConfig"
+								   containerClass="display-animation"
+								   (animationCreated)="handleAnimation($event)"
+                                   width="300px">
+						</ng-lottie>
+
 						<img src="./assets/simpleos-logo-clara.svg" class="display-img" atl="Logo SimplEOS" height="256" style="margin: 12px auto 50px auto;"/>
 					</ng-container>
-					<ng-container *ngIf="app.compilerVersion!=='EOS MAINNET'">
+					<ng-container *ngIf="app.compilerVersion==='LIBERLAND'">
 						<img src="./assets/logos/liberland_logo.PNG" atl="Logo Liberland" height="256" style="margin: 50px auto;"/>
 					</ng-container>
                 </div>
-				<div class="slogan" *ngIf="app.compilerVersion=='EOS MAINNET'">Your simple and secure EOS wallet</div>
-				<div class="sloganWallet" *ngIf="app.compilerVersion!=='EOS MAINNET'">Liberland Wallet</div>
-				<div class="slogan" *ngIf="app.compilerVersion!=='EOS MAINNET'">To live and let live</div>
+				<div class="slogan" *ngIf="app.compilerVersion==='DEFAULT'">Your simple and secure EOS wallet</div>
+				<div class="sloganWallet" *ngIf="app.compilerVersion==='LIBERLAND'">Liberland Wallet</div>
+				<div class="slogan" *ngIf="app.compilerVersion==='LIBERLAND'">To live and let live</div>
 			</div>
 			<div class="clr-col-md-auto text-center">
-                <div class="card check-card">
+                <div class="card info-card">
                     <div class="card-block fit-content text-center">
                         <div class="text-center"> Enter your pin to unlock
                         </div>
                         <mat-form-field class="public-input">
                             <input matInput #pin2 type="password" autocomplete="off" placeholder="Pin"
                                    (keyup.enter)="unlock()" [(ngModel)]="pin" [autofocus]="true" >
-                            <button mat-button matSuffix mat-icon-button class="btn btn-outline btn-sm btn-max"
+                            <button mat-button matSuffix mat-icon-button class="btn btn-info-outline btn-sm btn-max"
                                     (click)="unlock()" [disabled]="pin2.value.length === 0">
                                 Unlock
                             </button>
                             <mat-hint *ngIf="wrongpass" class="error">
                                 Wrong password.<br>{{nAttempts}} attempts left!
-                                <fa-icon [icon]="['far','exclamation-circle']"
-                                         pTooltip="Data will be cleared after the last attempt" class="error">
+                                <fa-icon [icon]="['far','exclamation-circle']" class="error"
+                                         matTooltip="Data will be cleared after the last attempt" matTooltipClass="black-tooltip" matTooltipPosition="right">
                                 </fa-icon>
                             </mat-hint>
                         </mat-form-field>
@@ -43,23 +45,23 @@
                 </div>
 			</div>
 			<div class="clr-col-md-12 text-center">
-                <div class="made-with-love" style="margin-top: 5px;">Forgot your pin?
-                    <a class="btn btn-sm btn-link2" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
+                <div class="text-on-cover" style="margin-top: 5px;">Forgot your pin?
+                    <a class="btn btn-sm btn-link btn-accent-link" style="max-width: none; cursor: pointer;" (click)="logoutModal = true">
                         Clear all data and logout
                         <fa-icon [icon]="['far', 'sign-out-alt']"></fa-icon>
                     </a>
                 </div>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion=='EOS MAINNET'">
-					<div class="credits made-with-love">Made with
+				<section class="placeholder border-r text-on-cover" style="margin-top:20px;" *ngIf="app.compilerVersion === 'DEFAULT'">
+					<div class="credits">Made with
 						<fa-icon [icon]="['fas', 'heart']"></fa-icon>
-						by <a style="color: var(--btn-link2-color)">EOS Rio</a>
+						by <span class="highlight-primary">EOS Rio</span>
 					</div>
-					<div class="version made-with-love">v{{aService.versionSys}}</div>
+					<div class="version">v{{aService.versionSys}}</div>
 					<br>
 				</section>
-				<section class="placeholder border-r" style="margin-top:10px;" *ngIf="app.compilerVersion!=='EOS MAINNET'">
-					<div class="credits">Powered by</div>
-					<div class="version">SimplEOS v{{aService.versionSys}}</div>
+				<section class="placeholder border-r text-on-cover" style="margin-top:20px;" *ngIf="app.compilerVersion !== 'DEFAULT'">
+					<span class="credits">Powered by </span>
+					<span class="version">SimplEOS v{{aService.versionSys}}</span>
 					<br>
 				</section>
             </div>
@@ -68,8 +70,8 @@
 </div>
 
 <clr-modal [(clrModalOpen)]="logoutModal" [clrModalSize]="'sm'">
-    <h3 class="modal-title text-white">
-        Are you <span class="blue">sure</span> ?
+    <h3 class="modal-title">
+        Are you <span class="highlight-primary">sure</span> ?
     </h3>
     <div class="modal-body">
         <p style="margin-bottom: 20px;">All your data will be lost. If you want to login again you will have to import your
@@ -82,7 +84,8 @@
             <button type="button" class="btn btn-info-outline" (click)="logout()">
                 Yes
             </button>
-            <div class="text-center">*SimplEOS will <br> be restarted</div>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">>*SimplEOS will <br> be restarted</div>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be restarted</div>
         </div>
     </div>
 </clr-modal>

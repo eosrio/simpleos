@@ -1,631 +1,633 @@
-<div class="container-fluid" style=" overflow:hidden;">
+<div class="container-fluid" style="height: 100%;  overflow:hidden;">
+    <div class="clr-row flex-items-xs-between" style="height: 100%;">
+        <!--         style="height: calc(100vh - 6.2rem);"-->
 
+        <!--<div >-->
+        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;"
+             *ngIf="aService.selected.getValue().name">
+            <div>
+                <div class="balance free-title">
+                    BALANCE
+                    <ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
+                        ${{(fullBalance) * aService.usd_rate | number: '1.2-2'}}
+                    </ng-container>
+                </div>
+                <div class="eos highlight-primary special-font font-weight-bold">
+                    {{fullBalance | number: '1.0-' +
+                aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                </div>
+                <div class="infos free-title">
+                    <span style="padding-right: 15px">
+                      <fa-icon
+                              [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked
+                        <span>{{staked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
+                    </span>
+                    |
+                    <span style="padding-left: 15px">
+							  <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked
+                        <span>
+                            {{unstaked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                        </span>
+                        <span *ngIf="unstaking > 0">(+{{(unstaking) | number :'1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
+                        </span>
+                    </span>
+                </div>
 
-	<div class="clr-row flex-items-xs-between"  style="height: calc(100vh - 6.2rem);">
-
-		<!--<div >-->
-		<div class="clr-col-md-10 text-center animate flex-column"  style="height: 100%; padding: 25px; overflow: auto;"
-			 *ngIf="aService.selected.getValue().name">
-
-			<div>
-				<div class="balance">
-					BALANCE
-					<ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-						${{(fullBalance) * aService.usd_rate | number: '1.2-2'}}
-					</ng-container>
-				</div>
-				<div
-					class="eos special-font font-weight-bold">{{fullBalance | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</div>
-				<div class="infos">
-							<span style="padding-right: 15px">
-							  <fa-icon
-								  [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked <span
-								class="special-font-regular">{{staked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
-							</span>
-					|
-					<span style="padding-left: 15px">
-							  <fa-icon
-								  [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked <span
-						class="special-font-regular">{{unstaked | number: '1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
-									<span *ngIf="unstaking > 0"
-										  style="color: #616161;">(+{{(unstaking) | number :'1.0-' + aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}}
-										)</span>
-							</span>
-				</div>
-
-				<div class="clr-row flex-items-xs-between" style="margin-top: 21px;">
-					<div class="clr-col-6">
+                <div class="clr-row flex-items-xs-between" style="margin-top: 21px;">
+                    <div class="clr-col-6">
 							<span style="width: 212px; float: left;"
-								  *ngIf="aService.activeChain['explorers'].length !== 0">
-								<a class="blue btn btn-sm btn-link" style="max-width: none;" (click)="openAccount()">
-									Open <strong style="color: #b0b0b7">{{aService.selected.getValue().name}}</strong> on a block explorer
+                                  *ngIf="aService.activeChain['explorers'].length !== 0">
+								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;"
+                                   (click)="openAccount()">
+									Open <strong class="main-text">{{aService.selected.getValue().name}}</strong> on a block explorer
 								</a>
 							</span>
-					</div>
-					<div class="clr-col-6">
+                    </div>
+                    <div class="clr-col-6">
 							<span (click)="refresh()" style="width: 100px; float: right">
-								<a class="btn btn-sm btn-link2" style="max-width: none;" (click)="refresh()">
+								<a class="btn btn-sm btn-link btn-primary-link"
+                                   style="max-width: none; font-weight: 600;">
 									<fa-icon [icon]="['far', 'undo']"></fa-icon>
 									Refresh
 								</a>
 							</span>
-					</div>
-				</div>
+                    </div>
+                </div>
 
-				<div class="clr-row" style="margin-bottom: 1px;">
-					<div class="clr-col-12">
-						<div class="card info-card" *ngIf="aService.activeChain['historyApi'] !==  ''">
-							<div class="card-block">
-								<form [formGroup]="frmFilters">
-									<div class="clr-row flex-items-xs-between">
-										<div class="clr-col-lg-3">
-											<mat-form-field class="action-selector example-full-width"
-															style="width: 185px;">
-												<mat-select #selectAction formControlName="selectAction" [value]="''"
-															(selectionChange)="choosedAction($event.value);">
-													<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
-													<mat-option *ngFor="let act of actionsFilter"
-																[value]="act['filter']" class="action-selector-option">
-														{{act['name'] }}
-													</mat-option>
-												</mat-select>
-											</mat-form-field>
-										</div>
-										<div class="clr-col-lg-3">
-											<mat-form-field style="margin-top:8px;width: 150px;">
-												<input matInput #startDate (focus)="myPicker.open()"
-													   formControlName="startDate" [matDatepicker]="myPicker"
-													   [min]="launchDate" [max]="maxDate"
-													   (dateChange)="choosedAfterDate($event.value)"
-													   placeholder="Choose a start date">
-												<mat-datepicker-toggle matSuffix [for]="myPicker"
-																	   style="color: #0095d3;"></mat-datepicker-toggle>
-												<mat-datepicker #myPicker disabled="false"></mat-datepicker>
-											</mat-form-field>
+                <div class="clr-row" style="margin-bottom: 1px;">
+                    <div class="clr-col-12">
+                        <div class="card info-card" *ngIf="aService.activeChain['hyperionApis'].length > 0 ">
+                            <div class="card-block">
+                                <form [formGroup]="frmFilters">
+                                    <div class="clr-row flex-items-xs-between">
+                                        <div class="clr-col-lg-3">
+                                            <mat-form-field class="action-selector example-full-width"
+                                                            style="width: 185px;">
+                                                <mat-select #selectAction formControlName="selectAction" [value]="''"
+                                                            (selectionChange)="choosedAction($event.value);">
+                                                    <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
+                                                    <mat-option *ngFor="let act of actionsFilter"
+                                                                [value]="act['filter']" class="action-selector-option">
+                                                        {{act['name'] }}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="clr-col-lg-3">
+                                            <mat-form-field style="margin-top:8px;width: 150px;">
+                                                <input matInput #startDate (focus)="myPicker.open()"
+                                                       formControlName="startDate" [matDatepicker]="myPicker"
+                                                       [min]="launchDate" [max]="maxDate"
+                                                       (dateChange)="choosedAfterDate($event.value)"
+                                                       placeholder="Choose a start date">
+                                                <mat-datepicker-toggle matSuffix [for]="myPicker"
+                                                                       style="color: #0095d3;"></mat-datepicker-toggle>
+                                                <mat-datepicker #myPicker disabled="false"></mat-datepicker>
+                                            </mat-form-field>
 
-										</div>
-										<div class="clr-col-lg-3">
-											<mat-form-field style="margin-top:8px;width: 150px;">
-												<input matInput #endDate (focus)="myPicker2.open()"
-													   formControlName="endDate" [matDatepicker]="myPicker2"
-													   [min]="minDate" (dateChange)="choosedBeforeDate($event.value)"
-													   placeholder="Choose a end date">
-												<mat-datepicker-toggle matSuffix [for]="myPicker2"
-																	   style="color: #0095d3;"></mat-datepicker-toggle>
-												<mat-datepicker #myPicker2 disabled="false"></mat-datepicker>
-											</mat-form-field>
+                                        </div>
+                                        <div class="clr-col-lg-3">
+                                            <mat-form-field style="margin-top:8px;width: 150px;">
+                                                <input matInput #endDate (focus)="myPicker2.open()"
+                                                       formControlName="endDate" [matDatepicker]="myPicker2"
+                                                       [min]="minDate" (dateChange)="choosedBeforeDate($event.value)"
+                                                       placeholder="Choose a end date">
+                                                <mat-datepicker-toggle matSuffix [for]="myPicker2"
+                                                                       style="color: #0095d3;"></mat-datepicker-toggle>
+                                                <mat-datepicker #myPicker2 disabled="false"></mat-datepicker>
+                                            </mat-form-field>
 
-										</div>
-										<!--											<div class="clr-col-lg-3">-->
-										<!--												<mat-checkbox class="spam-checkbox" (change)="hideSpan()" ngDefaultControl>Hide spam</mat-checkbox>-->
-										<!--											</div>-->
-										<!--											<div class="clr-col-lg-3">-->
-										<!--												<button class="btn btn-info-outline btn-sm" style="margin-right: 5px;margin-top: 20px;" (click)="clearFilter()">CLEAR FILTERS</button>-->
-										<!--											</div>-->
-									</div>
-								</form>
-							</div>
-						</div>
-					</div>
-				</div>
+                                        </div>
 
-			</div>
-			<!--</div>-->
-			<!--MAINTENANCE MODE--><!--
-				<ng-container *ngIf="aService.actions.length === 0 || aService.activeChain.name === 'EOS MAINNET'">
-					<div class="card info-card">
-						<div class="card-block text-center">
-							<div class="clr-row">
-								<div class="clr-col-lg-4 clr-col-md-6">
-									<lottie-animation-view
-										[options]="lottieConfig"
-										[width]="300"
-										[height]="'auto'"
-										(animCreated)="handleAnimation($event)">
-									</lottie-animation-view>
-								</div>
-								<div class="clr-col-lg-8 clr-col-md-6 text-left" style="align-self: center;">
-									<h2 style="margin-top: 0; color: #0094d2; font-weight: 400;">History under
-										maintenance!</h2>
-									<h3 style="color: #acacac;">We are working on a better solution for you.</h3>
-									<h3 style="color: #acacac;">Meanwhile, please use a block explorer to check
-										transactions:</h3>
+                                        <!--                                        <div class="clr-col-lg-3">-->
+                                        <!--                                            <mat-checkbox class="spam-checkbox" (change)="hideSpan()" ngDefaultControl>-->
+                                        <!--                                                Hide spam-->
+                                        <!--                                            </mat-checkbox>-->
+                                        <!--                                        </div>-->
+                                        <!--                                        <div class="clr-col-lg-3">-->
+                                        <!--                                            <button class="btn btn-info-outline btn-sm"-->
+                                        <!--                                                    style="margin-right: 5px;margin-top: 20px;" (click)="clearFilter()">-->
+                                        <!--                                                CLEAR FILTERS-->
+                                        <!--                                            </button>-->
+                                        <!--                                        </div>-->
 
-									<button *ngFor="let explorer of aService.activeChain.explorers"
-											(click)="openExplorer(aService.selected.getValue().name,explorer)"
-											class="btn btn-outline btn-info-outline"
-											style="margin-top: 27px;">{{explorer.name}}</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				</ng-container>
-				-->
-			<!--HISTORY TABLE-->
-			<div class="table-flex history-table" style="max-height: 100%; ">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-				<p-table #tableHistory [value]="aService.actions"
-						 [responsive]="true"
-						 [totalRecords]="aService.totalActions"
-						 dataKey="seq"
-						 class="overview-table flex-column"
-						 sortField="date"
-						 sortMode="single"
-						 [sortOrder]="-1"
-						 [rows]="12"
-						 [paginator]="true"
-						 rowExpandMode="single"
-						 (onPage)="loadActionsLazy($event)" [scrollable]="true" scrollHeight="100%">
-					<ng-template pTemplate="header">
-						<tr>
-							<th style="width: 70px;">
-							</th>
-							<th>
-								amount
-							</th>
-							<th>
+            </div>
 
-							</th>
-							<th [pSortableColumn]="'date'">
-								date
-								<p-sortIcon [field]="'date'"></p-sortIcon>
-							</th>
-							<th style="width: 80px;">
-								status
-							</th>
-							<th style="width: 60px;">
+            <!--HISTORY TABLE-->
+            <div class="table-flex history-table" style="max-height: 100%; ">
 
-							</th>
-						</tr>
-					</ng-template>
-					<ng-template pTemplate="body" let-item let-expanded="expanded">
+                <p-table [value]="aService.actions"
+                         [responsive]="true"
+                         [scrollable]="true"
+                         [sortOrder]="-1"
+                         [rows]="maxRows"
+                         dataKey="seq"
+                         class="overview-table flex-column"
+                         sortField="date"
+                         sortMode="single"
+                         rowExpandMode="single"
+                         scrollHeight="100%">
 
-						<tr [pSelectableRow]="item" [pRowToggler]="item"
-							class="tr-canexpand {{expanded?' expandRow ':''}}"
-							*ngIf="!item.dup">
+                    <ng-template pTemplate="footer">
+                        <p-paginator #paginator
+                                     [rows]="maxRows"
+                                     [totalRecords]="aService.totalActions"
+                                     (onPageChange)="loadActionsLazy($event)">
+                        </p-paginator>
+                    </ng-template>
 
-							<td class="text-center" style="width: 50px;">
-								<fa-icon *ngIf="item.type === 'received' && item.user !== item.contract"
-										 [icon]="['fal', 'arrow-alt-to-bottom']" size="lg"
-										 class="blue"></fa-icon>
-								<fa-icon *ngIf="item.type === 'received' && item.user === item.contract "
-										 [icon]="['far', 'parachute-box']" size="lg" class="blue"></fa-icon>
-								<fa-icon *ngIf="item.type === 'buyram' || item.type === 'sellram'"
-										 [icon]="['fal', 'memory']" class="blue"></fa-icon>
-								<fa-icon *ngIf="item.type === 'sent'" [icon]="['fal', 'paper-plane']"
-										 class="blue"></fa-icon>
-								<fa-icon
-									*ngIf="item.type === 'bytes_in' || item.type === 'bytes_out' || item.type === 'bytes_s'"
-									[icon]="['fas', 'th']" class="blue"></fa-icon>
-								<fa-icon
-									*ngIf="item.type === 'unstaked_in' || item.type === 'unstaked_out' || item.type === 'mvfrsavings' || item.type === 'unstaketorex'"
-									[icon]="['far', 'lock-open']" class="blue"></fa-icon>
-								<fa-icon
-									*ngIf="item.type === 'staked_in' || item.type === 'staked_out' || item.type === 'mvtosavings'"
-									[icon]="['far', 'lock']" class="blue"></fa-icon>
-								<fa-icon *ngIf="item.type === 'vote'" class="blue"
-										 [icon]="['far', 'edit']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'other'||item.type === 'other2'" class="blue"
-										 [icon]="['far', 'receipt']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'new'" class="blue"
-										 [icon]="['far', 'user']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'rentcpu' || item.type === 'rentnet'" class="blue"
-										 [icon]="['far', 'hand-holding-usd']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'refund'" class="blue"
-										 [icon]="['far', 'undo-alt']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'withdraw' ||item.type === 'deposit'" class="blue"
-										 [icon]="['far', 'donate']"></fa-icon>
-								<fa-icon *ngIf="item.type === 'buyrex' || item.type === 'sellrex'" class="blue"
-										 [icon]="['far', 'exchange-alt']"></fa-icon>
-							</td>
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th style="width: 70px;">
+                            </th>
+                            <th>
+                                amount
+                            </th>
+                            <th>
 
-							<td class="text-center">
+                            </th>
+                            <th [pSortableColumn]="'date'">
+                                date
+                                <p-sortIcon [field]="'date'"></p-sortIcon>
+                            </th>
+                            <th style="width: 80px;">
+                                status
+                            </th>
+                            <th style="width: 60px;">
 
-								<!--TRANSFER-->
-								<ng-container *ngIf="item.action_name === 'transfer'">
-											<span class="white special-font-regular">
+                            </th>
+                        </tr>
+                    </ng-template>
+
+                    <ng-template pTemplate="body" let-item let-expanded="expanded">
+
+                        <tr [pSelectableRow]="item" [pRowToggler]="item"
+                            class="tr-canexpand {{expanded?' expandRow ':''}}"
+                            *ngIf="!item.dup">
+
+                            <td class="text-center" style="width: 50px;">
+                                <fa-icon *ngIf="item.type === 'received' && item.user !== item.contract"
+                                         [icon]="['fal', 'arrow-alt-to-bottom']" size="lg"
+                                         class="blue"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'received' && item.user === item.contract "
+                                         [icon]="['far', 'parachute-box']" size="lg" class="blue"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'buyram' || item.type === 'sellram'"
+                                         [icon]="['far', 'memory']" class="blue"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'sent'" [icon]="['far', 'paper-plane']"
+                                         class="blue"></fa-icon>
+                                <fa-icon
+                                        *ngIf="item.type === 'bytes_in' || item.type === 'bytes_out' || item.type === 'bytes_s'"
+                                        [icon]="['fas', 'th']" class="blue"></fa-icon>
+                                <fa-icon
+                                        *ngIf="item.type === 'unstaked_in' || item.type === 'unstaked_out' || item.type === 'mvfrsavings' || item.type === 'unstaketorex'"
+                                        [icon]="['far', 'lock-open']" class="blue"></fa-icon>
+                                <fa-icon
+                                        *ngIf="item.type === 'staked_in' || item.type === 'staked_out' || item.type === 'mvtosavings'"
+                                        [icon]="['far', 'lock']" class="blue"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'vote'" class="blue"
+                                         [icon]="['far', 'edit']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'other'||item.type === 'other2'" class="blue"
+                                         [icon]="['far', 'receipt']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'new'" class="blue"
+                                         [icon]="['far', 'user']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'rentcpu' || item.type === 'rentnet'" class="blue"
+                                         [icon]="['far', 'hand-holding-usd']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'refund'" class="blue"
+                                         [icon]="['far', 'undo-alt']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'withdraw' ||item.type === 'deposit'" class="blue"
+                                         [icon]="['far', 'donate']"></fa-icon>
+                                <fa-icon *ngIf="item.type === 'buyrex' || item.type === 'sellrex'" class="blue"
+                                         [icon]="['far', 'exchange-alt']"></fa-icon>
+                            </td>
+
+                            <td class="text-center">
+
+                                <!--TRANSFER-->
+                                <ng-container *ngIf="item.action_name === 'transfer'">
+											<span class="highlight bold special-font-regular">
 												<span *ngIf="item.type === 'received'">+</span>
 												<span *ngIf="item.type === 'sent'">-</span>
 												<span *ngIf="item.type === 'sellram'">+</span>
 												<span *ngIf="item.type === 'buyram'">-</span>
-												{{item.amount | number: precision}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount | number: precision}} <span
+                                                    class="highlight-primary">{{item.symbol}}</span>
 											</span>
-									<ng-container *ngIf="item.symbol === aService.activeChain['symbol']">
-										<span
-											*ngIf="aService.activeChain['name'] === 'EOS MAINNET'"> (${{item.amount * aService.usd_rate | number}}
-											)</span>
-									</ng-container>
-								</ng-container>
+                                    <ng-container *ngIf="item.symbol === aService.activeChain['symbol']">
+										<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
+                                            (${{item.amount * aService.usd_rate | number: precision}})
+                                        </span>
+                                    </ng-container>
+                                </ng-container>
 
-								<!--BUYRAMBYTES-->
-								<ng-container *ngIf="item.action_name === 'buyrambytes'">
-											<span class="white special-font-regular">
+                                <!--BUYRAMBYTES-->
+                                <ng-container *ngIf="item.action_name === 'buyrambytes'">
+											<span class="highlight bold special-font-regular">
 												<span>+</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount}} <span class="highlight-primary">{{item.symbol}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--SELLRAM-->
-								<ng-container *ngIf="item.action_name === 'sellram'">
-											<span class="white special-font-regular">
+                                <!--SELLRAM-->
+                                <ng-container *ngIf="item.action_name === 'sellram'">
+											<span class="highlight bold special-font-regular">
 												<span>-</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount}} <span class="highlight-primary">{{item.symbol}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--MVTOSAVINGS-->
-								<ng-container *ngIf="item.action_name === 'mvtosavings'">
-											<span class="white special-font-regular">
+                                <!--MVTOSAVINGS-->
+                                <ng-container *ngIf="item.action_name === 'mvtosavings'">
+											<span class="highlight bold special-font-regular">
 												<span>+</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount}} <span class="highlight-primary">{{item.symbol}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--MVFRSAVINGS-->
-								<ng-container *ngIf="item.action_name === 'mvfrsavings'">
-											<span class="white special-font-regular">
+                                <!--MVFRSAVINGS-->
+                                <ng-container *ngIf="item.action_name === 'mvfrsavings'">
+											<span class="highlight bold special-font-regular">
 												<span>-</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount}} <span class="highlight-primary">{{item.symbol}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--VOTEPRODUCER-->
-								<ng-container *ngIf="item.action_name === 'voteproducer'">
-									<ng-container *ngIf="item.votedProducers.length > 0">
-										Voted on {{item.votedProducers.length}} BPs
-									</ng-container>
-									<ng-container *ngIf="item.votedProducers.length === 0 && item.proxy !== ''">
-										Proxied votes to <span class="blue">{{item.proxy}}</span>
-									</ng-container>
-									<ng-container *ngIf="item.votedProducers.length === 0 && item.proxy === ''">
-										Removed all votes
-									</ng-container>
-								</ng-container>
+                                <!--VOTEPRODUCER-->
+                                <ng-container *ngIf="item.action_name === 'voteproducer'">
+                                    <ng-container *ngIf="item.votedProducers.length > 0">
+                                        Voted on {{item.votedProducers.length}} BPs
+                                    </ng-container>
+                                    <ng-container *ngIf="item.votedProducers.length === 0 && item.proxy !== ''">
+                                        Proxied votes to <span class="highlight-primary">{{item.proxy}}</span>
+                                    </ng-container>
+                                    <ng-container *ngIf="item.votedProducers.length === 0 && item.proxy === ''">
+                                        Removed all votes
+                                    </ng-container>
+                                </ng-container>
 
-								<!--DELEGATEBW/UNDELEGATEBW-->
-								<ng-container
-									*ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
-											<span class="white special-font-regular">
+                                <!--DELEGATEBW/UNDELEGATEBW-->
+                                <ng-container
+                                        *ngIf="item.action_name === 'undelegatebw' || item.action_name === 'delegatebw'">
+											<span class="highlight bold special-font-regular">
 												<span *ngIf="item.type === 'staked_in'">-</span>
 												<span *ngIf="item.type === 'staked_out'">-</span>
 												<span *ngIf="item.type === 'unstaked_in'">+</span>
 												<span *ngIf="item.type === 'unstaked_out'">+</span>
-												{{item.amount | number: precision}}
-												<span class="blue">
+                                                {{item.amount | number: precision}}
+                                                <span class="blue">
 													{{aService.activeChain['symbol']}}
 												</span>
 											</span>
 
-									<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
+                                    <span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
 												(${{item.amount * aService.usd_rate | number}})
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--UNSTAKEDTOREX-->
-								<ng-container *ngIf="item.action_name === 'unstaketorex'">
-											<span class="white special-font-regular">
+                                <!--UNSTAKEDTOREX-->
+                                <ng-container *ngIf="item.action_name === 'unstaketorex'">
+											<span class="highlight bold special-font-regular">
 												- {{item.amount}}
-												<span class="blue">
+                                                <span class="highlight-primary">
 													{{aService.activeChain['symbol']}}
 												</span>
 											</span>
 
-									<!--											<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">-->
-									<!--												(${{item.amount * aService.usd_rate | number}})-->
-									<!--											</span>-->
-								</ng-container>
+                                    <!--											<span *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">-->
+                                    <!--												(${{item.amount * aService.usd_rate | number}})-->
+                                    <!--											</span>-->
+                                </ng-container>
 
-								<!--BUYREX-->
-								<ng-container *ngIf="item.action_name === 'buyrex'">
-											<span class="white special-font-regular">
+                                <!--BUYREX-->
+                                <ng-container *ngIf="item.action_name === 'buyrex'">
+											<span class="highlight bold special-font-regular">
 												<span>+</span>
-												{{item.amount}} <span
-												class="blue">{{aService.activeChain['symbol']}}</span>
+                                                {{item.amount}} <span
+                                                    class="highlight-primary">{{aService.activeChain['symbol']}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--DEPOSIT-->
-								<ng-container *ngIf="item.action_name === 'deposit'">
-											<span class="white special-font-regular">
+                                <!--DEPOSIT-->
+                                <ng-container *ngIf="item.action_name === 'deposit'">
+											<span class="highlight bold special-font-regular">
 												<span>-</span>
-												{{item.amount}} <span
-												class="blue">{{aService.activeChain['symbol']}}</span>
+                                                {{item.amount}} <span
+                                                    class="highlight-primary">{{aService.activeChain['symbol']}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--WITHDRAW-->
-								<ng-container *ngIf="item.action_name === 'withdraw'">
-											<span class="white special-font-regular">
+                                <!--WITHDRAW-->
+                                <ng-container *ngIf="item.action_name === 'withdraw'">
+											<span class="highlight bold special-font-regular">
 												<span>+</span>
-												{{item.amount}} <span
-												class="blue">{{aService.activeChain['symbol']}}</span>
+                                                {{item.amount}} <span
+                                                    class="highlight-primary">{{aService.activeChain['symbol']}}</span>
 										</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--SELLREX-->
-								<ng-container *ngIf="item.action_name === 'sellrex'">
-											<span class="white special-font-regular">
+                                <!--SELLREX-->
+                                <ng-container *ngIf="item.action_name === 'sellrex'">
+											<span class="highlight bold special-font-regular">
 												<span>-</span>
-												{{item.amount}} <span class="blue">{{item.symbol}}</span>
+                                                {{item.amount}} <span class="highlight-primary">{{item.symbol}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--RENTCPU-->
-								<ng-container *ngIf="item.action_name === 'rentcpu'">
-											<span class="white special-font-regular">
+                                <!--RENTCPU-->
+                                <ng-container *ngIf="item.action_name === 'rentcpu'">
+											<span class="highlight bold special-font-regular">
 												<span>-</span>
-												{{item.amount}} <span
-												class="blue">{{aService.activeChain['symbol']}}</span>
+                                                {{item.amount}} <span
+                                                    class="highlight-primary">{{aService.activeChain['symbol']}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--RENTCPU-->
-								<ng-container *ngIf="item.action_name === 'rentnet'">
-											<span class="white">
+                                <!--RENTCPU-->
+                                <ng-container *ngIf="item.action_name === 'rentnet'">
+											<span class="highlight bold">
 												<span>-</span>
-												{{item.amount}} <span
-												class="blue">{{aService.activeChain['symbol']}}</span>
+                                                {{item.amount}} <span
+                                                    class="highlight-primary">{{aService.activeChain['symbol']}}</span>
 											</span>
-								</ng-container>
+                                </ng-container>
 
-								<!--OTHERS-->
-								<ng-container *ngIf="item.type === 'new'">
-									Created account -
-									<span class="blue">{{item.user}}</span>
-								</ng-container>
+                                <!--OTHERS-->
+                                <ng-container *ngIf="item.type === 'new'">
+                                    Created account -
+                                    <span class="highlight-primary">{{item.user}}</span>
+                                </ng-container>
 
-								<!--OTHERS-->
-								<ng-container *ngIf="!item.matched">
-									action: {{item.action_name}}
-								</ng-container>
-							</td>
+                                <!--OTHERS-->
+                                <ng-container *ngIf="!item.matched">
+                                    action: {{item.action_name}}
+                                </ng-container>
+                            </td>
 
-							<td class="text-center">
+                            <td class="text-center">
 
-								<ng-container *ngIf="item.action_name === 'voteproducer'">
-									with {{item.voter}}
-								</ng-container>
+                                <ng-container *ngIf="item.action_name === 'voteproducer'">
+                                    with {{item.voter}}
+                                </ng-container>
 
-								<ng-container *ngIf="item.action_name === 'transfer'">
+                                <ng-container *ngIf="item.action_name === 'transfer'">
 											<span *ngIf="item.type === 'received'">
-												from <span class="blue">{{item.user}}</span>
+												from <span class="highlight-primary">{{item.user}}</span>
 											</span>
-									<span *ngIf="item.type === 'sent'">
-												to <span class="blue">{{item.user}}</span>
+                                    <span *ngIf="item.type === 'sent'">
+												to <span class="highlight-primary">{{item.user}}</span>
 											</span>
-									<span *ngIf="item.type === 'buyram'" class="blue">bought RAM</span>
-									<span *ngIf="item.type === 'sellram'" class="blue">sold RAM</span>
-									<span *ngIf="item.type === 'buyrex'" class="blue">bought REX</span>
-									<span *ngIf="item.type === 'buyrex'" class="blue">sold REX</span>
-								</ng-container>
+                                    <span *ngIf="item.type === 'buyram'" class="highlight-primary">bought RAM</span>
+                                    <span *ngIf="item.type === 'sellram'" class="highlight-primary">sold RAM</span>
+                                    <span *ngIf="item.type === 'buyrex'" class="highlight-primary">bought REX</span>
+                                    <span *ngIf="item.type === 'buyrex'" class="highlight-primary">sold REX</span>
+                                </ng-container>
 
-								<span *ngIf="item.type === 'unstaked_in'" class="blue">UNSTAKED</span>
-								<span *ngIf="item.type === 'unstaked_out'">
-											<span class="blue">UNSTAKED</span>
-											from <span class="blue">{{item.user}}</span>
+                                <span *ngIf="item.type === 'unstaked_in'" class="highlight-primary">UNSTAKED</span>
+                                <span *ngIf="item.type === 'unstaked_out'">
+											<span class="highlight-primary">UNSTAKED</span>
+											from <span class="highlight-primary">{{item.user}}</span>
 										</span>
 
-								<span *ngIf="item.type === 'staked_in'" class="blue">STAKED</span>
-								<span *ngIf="item.type === 'staked_out'">
-											<span class="blue">STAKED</span>
-											to <span class="blue">{{item.user}}</span>
+                                <span *ngIf="item.type === 'staked_in'" class="highlight-primary">STAKED</span>
+                                <span *ngIf="item.type === 'staked_out'">
+											<span class="highlight-primary">STAKED</span>
+											to <span class="highlight-primary">{{item.user}}</span>
 										</span>
-								<span *ngIf="item.type === 'refund'">
-											<span class="blue">REFUND</span>
-											to <span class="blue">this account</span>
-										</span>
-
-								<span *ngIf="item.type === 'mvtosavings'" class="blue">STAKED (Savings)</span>
-								<span *ngIf="item.type === 'mvfrsavings'" class="blue">UNSTAKED (Maturing)</span>
-
-								<span *ngIf="item.type === 'unstaketorex'" class="blue">UNSTAKED (To REX)</span>
-
-								<span *ngIf="item.type === 'buyrex'">
-											<span class="blue">bought REX</span>
-											to <span class="blue">this account</span>
-										</span>
-								<span *ngIf="item.type === 'sellrex'">
-											<span class="blue">sold REX</span>
-											from <span class="blue">this account</span>
+                                <span *ngIf="item.type === 'refund'">
+											<span class="highlight-primary">REFUND</span>
+											to <span class="highlight-primary">this account</span>
 										</span>
 
-								<span *ngIf="item.type === 'deposit'">
-											<span class="blue">SEND TO REX</span>
-											from <span class="blue">this account</span>
+                                <span *ngIf="item.type === 'mvtosavings'"
+                                      class="highlight-primary">STAKED (Savings)</span>
+                                <span *ngIf="item.type === 'mvfrsavings'"
+                                      class="highlight-primary">UNSTAKED (Maturing)</span>
+
+                                <span *ngIf="item.type === 'unstaketorex'"
+                                      class="highlight-primary">UNSTAKED (To REX)</span>
+
+                                <span *ngIf="item.type === 'buyrex'">
+											<span class="highlight-primary">bought REX</span>
+											to <span class="highlight-primary">this account</span>
+										</span>
+                                <span *ngIf="item.type === 'sellrex'">
+											<span class="highlight-primary">sold REX</span>
+											from <span class="highlight-primary">this account</span>
 										</span>
 
-								<span *ngIf="item.type === 'withdraw'">
-											<span class="blue">SEND FROM REX</span>
-											to <span class="blue">this account</span>
+                                <span *ngIf="item.type === 'deposit'">
+											<span class="highlight-primary">SEND TO REX</span>
+											from <span class="highlight-primary">this account</span>
 										</span>
 
-								<span *ngIf="item.type === 'rentcpu'">
-											<span class="blue">rent CPU</span>
-											to <span class="blue">{{item.user}}</span>
+                                <span *ngIf="item.type === 'withdraw'">
+											<span class="highlight-primary">SEND FROM REX</span>
+											to <span class="highlight-primary">this account</span>
 										</span>
 
-								<span *ngIf="item.type === 'rentnet'">
-											<span class="blue">rent NET</span>
-											to <span class="blue">{{item.user}}</span>
+                                <span *ngIf="item.type === 'rentcpu'">
+											<span class="highlight-primary">rent CPU</span>
+											to <span class="highlight-primary">{{item.user}}</span>
+										</span>
+
+                                <span *ngIf="item.type === 'rentnet'">
+											<span class="highlight-primary">rent NET</span>
+											to <span class="highlight-primary">{{item.user}}</span>
 										</span>
 
 
-								<span *ngIf="item.type === 'bytes_in'">
-											<span class="blue">bought bytes</span>
-											to <span class="blue">this account</span>
+                                <span *ngIf="item.type === 'bytes_in'">
+											<span class="highlight-primary">bought bytes</span>
+											to <span class="highlight-primary">this account</span>
 										</span>
-								<span *ngIf="item.type === 'bytes_out'">
-											<span class="blue">bought bytes</span>
-											to <span class="blue">{{item.user}}</span>
+                                <span *ngIf="item.type === 'bytes_out'">
+											<span class="highlight-primary">bought bytes</span>
+											to <span class="highlight-primary">{{item.user}}</span>
 										</span>
 
-								<span *ngIf="item.type === 'bytes_s'">
-											<span class="blue">sold bytes</span>
-											from <span class="blue">this account</span>
+                                <span *ngIf="item.type === 'bytes_s'">
+											<span class="highlight-primary">sold bytes</span>
+											from <span class="highlight-primary">this account</span>
 										</span>
-								<span *ngIf="item.type === 'new'">
+                                <span *ngIf="item.type === 'new'">
 											by {{memoCreatorAccName(item.memo)}}
 
 										</span>
-								<span *ngIf="item.type === 'other'||item.type === 'other2'">
-											<span class="blue">{{item.contract}}</span>-{{item.action_name}}
+                                <span *ngIf="item.type === 'other'||item.type === 'other2'">
+											<span class="highlight-primary">{{item.contract}}</span>-{{item.action_name}}
 										</span>
 
-								<ng-container *ngIf="!item.matched">
-									code: {{item.contract}}
-								</ng-container>
-							</td>
+                                <ng-container *ngIf="!item.matched">
+                                    code: {{item.contract}}
+                                </ng-container>
+                            </td>
 
-							<!--td class="text-center"><time am-time-ago="item.date"></time> </td-->
-							<td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
+                            <!--td class="text-center"><time am-time-ago="item.date"></time> </td-->
+                            <td class="text-center">{{moment.utc(item.date).fromNow()}}</td>
 
-							<td class="text-center" style="width: 90px;">
-								<fa-icon *ngIf="LIB >= item.block" [icon]="['far', 'check']" size="lg"
-										 class="blue"></fa-icon>
-								<fa-icon *ngIf="LIB < item.block" [icon]="['far', 'hourglass']"
-										 size="lg"></fa-icon>
-							</td>
+                            <td class="text-center" style="width: 90px;">
+                                <fa-icon *ngIf="LIB >= item.block" [icon]="['far', 'check']" size="lg"
+                                         class="highlight-primary"></fa-icon>
+                                <fa-icon *ngIf="LIB < item.block" [icon]="['far', 'hourglass']"
+                                         size="lg"></fa-icon>
+                            </td>
 
-							<td class="text-right expandable" style="width: 35px;">
-								<!--										<a  href="#" [pRowToggler]="item">-->
-								<fa-icon
-									[icon]="['fal', expanded ? 'chevron-circle-up' : 'chevron-circle-down']"
-									size="lg" class="blue">
-								</fa-icon>
-								<!--										</a>-->
-							</td>
+                            <td class="text-right expandable" style="width: 35px;">
+                                <!--										<a  href="#" [pRowToggler]="item">-->
+                                <fa-icon
+                                        [icon]="['fal', expanded ? 'chevron-circle-up' : 'chevron-circle-down']"
+                                        size="lg" class="highlight-primary">
+                                </fa-icon>
+                                <!--										</a>-->
+                            </td>
 
-						</tr>
-					</ng-template>
-					<ng-template pTemplate="rowexpansion" let-item>
-						<tr class="tr-expanded">
-							<td colspan="6">
-								<div class="clr-row row-expanded">
-									<div class="clr-col-1">
-									</div>
-									<div class="col-11 text-left">
-										<div>
-											<span class="blue">Transaction ID: </span>
-											<a (click)="openTX(item.id)" pTooltip="Open on explorer"
-											   style="cursor: pointer;">
-												{{item.id}}
-											</a>
-										</div>
-										<div class="col-8 text-left" style="overflow-x: auto;">
-											<ng-container *ngIf="item.action_name === 'voteproducer'">
-												<ng-container *ngIf="item.votedProducers.length > 0">
-													<span class="blue">Producers: </span>
-													<ng-container
-														*ngFor="let p of item.votedProducers; let i = index">
-														<a style="cursor: pointer;"
-														   (click)="openAccount(p)">{{p}}</a>
-														<span>{{i < item.votedProducers.length - 1 ? ', ' : ''}}</span>
-													</ng-container>
+                        </tr>
+                    </ng-template>
 
-												</ng-container>
-												<ng-container
-													*ngIf="item.votedProducers.length === 0 && item.proxy !== ''">
-													<span class="blue">Proxy: </span>
-													<a pTooltip="Open account on explorer"
-													   style="cursor: pointer;"
-													   (click)="openAccount(item.proxy)">{{item.proxy}}</a>
-												</ng-container>
-											</ng-container>
+                    <ng-template pTemplate="rowexpansion" let-item>
+                        <tr class="tr-expanded">
+                            <td colspan="6">
+                                <div class="clr-row row-expanded">
+                                    <div class="clr-col-1">
+                                    </div>
+                                    <div class="col-11 text-left">
+                                        <div>
+                                            <span class="highlight-primary">Transaction ID: </span>
+                                            <a (click)="openTX(item.id)" pTooltip="Open on explorer"
+                                               style="cursor: pointer;">
+                                                {{item.id}}
+                                            </a>
+                                        </div>
+                                        <div class="col-8 text-left" style="overflow-x: auto;">
+                                            <ng-container *ngIf="item.action_name === 'voteproducer'">
+                                                <ng-container *ngIf="item.votedProducers.length > 0">
+                                                    <span class="highlight-primary">Producers: </span>
+                                                    <ng-container
+                                                            *ngFor="let p of item.votedProducers; let i = index">
+                                                        <a style="cursor: pointer;"
+                                                           (click)="openAccount(p)">{{p}}</a>
+                                                        <span>{{i < item.votedProducers.length - 1 ? ', ' : ''}}</span>
+                                                    </ng-container>
 
-										</div>
-										<div>
-											<ng-container
-												*ngIf="item.action_name === 'transfer' && item.memo !== ''">
-												<span class="blue">Memo: </span>{{item.memo}}
-											</ng-container>
-										</div>
-										<div>
-													<span class="blue">
+                                                </ng-container>
+                                                <ng-container
+                                                        *ngIf="item.votedProducers.length === 0 && item.proxy !== ''">
+                                                    <span class="highlight-primary">Proxy: </span>
+                                                    <a pTooltip="Open account on explorer"
+                                                       style="cursor: pointer;"
+                                                       (click)="openAccount(item.proxy)">{{item.proxy}}</a>
+                                                </ng-container>
+                                            </ng-container>
+
+                                        </div>
+                                        <div>
+                                            <ng-container
+                                                    *ngIf="item.action_name === 'transfer' && item.memo !== ''">
+                                                <span class="highlight-primary">Memo: </span>{{item.memo}}
+                                            </ng-container>
+                                        </div>
+                                        <div>
+													<span class="highlight-primary">
 														Date:
 													</span>
-											{{moment.utc(item.date).format('DD/MM/YYYY H:mm:ss')}}(UTC)
-										</div>
-										<div *ngIf="!item.matched||item.type === 'new'">
-													<span class="blue">
+                                            {{moment.utc(item.date).format('DD/MM/YYYY H:mm:ss')}}(UTC)
+                                        </div>
+                                        <div *ngIf="!item.matched||item.type === 'new'">
+													<span class="highlight-primary">
 														Action Data (JSON):
 													</span>
-											<ngx-json-viewer width="300" [json]="item.json_data"
-															 [expanded]="false" class="history-json"></ngx-json-viewer>
-										</div>
-									</div>
-								</div>
-							</td>
-						</tr>
-					</ng-template>
-					<ng-template pTemplate="emptymessage" let-columns>
-						<tr>
-							<td [attr.colspan]="6">
-								No records found
-							</td>
-						</tr>
-					</ng-template>
-				</p-table>
+                                            <ngx-json-viewer width="300" [json]="item.json_data"
+                                                             [expanded]="false" class="history-json"></ngx-json-viewer>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </ng-template>
 
+                    <ng-template pTemplate="emptymessage" let-columns>
+                        <tr>
+                            <td [attr.colspan]="6">
+                                <fa-layers *ngIf="loading" class="mt-2 mb-1">
+                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                             class="highlight-accent"></fa-icon>
+                                </fa-layers>
+                                <span *ngIf="!loading">
+                                    No records found
+                                </span>
+                            </td>
+                        </tr>
+                    </ng-template>
 
-			</div>
-		</div>
+                </p-table>
+            </div>
+        </div>
 
-		<div class="col-md-2 tokens-panel" style="height: 100%;">
+        <div class="col-md-2 tokens-panel" style="height: 100%;">
 
-			<div class="clr-row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
-				<div class="col-12"><h3 style="color:var(--token-title-color);">All tokens</h3>
-					<ng-container *ngIf="aService.totalAssetsSum !== 0">
-						<div *ngIf="aService.activeChain.name === 'EOS MAINNET'" style="font-size: 16px;">Total:
-							${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
+            <div class="clr-row flex-items-xs-between tokens-panel-header" style="padding-bottom: 10px;">
+                <div class="col-12"><h3 style="color:var(--token-title-color);">All tokens</h3>
+                    <ng-container *ngIf="aService.totalAssetsSum !== 0">
+                        <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" style="font-size: 16px;">Total:
+                            ${{ (aService.totalAssetsSum) + (fullBalance * aService.usd_rate) | number:
                                 '1.2-2'}}
-						</div>
-						<div *ngIf="aService.activeChain.name !== 'EOS MAINNET'" style="font-size: 16px;">Total:
-							{{ fullBalance | number: '1.2-2'}}
-						</div>
-					</ng-container>
-				</div>
-			</div>
-			<div class="clr-row" style="height: 100%; opacity: 0.85" *ngIf="aService.loading">
-				<div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
-					<ng-container>
+                        </div>
+                        <div *ngIf="aService.activeChain.name !== 'EOS MAINNET'" style="font-size: 16px;">Total:
+                            {{ fullBalance | number: '1.2-2'}}
+                        </div>
+                    </ng-container>
+                </div>
+            </div>
+            <div class="clr-row" style="height: 100%; opacity: 0.85" *ngIf="aService.loading">
+                <div class="col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+                    <ng-container>
 
-						<fa-layers class="mt-2 mb-1">
-							<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-									 style="color:#0094d2;"></fa-icon>
-						</fa-layers>
-						<br>
+                        <fa-layers class="mt-2 mb-1">
+                            <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                     class="highlight-accent"></fa-icon>
+                        </fa-layers>
+                        <br>
 
-						<div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...
-						</div>
-					</ng-container>
-				</div>
-			</div>
-			<div class="tokens-panel-body">
-				<ul>
-					<li class="tokens-pad">
-						<h5 class="mt-0" style="color:var(--token-title-color);">{{aService.activeChain['symbol']}}</h5>
-						<div class="destaque-color-token">{{fullBalance}}</div>
-						<span *ngIf="aService.usd_rate !== null && aService.activeChain.name === 'EOS MAINNET'"
-							  style="color: var(--token-price-color);">
+                        <div class="highlight-accent" style="padding-left: 17px; font-size: 18px; margin-top: 10px">
+                            LOADING...
+                        </div>
+                    </ng-container>
+                </div>
+            </div>
+            <div class="tokens-panel-body">
+                <ul>
+                    <li class="tokens-pad">
+                        <h5 class="mt-0">{{aService.activeChain['symbol']}}</h5>
+                        <div class="destaque-color-token">{{fullBalance}}</div>
+                        <span *ngIf="aService.usd_rate !== null && aService.activeChain.name === 'EOS MAINNET'"
+                              class="token-price-color">
                 ${{(fullBalance * aService.usd_rate) | number:'1.2-2'}} @{{aService.usd_rate | number: '1.2-2'}}
               </span>
-					</li>
-					<li *ngFor="let token of aService.tokens" class="tokens-pad">
-						<h5 class="mt-0" style="color:var(--token-title-color);"
-							pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
-						<div class="destaque-color-token">{{token.balance}}</div>
-						<ng-container *ngIf="token.balance">
-              <span *ngIf="token.price !== null" style="color: var(--token-price-color);">
+                    </li>
+                    <li *ngFor="let token of aService.tokens" class="tokens-pad">
+                        <h5 class="mt-0" pTooltip="Contract: {{token.contract}}">{{token.name}}</h5>
+                        <div class="destaque-color-token">{{token.balance}}</div>
+                        <ng-container *ngIf="token.balance">
+              <span *ngIf="token.price !== null" class="token-price-color">
                 ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
               </span>
-						</ng-container>
-					</li>
-				</ul>
-				<div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will
-					appear
-					here.
-				</div>
-			</div>
-		</div>
-	</div>
+                        </ng-container>
+                    </li>
+                </ul>
+                <div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will
+                    appear
+                    here.
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

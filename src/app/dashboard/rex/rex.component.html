@@ -12,51 +12,46 @@
 								<div class="card-block">
 									<div class="clr-row animate">
 										<div class="clr-col-lg-5">
-											<div class="white">REX balance:</div>
-											<div class="rex-balances-top white-rex"><span
-												class="gray-rex">Liquid:</span> {{rexLiquid  | number:'1.0-2'}} REX
+											<div>REX balance:</div>
+											<div class="rex-balances-top">
+												Liquid: <span class="highlight">{{rexLiquid  | number:'1.0-2'}} REX</span>
 												<button type="button"
-														class="btn-rex btn btn-info-outline btn-sm"
+														class="btn btn-info-outline btn-sm"
 														style="margin: 2px 10px;" (click)="updaterex()">
 													refresh
 												</button>
 											</div>
-											<div class="rex-balances white" style="background-color:  var(--tr-resource-odd-backgorund);"><span
-												class="gray">Staked (savings):</span> {{rexSavings | number:'1.0-2'}}
-												REX
+											<div class="rex-balances" style="background-color:  var(--tr-resource-odd-backgorund);">
+												Staked (savings): <span class="highlight">{{rexSavings | number:'1.0-2'}} REX</span>
 											</div>
-											<div class="rex-balances white-rex"><span
-												class="gray-rex">Unstaking (maturing):</span> {{rexMaturing | number:'1.0-2'}}
-												REX
+											<div class="rex-balances">
+												Unstaking (maturing): <span class="highlight">{{rexMaturing | number:'1.0-2'}} REX</span>
 											</div>
-											<div class="rex-balances white" style="background-color: var(--tr-resource-odd-backgorund);"><span
-												class="gray">Total:</span> {{totalRexBalance | number:'1.0-2'}} REX (
-												<span
-													class="blue">{{totalRexBalance * rexPrice  | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-												)
+											<div class="rex-balances" style="background-color: var(--tr-resource-odd-backgorund);">
+												Total: <span class="highlight">{{totalRexBalance | number:'1.0-2'}} REX</span> (<span
+													class="highlight-primary">{{totalRexBalance * rexPrice  | number : '1.0-2'}} {{aService.activeChain['symbol']}}</span>)
 											</div>
-											<div class="rex-balances white-rex">
+											<div class="rex-balances">
 												<a role="tooltip" aria-haspopup="true"
 												   class="tooltip tooltip-lg tooltip-right">
-													<fa-icon [icon]="['far','question-circle']" class="white-rex"
+													<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 															 style="font-size: 16px;"></fa-icon>
 													<span
 														class="tooltip-content">After selling your REX, the {{aService.activeChain['symbol']}}
 														goes to the REX fund. To have your {{aService.activeChain['symbol']}}
 														back, please withdraw it to your account. </span>
 												</a>
-												<span
-													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+												&nbsp;&nbsp;your REX fund: <span class="highlight">{{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}</span>
 												<div>
-													<button [disabled]="rexFund === 0" type="button" class="btn-rex btn btn-info-outline btn-sm"
-															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
+															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>
 												</div>
 											</div>
 										</div>
 										<div class="clr-col-lg-7 text-center">
-											<span *ngIf="rexPrice > 0" class="white"
+											<span *ngIf="rexPrice > 0" class="highlight"
 												  style="margin-right: 65px; font-size: 15px;">
 												1 {{aService.activeChain['symbol']}}
 												= {{(1 / rexPrice) | number: '0.0-2'}} REX
@@ -82,27 +77,27 @@
 
 							<div class="card info-card" style="margin-bottom: 5px;">
 								<div class="card-block" style="padding: 0;">
-									<p-accordion class="howto">
+									<p-accordion class="howto nohighlight-accordion">
 										<p-accordionTab
 											header="How to earn with REX - {{aService.activeChain['symbol']}} Resource Exchange?">
-											<div class="howto-item"><span class="blue">1.</span> Lend
+											<div class="howto-item"><span class="highlight-primary">1.</span> Lend
 												your {{aService.activeChain['symbol']}} to a pool
 												(buy REX)
 												to earn a share of this pool's
 												income.
 											</div>
-											<div class="howto-item"><span class="blue">2.</span> Dapps and Developers
+											<div class="howto-item"><span class="highlight-primary">2.</span> Dapps and Developers
 												can borrow
 												resources from this pool by
 												paying {{aService.activeChain['symbol']}}.
 											</div>
-											<div class="howto-item"><span class="blue">3.</span> When you buy REX, you
+											<div class="howto-item"><span class="highlight-primary">3.</span> When you buy REX, you
 												have to wait
 												4 to 5 days to sell the REX.
 												(midnight UTC 4 days after you bought, so it may take a little more than
 												4 days!)
 											</div>
-											<div class="howto-item"><span class="blue">4.</span> Sell the REX when you
+											<div class="howto-item"><span class="highlight-primary">4.</span> Sell the REX when you
 												are ready to
 												get your {{aService.activeChain['symbol']}} back. You will
 												receive original amount + interest.
@@ -121,7 +116,7 @@
 							<div class="card info-card buyrex" style="margin-bottom: 5px;">
 								<div class="clr-row">
 									<div class="clr-col-lg-8"
-										 style="border-right: 5px solid var(--sidenav-active-border-color1); padding-right: 0;">
+										 style="border-right: 5px solid var(--rex-border-color); padding-right: 0;">
 										<div class="card-block upper-buycard">
 											<div class="clr-row">
 
@@ -131,22 +126,22 @@
 
 
 												<div class="clr-col-lg-11 white" *ngIf="!canbuyREX">
-													<div class="req-title gray">Requirements for buying REX</div>
-													<div class="req white">
+													<div class="req-title">Requirements for buying REX</div>
+													<div class="req highlight">
 														<fa-icon [icon]="['far', 'times-circle']" class="error"
 																 size="lg"></fa-icon>&nbsp;
 														Vote for at least 21 block producers or a proxy.
 														<button *ngIf="aService.activeChain.name === 'EOS MAINNET'"
 																type="button" class="btn btn-info-outline btn-sm"
-																style="float: right; margin-right: 5px; color: var(--rex-btn-color) !important;"
+																style="float: right; margin-right: 5px;"
 																(click)="voteOnProxy()">
 															VOTE BROCKPIERCE1
 														</button>
 														<div style="margin-top: 12px;">
-										<span class="explain black-white">You're currently voting for <span
+										<span class="explain">You're currently voting for <span
 											class="blue-rex">{{nVoters}}/21</span> producers.</span>
 															<button type="button" class="btn btn-info-outline btn-sm"
-																	style="float: right; margin-right: 5px; color: var(--rex-btn-color) !important;"
+																	style="float: right; margin-right: 5px;"
 																	(click)="gotoVote()">
 																OR GO TO VOTE PAGE
 															</button>
@@ -156,7 +151,7 @@
 
 												<ng-container *ngIf="canbuyREX">
 													<div class="clr-col-lg-6 gray mt-2"
-														 style="border-right: 1px solid var(--sidenav-active-border-color1)">
+														 style="border-right: 1px solid var(--rex-border-color)">
 														<div style="font-size: 15px;">from
 															Staked {{aService.activeChain['symbol']}}
 															to
@@ -164,10 +159,10 @@
 														</div>
 														<div *ngIf="!showAdvancedRatio" (click)="setMaxConvert()"
 															 style="cursor: pointer"><span
-															class="blue">Available:</span> {{staked | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
+															class="highlight-primary">Available:</span> {{staked | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
 														</div>
 														<div *ngIf="showAdvancedRatio"><span
-															class="blue">Available:</span> {{cpu_weight  | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
+															class="highlight-primary">Available:</span> {{cpu_weight  | number : '0.0-4'}}  {{aService.activeChain['symbol']}}
 															on CPU <br>
 															{{net_weight  | number : '0.0-4'}} {{aService.activeChain['symbol']}}
 															on NET
@@ -290,7 +285,7 @@
 															REX
 														</div>
 														<div style="cursor: pointer" (click)="setMaxLiquidToBuy()"><span
-															class="blue">Available:</span> {{totalEOSliquid  | number : '0.0-4'}}
+															class="highlight-primary">Available:</span> {{totalEOSliquid  | number : '0.0-4'}}
 															{{aService.activeChain['symbol']}}
 														</div>
 														<form [formGroup]="buyForm">
@@ -349,12 +344,12 @@
 											<div class="white" style="font-size: 17px;">
 												Sell REX
 											</div>
-											<div style="margin-top: 34px; cursor: pointer" class="gray"
+											<div style="margin-top: 34px; cursor: pointer"
 												 (click)="setMaxToSell()">
-												<span class="blue">Available:</span> {{rexLiquid  | number : '1.2-4'}}
+												<span class="highlight-primary">Available:</span> {{rexLiquid  | number : '1.2-4'}}
 												REX
 											</div>
-											<form [formGroup]="sellForm" class="gray">
+											<form [formGroup]="sellForm">
 												<mat-form-field class="input-width"
 																style="display: inline-block !important; width: 126px;">
 													<input matInput type="text" placeholder="Amount"
@@ -375,7 +370,7 @@
 														withdraw to my account
 														<a role="tooltip" aria-haspopup="true"
 														   class="tooltip tooltip-lg tooltip-left">
-															<fa-icon [icon]="['far','question-circle']" class="blue"
+															<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 																	 style="font-size: 16px;"></fa-icon>
 															<span
 																class="tooltip-content">When you sell REX, the {{aService.activeChain['symbol']}}
@@ -410,7 +405,7 @@
 										REX
 										(maturing)&nbsp;
 										<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-											<fa-icon [icon]="['far','question-circle']" class="blue"
+											<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 													 style="font-size: 16px;"></fa-icon>
 											<span class="tooltip-content">After you buy REX, you have to wait at least 4 days for them to mature and become liquid so you can sell them back for {{aService.activeChain['symbol']}}
 												. </span>
@@ -471,7 +466,7 @@
 										<fa-icon matSuffix [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;Staked REX
 										(savings)&nbsp;
 										<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left">
-											<fa-icon [icon]="['far','question-circle']" class="blue"
+											<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 													 style="font-size: 16px;"></fa-icon>
 											<span class="tooltip-content">You can't sell the REX in your savings account.<br> Your REX will stay staked until you request a unstake.</span>
 										</a>
@@ -578,33 +573,30 @@
 								<div class="card-block">
 									<div class="clr-row clr-justify-content-between">
 										<div class="clr-col-lg-5">
-											<div class="white">Market stats:</div>
-											<div class="rex-balances-top white-rex"><span
-												class="gray-rex">Available {{aService.activeChain['symbol']}}
-												in the resource pool:</span> {{total_unlent  | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+											<div>Market stats:</div>
+											<div class="rex-balances-top">
+												Available {{aService.activeChain['symbol']}}
+												in the resource pool: <span class="highlight">{{total_unlent  | number:'1.0-2'}} {{aService.activeChain['symbol']}}</span>
 											</div>
-											<div class="rex-balances white"  style="background-color:  var(--tr-resource-odd-backgorund);"><span
-												class="gray">
-												Total lent now:</span> {{total_lent | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+											<div class="rex-balances"  style="background-color:  var(--tr-resource-odd-backgorund);">
+												Total lent now: <span class="highlight">{{total_lent | number:'1.0-2'}} {{aService.activeChain['symbol']}}</span>
 											</div>
-											<div class="rex-balances white-rex"><span
-												class="gray-rex">Ative loans' payments:</span> {{total_rent | number:'1.0-2'}}
-												{{aService.activeChain['symbol']}}
+											<div class="rex-balances">
+												Ative loans' payments: <span class="highlight">{{total_rent | number:'1.0-2'}} {{aService.activeChain['symbol']}}</span>
 											</div>
-											<div class="rex-balances white-rex">
+											<div class="rex-balances">
 												<a role="tooltip" aria-haspopup="true"
 												   class="tooltip tooltip-lg tooltip-right">
-													<fa-icon [icon]="['far','question-circle']" class="white-rex"
+													<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 															 style="font-size: 16px;"></fa-icon>
 													<span
 														class="tooltip-content">When your loan ends, what is left on the renewal fund will be transfered to your REX fund.
 														To have your {{aService.activeChain['symbol']}} back, please withdraw it to your account. </span>
 												</a>
-												<span
-													class="gray-rex">&nbsp;&nbsp;your REX fund:</span> {{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}
+												&nbsp;&nbsp;your REX fund: <span class="highlight">{{rexFund | number:'1.0-2'}} {{aService.activeChain['symbol']}}</span>
 												<div>
-													<button [disabled]="rexFund === 0" type="button" class="btn-rex btn btn-info-outline btn-sm"
-															style="margin: 6px 0; color: var(--rex-btn-color) !important;" (click)="withdraw()">
+													<button [disabled]="rexFund === 0" type="button" class="btn btn-info-outline btn-sm"
+															style="margin: 6px 0;" (click)="withdraw()">
 														withdraw to my account
 													</button>
 												</div>
@@ -614,7 +606,7 @@
 											<span class="white" style="margin-right: 39px; font-size: 15px;">
 												1 {{aService.activeChain['symbol']}}
 												rents  <strong
-												class="blue">{{borrowingCost | number: '0.0-2'}} {{aService.activeChain['symbol']}}</strong> for 30 days
+												class="highlight-primary">{{borrowingCost | number: '0.0-2'}} {{aService.activeChain['symbol']}}</strong> for 30 days
 											</span>
 											<mat-form-field class="time-selector example-full-width"
 															style="width: 93px;">
@@ -639,7 +631,7 @@
 								<div class="card-block upper-buycard">
 									<div class="white" style="font-size: 17px">Borrow CPU / NET</div>
 									<div class="gray"><span
-										class="blue">Available:</span> {{totalEOSliquid   | number : '1.0-4'}} {{aService.activeChain['symbol']}}
+										class="highlight-primary">Available:</span> {{totalEOSliquid   | number : '1.0-4'}} {{aService.activeChain['symbol']}}
 									</div>
 									<div class="gray" style="margin-top: 7px; font-size: 15px">Enter the amount you want
 										to borrow for 30 days:
@@ -704,7 +696,7 @@
 											</mat-form-field>&nbsp;&nbsp;
 											<a role="tooltip" aria-haspopup="true"
 											   class="tooltip tooltip-lg tooltip-top-left">
-												<fa-icon [icon]="['far','question-circle']" class="blue"
+												<fa-icon [icon]="['far','question-circle']" class="highlight-primary"
 														 style="font-size: 16px;"></fa-icon>
 												<span
 													class="tooltip-content" style="z-index: 1000">If you want your loan to be automatically renewed, you can deposit {{aService.activeChain['symbol']}} into this fund. When the 30 days expire, the renewal cost will be automatically debited from the fund.

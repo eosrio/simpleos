@@ -1,30 +1,71 @@
 <clr-modal [(clrModalOpen)]="visibility" [clrModalStaticBackdrop]="true" (clrModalOpenChange)="onClose()">
-	<h3 class="modal-title text-white">Confirm <span class="blue">{{modalData.actionTitle}}</span></h3>
-	<div class="modal-body">
-		<h5 class="gray mt-0">Account: {{modalData.signerAccount}}</h5>
-		<h4 class="text-white" [innerHTML]="modalData.labelHTML"></h4>
-		<h5 class="mt-0"></h5>
-		<p-accordion *ngIf="displayTerms">
-			<p-accordionTab [header]="modalData.termsHeader"
-							[innerHTML]="modalData.termsHTML">
-			</p-accordionTab>
-		</p-accordion>
-	</div>
-	<form [formGroup]="confirmationForm" class="modal-footer">
-		<ng-container>
-			<mat-form-field>
-				<input matInput #pass type="password" formControlName="pass"
-					   (keyup.enter)="executeAction(pass.value);"
-					   placeholder="Password">
-				<mat-hint class="error" align="start" *ngIf="errormsg !== ''">
-					{{errormsg}}
-				</mat-hint>
-			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;"
-					(click)="executeAction(pass.value);" [disabled]="busy">
-				Confirm
-				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-			</button>
-		</ng-container>
-	</form>
+    <h3 class="modal-title" style="display: contents;">Confirm <span class="highlight-primary"
+                                                                     [innerHTML]="modalData.actionTitle"></span></h3>
+    <div class="modal-body">
+        <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
+
+        <p-accordion *ngIf="modalData.labelHTML === ''">
+            <p-accordionTab *ngFor="let act of modalData.transactionPayload.actions; let i = index"
+                            header="{{act.name}} on {{act.account}}"
+                            [selected]="i === 0">
+                <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
+            </p-accordionTab>
+        </p-accordion>
+
+        <h4 *ngIf="modalData.labelHTML !== ''" [innerHTML]="modalData.labelHTML"></h4>
+        <h5 class="mt-0"></h5>
+        <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
+            <p-accordion>
+                <p-accordionTab>
+                    <p-header>
+                        <div style="display: contents;" [innerHTML]="modalData.termsHeader"></div>
+                    </p-header>
+                    <div [innerHTML]="modalData.termsHTML"></div>
+                </p-accordionTab>
+            </p-accordion>
+        </ng-container>
+    </div>
+
+    <div class="modal-footer">
+        <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
+            <div>
+                <ng-container *ngIf="mode === 'local'">
+                    <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
+
+                        <mat-form-field style="margin-top: 15px;">
+                            <input matInput
+                                   cdkTrapFocus
+                                   #pass="matInput"
+                                   type="password"
+                                   formControlName="pass"
+                                   (keyup.enter)="executeAction(pass.value);"
+                                   placeholder="Password">
+                        </mat-form-field>
+
+                        <button type="button" class="btn btn-info-outline"
+                                (click)="executeAction(pass.value);" [disabled]="busy">
+                            Confirm
+                            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                        </button>
+
+                    </form>
+                </ng-container>
+
+                <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" *ngIf="mode === 'ledger'">
+                    <span class="text-faded">device: {{requiredLedgerInfo.device}}
+                        - slot: {{requiredLedgerInfo.slot}}</span>
+                    <button type="button" class="btn btn-info-outline"
+                            style="margin-top: 12px;" (click)="signLedger()">
+                        sign with ledger
+                        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                    </button>
+                </div>
+            </div>
+            <div class="error error-modal-footer" *ngIf="errormsg !== ''">
+                <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
+                {{errormsg}}
+            </div>
+        </div>
+    </div>
+
 </clr-modal>

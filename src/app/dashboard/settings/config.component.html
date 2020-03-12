@@ -1,547 +1,604 @@
 <div class="container" style="height: 100%; overflow-x: hidden;">
 
-	<div class="clr-row animate flex-items-xs-between" style="padding-top: 15px;">
-		<div class="clr-col-lg-7">
-			<!--<div class="card info-card disabled-card" pTooltip="soon"></div>-->
-			<div class="card info-card" *ngIf="app.compilerVersion==='EOS MAINNET'">
-				<div class="card-header title">
-					Connected to
-					<mat-form-field class="chain-selector example-full-width" style="width: 207px;">
-						<mat-select [value]="network.activeChain['id']"
-									(selectionChange)="changeChain($event)">
-							<!--<fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>-->
-							<mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name" >
-								<mat-option *ngFor="let chain of group.chains" [value]="chain.id"  class="chain-option">
-									<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
-										 class="chain-icon"/>
-									{{ chain.name }}
-								</mat-option>
-							</mat-optgroup>
-<!--							<mat-option *ngFor="let chain of network.defaultChains" class="chain-option"-->
-<!--										[value]="chain.id">-->
-<!--								<img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"-->
-<!--									 class="chain-icon"/>-->
-<!--								{{ chain.name }}-->
-<!--							</mat-option>-->
-						</mat-select>
-					</mat-form-field>
-				</div>
-			</div>
+    <div class="clr-row animate flex-items-xs-between" style="padding-top: 15px;">
+        <div class="clr-col-lg-7">
 
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Network Options
-				</div>
-				<div class="card-block">
-					<div class="info2">Connect to another endpoint.</div>
-					<div class="card chains-card">
-						<ng-container *ngFor="let endpoint of network.validEndpoints">
-							<div
-								class="card-block chain-section {{network.selectedEP() === endpoint.url?'selected':''}}"
-								(click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
-								{{endpoint.url}}
-								<span style="float:right">latency: {{endpoint.latency}} ms</span>
-							</div>
-						</ng-container>
-					</div>
-					<div class="clr-row" style="margin-left: 0;">
-						<div class="clr-col-auto">
-							<button class="btn btn-info-outline mt-1 special-font" (click)="endpointModal = true"
-									style="font-weight: 700">Other
-							</button>
-						</div>
-						<div class="clr-col-auto">
-							<button class="btn btn-info-outline mt-1 special-font" (click)="network.connect(true)"
-									pTooltip="Automatically connects on the fastest endpoint for you"
-									style="font-weight: 700">Auto
-							</button>
-						</div>
-						<div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
-							<fa-layers class="mt-2 mb-1">
-								<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
-										 style="color:#0094d2;"></fa-icon>
-							</fa-layers>
-						</div>
-						<div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
-							 style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
-							<span style="color:#0094d2; padding-left: 17px; font-size: 18px;">Connecting...</span>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Keys Generator Tool
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Keys Generator tool.</span>
-					</a>
-				</div>
-				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="newKeys = true"
-							style="font-weight: 700">Generate
-					</button>
-				</div>
-			</div>
+            <div class="card info-card">
+                <div class="card-header title card-title-color" style="padding-top: 12px; margin-bottom: -7px">
+                    Connected to
+                    <mat-form-field class="chain-selector example-full-width" style="width: 207px;">
+                        <mat-select [value]="network.activeChain['id']"
+                                    (selectionChange)="changeChain($event)">
+                            <mat-optgroup *ngFor="let group of network.selectGroup" [label]="group.name">
+                                <mat-option *ngFor="let chain of group.chains" [value]="chain.id" class="chain-option">
+                                    <img [src]="'./assets/chain-icons/' + chain.icon" width="28" height="28"
+                                         class="chain-icon"/>
+                                    {{ chain.name }}
+                                </mat-option>
+                            </mat-optgroup>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="card-block">
+                    <div fxLayout="row" fxLayoutAlign="start center" fxFlex="grow" fxLayoutGap="7px">
+                        <div class="advanced text-faded">Advanced option:</div>
+                        <div>
+                            <a (click)="network.openCustomChainModal()" class="clicked highlight-primary">
+                                CUSTOM CHAIN
+                            </a>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                     style="font-size: 15px;"
+                                     [matTooltip]="'Connect to a custom EOSIO chain.' + '\n' +
+													'Option generally used by developers.'"
+                                     matTooltipClass="black-tooltip">
+                            </fa-icon>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-			<!--
-			TO THE NEXT VERSION
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Network Options
+                </div>
+                <div class="card-block">
+                    <div class="info2">Connect to another endpoint.</div>
+                    <div class="card chains-card">
+                        <ng-container *ngFor="let endpoint of network.validEndpoints">
+                            <div
+                                    class="card-block chain-section {{network.selectedEP() === endpoint.url?'selected':''}}"
+                                    (click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
+                                {{endpoint.url}}
+                                <span style="float:right">latency: {{endpoint.latency}} ms</span>
+                            </div>
+                        </ng-container>
+                    </div>
+                    <div class="clr-row" style="margin-left: 0;">
+                        <div class="clr-col-auto" style="padding-left: 0;">
+                            <button class="btn btn-info-outline mt-1" (click)="endpointModal = true"
+                                    style="font-weight: 700">Other
+                            </button>
+                        </div>
+                        <div class="clr-col-auto">
+                            <button class="btn btn-info-outline mt-1" (click)="network.connect(true)"
+                                    matTooltip="Automatically connects on the fastest endpoint for you"
+                                    matTooltipClass="black-tooltip" matTooltipPosition="right"
+                                    style="font-weight: 700">Auto
+                            </button>
+                        </div>
+                        <div class="clr-col-auto" *ngIf="!network.networkingReady.getValue()">
+                            <fa-layers class="mt-2 mb-1">
+                                <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                         class="highlight-primary"></fa-icon>
+                            </fa-layers>
+                        </div>
+                        <div class="clr-col my-auto" *ngIf="!network.networkingReady.getValue()"
+                             style="margin-top: auto; margin-bottom: auto; padding-top: 10px;">
+                            <span class="highlight-primary"
+                                  style="padding-left: 17px; font-size: 18px;">Connecting...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Keys Management
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Manage your keys.</span>
-					</a>
-				</div>
-				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="managerKeys = true"
-							style="font-weight: 700">Manager
-					</button>
-				</div>
-			</div>
-			-->
-		</div>
-		<div class="clr-col-lg-5">
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Logout Options
-				</div>
-				<div class="card-block borderb">
-					<button class="btn btn-info-outline special-font" (click)="logoutModal = true"
-							style="font-weight: 700">Logout from all chains
-					</button>
-					<div class="info">*All your data will be cleared from this PC. Should you want to login again, you will
-						have to import your private key again.
-					</div>
-				</div>
-				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="logoutChainModal = true"
-							style="font-weight: 700">Logout from {{aService.activeChain['name']}}
-					</button>
-					<div class="info">*Your data will be cleared from this PC. Should you want to login again, you will
-						have to import your private key again.
-					</div>
-				</div>
-			</div>
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Lockscreen Pin &nbsp;
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Small security pin <br> used to unlock the screen.
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Other Tools
+                </div>
+                <div class="card-block">
+                    <button class="btn btn-info-outline"
+                            (click)="openKeyGenModal()"
+                            style="font-weight: 700">
+                        Key Generator
+                    </button>
+                </div>
+            </div>
+
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Key/Account Management
+                    <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                 style="font-size: 16px;"></fa-icon>
+                        <span class="tooltip-content">Manage your imported keys.</span>
+                    </a>
+                </div>
+                <div class="card-block">
+                    <button class="btn btn-info-outline" (click)="managerKeys = true"
+                            style="font-weight: 700">Manager
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="clr-col-lg-5">
+
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Logout Options
+                </div>
+                <div class="card-block borderb">
+                    <button class="btn btn-info-outline" (click)="logoutModal = true"
+                            style="font-weight: 700">Logout from
+                        <span *ngIf="app.compilerVersion === 'DEFAULT'">all chains</span>
+                        <span *ngIf="app.compilerVersion !== 'DEFAULT'">{{aService.activeChain['name']}}</span>
+                    </button>
+                    <div class="info">*All your data will be cleared from this PC. Should you want to login again, you
+                        will
+                        have to import your private key again.
+                    </div>
+                </div>
+                <div class="card-block" *ngIf="app.compilerVersion === 'DEFAULT'">
+                    <button class="btn btn-info-outline" (click)="logoutChainModal = true"
+                            style="font-weight: 700">Logout from {{aService.activeChain['name']}}
+                    </button>
+                    <div class="info">*Your data will be cleared from this PC. Should you want to login again, you will
+                        have to import your private key again.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Lockscreen Pin &nbsp;
+                    <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;">
+                        </fa-icon>
+                        <span class="tooltip-content">Small security pin <br> used to unlock the screen.</span>
+                    </a>
+                </div>
+                <div class="card-block">
+                    <button class="btn btn-info-outline" (click)="pinModal = true"
+                            style="font-weight: 700">SET PIN
+                    </button>
+                    <button class="btn btn-danger-outline" (click)="clearPinModal = true"
+                            style="font-weight: 700">REMOVE lOCKSCREEN
+                    </button>
+                </div>
+            </div>
+
+            <div class="card info-card" *ngIf="aService.selected.getValue().type === 'local'">
+                <div class="card-header title card-title-color special-font">
+                    Change Password &nbsp;
+                    <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                        <fa-icon [icon]="['far','question-circle']"
+                                 class="highlight-primary"
+                                 style="font-size: 16px;">
+                        </fa-icon>
+                        <span class="tooltip-content">
+							Password used to <br> sign transactions / actions.
+						</span>
+                    </a>
+                </div>
+
+                <div class="card-block">
+                    <button class="btn btn-info-outline" (click)="changePassModal = true"
+                            style="font-weight: 700">CHANGE
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="card info-card">
+                <div class="card-header title card-title-color special-font">
+                    Backup&nbsp;
+                    <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                 style="font-size: 16px;"></fa-icon>
+                        <span class="tooltip-content">
+							Create a backup file that can only be imported back on <span
+                                *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS.</span>
+							<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet.</span>
+							<br>Use your wallet with the same configuration at any device.
               </span>
-					</a>
-				</div>
-				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="pinModal = true"
-							style="font-weight: 700">SET PIN
-					</button>
-					<button class="btn btn-danger-outline special-font" (click)="clearPinModal = true"
-							style="font-weight: 700">REMOVE lOCKSCREEN
-					</button>
-				</div>
-			</div>
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Change Password &nbsp;
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span class="tooltip-content">Password used to <br> make transactions / actions.</span>
-					</a>
-				</div>
-				<div class="card-block">
-					<button class="btn btn-info-outline special-font" (click)="changePassModal = true"
-							style="font-weight: 700">CHANGE
-					</button>
-				</div>
-			</div>
-			<div class="card info-card">
-				<div class="card-header title special-font">
-					Backup&nbsp;
-					<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-						<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-						<span
-							class="tooltip-content">Create a backup file that can only be imported back on SimplEOS. <br>Use your wallet with the same configuration at any device.
-              </span>
-					</a>
-				</div>
-				<div class="card-block">
-					<div style="margin-bottom: 20px;">
-						<mat-checkbox [checked]="autoBackup" (change)="toggleAutosave($event)">Automatic Backup&nbsp;
-						</mat-checkbox>
-						<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-							<fa-icon [icon]="['far','question-circle']" class="blue" style="font-size: 16px;"></fa-icon>
-							<span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the "simpleosAutosave" folder that is created on the same place that SimplEOS is installed.</span>
-						</a>
-						<div class="info" *ngIf="lastBackupTime !== ''">* Last backup on {{lastBackupTime}}</div>
-					</div>
-					<button class="btn btn-info-outline special-font" (click)="exportBKModal = true"
-							style="font-weight: 700">EXPORT
-					</button>
-					<button class="btn btn-info-outline special-font" (click)="importBKModal = true"
-							style="font-weight: 700">IMPORT
-					</button>
-					<div style="margin-top: 20px;">
-						<button class="btn btn-info-outline special-font" (click)="openPKModal()"
-								style="font-weight: 700">VIEW PRIVATE KEY
-							<fa-icon [icon]="['fas', 'skull-crossbones']" size="lg"></fa-icon>
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                    </a>
+                </div>
+                <div class="card-block">
+                    <div style="margin-bottom: 20px;">
+                        <mat-checkbox [checked]="autoBackup" (change)="toggleAutosave($event)">Automatic Backup&nbsp;
+                        </mat-checkbox>
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                     style="font-size: 16px;"></fa-icon>
+                            <span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the
+								<span *ngIf="app.compilerVersion === 'DEFAULT'">"simpleosAutosave"</span>
+								<span *ngIf="app.compilerVersion === 'LIBERLAND'">"liberlandAutosave"</span>
+								 folder that is created on the same place that
+								<span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span>
+								<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet</span>
+								is installed.</span>
+                        </a>
+                        <div class="info" *ngIf="backup.lastBackupTime !== ''">* Last backup on {{backup.lastBackupTime}}</div>
+                    </div>
+                    <button class="btn btn-info-outline" (click)="exportBKModal = true"
+                            style="font-weight: 700">EXPORT
+                    </button>
+                    <button class="btn btn-info-outline" (click)="importBKModal = true"
+                            style="font-weight: 700">IMPORT
+                    </button>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-info-outline" (click)="openPKModal()"
+                                style="font-weight: 700">VIEW PRIVATE KEY
+                            <fa-icon [icon]="['fas', 'skull-crossbones']" size="lg"></fa-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <clr-modal [(clrModalOpen)]="logoutModal" [clrModalSize]="'sm'">
-	<h3 class="modal-title text-white">
-		Are you <span class="blue">sure</span> ?
-	</h3>
-	<div class="modal-body">
-		<p style="margin-bottom: 20px;">All your data will be cleared. If you want to login again you will have to import
-			your
-			private key again.</p>
-		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
-		<div>
-			<button type="button" class="btn btn-info-outline" (click)="logout()">
-				Yes
-			</button>
-			<div class="text-center black-white">*SimplEOS will <br> be restarted</div>
-		</div>
-	</div>
+    <h3 class="modal-title">
+        Are you <span class="highlight-primary">sure</span> ?
+    </h3>
+    <div class="modal-body" style="overflow-y: hidden;">
+        <p style="padding-bottom: 20px;">All your data will be cleared. If you want to login again you will have to
+            import
+            your
+            private key again.</p>
+        <mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-danger-outline" (click)="logoutModal = false">Cancel</button>
+        <div>
+            <button type="button" class="btn btn-info-outline" (click)="logout()">
+                Yes
+            </button>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be
+                restarted
+            </div>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'LIBERLAND'">*Wallet will <br> be
+                restarted
+            </div>
+        </div>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="logoutChainModal" [clrModalSize]="'sm'">
-	<h3 class="modal-title text-white">
-		Are you <span class="blue">sure</span> ?
-	</h3>
-	<div class="modal-body">
-		<p style="margin-bottom: 20px;">Your <span class="blue">{{aService.activeChain['name']}}</span> data will be cleared . If you want to login again you will have to import
-			your
-			private key again.</p>
-		<mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-danger-outline" (click)="logoutChainModal = false">Cancel</button>
-		<div>
-			<button type="button" class="btn btn-info-outline" (click)="logoutByCahin()">
-				Yes
-			</button>
-			<div class="text-center black-white">*SimplEOS will <br> be restarted</div>
-		</div>
-	</div>
+    <h3 class="modal-title">
+        Are you <span class="highlight-primary">sure</span> ?
+    </h3>
+    <div class="modal-body" style="overflow-y: hidden;">
+        <p style="margin-bottom: 20px;">Your <span class="highlight-primary">{{aService.activeChain['name']}}</span>
+            data will be
+            cleared . If you want to login again you will have to import
+            your
+            private key again.</p>
+        <mat-checkbox [(ngModel)]="clearContacts">Also clear contacts on logout</mat-checkbox>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-danger-outline" (click)="logoutChainModal = false">Cancel</button>
+        <div>
+            <button type="button" class="btn btn-info-outline" (click)="logoutByCahin()">
+                Yes
+            </button>
+            <div class="text-center text-faded mt-1" *ngIf="app.compilerVersion === 'DEFAULT'">*SimplEOS will <br> be
+                restarted
+            </div>
+        </div>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="endpointModal" [clrModalSize]="'md'">
-	<h3 class="modal-title text-white">
-		Connect to another endpoint, enter url below:
-	</h3>
-	<div class="modal-body">
-		<mat-form-field>
-			<input matInput type="text" placeholder="endpoint" #customEndpoint>
-		</mat-form-field>
-	</div>
-	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
-		<button type="button" class="btn btn-info-outline" (click)="connectCustom(customEndpoint.value)">
-			Connect
-		</button>
-	</div>
+    <h3 class="modal-title">
+        Connect to another endpoint, enter url below:
+    </h3>
+    <div class="modal-body">
+        <mat-form-field>
+            <input matInput type="text" placeholder="endpoint" #customEndpoint>
+        </mat-form-field>
+    </div>
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <button type="button" class="btn btn-info-outline" (click)="connectCustom(customEndpoint.value)">
+            Connect
+            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="confirmModal" [clrModalSize]="'md'">
-	<h3 class="modal-title text-white" *ngIf="selectedEndpoint">
-		Connect to <span class="blue">{{selectedEndpoint.url}}</span> ?
-	</h3>
-	<div class="modal-body">
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
-		<button type="button" class="btn btn-info-outline" (click)="connectEndpoint()">
-			Connect
-		</button>
-	</div>
+    <h3 class="modal-title" *ngIf="selectedEndpoint">
+        Connect to <span class="highlight-primary">{{selectedEndpoint.url}}</span> ?
+    </h3>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-danger-outline" (click)="confirmModal = false">Cancel</button>
+        <button type="button" class="btn btn-info-outline" (click)="connectEndpoint()">
+            Connect
+            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="changePassModal" [clrModalSize]="'md'">
-	<h3 class="modal-title text-white">
-		<fa-icon [icon]="['fas','key']"></fa-icon>&nbsp;&nbsp;Change Password
-	</h3>
-	<div class="modal-body">
-		<form [formGroup]="passForm">
-			<mat-form-field class="mt-1 pass-input">
-				<input matInput type="password" placeholder="Old password"
-					   formControlName="oldpass">
-			</mat-form-field>
-			<mat-form-field class="mt-1  pass-input">
-				<input matInput #pass type="password" placeholder="New password" (blur)="passCompare()"
-					   [formControl]="passForm['controls'].matchingPassword['controls']['pass1']">
-				<fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
-						 (click)="pass.type = 'text'"></fa-icon>
-				<fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
-						 (click)="pass.type = 'password'"></fa-icon>
-				<mat-hint align="start">
-					Min 10 characters
-				</mat-hint>
-				<mat-hint align="end">{{pass.value.length}} / 10+</mat-hint>
-			</mat-form-field>
-			<mat-form-field style="margin-top: 19px" class="pass-input">
-				<input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
-					   [formControl]="passForm['controls'].matchingPassword['controls']['pass2']">
-				<fa-icon matSuffix *ngIf="pass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
-						 (click)="pass2.type = 'text'"></fa-icon>
-				<fa-icon matSuffix *ngIf="pass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
-						 (click)="pass2.type = 'password'"></fa-icon>
-				<mat-error *ngIf="!passmatch">
-					Passwords do not match!
-				</mat-error>
-			</mat-form-field>
-		</form>
-	</div>
-	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
-		<button type="submit" class="btn btn-info-outline" (click)="changePass()" [disabled]="!passForm.valid">
-			Change and Restart simplEOS
-		</button>
-	</div>
+    <h3 class="modal-title">
+        <fa-icon [icon]="['fas','key']"></fa-icon>&nbsp;&nbsp;Change Password
+    </h3>
+    <div class="modal-body" style="min-height: 220px;">
+        <form [formGroup]="passForm">
+            <!--			OLD PASS-->
+            <mat-form-field class="mt-1 pass-input">
+                <input matInput type="password" placeholder="Old password"
+                       formControlName="oldpass">
+                <mat-error *ngIf="wrongpass">
+                    Wrong password!
+                </mat-error>
+            </mat-form-field>
+
+            <!--			NEW PASS 1-->
+            <mat-form-field class="mt-3  pass-input">
+                <input matInput #pass type="password" placeholder="New password" (blur)="passCompare()"
+                       [formControl]="passForm['controls'].matchingPassword['controls']['pass1']">
+                <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="pass.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                         (click)="pass.type = 'password'"></fa-icon>
+                <mat-hint align="start">
+                    Min 4 characters
+                </mat-hint>
+                <mat-hint align="end">{{pass.value.length}} / 4+</mat-hint>
+            </mat-form-field>
+
+            <!--			NEW PASS 2-->
+            <mat-form-field style="margin-top: 19px" class="pass-input">
+                <input matInput #pass2 type="password" placeholder="Confirm password" (blur)="passCompare()"
+                       [formControl]="passForm['controls'].matchingPassword['controls']['pass2']">
+                <fa-icon matSuffix *ngIf="pass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="pass2.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="pass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                         (click)="pass2.type = 'password'"></fa-icon>
+                <mat-error *ngIf="!passmatch">
+                    Passwords do not match!
+                </mat-error>
+            </mat-form-field>
+        </form>
+    </div>
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <button type="submit"
+                class="btn btn-info-outline"
+                (click)="changePass()"
+                [disabled]="!passForm.valid">
+            Confirm
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="pinModal" [clrModalSize]="'sm'">
-	<h3 class="modal-title text-white">
-		Set lockscreen pin
-	</h3>
-	<div class="modal-body modal-pin" style="overflow-y: paged-x !important;">
-		<form [formGroup]="pinForm">
-			<mat-form-field class="mt-1">
-				<input matInput #pin type="password" placeholder="New pin" formControlName="pin">
-				<fa-icon matSuffix *ngIf="pin.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
-						 (click)="pin.type = 'text'"></fa-icon>
-				<fa-icon matSuffix *ngIf="pin.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
-						 (click)="pin.type = 'password'"></fa-icon>
-				<mat-hint align="start">
-					This pin can be anything you want
-				</mat-hint>
-			</mat-form-field>
-		</form>
-	</div>
-	<div class="modal-footer">
-		<button type="button" (click)="setPIN()" class="btn btn-info-outline" [disabled]="!pinForm.valid">
-			Set pin
-		</button>
-	</div>
+    <h3 class="modal-title">
+        Set lockscreen pin
+    </h3>
+    <div class="modal-body modal-pin" style="overflow-y: paged-x !important;">
+        <form [formGroup]="pinForm">
+            <mat-form-field class="mt-1">
+                <input matInput #pin type="password" placeholder="New pin" formControlName="pin">
+                <fa-icon matSuffix *ngIf="pin.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="pin.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="pin.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                         (click)="pin.type = 'password'"></fa-icon>
+                <mat-hint align="start">
+                    This pin can be anything you want
+                </mat-hint>
+            </mat-form-field>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" (click)="setPIN()" class="btn btn-info-outline" [disabled]="!pinForm.valid">
+            Set pin
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="clearPinModal" [clrModalSize]="'sm'">
-	<h3 class="modal-title text-white">
-		Are you <span class="blue">sure</span> ?
-	</h3>
-	<div class="modal-body">
-		<p style="margin-bottom: 20px;">If you remove the lockscreen, your balance will be displayed when opening the
-			wallet</p>
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-danger-outline" (click)="clearPinModal = false">Cancel</button>
-		<button type="button" class="btn btn-info-outline" (click)="clearPin()">
-			Yes
-		</button>
-	</div>
+    <h3 class="modal-title">
+        Are you <span class="highlight-primary">sure</span> ?
+    </h3>
+    <div class="modal-body">
+        <p style="margin-bottom: 20px;">If you remove the lockscreen, your balance will be displayed when opening the
+            wallet</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-danger-outline" (click)="clearPinModal = false">Cancel</button>
+        <button type="button" class="btn btn-info-outline" (click)="clearPin()">
+            Yes
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="importBKModal" [clrModalSize]="'md'">
-	<h3 class="modal-title text-white">
-		Select your backup file:
-	</h3>
-	<div class="modal-body">
-		<form [formGroup]="importForm" (keyup.enter)="importBK()">
-			<button type="button" class="btn btn-info-outline" (click)="inputIMClick()" style="margin-left:10px;">
-				Select file
-			</button>
-			<mat-form-field class="mt-8">
-				<input matInput #passimport type="password" placeholder="Password" formControlName="pass"
-					   [disabled]="customImportBK">
-				<!--<fa-icon matSuffix *ngIf="passimport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"-->
-				<!--(click)="passimport.type = 'text'"></fa-icon>-->
-				<!--<fa-icon matSuffix *ngIf="passimport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"-->
-				<!--(click)="passimport.type = 'password'"></fa-icon>-->
-				<mat-hint align="start">
-					Password that was used to encrypt your file
-				</mat-hint>
-			</mat-form-field>
-			<br/>
-			<br/>
-			<br/>
-			<span class="black-white">{{choosedFil}}</span>
-			<input style="visibility:hidden;" type="file" placeholder="Backup file" (change)="importCheckBK($event)"
-				   formControlName="customImportBK" #customImportBK>
-		</form>
-	</div>
-	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
-		<button type="button" class="btn btn-info-outline" (click)="importBK()" [disabled]="!importForm.valid"
-				[disabled]="busy">
-			Import
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</div>
+    <h3 class="modal-title">
+        Select your backup file:
+    </h3>
+    <div class="modal-body">
+        <form [formGroup]="importForm">
+            <button type="button" class="btn btn-info-outline"
+                    (click)="inputIMClick()" style="margin-left:10px;">
+                Select file
+            </button>
+            <mat-form-field class="mt-8">
+                <input matInput type="password" placeholder="Password" formControlName="pass">
+                <mat-hint align="start">
+                    Password that was used to encrypt your file
+                </mat-hint>
+            </mat-form-field>
+            <br/>
+            <br/>
+            <br/>
+            <span class="text-faded">{{infile}}</span>
+        </form>
+    </div>
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <button type="button"
+                class="btn btn-info-outline"
+                (click)="importBK()"
+                [disabled]="busy || infile === ''">
+            Import
+            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        </button>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="exportBKModal" [clrModalSize]="'md'">
-	<h3 class="modal-title text-white">
-		Choose were to save your backup file:
-	</h3>
-	<div class="modal-body">
-		<form [formGroup]="exportForm" (keyup.enter)="exportBK()">
+    <h3 class="modal-title">
+        Choose where to save your backup file:
+    </h3>
+    <div class="modal-body">
+        <form [formGroup]="exportForm">
+            <mat-form-field class="mt-8">
+                <input matInput #passexport type="password" placeholder="Encrypt your file" formControlName="pass">
+                <fa-icon matSuffix *ngIf="passexport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="passexport.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="passexport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
+                         class="copy"
+                         (click)="passexport.type = 'password'"></fa-icon>
+                <mat-hint align="start">
+                    This password can be anything you want
+                </mat-hint>
+            </mat-form-field>
+            <button type="button" class="btn btn-info-outline" (click)="inputEXClick()" style="margin-left:10px;">
+                Choose directory
+            </button>
+            <br/>
+            <br/>
+            <br/>
+            <span class="text-faded">{{exfile}}</span>
+        </form>
 
-			<mat-form-field class="mt-8">
-				<input matInput #passexport type="password" placeholder="Encrypt your file" formControlName="pass">
-				<fa-icon matSuffix *ngIf="passexport.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
-						 (click)="passexport.type = 'text'"></fa-icon>
-				<fa-icon matSuffix *ngIf="passexport.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
-						 class="copy"
-						 (click)="passexport.type = 'password'"></fa-icon>
-				<mat-hint align="start">
-					This password can be anything you want
-				</mat-hint>
-			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" (click)="inputEXClick()" style="margin-left:10px;">
-				Choose directory
-			</button>
-			<br/>
-			<br/>
-			<br/>
-			<span class="black-white">{{choosedDir}}</span>
-			<input style="visibility:hidden;" type="file" placeholder="Backup Directory"
-				   (change)="exportCheckBK($event)" formControlName="customExportBK" webkitdirectory directory
-                   #customExportBK>
-
-		</form>
-
-	</div>
-	<div class="modal-footer" style="padding: 0.5rem 0 0 0;">
-		<button type="button" class="btn btn-info-outline" (click)="exportBK()" [disabled]="!exportForm.valid"
-				[disabled]="busy">
-			Export
-			<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-		</button>
-	</div>
+    </div>
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <button type="button"
+                class="btn btn-info-outline"
+                (click)="exportBK()"
+                [disabled]="busy || exfile === ''">
+            Export
+            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        </button>
+    </div>
 </clr-modal>
 
+<!--VIEW PRIVATE KEY-->
 <clr-modal #pkModal [(clrModalOpen)]="viewPKModal" [clrModalSize]="'md'" (clrModalOpenChange)="closePkModal();">
-	<h3 class="modal-title" style="color: #e12200;">
-		Caution
-		<fa-icon [icon]="['fas', 'exclamation-triangle']"></fa-icon>
-	</h3>
-	<div class="modal-body">
-		<div *ngIf="claimKey">
-			Saved claim private key
-			<mat-form-field style="width: 470px; margin-top: 25px;">
-				<input matInput placeholder="Claim private key"
-					   [value]="claimPrivateKey" readonly>
-				<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(claimPrivateKey)"></fa-icon>
-			</mat-form-field>
-		</div>
-		<div *ngIf="!showpk && !claimKey">
-			<h4 class="text-white">Are you <span class="blue">sure</span> you want to see the active private key of the
-				account <span class="blue">{{selectedAccount}}</span>?</h4>
-			<div style="color: #9A9A9A;">*Your private key is the only access to your account, so it should always be
-				kept in a safe place.
-			</div>
-			<form [formGroup]="showpkForm" (keyup.enter)="viewPK()">
-				<mat-form-field class="mt-8">
-					<input matInput type="password" placeholder="Password" formControlName="pass">
-				</mat-form-field>
-				<button type="button" class="btn btn-info-outline" style="margin-left:10px;" (click)="viewPK()">
-					YES, SHOW ME
-					<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-				</button>
-			</form>
-		</div>
-		<div *ngIf="showpk && !claimKey">
-			<h4 class="text-white">Please, save the active key on a safe place and <span class="blue">never share your private key with
+    <h3 class="modal-title" style="color: var(--text-error) !important">
+        Caution
+        <fa-icon [icon]="['fas', 'exclamation-triangle']"></fa-icon>
+    </h3>
+    <div class="modal-body">
+        <div *ngIf="claimKey">
+            Saved claim private key
+            <mat-form-field style="width: 350px; margin-top: 25px;">
+                <input matInput placeholder="Claim private key"
+                       [value]="claimPrivateKey" readonly>
+                <fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
+                         (click)="cc(claimPrivateKey)"></fa-icon>
+            </mat-form-field>
+        </div>
+        <div *ngIf="!showpk && !claimKey">
+            <h4>Are you <span class="highlight-primary">sure</span> you want to see the active private key of the
+                account <span class="highlight-primary">{{selectedAccount}}</span>?</h4>
+            <div class="text-faded">*Your private key is the only access to your account, so it should always be
+                kept in a safe place.
+            </div>
+            <form [formGroup]="showpkForm" (keyup.enter)="viewPK()" class="mt-3">
+                <mat-form-field>
+                    <input matInput type="password" placeholder="Password" formControlName="pass">
+                </mat-form-field>
+                <button type="button" class="btn btn-info-outline" style="margin-left:10px;" (click)="viewPK()">
+                    YES, SHOW ME
+                    <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                </button>
+            </form>
+        </div>
+        <div *ngIf="showpk && !claimKey">
+            <h4>Please, save the active key on a safe place and <span class="highlight-primary">never share your private key with
 				anyone.</span></h4>
-			<mat-form-field style="width: 470px; margin-top: 25px;">
-				<input matInput placeholder="Active private key"
-					   [value]="tempPK" readonly>
-				<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(tempPK)"></fa-icon>
-			</mat-form-field>
-		</div>
-	</div>
-	<div class="modal-footer" *ngIf="showpk">
-		This window will close in {{timetoclose}}s...
-	</div>
+            <mat-form-field style="width: 470px; margin-top: 25px;">
+                <input matInput placeholder="Active private key"
+                       [value]="tempPK" readonly>
+                <a matSuffix class="tooltip tooltip-xs tooltip-top-left">
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="copy" (click)="cc(tempPK)"></fa-icon>
+                    <span class="tooltip-content">Copy</span>
+                </a>
+            </mat-form-field>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
+            <div class="error error-modal-footer" *ngIf="pkError !== ''">
+                <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
+                {{pkError}}
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer text-faded" *ngIf="showpk">
+        This window will close in {{timetoclose}}s...
+    </div>
 </clr-modal>
 
-<clr-wizard #wizardkeys [(clrWizardOpen)]="newKeys" clrWizardSize="lg">
-	<clr-wizard-title>Generate new keys</clr-wizard-title>
-	<clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
-	<clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
-	<clr-wizard-button [type]="'next'">Next</clr-wizard-button>
-	<clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+<!--GENERATE KEYS-->
+<app-keygen-modal></app-keygen-modal>
 
-
-	<clr-wizard-page [clrWizardPageNextDisabled]="ownerpub2 === '' || ownerpk2 === '' || !agreeKeys2">
-		<ng-template clrPageTitle>New Keys</ng-template>
-		<h5 class="bold">We recommend you <span class="error">disconnet from the internet</span></h5>
-		<!--<h5>This will be your private keys. Please, <span class="bold">save them somewhere safe!</span></h5>-->
-		<h5 class="gray">Please click the <span style="cursor:pointer;" class="blue" > Generate Key Pair </span>
-			button.</h5>
-		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Public key" [(ngModel)]="ownerpub2">
-			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-					 (click)="cc(ownerpub2)"></fa-icon>
-			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-		</mat-form-field>
-
-		<mat-form-field class="mt-1" style="width: 470px">
-			<input matInput placeholder="Private key" [(ngModel)]="ownerpk2">
-			<fa-icon matSuffix [icon]="['far', 'clone']" size="lg" class="copy"
-					 (click)="cc(ownerpk2)"></fa-icon>
-			<mat-hint>ctrl c + ctrl v to copy & paste</mat-hint>
-		</mat-form-field>
-
-		<button class="btn btn-primary" style="margin-top:20px;" (click)="generateNKeys()">Generate Key Pair</button>
-
-		<fa-layers *ngIf="generating2" class="blue fa-fw">
-			<fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
-		</fa-layers>
-		<br/>
-		<ng-container *ngIf="generated2" style="clear:both;">
-			<mat-checkbox [(ngModel)]="agreeKeys2">I have saved all my keys on a safe place</mat-checkbox>
-		</ng-container>
-	</clr-wizard-page>
-</clr-wizard>
-
-<clr-modal #managepkModal [(clrModalOpen)]="managerKeys" [clrModalSize]="'lg'">
-	<h3 class="modal-title">
-		Keys Management
-	</h3>
-	<div class="modal-body">
-		<clr-tabs clrLayout="vertical">
-			<clr-tab *ngFor="let key of keysaccounts; let idx = index">
-				<button clrTabLink id="link1">Key {{idx+1}}</button>
-				<clr-tab-content [id]="'content'+idx" *clrIfActive >
-					PUBLIC KEY: {{key.public_key}}
-					<ng-container *ngFor="let acc of key.accounts">
-						{{acc.name}}<br>
-					</ng-container>
-				</clr-tab-content>
-			</clr-tab>
-<!--			<clr-tab>-->
-<!--				<button clrTabLink>Key 2</button>-->
-<!--				<clr-tab-content *clrIfActive="true">-->
-<!--					PUBLIC KEY:-->
-<!--					Account 1<br>-->
-<!--					Account 2<br>-->
-<!--					Account 3<br>-->
-<!--				</clr-tab-content>-->
-<!--			</clr-tab>-->
-		</clr-tabs>
-	</div>
-	<div class="modal-footer" *ngIf="showpk">
-		This window will close in {{timetoclose}}s...
-	</div>
+<!--MANAGE KEYS-->
+<clr-modal #managepkModal
+           [(clrModalOpen)]="managerKeys"
+           [clrModalSize]="'lg'"
+           (clrModalOpenChange)="populateAccounts()">
+    <h3 class="modal-title">
+        Key/Account Management
+    </h3>
+    <div class="modal-body" style="min-height: 30vh;">
+        <clr-tabs clrLayout="vertical">
+            <clr-tab *ngFor="let key of localKeys; let idx = index">
+                <button style="font-family: 'SourceCodePro',monospace" clrTabLink id="link1">Key {{idx + 1}}:
+                    <span>
+						{{key.slice(0, 5)}}...{{key.slice(key.length - 4, key.length - 1)}}
+					</span>
+                </button>
+                <clr-tab-content [id]="'content'+idx" *clrIfActive>
+                    <div style="font-weight: 600" class="highlight-primary">PUBLIC KEY:</div>
+                    <div class="highlight">{{key}}
+                        <button class="btn btn-sm btn-danger-outline" (click)="removeKey(key);">
+                            <fa-icon [icon]="['far','trash-alt']"></fa-icon>
+                            Remove key
+                        </button>
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                     style="font-size: 16px;"></fa-icon>
+                            <span class="tooltip-content">Remove all accounts associated with this private key from SimplEOS <br>
+							This will not delete your accounts from the blockchain, just remove them from SimplEOS</span>
+                        </a>
+                    </div>
+                    <div style="margin-top: 20px; font-weight: 600" class="highlight-primary">Associated imported
+                        accounts:
+                    </div>
+                    <div *ngFor="let a of keysaccounts.get(key)" fxLayout="row" fxLayoutAlign="start center">
+                        <div fxFlex="29">{{a.account.name}}@{{a.permission}}</div>
+                        <button (click)="removeAccount(a.account.name,true)" class="btn btn-sm btn-danger-outline"
+                                style="min-width: unset; padding: 0 5px; margin-left: 7px">
+                            <fa-icon [icon]="['far','trash-alt']"></fa-icon>
+                        </button>
+                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                     style="font-size: 16px;"></fa-icon>
+                            <span class="tooltip-content">Remove this account from SimplEOS <br>
+							This will not delete your account from the <br>
+							blockchain, it will just remove it from SimplEOS</span>
+                        </a>
+                    </div>
+                </clr-tab-content>
+            </clr-tab>
+            <!--			<clr-tab>-->
+            <!--				<button clrTabLink>Key 2</button>-->
+            <!--				<clr-tab-content *clrIfActive="true">-->
+            <!--					PUBLIC KEY:-->
+            <!--					Account 1<br>-->
+            <!--					Account 2<br>-->
+            <!--					Account 3<br>-->
+            <!--				</clr-tab-content>-->
+            <!--			</clr-tab>-->
+        </clr-tabs>
+    </div>
 </clr-modal>
 
 

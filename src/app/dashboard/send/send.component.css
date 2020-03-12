@@ -5,15 +5,14 @@
 .balance {
     font-size: 21px;
     margin-bottom: 19px;
-	color: var(--text-gray3-color);
 }
 
 .eos {
     font-size: 46px;
     margin-bottom: 19px;
-    color: var(--text-blue-color);
 	font-family:  var(--special-font-bold);
 	/*font-weight: var(--special-font-weight);*/
+    line-height: 44px;
 }
 
 .dollar {
@@ -49,7 +48,7 @@ form {
 }
 
 .letter {
-    color: #e3e3e3;
+    color: var(--letter-color);
 	padding: 5px 0 2px 0.5rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -62,7 +61,7 @@ li {
 }
 
 li:hover {
-    background-color: var(--tr-hover);
+    background-color: var(--tokens-panel-hover);
     color: var(--sidenav-active-color);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
@@ -98,16 +97,26 @@ li:hover .contact-hover {
     overflow-x: hidden;
 }
 
-.newContactBtn {
-    background-color: #21212126;
+.newcontact-btn {
+    background-color: var(--newcontact-btn-bg);
     border-bottom: 0;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
-    border-top: 1px solid #3f3f3f;
+    border-top: 1px solid var(--newcontact-btn-bordertop);
+    color: var(--newcontact-btn-color);
     margin-bottom: 0;
 }
+
+.newcontact-btn:hover {
+    background-color: var(--newcontact-btn-bg-hover);
+    color: var(--newcontact-btn-color-hover);
+}
 /*contact's panel end*/
+
+.account {
+    font-size: 14px;
+}
 
 .mat-option {
     line-height: 24px;
@@ -115,20 +124,17 @@ li:hover .contact-hover {
     padding: 30px 16px;
 }
 
-.name {
-    color: var(--text-white-color);
-}
-
-.account {
-    font-size: 14px;
-}
-
 mat-option:not(.last) {
     border-bottom: 1px solid #404040;
 }
 
 /deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-    background: #3a3a3a;
+    background: var(--info-card-bg-hover);
+}
+
+.mat-option.mat-active {
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--text-highlight);
 }
 
 .btn-max {
@@ -145,10 +151,6 @@ mat-option:not(.last) {
     display: flex;
     justify-content: flex-end;
     padding-top: 0;
-}
-
-.error {
-    color: #f44336 !important;
 }
 
 .deleteBtn, .editBtn {
@@ -173,4 +175,8 @@ mat-option:not(.last) {
 
 /deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
 	background-color: var(--destaque-color-token);
+}
+
+.account-color {
+    color: var(--token-price-color);
 }

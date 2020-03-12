@@ -1,6 +1,6 @@
 .wrap {
     display: flex;
-    min-height: 100vh;
+    height: calc(100vh - 1.7rem);
     flex-direction: column;
 	background: var(--landing-background);
     background-size: cover;
@@ -12,7 +12,7 @@
 }
 
 .anim-logo {
-    margin-top: 41px;
+    margin-top: 30px;
 }
 
 .sloganWallet {
@@ -72,13 +72,11 @@
     animation-fill-mode: both;
 }
 
-.check-card {
+.info-card {
     box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
     border: none;
-    background-color: var(--info-card-background);
     margin-top: 31px;
     width: 350px;
-	color: var(--text-title-color) !important;
 }
 
 .info {
@@ -111,7 +109,3 @@
 .modal-body {
     overflow-y: hidden !important;
 }
-
-/*.logout-btn {*/
-/*	color: var(--text-destaque-color);*/
-/*}*/

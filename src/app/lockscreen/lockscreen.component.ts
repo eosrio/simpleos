@@ -1,9 +1,10 @@
-import {Component , OnInit } from '@angular/core';
-import {CryptoService} from '../services/crypto.service';
+import {Component, OnInit} from '@angular/core';
+import {CryptoService} from '../services/crypto/crypto.service';
 import {Router} from '@angular/router';
 import {NetworkService} from '../services/network.service';
 import {AccountsService} from '../services/accounts.service';
 import {AppComponent} from '../app.component';
+import {AnimationOptions} from "ngx-lottie";
 
 @Component({
 	selector: 'app-lockscreen',
@@ -18,7 +19,12 @@ export class LockscreenComponent implements OnInit {
 	logoutModal: boolean;
 	clearContacts: boolean;
 	anim: any;
-	lottieConfig: Object;
+
+	lottieConfig: AnimationOptions = {
+		path: 'assets/logoanim.json',
+		autoplay: true,
+		loop: false
+	};
 
 	static resetApp() {
 		window['remote']['app']['relaunch']();
@@ -34,17 +40,20 @@ export class LockscreenComponent implements OnInit {
 	) {
 		this.logoutModal = false;
 		this.clearContacts = false;
-		this.lottieConfig = {
-			path: 'assets/logoanim.json',
-			autoplay: true,
-			loop: false
-		};
+	}
+
+	toggleAnimation() {
+		if (this.anim) {
+			const duration = this.anim.getDuration(true);
+			this.anim.goToAndPlay(Math.round(duration / 3), true);
+		}
 	}
 
 	ngOnInit() {
-		if (localStorage.getItem('simpleos-hash') === null) {
+		if (!localStorage.getItem('simpleos-hash')) {
+			console.log('no hash saved.. navigating to landing page');
 			this.router.navigate(['landing']).catch(() => {
-				alert('cannot navigate out');
+				console.log('cannot navigate out');
 			});
 		}
 	}

@@ -1,10 +1,3 @@
-.info-card {
-    background-color: var(--info-card-background);
-    border-radius: 5px;
-    border: 0;
-    box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-}
-
 .total {
     font-size: 23px;
     margin-bottom: 19px;
@@ -22,7 +15,6 @@
 
 .instruction {
     font-size: 16px;
-    color: var(--text-title-color);
 }
 
 /*meterial's slider*/
@@ -124,7 +116,6 @@
     background: #0094d2;
     color: #ffffff;
 }
-/*prime's table end*/
 
 .expandable fa-icon:hover {
     color: #39c5ff;
@@ -153,16 +144,15 @@
     margin-left: 0;
     margin-right: 0;
 }
+/*prime's table end*/
 
 .title {
-    color: var(--text-gray-color);
     font-weight: 500;
     margin-left: 10px;
     display: inline-flex;
 }
 
 .gbm-title {
-	color: var(--text-white-color);
 	font-size: 16px;
 }
 
@@ -207,7 +197,7 @@ a:visited {
 }
 
 .social-icon fa-icon:hover {
-    color: var(--text-white-color);
+    color: var(--text-highlight);
     cursor: pointer;
 }
 
@@ -257,18 +247,24 @@ a:visited {
 	display: none;
 }
 
+/*tabs*/
 /deep/ #vote-tabs .mat-tab-header {
 	background-color: var(--info-card-background);
 }
 
 /deep/ #vote-tabs .mat-tab-label .mat-tab-label-content {
-	font-size:17px !important
+	font-size:17px !important;
+    color: var(--vote-tab-color);
 }
 
 /deep/  #vote-tabs .mat-tab-label-active {
-	background-color: var(--mat-tab-active);
+	background-color: var(--vote-tab-active);
 }
 
+/deep/  #vote-tabs .mat-tab-label-active .mat-tab-label-content {
+    color: var(--vote-tab-active-color);
+}
+/*tabs end*/
 
 /deep/ .bps-table .ui-table-caption, .ui-table-summary {
 	padding: 0 0 .25em 0;
@@ -282,15 +278,6 @@ a:visited {
 	line-height: 24px;
 	height: 54px;
 	padding: 30px 16px;
-}
-
-
-mat-option:not(.last) {
-	border-bottom: 1px solid #404040;
-}
-
-/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-	background: #3a3a3a;
 }
 
 .text-bold {
@@ -330,3 +317,4 @@ mat-option:not(.last) {
 /deep/ .red-checkbox .mat-checkbox-checked.mat-accent .mat-checkbox-background {
 	background-color: var(--text-error) !important;
 }
+

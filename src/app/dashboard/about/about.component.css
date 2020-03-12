@@ -1,17 +1,16 @@
-.paragraph {
+.p {
     font-size: 17px;
-    color: #999999;
     margin-top: 16px;
 }
 
 .website:visited {
-    color: #0094d2;
+    color: var(--text-highlight-primary);
     text-decoration: none;
 }
 
 
 .website:link {
-    color: #0094d2;
+    color: var(--text-highlight-primary);
     text-decoration: none;
 }
 
@@ -20,7 +19,7 @@
 }
 
 .social-icon fa-icon:hover {
-    color: var(--text-white-color);
+    color: var(--text-highlight);
     cursor: pointer;
 }
 

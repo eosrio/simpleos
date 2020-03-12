@@ -1,10 +1,9 @@
 import {ApplicationRef, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {EOSJSService} from './eosjs.service';
 import {Subject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import * as moment from 'moment';
-import {Eosjs2Service} from './eosjs2.service';
+import {Eosjs2Service} from './eosio/eosjs2.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -19,7 +18,6 @@ export class VotingService {
 
 	constructor(
 		private eosjs: Eosjs2Service,
-		private eos: EOSJSService,
 		private http: HttpClient,
 		private aService: AccountsService,
 		private ref: ApplicationRef
@@ -36,13 +34,12 @@ export class VotingService {
 		this.totalProducerVoteWeight = 0;
 		this.stakePercent = 0;
 		this.isOnline = false;
-
 		this.lastState = false;
 		this.lastChain = '';
 		this.lastAcc = '';
 
 		// EOSJS Status watcher
-		this.eos.online.asObservable().subscribe(value => {
+		this.eosjs.online.asObservable().subscribe(value => {
 			this.isOnline = value;
 			if (value !== this.lastState) {
 				this.lastState = value;
@@ -54,12 +51,12 @@ export class VotingService {
 		});
 
 		// Account status watcher
-		this.aService.selected.asObservable().subscribe((sA) => {
-			if (sA['name']) {
-				this.selectedAccount = sA;
+		this.aService.selected.asObservable().subscribe((acc) => {
+			if (acc && acc.name) {
+				this.selectedAccount = acc;
 				if (this.bps.length === 0 && !this.initList) {
-					if (this.lastAcc !== sA['name'] || this.lastChain !== this.aService.activeChain.name) {
-						this.lastAcc = sA['name'];
+					if (this.lastAcc !== acc.name || this.lastChain !== this.aService.activeChain.name) {
+						this.lastAcc = acc.name;
 						this.lastChain = this.aService.activeChain.name;
 						this.callLoader();
 					}
@@ -71,15 +68,12 @@ export class VotingService {
 	public bps: any[];
 	public proxies: any[];
 	public listReady = new Subject<Boolean>();
-	// public listReadyProxy = new Subject<Boolean>();
-	public counter = new Subject<Number>();
 	selectedAccount: any;
 	initList: boolean;
 	initListProx: boolean;
 	totalActivatedStake: number;
 	voteType: number;
 	totalProducerVoteWeight: number;
-	totalVoteWeight: number;
 	chainActive: boolean;
 	stakePercent: number;
 	activeCounter = 50;
@@ -98,19 +92,6 @@ export class VotingService {
 	list: any[];
 
 	maxProxies = 1000;
-
-	static shuffle(array) {
-		let currentIndex = array.length, temporaryValue, randomIndex;
-		while (0 !== currentIndex) {
-			randomIndex = Math.floor(Math.random() * currentIndex);
-			currentIndex -= 1;
-			temporaryValue = array[currentIndex];
-			array[currentIndex] = array[randomIndex];
-			array[randomIndex] = temporaryValue;
-		}
-		return array;
-	}
-
 
 	static amountFilter(value, args?) {
 		let exp;
@@ -134,13 +115,6 @@ export class VotingService {
 		}
 	}
 
-	forceReload() {
-		console.log('Voting Service: Force reload!');
-		this.bps = [];
-		this.initList = false;
-		// this.listProducers();
-	}
-
 	clearLists() {
 		this.bps = [];
 		this.proxies = [];
@@ -154,18 +128,6 @@ export class VotingService {
 				data: this.data
 			}]
 		};
-	}
-
-	randomizeList() {
-		this.bps = VotingService.shuffle(this.bps);
-	}
-
-	bpsByChain(id) {
-		this.bps = this.bps.filter(bp => bp.chainId === id);
-	}
-
-	pxsByChain(id) {
-		this.proxies = this.proxies.filter(px => px.chainId === id);
 	}
 
 	currentVoteType(sel) {
@@ -186,29 +148,38 @@ export class VotingService {
 	}
 
 	async listProducers() {
+		if (this.loadingProds) {
+			return;
+		}
+		if (this.aService.activeChain.name.startsWith('LIBERLAND')) {
+			return;
+		}
 		this.setWeightParams();
 		if (this.bps.length > 0) {
 			return;
 		}
 		if (!this.initList && !this.loadingProds && this.aService.selected.getValue().name) {
 			this.loadingProds = true;
-			const producers = await this.eos.listProducers();
-			// console.log('ListProducers returned ' + producers.rows.length + ' producers');
-			const global_data = await this.eos.getChainInfo();
+			const producers = await this.eosjs.listProducers();
+			const global_data = await this.eosjs.getChainInfo();
 			this.totalProducerVoteWeight = parseFloat(global_data.rows[0]['total_producer_vote_weight']);
+
 			const total_votes = this.totalProducerVoteWeight;
 			// Pass 1 - Add accounts
 			const myAccount = this.aService.selected.getValue();
+			console.log('account', myAccount);
 			this.bps = [];
 			this.hasList = producers.rows.length > 0;
 			producers.rows.forEach((prod: any, idx) => {
 				const vote_pct: any = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
 				let voted;
-				if (myAccount.details['voter_info']) {
+
+				if (myAccount.details && myAccount.details['voter_info']) {
 					voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
 				} else {
 					voted = false;
 				}
+
 				const _total = this.convertVotes(prod['total_votes']);
 				const producerMetadata = {
 					name: prod['owner'],
@@ -359,8 +330,22 @@ export class VotingService {
 		this.conversionFactor = parseInt('' + ((moment().unix() - this.block_timestamp_epoch) / 604800), 10) / this.weeks;
 	}
 
+	async getProxyListHyperionMulti() {
+		for (const api of this.aService.activeChain.hyperionApis) {
+			const url = api + '/state/get_voters?proxy=true&skip=0&limit=' + this.maxProxies;
+			try {
+				const data: any = await this.http.get(url).toPromise();
+				if (data.voters && data.voters.length > 0) {
+					return data;
+				}
+			} catch (e) {
+				console.log(`failed to fetch proxy list from: ${api}`);
+			}
+		}
+		return null;
+	}
+
 	async listProxies() {
-		// console.log('list proxies!');
 		this.setWeightParams();
 		let registry = null;
 		if (this.proxies.length > 0) {
@@ -368,50 +353,46 @@ export class VotingService {
 		}
 		if (!this.loadingProxs && this.initListProx === false && this.aService.selected.getValue().name) {
 			this.loadingProxs = true;
-			// console.log('listProxies 1', this.loadingProxs, this.initListProx);
 			this.proxies = [];
 			this.uniqueProxies.clear();
 			const myAccount = this.aService.selected.getValue();
 			if (this.aService.activeChain['proxyRegistry'] === '') {
-				if (this.aService.activeChain.historyApi !== '') {
-					const url = this.aService.activeChain.historyApi + '/state/get_voters?proxy=true&skip=0&limit=' + this.maxProxies;
-					const result = await this.http.get(url).toPromise();
-					if (result) {
-						this.hasList = result['voters'].length > 0;
-						let voted = false;
-						let idx = 0;
-						for (const item of result['voters']) {
-							if (myAccount.details['voter_info']) {
-								voted = myAccount.details['voter_info']['proxy'] === item['account'];
-							}
-							const _total = this.convertVotes(item['weight']);
-							const proxiesMetadata = {
-								name: '-',
-								account: item['account'],
-								key: '',
-								location: '',
-								geo: [],
-								position: idx + 1,
-								status: '',
-								total_votes: _total.str,
-								total_votes_num: _total.num,
-								social: {steemit: '', telegram: '', twitter: '', wechat: ''},
-								website: '',
-								logo_256: '',
-								checked: voted,
-								chainId: this.aService.activeChain.id,
-								philosophy: '',
-								background: '',
-								slogan: '',
-								weight: item['weight'],
-								reg: false
-							};
-							if (!this.uniqueProxies.has(proxiesMetadata.account)) {
-								this.proxies.push(proxiesMetadata);
-								this.uniqueProxies.add(proxiesMetadata.account);
-							}
-							idx++;
+				const result = await this.getProxyListHyperionMulti();
+				if (result) {
+					this.hasList = result['voters'].length > 0;
+					let voted = false;
+					let idx = 0;
+					for (const item of result['voters']) {
+						if (myAccount.details['voter_info']) {
+							voted = myAccount.details['voter_info']['proxy'] === item['account'];
 						}
+						const _total = this.convertVotes(item['weight']);
+						const proxiesMetadata = {
+							name: '-',
+							account: item['account'],
+							key: '',
+							location: '',
+							geo: [],
+							position: idx + 1,
+							status: '',
+							total_votes: _total.str,
+							total_votes_num: _total.num,
+							social: {steemit: '', telegram: '', twitter: '', wechat: ''},
+							website: '',
+							logo_256: '',
+							checked: voted,
+							chainId: this.aService.activeChain.id,
+							philosophy: '',
+							background: '',
+							slogan: '',
+							weight: item['weight'],
+							reg: false
+						};
+						if (!this.uniqueProxies.has(proxiesMetadata.account)) {
+							this.proxies.push(proxiesMetadata);
+							this.uniqueProxies.add(proxiesMetadata.account);
+						}
+						idx++;
 					}
 				}
 			} else {
@@ -466,7 +447,6 @@ export class VotingService {
 			this.initListProx = true;
 			this.listReady.next(true);
 			this.loadingProxs = false;
-			// console.log('listProxies 2', this.loadingProxs, this.initListProx);
 
 			// Pass 2 - Enhance metadata
 			this.activeCounter = 50;
@@ -488,11 +468,10 @@ export class VotingService {
 				let cachedPayload = null;
 				if (stored_data) {
 					cachedPayload = fullCache[prox['account']];
-					// console.log(prox,fullCache[prox['account']]);
 					if (cachedPayload) {
 						if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
 							// Expired
-							console.log('expired', expiration);
+							// console.log('expired', expiration);
 							requestQueue.push({proxy: prox['account'], index: idx});
 						} else if (this.proxies[idx].checked !== cachedPayload['meta']['checked']) {
 							// Load from cache
@@ -508,7 +487,7 @@ export class VotingService {
 					}
 				} else {
 					// New entry
-					console.log('New entry from hyperion');
+					// console.log('New entry from hyperion');
 					requestQueue.push({proxy: prox['account'], index: idx});
 				}
 			});

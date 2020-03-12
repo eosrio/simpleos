@@ -1,0 +1,112 @@
+<clr-modal #customChainModal
+           [clrModalOpen]="network.customChainModal"
+           [clrModalStaticBackdrop]="false"
+           (clrModalOpenChange)="onModalClose($event)"
+           [clrModalSize]="'lg'">
+    <h3 class="modal-title">
+        Connect to a custom chain
+    </h3>
+
+    <div class="modal-body" style="min-height: 60vh;">
+
+        <div fxLayout="row" fxLayoutGap="20px" fxLayoutAlign="start center" class="mt-3">
+            <mat-form-field style="width: 150px">
+                <label><input matInput placeholder="Network Name" [(ngModel)]="chainName"></label>
+            </mat-form-field>
+
+            <mat-radio-group [(ngModel)]="chainType" aria-label="Select an option" color="primary">
+                <mat-radio-button value="MAINNET">Mainnet</mat-radio-button>
+                <mat-radio-button value="TESTNET">Testnet</mat-radio-button>
+            </mat-radio-group>
+        </div>
+
+        <mat-form-field style="width: 300px">
+            <label><input matInput placeholder="Endpoint" [(ngModel)]="apiUrl" (blur)="checkEndpoint()"></label>
+            <mat-hint>Example: http://localhost:8888</mat-hint>
+        </mat-form-field>
+        <span *ngIf="busy">
+            <fa-icon [icon]="['far', 'spinner']" [spin]="true"></fa-icon> Checking...
+        </span>
+        <p *ngIf="endpointErr" class="text-warn bold">
+            Error: invalid endpoint!
+        </p>
+
+        <p *ngIf="nativeHistoryStatus" class="highlight-primary">Native V1 History Detected
+            <fa-icon [icon]="['far', 'check']"></fa-icon>
+        </p>
+        <p *ngIf="hyperionHistoryStatus" class="highlight-primary">Hyperion V2 History Detected
+            <fa-icon [icon]="['far', 'check']"></fa-icon>
+        </p>
+
+        <mat-form-field class="mt-3" style="width: 550px">
+            <label><input matInput placeholder="Chain ID" [(ngModel)]="chainId"></label>
+            <mat-hint>Example: aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906</mat-hint>
+        </mat-form-field>
+
+        <div fxLayout="row" fxLayoutGap="20px" fxLayoutAlign="start center" class="mt-4">
+            <mat-form-field style="width: 150px">
+                <label><input matInput placeholder="System Contract" [(ngModel)]="eosioAlias"></label>
+            </mat-form-field>
+
+            <mat-form-field style="width: 150px">
+                <label><input matInput placeholder="Token Contract" [(ngModel)]="tokenContract"
+                              (blur)="lookupSystemToken()"></label>
+            </mat-form-field>
+        </div>
+
+        <div fxLayout="row" fxLayoutGap="20px" fxLayoutAlign="start center" class="mt-3">
+            <mat-form-field style="width: 150px">
+                <label><input matInput placeholder="Native Symbol" [(ngModel)]="symbol"></label>
+                <mat-hint>Example: EOS</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field style="width: 150px">
+                <label><input matInput placeholder="Decimal Precision" [(ngModel)]="precision"></label>
+                <mat-hint>Example: 4</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <mat-form-field class="mt-3" style="width: 300px">
+            <label><input matInput placeholder="Hyperion API" [(ngModel)]="hyperionUrl"
+                          (blur)="checkHyperion()"></label>
+            <mat-hint>Example: http://localhost:7000/v2</mat-hint>
+        </mat-form-field>
+
+        <br>
+
+        <mat-form-field class="mt-3" style="width: 300px">
+            <label><input matInput placeholder="Proxy Registry Contract" [(ngModel)]="proxyRegistry"
+                          (blur)="checkProxyContract()"></label>
+            <mat-hint>Example: regproxyinfo</mat-hint>
+        </mat-form-field>
+
+        <div style="display: grid">
+            <p>Wallet Features:</p>
+            <mat-slide-toggle [(ngModel)]="toggleHistory" color="primary">History</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleSend" color="primary">Send</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleRes" color="primary">Resources</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleVote" color="primary">Voting</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleStake" color="primary">Staking</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleRex" color="primary">REX</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="toggleForum" color="primary">Referendum</mat-slide-toggle>
+        </div>
+
+    </div>
+
+    <div class="modal-footer" style="padding: 0.5rem 0 0 0;">
+        <button type="button" class="btn btn-link btn-primary-link" (click)="deleteStoredData()">
+            CLEAR ALL CUSTOM CHAINS
+        </button>
+        <button type="button" class="btn btn-danger-outline" (click)="customChainModal.close()">
+            CANCEL
+        </button>
+        <button type="button" class="btn btn-info-outline" [disabled]="testing" (click)="testConnection()">
+            VALIDATE
+            <fa-icon *ngIf="testing" [icon]="['far', 'spinner']" [spin]="testing"></fa-icon>
+        </button>
+        <button type="button" class="btn btn-info-outline" [disabled]="!validated" (click)="finish()">
+            FINISH
+        </button>
+    </div>
+
+</clr-modal>

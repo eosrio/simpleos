@@ -1,19 +1,23 @@
 .wrap {
 	display: flex;
-	min-height: 100vh;
+	height: calc(100vh - 1.7rem);
 	flex-direction: column;
 	background: var(--landing-background);
 	/*background-image: var(--landing-image-background);*/
 	background-size: cover;
+	background-color: var(--background-gd);
 }
 
 .clicked:hover {
-	border-bottom: 1px solid var(--text-blue-color) !important;
+	border-bottom: 1px solid var(--text-highlight-primary) !important;
 }
 
 .clicked {
 	text-decoration: none;
 	cursor: pointer !important;
+	text-transform: uppercase;
+	letter-spacing: .12em;
+	font-size: .6rem;
 }
 
 .boxOption {
@@ -27,39 +31,20 @@
 	cursor: pointer !important;
 }
 
-.info-card {
-	background-color: var(--info-card-background);
-	border-radius: 5px;
-	border: 0;
-	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
-}
-
 .title {
-	color: var(--text-title-color);
 	font-size: 21px;
 	border-bottom: 1px solid #4e4e4e;
-	margin-bottom: 10px;
 	padding-bottom: 0;
-}
-
-.info {
-	color: var(--verify-card-text-color);
-	margin-bottom: 20px;
-	font-size: 15px;
 }
 
 .info2 {
 	font-size: 17px;
-	color: var(--text-title-color);
-}
-
-.verify-mat-hint {
-	color: var(--verify-card-text-color) !important;
+	/*color: var(--text-title-color);*/
 }
 
 .chains-card {
-	background-color: var(--info-card-background);
-	/*background-color: transparent;*/
+	/*background-color: var(--info-card-background);*/
+	background-color: transparent;
 	border: 1px solid #565656;
 	box-shadow: none;
 	color: #848484;
@@ -74,8 +59,9 @@
 }
 
 .chain-section:not(.selected):hover {
-	background-color: var(--mat-tab-active);
+	background-color: var(--info-card-bg-hover);
 	cursor: pointer;
+	color: var(--text-card-title-color);
 }
 
 .container-fluid {
@@ -85,12 +71,7 @@
 
 .anim-logo {
 	/*margin-top: 80px;*/
-	margin-top: 41px;
-}
-
-.selected {
-	background-color: var(--text-blue-color);
-	color: white;
+	margin-top: 30px;
 }
 
 .sloganWallet {
@@ -151,29 +132,16 @@
 	animation-fill-mode: both;
 }
 
-.bold {
-	color: var(--text-gray3-color);
-	font-weight: 500;
-}
-
-.check-card {
-	box-shadow: 4px 6px 5px 0 rgba(0, 0, 0, 0.34);
-	border: none;
-	background-color:  var(--verify-card-backgound-color);
-	/*background-color: rgba(162, 162, 162, 0.12);*/
-	margin-top: 31px;
-}
-
 .public-input {
 	margin-top: 20px;
 	width: 335px;
 	margin-bottom: 5px;
 }
 
-.btn-check {
-	margin-bottom: 10px;
-	margin-left: 10px;
-}
+/*.btn-check {*/
+/*	margin-bottom: 10px;*/
+/*	margin-left: 10px;*/
+/*}*/
 
 .card-block {
 	border-bottom: 0;
@@ -249,12 +217,13 @@
 }
 
 .advanced {
-	font-size: 14px;
-	color: #696969;
+	text-transform: uppercase;
+	letter-spacing: .12em;
+	font-size: .6rem;
 }
 
 .warn {
-	color: #ff3f32;
+	color: var(--text-error);
 }
 
 .fit-content {
@@ -268,24 +237,24 @@
 
 .settings-card {
 	background-color: transparent;
-	border: 1px solid #0079b8;
+	border: 1px solid var(--text-highlight-primary);
 	box-shadow: none;
 	color: #ffffff;
 }
 
 .mt-OTHER {
-	margin-top: 0px !important;
+	margin-top: 0 !important;
 	margin-bottom: 1rem !important;
 }
 
 /deep/ .chain-selector .mat-select-value {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
 /deep/ .mat-optgroup-label  {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 14px !important;
 	line-height: 2.5em!important;
@@ -303,24 +272,33 @@
 }
 
 /deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
-	color: var(--text-blue-color);
+	color: var(--text-highlight-primary);
 }
 
 /deep/ .mat-select-arrow {
-	color: rgb(177, 177, 177);
+	color: var(--text-card-color);
 }
 
 /deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
-	color: #0094d2 !important;
+	color: var(--text-highlight-primary) !important;
 }
 
 .selected {
-	background-color: #0077b7;
+	background-color: var(--text-highlight-primary);
 	color: white;
 }
 
 /deep/ .select-father .mat-form-field-infix {
 	padding-top: 0;
+}
+
+::ng-deep .black-tooltip {
+	background-color: black;
+	font-size: .65rem;
+	letter-spacing: normal;
+	/*line-height: .9rem;*/
+	font-family: Metropolis, sans-serif;
+	white-space: pre-line;
 }
 
 

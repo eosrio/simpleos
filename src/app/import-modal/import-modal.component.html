@@ -1,0 +1,187 @@
+<clr-wizard #importwizard [clrWizardSize]="'lg'" (clrWizardOnFinish)="importAccounts()">
+    <clr-wizard-title>Use existing wallet</clr-wizard-title>
+
+    <clr-wizard-button [type]="'cancel'">Cancel</clr-wizard-button>
+    <clr-wizard-button [type]="'previous'">Back</clr-wizard-button>
+    <clr-wizard-button [type]="'next'">Next</clr-wizard-button>
+    <clr-wizard-button [type]="'finish'">Finish</clr-wizard-button>
+
+    <clr-wizard-page
+            [clrWizardPageNextDisabled]="!((pvtform.valid && !busyVerifying) ||
+            (usingLedger && sLAc.selectedOptions.selected.length > 0 && ledger.ledgerAccounts.length > 0))"
+            (clrWizardPageOnCommit)="importKeys(sLAc.selectedOptions.selected)"
+            [clrWizardPagePreventDefault]="true"
+            (clrWizardPageOnCancel)="doCancel()">
+
+        <ng-template clrPageTitle>Import Key</ng-template>
+
+        <ng-container *ngIf="!usingLedger">
+            <h5>Insert your existing private key below (ACTIVE key recommended)</h5>
+
+            <form [formGroup]="pvtform">
+                <mat-form-field class="mt-3" style="width: 100%;">
+                    <input #pkField matInput type="password" formControlName="private_key"
+                           placeholder="{{network.activeChain['name']}} Active Private key">
+                    <fa-icon matSuffix *ngIf="pkField.type === 'password'" [icon]="['far', 'eye']" size="lg"
+                             class="copy"
+                             (click)="pkField.type = 'text'"></fa-icon>
+                    <fa-icon matSuffix *ngIf="pkField.type === 'text'" [icon]="['far', 'eye-slash']" size="lg"
+                             class="copy"
+                             (click)="pkField.type = 'password'"></fa-icon>
+                    <mat-hint align="start">
+                        ctrl c + ctrl v to copy & paste
+                    </mat-hint>
+                    <mat-error *ngIf="!pvtform.valid">
+                        {{errormsg}}
+                    </mat-error>
+                    <mat-error>
+                        {{apierror}}
+                    </mat-error>
+                </mat-form-field>
+            </form>
+
+            <br>
+
+            <p *ngIf="busyVerifying">
+                Searching for accounts...
+                <fa-icon [icon]="['far','spinner']" [spin]="true"></fa-icon>
+            </p>
+
+            <!--		standard accounts-->
+            <div *ngFor="let importedAccount of importedAccounts">
+            <span class="label label-blue" style="font-size: medium">
+                {{importedAccount['account_name']}}@{{importedAccount['permission']}}
+            </span>
+            </div>
+        </ng-container>
+
+        <ng-container *ngIf="pvtform.get('private_key').pristine">
+            <p *ngIf="!usingLedger">OR</p>
+
+            <button class="btn btn-primary" (click)="loadLedgerAccounts()">USE HARDWARE WALLET</button>
+
+            <p *ngIf="ledgerError !== ''" class="error">{{ledgerError}}</p>
+
+            <fa-layers *ngIf="ledger.reading" class="highlight-primary fa-fw">
+                <fa-icon [icon]="['far','spinner']" size="2x" [spin]="true"></fa-icon>
+            </fa-layers>
+
+            <p *ngIf="ledger.reading">Reading slot: {{ledger.currentSlot}}</p>
+
+            <div *ngIf="importedAccounts.length > 0" style="margin-top: 10px">
+                Account<span *ngIf="importedAccounts.length > 1">s</span>
+            </div>
+
+            <div *ngIf="ledger.ledgerAccounts.length > 0"
+                 style="margin-top: 20px;">
+                Select the accounts to import:
+            </div>
+
+            <div *ngIf="ledger.ledgerAccounts.length === 0 && ledger.ledgerPublicKeys.length > 0"
+                 style="margin-top: 20px;">
+                No accounts detected with this {{ledger.deviceName}} public keys
+            </div>
+
+        </ng-container>
+
+        <mat-selection-list [ngStyle]="{'display': usingLedger ? 'inherit':'none'}"
+                            #sLAc
+                            class="ledger-select">
+            <ng-container *ngFor="let elem of ledger.ledgerAccounts">
+                <mat-list-option *ngFor="let acct of elem.accounts"
+                                 color="primary"
+                                 (click)="tick()"
+                                 [value]="acct">
+                    {{acct.actor}}@{{acct.permission}}
+                </mat-list-option>
+            </ng-container>
+        </mat-selection-list>
+
+        <button *ngIf="ledger.ledgerPublicKeys.length > 0 && !displayPublicKeys"
+                (click)="displayPublicKeys = !displayPublicKeys; cdr.detectChanges()"
+                class="btn btn-primary btn-sm mt-2" [disabled]="ledger.reading">
+            VIEW PUBLIC KEYS
+        </button>
+
+        <ng-container *ngIf="displayPublicKeys">
+            <div style="margin-top: 20px;" class="highlight">
+                Ledger public keys:
+            </div>
+            <mat-list role="list">
+                <mat-list-item role="listitem" matTooltip="click to copy" *ngFor="let key of ledger.ledgerPublicKeys">
+                    <span style="font-family: 'SourceCodePro',monospace; font-size: smaller">{{key.address}}</span>
+                    <fa-icon [icon]="['far', 'clone']" size="lg" class="ml-4 copy" (click)="cc(key.address)"></fa-icon>
+                </mat-list-item>
+            </mat-list>
+        </ng-container>
+
+        <ng-container *ngIf="pvtform.get('private_key').pristine">
+            <div *ngIf="sLAc.selectedOptions.selected.length > 0" style="margin-top:10px;">
+                {{sLAc.selectedOptions.selected.length}} accounts selected
+            </div>
+        </ng-container>
+
+    </clr-wizard-page>
+
+    <!--    PASSWORD ENCRYPTION PAGE-->
+    <clr-wizard-page *ngIf="!usingLedger" [clrWizardPageNextDisabled]="!passform.valid">
+
+        <ng-template clrPageTitle>Password</ng-template>
+
+        <form [formGroup]="passform">
+            <h5>Define your password. This will be used to <strong> confirm all
+                transactions.</strong></h5>
+            <mat-form-field class="mt-3" style="display: flex;">
+                <input matInput #pass type="password" placeholder="Password" (blur)="passCompare()"
+                       [formControl]="passform['controls'].matchingPassword['controls']['pass1']">
+                <fa-icon matSuffix *ngIf="pass.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="pass.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="pass.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                         (click)="pass.type = 'password'"></fa-icon>
+                <mat-hint align="start">
+                    Min 4 characters
+                </mat-hint>
+                <mat-hint align="end">{{pass.value.length}} / 4+</mat-hint>
+            </mat-form-field>
+            <mat-form-field style="margin-top: 19px; display: flex;">
+                <input matInput (keyup.enter)="nextPage()" #pass2 type="password"
+                       placeholder="Confirm password" (blur)="passCompare()"
+                       [formControl]="passform['controls'].matchingPassword['controls']['pass2']">
+
+                <fa-icon matSuffix *ngIf="pass2.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                         (click)="pass2.type = 'text'"></fa-icon>
+                <fa-icon matSuffix *ngIf="pass2.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                         (click)="pass2.type = 'password'"></fa-icon>
+
+                <mat-error *ngIf="!passmatch">
+                    Passwords do not match!
+                </mat-error>
+            </mat-form-field>
+        </form>
+    </clr-wizard-page>
+
+    <!--    LOCKSCREEN SETUP PAGE-->
+    <clr-wizard-page *ngIf="!hasPIN" (clrWizardPageOnCommit)="importAccounts()">
+        <ng-template clrPageTitle>Lockscreen</ng-template>
+        <h5 style="margin-bottom: 15px;">
+            <span style="font-weight: 700;" class="highlight-primary">Lockscreen pin.</span>
+            Do you want to define a small privacy pin used to unlock the screen next time you open the wallet?
+        </h5>
+        <h5 style="margin-bottom: 18px;" class="text-faded">*This <span style="font-weight: 700;">does not</span>
+            replace
+            your password used to confirm
+            transactions</h5>
+        <mat-checkbox [(ngModel)]="lockscreen">Set lockscreen</mat-checkbox>
+        <mat-form-field class="mt-3" *ngIf="lockscreen" style="display: flex;">
+            <input matInput #pin1 type="password" placeholder="Lockscreen pin" [(ngModel)]="pin">
+            <fa-icon matSuffix *ngIf="pin1.type === 'password'" [icon]="['far', 'eye']" size="lg" class="copy"
+                     (click)="pin1.type = 'text'"></fa-icon>
+            <fa-icon matSuffix *ngIf="pin1.type === 'text'" [icon]="['far', 'eye-slash']" size="lg" class="copy"
+                     (click)="pin1.type = 'password'"></fa-icon>
+            <mat-hint align="start">
+                This pin can be anything you want
+            </mat-hint>
+        </mat-form-field>
+    </clr-wizard-page>
+
+</clr-wizard>

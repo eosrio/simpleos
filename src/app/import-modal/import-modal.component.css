@@ -1,0 +1,11 @@
+
+/*Markdown INICIO*/
+markdown ::ng-deep h6{ color: var(--text-card-title-color); }
+markdown ::ng-deep h5{ color: var(--text-card-title-color); }
+markdown ::ng-deep h4{ color: var(--text-highlight-primary); }
+markdown ::ng-deep h3{ color: var(--text-highlight-primary); }
+markdown ::ng-deep h2{ color: var(--text-highlight-primary); }
+markdown ::ng-deep h1{ color: var(--text-highlight-primary); }
+markdown ::ng-deep p{ color: var(--text-card-color);}
+markdown ::ng-deep li{ color: var(--text-faded); }
+/*Markdown FIM*/

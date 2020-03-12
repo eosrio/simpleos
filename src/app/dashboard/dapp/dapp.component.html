@@ -1,145 +1,149 @@
 <div class="container-fluid" style="height: 100%;overflow-x: hidden;">
-	<div class="clr-row dapppage-row text-center clr-justify-content-center" style="padding-bottom: 10px;">
-		<div class="clr-col-lg-6">
-			<h1 class="gray">Contracts</h1>
-			<!--<div class="clr-col-lg-12 clr-col-md-12">-->
-			<form [formGroup]="searchForm">
-				<mat-form-field class="C clr-col-lg-7">
-					<input type="text" #search formControlName="search" matInput placeholder="Search..."
-						   (keyup.enter)="searchDapp($event.target.value)">
-					<fa-icon matSuffix [icon]="['far', 'search']" size="lg"
-							 (click)="searchDapp(searchForm.value.search)"></fa-icon>
-					<mat-error align="start" *ngIf="errormsg !== ''">
-						{{errormsg}}
-					</mat-error>
-				</mat-form-field>
-			</form>
-			<div class="tokens-pad"> Search for <b>Smart Contracts</b> here and interact whith them!</div>
-			<!--</div>-->
-		</div>
-	</div>
-	<div class="clr-row dapppage-row" style="height: 100%; opacity: 0.85" *ngIf="loading">
-		<div class="clr-col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
-			<ng-container>
+    <div class="clr-row dapppage-row text-center clr-justify-content-center" style="padding-bottom: 10px;">
+        <div class="clr-col-lg-6">
+            <h1 class="card-title-color">Contracts</h1>
+            <!--<div class="clr-col-lg-12 clr-col-md-12">-->
+            <form [formGroup]="searchForm">
+                <mat-form-field class="C clr-col-lg-7">
+                    <input type="text" #search formControlName="search" matInput placeholder="Search..."
+                           (keyup.enter)="searchDapp($event.target.value)">
+                    <fa-icon matSuffix [icon]="['far', 'search']" size="lg"
+                             (click)="searchDapp(searchForm.value.search)"></fa-icon>
+                    <mat-error align="start" *ngIf="errormsg !== ''">
+                        {{errormsg}}
+                    </mat-error>
+                </mat-form-field>
+            </form>
+            <div class="card-text-color" style="margin: 15px 0"> Search for <b>Smart Contracts</b> here and interact whith them!</div>
+            <!--</div>-->
+        </div>
+    </div>
+    <div class="clr-row dapppage-row" style="height: 100%; opacity: 0.85" *ngIf="loading">
+        <div class="clr-col-lg-12 text-center flex-column animate" style="padding: 39px; align-items: center;">
+            <ng-container>
 
-				<fa-layers class="mt-2 mb-1">
-					<fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
-				</fa-layers>
-				<br>
+                <fa-layers class="mt-2 mb-1">
+                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" style="color:#0094d2;"></fa-icon>
+                </fa-layers>
+                <br>
 
-				<div style="color:#0094d2; padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
-			</ng-container>
-		</div>
-	</div>
-	<div class="clr-row dapppage-row text-center clr-justify-content-center">
-		<div class="clr-col-md-9" style="float: none; margin: 0 auto;">
-			<div class="tokens-panel-body" style="padding-bottom: 20px;">
-				<ul>
-					<li *ngFor="let token of tokens" class="tokens-pad"
-						(click)="tokenModal = true;loadTokenInfo(token);">
-						<div>
-							<h5 class="gray mt-0" pTooltip="Contract: {{token.contract}}">
-								<span *ngIf="token.name !== null">{{token.name}}</span>
-								<span *ngIf="token.name == null">{{token.contract}}</span>
-							</h5>
-							<div style="color: var(--text-blue-color);">{{token.balance}}</div>
-							<ng-container *ngIf="token.balance">
+                <div class="highlight-primary" style="padding-left: 17px; font-size: 18px; margin-top: 10px">LOADING...</div>
+            </ng-container>
+        </div>
+    </div>
+    <div class="clr-row dapppage-row text-center clr-justify-content-center">
+        <div class="clr-col-md-9" style="float: none; margin: 0 auto;">
+            <div class="tokens-panel-body" style="padding-bottom: 20px;">
+                <ul>
+                    <li *ngFor="let token of tokens" class="tokens-pad"
+                        (click)="tokenModal = true;loadTokenInfo(token);">
+                        <div>
+                            <h5 class="mt-0" pTooltip="Contract: {{token.contract}}">
+                                <span *ngIf="token.name !== null">{{token.name}}</span>
+                                <span *ngIf="token.name == null">{{token.contract}}</span>
+                            </h5>
+                            <div class="highlight-primary">{{token.balance}}</div>
+                            <ng-container *ngIf="token.balance">
                 <span *ngIf="token.price !== null" style="color: #696969">
                   ${{(token.balance * token.price) | number:'1.2-2'}} @{{token.price | number: '1.2-2'}}
                 </span>
-							</ng-container>
-						</div>
-					</li>
-				</ul>
-				<div *ngIf="aService.tokens.length === 0" class="tokens-pad">Your other tokens, such as Airdrops, will
-					appear
-					here.
-				</div>
-			</div>
-		</div>
-		<br>
-	</div>
+                            </ng-container>
+                        </div>
+                    </li>
+                </ul>
+                <div *ngIf="aService.tokens.length === 0" class="card-text-color" style="margin-top: 20px">Your other tokens, such as Airdrops, will appear here.
+                </div>
+            </div>
+        </div>
+        <br>
+    </div>
 </div>
 
 <clr-modal [(clrModalOpen)]="tokenModal" [clrModalSize]="'md'" class="tokenModal">
 
-	<!--h3 class="modal-title text-white">Contract: <span class="blue">{{contract}}</span></h3-->
-	<div class="modal-body" style="overflow-y: auto!important;">
-		<img *ngIf="logo!==''"
-			 style="position:relative !important; top:0px !important; right:0px !important; float: right! important; width:120px !important; height:120px !important; margin:10px 0 0 10px !important;"
-			 src="{{logo}}"/>
-		<h3 class="modal-title text-white">Contract: <span class="blue">{{contract}}</span></h3>
-		<h4 *ngIf="balance !== null && balance !== undefined" class="text-white">Balance: <span
-			class="blue">{{balance| number: '1.4-4'}} {{name}}</span>
-		</h4>
-		<div *ngIf="price !== null && price !== undefined">
-			<h4 class="text-white">Price: <span class="blue">{{price| number: '1.4-4'}}</span></h4>
-			${{(balance * price) | number:'1.2-2'}} @{{price | number: '1.2-2'}}
-		</div>
+    <!--h3 class="modal-title text-white">Contract: <span class="highlight-primary">{{contract}}</span></h3-->
+    <div class="modal-body" style="overflow-y: auto!important;">
+        <img *ngIf="logo!==''"
+             style="position:relative !important; top:0px !important; right:0px !important; float: right! important; width:120px !important; height:120px !important; margin:10px 0 0 10px !important;"
+             src="{{logo}}"/>
+        <h3 class="modal-title">Contract: <span class="highlight-primary">{{contract}}</span></h3>
+        <h4 *ngIf="balance !== null && balance !== undefined">Balance: <span
+                class="highlight-primary">{{balance| number: '1.4-4'}} {{name}}</span>
+        </h4>
+        <div *ngIf="price !== null && price !== undefined">
+            <h4>Price: <span class="highlight-primary">{{price| number: '1.4-4'}}</span></h4>
+            ${{(balance * price) | number:'1.2-2'}} @{{price | number: '1.2-2'}}
+        </div>
 
-		<div>
-			<h4 *ngIf="description!==''" class="blue">Description: <span class="text-white">{{description}}</span></h4>
-		</div>
+        <div>
+            <h4 *ngIf="description!==''" class="highlight-primary">Description: <span class="highlight">{{description}}</span></h4>
+        </div>
 
-		<!--hr style="border:0px !important;border-bottom:1px solid #0094d2 !important;" /-->
-		<h4><span class="blue">Contract Actions:</span></h4>
-		<!--h4 class="text-white mt-0">Voting power will be: <span class="blue">{{21212 | number}}%</span></h4-->
-		<br/>
-		<!--mat-button-toggle-group name="alignment">
-			<mat-button-toggle value="left" *ngFor="let action of abiSmartContractActions" class="btn btn-outline btn-info-outline"
-							   (click)="getForm(action.type);">
-				<div style="text-transform: uppercase !important;">{{action.name}}</div>
-			</mat-button-toggle>
-		</mat-button-toggle-group-->
+        <!--hr style="border:0px !important;border-bottom:1px solid #0094d2 !important;" /-->
+        <h4>Contract Actions:</h4>
+        <!--h4 class="text-white mt-0">Voting power will be: <span class="highlight-primary">{{21212 | number}}%</span></h4-->
+        <br/>
+        <!--mat-button-toggle-group name="alignment">
+            <mat-button-toggle value="left" *ngFor="let action of abiSmartContractActions" class="btn btn-outline btn-info-outline"
+                               (click)="getForm(action.type);">
+                <div style="text-transform: uppercase !important;">{{action.name}}</div>
+            </mat-button-toggle>
+        </mat-button-toggle-group-->
 
-		<button *ngFor="let action of abiSmartContractActions" type="button" class="btn btn-outline btn-info-outline"
-				(click)="getForm(action.type,action.name);" [ngClass]="buttonActive===action.name?'active':''" style="margin-top: 15px; padding:0px 17px !important;">
-			{{action.name}}
-		</button>
-		<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+        <button *ngFor="let action of abiSmartContractActions" type="button" class="btn btn-outline btn-info-outline"
+                (click)="getForm(action.type,action.name);" [ngClass]="buttonActive===action.name?'active':''"
+                style="margin-top: 15px; padding:0px 17px !important;">
+            {{action.name}}
+        </button>
+        <fa-icon class="highlight-primary" [icon]="['far','spinner']" [spin]="true" *ngIf="busy" size="lg"></fa-icon>
 
-		<br/>
-		<div class="my-mat-class">
-			<json-schema-form
-				[loadExternalAssets]="true"
-				framework="material-design"
-				[schema]="schemaJSON"
-				[model]="modelJSON"
-				(onSubmit)="formFilled($event);"
-				>
-			</json-schema-form>
-		</div>
-		<!--<ng-container #dForm style="overflow-y: auto !important;"></ng-container>-->
-		<span class="error" align="start" *ngIf="errormsg2 !== ''">
+        <br/>
+        <div class="my-mat-class">
+            <json-schema-form
+                    [loadExternalAssets]="true"
+                    framework="material-design"
+                    [schema]="schemaJSON"
+                    [model]="modelJSON"
+                    (onSubmit)="formFilled($event);"
+            >
+            </json-schema-form>
+        </div>
+        <!--<ng-container #dForm style="overflow-y: auto !important;"></ng-container>-->
+        <span class="error" align="start" *ngIf="errormsg2 !== ''">
             {{errormsg2}}
         </span>
-	</div>
+    </div>
 </clr-modal>
 
 <clr-modal [(clrModalOpen)]="sendModal">
-	<h3 class="modal-title text-white"><span class="blue">Confirm Action</span></h3>
-	<h4 class="modal-title text-white"><span class="blue">{{contract}}::{{action}}</span></h4>
-	<div class="modal-body">
-		<h5 class="modal-title text-white"><span class="blue">Form(JSON)</span></h5>
-		<ngx-json-viewer width="300" [json]="formVal" [expanded]="true"></ngx-json-viewer>
-	</div>
-	<div class="modal-footer">
-		<form [formGroup]="confirmForm" class="confirmForm">
-			<mat-form-field>
-				<input matInput #pass type="password" (keyup.enter)="pushAction()" placeholder="Password"
-					   formControlName="pass">
-				<mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-					{{wrongpass}}
-				</mat-hint>
-				<br clear="all"/>
-			</mat-form-field>
-			<button type="button" class="btn btn-info-outline" style="margin-top: 12px;padding: 5px;"
-					(click)="pushAction()"
-					[disabled]="!confirmForm.valid || busy">
-				Confirm
-				<fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-			</button>
+    <h3 class="modal-title text-white"><span class="highlight-primary">Confirm Action</span></h3>
+    <h4 class="modal-title text-white"><span class="highlight-primary">{{contract}}::{{action}}</span></h4>
+    <div class="modal-body">
+        <h5 class="modal-title text-white"><span class="highlight-primary">Form(JSON)</span></h5>
+        <ngx-json-viewer width="300" [json]="formVal" [expanded]="true"></ngx-json-viewer>
+    </div>
+    <div class="modal-footer">
+        <div fxLayout="column" style="display:flex;">
+            <div dir="ltr" fxLayoutGap="20px">
+                <form [formGroup]="confirmForm" class="confirmForm">
+                    <mat-form-field>
+                        <input matInput #pass type="password" (keyup.enter)="pushAction()" placeholder="Password"
+                               formControlName="pass">
+                        <br clear="all"/>
+                    </mat-form-field>
+                    <button type="button" class="btn btn-info-outline" style="margin-top: 12px; padding: 5px;"
+                            (click)="pushAction()"
+                            [disabled]="!confirmForm.valid || busy">
+                        Confirm
+                        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                    </button>
 
-		</form>
-	</div>
+                </form>
+            </div>
+        </div>
+        <div class="error error-modal-footer" *ngIf="wrongpass !== ''">
+            <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
+            {{wrongpass}}
+        </div>
+    </div>
 </clr-modal>
