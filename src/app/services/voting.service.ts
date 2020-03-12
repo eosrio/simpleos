@@ -468,11 +468,10 @@ export class VotingService {
 				let cachedPayload = null;
 				if (stored_data) {
 					cachedPayload = fullCache[prox['account']];
-					// console.log(prox,fullCache[prox['account']]);
 					if (cachedPayload) {
 						if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
 							// Expired
-							console.log('expired', expiration);
+							// console.log('expired', expiration);
 							requestQueue.push({proxy: prox['account'], index: idx});
 						} else if (this.proxies[idx].checked !== cachedPayload['meta']['checked']) {
 							// Load from cache
@@ -488,7 +487,7 @@ export class VotingService {
 					}
 				} else {
 					// New entry
-					console.log('New entry from hyperion');
+					// console.log('New entry from hyperion');
 					requestQueue.push({proxy: prox['account'], index: idx});
 				}
 			});

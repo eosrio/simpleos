@@ -578,11 +578,51 @@ export class SendComponent implements OnInit, OnDestroy {
             try {
                 await this.aService.refreshFromChain(false, [to]);
                 const sel = this.aService.selected.getValue();
-                this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                const newBalance = sel.full_balance - sel.staked - sel.unstaking;
+                if (newBalance !== this.unstaked) {
+                    this.unstaked = newBalance;
+                    this.updateToken();
+                } else {
+                    let attempts = 0;
+                    let loop = setInterval(() => {
+                        attempts++;
+                        this.aService.refreshFromChain(false, [to]).then(() => {
+                            const sel = this.aService.selected.getValue();
+                            const newBalance = sel.full_balance - sel.staked - sel.unstaking;
+                            if (newBalance !== this.unstaked) {
+                                this.unstaked = newBalance;
+                                this.updateToken();
+                                if (loop) {
+                                    clearInterval(loop);
+                                    loop = null;
+                                }
+                            }
+                        });
+                        if (attempts > 20) {
+                            if (loop) {
+                                clearInterval(loop);
+                            }
+                        }
+
+                    }, 2000);
+                }
             } catch (e) {
                 console.error(e);
             }
         }
+    }
+
+    updateToken() {
+        const symbol = this.sendForm.get('token').value;
+        const token = this.aService.tokens.find(tk => tk.name === symbol.toUpperCase());
+        if (token) {
+            this.selectedToken = token;
+            this.token_balance = this.selectedToken.balance;
+        } else {
+            this.selectedToken = {name: this.aService.activeChain['symbol'], price: 1.0000};
+            this.token_balance = this.unstaked;
+        }
+        this.cdr.detectChanges();
     }
 
     openEditContactModal(contact) {
