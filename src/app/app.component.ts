@@ -413,7 +413,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     mode: string = 'local';
 
     performUpdate() {
-        window['shell'].openExternal('https://eosrio.io/simpleos/').catch(console.log);
+        if (this.compilerVersion === 'LIBERLAND') {
+            if (this.newVersion['homepage']) {
+                window['shell'].openExternal(this.newVersion['homepage']).catch(console.log);
+            } else {
+                this.openGithub();
+            }
+        } else {
+            window['shell'].openExternal('https://eosrio.io/simpleos/').catch(console.log);
+        }
     }
 
     openGithub() {
