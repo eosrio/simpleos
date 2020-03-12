@@ -598,24 +598,28 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                         const perms = details.permissions;
                         const claim_perm = perms.find(p => p.perm_name === 'claim');
                         if (claim_perm) {
-                            const claim_key = claim_perm.required_auth.keys[0].key;
-                            this.keytar.getPassword('simpleos', claim_key).then((key) => {
-                                try {
-                                    const savedKey = PrivateKey.fromString(key).getPublicKey().toString();
-                                    if (Numeric.convertLegacyPublicKey(claim_key) === savedKey) {
-                                        this.checkLinkedAuth(selected.name).then((req_link) => {
-                                            if (req_link.length === 0) {
-                                                this.autoClaimStatus = true;
-                                                this.claimPublicKey = claim_key;
-                                            } else {
-                                                this.claimSetupWarning = `Linkauth missing for (${req_link.join(', ')}). Please renew your claim key or set the permission links manually.`;
-                                            }
-                                        });
-                                    } else {
-                                        console.log('FATAL: Invalid key');
+                            const claim_key = Numeric.convertLegacyPublicKey(claim_perm.required_auth.keys[0].key);
+                            this.keytar.getPassword('simpleos', claim_key).then((key: string) => {
+                                if (key) {
+                                    try {
+                                        const savedKey = PrivateKey.fromString(key).getPublicKey().toString();
+                                        if (claim_key === savedKey) {
+                                            this.checkLinkedAuth(selected.name).then((req_link) => {
+                                                if (req_link.length === 0) {
+                                                    this.autoClaimStatus = true;
+                                                    this.claimPublicKey = claim_key;
+                                                } else {
+                                                    this.claimSetupWarning = `Linkauth missing for (${req_link.join(', ')}). Please renew your claim key or set the permission links manually.`;
+                                                }
+                                            });
+                                        } else {
+                                            console.log('FATAL: Invalid key');
+                                        }
+                                    } catch (e) {
+                                        console.log('Key verification failed');
                                     }
-                                } catch (e) {
-                                    console.log('Key verification failed');
+                                } else {
+                                    console.log('no key saved');
                                 }
                             }).catch((error) => {
                                 console.log(error);
@@ -631,21 +635,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log('autoclaim disabled');
             this.enableAutoClaim = false;
             this.edAutoClaim(false);
-            // this.enableAutoClaimStartup();
-            // this.autoClaimConfig['enabled'] = true;
-            // this.storeConfig();
         }
     }
 
-    //
-    // getMyVote(account){
-    // 	this.aService.selected.asObservable().subscribe((selected: any) => {
-    // 		// const myAccount = selected.selected.getValue();
-    // 		// return (myAccount.details['voter_info']['proxy'].indexOf(account) !== -1);
-    // 	});
-    //
-    // }
-    //
+
     getProxyVotes(account) {
         this.listProxyVote = [];
         this.eosjs.getAccountInfo(account).then(v => {
@@ -757,28 +750,20 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             this.selectedVotes = [this.selectedProxy];
         } else {
             if (this.voteService.voteType) {
-                // this.selectedPxs = [];
                 this.voteService.proxies.forEach((px) => {
                     if (px.checked) {
                         this.selectedVotes.push(px.account);
                     }
-                    // this.selectedPxs.push(px.account);
-
                 });
                 this.getProxyVotes(this.selectedVotes[0]);
             } else {
-                // this.selectedBPs = [];
                 this.voteService.bps.forEach((bp) => {
                     if (bp.checked) {
-                        // this.selectedBPs.push(bp.account);
                         this.selectedVotes.push(bp.account);
                     }
                 });
             }
         }
-        // this.passForm.reset();
-        // this.wrongpass = '';
-        // this.voteModal = true;
         this.setVote();
     }
 
@@ -979,10 +964,27 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
+    async checkLinkedAuthHyperionMulti(account): Promise<any> {
+        if (!this.aService.activeChain.hyperionApis) {
+            return;
+        }
+        for (const api of this.aService.activeChain.hyperionApis) {
+            let url = api + '/history/get_actions?account=' + account + '&filter=eosio:linkauth';
+            try {
+                const response: any = await this.http.get(url).toPromise();
+                if (response.actions && response.actions.length > 0) {
+                    return response;
+                }
+            } catch (e) {
+                console.log(`failed to fetch actions: ${api}`);
+            }
+        }
+        return;
+    }
+
     async checkLinkedAuth(account): Promise<string[]> {
-        const result = await this.http.get(
-            this.aService.activeChain.historyApi + '/history/get_actions?account=' +
-            account + '&filter=eosio:linkauth').toPromise();
+        const result = await this.checkLinkedAuthHyperionMulti(account);
+        console.log(result);
         const required = ['claimgbmvote', 'claimgenesis', 'voteproducer'];
         if (result['actions'].length > 0) {
             for (const a of result['actions']) {
@@ -1003,7 +1005,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    claimWithActive() {
+    async claimWithActive() {
         const [auth, publicKey] = this.trxFactory.getAuth();
         console.log(auth);
         const messageHTML = `
@@ -1026,11 +1028,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 owner: auth.actor,
             },
         });
-        console.log(_actions);
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: _actions,
-            },
+        await this.trxFactory.launch(publicKey, {
+            transactionPayload: {actions: _actions},
             termsHeader: '',
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
@@ -1061,16 +1060,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
             },
         });
-        this.trxFactory.launcher.emit(true);
-        const subs = this.trxFactory.status.subscribe((event) => {
-            if (event === 'done') {
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-            this.cdr.detectChanges();
-        });
+        this.cdr.detectChanges();
     }
 
     async claimDirect(voteOnly) {
@@ -1088,8 +1078,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 _producers = accountData['voter_info']['producers'];
             }
         }
-        const claim_private_key = await this.keytar.getPassword('simpleos',
-            this.claimPublicKey);
+        const claim_private_key = await this.keytar.getPassword('simpleos', this.claimPublicKey);
         const signatureProvider = new JsSignatureProvider([claim_private_key]);
         const rpc = this.eosjs.rpc;
         const api = new Api({
@@ -1199,16 +1188,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		<br><br> You don't need to leave your wallet open, your computer just needs to be turned on.
 		<br><br>This action doesn't expose your private key.  </h5>
 		`;
-
         const keypair = this.crypto.generateKeyPair();
-
         const private_key = keypair.private;
         const public_key = keypair.public;
-
         const _actions = [];
         let changeKey = true;
         if (auth.permission === 'active' || auth.permission === 'owner') {
-
             _actions.push({
                 account: 'eosio',
                 name: 'updateauth',
@@ -1230,11 +1215,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         if (this.enableLinkAuth) {
-            // Test linkauth
-            console.log('Test linkauth');
             const req_link = await this.checkLinkedAuth(auth.actor);
-            console.log(req_link);
-
             for (const link_type of req_link) {
                 _actions.push({
                     account: 'eosio',
@@ -1249,53 +1230,38 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 });
             }
         }
-        console.log(_actions);
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: _actions,
-            },
+        const results = await this.trxFactory.launch(publicKey, {
+            transactionPayload: {actions: _actions},
             termsHeader: '',
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             labelHTML: messageHTML,
             actionTitle: 'auto-claim setup',
-            termsHTML: '',
+            termsHTML: ''
         });
-        this.trxFactory.launcher.emit(true);
-        const subs = this.trxFactory.status.subscribe((event) => {
-            if (event === 'done') {
-                // Save private key to credential storage
-                if (!changeKey) {
-                    this.keytar.setPassword('simpleos', publicKey, this.crypto.getPK());
-                    this.claimPublicKey = publicKey;
-                    this.configureAutoClaim(auth.actor, publicKey, 'claim');
-                } else {
-                    this.keytar.setPassword('simpleos', public_key, private_key);
-                    this.claimPublicKey = public_key;
-                    this.configureAutoClaim(auth.actor, public_key, 'claim');
+        if (results === 'done') {
+            if (!changeKey) {
+                this.keytar.setPassword('simpleos', publicKey, this.crypto.getPK());
+                this.claimPublicKey = publicKey;
+                this.configureAutoClaim(auth.actor, publicKey, 'claim');
+            } else {
+                this.keytar.setPassword('simpleos', public_key, private_key);
+                this.claimPublicKey = public_key;
+                this.configureAutoClaim(auth.actor, public_key, 'claim');
+            }
+            this.autoClaimStatus = true;
+            this.checkWaxGBMdata(this.aService.selected.getValue().name).then(() => {
+                if (this.claimReady) {
+                    this.claimDirect(false).catch(console.log);
                 }
-                this.autoClaimStatus = true;
-                subs.unsubscribe();
-                this.checkWaxGBMdata(this.aService.selected.getValue().name).then(() => {
-                    if (this.claimReady) {
-                        this.claimDirect(false).catch(console.log);
-                    }
-                });
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+            });
+        }
     }
 
     configureAutoClaim(accountName, publicKey, permission) {
         if (!this.autoClaimConfig['WAX-GBM']) {
             this.autoClaimConfig['WAX-GBM'] = {
-                apis: [
-                    'https://wax.eosrio.io',
-                    'https://api.waxsweden.org',
-                    'https://chain.wax.io',
-                ],
+                apis: this.aService.activeChain.endpoints.map(e => e.url),
                 jobs: [],
             };
         }
@@ -1328,8 +1294,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             parseFloat(voter['unpaid_voteshare_change_rate']);
         const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
         const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
-        this.voteRewardsDaily = voterBucket *
-            (unpaidVoteShare / globalUnpaidVoteShare);
+        this.voteRewardsDaily = voterBucket * (unpaidVoteShare / globalUnpaidVoteShare);
     }
 
     private async checkWaxGBMdata(name: any) {
