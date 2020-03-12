@@ -29,8 +29,13 @@ mat-option:not(.last) {
 	border-bottom: 1px solid #404040;
 }
 
-/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-	background: #3a3a3a;
+.mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
+	background: var(--info-card-bg-hover);
+}
+
+.mat-option.mat-active {
+	background: rgba(0, 0, 0, 0.12);
+	color: var(--text-highlight);
 }
 
 input[type=number]::-webkit-inner-spin-button,

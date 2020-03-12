@@ -280,15 +280,6 @@ a:visited {
 	padding: 30px 16px;
 }
 
-
-mat-option:not(.last) {
-	border-bottom: 1px solid #404040;
-}
-
-/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
-	background: #3a3a3a;
-}
-
 .text-bold {
 	font-weight: 700;
 }
