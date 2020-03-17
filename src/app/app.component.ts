@@ -65,6 +65,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private eventFired: boolean;
     public loadingTRX: boolean;
     private transitMode = false;
+    private isSimpleosConnect: boolean;
 
     constructor(
         private fb: FormBuilder,
@@ -234,6 +235,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     return;
                 }
                 this.zone.run(() => {
+                    this.isSimpleosConnect = false;
                     this.transitconnect = true;
                     this.eventFired = false;
                 });
@@ -310,15 +312,23 @@ export class AppComponent implements OnInit, AfterViewInit {
                     bodyOutputType: BodyOutputType.TrustedHtml,
                 };
                 this.toaster.popAsync(toast);
-                const accountMap = this.aService.accounts.map(a => {
-                    const [publicKey, perm] = this.aService.getStoredKey(a);
-                    return {
-                        actor: a.name,
-                        permission: perm,
-                        key: publicKey,
-                    };
-                });
-                event.sender.send('authorizationsResponse', accountMap);
+                this.transitconnect = true;
+                this.isSimpleosConnect = true;
+
+                if (this.aService.accounts.length > 0) {
+                    this.accountChange = this.selectedAccount.subscribe((data) => {
+                        if (data) {
+                            event.sender.send('authorizationsResponse', data);
+                            this.accountChange.unsubscribe();
+                            this.selectedAccount.next(null);
+                            this.transitconnect = false;
+                        }
+                    });
+                } else {
+                    console.log('No account found!');
+                    event.sender.send('authorizationsResponse', {});
+                }
+
                 break;
             }
             case 'sign': {
@@ -429,16 +439,29 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     selectAccount(account_data, idx) {
-        const [auth, key] = this.trxFactory.getAuth(account_data);
-        if (key !== '') {
-            const responseData = {
-                accountName: account_data.name,
-                permission: auth.permission,
-                publicKey: key,
-            };
-            this.selectedAccount.next(responseData);
+        if(this.isSimpleosConnect ){
+            const accountMap = this.aService.accounts.map(a => {
+                const [publicKey, perm] = this.aService.getStoredKey(a);
+                return {
+                    actor: a.name,
+                    permission: perm,
+                    key: publicKey,
+                };
+            });
+            this.selectedAccount.next(accountMap);
             this.aService.select(idx);
-            this.transitconnect = false;
+        } else {
+            const [auth, key] = this.trxFactory.getAuth(account_data);
+            if (key !== '') {
+                const responseData = {
+                    accountName: account_data.name,
+                    permission: auth.permission,
+                    publicKey: key,
+                };
+                this.transitconnect = false;
+                this.selectedAccount.next(responseData);
+                this.aService.select(idx);
+            }
         }
     }
 
