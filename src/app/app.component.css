@@ -72,7 +72,6 @@
 
 .connect-anim {
 	visibility: hidden;
-	position: fixed;
 }
 
 .chain-section:hover > .connect-anim {
