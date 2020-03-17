@@ -81,7 +81,7 @@ class SimpleosConnectService {
 
     onGetAuthorizations(chainId, callback) {
         console.log('onGetAuthorizations');
-
+        this.main.getFocus();
         this.sendMessage('sc_request',
             {message: 'change_chain', chain_id: chainId});
 
