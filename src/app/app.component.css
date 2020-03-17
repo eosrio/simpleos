@@ -76,8 +76,7 @@
 
 .chain-section:hover > .connect-anim {
 	visibility: visible;
-	-webkit-animation: fadeInRight 1s;
-	animation: fadeInRight 1s;
+	animation: fadeInRight 800ms;
 }
 
 /*@-webkit-keyframes fadeInRight {*/
