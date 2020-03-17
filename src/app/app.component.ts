@@ -439,29 +439,26 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     selectAccount(account_data, idx) {
-        if(this.isSimpleosConnect ){
-            const accountMap = this.aService.accounts.map(a => {
-                const [publicKey, perm] = this.aService.getStoredKey(a);
-                return {
-                    actor: a.name,
-                    permission: perm,
-                    key: publicKey,
+
+        const [auth, key] = this.trxFactory.getAuth(account_data);
+        let responseData;
+        if (key !== '') {
+            if (this.isSimpleosConnect) {
+                responseData = {
+                    actor: account_data.name,
+                    permission: auth.permission,
+                    key: key,
                 };
-            });
-            this.selectedAccount.next(accountMap);
-            this.aService.select(idx);
-        } else {
-            const [auth, key] = this.trxFactory.getAuth(account_data);
-            if (key !== '') {
-                const responseData = {
+            } else {
+                responseData = {
                     accountName: account_data.name,
                     permission: auth.permission,
                     publicKey: key,
                 };
                 this.transitconnect = false;
-                this.selectedAccount.next(responseData);
-                this.aService.select(idx);
             }
+            this.selectedAccount.next(responseData);
+            this.aService.select(idx);
         }
     }
 
