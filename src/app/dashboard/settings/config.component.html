@@ -552,7 +552,7 @@
             <clr-tab *ngFor="let key of localKeys; let idx = index">
                 <button style="font-family: 'SourceCodePro',monospace" clrTabLink id="link1">Key {{idx + 1}}:
                     <span>
-						{{key.slice(0, 5)}}...{{key.slice(key.length - 4, key.length - 1)}}
+						{{key.slice(0, 5)}}...{{key.slice(key.length - 4, key.length)}}
 					</span>
                 </button>
                 <clr-tab-content [id]="'content'+idx" *clrIfActive>
