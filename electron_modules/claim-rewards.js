@@ -43,6 +43,7 @@ class ClaimRewardsService {
 		if (!fs.existsSync(basePath)) {
 			fs.mkdirSync(basePath);
 		}
+		this.autoClaimCheck();
 	}
 
 	setRpcApi(api) {
@@ -170,7 +171,8 @@ class ClaimRewardsService {
 	}
 
 	addTrayIcon() {
-		this.appIcon = new Tray(path.join(__dirname, 'static/tray-icon.png'));
+		console.log(path.join(__dirname, '../static/tray-icon.png'));
+		this.appIcon = new Tray(path.join(__dirname, '../static/tray-icon.png'));
 		const trayMenu = Menu.buildFromTemplate([
 			{
 				label: 'SimplEOS Wallet', click: () => {

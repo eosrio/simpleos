@@ -717,7 +717,7 @@ export class AccountsService {
         if (data.length > 0) {
             this.accounts = [
                 ...data.map((value) => {
-                    return !value.details ? {name: value['account_name'], details: value} : value;
+                    return !value.details ? {name: value['account_name'],full_balance:0, details: value} : value;
                 })
             ];
             // reload all account

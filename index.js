@@ -63,6 +63,7 @@ class SimpleosWallet {
         if (compilerVersion === 'DEFAULT') {
             this.simpleosAutoLauncher = new AutoLaunch({name: 'simpleos'});
             this.claimRW = new ClaimRewardsService(this);
+            this.isEnableAutoClaim = this.claimRW.isEnableAutoClaim;
         } else {
             app.setLoginItemSettings({openAtLogin: false, args: ['--autostart']});
             app.setLoginItemSettings({openAtLogin: false});
@@ -91,10 +92,12 @@ class SimpleosWallet {
         this.debug = args.some(val => val === '--debug');
         this.serve = args.some(val => val === '--serve');
         this.isAutoLaunch = this.loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
-
+        console.log(this.claimRW);
         if (this.claimRW) {
+            this.isEnableAutoClaim = this.claimRW.isEnableAutoClaim;
             this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
             console.log('Developer Mode:', this.devMode);
+
             this.claimRW.writeLog(
                 `Auto Launcher: ${JSON.stringify(this.simpleosAutoLauncher)}`,
             );
@@ -123,7 +126,10 @@ class SimpleosWallet {
 
     runAutoLaunchMode() {
         // check if another agent is running
+        console.log(`run Auto Launch Mode...`);
         app.on('second-instance', (event, argv) => {
+            console.log(`check if another agent is running...`);
+
             if (argv[1] === '--autostart') {
                 this.claimRW.writeLog(`Force quit agent in second instance...`);
                 app.quit();
