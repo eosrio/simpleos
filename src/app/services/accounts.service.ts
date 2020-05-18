@@ -191,23 +191,23 @@ export class AccountsService {
         if (!this.loadingTokens && ((Date.now() - this.lastTkLoadTime > 60 * 1000) || this.tokens.length === 0)) {
             this.loadingTokens = true;
             this.sessionTokens[this.selectedIdx] = [];
-            if (this.activeChain['name'] === 'EOS MAINNET') {
-                const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
-                this.lastTkLoadTime = Date.now();
-                const tokens = Object.keys(data);
-                this.loading = false;
-                tokens.forEach((idx) => {
-                    if (data[idx]['symbol'] !== this.activeChain['symbol']) {
-                        this.registerSymbol(data[idx]);
-                    }
-                });
-                this.tokens.sort((a: any, b: any) => {
-                    return a.usd_value < b.usd_value ? 1 : -1;
-                });
-                this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-                this.loadingTokens = false;
-                return this.accounts;
-            } else {
+            // if (this.activeChain['name'] === 'EOS MAINNET') {
+            //     const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
+            //     this.lastTkLoadTime = Date.now();
+            //     const tokens = Object.keys(data);
+            //     this.loading = false;
+            //     tokens.forEach((idx) => {
+            //         if (data[idx]['symbol'] !== this.activeChain['symbol']) {
+            //             this.registerSymbol(data[idx]);
+            //         }
+            //     });
+            //     this.tokens.sort((a: any, b: any) => {
+            //         return a.usd_value < b.usd_value ? 1 : -1;
+            //     });
+            //     this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+            //     this.loadingTokens = false;
+            //     return this.accounts;
+            // } else {
                 // Load with hyperion multi
                 this.lastTkLoadTime = Date.now();
                 const data = await this.getTokenHyperionMulti(account);
@@ -240,7 +240,7 @@ export class AccountsService {
                     this.lastTkLoadTime = Date.now();
                     return null;
                 }
-            }
+            // }
         } else {
             if (this.tokens.length > 0) {
                 this.loadingTokens = false;
@@ -486,6 +486,7 @@ export class AccountsService {
             account = this.selected.getValue().name;
         }
         const store = localStorage.getItem('actionStore.' + this.activeChain['id']);
+        // console.log('GETACCACTIONS:',store);
         if (store) {
             this.actionStore = JSON.parse(store.toString());
         }
