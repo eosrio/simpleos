@@ -146,16 +146,21 @@ export class AppComponent implements OnInit, AfterViewInit {
                 if (this.compilerVersion === 'DEFAULT') {
                     this.newVersion = await this.eosjs.checkSimpleosUpdate();
                 } else {
-                    const results = await this.http.get('https://raw.githubusercontent.com/eosrio/simpleos/master/latest.json', {
-                        headers: new HttpHeaders({
-                            'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        })
-                    }).toPromise();
-                    if (results && results[this.compilerVersion]) {
-                        this.newVersion = results[this.compilerVersion];
+                    try{
+                        const results = await this.http.get('https://raw.githubusercontent.com/eosrio/simpleos/master/latest.json', {
+                            headers: new HttpHeaders({
+                                'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            })
+                        }).toPromise();
+                        if (results && results[this.compilerVersion]) {
+                            this.newVersion = results[this.compilerVersion];
+                        }
+                    }catch (e) {
+                        console.log('Failed to check version in github');
                     }
+
                 }
                 if (this.newVersion) {
                     const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));

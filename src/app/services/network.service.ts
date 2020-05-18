@@ -264,25 +264,31 @@ export class NetworkService {
                 server.latency = -1;
                 resolve();
             }, 2000);
-            this.http.get(`${server.url}/v1/chain/get_info`).toPromise().then((data: any) => {
-                if (data['chain_id'] === this.activeChain.id) {
-                    server.latency = ((new Date().getTime()) - refTime);
-                    clearTimeout(tempTimer);
-                    if (server.latency > 1 && server.latency < 200) {
-                        if (this.connected === false) {
-                            this.connected = true;
-                            this.callStartupConn(server);
+            try{
+                this.http.get(`${server.url}/v1/chain/get_info`).toPromise().then((data: any) => {
+                    if (data['chain_id'] === this.activeChain.id) {
+                        server.latency = ((new Date().getTime()) - refTime);
+                        clearTimeout(tempTimer);
+                        if (server.latency > 1 && server.latency < 200) {
+                            if (this.connected === false) {
+                                this.connected = true;
+                                this.callStartupConn(server);
+                            }
                         }
+                        resolve();
+                    } else {
+                        console.log(`API ${server.url} is serving a different chain id!
+                            expected: ${this.activeChain.id}, got: ${data['chain_id']}`);
                     }
+                }).catch(() => {
+                    server.latency = -1;
                     resolve();
-                } else {
-                    console.log(`API ${server.url} is serving a different chain id!
-                        expected: ${this.activeChain.id}, got: ${data['chain_id']}`);
-                }
-            }).catch(() => {
+                });
+            }catch (e) {
                 server.latency = -1;
                 resolve();
-            });
+            }
+
         });
     }
 
