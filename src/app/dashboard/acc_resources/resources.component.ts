@@ -405,28 +405,33 @@ export class ResourcesComponent implements OnInit {
 
     loadHistory() {
         let i = 0;
-        this.http.get('https://hapi.eosrio.io/ram/history1D').subscribe((data: any[]) => {
-            data.reverse();
-            data.forEach((val) => {
-                this.dataDT.push(val.time);
-                this.dataVAL.push(val.price);
-                i++;
-            });
-            this.updateChart();
-            let j = 0;
-            this.ramService.ramTicker.asObservable().subscribe((ramdata) => {
-                if (ramdata) {
-                    if (ramdata.price) {
-                        const dt = new Date(ramdata.time);
-                        this.ramPriceEOS = ramdata.price;
-                        this.dataDT.push(dt.toISOString());
-                        this.dataVAL.push(ramdata.price);
-                        this.updateChart();
-                        j++;
+        try{
+            this.http.get('https://hapi.eosrio.io/ram/history1D').subscribe((data: any[]) => {
+                data.reverse();
+                data.forEach((val) => {
+                    this.dataDT.push(val.time);
+                    this.dataVAL.push(val.price);
+                    i++;
+                });
+                this.updateChart();
+                let j = 0;
+                this.ramService.ramTicker.asObservable().subscribe((ramdata) => {
+                    if (ramdata) {
+                        if (ramdata.price) {
+                            const dt = new Date(ramdata.time);
+                            this.ramPriceEOS = ramdata.price;
+                            this.dataDT.push(dt.toISOString());
+                            this.dataVAL.push(ramdata.price);
+                            this.updateChart();
+                            j++;
+                        }
                     }
-                }
+                });
             });
-        });
+        }catch (e) {
+            console.log('Failed to get RAM information', e);
+        }
+
     }
 
     checkAccountName() {

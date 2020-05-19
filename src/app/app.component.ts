@@ -65,6 +65,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private eventFired: boolean;
     public loadingTRX: boolean;
     private transitMode = false;
+    private isSimpleosConnect: boolean;
 
     constructor(
         private fb: FormBuilder,
@@ -145,16 +146,21 @@ export class AppComponent implements OnInit, AfterViewInit {
                 if (this.compilerVersion === 'DEFAULT') {
                     this.newVersion = await this.eosjs.checkSimpleosUpdate();
                 } else {
-                    const results = await this.http.get('https://raw.githubusercontent.com/eosrio/simpleos/master/latest.json', {
-                        headers: new HttpHeaders({
-                            'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        })
-                    }).toPromise();
-                    if (results && results[this.compilerVersion]) {
-                        this.newVersion = results[this.compilerVersion];
+                    try{
+                        const results = await this.http.get('https://raw.githubusercontent.com/eosrio/simpleos/master/latest.json', {
+                            headers: new HttpHeaders({
+                                'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            })
+                        }).toPromise();
+                        if (results && results[this.compilerVersion]) {
+                            this.newVersion = results[this.compilerVersion];
+                        }
+                    }catch (e) {
+                        console.log('Failed to check version in github');
                     }
+
                 }
                 if (this.newVersion) {
                     const remoteVersionNum = parseInt(this.newVersion['version_number'].replace(/[v.]/g, ''));
@@ -234,6 +240,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                     return;
                 }
                 this.zone.run(() => {
+                    this.isSimpleosConnect = false;
                     this.transitconnect = true;
                     this.eventFired = false;
                 });
@@ -310,15 +317,23 @@ export class AppComponent implements OnInit, AfterViewInit {
                     bodyOutputType: BodyOutputType.TrustedHtml,
                 };
                 this.toaster.popAsync(toast);
-                const accountMap = this.aService.accounts.map(a => {
-                    const [publicKey, perm] = this.aService.getStoredKey(a);
-                    return {
-                        actor: a.name,
-                        permission: perm,
-                        key: publicKey,
-                    };
-                });
-                event.sender.send('authorizationsResponse', accountMap);
+                this.transitconnect = true;
+                this.isSimpleosConnect = true;
+
+                if (this.aService.accounts.length > 0) {
+                    this.accountChange = this.selectedAccount.subscribe((data) => {
+                        if (data) {
+                            event.sender.send('authorizationsResponse', data);
+                            this.accountChange.unsubscribe();
+                            this.selectedAccount.next(null);
+                            this.transitconnect = false;
+                        }
+                    });
+                } else {
+                    console.log('No account found!');
+                    event.sender.send('authorizationsResponse', {});
+                }
+
                 break;
             }
             case 'sign': {
@@ -429,16 +444,26 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     selectAccount(account_data, idx) {
+
         const [auth, key] = this.trxFactory.getAuth(account_data);
+        let responseData;
         if (key !== '') {
-            const responseData = {
-                accountName: account_data.name,
-                permission: auth.permission,
-                publicKey: key,
-            };
+            if (this.isSimpleosConnect) {
+                responseData = {
+                    actor: account_data.name,
+                    permission: auth.permission,
+                    key: key,
+                };
+            } else {
+                responseData = {
+                    accountName: account_data.name,
+                    permission: auth.permission,
+                    publicKey: key,
+                };
+                this.transitconnect = false;
+            }
             this.selectedAccount.next(responseData);
             this.aService.select(idx);
-            this.transitconnect = false;
         }
     }
 
