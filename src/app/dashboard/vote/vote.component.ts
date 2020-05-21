@@ -343,7 +343,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.checkWaxGBMdata(selected.name).catch(console.log);
                 this.checkVoterRewards(selected.name).catch(console.log);
                 this.verifyAutoClaimSetup(selected).catch(console.log);
-                this.enableAutoClaim = this.edAutoClaim(true);
+                this.enableAutoClaim = this.toggleAutoClaim(true);
             }
             if (!this.isDestroyed) {
                 this.cdr.detectChanges();
@@ -528,7 +528,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
     }
 
-    edAutoClaim(check?) {
+    toggleAutoClaim(check?) {
         try {
             const filename = this.basePath + '/autoclaim.json';
             if (this.fs.existsSync(filename)) {
@@ -538,6 +538,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
                 data['enabled'] = !(data['enabled']);
                 this.enableAutoClaim = data['enabled'];
+                console.log(data);
                 this.fs.writeFileSync(filename, JSON.stringify(data, null, '\t'));
             } else {
                 const data = JSON.stringify(this.autoClaimConfig, null, '\t');
@@ -637,7 +638,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         } else {
             this.enableAutoClaim = false;
-            this.edAutoClaim(false);
+            this.toggleAutoClaim(true);
         }
     }
 
@@ -1004,8 +1005,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         if (this.autoClaimStatus) {
             this.claimDirect(false).catch(console.log);
         } else {
-            this.claimWithActive();
+            this.claimWithActive().catch(console.log);
         }
+        this.checkWaxGBMdata(this.aService.selected.getValue().name).catch(console.log);
     }
 
     async claimWithActive() {

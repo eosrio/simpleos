@@ -300,7 +300,7 @@
                     </div>
                     <div class="black-white" style="margin-top: 6px;"
                          *ngIf="autoClaimStatus || !enableAutoClaim">
-                        <mat-checkbox [checked]="enableAutoClaim" (change)="edAutoClaim()">
+                        <mat-checkbox [checked]="enableAutoClaim" (change)="toggleAutoClaim()">
                             Enable autoclaim
                         </mat-checkbox>
 
