@@ -535,7 +535,7 @@
       "endpoints": [
 		{"url": "https://jungle3.eossweden.org","owner": "EOS Sweden","latency": 0},
 		{"url": "https://jungle3.eosusa.news","owner": "EOS USA","latency": 0},
-        {"url": "https://jungle3history.cryptolions.io","owner": "Cryptolions","latency": 0}
+        {"url": "https://jungle3history.cryptolions.io","owner": "Cryptolions","latency": 0},
         {"url": "https://jungle3.eosrio.io","owner": "EOS Rio","latency": 0}
       ],
       "explorers": [
