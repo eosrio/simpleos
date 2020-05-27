@@ -495,6 +495,62 @@
         }
       ]
     },
+        {
+      "id": "2a02a0053e5a8cf73a56ba0fda11e4d92e0238a4a2aa74fccf46d5a910746840",
+      "symbol": "EOS",
+      "icon": "jungle.png",
+      "precision": 4,
+      "name": "JUNGLE 3",
+      "network": "TESTNET",
+      "firstApi": "https://jungle3history.cryptolions.io",
+      "historyApi": "https://jungle3history.cryptolions.io/v2",
+      "hyperionApis": [
+        "https://jungle3history.cryptolions.io/v2",
+        "https://jungle3.eosusa.news/v2",
+        "https://jungle3.eosrio.io/v2"
+      ],
+      "forumTally": "",
+      "eosrioBP": "eosriobrazil",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": true,
+        "vote": true,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": true,
+        "forum": false,
+        "rex": true
+      },
+      "system": [
+        "eosio",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+		{"url": "https://jungle3.eossweden.org","owner": "EOS Sweden","latency": 0},
+		{"url": "https://jungle3.eosusa.news","owner": "EOS USA","latency": 0},
+        {"url": "https://jungle3history.cryptolions.io","owner": "Cryptolions","latency": 0}
+        {"url": "https://jungle3.eosrio.io","owner": "EOS Rio","latency": 0}
+      ],
+      "explorers": [
+      	{
+          "name": "Bloks.io",
+          "account_url": "https://jungle3.bloks.io/account/",
+          "tx_url": "https://jungle3.bloks.io/transaction/"
+        },
+        {
+          "name": "EOSX",
+          "account_url": "https://jungle.eosx.io/account/",
+          "tx_url": "https://jungle.eosx.io/tx/"
+        }
+      ]
+    },
     {
       "id": "e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473",
       "symbol": "EOS",
