@@ -21,6 +21,7 @@ import {NgxEchartsModule} from 'ngx-echarts';
 import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
+import * as echarts from 'echarts';
 
 // Fusejs - fuzzy search
 import {FuseJsModule} from './modules/fusejs/fusejs.module';
@@ -213,7 +214,7 @@ export function playerFactory() {
         MatSlideToggleModule,
         ReactiveFormsModule,
         TextMaskModule,
-        NgxEchartsModule,
+        NgxEchartsModule.forRoot({ echarts }),
         ToasterModule.forRoot(),
         AppRoutingModule,
         NgxJsonViewerModule,
@@ -243,7 +244,8 @@ export function playerFactory() {
         LedgerService,
         ConnectService,
         BackupService,
-        ThemeService
+        ThemeService,
+
     ],
     bootstrap: [AppComponent],
 })

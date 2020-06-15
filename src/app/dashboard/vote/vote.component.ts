@@ -21,6 +21,7 @@ import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../../interfaces/account';
+import {NgxEchartsConfig} from "ngx-echarts/lib/ngx-echarts.directive";
 
 @Component({
     selector: 'app-vote',
