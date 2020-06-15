@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, AfterViewInit, ChangeDetectorRef, OnDestroy} from '@angular/core';
 import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
@@ -10,8 +10,10 @@ import {CryptoService} from '../../services/crypto/crypto.service';
 import {RamService} from '../../services/ram.service';
 
 import * as moment from 'moment';
-import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
+import {TransactionFactoryService, TrxPayload} from '../../services/eosio/transaction-factory.service';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
+import {Subscription} from "rxjs";
+import {RexComponent} from "../rex/rex.component";
 
 const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
     '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
@@ -23,7 +25,7 @@ const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
     templateUrl: './resources.component.html',
     styleUrls: ['./resources.component.css']
 })
-export class ResourcesComponent implements OnInit {
+export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     ramPriceEOS = 0;
     total_ram_bytes_reserved = 0;
@@ -58,6 +60,84 @@ export class ResourcesComponent implements OnInit {
 
     ram_quota = 0;
     ram_usage = 0;
+
+    max: number;
+    min: number;
+    minstake: boolean;
+    busyList: boolean;
+    hasRex: boolean;
+    hasVote: boolean;
+    valuetoStake: string;
+    percenttoStake: string;
+    minToStake = 0.01;
+    unstaking: number;
+    unstakeTime: string;
+    stakeModal: boolean;
+    voteModal: boolean;
+    isValidAccount: boolean;
+    nVotes = 0;
+    nVotesProxy = 0;
+    totalBalance: number;
+    stakedBalance: number;
+    totalStaked: number;
+    votedEOSDecay: number;
+    votedDecay: number;
+    singleSelectionBP: any;
+    selectedVotes: any[];
+    wrongpass: string;
+    frmForProxy: FormGroup;
+    percentMask = createNumberMask({
+        prefix: '',
+        allowDecimal: true,
+        includeThousandsSeparator: false,
+        decimalLimit: 1,
+        integerLimit: 3,
+    });
+    stakingDiff: number;
+    stakingHRV: string;
+    stakerr: string;
+    stakedisabled: boolean;
+    fromAccount: string;
+    nbps: number;
+    showAdvancedRatio = false;
+
+    location: string[];
+    country: string[];
+    options: any;
+
+    initOptions = {
+        renderer: 'z',
+        width: 1000,
+        height: 400,
+    };
+
+    net_self = '';
+    cpu_self = '';
+    stakingRatio = 75;
+
+
+
+    isManually: boolean;
+    private keytar: any;
+    private fs: any;
+    autoClaimStatus: boolean;
+
+    claimPublicKey = '';
+    public claimError: string;
+    public gbmBalance = 0;
+    public gbmLastClaim: string;
+    public gbmNextClaim: string;
+    public claimReady: boolean;
+    public gbmEstimatedDaily = 0;
+    public voteRewardsDaily = 0;
+    private autoClaimConfig = {};
+    private last_claim_time: number;
+    public claimSetupWarning = '';
+    public basePath = '';
+    enableAutoClaim: boolean;
+    enableLinkAuth: boolean;
+
+
     cpu_limit: any;
     cpu_weight = '';
     cpu_weight_n = 0;
@@ -99,6 +179,12 @@ export class ResourcesComponent implements OnInit {
     });
     private mode = 'local';
 
+    private selectedAccountName = '';
+
+    private isDestroyed = false;
+    subscriptions: Subscription[] = [];
+    precision = '';
+
     constructor(
         private eosjs: Eosjs2Service,
         public aService: AccountsService,
@@ -108,6 +194,7 @@ export class ResourcesComponent implements OnInit {
         public ramService: RamService,
         private http: HttpClient,
         private trxFactory: TransactionFactoryService,
+        private cdr: ChangeDetectorRef,
     ) {
         this.busy = false;
         this.dataDT = [];
@@ -123,6 +210,13 @@ export class ResourcesComponent implements OnInit {
         this.errormsgD = '';
         this.errormsgD2 = '';
         this.errormsgD3 = '';
+
+        this.totalBalance = 0;
+        this.stakedBalance = 0;
+        this.totalStaked = 0;
+        this.votedEOSDecay = 0;
+        this.votedDecay = 0;
+        this.isManually = false;
 
         this.net_limit = {
             used: 0
@@ -320,6 +414,324 @@ export class ResourcesComponent implements OnInit {
             }
         });
 
+    }
+
+    ngOnDestroy(): void {
+        this.isDestroyed = true;
+        this.subscriptions.forEach(s => {
+            s.unsubscribe();
+        });
+    }
+
+    ngAfterViewInit(): void {
+        const sub = this.aService.selected
+            .asObservable()
+            .subscribe((selected: any) => {
+                this.onAccountChanged(selected);
+            });
+        this.subscriptions.push(sub);
+    }
+
+    onAccountChanged(selected: EOSAccount) {
+        this.totalStaked = 0;
+        this.votedDecay = 0;
+        this.votedEOSDecay = 0;
+        if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
+            const precision = Math.pow(10, this.aService.activeChain['precision']);
+            this.precision = '1.0-' + this.aService.activeChain['precision'];
+
+
+            this.fromAccount = selected.name;
+            this.selectedAccountName = selected.name;
+            this.totalBalance = selected.full_balance;
+            this.stakedBalance = selected.staked;
+            this.unstaking = selected.unstaking;
+            this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+
+            if (this.totalBalance > 0) {
+                this.minToStake = 100 / this.totalBalance;
+                this.valuetoStake = this.stakedBalance.toString();
+            } else {
+                this.minToStake = 0;
+                this.valuetoStake = '0';
+                this.percenttoStake = '0';
+            }
+            this.cpu_weight = selected.details.total_resources.cpu_weight;
+            this.net_weight = selected.details.total_resources.net_weight;
+            if(selected.details.self_delegated_bandwidth){
+                this.cpu_self = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                this.net_self = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
+            }else{
+                this.cpu_self = '';
+                this.net_self = '';
+            }
+
+            console.log(selected);
+            this.updateStakePercent();
+
+            if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+                this.cpu_weight = selected.details.total_resources.cpu_weight;
+                this.net_weight = selected.details.total_resources.net_weight;
+                const _cpu = RexComponent.asset2Float(this.cpu_weight);
+                const _net = RexComponent.asset2Float(this.net_weight);
+                this.cpu_weight_n = _cpu;
+                this.net_weight_n = _net;
+                this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+
+                if (selected.details.voter_info) {
+                    let weeks = 52;
+                    let block_timestamp_epoch = 946684800;
+                    let precision = Math.pow(10, this.aService.activeChain['precision']);
+                    if (this.aService.activeChain['symbol'] === 'WAX') {
+                        weeks = 13;
+                        block_timestamp_epoch = 946684800;
+                    }
+                    this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
+                    this.totalStaked = (selected.details.voter_info.staked / precision);
+                    const a = (moment().unix() - block_timestamp_epoch);
+                    const b = parseInt('' + (a / 604800), 10) / weeks;
+                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
+                    this.votedEOSDecay = this.totalStaked - decayEOS;
+                    if (selected.details.voter_info.last_vote_weight > 0) {
+                        this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
+                    }
+                }
+            } else {
+                this.hasVote = false;
+            }
+
+            this.getRexBalance(selected.name);
+
+            if (!this.isDestroyed) {
+                this.cdr.detectChanges();
+            }
+        }
+    }
+
+    updateStakePercent() {
+        this.stakedisabled = false;
+        if (this.totalBalance > 0) {
+            this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) /
+                this.totalBalance).toString();
+        }
+    }
+
+    getRexBalance(acc) {
+        if (this.aService.activeChain.features['rex']) {
+            this.eosjs.getRexData(acc).then(async (rexdata) => {
+                this.hasRex = !rexdata.rexbal;
+            });
+        } else {
+            this.hasRex = false;
+        }
+    }
+
+    updateStakeValue() {
+        this.stakedisabled = false;
+        this.minstake = false;
+        this.valuetoStake = (this.totalBalance *
+            (parseFloat(this.percenttoStake) / 100)).toString();
+        if (this.valuetoStake === '1') {
+            this.minstake = true;
+        }
+    }
+
+    checkPercent() {
+        this.minstake = false;
+        let min;
+        if (this.totalBalance > 0) {
+            min = 100 / this.totalBalance;
+        } else {
+            min = 0;
+        }
+        if (parseFloat(this.percenttoStake) <= min) {
+            this.percenttoStake = min.toString();
+            this.updateStakeValue();
+            this.minstake = true;
+        }
+        if (parseFloat(this.percenttoStake) > 100) {
+            this.percenttoStake = '100';
+            this.updateStakeValue();
+        }
+    }
+
+    checkValue() {
+        this.minstake = false;
+        if (parseFloat(this.valuetoStake) <= 1) {
+            // this.valuetoStake = '1';
+            // this.updateStakePercent();
+            this.minstake = true;
+        }
+        if (parseFloat(this.valuetoStake) > this.totalBalance) {
+            this.valuetoStake = this.totalBalance.toString();
+            this.updateStakePercent();
+        }
+    }
+
+    checkValueManually(op) {
+        this.minstake = false;
+        const sum = parseFloat(this.cpu_self) +parseFloat(this.net_self);
+        if (sum <= 1) {
+            this.minstake = true;
+        }
+        if(this.isManually){
+            if (sum > this.totalBalance) {
+                if(op === 'cpu'){
+                    this.cpu_self = `${this.totalBalance - parseFloat(this.net_self)}`;
+                }else{
+                    this.net_self = `${this.totalBalance - parseFloat(this.cpu_self)}`;
+                }
+            }
+        }
+    }
+
+    sliderLabel(value: number): string {
+        const val = parseInt(value.toString(), 10);
+        return val.toString();
+    }
+
+    updateRatio() {
+        console.log(this.stakingRatio);
+    }
+
+    setStake() {
+        this.stakerr = '';
+        const precisionVal = this.aService.activeChain['precision'];
+        const precision = Math.pow(10, this.aService.activeChain['precision']);
+
+        const prevStake = Math.round(this.aService.selected.getValue().staked * precision);
+
+        let nextStakeFloat = parseFloat(this.valuetoStake);
+
+        if(this.isManually){
+            const nextStakeCPUFloat = parseFloat(this.cpu_self===''?'0':this.cpu_self);
+            const nextStakeNETFloat = parseFloat(this.net_self===''?'0':this.net_self);
+
+            nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
+
+            this.valuetoStake = `${nextStakeFloat}`;
+            if(nextStakeFloat === 0){
+                const cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                const net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
+                const total_prevStake = (parseFloat(cpu_self===''?'0':cpu_self) + parseFloat(net_self===''?'0':net_self));
+                console.log(cpu_self,net_self);
+                this.stakingRatio = (parseFloat(cpu_self===''?'0':cpu_self) / total_prevStake) * 100;
+
+            }else{
+                this.stakingRatio = (nextStakeCPUFloat / nextStakeFloat) * 100;
+            }
+            console.log(nextStakeCPUFloat,nextStakeNETFloat);
+        }
+        console.log(this.stakingRatio);
+        const nextStakeInt = Math.round(nextStakeFloat * precision);
+        const diff = nextStakeInt - prevStake;
+        console.log(diff);
+        this.stakingDiff = diff;
+        this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
+        this.wrongpass = '';
+        console.log(diff);
+        if (diff !== 0) {
+            this.newSetStake().catch(console.log);
+        } else {
+            this.stakerr = 'Value has not changed';
+        }
+
+    }
+
+    async newSetStake() {
+        this.busy = true;
+        this.wrongpass = '';
+        const account = this.aService.selected.getValue();
+        const precisionVal = this.aService.activeChain['precision'];
+        this.wrongpass = '';
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        this.mode = this.crypto.getPrivateKeyMode(publicKey);
+
+        let actionTitle = ``;
+        let html = ``;
+        let action = '';
+        if (this.stakingDiff > 0) {
+            action = 'stake';
+            html = `<h5 class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>`;
+            actionTitle = `Stake <span class="blue">+${this.stakingHRV}</span> ?`;
+        } else if (this.stakingDiff < 0) {
+            action = 'unstake';
+            html = `<h5 class="mt-0">Your tokens will be free for transfers after 3 days.</h5>`;
+            actionTitle = `Unstake <span class="blue">${this.stakingHRV}</span> ?`;
+        }
+
+        const messageHTML = ` <h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precisionVal)}</span></h4>
+            <h4 class="text-white mt-0">Voting power will be: <span class="blue">${parseFloat(this.percenttoStake).toFixed(2)}%</span></h4>
+            ${html}`;
+
+        const [, permission] = this.aService.getStoredKey(account);
+        let trx = {} as TrxPayload;
+        if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
+            try {
+                const actions = await this.eosjs.changebw(
+                    account.name,
+                    permission,
+                    this.stakingDiff,
+                    this.aService.activeChain['symbol'],
+                    this.stakingRatio / 100,
+                    this.aService.activeChain['precision'],
+                    this.isManually
+                );
+                trx = {actions: actions};
+                console.log(actions);
+            } catch (e) {
+                console.log(e);
+            }
+        } else {
+            trx = {
+                actions: [{
+                    account: 'eosio',
+                    name: action,
+                    authorization: [auth],
+                    data: {
+                        'acnt': account.name,
+                        'quantity': this.stakingHRV,
+                    }
+                }]
+            };
+        }
+
+        console.log(trx);
+        this.trxFactory.modalData.next({
+            transactionPayload: trx,
+            signerAccount: auth.actor,
+            signerPublicKey: publicKey,
+            actionTitle: actionTitle,
+            labelHTML: messageHTML,
+            termsHeader: '',
+            termsHTML: ''
+        });
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
+        const subs = this.trxFactory.status.subscribe((event) => {
+            console.log(event);
+            if (event === 'done') {
+                setTimeout(() => {
+                    this.aService.refreshFromChain(false).then(async () => {
+                        await this.onAccountChanged(this.aService.selected.getValue());
+                        // this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+                        // this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+                        // const _cpu = RexComponent.asset2Float(this.cpu_weight);
+                        // const _net = RexComponent.asset2Float(this.net_weight);
+                        // this.cpu_weight_n = _cpu;
+                        // this.net_weight_n = _net;
+                        // this.cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                        // this.net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
+                    });
+                }, 1500);
+                subs.unsubscribe();
+            }
+            if (event === 'modal_closed') {
+                subs.unsubscribe();
+            }
+        });
     }
 
     listbw(account_name) {

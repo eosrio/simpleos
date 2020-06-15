@@ -1,268 +1,567 @@
 <div class="container-fluid" style="overflow-x: hidden; height: 100%">
-    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+    <div class="clr-row animate rexpage-row justify-content-center" style="padding-top: 15px;padding-bottom: 15px;">
+        <div class="clr-col-lg-12">
+            <mat-tab-group id="rex-tabs" dynamicHeight selectedIndex="0">
+                <mat-tab label="CPU / NET">
+                    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+                        <div class="clr-col-lg-6">
+                            <div class="card info-card">
+                                <div class="card-block text-center">
+                                    <div class="total free-title">TOTAL
+                                        <ng-container *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
+                                            | ${{(totalBalance * aService.usd_rate) | number: '1.2-2'}}
+                                        </ng-container>
+                                    </div>
+                                    <div class="highlight-primary eos special-font">{{(totalBalance > 10000) ? ((totalBalance / 1000) |
+                                        number: '1.2-4') + "K" : ((totalBalance) | number: precision) }} {{aService.activeChain['symbol']}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card info-card">
+                                <div class="card-block text-center">
+                                    <div class="total free-title">STAKED
+                                        <ng-container *ngIf="aService.activeChain['name'] === 'EOS MAINNET'">
+                                            | ${{(stakedBalance * aService.usd_rate) | number: '1.2-2'}}
+                                        </ng-container>
+                                    </div>
+                                    <div class="highlight-primary eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
+                                        number: '1.2-4') + "K" : ((stakedBalance) | number: precision) }} {{aService.activeChain['symbol']}}
+                                    </div>
+                                    <div *ngIf="aService.activeChain['features']['rex']&&!hasRex"
+                                         style="font-size: 16px;" class="free-title">
+                                        STAKED + REX: <span class="highlight-primary">{{(totalStaked) | number :
+                                        '1.2-4'}} {{aService.activeChain['symbol']}} </span>
+                                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                                            <span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
+                                        </a>
+                                    </div>
+                                    <div *ngIf="aService.activeChain['features']['vote']&&hasVote"
+                                         style="font-size: 16px;" class="free-title">
+                                        VOTE DECAY: <span [ngClass]="votedDecay > 0.0000  ? 'text-warn' : 'text-faded'">
+							{{(votedEOSDecay) | number : '1.2-4'}} {{aService.activeChain['symbol']}}
 
-        <div class="clr-col-lg-4">
-            <div class="card info-card special-font">
-                <div class="card-block">
-                    <div class="title">RAM price</div>
-                    <!--<div class="highlight-primary resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-                    <div
-                            class="highlight-primary resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
-                        /KB
-                    </div>
-                </div>
-            </div>
-            <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" echarts [options]="ram_chart"
-                 [merge]="ram_chartMerge" class="demo-chart"></div>
-        </div>
+                                        <fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']"></fa-icon>
+                                        {{(votedDecay) | number : '1.2-4'}} %
+						</span>
+                                    </div>
+                                </div>
 
-        <div class="clr-col-lg-3">
-
-            <div class="card info-card special-font">
-                <div class="card-block">
-                    <div class="progress bottom" [ngClass]="{'danger': (ram_usage/ram_quota) > 0.85}">
-                        <progress [value]="ram_usage" [max]="ram_quota"></progress>
-                    </div>
-                    <div class="title">your RAM
-                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                            <span
-                                    class="tooltip-content">RAM is a resource used to store information on your account<br>
-              				</span>
-                        </a>
-                    </div>
-                    <div class="resource"><span class="highlight-primary">Used {{ram_usage / (1024) | number: '1.2-2'}}
-                        KB</span><span class="text-faded"> / {{ram_quota / (1024) | number:
-                        '1.2-2'}} KB</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card info-card special-font">
-                <div class="card-block" style="height: auto;">
-                    <form [formGroup]="ramMarketFormBuy">
-                        <div class="title">Buy RAM</div>
-                        <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
-                            <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
-                                   [textMask]="{mask: numberMask}" formControlName="buyBytes"
-                                   (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
-                        </mat-form-field>
-                        <span style="margin: 0 12px;">=</span>
-                        <mat-form-field class="mt-1" style="width: 80px; display: inline-block !important;">
-                            <input matInput type="text" #buyAmountEos
-                                   placeholder="Price in {{aService.activeChain['symbol']}}"
-                                   [textMask]="{mask: numberMask}" formControlName="buyEos"
-                                   (keyup)="(errormsg2='');convertToBytes()"/>
-                        </mat-form-field>
-                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
-                        <mat-error align="start" *ngIf="errormsg2 !== ''">
-                            {{errormsg2}}
-                        </mat-error>
-                        <mat-form-field
-                                style="width: 212px;  clear:both; display: inline-block !important; margin-top: 8px">
-                            <input type="text" placeholder="Account" matInput #accountBuy formControlName="accountBuy"
-                                   [matAutocomplete]="auto1">
-                            <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
-                            <mat-autocomplete #auto1="matAutocomplete">
-                                <mat-option value="to this account">to this account</mat-option>
-                                <mat-option value="to another account">to another account</mat-option>
-                            </mat-autocomplete>
-                        </mat-form-field>
-
-                        <mat-form-field *ngIf="ramMarketFormBuy.value.accountBuy=='to another account'"
-                                        style="width: 212px; clear:both; display: inline-block !important;  margin-top: 8px; margin-bottom: 10px;">
-                            <input matInput #anotherAcc placeholder="Buy to (account name)" formControlName="anotherAcc"
-                                   (blur)="checkAccountName()" maxlength="12" class="text-lowercase"/>
-                            <mat-error align="start" *ngIf="errormsg !== ''">
-                                {{errormsg}}
-                            </mat-error>
-                            <mat-hint align="end">{{anotherAcc.value.length}} / 12</mat-hint>
-                        </mat-form-field>
-                        <br>
-                        <button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormBuy.valid"
-                                (click)="fillBuy();" style="font-weight: 700;">Buy
-                        </button>
-                        <div class="progress dark" style="margin-top: 20px">
-                            <progress value="0" max="100" style="height: 2px;"></progress>
+                            </div>
                         </div>
-                    </form>
-                    <form [formGroup]="ramMarketFormSell">
-                        <div class="title" style="margin-top: 40px;">Sell RAM</div>
-                        <mat-form-field class="mt-1" style="width: 100px; display: inline-block !important;">
-                            <input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
-                                   placeholder="RAM amount (KB)" formControlName="sellBytes"
-                                   (keyup)="(errormsgeos='');convertToEosSELL()" (blur)="checkSellBytes()"/>
-                        </mat-form-field>
-                        <span style="margin: 0 12px;">=</span>
-                        <mat-form-field lass="mt-1" style="width: 80px; display: inline-block !important;">
-                            <input matInput #sellEos type="text" [textMask]="{mask: numberMask}"
-                                   placeholder="Price in {{aService.activeChain['symbol']}}" formControlName="sellEos"
-                                   (keyup)="(errormsgeos='');convertToBytesSELL()" (blur)="checkSellBytes()"/>
-                        </mat-form-field>
-                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
-                        <mat-error align="start" *ngIf="errormsgeos !== ''">
-                            {{errormsgeos}}
-                        </mat-error>
-                        <br>
-                        <button class="btn btn-outline btn-info-outline" [disabled]="!ramMarketFormSell.valid"
-                                (click)="fillSell();" style="font-weight: 700;">Sell
-                        </button>
-                    </form>
-                </div>
-            </div>
+                        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') === -1">
+                            <div class="card info-card">
+                                <div class="card-block" style="">
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-12">
+                                            <div class="instruction card-title-color expandable special-font">Stake
+                                                your {{aService.activeChain['symbol']}}
+                                                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                                                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                             style="font-size: 16px;"></fa-icon>
+                                                    <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+                                                </a>
+                                                <div style="float:right">
+                                                    <mat-checkbox [checked]="isManually"  (change)="isManually=!isManually">
+                                                        Enable manually Stake
+                                                    </mat-checkbox>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-            <div class="card info-card special-font">
-                <div class="card-block">
-                    <div class="title">Refund Stake
-                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                            <span
-                                    class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
-              				</span>
-                        </a>
-                        <button class="btn btn-outline btn-info-outline"
-                                style="margin:15px auto; font-weight: 700; display: flex;"
-                                (click)="newRefund()">Request
-                        </button>
+                                    <ng-container *ngIf="!isManually">
+                                        <div class="clr-row">
+                                            <div class="clr-col-lg-6">
+                                                <mat-form-field class="input-width">
+                                                    <input matInput type="text" placeholder="Value (%)"
+                                                           (blur)="updateStakeValue(); checkPercent();"
+                                                           [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                                           [textMask]="{mask: percentMask}">
+                                                    <span class="suffix" matSuffix>%</span>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="clr-col-lg-6">
+                                                <mat-form-field class="input-width">
+                                                    <input matInput type="text" min="0"
+                                                           placeholder="Value ({{aService.activeChain['symbol']}})"
+                                                           [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
+                                                           [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                                                    <span class="suffix special-font"
+                                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <mat-slider class="stake-slider"
+                                                        [min]="minToStake"
+                                                        [max]="max"
+                                                        [thumbLabel]="true"
+                                                        (change)="updateStakeValue()"
+                                                        [tickInterval]="25"
+                                                        [displayWith]="sliderLabel"
+                                                        [(ngModel)]="percenttoStake">
+                                            </mat-slider>
+                                        </div>
+                                    </ng-container>
+
+                                    <ng-container *ngIf="isManually">
+                                        <div class="clr-row">
+                                            <div class="clr-col-lg-6">
+                                                <mat-form-field class="input-width">
+                                                    <input matInput type="text" min="0"
+                                                           placeholder="CPU Value" [ngModel]="cpu_self"
+                                                           (ngModelChange)="cpu_self=$event"
+                                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('cpu');">
+                                                    <span class="suffix special-font"
+                                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="clr-col-lg-6">
+                                                <mat-form-field class="input-width">
+                                                    <input matInput type="text" min="0"
+                                                           placeholder="NET Value" [ngModel]="net_self"
+                                                           (ngModelChange)="net_self=$event"
+                                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('net');">
+                                                    <span class="suffix special-font"
+                                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+                                    </ng-container>
+
+                                    <ng-container *ngIf="!isManually">
+                                        <small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced
+                                            Option:
+                                            Change
+                                            Staking Ratio
+                                        </small>
+                                        <div class="{{ showAdvancedRatio ? 'show animated fadeIn' : 'hidden'}}"
+                                             style="margin-top: 12px;">
+                                            <div>
+                                                <div class="clr-row">
+                                                    <div class="clr-col-lg-4"></div>
+                                                    <div class="clr-col-lg-2 text-center">
+                                                        BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
+                                                    </div>
+                                                    <div class="clr-col-lg-2" style="text-align: center">
+									<span style="margin-left: 20px;">RECOMMENDED
+									<br><span style="position: absolute; margin-left: 41px;">|</span>
+									</span>
+                                                    </div>
+                                                </div>
+                                                <div class="clr-row">
+                                                    <div class="clr-col-lg-2 text-right">
+                                                        NET FOCUS
+                                                    </div>
+                                                    <div class="clr-col-lg-8">
+                                                        <mat-slider class="stake-slider"
+                                                                    [min]="20"
+                                                                    [max]="90"
+                                                                    [step]="1"
+                                                                    [thumbLabel]="true"
+                                                                    (change)="updateRatio()"
+                                                                    [tickInterval]="20"
+                                                                    [displayWith]="sliderLabel"
+                                                                    [(ngModel)]="stakingRatio">
+                                                        </mat-slider>
+                                                    </div>
+                                                    <div class="clr-col-lg-2 text-left">
+                                                        CPU FOCUS
+                                                    </div>
+                                                </div>
+                                                <span>
+								<span class="font-weight-bold">Attention:</span> If you have an unstaking in progress, your staking ratio might be limited by your unstaking balance. SimplEOS will attemp to use the selected ratio.
+							If that is not possible, SimplEOS will try to get close as possible to the desired ratio.
+						</span>
+                                            </div>
+                                        </div>
+
+                                    </ng-container>
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-5">
+                                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+                                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set
+                                                Stake
+                                            </button>
+                                            <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
+                                            <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
+                                               *ngIf="minstake">
+                                                <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
+                                                <span class="tooltip-content">
+									Please, be careful when staking the minimum. <br>
+									This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
+									However, if you just want to remove the tokens to an exchange, that is fine.
+								</span>
+                                            </a>
+                                        </div>
+                                        <div class="clr-col-lg-7 text-right" style="align-self: flex-end;">
+
+                                            <span class="highlight" style="font-weight: 600">CPU: </span>
+                                            <span class=" special-font"
+                                                  *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                            <span *ngIf="valuetoStake === ''">50% </span> /
+                                            <span class="highlight" style="font-weight: 600">NET: </span>
+                                            <span class=" special-font"
+                                                  *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                            <span *ngIf="valuetoStake === ''">50%</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > -1">
+                            <div class="card info-card">
+                                <div class="card-block" style="min-height: 270px">
+                                    <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
+                                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                     style="font-size: 16px;"></fa-icon>
+                                            <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+                                        </a>
+                                    </div>
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-6">
+                                            <mat-form-field class="input-width">
+                                                <input matInput type="text" placeholder="Value (%)"
+                                                       (blur)="updateStakeValue(); checkPercent();"
+                                                       [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                                       [textMask]="{mask: percentMask}">
+                                                <span class="suffix" matSuffix>%</span>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="clr-col-lg-6">
+                                            <mat-form-field class="input-width">
+                                                <input matInput type="text" min="1"
+                                                       placeholder="Value ({{aService.activeChain['symbol']}})"
+                                                       [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
+                                                       [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                                                <span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
+                                            </mat-form-field>
+                                        </div>
+
+                                    </div>
+                                    <div>
+                                        <mat-slider class="stake-slider"
+                                                    [min]="minToStake"
+                                                    [max]="max"
+                                                    [thumbLabel]="true"
+                                                    (change)="updateStakeValue()"
+                                                    [tickInterval]="25"
+                                                    [displayWith]="sliderLabel"
+                                                    [(ngModel)]="percenttoStake">
+                                        </mat-slider>
+                                    </div>
+
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-5">
+                                            <button (click)="setStake()" class="btn btn-info-outline"
+                                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
+                                            </button>
+                                            <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+                        <div class="clr-col-lg-6">
 
-                </div>
-            </div>
+                            <div class="card info-card special-font">
+                                <div class="card-block">
+                                    <div class="progress bottom"
+                                         [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
+                                        <progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
+                                    </div>
+                                    <span class="title">NET Bandwidth</span>
+                                    <span class="resource"
+                                          style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                                    <div class="resource"><span
+                                            class="highlight-primary">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
+                                        KB </span><span class="text-faded">/ {{net_limit.max / (1024)
+                                        | number: '1.2-2'}} KB</span>
+                                    </div>
+                                </div>
+                            </div>
 
-        </div>
+                            <div class="card info-card special-font">
+                                <div class="card-block">
+                                    <div class="progress bottom"
+                                         [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
+                                        <progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
+                                    </div>
+                                    <span class="title">CPU Bandwidth
+                      <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                        <span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
+                      </a>
+                  </span>
+                                    <span class="resource"
+                                          style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                                    <div class="highlight-primary resource"><span
+                                            class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
+                                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
+                                        | number: '1.2-2'}} ms</span>
+                                    </div>
+                                </div>
+                            </div>
 
-        <div class="clr-col-lg-5">
+                            <div class="card info-card special-font">
+                                <div class="card-block">
+                                    <div class="title">Refund Stake
+                                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                                            <fa-icon [icon]="['far','question-circle']"
+                                                     class="highlight-primary"></fa-icon>
+                                            <span
+                                                    class="tooltip-content">Used on the rare case when unstaking gets stuck. If your unstaking is taking more than 72 hours to complete, request the refund to free your funds.<br>
+                                    </span>
+                                        </a>
+                                        <button class="btn btn-outline btn-info-outline"
+                                                style="margin:15px auto; font-weight: 700; display: flex;"
+                                                (click)="newRefund()">Request
+                                        </button>
+                                    </div>
 
-            <div class="card info-card special-font">
-                <div class="card-block">
-                    <div class="progress bottom" [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
-                        <progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clr-col-lg-6">
+                            <div class="card info-card special-font">
+                                <div style="padding: .5rem .75rem;">
+                                    <div class="title">Delegated Resources
+                                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
+                                            <fa-icon [icon]="['far','question-circle']"
+                                                     class="highlight-primary"></fa-icon>
+                                            <span class="tooltip-content">Resources you lent to other accounts <br>
+                      </span>
+                                        </a>
+                                    </div>
+                                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                                    <div class="card-text" style="margin-bottom: 0px !important;"><span
+                                            class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                        |
+                                        <span
+                                                class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                    </div>
+
+
+                                    <div style="height: auto; margin-bottom: 0px !important;">
+                                        <form [formGroup]="delegateForm">
+                                            <!--div class="title">Delegate to</div-->
+
+                                            <mat-form-field
+                                                    style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
+                                                <input matInput #receiverAcc placeholder="Delegate to (account name)"
+                                                       formControlName="receiverAcc" (blur)="checkAccName()"
+                                                       maxlength="12"
+                                                       class="text-lowercase"/>
+                                                <mat-error align="start" *ngIf="errormsgD !== ''">
+                                                    {{errormsgD}}
+                                                </mat-error>
+                                                <mat-hint align="end">{{receiverAcc.value.length}} / 12</mat-hint>
+                                            </mat-form-field>
+                                            <br/>
+
+                                            <mat-form-field class="mt-1"
+                                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                                                <input matInput type="text" #cpuAmountEos
+                                                       placeholder="CPU ({{aService.activeChain['symbol']}})"
+                                                       [textMask]="{mask: numberMask}" formControlName="cpuEos"
+                                                       (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
+                                            </mat-form-field>
+
+                                            <span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                                            <mat-form-field class="mt-1"
+                                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
+                                                <input matInput type="text" #netAmountEos
+                                                       placeholder="NET ({{aService.activeChain['symbol']}})"
+                                                       [textMask]="{mask: numberMask}" formControlName="netEos"
+                                                       (keyup)="checkEos(netAmountEos.value,'net');"/>
+                                            </mat-form-field>
+                                            <mat-error align="start" *ngIf="errormsgD3 !== ''">
+                                                {{errormsgD3}}
+                                            </mat-error>
+
+                                            <button class="btn btn-outline btn-info-outline"
+                                                    [disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
+                                                    (click)="fillDelegateRequest();" style="font-weight: 700;">
+                                                DELEGATE
+                                            </button>
+
+                                        </form>
+                                    </div>
+
+                                    <div *ngIf="delegations.length === 0"> You have no external delegated
+                                        resources
+                                    </div>
+                                </div>
+                                <div class="card-block" style="padding: 0">
+                                    <table class="table table-noborder" *ngIf="delegations.length > 0">
+                                        <thead>
+                                        <tr>
+                                            <th class="left">Account</th>
+                                            <th>NET</th>
+                                            <th>CPU</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr *ngFor="let item of delegations">
+                                            <td class="left">{{item.to}}
+                                            </td>
+                                            <td>{{item.net_weight}}</td>
+                                            <td>{{item.cpu_weight}}</td>
+                                            <td>
+                                                <button class="btn btn-icon btn-danger-outline deleteBtn btn-sm"
+                                                        (click)="fillUnDelegateRequest(item.to, item.net_weight, item.cpu_weight)">
+                                                    <fa-icon [icon]="['far', 'times']"></fa-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <span class="title">NET Bandwidth</span>
-                    <span class="resource"
-                          style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-                    <div class="resource"><span class="highlight-primary">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
-                        KB </span><span class="text-faded">/ {{net_limit.max / (1024)
-                        | number: '1.2-2'}} KB</span>
+                </mat-tab>
+                <mat-tab label="RAM">
+                    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+                        <div class="clr-col-lg-8">
+                            <div class="card info-card special-font">
+                                <div class="card-block">
+                                    <div class="title">RAM price</div>
+                                    <!--<div class="highlight-primary resource">{{ramPriceEOS | number: '1.2-6'}} EOS/KB</div>&lt;!&ndash;CSTAM&ndash;&gt;-->
+                                    <div
+                                            class="highlight-primary resource">{{ramService.ramPriceEOS | number: '1.2-6'}} {{aService.activeChain['symbol']}}
+                                        /KB
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="aService.activeChain.name === 'EOS MAINNET'" echarts [options]="ram_chart"
+                                 [merge]="ram_chartMerge" class="demo-chart"></div>
+                        </div>
+
+                        <div class="clr-col-lg-4">
+
+                            <div class="card info-card special-font">
+                                <div class="card-block">
+                                    <div class="progress bottom" [ngClass]="{'danger': (ram_usage/ram_quota) > 0.85}">
+                                        <progress [value]="ram_usage" [max]="ram_quota"></progress>
+                                    </div>
+                                    <div class="title">your RAM
+                                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                                            <fa-icon [icon]="['far','question-circle']"
+                                                     class="highlight-primary"></fa-icon>
+                                            <span
+                                                    class="tooltip-content">RAM is a resource used to store information on your account<br>
+                                    </span>
+                                        </a>
+                                    </div>
+                                    <div class="resource"><span
+                                            class="highlight-primary">Used {{ram_usage / (1024) | number: '1.2-2'}}
+                                        KB</span><span class="text-faded"> / {{ram_quota / (1024) | number:
+                                        '1.2-2'}} KB</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card info-card special-font">
+                                <div class="card-block" style="height: auto;">
+                                    <form [formGroup]="ramMarketFormBuy">
+                                        <div class="title">Buy RAM</div>
+                                        <mat-form-field class="mt-1"
+                                                        style="width: 100px; display: inline-block !important;">
+                                            <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
+                                                   [textMask]="{mask: numberMask}" formControlName="buyBytes"
+                                                   (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
+                                        </mat-form-field>
+                                        <span style="margin: 0 12px;">=</span>
+                                        <mat-form-field class="mt-1"
+                                                        style="width: 80px; display: inline-block !important;">
+                                            <input matInput type="text" #buyAmountEos
+                                                   placeholder="Price in {{aService.activeChain['symbol']}}"
+                                                   [textMask]="{mask: numberMask}" formControlName="buyEos"
+                                                   (keyup)="(errormsg2='');convertToBytes()"/>
+                                        </mat-form-field>
+                                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
+                                        <mat-error align="start" *ngIf="errormsg2 !== ''">
+                                            {{errormsg2}}
+                                        </mat-error>
+                                        <mat-form-field
+                                                style="width: 212px;  clear:both; display: inline-block !important; margin-top: 8px">
+                                            <input type="text" placeholder="Account" matInput #accountBuy
+                                                   formControlName="accountBuy"
+                                                   [matAutocomplete]="auto1">
+                                            <fa-icon matSuffix [icon]="['fas', 'caret-down']"></fa-icon>
+                                            <mat-autocomplete #auto1="matAutocomplete">
+                                                <mat-option value="to this account">to this account</mat-option>
+                                                <mat-option value="to another account">to another account</mat-option>
+                                            </mat-autocomplete>
+                                        </mat-form-field>
+
+                                        <mat-form-field *ngIf="ramMarketFormBuy.value.accountBuy=='to another account'"
+                                                        style="width: 212px; clear:both; display: inline-block !important;  margin-top: 8px; margin-bottom: 10px;">
+                                            <input matInput #anotherAcc placeholder="Buy to (account name)"
+                                                   formControlName="anotherAcc"
+                                                   (blur)="checkAccountName()" maxlength="12" class="text-lowercase"/>
+                                            <mat-error align="start" *ngIf="errormsg !== ''">
+                                                {{errormsg}}
+                                            </mat-error>
+                                            <mat-hint align="end">{{anotherAcc.value.length}} / 12</mat-hint>
+                                        </mat-form-field>
+                                        <br>
+                                        <button class="btn btn-outline btn-info-outline"
+                                                [disabled]="!ramMarketFormBuy.valid"
+                                                (click)="fillBuy();" style="font-weight: 700;">Buy
+                                        </button>
+                                        <div class="progress dark" style="margin-top: 20px">
+                                            <progress value="0" max="100" style="height: 2px;"></progress>
+                                        </div>
+                                    </form>
+                                    <form [formGroup]="ramMarketFormSell">
+                                        <div class="title" style="margin-top: 40px;">Sell RAM</div>
+                                        <mat-form-field class="mt-1"
+                                                        style="width: 100px; display: inline-block !important;">
+                                            <input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
+                                                   placeholder="RAM amount (KB)" formControlName="sellBytes"
+                                                   (keyup)="(errormsgeos='');convertToEosSELL()"
+                                                   (blur)="checkSellBytes()"/>
+                                        </mat-form-field>
+                                        <span style="margin: 0 12px;">=</span>
+                                        <mat-form-field lass="mt-1"
+                                                        style="width: 80px; display: inline-block !important;">
+                                            <input matInput #sellEos type="text" [textMask]="{mask: numberMask}"
+                                                   placeholder="Price in {{aService.activeChain['symbol']}}"
+                                                   formControlName="sellEos"
+                                                   (keyup)="(errormsgeos='');convertToBytesSELL()"
+                                                   (blur)="checkSellBytes()"/>
+                                        </mat-form-field>
+                                        <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
+                                        <mat-error align="start" *ngIf="errormsgeos !== ''">
+                                            {{errormsgeos}}
+                                        </mat-error>
+                                        <br>
+                                        <button class="btn btn-outline btn-info-outline"
+                                                [disabled]="!ramMarketFormSell.valid"
+                                                (click)="fillSell();" style="font-weight: 700;">Sell
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+
+
+                        </div>
+
+
                     </div>
-                </div>
-            </div>
-
-            <div class="card info-card special-font">
-                <div class="card-block">
-                    <div class="progress bottom" [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
-                        <progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
-                    </div>
-                    <span class="title">CPU Bandwidth
-			  <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
-              	<fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-              	<span class="tooltip-content">Used in every transaction <br>you make. Regenerates over <br> time.</span>
-			  </a>
-		  </span>
-                    <span class="resource"
-                          style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
-                    <div class="highlight-primary resource"><span class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
-                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
-                        | number: '1.2-2'}} ms</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card info-card special-font">
-                <div style="padding: .5rem .75rem;">
-                    <div class="title">Delegated Resources
-                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                            <span class="tooltip-content">Resources you lent to other accounts <br>
-              </span>
-                        </a>
-                    </div>
-                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-                    <div class="card-text" style="margin-bottom: 0px !important;"><span
-                            class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                        |
-                        <span
-                                class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                    </div>
-
-
-                    <div style="height: auto; margin-bottom: 0px !important;">
-                        <form [formGroup]="delegateForm">
-                            <!--div class="title">Delegate to</div-->
-
-                            <mat-form-field
-                                    style="width: 212px; clear:both; display: inline-block !important;  margin-top: 10px !important; margin-bottom: 10px;">
-                                <input matInput #receiverAcc placeholder="Delegate to (account name)"
-                                       formControlName="receiverAcc" (blur)="checkAccName()" maxlength="12"
-                                       class="text-lowercase"/>
-                                <mat-error align="start" *ngIf="errormsgD !== ''">
-                                    {{errormsgD}}
-                                </mat-error>
-                                <mat-hint align="end">{{receiverAcc.value.length}} / 12</mat-hint>
-                            </mat-form-field>
-                            <br/>
-
-                            <mat-form-field class="mt-1"
-                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-                                <input matInput type="text" #cpuAmountEos
-                                       placeholder="CPU ({{aService.activeChain['symbol']}})"
-                                       [textMask]="{mask: numberMask}" formControlName="cpuEos"
-                                       (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
-                            </mat-form-field>
-
-                            <span style="margin: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            <mat-form-field class="mt-1"
-                                            style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
-                                <input matInput type="text" #netAmountEos
-                                       placeholder="NET ({{aService.activeChain['symbol']}})"
-                                       [textMask]="{mask: numberMask}" formControlName="netEos"
-                                       (keyup)="checkEos(netAmountEos.value,'net');"/>
-                            </mat-form-field>
-                            <mat-error align="start" *ngIf="errormsgD3 !== ''">
-                                {{errormsgD3}}
-                            </mat-error>
-
-                            <button class="btn btn-outline btn-info-outline"
-                                    [disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
-                                    (click)="fillDelegateRequest();" style="font-weight: 700;">
-                                DELEGATE
-                            </button>
-
-                        </form>
-                    </div>
-
-                    <div *ngIf="delegations.length === 0"> You have no external delegated
-                        resources
-                    </div>
-                </div>
-                <div class="card-block" style="padding: 0">
-                    <table class="table table-noborder" *ngIf="delegations.length > 0">
-                        <thead>
-                        <tr>
-                            <th class="left">Account</th>
-                            <th>NET</th>
-                            <th>CPU</th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr *ngFor="let item of delegations">
-                            <td class="left">{{item.to}}
-                            </td>
-                            <td>{{item.net_weight}}</td>
-                            <td>{{item.cpu_weight}}</td>
-                            <td>
-                                <button class="btn btn-icon btn-danger-outline deleteBtn btn-sm"
-                                        (click)="fillUnDelegateRequest(item.to, item.net_weight, item.cpu_weight)">
-                                    <fa-icon [icon]="['far', 'times']"></fa-icon>
-                                </button>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    <br>
+                </mat-tab>
+            </mat-tab-group>
         </div>
     </div>
-    <br>
 </div>

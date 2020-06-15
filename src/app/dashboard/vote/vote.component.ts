@@ -21,7 +21,6 @@ import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../../interfaces/account';
-import {NgxEchartsConfig} from "ngx-echarts/lib/ngx-echarts.directive";
 
 @Component({
     selector: 'app-vote',
@@ -598,22 +597,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.verifyAutoClaimSetup(this.aService.selected.getValue()).catch(console.log);
     }
-
-    // enableAutoClaimStartup() {
-    // 	const AutoLaunch = this._electronService.remote.require('auto-launch');
-    // 	const walletAutoLauncher = new AutoLaunch({
-    // 		name: 'simpleos'
-    // 	});
-    // 	walletAutoLauncher.opts.appPath += '" --autostart"';
-    // 	walletAutoLauncher.isEnabled().then((isEnabled) => {
-    // 		if (isEnabled) {
-    // 			return;
-    // 		}
-    // 		walletAutoLauncher.enable();
-    // 	}).catch(function (err) {
-    // 		console.log(err);
-    // 	});
-    // }
 
     IsJsonString(str) {
         try {

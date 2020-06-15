@@ -529,7 +529,7 @@ export class AccountsService {
                 url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
                 url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
                 url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
-                console.log(url);
+
                 try {
                     const tref = Date.now();
                     const response: any = await this.http.get(url).toPromise();
@@ -635,7 +635,6 @@ export class AccountsService {
             '&after=' + beforeDate.format('YYYY-MM-DD[T]HH:mm:ss') +
             '&before=' + nowDate.format('YYYY-MM-DD[T]HH:mm:ss');
 
-        console.log(url);
         try {
             const response: any = await this.http.get(url).toPromise();
                 if (response.actions.length > 0) {
