@@ -60,6 +60,7 @@ class SimpleosWallet {
     });
 
     constructor() {
+
         if (compilerVersion === 'DEFAULT') {
             this.simpleosAutoLauncher = new AutoLaunch({name: 'simpleos'});
             this.claimRW = new ClaimRewardsService(this);
@@ -92,7 +93,6 @@ class SimpleosWallet {
         this.debug = args.some(val => val === '--debug');
         this.serve = args.some(val => val === '--serve');
         this.isAutoLaunch = this.loginOpts.wasOpenedAtLogin || args.some(val => val === '--autostart');
-        console.log(this.claimRW);
         if (this.claimRW) {
             this.isEnableAutoClaim = this.claimRW.isEnableAutoClaim;
             this.claimRW.writeLog(`Developer Mode: ${this.devMode}`);
@@ -325,7 +325,7 @@ class SimpleosWallet {
         }
     }
 
-    notify(title, body, autoClose) {
+   async notify(title, body, autoClose) {
         const notification = new Notification({
             title: title,
             body: body,

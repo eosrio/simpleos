@@ -163,10 +163,10 @@ class ClaimRewardsService {
 						claimError = eJson.error.details[0].message;
 					}
 				}
-				this.main.notify('Auto-claim error',
-					'Account: ' + account_name + '\n Error: ' + claimError, 0);
 			}
+			await this.main.notify('Auto-claim error', 'Account: ' + account_name + '\nError: ' + claimError, 0);
 			throw new Error(claimError);
+
 		}
 	}
 
@@ -219,7 +219,7 @@ class ClaimRewardsService {
 			json: true, scope: account, code: 'eosio', table: 'genesis', limit: 1,
 		});
 		if (genesis_table.rows.length === 1) {
-			return moment.utc(genesis_table.rows[0].last_claim_time);
+			return moment(moment.utc(genesis_table.rows[0].last_claim_time)).local();
 		} else {
 			return null;
 		}
@@ -255,6 +255,7 @@ class ClaimRewardsService {
 
 	runAutoClaim() {
 		this.writeLog('Checking claim conditions...');
+		console.log('Checking claim conditions...');
 		const cPath = basePath + '/autoclaim.json';
 		if (fs.existsSync(basePath + '/autoclaim.json')) {
 			fs.readFile(cPath, (err, data) => {
@@ -271,7 +272,7 @@ class ClaimRewardsService {
 									apis);
 								if (a) {
 									a.add(1, 'day');
-									const b = moment().utc();
+									const b = moment(moment.utc()).local();
 									const scheduleName = 'autoClaim-' + job['account'];
 									if (b.diff(a, 'seconds') > 0) {
 										this.writeLog(
@@ -328,8 +329,8 @@ class ClaimRewardsService {
 			if (autoclaimConf['enabled'] && productName === 'simpleos') {
 				if (autoclaimConf['WAX-GBM']) {
 					for (const job of autoclaimConf['WAX-GBM']['jobs']) {
-						const a = moment.utc(job['next_claim_time']);
-						const b = moment().utc();
+						const a = moment(moment.utc(job['next_claim_time'])).local();
+						const b = moment(moment.utc()).local();
 						this.writeLog(`Diff next date from now (sec): ${b.diff(a,
 							'seconds')}`);
 						if (b.diff(a, 'seconds') > 0) {

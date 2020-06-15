@@ -48,46 +48,89 @@
         </div>
         <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') === -1">
             <div class="card info-card">
-                <div class="card-block" style="min-height: 270px">
-                    <div class="instruction card-title-color expandable special-font">Stake your {{aService.activeChain['symbol']}}
-                        <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
-                            <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
-                        </a>
-                    </div>
+                <div class="card-block" style="">
                     <div class="clr-row">
-                        <div class="clr-col-lg-6">
-                            <mat-form-field class="input-width">
-                                <input matInput type="text" placeholder="Value (%)"
-                                       (blur)="updateStakeValue(); checkPercent();"
-                                       [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
-                                       [textMask]="{mask: percentMask}">
-                                <span class="suffix" matSuffix>%</span>
-                            </mat-form-field>
-                        </div>
-                        <div class="clr-col-lg-6">
-                            <mat-form-field class="input-width">
-                                <input matInput type="text" min="1"
-                                       placeholder="Value ({{aService.activeChain['symbol']}})"
-                                       [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
-                                       [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
-                                <span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
-                            </mat-form-field>
+                        <div class="clr-col-lg-12">
+                            <div class="instruction card-title-color expandable special-font">Stake
+                                your {{aService.activeChain['symbol']}}
+                                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
+                                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                             style="font-size: 16px;"></fa-icon>
+                                    <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+                                </a>
+                                <div style="float:right">
+                                    <mat-checkbox [checked]="isManually"  (change)="isManually=!isManually">
+                                        Enable manually Stake
+                                    </mat-checkbox>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <mat-slider class="stake-slider"
-                                    [min]="minToStake"
-                                    [max]="max"
-                                    [thumbLabel]="true"
-                                    (change)="updateStakeValue()"
-                                    [tickInterval]="25"
-                                    [displayWith]="sliderLabel"
-                                    [(ngModel)]="percenttoStake">
-                        </mat-slider>
-                    </div>
-                    <ng-container>
-                        <small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced Option:
+
+                    <ng-container *ngIf="!isManually">
+                        <div class="clr-row">
+                            <div class="clr-col-lg-6">
+                                <mat-form-field class="input-width">
+                                    <input matInput type="text" placeholder="Value (%)"
+                                           (blur)="updateStakeValue(); checkPercent();"
+                                           [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                           [textMask]="{mask: percentMask}">
+                                    <span class="suffix" matSuffix>%</span>
+                                </mat-form-field>
+                            </div>
+                            <div class="clr-col-lg-6">
+                                <mat-form-field class="input-width">
+                                    <input matInput type="text" min="0"
+                                           placeholder="Value ({{aService.activeChain['symbol']}})"
+                                           [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
+                                           [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                                    <span class="suffix special-font"
+                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <div>
+                            <mat-slider class="stake-slider"
+                                        [min]="minToStake"
+                                        [max]="max"
+                                        [thumbLabel]="true"
+                                        (change)="updateStakeValue()"
+                                        [tickInterval]="25"
+                                        [displayWith]="sliderLabel"
+                                        [(ngModel)]="percenttoStake">
+                            </mat-slider>
+                        </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="isManually">
+                        <div class="clr-row">
+                            <div class="clr-col-lg-6">
+                                <mat-form-field class="input-width">
+                                    <input matInput type="text" min="0"
+                                           placeholder="CPU Value" [ngModel]="cpu_self"
+                                           (ngModelChange)="cpu_self=$event"
+                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('cpu');">
+                                    <span class="suffix special-font"
+                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                </mat-form-field>
+                            </div>
+                            <div class="clr-col-lg-6">
+                                <mat-form-field class="input-width">
+                                    <input matInput type="text" min="0"
+                                           placeholder="NET Value" [ngModel]="net_self"
+                                           (ngModelChange)="net_self=$event"
+                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('net');">
+                                    <span class="suffix special-font"
+                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="!isManually">
+                        <small class="warning-text" (click)="showAdvancedRatio = !showAdvancedRatio">Advanced
+                            Option:
                             Change
                             Staking Ratio
                         </small>
@@ -131,35 +174,38 @@
 						</span>
                             </div>
                         </div>
-                        <div class="clr-row">
-                            <div class="clr-col-lg-5">
-                                <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
-                                        style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
-                                </button>
-                                <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
-                                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
-                                   *ngIf="minstake">
-                                    <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
-                                    <span class="tooltip-content">
+
+                    </ng-container>
+                    <div class="clr-row">
+                        <div class="clr-col-lg-5">
+                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
+                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set
+                                Stake
+                            </button>
+                            <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
+                            <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
+                               *ngIf="minstake">
+                                <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
+                                <span class="tooltip-content">
 									Please, be careful when staking the minimum. <br>
 									This is not recommended if you want to do a lot of transactions, as you will have little CPU bandwidth and may have to wait long hours to stake again. <br>
 									However, if you just want to remove the tokens to an exchange, that is fine.
 								</span>
-                                </a>
-                            </div>
-                            <div class="clr-col-lg-7 text-right" style="align-self: flex-end;">
-
-                                <span class="highlight" style="font-weight: 600">CPU: </span>
-                                <span class=" special-font"
-                                      *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                                <span *ngIf="valuetoStake === ''">50% </span> /
-                                <span class="highlight" style="font-weight: 600">NET: </span>
-                                <span class=" special-font"
-                                      *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
-                                <span *ngIf="valuetoStake === ''">50%</span>
-                            </div>
+                            </a>
                         </div>
-                    </ng-container>
+                        <div class="clr-col-lg-7 text-right" style="align-self: flex-end;">
+
+                            <span class="highlight" style="font-weight: 600">CPU: </span>
+                            <span class=" special-font"
+                                  *ngIf="valuetoStake !== ''">{{cpu_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                            <span *ngIf="valuetoStake === ''">50% </span> /
+                            <span class="highlight" style="font-weight: 600">NET: </span>
+                            <span class=" special-font"
+                                  *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                            <span *ngIf="valuetoStake === ''">50%</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -170,7 +216,8 @@
                 <div class="card-block" style="min-height: 270px">
                     <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary" style="font-size: 16px;"></fa-icon>
+                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                     style="font-size: 16px;"></fa-icon>
                             <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
                         </a>
                     </div>
@@ -193,6 +240,7 @@
                                 <span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
                             </mat-form-field>
                         </div>
+
                     </div>
                     <div>
                         <mat-slider class="stake-slider"
@@ -205,6 +253,7 @@
                                     [(ngModel)]="percenttoStake">
                         </mat-slider>
                     </div>
+
                     <div class="clr-row">
                         <div class="clr-col-lg-5">
                             <button (click)="setStake()" class="btn btn-info-outline"
@@ -225,8 +274,8 @@
                     <div class="gbm-title card-title-color">WAX GBM Rewards
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                            <span
-                                    class="tooltip-content">Genesis block member Rewards. For memebers that claimed their WAX tokens on the period of June 30 to August 30, 2019.
+                            <span class="tooltip-content">
+                                Genesis block member Rewards. For memebers that claimed their WAX tokens on the period of June 30 to August 30, 2019.
 							</span>
                         </a>
                         <button class="btn btn-info-outline" (click)="claimGBMrewards()"
@@ -362,7 +411,8 @@
                         </div>
                         <div class="clr-col-lg-5 clr-col-md-5 text-left" *ngIf="voteService.voteType">
                             <h4 class="title card-title-color">Vote through a Proxy! </h4>
-                            <h5 class="subtitle card-text-color mt-0">Choose a proxy to vote for block producers on your behalf</h5>
+                            <h5 class="subtitle card-text-color mt-0">Choose a proxy to vote for block producers on your
+                                behalf</h5>
                         </div>
                         <div class="clr-col-lg-3 clr-col-md-6  text-right mt-3" *ngIf="voteService.hasList">
                             <mat-form-field class="searchbar">
@@ -447,7 +497,8 @@
                         <td class="text-right" colspan="8">
                             <div class="clr-col-auto" style="margin: 0 auto; text-align: center;">
                                 <fa-layers class="mt-2 mb-1">
-                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x" class="highlight-primary"></fa-icon>
+                                    <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
+                                             class="highlight-primary"></fa-icon>
                                 </fa-layers>
                             </div>
                         </td>

@@ -308,6 +308,10 @@ export class ResourcesComponent implements OnInit {
                 this.ram_usage = d.ram_usage;
                 this.cpu_limit = d.cpu_limit;
                 this.net_limit = d.net_limit;
+                if (!selected.activitypastday) {
+                    this.cpu_limit['used'] = 0;
+                    this.net_limit['used'] = 0;
+                }
                 this.cpu_weight = d.total_resources.cpu_weight;
                 this.cpu_weight_n = parseFloat(this.cpu_weight.split(' ')[0]);
                 this.net_weight = d.total_resources.net_weight;
@@ -405,7 +409,7 @@ export class ResourcesComponent implements OnInit {
 
     loadHistory() {
         let i = 0;
-        try{
+        try {
             this.http.get('https://hapi.eosrio.io/ram/history1D').subscribe((data: any[]) => {
                 data.reverse();
                 data.forEach((val) => {
@@ -428,7 +432,7 @@ export class ResourcesComponent implements OnInit {
                     }
                 });
             });
-        }catch (e) {
+        } catch (e) {
             console.log('Failed to get RAM information', e);
         }
 
@@ -786,8 +790,8 @@ export class ResourcesComponent implements OnInit {
                     data: {
                         'from': this.accNow,
                         'receiver': this.fromUD,
-                        'unstake_cpu_quantity': this.netUD + ' ' + this.aService.activeChain['symbol'],
-                        'unstake_net_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol']
+                        'unstake_cpu_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol'],
+                        'unstake_net_quantity': this.netUD + ' ' + this.aService.activeChain['symbol']
 
                     }
                 }]
@@ -879,8 +883,8 @@ export class ResourcesComponent implements OnInit {
                     data: {
                         'from': this.accNow,
                         'receiver': this.accTo,
-                        'stake_cpu_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
-                        'stake_net_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
+                        'stake_cpu_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
+                        'stake_net_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
                         'transfer': 0
                     }
                 }]

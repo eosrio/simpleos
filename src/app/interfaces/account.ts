@@ -6,6 +6,7 @@ export interface EOSAccount {
 	full_balance: number;
 	staked: number;
 	unstakeTime: string;
+	activitypastday:boolean;
 	actions: any[];
 	type: string;
 	storedKey: string;

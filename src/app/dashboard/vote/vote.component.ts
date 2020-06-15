@@ -35,7 +35,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     busyList: boolean;
     hasRex: boolean;
     hasVote: boolean;
-
     valuetoStake: string;
     percenttoStake: string;
     minToStake = 0.01;
@@ -90,6 +89,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
     net_weight = '';
     cpu_weight = '';
+    net_self = '';
+    cpu_self = '';
     cpu_weight_n = 0;
     net_weight_n = 0;
     stakingRatio = 75;
@@ -100,6 +101,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
     private selectedProxy = '';
 
+    isManually: boolean;
     private keytar: any;
     private fs: any;
     autoClaimStatus: boolean;
@@ -170,6 +172,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.singleSelectionBP = {
             name: '',
         };
+        this.isManually = false;
         this.selectedVotes = [];
 
         this.frmForProxy = this.fb.group({
@@ -307,7 +310,19 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.valuetoStake = '0';
                 this.percenttoStake = '0';
             }
+            this.cpu_weight = selected.details.total_resources.cpu_weight;
+            this.net_weight = selected.details.total_resources.net_weight;
+            if(selected.details.self_delegated_bandwidth){
+                this.cpu_self = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                this.net_self = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
+            }else{
+                this.cpu_self = '';
+                this.net_self = '';
+            }
+
+            console.log(selected);
             this.updateStakePercent();
+
             if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
                 this.loadPlacedVotes(selected);
                 this.cpu_weight = selected.details.total_resources.cpu_weight;
@@ -317,6 +332,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.cpu_weight_n = _cpu;
                 this.net_weight_n = _net;
                 this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+
                 if (selected.details.voter_info) {
                     let weeks = 52;
                     let block_timestamp_epoch = 946684800;
@@ -370,10 +386,32 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const precision = Math.pow(10, this.aService.activeChain['precision']);
 
         const prevStake = Math.round(this.aService.selected.getValue().staked * precision);
-        console.log(this.aService.selected.getValue().details.voter_info.staked / precision);
-        const nextStakeFloat = parseFloat(this.valuetoStake);
+
+        let nextStakeFloat = parseFloat(this.valuetoStake);
+
+        if(this.isManually){
+            const nextStakeCPUFloat = parseFloat(this.cpu_self===''?'0':this.cpu_self);
+            const nextStakeNETFloat = parseFloat(this.net_self===''?'0':this.net_self);
+
+            nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
+
+            this.valuetoStake = `${nextStakeFloat}`;
+            if(nextStakeFloat === 0){
+                const cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                const net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
+                const total_prevStake = (parseFloat(cpu_self===''?'0':cpu_self) + parseFloat(net_self===''?'0':net_self));
+                console.log(cpu_self,net_self);
+                this.stakingRatio = (parseFloat(cpu_self===''?'0':cpu_self) / total_prevStake) * 100;
+
+            }else{
+                this.stakingRatio = (nextStakeCPUFloat / nextStakeFloat) * 100;
+            }
+            console.log(nextStakeCPUFloat,nextStakeNETFloat);
+        }
+        console.log(this.stakingRatio);
         const nextStakeInt = Math.round(nextStakeFloat * precision);
         const diff = nextStakeInt - prevStake;
+        console.log(diff);
         this.stakingDiff = diff;
         this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
         this.wrongpass = '';
@@ -426,6 +464,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.aService.activeChain['symbol'],
                     this.stakingRatio / 100,
                     this.aService.activeChain['precision'],
+                    this.isManually
                 );
                 trx = {actions: actions};
                 console.log(actions);
@@ -461,9 +500,16 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log(event);
             if (event === 'done') {
                 setTimeout(() => {
-                    this.aService.refreshFromChain(false).then(() => {
-                        this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
-                        this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+                    this.aService.refreshFromChain(false).then(async () => {
+                        await this.onAccountChanged(this.aService.selected.getValue());
+                        // this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+                        // this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+                        // const _cpu = RexComponent.asset2Float(this.cpu_weight);
+                        // const _net = RexComponent.asset2Float(this.net_weight);
+                        // this.cpu_weight_n = _cpu;
+                        // this.net_weight_n = _net;
+                        // this.cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                        // this.net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
                     });
                 }, 1500);
                 subs.unsubscribe();
@@ -538,6 +584,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
                 data['enabled'] = !(data['enabled']);
                 this.enableAutoClaim = data['enabled'];
+                this.autoClaimStatus = data['enabled'];
                 console.log(data);
                 this.fs.writeFileSync(filename, JSON.stringify(data, null, '\t'));
             } else {
@@ -577,7 +624,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     async verifyAutoClaimSetup(selected) {
-        this.autoClaimStatus = false;
+        // this.autoClaimStatus = false;
         this.claimSetupWarning = '';
         const filename = this.basePath + '/autoclaim.json';
         if (!this.fs.existsSync(filename)) {
@@ -641,7 +688,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             this.toggleAutoClaim(true);
         }
     }
-
 
     getProxyVotes(account) {
         this.listProxyVote = [];
@@ -738,13 +784,30 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     checkValue() {
         this.minstake = false;
         if (parseFloat(this.valuetoStake) <= 1) {
-            this.valuetoStake = '1';
-            this.updateStakePercent();
+            // this.valuetoStake = '1';
+            // this.updateStakePercent();
             this.minstake = true;
         }
         if (parseFloat(this.valuetoStake) > this.totalBalance) {
             this.valuetoStake = this.totalBalance.toString();
             this.updateStakePercent();
+        }
+    }
+
+    checkValueManually(op) {
+        this.minstake = false;
+        const sum = parseFloat(this.cpu_self) +parseFloat(this.net_self);
+        if (sum <= 1) {
+            this.minstake = true;
+        }
+        if(this.isManually){
+            if (sum > this.totalBalance) {
+                if(op === 'cpu'){
+                    this.cpu_self = `${this.totalBalance - parseFloat(this.net_self)}`;
+                }else{
+                    this.net_self = `${this.totalBalance - parseFloat(this.cpu_self)}`;
+                }
+            }
         }
     }
 
@@ -1295,11 +1358,16 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             scope: 'eosio',
             table: 'global',
         }))['rows'][0];
-        const unpaidVoteShare = ((1000 * 60 * 60 * 24) / 1000000) *
-            parseFloat(voter['unpaid_voteshare_change_rate']);
-        const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
-        const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
-        this.voteRewardsDaily = voterBucket * (unpaidVoteShare / globalUnpaidVoteShare);
+        if(voter){
+            const unpaidVoteShare = ((1000 * 60 * 60 * 24) / 1000000) *
+                parseFloat(voter['unpaid_voteshare_change_rate']);
+            const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
+            const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
+            this.voteRewardsDaily = voterBucket * (unpaidVoteShare / globalUnpaidVoteShare);
+        }else{
+            this.voteRewardsDaily = 0;
+        }
+
     }
 
     private async checkWaxGBMdata(name: any) {

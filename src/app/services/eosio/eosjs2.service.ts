@@ -514,7 +514,7 @@ export class Eosjs2Service {
         });
     }
 
-    async changebw(account, permission, amount, symbol, ratio, fr) {
+    async changebw(account, permission, amount, symbol, ratio, fr, isManual) {
         const accountInfo = await this.rpc.get_account(account);
         const refund = accountInfo.refund_request;
         const liquid_bal = accountInfo.core_liquid_balance;
@@ -528,14 +528,28 @@ export class Eosjs2Service {
 
         const _div = Math.pow(10, fr);
         const _zero = Number(0).toFixed(fr);
-
-        if (typeof accountInfo.cpu_weight === 'string') {
-            wei_cpu = Math.round(parseTokenValue(accountInfo.cpu_weight) / _div);
-            wei_net = Math.round(parseTokenValue(accountInfo.net_weight) / _div);
-        } else {
-            wei_cpu = accountInfo.cpu_weight;
-            wei_net = accountInfo.net_weight;
+        if(isManual){
+            wei_cpu = 0;
+            wei_net = 0;
+            if(accountInfo.self_delegated_bandwidth){
+                if (typeof accountInfo.self_delegated_bandwidth.cpu_weight === 'string') {
+                    wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
+                    wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
+                } else {
+                    wei_cpu = accountInfo.self_delegated_bandwidth.cpu_weight;
+                    wei_net = accountInfo.self_delegated_bandwidth.net_weight;
+                }
+            }
+        }else{
+            if (typeof accountInfo.cpu_weight === 'string') {
+                wei_cpu = Math.round(parseTokenValue(accountInfo.cpu_weight) / _div);
+                wei_net = Math.round(parseTokenValue(accountInfo.net_weight) / _div);
+            } else {
+                wei_cpu = accountInfo.cpu_weight;
+                wei_net = accountInfo.net_weight;
+            }
         }
+
 
         if (liquid_bal) {
             liquid = Math.round(parseTokenValue(liquid_bal) * _div);
@@ -552,6 +566,8 @@ export class Eosjs2Service {
         const new_net = new_total * (1 - ratio);
         let cpu_diff = new_cpu - wei_cpu;
         let net_diff = new_net - wei_net;
+
+        console.log(current_stake,new_cpu,new_net,cpu_diff,net_diff);
 
         if (cpu_diff > (ref_cpu + liquid)) {
             net_diff += (cpu_diff - (ref_cpu + liquid));

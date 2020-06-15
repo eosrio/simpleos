@@ -7,6 +7,7 @@ import {parseTokenValue} from '../helpers/aux_functions';
 import {CryptoService} from './crypto/crypto.service';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../interfaces/account';
+import * as moment from 'moment';
 
 @Injectable({
     providedIn: 'root',
@@ -518,7 +519,7 @@ export class AccountsService {
                 apis = this.activeChain.hyperionProviders.map(a => a.url);
             }
         }
-
+        let bestUrl = '';
         for (const api of apis) {
             if (!result) {
 
@@ -528,7 +529,7 @@ export class AccountsService {
                 url = url + (after !== '' && after !== undefined ? '&after=' + after : '');
                 url = url + (before !== '' && before !== undefined ? '&before=' + before : '');
                 url = url + (parent !== '' && parent !== undefined ? '&parent=' + parent : '');
-
+                console.log(url);
                 try {
                     const tref = Date.now();
                     const response: any = await this.http.get(url).toPromise();
@@ -537,6 +538,7 @@ export class AccountsService {
                         console.log(`Used ${api} with ${latency} ms latency`);
                         // const provider = this.activeChain.hyperionProviders.find(p => p.url === api);
                         // provider.latency = latency;
+                        bestUrl = api;
                         result = response;
                     }
                 } catch (e) {
@@ -564,6 +566,7 @@ export class AccountsService {
             this.totalActions = result['total']['value'];
             this.accounts[this.selectedIdx]['actions'] = this.actions;
             this.calcTotalAssets();
+            this.checkLastActions(bestUrl, account).catch(console.log);
             return true;
         } else {
             console.log('no action history from hyperion endpoints');
@@ -617,9 +620,39 @@ export class AccountsService {
             });
             this.accounts[this.selectedIdx]['actions'] = this.actions;
             this.calcTotalAssets();
+            // this.checkLastActions('').catch(console.log);
         }).catch((err) => {
             console.log(err);
         });
+    }
+
+    async checkLastActions(api, account){
+        let activitypastday = false;
+        const nowDate = moment.utc(moment().local());
+        const beforeDate = moment.utc(moment().local()).subtract(1, 'days');
+
+        let url = api + '/history/get_actions?limit=100&skip=0&account=' + account +
+            '&after=' + beforeDate.format('YYYY-MM-DD[T]HH:mm:ss') +
+            '&before=' + nowDate.format('YYYY-MM-DD[T]HH:mm:ss');
+
+        console.log(url);
+        try {
+            const response: any = await this.http.get(url).toPromise();
+                if (response.actions.length > 0) {
+                    response.actions.forEach(act => {
+                        console.log(act['act']['authorization']);
+                        const actor = act['act']['authorization'].find(auth => auth.actor === account);
+                        if (!activitypastday && actor) {
+                            activitypastday = true;
+                        }
+                    });
+            }
+
+        } catch (e) {
+            console.log(`failed to fetch actions: ${api}`);
+        }
+        this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
+        console.log(activitypastday);
     }
 
     reloadActions(account) {
@@ -732,7 +765,7 @@ export class AccountsService {
         return new Promise(async (resolve) => {
             const newdata = await this.eosjs.getAccountInfo(account['name']);
             const tokens = await this.eosjs.getTokens(account['name']);
-            let balance = 0;
+            let balance = 0; 
             let ref_time = null;
             let ref_cpu = 0;
             let ref_net = 0;

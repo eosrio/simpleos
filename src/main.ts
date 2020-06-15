@@ -20,12 +20,7 @@ function angularBoot() {
     }).catch(err => console.log(err));
 }
 
-(async () => {
-
-    if (!localStorage.getItem('simplEOS.activeChainID')) {
-        localStorage.setItem('simplEOS.activeChainID', 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906');
-    }
-
+async function fecthConfigJson() {
     const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/config.json';
 
     let response;
@@ -34,6 +29,7 @@ function angularBoot() {
     } catch (e) {
         console.log('failed to load updated config.json from github');
         console.log(e);
+        fecthConfigJson().catch(console.log);
     }
 
     let jsonBody;
@@ -52,6 +48,16 @@ function angularBoot() {
     } catch (e) {
         console.log('error saving to localStorage');
     }
+}
+
+(async () => {
+
+    if (!localStorage.getItem('simplEOS.activeChainID')) {
+        localStorage.setItem('simplEOS.activeChainID', 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906');
+    }
+
+    await fecthConfigJson();
+
 
     // Launch Main Application
     angularBoot();
