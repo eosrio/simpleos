@@ -514,12 +514,10 @@ export class Eosjs2Service {
         });
     }
 
-    async changebw(account, permission, amount, symbol, ratio, fr, isManual) {
+    async changebw(account, permission, amount, symbol, ratio, fr) {
         const accountInfo = await this.rpc.get_account(account);
         const refund = accountInfo.refund_request;
         const liquid_bal = accountInfo.core_liquid_balance;
-        let cpu_v;
-        let net_v;
         let wei_cpu: number;
         let wei_net: number;
         let ref_cpu = 0;
@@ -528,26 +526,12 @@ export class Eosjs2Service {
 
         const _div = Math.pow(10, fr);
         const _zero = Number(0).toFixed(fr);
-        if(isManual){
-            wei_cpu = 0;
-            wei_net = 0;
-            if(accountInfo.self_delegated_bandwidth){
-                if (typeof accountInfo.self_delegated_bandwidth.cpu_weight === 'string') {
-                    wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
-                    wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
-                } else {
-                    wei_cpu = accountInfo.self_delegated_bandwidth.cpu_weight;
-                    wei_net = accountInfo.self_delegated_bandwidth.net_weight;
-                }
-            }
-        }else{
-            if (typeof accountInfo.cpu_weight === 'string') {
-                wei_cpu = Math.round(parseTokenValue(accountInfo.cpu_weight) / _div);
-                wei_net = Math.round(parseTokenValue(accountInfo.net_weight) / _div);
-            } else {
-                wei_cpu = accountInfo.cpu_weight;
-                wei_net = accountInfo.net_weight;
-            }
+        if (typeof accountInfo.cpu_weight === 'string') {
+            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
+            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
+        } else {
+            wei_cpu = parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight);
+            wei_net = parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight);
         }
 
 
@@ -567,7 +551,57 @@ export class Eosjs2Service {
         let cpu_diff = new_cpu - wei_cpu;
         let net_diff = new_net - wei_net;
 
-        console.log(current_stake,new_cpu,new_net,cpu_diff,net_diff);
+        return await this.processStakeActions(account, permission, cpu_diff, net_diff, ref_cpu, ref_net, liquid, _div, fr, _zero, symbol);
+
+    }
+
+    async changebwManually(account, permission, amountCPU, amountNET, symbol, fr) {
+        const accountInfo = await this.rpc.get_account(account);
+        const refund = accountInfo.refund_request;
+        const liquid_bal = accountInfo.core_liquid_balance;
+
+        let wei_cpu: number;
+        let wei_net: number;
+        let ref_cpu = 0;
+        let ref_net = 0;
+        let liquid = 0;
+
+        const _div = Math.pow(10, fr);
+        const _zero = Number(0).toFixed(fr);
+        if (typeof accountInfo.cpu_weight === 'string') {
+            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
+            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
+        } else {
+            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) * _div);
+            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) * _div);
+        }
+
+
+        if (liquid_bal) {
+            liquid = Math.round(parseTokenValue(liquid_bal) * _div);
+        }
+
+        if (refund) {
+            ref_cpu = Math.round(parseTokenValue(refund.cpu_amount) * _div);
+            ref_net = Math.round(parseTokenValue(refund.net_amount) * _div);
+        }
+
+        const new_cpu = amountCPU;
+        const new_net = amountNET;
+        let cpu_diff = new_cpu - wei_cpu;
+        let net_diff = new_net - wei_net;
+        console.log('current --->', wei_cpu, wei_net);
+        console.log('new ------->', new_cpu, new_net);
+        console.log('diff ------>', cpu_diff, net_diff);
+
+        return await this.processStakeActions(account, permission, cpu_diff, net_diff, ref_cpu, ref_net, liquid, _div, fr, _zero, symbol);
+
+    }
+
+    async processStakeActions(account, permission, cpu_diff, net_diff, ref_cpu, ref_net, liquid, _div, fr, _zero, symbol) {
+
+        let cpu_v;
+        let net_v;
 
         if (cpu_diff > (ref_cpu + liquid)) {
             net_diff += (cpu_diff - (ref_cpu + liquid));

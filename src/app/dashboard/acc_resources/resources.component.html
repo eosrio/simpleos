@@ -27,13 +27,13 @@
                                     <div class="highlight-primary eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
                                         number: '1.2-4') + "K" : ((stakedBalance) | number: precision) }} {{aService.activeChain['symbol']}}
                                     </div>
-                                    <div *ngIf="aService.activeChain['features']['rex']&&!hasRex"
+                                    <div *ngIf="aService.activeChain['features']['rex']&&hasRex"
                                          style="font-size: 16px;" class="free-title">
                                         STAKED + REX: <span class="highlight-primary">{{(totalStaked) | number :
                                         '1.2-4'}} {{aService.activeChain['symbol']}} </span>
                                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
                                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                                            <span class="tooltip-content">This amount represents your total voting power which includes staked EOS and the amount allocated to REX.</span>
+                                            <span class="tooltip-content">This amount represents your total voting power which includes staked EOS from this account and delgated resouces you lent to other accounts and the amount allocated to REX.</span>
                                         </a>
                                     </div>
                                     <div *ngIf="aService.activeChain['features']['vote']&&hasVote"
@@ -63,7 +63,7 @@
                                                 </a>
                                                 <div style="float:right">
                                                     <mat-checkbox [checked]="isManually"  (change)="isManually=!isManually">
-                                                        Enable manually Stake
+                                                        Manually
                                                     </mat-checkbox>
                                                 </div>
                                             </div>

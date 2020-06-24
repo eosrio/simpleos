@@ -380,146 +380,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log(this.stakingRatio);
     }
 
-    setStake() {
-        this.stakerr = '';
-        const precisionVal = this.aService.activeChain['precision'];
-        const precision = Math.pow(10, this.aService.activeChain['precision']);
-
-        const prevStake = Math.round(this.aService.selected.getValue().staked * precision);
-
-        let nextStakeFloat = parseFloat(this.valuetoStake);
-
-        if(this.isManually){
-            const nextStakeCPUFloat = parseFloat(this.cpu_self===''?'0':this.cpu_self);
-            const nextStakeNETFloat = parseFloat(this.net_self===''?'0':this.net_self);
-
-            nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
-
-            this.valuetoStake = `${nextStakeFloat}`;
-            if(nextStakeFloat === 0){
-                const cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
-                const net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
-                const total_prevStake = (parseFloat(cpu_self===''?'0':cpu_self) + parseFloat(net_self===''?'0':net_self));
-                console.log(cpu_self,net_self);
-                this.stakingRatio = (parseFloat(cpu_self===''?'0':cpu_self) / total_prevStake) * 100;
-
-            }else{
-                this.stakingRatio = (nextStakeCPUFloat / nextStakeFloat) * 100;
-            }
-            console.log(nextStakeCPUFloat,nextStakeNETFloat);
-        }
-        console.log(this.stakingRatio);
-        const nextStakeInt = Math.round(nextStakeFloat * precision);
-        const diff = nextStakeInt - prevStake;
-        console.log(diff);
-        this.stakingDiff = diff;
-        this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
-        this.wrongpass = '';
-        console.log(diff);
-        if (diff !== 0) {
-            this.newSetStake().catch(console.log);
-        } else {
-            this.stakerr = 'Value has not changed';
-        }
-
-    }
-
-    async newSetStake() {
-        this.busy = true;
-        this.wrongpass = '';
-        const account = this.aService.selected.getValue();
-        const precisionVal = this.aService.activeChain['precision'];
-        this.wrongpass = '';
-
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
-
-        this.mode = this.crypto.getPrivateKeyMode(publicKey);
-
-        let actionTitle = ``;
-        let html = ``;
-        let action = '';
-        if (this.stakingDiff > 0) {
-            action = 'stake';
-            html = `<h5 class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>`;
-            actionTitle = `Stake <span class="blue">+${this.stakingHRV}</span> ?`;
-        } else if (this.stakingDiff < 0) {
-            action = 'unstake';
-            html = `<h5 class="mt-0">Your tokens will be free for transfers after 3 days.</h5>`;
-            actionTitle = `Unstake <span class="blue">${this.stakingHRV}</span> ?`;
-        }
-
-        const messageHTML = ` <h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precisionVal)}</span></h4>
-            <h4 class="text-white mt-0">Voting power will be: <span class="blue">${parseFloat(this.percenttoStake).toFixed(2)}%</span></h4>
-            ${html}`;
-
-        const [, permission] = this.aService.getStoredKey(account);
-        let trx = {} as TrxPayload;
-        if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
-            try {
-                const actions = await this.eosjs.changebw(
-                    account.name,
-                    permission,
-                    this.stakingDiff,
-                    this.aService.activeChain['symbol'],
-                    this.stakingRatio / 100,
-                    this.aService.activeChain['precision'],
-                    this.isManually
-                );
-                trx = {actions: actions};
-                console.log(actions);
-            } catch (e) {
-                console.log(e);
-            }
-        } else {
-            trx = {
-                actions: [{
-                    account: 'eosio',
-                    name: action,
-                    authorization: [auth],
-                    data: {
-                        'acnt': account.name,
-                        'quantity': this.stakingHRV,
-                    }
-                }]
-            };
-        }
-
-        console.log(trx);
-        this.trxFactory.modalData.next({
-            transactionPayload: trx,
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: '',
-            termsHTML: ''
-        });
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe((event) => {
-            console.log(event);
-            if (event === 'done') {
-                setTimeout(() => {
-                    this.aService.refreshFromChain(false).then(async () => {
-                        await this.onAccountChanged(this.aService.selected.getValue());
-                        // this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
-                        // this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
-                        // const _cpu = RexComponent.asset2Float(this.cpu_weight);
-                        // const _net = RexComponent.asset2Float(this.net_weight);
-                        // this.cpu_weight_n = _cpu;
-                        // this.net_weight_n = _net;
-                        // this.cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
-                        // this.net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
-                    });
-                }, 1500);
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
-    }
-
     updateBalances() {
         const selectedAcc = this.aService.selected.getValue();
         this.totalBalance = selectedAcc.full_balance;
@@ -556,7 +416,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     getRexBalance(acc) {
         if (this.aService.activeChain.features['rex']) {
             this.eosjs.getRexData(acc).then(async (rexdata) => {
-                this.hasRex = !rexdata.rexbal;
+                let amount = 0;
+                if (rexdata.rexbal !== undefined) {
+                    const balance = rexdata.rexbal.rex_balance.split(' ');
+                    amount = parseFloat(balance[0]);
+                }
+                this.hasRex = amount > 0;
             });
         } else {
             this.hasRex = false;

@@ -116,7 +116,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     stakingRatio = 75;
 
 
-
     isManually: boolean;
     private keytar: any;
     private fs: any;
@@ -141,9 +140,11 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     cpu_limit: any;
     cpu_weight = '';
     cpu_weight_n = 0;
+    cpu_amount_m = 0;
     net_limit: any;
     net_weight = '';
     net_weight_n = 0;
+    net_amount_m = 0;
 
     delegations = [];
     delegated_net = 0;
@@ -458,10 +459,10 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }
             this.cpu_weight = selected.details.total_resources.cpu_weight;
             this.net_weight = selected.details.total_resources.net_weight;
-            if(selected.details.self_delegated_bandwidth){
+            if (selected.details.self_delegated_bandwidth) {
                 this.cpu_self = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
                 this.net_self = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
-            }else{
+            } else {
                 this.cpu_self = '';
                 this.net_self = '';
             }
@@ -519,7 +520,14 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     getRexBalance(acc) {
         if (this.aService.activeChain.features['rex']) {
             this.eosjs.getRexData(acc).then(async (rexdata) => {
-                this.hasRex = !rexdata.rexbal;
+                console.log(rexdata);
+                console.log(!rexdata.rexbal);
+                let amount = 0;
+                if (rexdata.rexbal !== undefined) {
+                    const balance = rexdata.rexbal.rex_balance.split(' ');
+                    amount = parseFloat(balance[0]);
+                }
+                this.hasRex = amount > 0;
             });
         } else {
             this.hasRex = false;
@@ -570,15 +578,15 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     checkValueManually(op) {
         this.minstake = false;
-        const sum = parseFloat(this.cpu_self) +parseFloat(this.net_self);
+        const sum = parseFloat(this.cpu_self) + parseFloat(this.net_self);
         if (sum <= 1) {
             this.minstake = true;
         }
-        if(this.isManually){
+        if (this.isManually) {
             if (sum > this.totalBalance) {
-                if(op === 'cpu'){
+                if (op === 'cpu') {
                     this.cpu_self = `${this.totalBalance - parseFloat(this.net_self)}`;
-                }else{
+                } else {
                     this.net_self = `${this.totalBalance - parseFloat(this.cpu_self)}`;
                 }
             }
@@ -599,37 +607,33 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const precisionVal = this.aService.activeChain['precision'];
         const precision = Math.pow(10, this.aService.activeChain['precision']);
 
-        const prevStake = Math.round(this.aService.selected.getValue().staked * precision);
+        let prevStake = Math.round(this.aService.selected.getValue().staked * precision);
 
         let nextStakeFloat = parseFloat(this.valuetoStake);
 
-        if(this.isManually){
-            const nextStakeCPUFloat = parseFloat(this.cpu_self===''?'0':this.cpu_self);
-            const nextStakeNETFloat = parseFloat(this.net_self===''?'0':this.net_self);
+        if (this.isManually) {
+            const nextStakeCPUFloat = parseFloat(this.cpu_self === '' ? '0' : this.cpu_self);
+            const nextStakeNETFloat = parseFloat(this.net_self === '' ? '0' : this.net_self);
+
+            const cpu_self = parseFloat(this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0]);
+            const net_self = parseFloat(this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0]);
 
             nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
+            prevStake = Math.round((cpu_self + net_self) * precision);
 
             this.valuetoStake = `${nextStakeFloat}`;
-            if(nextStakeFloat === 0){
-                const cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
-                const net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
-                const total_prevStake = (parseFloat(cpu_self===''?'0':cpu_self) + parseFloat(net_self===''?'0':net_self));
-                console.log(cpu_self,net_self);
-                this.stakingRatio = (parseFloat(cpu_self===''?'0':cpu_self) / total_prevStake) * 100;
-
-            }else{
-                this.stakingRatio = (nextStakeCPUFloat / nextStakeFloat) * 100;
-            }
-            console.log(nextStakeCPUFloat,nextStakeNETFloat);
+            this.cpu_amount_m =  nextStakeCPUFloat * precision;
+            this.net_amount_m =  nextStakeNETFloat * precision;
         }
-        console.log(this.stakingRatio);
+
         const nextStakeInt = Math.round(nextStakeFloat * precision);
+
         const diff = nextStakeInt - prevStake;
-        console.log(diff);
+
         this.stakingDiff = diff;
         this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
         this.wrongpass = '';
-        console.log(diff);
+
         if (diff !== 0) {
             this.newSetStake().catch(console.log);
         } else {
@@ -671,15 +675,21 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         let trx = {} as TrxPayload;
         if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
             try {
-                const actions = await this.eosjs.changebw(
+                const actions = await (this.isManually ? this.eosjs.changebwManually(
+                    account.name,
+                    permission,
+                    this.cpu_amount_m,
+                    this.net_amount_m,
+                    this.aService.activeChain['symbol'],
+                    this.aService.activeChain['precision'],
+                ) : this.eosjs.changebw(
                     account.name,
                     permission,
                     this.stakingDiff,
                     this.aService.activeChain['symbol'],
                     this.stakingRatio / 100,
-                    this.aService.activeChain['precision'],
-                    this.isManually
-                );
+                    this.aService.activeChain['precision']
+                ));
                 trx = {actions: actions};
                 console.log(actions);
             } catch (e) {
