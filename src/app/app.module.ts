@@ -22,6 +22,7 @@ import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
 import * as echarts from 'echarts';
+import {SnotifyModule, SnotifyService, ToastDefaults} from 'ng-snotify';
 
 // Fusejs - fuzzy search
 import {FuseJsModule} from './modules/fusejs/fusejs.module';
@@ -233,6 +234,7 @@ export function playerFactory() {
         MatTooltipModule,
         PaginatorModule,
         A11yModule,
+        SnotifyModule,
     ],
     providers: [
         Eosjs2Service,
@@ -245,6 +247,8 @@ export function playerFactory() {
         ConnectService,
         BackupService,
         ThemeService,
+        { provide: 'SnotifyToastConfig', useValue: ToastDefaults},
+        SnotifyService,
 
     ],
     bootstrap: [AppComponent],

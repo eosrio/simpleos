@@ -8,6 +8,7 @@ import {CryptoService} from './crypto/crypto.service';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../interfaces/account';
 import * as moment from 'moment';
+import {NotificationService} from "./notification.service";
 
 @Injectable({
     providedIn: 'root',
@@ -42,6 +43,7 @@ export class AccountsService {
         private eosjs: Eosjs2Service,
         private crypto: CryptoService,
         private toaster: ToasterService,
+        private notification: NotificationService,
     ) {
         this.accounts = [];
         this.usd_rate = 10.00;
@@ -209,38 +211,38 @@ export class AccountsService {
             //     this.loadingTokens = false;
             //     return this.accounts;
             // } else {
-                // Load with hyperion multi
-                this.lastTkLoadTime = Date.now();
-                const data = await this.getTokenHyperionMulti(account);
-                if (data) {
-                    const tokens = data['tokens'];
-                    for (const token of tokens) {
-                        if (token.symbol !== this.activeChain['symbol']) {
-                            token['balance'] = token['amount'];
-                            token['usd_value'] = 0;
-                            this.registerSymbol(token);
-                        }
+            // Load with hyperion multi
+            this.lastTkLoadTime = Date.now();
+            const data = await this.getTokenHyperionMulti(account);
+            if (data) {
+                const tokens = data['tokens'];
+                for (const token of tokens) {
+                    if (token.symbol !== this.activeChain['symbol']) {
+                        token['balance'] = token['amount'];
+                        token['usd_value'] = 0;
+                        this.registerSymbol(token);
                     }
-                    this.tokens.sort((a: any, b: any) => {
-                        if (a.symbol < b.symbol) {
-                            return -1;
-                        }
-                        if (a.symbol > b.symbol) {
-                            return 1;
-                        }
-                        return 0;
-                    });
-                    this.lastTkLoadTime = Date.now();
-                    this.loading = false;
-                    this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-                    this.loadingTokens = false;
-                    return this.accounts;
-                } else {
-                    this.loading = false;
-                    this.loadingTokens = false;
-                    this.lastTkLoadTime = Date.now();
-                    return null;
                 }
+                this.tokens.sort((a: any, b: any) => {
+                    if (a.symbol < b.symbol) {
+                        return -1;
+                    }
+                    if (a.symbol > b.symbol) {
+                        return 1;
+                    }
+                    return 0;
+                });
+                this.lastTkLoadTime = Date.now();
+                this.loading = false;
+                this.accounts[this.selectedIdx]['tokens'] = this.tokens;
+                this.loadingTokens = false;
+                return this.accounts;
+            } else {
+                this.loading = false;
+                this.loadingTokens = false;
+                this.lastTkLoadTime = Date.now();
+                return null;
+            }
             // }
         } else {
             if (this.tokens.length > 0) {
@@ -626,30 +628,49 @@ export class AccountsService {
         });
     }
 
-    async checkLastActions(api, account){
+    async checkLastActions(api, account) {
         let activitypastday = false;
+        let hasNewReceived = false;
         const nowDate = moment.utc(moment().local());
         const beforeDate = moment.utc(moment().local()).subtract(1, 'days');
-
+        const precision = this.activeChain['precision'];
+        const symbol = this.activeChain['symbol'];
+        console.log(this.activeChain);
+        let amountSum = 0;
         let url = api + '/history/get_actions?limit=100&skip=0&account=' + account +
             '&after=' + beforeDate.format('YYYY-MM-DD[T]HH:mm:ss') +
             '&before=' + nowDate.format('YYYY-MM-DD[T]HH:mm:ss');
-
+        console.log(url);
         try {
             const response: any = await this.http.get(url).toPromise();
-                if (response.actions.length > 0) {
-                    response.actions.forEach(act => {
-                        console.log(act['act']['authorization']);
-                        const actor = act['act']['authorization'].find(auth => auth.actor === account);
-                        if (!activitypastday && actor) {
-                            activitypastday = true;
+
+            if (response.actions.length > 0) {
+                response.actions.forEach(act => {
+                    if (act['act']['name'] === 'transfer') {
+                        if (act['act']['data']['amount'] > 0.0001) {
+                            if (act['act']['data']['to'] === account) {
+                                amountSum += act['act']['data']['amount'];
+                                hasNewReceived = true;
+                            }
                         }
-                    });
+                    }
+                    console.log(act['act']['authorization']);
+                    const actor = act['act']['authorization'].find(auth => auth.actor === account);
+                    if (!activitypastday && actor) {
+                        activitypastday = true;
+                    }
+                });
             }
+
 
         } catch (e) {
             console.log(`failed to fetch actions: ${api}`);
         }
+        const html = `<div class="snotifyToast__title">Recently received </div>
+                    <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>  
+                    Amount: ${amountSum.toFixed(precision)} ${symbol} </div>`;
+
+        this.notification.onHtml(html);
         this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
         console.log(activitypastday);
     }
@@ -672,6 +693,10 @@ export class AccountsService {
             }
             this.selectedIdx = index;
             this.selected.next(sel);
+
+            // this.notification.onInfo();
+            // this.notification.onWarning();
+            // this.notification.onError();
             this.fetchTokens(sel.name).catch(console.log);
         }
     }
@@ -750,7 +775,7 @@ export class AccountsService {
         if (data.length > 0) {
             this.accounts = [
                 ...data.map((value) => {
-                    return !value.details ? {name: value['account_name'],full_balance:0, details: value} : value;
+                    return !value.details ? {name: value['account_name'], full_balance: 0, details: value} : value;
                 })
             ];
             // reload all account
@@ -764,20 +789,36 @@ export class AccountsService {
         return new Promise(async (resolve) => {
             const newdata = await this.eosjs.getAccountInfo(account['name']);
             const tokens = await this.eosjs.getTokens(account['name']);
-            let balance = 0; 
+            let balance = 0;
             let ref_time = null;
             let ref_cpu = 0;
             let ref_net = 0;
             let staked = 0;
             const refund = newdata['refund_request'];
             if (refund) {
+                const precision = this.activeChain['precision'];
+                const symbol = this.activeChain['symbol'];
+
                 ref_cpu = this.parseEOS(refund['cpu_amount']);
                 ref_net = this.parseEOS(refund['net_amount']);
                 balance += ref_net;
                 balance += ref_cpu;
                 const tempDate = refund['request_time'] + '.000Z';
                 ref_time = new Date(tempDate);
+                const dateFormat = "YYYY-MM-DD HH:mm:ss";
+                const unstakeDate = moment(moment(ref_time).local());
+                const threeDaysAgo = moment().local().subtract(72, 'hours').format(dateFormat);
+                const differenceInHours = moment(unstakeDate).diff(threeDaysAgo, 'hours');
+                // if (differenceInHours < 0) {
+                    const html = `<div class="snotifyToast__title">Refund to <i>(${account['name']})</i></div>
+                    <div class="snotifyToast__body">Balance: ${balance.toFixed(precision)} ${symbol} <br/> 
+                    ${moment(moment(ref_time).local()).fromNow()}</div>`;
+
+                    this.notification.onHtml(html);
+                // }
+
             }
+
             tokens.forEach((tk) => {
                 balance += this.parseEOS(tk);
             });

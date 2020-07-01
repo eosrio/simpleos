@@ -52,6 +52,9 @@
                 "input": "node_modules/animate.css/animate.min.css"
               },
               {
+                "input": "node_modules/ng-snotify/styles/dark.scss"
+              },
+              {
                 "input": "src/styles.css"
               }
             ],

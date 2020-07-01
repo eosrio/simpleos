@@ -18,6 +18,7 @@ import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Router} from "@angular/router";
+import {NotificationService} from "../services/notification.service";
 
 @Component({
     selector: 'app-dashboard',
@@ -131,7 +132,8 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         private theme: ThemeService,
         public app: AppComponent,
         private cdr: ChangeDetectorRef,
-        private router: Router
+        private router: Router,
+        public notification: NotificationService,
     ) {
 
         this.newAccountModal = false;
@@ -259,10 +261,12 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         let loadedFirst = false;
         this.subscriptions.push(
             this.aService.selected.asObservable().subscribe((data) => {
+
+                const acc = this.aService.selected.getValue();
                 this.selectedTab = this.aService.selectedIdx;
                 if (data.name && !loadedFirst) {
                     loadedFirst = true;
-                    this.aService.getAccActions(this.aService.selected.getValue().name).catch(console.log);
+                    this.aService.getAccActions(acc.name).catch(console.log);
                 }
             }),
         );

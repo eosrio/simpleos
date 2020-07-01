@@ -1012,3 +1012,35 @@ body .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active 
 .mat-form-field-suffix a {
 	color: inherit;
 }
+
+
+/*Notifications*/
+.snotifyToast{
+	background-color: var(--sidenav-active-background)!important;
+}
+
+.snotifyToast__progressBar{
+	background-color: var(--scroll-background)!important;
+}
+.snotifyToast__progressBar__percentage{
+	background-color: var(--scroll-thumb-background)!important;
+}
+
+.snotifyToast__title{
+	color:var(--table-th-color) !important;
+	font-size: 22px;
+	width: 100vw;
+}
+
+.snotifyToast__body{
+	color:var(--table-td-color) !important;
+	font-size: 16px;
+	width: 100vw;
+}
+.snotify-icon{
+	max-height: 35px!important;
+	max-width: 35px!important;
+}
+/*
+	CHANGE DIRECTLY in the package node_module/ng-snotify/styles/{THEME}/icons.scss  (class used .snotify-icon--info)
+*/
