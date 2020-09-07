@@ -8,10 +8,10 @@
       "name": "EOS MAINNET",
       "network": "MAINNET",
       "firstApi": "https://api.eosrio.io",
-      "historyApi": "https://api.eossweden.org/v2",
+      "historyApi": "https://eos.hyperion.eosrio.io/v2",
       "hyperionApis": [
-        "https://api.eossweden.org/v2",
-        "https://mainnet.eosn.io/v2"
+        "https://eos.hyperion.eosrio.io/v2",
+        "https://api.eossweden.org/v2"
       ],
       "forumTally": "https://s3.amazonaws.com/api.eosvotes.io/eosvotes/tallies/latest.json",
       "eosrioBP": "eosriobrazil",
@@ -160,8 +160,9 @@
       "name": "WAX MAINNET",
       "network": "MAINNET",
       "firstApi": "https://wax.eosrio.io",
-      "historyApi": "https://api.waxsweden.org/v2",
+      "historyApi": "https://wax.eosrio.io/v2",
       "hyperionApis": [
+        "https://wax.eosrio.io/v2",
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
         "https://api.wax.alohaeos.com/v2",
