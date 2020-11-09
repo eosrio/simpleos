@@ -31,6 +31,11 @@
         "forum": true,
         "rex": true
       },
+      "borrow": {
+        "enable": true,
+        "margin": 1.30,
+        "default_us": 1000
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -189,6 +194,9 @@
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -293,6 +301,9 @@
         "forum": true,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -379,6 +390,9 @@
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -444,6 +458,9 @@
         "newAcc": true,
         "forum": false,
         "rex": true
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -515,6 +532,9 @@
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -563,6 +583,9 @@
         "newAcc": false,
         "forum": false,
         "rex": false
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -632,6 +655,9 @@
         "newAcc": true,
         "forum": false,
         "rex": true
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -707,6 +733,9 @@
         "forum": false,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -767,6 +796,9 @@
         "newAcc": true,
         "forum": false,
         "rex": true
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -830,6 +862,9 @@
         "forum": false,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -888,6 +923,9 @@
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.init",
@@ -931,6 +969,9 @@
         "newAcc": false,
         "forum": false,
         "rex": false
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -982,6 +1023,9 @@
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -1026,6 +1070,9 @@
         "newAcc": true,
         "forum": false,
         "rex": false
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
