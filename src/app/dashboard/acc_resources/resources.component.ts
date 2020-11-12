@@ -594,13 +594,15 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
    async updateRatio(selected) {
-        this.cpu_weight = selected.details.self_delegated_bandwidth.cpu_weight;
-        this.net_weight = selected.details.self_delegated_bandwidth.net_weight;
-        const _cpu = RexComponent.asset2Float(this.cpu_weight);
-        const _net = RexComponent.asset2Float(this.net_weight);
+        this.cpu_weight = selected.details.total_resources.cpu_weight;
+        this.net_weight = selected.details.total_resources.net_weight;
+        const _cpu = RexComponent.asset2Float(selected.details.total_resources.cpu_weight);
+        const _net = RexComponent.asset2Float(selected.details.total_resources.net_weight);
         this.cpu_weight_n = _cpu;
         this.net_weight_n = _net;
-        this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+        const _cpuSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth.cpu_weight);
+        const _netSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth.net_weight);
+        this.stakingRatio = (_cpuSelf / (_cpuSelf + _netSelf)) * 100;
         this.cdr.detectChanges();
         console.log(_cpu,_net,this.stakingRatio);
     }
