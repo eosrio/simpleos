@@ -9,6 +9,7 @@ import {Eosjs2Service} from './eosio/eosjs2.service';
 import {HttpClient} from '@angular/common/http';
 import {localConfig} from '../../config';
 import {environment} from '../../environments/environment';
+import {localError} from "../../error";
 
 export interface Endpoint {
     url: string;
@@ -43,6 +44,7 @@ export class NetworkService {
 
     public activeChain = null;
     defaultChains: any[];
+    defaultErrors: any[];
     selectGroup: any[];
     isStarting = false;
 
@@ -132,6 +134,16 @@ export class NetworkService {
         } catch (e) {
             console.log(e);
         }
+
+        let errorSimpleos = JSON.parse(localStorage.getItem('errorSimpleos'));
+        if (!errorSimpleos) {
+            console.log('failed to load updated config');
+            errorSimpleos = {
+                error: localError
+            };
+        }
+
+        this.defaultErrors = errorSimpleos.error;
 
         this.createGroups();
 

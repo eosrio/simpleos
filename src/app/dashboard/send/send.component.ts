@@ -14,6 +14,7 @@ import {TransactionFactoryService} from '../../services/eosio/transaction-factor
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {ElectronService} from "ngx-electron";
 import {start} from "repl";
+import {ResourceService} from "../../services/resource.service";
 
 
 export interface Contact {
@@ -91,7 +92,8 @@ export class SendComponent implements OnInit, OnDestroy {
                 private ledger: LedgerService,
                 private network: NetworkService,
                 private trxFactory: TransactionFactoryService,
-                private electron: ElectronService
+                private electron: ElectronService,
+                private resource: ResourceService
     ) {
         this.sendModal = false;
         this.newContactModal = false;
@@ -509,7 +511,10 @@ export class SendComponent implements OnInit, OnDestroy {
     }
 
     async newTransfer() {
+
         const to = this.sendForm.get('to').value.toLowerCase();
+        let actionsModal;
+
         const result = await this.trxFactory.transact(async (auth) => {
             const selAcc = this.aService.selected.getValue();
             const from = selAcc.name;
@@ -518,8 +523,12 @@ export class SendComponent implements OnInit, OnDestroy {
             let contract = 'eosio.token';
             let termsHeader = '';
             let termsHtml = '';
+
             const tk_name = this.sendForm.get('token').value;
+
+
             let precision = this.aService.activeChain['precision'];
+
             if (tk_name !== this.aService.activeChain['symbol']) {
                 const idx = this.aService.tokens.findIndex((val) => {
                     return val.name === tk_name;
@@ -528,9 +537,10 @@ export class SendComponent implements OnInit, OnDestroy {
                 precision = this.aService.tokens[idx].precision;
             }
             const actionTitle = `<span class="blue">Transfer</span>`;
+
             const messageHTML = `
-                <h5 class="modal-title text-white"><span class="blue">${from}</span> sends <span
-                class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="blue">${to}</span></h5> 	
+                <h5 class="modal-title"><span class="highlight-primary">${from}</span> sends <span
+                class="blue">${amount.toFixed(precision) + ' ' + tk_name}</span> to <span class="highlight-primary">${to}</span></h5> 	
 		    `;
 
             if (this.sendForm.value.token === 'EOS' && this.aService.activeChain.name === 'EOS MAINNET') {
@@ -554,60 +564,88 @@ export class SendComponent implements OnInit, OnDestroy {
             this.addDividers();
             this.storeContacts();
 
+            actionsModal = [{
+                account: contract,
+                name: 'transfer',
+                authorization: [auth],
+                data: {
+                    'from': from,
+                    'to': to,
+                    'quantity': amount.toFixed(precision) + ' ' + tk_name,
+                    'memo': memo
+                }
+            }];
+
+            const resultResource = await this.resource.checkResource(auth,actionsModal, tk_name);
+            const resourceActions = await this.resource.getActions(auth);
+
             return {
                 transactionPayload: {
-                    actions: [{
-                        account: contract,
-                        name: 'transfer',
-                        authorization: [auth],
-                        data: {
-                            'from': from,
-                            'to': to,
-                            'quantity': amount.toFixed(precision) + ' ' + tk_name,
-                            'memo': memo
-                        }
-                    }]
+                    actions: actionsModal
                 },
+                resourceTransactionPayload: {
+                    actions: resourceActions
+                },
+                resourceInfo: resultResource,
+                addActions: resultResource['needResources'],
                 actionTitle: actionTitle,
                 labelHTML: messageHTML,
                 termsHeader: termsHeader,
-                termsHTML: termsHtml
-            }
+                termsHTML: termsHtml,
+            };
         });
-        if (result.status === 'done') {
-            try {
-                await this.aService.refreshFromChain(false, [to]);
-                const sel = this.aService.selected.getValue();
-                const newBalance = sel.full_balance - sel.staked - sel.unstaking;
-                if (newBalance !== this.unstaked) {
-                    this.unstaked = newBalance;
-                    this.updateToken();
-                } else {
-                    let attempts = 0;
-                    let loop = setInterval(() => {
-                        attempts++;
-                        this.aService.refreshFromChain(false, [to]).then(() => {
-                            const sel = this.aService.selected.getValue();
-                            const newBalance = sel.full_balance - sel.staked - sel.unstaking;
-                            if (newBalance !== this.unstaked) {
-                                this.unstaked = newBalance;
-                                this.updateToken();
+
+        try{
+            const jsonStatus = JSON.parse(result.status );
+            if(jsonStatus.error.code === 3080004){
+                const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                const cpu = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
+                await this.resource.checkResource(result.auth, actionsModal, cpu);
+            }
+
+            if(jsonStatus.error.code === 3080002){
+                const valueSTR = jsonStatus.error.details[0].message.split('>');
+                const net = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
+                await this.resource.checkResource(result.auth, actionsModal, undefined,net);
+            }
+        }catch (e) {
+            if (result.status === 'done') {
+                try {
+                    await this.aService.refreshFromChain(false, [to]);
+                    const sel = this.aService.selected.getValue();
+                    const newBalance = sel.full_balance - sel.staked - sel.unstaking;
+                    if (newBalance !== this.unstaked) {
+                        this.unstaked = newBalance;
+                        this.updateToken();
+                    } else {
+                        let attempts = 0;
+                        let loop = setInterval(() => {
+                            attempts++;
+                            this.aService.refreshFromChain(false, [to]).then(() => {
+                                const sel = this.aService.selected.getValue();
+                                const newBalance = sel.full_balance - sel.staked - sel.unstaking;
+                                if (newBalance !== this.unstaked) {
+                                    this.unstaked = newBalance;
+                                    this.updateToken();
+                                    if (loop) {
+                                        clearInterval(loop);
+                                        loop = null;
+                                    }
+                                }
+                            });
+                            if (attempts > 20) {
                                 if (loop) {
                                     clearInterval(loop);
-                                    loop = null;
                                 }
                             }
-                        });
-                        if (attempts > 20) {
-                            if (loop) {
-                                clearInterval(loop);
-                            }
-                        }
 
-                    }, 2000);
+                        }, 2000);
+                    }
+                } catch (e) {
+                    console.error(e);
                 }
-            } catch (e) {
-                console.error(e);
+            }else {
+                console.log(result);
             }
         }
     }

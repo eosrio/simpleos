@@ -14,57 +14,57 @@
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "aot": true,
-            "outputPath": "ng-dist",
-            "index": "src/index.html",
-            "main": "src/main.ts",
+            "outputPath": "./ng-dist",
+            "index": "./src/index.html",
+            "main": "./src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
-              "src/favicon.ico",
-              "src/assets"
+              "./src/favicon.ico",
+              "./src/assets"
             ],
             "styles": [
               {
-                "input": "node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
+                "input": "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
               },
               {
-                "input": "node_modules/bootstrap/dist/css/bootstrap-grid.min.css"
+                "input": "./node_modules/bootstrap/dist/css/bootstrap-grid.min.css"
               },
               {
-                "input": "node_modules/@clr/ui/clr-ui.min.css"
+                "input": "./node_modules/@clr/ui/clr-ui.min.css"
               },
               {
-                "input": "node_modules/@clr/icons/clr-icons.min.css"
+                "input": "./node_modules/@clr/icons/clr-icons.min.css"
               },
               {
-                "input": "node_modules/primeng/resources/themes/nova-dark/theme.css"
+                "input": "./node_modules/primeng/resources/themes/nova-light/theme.css"
               },
               {
-                "input": "node_modules/angular2-toaster/toaster.css"
+                "input": "./node_modules/angular2-toaster/toaster.css"
               },
               {
-                "input": "node_modules/primeng/resources/primeng.min.css"
+                "input": "./node_modules/primeng/resources/primeng.min.css"
               },
               {
-                "input": "node_modules/primeicons/primeicons.css"
+                "input": "./node_modules/primeicons/primeicons.css"
               },
               {
-                "input": "node_modules/animate.css/animate.min.css"
+                "input": "./node_modules/animate.css/animate.min.css"
               },
               {
-                "input": "node_modules/ng-snotify/styles/dark.scss"
+                "input": "./node_modules/ng-snotify/styles/dark.scss"
               },
               {
-                "input": "src/styles.css"
+                "input": "./src/styles.css"
               }
             ],
             "scripts": [
-              "node_modules/@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js",
-              "node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js",
-              "node_modules/@clr/icons/clr-icons.min.js",
-              "node_modules/moment/min/moment.min.js",
-              "node_modules/echarts/dist/echarts.min.js",
-              "electron_modules/native.js"
+              "./node_modules/@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js",
+              "./node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js",
+              "./node_modules/@clr/icons/clr-icons.min.js",
+              "./node_modules/moment/min/moment.min.js",
+              "./node_modules/echarts/dist/echarts.min.js",
+              "./electron_modules/native.js"
             ]
           },
           "configurations": {
@@ -83,8 +83,8 @@
               ],
               "fileReplacements": [
                 {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.prod.ts"
+                  "replace": "./src/environments/environment.ts",
+                  "with": "./src/environments/environment.prod.ts"
                 }
               ],
               "optimization": true,

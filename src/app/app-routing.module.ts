@@ -11,7 +11,6 @@ import {LockscreenComponent} from './lockscreen/lockscreen.component';
 import {LockGuard} from './guards/lock.guard';
 import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 import {DappComponent} from './dashboard/dapp/dapp.component';
-import {ReferendumComponent} from './dashboard/referendum/referendum.component';
 import {RexComponent} from './dashboard/rex/rex.component';
 
 const routes: Routes = [
@@ -60,10 +59,6 @@ const routes: Routes = [
 			{
 				path: 'about',
 				component: AboutComponent,
-			},
-			{
-				path: 'referendum',
-				component: ReferendumComponent,
 			}
 		]
 	}

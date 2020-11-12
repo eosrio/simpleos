@@ -392,7 +392,7 @@ export class Eosjs2Service {
 
     async loadPublicKey(pubkey: PublicKey): Promise<any> {
         return new Promise(async (resolve, reject2) => {
-            if (pubkey.validate()) {
+            if (pubkey.isValid()) {
                 const tempAccData = [];
                 const account_names = await this.getKeyAccountsMulti(pubkey.toString());
                 console.log(account_names);
@@ -568,12 +568,17 @@ export class Eosjs2Service {
 
         const _div = Math.pow(10, fr);
         const _zero = Number(0).toFixed(fr);
+
+        const cpuWeightSTR = accountInfo.self_delegated_bandwidth===null ? '0.0000 ' + symbol : accountInfo.self_delegated_bandwidth.cpu_weight;
+        const netWeightSTR = accountInfo.self_delegated_bandwidth===null ? '0.0000 ' + symbol : accountInfo.self_delegated_bandwidth.net_weight;
+
+
         if (typeof accountInfo.cpu_weight === 'string') {
-            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
-            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
+            wei_cpu = Math.round(parseTokenValue(cpuWeightSTR) / _div);
+            wei_net = Math.round(parseTokenValue(netWeightSTR) / _div);
         } else {
-            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) * _div);
-            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) * _div);
+            wei_cpu = Math.round(parseTokenValue(cpuWeightSTR) * _div);
+            wei_net = Math.round(parseTokenValue(netWeightSTR) * _div);
         }
 
 

@@ -128,10 +128,6 @@
                    [routerLink]="['dapp']">
                     <fa-icon [icon]="['far', 'puzzle-piece']"></fa-icon>&nbsp;&nbsp;CONTRACTS (beta)
                 </a>
-                <a *ngIf="network.activeChain.features['forum']" class="nav-link" routerLinkActive="active"
-                   [routerLink]="['referendum']">
-                    <fa-icon [icon]="['far', 'box-ballot']"></fa-icon>&nbsp;&nbsp;REFERENDUM
-                </a>
             </section>
             <section class="placeholder border-r" *ngIf="app.compilerVersion === 'DEFAULT'">
                 <div class="credits">Made with

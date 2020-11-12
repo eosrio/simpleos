@@ -31,6 +31,11 @@ export const localConfig = {
         "forum": true,
         "rex": true
       },
+      "borrow": {
+        "enable": true,
+        "margin": 1.30,
+        "default_us": 1000
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -169,6 +174,9 @@ export const localConfig = {
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -273,6 +281,9 @@ export const localConfig = {
         "forum": true,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -356,6 +367,9 @@ export const localConfig = {
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -421,6 +435,9 @@ export const localConfig = {
         "newAcc": true,
         "forum": false,
         "rex": true
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -492,6 +509,9 @@ export const localConfig = {
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -536,6 +556,9 @@ export const localConfig = {
         "newAcc": false,
         "forum": false,
         "rex": false
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -608,6 +631,9 @@ export const localConfig = {
         "forum": false,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -662,6 +688,9 @@ export const localConfig = {
         "newAcc": true,
         "forum": false,
         "rex": true
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",
@@ -722,6 +751,9 @@ export const localConfig = {
         "forum": false,
         "rex": true
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -780,6 +812,9 @@ export const localConfig = {
         "forum": false,
         "rex": false
       },
+      "borrow": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -824,6 +859,9 @@ export const localConfig = {
         "newAcc": true,
         "forum": false,
         "rex": false
+      },
+      "borrow": {
+        "enable": false
       },
       "system": [
         "eosio",

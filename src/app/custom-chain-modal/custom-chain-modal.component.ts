@@ -35,7 +35,6 @@ export class CustomChainModalComponent implements OnInit {
     toggleRes = true;
     toggleVote = true;
     toggleRex = false;
-    toggleForum = false;
     toggleStake = true;
 
     busy: boolean;
@@ -203,7 +202,6 @@ export class CustomChainModalComponent implements OnInit {
                 "resource": this.toggleRes,
                 "vote": this.toggleVote,
                 "staking": this.toggleStake,
-                "forum": this.toggleForum,
                 "rex": this.toggleRex,
                 "dapps": true,
                 "newAcc": true,

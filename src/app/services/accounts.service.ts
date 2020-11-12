@@ -22,6 +22,7 @@ export class AccountsService {
     public selectedIdx = 0;
     public lastUpdate = new Subject<any>();
     public versionSys: string;
+    public bestApiHyperion: string;
 
     usd_rate = 1;
     tokens = [];
@@ -521,6 +522,7 @@ export class AccountsService {
                 apis = this.activeChain.hyperionProviders.map(a => a.url);
             }
         }
+        this.bestApiHyperion = '';
         let bestUrl = '';
         for (const api of apis) {
             if (!result) {
@@ -540,6 +542,7 @@ export class AccountsService {
                         console.log(`Used ${api} with ${latency} ms latency`);
                         // const provider = this.activeChain.hyperionProviders.find(p => p.url === api);
                         // provider.latency = latency;
+                        this.bestApiHyperion = api;
                         bestUrl = api;
                         result = response;
                     }
@@ -568,7 +571,7 @@ export class AccountsService {
             this.totalActions = result['total']['value'];
             this.accounts[this.selectedIdx]['actions'] = this.actions;
             this.calcTotalAssets();
-            this.checkLastActions(bestUrl, account).catch(console.log);
+            await this.checkLastActions(bestUrl, account);
             return true;
         } else {
             console.log('no action history from hyperion endpoints');
@@ -635,7 +638,7 @@ export class AccountsService {
         const beforeDate = moment.utc(moment().local()).subtract(1, 'days');
         const precision = this.activeChain['precision'];
         const symbol = this.activeChain['symbol'];
-        console.log(this.activeChain);
+
         let amountSum = 0;
         let url = api + '/history/get_actions?limit=100&skip=0&account=' + account +
             '&after=' + beforeDate.format('YYYY-MM-DD[T]HH:mm:ss') +
@@ -647,14 +650,14 @@ export class AccountsService {
             if (response.actions.length > 0) {
                 response.actions.forEach(act => {
                     if (act['act']['name'] === 'transfer') {
-                        if (act['act']['data']['amount'] > 0.0001) {
+                        // if (act['act']['data']['amount'] > 0.0001) {
                             if (act['act']['data']['to'] === account) {
                                 amountSum += act['act']['data']['amount'];
                                 hasNewReceived = true;
                             }
-                        }
+                        // }
                     }
-                    console.log(act['act']['authorization']);
+
                     const actor = act['act']['authorization'].find(auth => auth.actor === account);
                     if (!activitypastday && actor) {
                         activitypastday = true;
@@ -666,13 +669,15 @@ export class AccountsService {
         } catch (e) {
             console.log(`failed to fetch actions: ${api}`);
         }
-        const html = `<div class="snotifyToast__title">Recently received </div>
-                    <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>  
-                    Amount: ${amountSum.toFixed(precision)} ${symbol} </div>`;
+        if(hasNewReceived){
+            const html = `<div class="snotifyToast__title">Recently received </div>
+                        <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>
+                        Amount: ${amountSum.toFixed(precision)} ${symbol} </div>`;
 
-        this.notification.onHtml(html);
+            this.notification.onHtml(html);
+        }
         this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
-        console.log(activitypastday);
+        // console.log(activitypastday);
     }
 
     reloadActions(account) {
@@ -809,13 +814,13 @@ export class AccountsService {
                 const unstakeDate = moment(moment(ref_time).local());
                 const threeDaysAgo = moment().local().subtract(72, 'hours').format(dateFormat);
                 const differenceInHours = moment(unstakeDate).diff(threeDaysAgo, 'hours');
-                // if (differenceInHours < 0) {
+                if (differenceInHours < 0) {
                     const html = `<div class="snotifyToast__title">Refund to <i>(${account['name']})</i></div>
                     <div class="snotifyToast__body">Balance: ${balance.toFixed(precision)} ${symbol} <br/> 
                     ${moment(moment(ref_time).local()).fromNow()}</div>`;
 
                     this.notification.onHtml(html);
-                // }
+                }
 
             }
 
@@ -853,6 +858,7 @@ export class AccountsService {
     }
 
     async refreshFromChain(refreshAll, refreshOthers?: string[]) {
+        console.log(this.isRefreshing);
         if (this.isRefreshing) {
             return;
         }
@@ -874,9 +880,10 @@ export class AccountsService {
                 }
             }
         }
-        await this.fetchTokens(this.selected.getValue().name);
+        const resultToken = await this.fetchTokens(this.selected.getValue().name);
         await this.classifySigProviders();
-        await this.storeAccountData(this.accounts);
+        const resultStoreAccData = await this.storeAccountData(this.accounts);
+        console.log('finish resfresh');
         this.isRefreshing = false;
     }
 

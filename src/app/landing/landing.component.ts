@@ -326,7 +326,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	setEndPoint(ep) {
-		console.log('------------->>>>>>>>>', ep, this.endpoint);
+		console.log('ENDPOINT >>> ', ep, this.endpoint);
 		if (ep !== this.endpoint) {
 			this.endpoint = ep;
 			this.customConnect();
@@ -403,7 +403,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	makePayload() {
-		if (PublicKey.fromString(this.ownerpub).validate() && PublicKey.fromString(this.activepub).validate()) {
+		if (PublicKey.fromString(this.ownerpub).isValid() && PublicKey.fromString(this.activepub).isValid()) {
 			console.log('Generating account payload');
 			this.newAccountPayload = btoa(JSON.stringify({
 				n: this.accountname.toLowerCase(),

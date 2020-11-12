@@ -49,6 +49,35 @@ async function fecthConfigJson() {
         console.log('error saving to localStorage');
     }
 }
+async function fecthErrorJson() {
+    const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/error.json';
+
+    let response;
+    try {
+        response = await fetch(url);
+    } catch (e) {
+        console.log('failed to load updated error.json from github');
+        console.log(e);
+        fecthErrorJson().catch(console.log);
+    }
+
+    let jsonBody;
+    try {
+        jsonBody = await response.json();
+    } catch (e) {
+        console.log('error parsing json data');
+        console.log(e);
+    }
+
+    try {
+        if (jsonBody) {
+            const payload = {lastUpdate: new Date(), error: jsonBody};
+            localStorage.setItem('errorSimpleos', JSON.stringify(payload));
+        }
+    } catch (e) {
+        console.log('error saving to localStorage');
+    }
+}
 
 (async () => {
 
@@ -57,6 +86,8 @@ async function fecthConfigJson() {
     }
 
     await fecthConfigJson();
+
+    await fecthErrorJson();
 
 
     // Launch Main Application

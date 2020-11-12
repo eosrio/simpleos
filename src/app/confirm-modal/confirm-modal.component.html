@@ -4,16 +4,47 @@
     <div class="modal-body">
         <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
 
-        <p-accordion *ngIf="modalData.labelHTML === ''">
+
+
+        <ng-container *ngIf="modalData.labelHTML === ''">
+            <p-accordion>
             <p-accordionTab *ngFor="let act of modalData.transactionPayload.actions; let i = index"
                             header="{{act.name}} on {{act.account}}"
                             [selected]="i === 0">
-                <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
-            </p-accordionTab>
-        </p-accordion>
+                    <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
+                </p-accordionTab>
+            </p-accordion>
+            <h4 [innerHTML]="modalData.labelHTML | safe: 'html'"></h4>
+        </ng-container>
 
-        <h4 *ngIf="modalData.labelHTML !== ''" [innerHTML]="modalData.labelHTML"></h4>
+        <ng-container *ngIf="modalData.addActions">
+            <mat-card class="info-resource">
+            <h5 class="modal-title ">
+                Ops, looks like you do not have enough network resources to perform this action.<br><br>
+                No problem! We got your back!<br><br>
+                We estimate you need <span class="highlight-secondary">{{resource.resourceInfo['borrow'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>
+                to pay for this action, we can borrow this on REX for you and it will cost <span class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>,
+                and you get daily renews for 30 days.
+                <br>
+                <br>
+                <label style="margin-right: 25px">
+                    <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" style="margin-right: 10px" >
+                    yes, please do it
+                </label>
+                <label>
+                    <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >
+                    no, thanks
+                </label>
+            </h5>
+            </mat-card>
+        </ng-container>
+
+        <ng-container *ngIf="modalData.labelHTML !== ''">
+            <h4 [innerHTML]="modalData.labelHTML | safe: 'html'" ></h4>
+        </ng-container>
+
         <h5 class="mt-0"></h5>
+
         <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
             <p-accordion>
                 <p-accordionTab>
@@ -31,7 +62,6 @@
             <div>
                 <ng-container *ngIf="mode === 'local'">
                     <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
-
                         <mat-form-field style="margin-top: 15px;">
                             <input matInput
                                    cdkTrapFocus
@@ -61,9 +91,16 @@
                     </button>
                 </div>
             </div>
-            <div class="error error-modal-footer" *ngIf="errormsg !== ''">
+            <div class="error error-modal-footer" *ngIf="errormsg['friendly']!==''">
                 <fa-icon [icon]="['fas','exclamation-triangle']" class="mr-1"></fa-icon>
-                {{errormsg}}
+                {{errormsg['friendly']}}
+                <ng-container *ngIf="errormsg['origin']!==''">
+                    <p-accordion class="error error-accordion">
+                        <p-accordionTab header="Advanced">
+                            {{errormsg['origin']}}
+                        </p-accordionTab>
+                    </p-accordion>
+                </ng-container>
             </div>
         </div>
     </div>

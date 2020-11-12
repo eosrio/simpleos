@@ -21,6 +21,7 @@ import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../../interfaces/account';
+import {ResourceService} from "../../services/resource.service";
 
 @Component({
     selector: 'app-vote',
@@ -140,6 +141,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         public app: AppComponent,
         public theme: ThemeService,
         private electron: ElectronService,
+        private resource: ResourceService
     ) {
 
         this.keytar = this.electron.remote.require('keytar');
@@ -700,7 +702,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.nVotes = 1;
     }
 
-    setVote() {
+    async setVote() {
 
         const voter = this.aService.selected.getValue();
         let proxy = '';
@@ -726,6 +728,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const actionTitle = `<span class="blue">vote</span>`;
 
         const messageHTML = `<h4 class="text-white">Do you confirm voting on the following ${this.voteService.voteType ? 'Proxy' : 'BPs'}?</h4>
+        
         <h5 class="mt-0">${this.selectedVotes.join(', ')}</h5>`;
 
         if (this.aService.activeChain.name === 'EOS MAINNET') {
@@ -750,48 +753,72 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 system to be used on my behalf or on behalf of another, is forbidden and doing so violates this
                 contract.`;
         }
+        let actionsModal = [{
+            account: 'eosio',
+            name: 'voteproducer',
+            authorization: [auth],
+            data: {
+                'voter': voter.name,
+                'proxy': this.voteService.voteType ? proxy : '',
+                'producers': this.voteService.voteType ? '' : currentVotes,
+            }
+        }];
+
+        const resultResource = await this.resource.checkResource(auth,actionsModal);
+        let resourceActions = await this.resource.getActions(auth);
 
 
         this.trxFactory.modalData.next({
             transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'voteproducer',
-                    authorization: [auth],
-                    data: {
-                        'voter': voter.name,
-                        'proxy': this.voteService.voteType ? proxy : '',
-                        'producers': this.voteService.voteType ? '' : currentVotes,
-                    }
-                }]
+                actions: actionsModal
             },
+            resourceTransactionPayload: {
+                actions: resourceActions
+            },
+            resourceInfo: resultResource,
+            addActions: resultResource['needResources'],
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: termsHeader,
-            termsHTML: termsHtml
+            termsHTML: termsHtml,
         });
 
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe((event) => {
-            console.log(event);
-            if (event === 'done') {
-                setTimeout(() => {
-                    this.aService.refreshFromChain(false).then(() => {
-                        this.voteOption(this.voteService.voteType);
-                        this.voteService.currentVoteType(voter.name);
-                        this.loadPlacedVotes(this.aService.selected.getValue());
-                        this.setCheckListVote(this.aService.selected.getValue().name);
-                    }).catch(err => {
-                        console.log('Refresh From Chain Error:', err);
-                    });
-                    // this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
-                }, 1500);
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
+        const subs = this.trxFactory.status.subscribe( async (event) => {
+
+            try{
+                const jsonStatus = JSON.parse(event);
+                if(jsonStatus.error.code === 3080004){
+                    const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                    const cpu = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
+                    await this.resource.checkResource(auth, actionsModal, cpu);
+                }
+
+                if(jsonStatus.error.code === 3080002){
+                    const valueSTR = jsonStatus.error.details[0].message.split('>');
+                    const net = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
+                    await this.resource.checkResource(auth, actionsModal, undefined,net);
+                }
+            }catch (e) {
+                if (event === 'done') {
+                    setTimeout(() => {
+                        this.aService.refreshFromChain(false).then(() => {
+                            this.voteOption(this.voteService.voteType);
+                            this.voteService.currentVoteType(voter.name);
+                            this.loadPlacedVotes(this.aService.selected.getValue());
+                            this.setCheckListVote(this.aService.selected.getValue().name);
+                        }).catch(err => {
+                            console.log('Refresh From Chain Error:', err);
+                        });
+                        // this.aService.select(this.aService.accounts.findIndex(sel => sel.name === voter.name));
+                    }, 1500);
+                    subs.unsubscribe();
+                }
+                if (event === 'modal_closed') {
+                    subs.unsubscribe();
+                }
             }
         });
     }

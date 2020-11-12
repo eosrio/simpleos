@@ -14,6 +14,7 @@ import {TransactionFactoryService, TrxPayload} from '../../services/eosio/transa
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {Subscription} from "rxjs";
 import {RexComponent} from "../rex/rex.component";
+import {ResourceService} from "../../services/resource.service";
 
 const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
     '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
@@ -69,7 +70,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     hasVote: boolean;
     valuetoStake: string;
     percenttoStake: string;
-    minToStake = 0.01;
+    minToStake = 0.00;
     unstaking: number;
     unstakeTime: string;
     stakeModal: boolean;
@@ -117,8 +118,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
     isManually: boolean;
-    private keytar: any;
-    private fs: any;
     autoClaimStatus: boolean;
 
     claimPublicKey = '';
@@ -129,8 +128,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     public claimReady: boolean;
     public gbmEstimatedDaily = 0;
     public voteRewardsDaily = 0;
-    private autoClaimConfig = {};
-    private last_claim_time: number;
     public claimSetupWarning = '';
     public basePath = '';
     enableAutoClaim: boolean;
@@ -196,6 +193,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         private http: HttpClient,
         private trxFactory: TransactionFactoryService,
         private cdr: ChangeDetectorRef,
+        private resource: ResourceService
     ) {
         this.busy = false;
         this.dataDT = [];
@@ -428,19 +426,19 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const sub = this.aService.selected
             .asObservable()
             .subscribe((selected: any) => {
-                this.onAccountChanged(selected);
+                this.onAccountChanged(selected).catch(console.log);
             });
         this.subscriptions.push(sub);
     }
 
-    onAccountChanged(selected: EOSAccount) {
+    async onAccountChanged(selected: EOSAccount) {
         this.totalStaked = 0;
         this.votedDecay = 0;
         this.votedEOSDecay = 0;
-        if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
-            const precision = Math.pow(10, this.aService.activeChain['precision']);
+        this.isDestroyed = false;
+        // if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
+        if (selected && selected['name'] ) {
             this.precision = '1.0-' + this.aService.activeChain['precision'];
-
 
             this.fromAccount = selected.name;
             this.selectedAccountName = selected.name;
@@ -450,7 +448,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
 
             if (this.totalBalance > 0) {
-                this.minToStake = 100 / this.totalBalance;
+                this.minToStake = 0;
+                // this.minToStake = 100 / this.totalBalance;
                 this.valuetoStake = this.stakedBalance.toString();
             } else {
                 this.minToStake = 0;
@@ -471,13 +470,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.updateStakePercent();
 
             if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
-                this.cpu_weight = selected.details.total_resources.cpu_weight;
-                this.net_weight = selected.details.total_resources.net_weight;
-                const _cpu = RexComponent.asset2Float(this.cpu_weight);
-                const _net = RexComponent.asset2Float(this.net_weight);
-                this.cpu_weight_n = _cpu;
-                this.net_weight_n = _net;
-                this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+                await this.updateRatio(selected);
 
                 if (selected.details.voter_info) {
                     let weeks = 52;
@@ -506,6 +499,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             if (!this.isDestroyed) {
                 this.cdr.detectChanges();
             }
+            console.log(this.minToStake);
         }
     }
 
@@ -546,12 +540,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     checkPercent() {
         this.minstake = false;
-        let min;
-        if (this.totalBalance > 0) {
-            min = 100 / this.totalBalance;
-        } else {
-            min = 0;
-        }
+        let min = 0;
+        // if (this.totalBalance > 0) {
+        //     min = 100 / this.totalBalance;
+        // } else {
+        //      min = 0;
+        // }
         if (parseFloat(this.percenttoStake) <= min) {
             this.percenttoStake = min.toString();
             this.updateStakeValue();
@@ -564,12 +558,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     checkValue() {
-        this.minstake = false;
-        if (parseFloat(this.valuetoStake) <= 1) {
-            // this.valuetoStake = '1';
-            // this.updateStakePercent();
-            this.minstake = true;
-        }
+
+        this.minstake = parseFloat(this.valuetoStake) <= 1;
         if (parseFloat(this.valuetoStake) > this.totalBalance) {
             this.valuetoStake = this.totalBalance.toString();
             this.updateStakePercent();
@@ -598,25 +588,44 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         return val.toString();
     }
 
-    updateRatio() {
-        console.log(this.stakingRatio);
+    callUpdateRatio(){
+        const selected = this.aService.selected.getValue();
+        this.updateRatio(selected).catch(console.log);
     }
 
-    setStake() {
+   async updateRatio(selected) {
+        this.cpu_weight = selected.details.self_delegated_bandwidth.cpu_weight;
+        this.net_weight = selected.details.self_delegated_bandwidth.net_weight;
+        const _cpu = RexComponent.asset2Float(this.cpu_weight);
+        const _net = RexComponent.asset2Float(this.net_weight);
+        this.cpu_weight_n = _cpu;
+        this.net_weight_n = _net;
+        this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+        this.cdr.detectChanges();
+        console.log(_cpu,_net,this.stakingRatio);
+    }
+
+    async setStake() {
         this.stakerr = '';
         const precisionVal = this.aService.activeChain['precision'];
+        const symbol = this.aService.activeChain['symbol'];
         const precision = Math.pow(10, this.aService.activeChain['precision']);
-
+        const selected = this.aService.selected.getValue();
         let prevStake = Math.round(this.aService.selected.getValue().staked * precision);
 
         let nextStakeFloat = parseFloat(this.valuetoStake);
+        console.log(nextStakeFloat);
 
         if (this.isManually) {
             const nextStakeCPUFloat = parseFloat(this.cpu_self === '' ? '0' : this.cpu_self);
             const nextStakeNETFloat = parseFloat(this.net_self === '' ? '0' : this.net_self);
 
-            const cpu_self = parseFloat(this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0]);
-            const net_self = parseFloat(this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0]);
+            console.log(selected.details.self_delegated_bandwidth);
+            const cpuWeightSTR = selected.details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.cpu_weight;
+            const netWeightSTR = selected.details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.net_weight;
+
+            const cpu_self = RexComponent.asset2Float(cpuWeightSTR);
+            const net_self = RexComponent.asset2Float(netWeightSTR);
 
             nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
             prevStake = Math.round((cpu_self + net_self) * precision);
@@ -625,7 +634,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cpu_amount_m =  nextStakeCPUFloat * precision;
             this.net_amount_m =  nextStakeNETFloat * precision;
         }
-
+        await this.updateRatio(selected);
         const nextStakeInt = Math.round(nextStakeFloat * precision);
 
         const diff = nextStakeInt - prevStake;
@@ -646,7 +655,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.busy = true;
         this.wrongpass = '';
         const account = this.aService.selected.getValue();
-        const precisionVal = this.aService.activeChain['precision'];
+        const tk_name = this.aService.activeChain['symbol'];
+        const precision = this.aService.activeChain['precision'];
         this.wrongpass = '';
 
         // Transaction Signature
@@ -667,11 +677,11 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             actionTitle = `Unstake <span class="blue">${this.stakingHRV}</span> ?`;
         }
 
-        const messageHTML = ` <h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precisionVal)}</span></h4>
-            <h4 class="text-white mt-0">Voting power will be: <span class="blue">${parseFloat(this.percenttoStake).toFixed(2)}%</span></h4>
+        const messageHTML = `<h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precision)}</span></h4>
             ${html}`;
 
         const [, permission] = this.aService.getStoredKey(account);
+
         let trx = {} as TrxPayload;
         if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
             try {
@@ -680,18 +690,18 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                     permission,
                     this.cpu_amount_m,
                     this.net_amount_m,
-                    this.aService.activeChain['symbol'],
-                    this.aService.activeChain['precision'],
+                    tk_name,
+                    precision,
                 ) : this.eosjs.changebw(
                     account.name,
                     permission,
                     this.stakingDiff,
-                    this.aService.activeChain['symbol'],
+                    tk_name,
                     this.stakingRatio / 100,
-                    this.aService.activeChain['precision']
+                    precision
                 ));
+
                 trx = {actions: actions};
-                console.log(actions);
             } catch (e) {
                 console.log(e);
             }
@@ -709,38 +719,71 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             };
         }
 
-        console.log(trx);
+        await this.resource.checkResource(auth, trx.actions);
+        const resourceActions = await this.resource.getActions(auth);
+
         this.trxFactory.modalData.next({
             transactionPayload: trx,
+            resourceTransactionPayload: {
+                actions: resourceActions
+            },
+            resourceInfo: this.resource.resourceInfo,
+            addActions: this.resource.resourceInfo.needResources,
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: '',
-            termsHTML: ''
+            termsHTML: '',
         });
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe((event) => {
+        const subs = this.trxFactory.status.subscribe(async (event) => {
             console.log(event);
-            if (event === 'done') {
-                setTimeout(() => {
-                    this.aService.refreshFromChain(false).then(async () => {
-                        await this.onAccountChanged(this.aService.selected.getValue());
-                        // this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
-                        // this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
-                        // const _cpu = RexComponent.asset2Float(this.cpu_weight);
-                        // const _net = RexComponent.asset2Float(this.net_weight);
-                        // this.cpu_weight_n = _cpu;
-                        // this.net_weight_n = _net;
-                        // this.cpu_self = this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
-                        // this.net_self = this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight.split(' ')[0];
-                    });
-                }, 1500);
-                subs.unsubscribe();
+            try{
+                const jsonStatus = JSON.parse(event);
+                if(jsonStatus.error.code === 3080004){
+                    const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                    const cpu = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ""));
+                    await this.resource.checkResource(auth, trx.actions, cpu);
+                }
+
+                if(jsonStatus.error.code === 3080002){
+                    const valueSTR = jsonStatus.error.details[0].message.split('>');
+                    const net = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ""));
+                    await this.resource.checkResource(auth, trx.actions, undefined,net);
+                }
+
+
+            }catch (e) {
+                if (event === 'done') {
+                    console.log(event);
+                    await this.aService.refreshFromChain(false );
+                     setTimeout(async () => {
+                            await this.onAccountChanged(this.aService.selected.getValue());
+
+                            // this.cpu_weight = this.aService.selected.getValue().details.total_resources.cpu_weight;
+                            // this.net_weight = this.aService.selected.getValue().details.total_resources.net_weight;
+                            // const _cpu = RexComponent.asset2Float(this.cpu_weight);
+                            // const _net = RexComponent.asset2Float(this.net_weight);
+                            // this.cpu_weight_n = _cpu;
+                            // this.net_weight_n = _net;
+                            //
+                            // const symbol = this.aService.activeChain['symbol'];
+                            // const precision = this.aService.activeChain['precision'];
+                            // const cpuWeightSTR = this.aService.selected.getValue().details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : this.aService.selected.getValue().details.self_delegated_bandwidth.cpu_weight;
+                            // const netWeightSTR = this.aService.selected.getValue().details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : this.aService.selected.getValue().details.self_delegated_bandwidth.net_weight;
+                            //
+                            // this.cpu_self = parseFloat(cpuWeightSTR.split(' ')[0]).toPrecision(precision);
+                            // this.net_self = parseFloat(netWeightSTR.split(' ')[0]).toPrecision(precision);
+                            // this.cdr.detectChanges();
+                    }, 2000);
+                    subs.unsubscribe();
+                }
+                if (event === 'modal_closed') {
+                    subs.unsubscribe();
+                }
             }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
+
         });
     }
 
@@ -953,15 +996,20 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.checkSellBytes()) {
             this.seller = this.aService.selected.getValue().name;
             this.bytessell = Math.floor(this.ramMarketFormSell.get('sellBytes').value * 1024);
-            this.newSell();
+            this.newSell().catch(console.log);
         }
     }
 
-    newSell() {
+    async newSell() {
         let termsHeader = ``;
         let termsHtml = ``;
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+
         const actionTitle = `<span class="blue">Password</span>`;
-        const messageHTML = ` <h3 class="modal-title text-white"><span class="blue">${this.seller}</span> sell <span
+        const messageHTML = `<h3 class="modal-title text-white"><span class="blue">${this.seller}</span> sell <span
             class="blue">${this.bytesFilter(this.bytessell)} </span></h3>
         <h5>
             <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
@@ -974,45 +1022,25 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 <br><br>
                 As an authorized party I <span class="blue">${this.seller}</span> wish to sell <span class="blue">${this.bytessell}</span> bytes of unused RAM from
                 account <span class="blue">${this.seller}</span>.`;
+
         }
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        let actionsModal= [{
+            account: 'eosio',
+            name: 'sellram',
+            authorization: [auth],
+            data: {
+                'account': this.seller,
+                'bytes': this.bytessell
+            }
+        }];
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'sellram',
-                    authorization: [auth],
-                    data: {
-                        'account': this.seller,
-                        'bytes': this.bytessell
-                    }
-                }]
-            },
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: termsHeader,
-            termsHTML: termsHtml
-        });
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false);
-                } catch (e) {
-                    console.error(e);
-                }
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+
+        const resultResource = await this.resource.checkResource(auth, actionsModal);
+        const resourceActions = await this.resource.getActions(auth);
+
+        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
     }
 
     fillBuy() {
@@ -1026,16 +1054,20 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             if (accountBuy === 'to another account') {
                 this.receiver = this.ramMarketFormBuy.get('anotherAcc').value;
             }
-            this.newBuy();
+            this.newBuy().catch(console.log);
         }
     }
 
-    newBuy() {
+    async newBuy() {
         const bytesAmount = Math.floor(this.ramMarketFormBuy.value.buyBytes * 1024);
         let termsHeader = ``;
         let termsHtml = ``;
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
         const actionTitle = `<span class="blue">Password</span>`;
-        const messageHTML = `<h3 class="modal-title text-white"><span class="blue">${this.payer}</span> buy <span
+        const messageHTML = ` <h3 class="modal-title text-white"><span class="blue">${this.payer}</span> buy <span
             class="blue">${this.bytesFilter(bytesAmount)} </span> to ${this.receiver}
         </h3>
         <h5>
@@ -1071,54 +1103,35 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 freed and that freeing RAM may be subject to terms of other contracts.`;
         }
 
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        let actionsModal= [{
+            account: 'eosio',
+            name: 'buyrambytes',
+            authorization: [auth],
+            data: {
+                'payer': this.payer,
+                'receiver': this.receiver,
+                'bytes': this.bytesbuy
+            }
+        }];
 
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'buyrambytes',
-                    authorization: [auth],
-                    data: {
-                        'payer': this.payer,
-                        'receiver': this.receiver,
-                        'bytes': this.bytesbuy
-                    }
-                }]
-            },
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: termsHeader,
-            termsHTML: termsHtml
-        });
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false);
-                } catch (e) {
-                    console.error(e);
-                }
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+        const resultResource = await this.resource.checkResource(auth, actionsModal);
+        const resourceActions = await this.resource.getActions(auth);
+
+        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
     }
 
-    newRefund() {
+    async newRefund() {
         const namesel = this.aService.selected.getValue().name;
         let termsHeader = ``;
         let termsHtml = ``;
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
         const actionTitle = `<span class="blue">Password</span>`;
-        const messageHTML = ` <h3 class="modal-title text-white">Request Refund to <span class="blue">${this.aService.selected.getValue().name}</span></h3>`;
+        const messageHTML = `<h3 class="modal-title text-white">Request Refund to <span class="blue">${this.aService.selected.getValue().name}</span></h3>`;
 
         if (this.aService.activeChain.name === 'EOS MAINNET') {
             termsHeader = 'By submiting this transaction, you agree to the refund Terms & Conditions';
@@ -1128,45 +1141,21 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 have the unstaked tokens of <span class="blue">${this.aService.selected.getValue().name}</span> returned.`;
         }
 
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'refund',
-                    authorization: [auth],
-                    data: {
-                        'owner': namesel
-                    }
-                }]
-            },
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: termsHeader,
-            termsHTML: termsHtml
-        });
-
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-
-        const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false);
-                } catch (e) {
-                    console.error(e);
-                }
-                subs.unsubscribe();
+        let actionsModal = [{
+            account: 'eosio',
+            name: 'refund',
+            authorization: [auth],
+            data: {
+                'owner': namesel
             }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+        }];
+
+        const resultResource = await this.resource.checkResource(auth, actionsModal);
+        const resourceActions = await this.resource.getActions(auth);
+
+        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
     }
 
     fillUnDelegateRequest(from: string, net: string, cpu: string) {
@@ -1174,12 +1163,16 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.netUD = net;
         this.cpuUD = cpu;
         this.accNow = this.aService.selected.getValue().name;
-        this.newUnDelegateRequest();
+        this.newUnDelegateRequest().catch(console.log);
     }
 
-    newUnDelegateRequest() {
+    async newUnDelegateRequest() {
         let termsHeader = ``;
         let termsHtml = ``;
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
         const actionTitle = `<span class="blue">Password</span>`;
         const messageHTML = ` <h3 class="modal-title text-white">Are you sure you want to undelegate <span class="blue">NET</span> and <span
             class="blue"> CPU</span> from <span class="blue">${this.fromUD}</span></h3>
@@ -1199,47 +1192,25 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been
                 authorized to take this action by their beneficial owner(s).`;
         }
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'undelegatebw',
-                    authorization: [auth],
-                    data: {
-                        'from': this.accNow,
-                        'receiver': this.fromUD,
-                        'unstake_cpu_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol'],
-                        'unstake_net_quantity': this.netUD + ' ' + this.aService.activeChain['symbol']
+        let actionsModal = [{
+            account: 'eosio',
+            name: 'undelegatebw',
+            authorization: [auth],
+            data: {
+                'from': this.accNow,
+                'receiver': this.fromUD,
+                'unstake_cpu_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol'],
+                'unstake_net_quantity': this.netUD + ' ' + this.aService.activeChain['symbol']
 
-                    }
-                }]
-            },
-            signerAccount: auth.actor,
-            signerPublicKey: publicKey,
-            actionTitle: actionTitle,
-            labelHTML: messageHTML,
-            termsHeader: termsHeader,
-            termsHTML: termsHtml
-        });
-        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false);
-                } catch (e) {
-                    console.error(e);
-                }
-                subs.unsubscribe();
             }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
-            }
-        });
+        }];
+
+        const resultResource = await this.resource.checkResource(auth, actionsModal);
+        const resourceActions = await this.resource.getActions(auth);
+
+        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
     }
 
     checkEos(eosVal, val) {
@@ -1270,16 +1241,19 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(this.aService.activeChain['precision']);
         this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(this.aService.activeChain['precision']);
         this.accNow = this.aService.selected.getValue().name;
-        this.newDelegateRequest();
+        this.newDelegateRequest().catch(console.log);
 
     }
 
-
-    newDelegateRequest() {
+    async newDelegateRequest() {
         let termsHeader = ``;
         let termsHtml = ``;
-        const actionTitle = `<span class="blue">Password</span>`;
-        const messageHTML = `<h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span
+
+        // Transaction Signature
+        const [auth, publicKey] = this.trxFactory.getAuth();
+
+        const actionTitle = `<span class="blue">Password</span>`
+        const messageHTML = ` <h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span
             class="blue"> CPU</span> to <span class="blue">${this.accTo}</span></h3> `;
         if (this.aService.activeChain.name === 'EOS MAINNET') {
             termsHeader = 'By submiting this transaction, you agree to the delegatebw Terms & Conditions';
@@ -1293,48 +1267,76 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 been authorized to
                 take this action by their beneficial owner(s).`;
         }
-        // Transaction Signature
-        const [auth, publicKey] = this.trxFactory.getAuth();
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        let actionsModal= [{
+            account: 'eosio',
+            name: 'delegatebw',
+            authorization: [auth],
+            data: {
+                'from': this.accNow,
+                'receiver': this.accTo,
+                'stake_cpu_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
+                'stake_net_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
+                'transfer': 0
+            }
+        }];
+
+        const resultResource = await this.resource.checkResource(auth, actionsModal);
+        const resourceActions = await this.resource.getActions(auth);
+
+        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+    }
+
+    async _execTrxFactoryNext(actionsModal,resourceActions,needResources,actor,publicKey,actionTitle,messageHTML,termsHeader, termsHtml, resultResource?){
         this.trxFactory.modalData.next({
             transactionPayload: {
-                actions: [{
-                    account: 'eosio',
-                    name: 'delegatebw',
-                    authorization: [auth],
-                    data: {
-                        'from': this.accNow,
-                        'receiver': this.accTo,
-                        'stake_cpu_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
-                        'stake_net_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
-                        'transfer': 0
-                    }
-                }]
+                actions: actionsModal
             },
-            signerAccount: auth.actor,
+            resourceTransactionPayload: {
+                actions: resourceActions
+            },
+            resourceInfo: resultResource,
+            addActions: needResources,
+            signerAccount: actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: termsHeader,
-            termsHTML: termsHtml
+            termsHTML: termsHtml,
         });
-        this.trxFactory.launcher.emit({
-            visibility: true,
-            mode: this.mode
-        });
+
+        this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
         const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
-            if (event === 'done') {
-                try {
-                    await this.aService.refreshFromChain(false);
-                } catch (e) {
-                    console.error(e);
+            // console.log(event);
+            try{
+                const jsonStatus = JSON.parse(event);
+                if(jsonStatus.error.code === 3080004){
+                    const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                    const cpu = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ""));
+                    await this.resource.checkResource(actor, actionsModal, cpu);
                 }
-                subs.unsubscribe();
-            }
-            if (event === 'modal_closed') {
-                subs.unsubscribe();
+
+                if(jsonStatus.error.code === 3080002){
+                    const valueSTR = jsonStatus.error.details[0].message.split('>');
+                    const net = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ""));
+                    await this.resource.checkResource(actor, actionsModal, undefined,net);
+                }
+
+            }catch (e) {
+                if (event === 'done') {
+                    try {
+                        await this.aService.refreshFromChain(false);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    subs.unsubscribe();
+                }
+                if (event === 'modal_closed') {
+                    subs.unsubscribe();
+                }
+
             }
         });
+
     }
 }

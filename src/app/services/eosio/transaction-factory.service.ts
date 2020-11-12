@@ -16,7 +16,10 @@ export interface TrxModalData {
     signerPublicKey?: string;
     signerAccount?: string;
     transactionPayload: TrxPayload;
+    resourceTransactionPayload?: TrxPayload;
+    resourceInfo?:any,
     errorFunc?: any;
+    addActions?: boolean;
 }
 
 @Injectable({
@@ -44,7 +47,12 @@ export class TransactionFactoryService {
             transactionPayload: {
                 actions: []
             },
-            errorFunc: null
+            resourceTransactionPayload: {
+                actions: []
+            },
+            resourceInfo: null,
+            errorFunc: null,
+            addActions: false,
         });
     }
 

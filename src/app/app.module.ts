@@ -39,7 +39,6 @@ import {faSkullCrossbones} from '@fortawesome/pro-solid-svg-icons/faSkullCrossbo
 import {faKey} from '@fortawesome/pro-solid-svg-icons/faKey';
 import {faExclamationTriangle} from '@fortawesome/pro-solid-svg-icons/faExclamationTriangle';
 import {faGlobe} from '@fortawesome/pro-solid-svg-icons/faGlobe';
-
 // FAL - Light Pro
 import {faArrowAltToBottom} from '@fortawesome/pro-light-svg-icons/faArrowAltToBottom';
 import {faChevronCircleUp} from '@fortawesome/pro-light-svg-icons/faChevronCircleUp';
@@ -47,7 +46,6 @@ import {faChevronCircleDown} from '@fortawesome/pro-light-svg-icons/faChevronCir
 import {faCog} from '@fortawesome/pro-light-svg-icons/faCog';
 import {faSearchMinus} from '@fortawesome/pro-light-svg-icons/faSearchMinus';
 import {faSearchPlus} from '@fortawesome/pro-light-svg-icons/faSearchPlus';
-
 // FAB - Brands Free
 import {faTelegramPlane} from '@fortawesome/free-brands-svg-icons/faTelegramPlane';
 import {faTwitter} from '@fortawesome/free-brands-svg-icons/faTwitter';
@@ -108,7 +106,6 @@ import {ResourcesComponent} from './dashboard/acc_resources/resources.component'
 import {VoteComponent} from './dashboard/vote/vote.component';
 import {RexComponent} from './dashboard/rex/rex.component';
 import {DappComponent} from './dashboard/dapp/dapp.component';
-import {ReferendumComponent} from './dashboard/referendum/referendum.component';
 import {AboutComponent} from './dashboard/about/about.component';
 import {ConfigComponent} from './dashboard/settings/config.component';
 import {InputModalComponent} from './input-modal/input-modal.component';
@@ -144,6 +141,8 @@ import {MatSliderModule} from '@angular/material/slider';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatListModule} from "@angular/material/list";
 import {FlexLayoutModule} from "@angular/flex-layout";
+import {MatTreeModule} from "@angular/material/tree";
+
 
 // PrimeNG
 import {AccordionModule} from 'primeng/accordion';
@@ -164,6 +163,10 @@ import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
 import {A11yModule} from "@angular/cdk/a11y";
 import { CustomChainModalComponent } from './custom-chain-modal/custom-chain-modal.component';
 
+//Safepipe to html tags
+import { SafePipe } from './services/safe.pipe';
+import {MatCardModule} from "@angular/material/card";
+
 export function playerFactory() {
     return player;
 }
@@ -182,7 +185,6 @@ export function playerFactory() {
         LockscreenComponent,
         ResourcesComponent,
         DappComponent,
-        ReferendumComponent,
         RexComponent,
         ThousandSuffixesPipe,
         ConfirmModalComponent,
@@ -190,6 +192,7 @@ export function playerFactory() {
         ImportModalComponent,
         KeygenModalComponent,
         CustomChainModalComponent,
+        SafePipe,
     ],
     imports: [
         FormsModule,
@@ -213,9 +216,10 @@ export function playerFactory() {
         MatButtonToggleModule,
         MatDatepickerModule,
         MatSlideToggleModule,
+        MatTreeModule,
         ReactiveFormsModule,
         TextMaskModule,
-        NgxEchartsModule.forRoot({ echarts }),
+        NgxEchartsModule.forRoot({echarts}),
         ToasterModule.forRoot(),
         AppRoutingModule,
         NgxJsonViewerModule,
@@ -235,6 +239,7 @@ export function playerFactory() {
         PaginatorModule,
         A11yModule,
         SnotifyModule,
+        MatCardModule,
     ],
     providers: [
         Eosjs2Service,
