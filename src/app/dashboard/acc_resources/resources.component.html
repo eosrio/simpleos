@@ -32,7 +32,8 @@
                                         STAKED + REX: <span class="highlight-primary">{{(totalStaked) | number :
                                         '1.2-4'}} {{aService.activeChain['symbol']}} </span>
                                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                                            <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                                            <fa-icon [icon]="['far','question-circle']"
+                                                     class="highlight-primary"></fa-icon>
                                             <span class="tooltip-content">This amount represents your total voting power which includes staked EOS from this account and delgated resouces you lent to other accounts and the amount allocated to REX.</span>
                                         </a>
                                     </div>
@@ -41,7 +42,8 @@
                                         VOTE DECAY: <span [ngClass]="votedDecay > 0.0000  ? 'text-warn' : 'text-faded'">
 							{{(votedEOSDecay) | number : '1.2-4'}} {{aService.activeChain['symbol']}}
 
-                                        <fa-icon *ngIf="votedDecay > 0" [icon]="['far','long-arrow-alt-down']"></fa-icon>
+                                        <fa-icon *ngIf="votedDecay > 0"
+                                                 [icon]="['far','long-arrow-alt-down']"></fa-icon>
                                         {{(votedDecay) | number : '1.2-4'}} %
 						</span>
                                     </div>
@@ -56,13 +58,16 @@
                                         <div class="clr-col-lg-12">
                                             <div class="instruction card-title-color expandable special-font">Stake
                                                 your {{aService.activeChain['symbol']}}
-                                                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
-                                                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
+                                                <a role="tooltip" aria-haspopup="true"
+                                                   class="tooltip tooltip-lg tooltip-right">
+                                                    <fa-icon [icon]="['far','question-circle']"
+                                                             class="highlight-primary"
                                                              style="font-size: 16px;"></fa-icon>
                                                     <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
                                                 </a>
                                                 <div style="float:right">
-                                                    <mat-checkbox [checked]="isManually"  (change)="isManually=!isManually">
+                                                    <mat-checkbox [checked]="isManually"
+                                                                  (change)="isManually=!isManually">
                                                         Manually
                                                     </mat-checkbox>
                                                 </div>
@@ -76,7 +81,8 @@
                                                 <mat-form-field class="input-width">
                                                     <input matInput type="text" placeholder="Value (%)"
                                                            (blur)="updateStakeValue(); checkPercent();"
-                                                           [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                                           [ngModel]="percenttoStake"
+                                                           (ngModelChange)="percenttoStake=$event"
                                                            [textMask]="{mask: percentMask}">
                                                     <span class="suffix" matSuffix>%</span>
                                                 </mat-form-field>
@@ -85,8 +91,10 @@
                                                 <mat-form-field class="input-width">
                                                     <input matInput type="text" min="0"
                                                            placeholder="Value ({{aService.activeChain['symbol']}})"
-                                                           [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
-                                                           [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
+                                                           [ngModel]="valuetoStake"
+                                                           (ngModelChange)="valuetoStake=$event"
+                                                           [textMask]="{mask: numberMask}"
+                                                           (blur)="updateStakePercent(); checkValue();">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
                                                 </mat-form-field>
@@ -113,7 +121,8 @@
                                                     <input matInput type="text" min="0"
                                                            placeholder="CPU Value" [ngModel]="cpu_self"
                                                            (ngModelChange)="cpu_self=$event"
-                                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('cpu');">
+                                                           [textMask]="{mask: numberMask}"
+                                                           (blur)="checkValueManually('cpu');">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
                                                 </mat-form-field>
@@ -123,7 +132,8 @@
                                                     <input matInput type="text" min="0"
                                                            placeholder="NET Value" [ngModel]="net_self"
                                                            (ngModelChange)="net_self=$event"
-                                                           [textMask]="{mask: numberMask}" (blur)="checkValueManually('net');">
+                                                           [textMask]="{mask: numberMask}"
+                                                           (blur)="checkValueManually('net');">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
                                                 </mat-form-field>
@@ -143,7 +153,8 @@
                                                 <div class="clr-row">
                                                     <div class="clr-col-lg-4"></div>
                                                     <div class="clr-col-lg-2 text-center">
-                                                        BALANCED <br><span style="position: absolute; margin-left: 19px;">|</span>
+                                                        BALANCED <br><span
+                                                            style="position: absolute; margin-left: 19px;">|</span>
                                                     </div>
                                                     <div class="clr-col-lg-2" style="text-align: center">
 									<span style="margin-left: 20px;">RECOMMENDED
@@ -180,13 +191,16 @@
 
                                     </ng-container>
                                     <div class="clr-row">
-                                        <div class="clr-col-lg-5">
-                                            <button (click)="setStake()" class="btn btn-outline btn-info-outline special-font"
-                                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set
+                                        <div class="clr-col-lg-4">
+                                            <button (click)="setStake()"
+                                                    class="btn btn-outline btn-info-outline special-font"
+                                                    style="margin-top: 14px; font-weight: 700"
+                                                    [disabled]="stakedisabled">Set
                                                 Stake
                                             </button>
                                             <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
-                                            <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right"
+                                            <a role="tooltip" aria-haspopup="true"
+                                               class="tooltip tooltip-lg tooltip-right"
                                                *ngIf="minstake">
                                                 <fa-icon [icon]="['far','exclamation-circle']" class="error"></fa-icon>
                                                 <span class="tooltip-content">
@@ -196,7 +210,7 @@
 								</span>
                                             </a>
                                         </div>
-                                        <div class="clr-col-lg-7 text-right" style="align-self: flex-end;">
+                                        <div class="clr-col-lg-8 text-right" style="align-self: flex-end;">
 
                                             <span class="highlight" style="font-weight: 600">CPU: </span>
                                             <span class=" special-font"
@@ -206,6 +220,15 @@
                                             <span class=" special-font"
                                                   *ngIf="valuetoStake !== ''">{{ net_weight_n | number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
                                             <span *ngIf="valuetoStake === ''">50%</span>
+
+                                            <a role="tooltip" aria-haspopup="true"
+                                               class="tooltip tooltip-sm tooltip-left" style="margin-left: 7px">
+                                                <fa-icon [icon]="['far','question-circle']"
+                                                         class="highlight-primary"></fa-icon>
+                                                <span class="tooltip-content">
+                                                   Total resources staked by this account, REX and/or others.<br>
+                                                </span>
+                                            </a>
                                         </div>
                                     </div>
 
@@ -215,7 +238,8 @@
                         <div class="clr-col-lg-6" *ngIf="aService.activeChain['name'].indexOf('LIBERLAND') > -1">
                             <div class="card info-card">
                                 <div class="card-block" style="min-height: 270px">
-                                    <div class="instruction expandable special-font">Stake your {{aService.activeChain['symbol']}}
+                                    <div class="instruction expandable special-font">Stake
+                                        your {{aService.activeChain['symbol']}}
                                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-right">
                                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
                                                      style="font-size: 16px;"></fa-icon>
@@ -227,7 +251,8 @@
                                             <mat-form-field class="input-width">
                                                 <input matInput type="text" placeholder="Value (%)"
                                                        (blur)="updateStakeValue(); checkPercent();"
-                                                       [ngModel]="percenttoStake" (ngModelChange)="percenttoStake=$event"
+                                                       [ngModel]="percenttoStake"
+                                                       (ngModelChange)="percenttoStake=$event"
                                                        [textMask]="{mask: percentMask}">
                                                 <span class="suffix" matSuffix>%</span>
                                             </mat-form-field>
@@ -237,8 +262,10 @@
                                                 <input matInput type="text" min="1"
                                                        placeholder="Value ({{aService.activeChain['symbol']}})"
                                                        [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
-                                                       [textMask]="{mask: numberMask}" (blur)="updateStakePercent(); checkValue();">
-                                                <span class="suffix special-font" matSuffix>{{aService.activeChain['symbol']}}</span>
+                                                       [textMask]="{mask: numberMask}"
+                                                       (blur)="updateStakePercent(); checkValue();">
+                                                <span class="suffix special-font"
+                                                      matSuffix>{{aService.activeChain['symbol']}}</span>
                                             </mat-form-field>
                                         </div>
 
@@ -258,7 +285,8 @@
                                     <div class="clr-row">
                                         <div class="clr-col-lg-5">
                                             <button (click)="setStake()" class="btn btn-info-outline"
-                                                    style="margin-top: 14px; font-weight: 700" [disabled]="stakedisabled">Set Stake
+                                                    style="margin-top: 14px; font-weight: 700"
+                                                    [disabled]="stakedisabled">Set Stake
                                             </button>
                                             <div class="error" *ngIf="this.stakerr !== ''">{{this.stakerr}}</div>
                                         </div>
@@ -335,18 +363,20 @@
                                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-sm tooltip-right">
                                             <fa-icon [icon]="['far','question-circle']"
                                                      class="highlight-primary"></fa-icon>
-                                            <span class="tooltip-content">Resources you lent to other accounts <br>
-                      </span>
+                                            <span class="tooltip-content">
+                                                Resources you lent to other accounts <br>
+                                            </span>
                                         </a>
                                     </div>
-                                    <!--<div class="card-text" style="margin-bottom: 0px !important;" ><span class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} EOS</span> | <span class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} EOS</span></div>&lt;!&ndash;CSTAM&ndash;&gt;-->
-                                    <div class="card-text" style="margin-bottom: 0px !important;"><span
-                                            class="highlight-primary">NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                    <div class="card-text" style="margin-bottom: 0px !important;">
+                                        <span class="highlight-primary">
+                                            NET: {{delegated_net| number: '1.0-4'}} {{aService.activeChain['symbol']}}
+                                        </span>
                                         |
-                                        <span
-                                                class="highlight-primary">CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}</span>
+                                        <span class="highlight-primary">
+                                            CPU: {{delegated_cpu| number: '1.0-4'}} {{aService.activeChain['symbol']}}
+                                        </span>
                                     </div>
-
 
                                     <div style="height: auto; margin-bottom: 0px !important;">
                                         <form [formGroup]="delegateForm">
@@ -381,10 +411,9 @@
                                                        [textMask]="{mask: numberMask}" formControlName="netEos"
                                                        (keyup)="checkEos(netAmountEos.value,'net');"/>
                                             </mat-form-field>
-                                            <mat-error align="start" *ngIf="errormsgD3 !== ''">
-                                                {{errormsgD3}}
-                                            </mat-error>
-
+                                            <mat-error align="start"
+                                                       *ngIf="errormsgD3 !== ''">{{errormsgD3}}</mat-error>
+                                            <br/>
                                             <button class="btn btn-outline btn-info-outline"
                                                     [disabled]="(!delegateForm.valid)&&(netAmountEos.value !== '0')&&(cpuAmountEos.value !== '0')"
                                                     (click)="fillDelegateRequest();" style="font-weight: 700;">
@@ -552,7 +581,6 @@
                                     </form>
                                 </div>
                             </div>
-
 
 
                         </div>
