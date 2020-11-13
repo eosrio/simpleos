@@ -1,4 +1,4 @@
 [
-  {"code":3080004,"message":"Transaction exceeded the current CPU usage limit imposed on the transaction"},
-  {"code":3080002,"message":"Transaction exceeded the current network usage limit imposed on the transaction"}
+  {"code":3080004,"message":"Ops, the transaction is still exceeding the resources available. Please check the new estimate and authorize the additional REX rental"},
+  {"code":3080002,"message":"Ops, the transaction is still exceeding the resources available. Please check the new estimate and authorize the additional REX rental"}
 ]
