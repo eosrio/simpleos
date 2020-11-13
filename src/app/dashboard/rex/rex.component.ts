@@ -110,6 +110,9 @@ export class RexComponent implements OnDestroy {
     private mode = 'local';
 
     static asset2Float(asset) {
+        if(asset === null || asset === undefined){
+            return 0.0;
+        }
         return parseFloat(asset.split(' ')[0]);
     }
 
