@@ -20,11 +20,15 @@
         <ng-container *ngIf="modalData.addActions">
             <mat-card class="info-resource">
             <h5 class="modal-title ">
-                Ops, looks like you do not have enough network resources to perform this action.<br><br>
+                Ops, not enough resources <a role="tooltip" aria-haspopup="true"
+                                             class="tooltip tooltip-sm tooltip-left" style="margin-left: 7px">
+                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                    <span class="tooltip-content">
+                        Looks like you do not have enough network resources to perform this action.<br>
+                    </span>
+                </a><br><br>
                 No problem! We got your back!<br><br>
-                We estimate you need <span class="highlight-secondary">{{resource.resourceInfo['borrow'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>
-                to pay for this action, we can borrow this on REX for you and it will cost <span class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>,
-                and you get daily renews for 30 days.
+                We can rent resources on REX to pay for the resources. It will cost <span class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>.
                 <br>
                 <br>
                 <label style="margin-right: 25px">

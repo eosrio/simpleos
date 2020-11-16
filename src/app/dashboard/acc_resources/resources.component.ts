@@ -514,8 +514,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     getRexBalance(acc) {
         if (this.aService.activeChain.features['rex']) {
             this.eosjs.getRexData(acc).then(async (rexdata) => {
-                console.log(rexdata);
-                console.log(!rexdata.rexbal);
+                // console.log(rexdata);
+                // console.log(!rexdata.rexbal);
                 let amount = 0;
                 if (rexdata.rexbal !== undefined) {
                     const balance = rexdata.rexbal.rex_balance.split(' ');
@@ -590,6 +590,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     callUpdateRatio(){
         const selected = this.aService.selected.getValue();
+        // console.log(this.stakingRatio);
         this.updateRatio(selected).catch(console.log);
     }
 
@@ -600,11 +601,13 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const _net = RexComponent.asset2Float(selected.details.total_resources.net_weight);
         this.cpu_weight_n = _cpu;
         this.net_weight_n = _net;
-        const _cpuSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null? null: selected.details.self_delegated_bandwidth.cpu_weight);
-        const _netSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null? null: selected.details.self_delegated_bandwidth.net_weight);
-        this.stakingRatio = (_cpuSelf / (_cpuSelf + _netSelf)) * 100;
+
+        const symbol = this.aService.activeChain['symbol'];
+        const _cpuSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null? '0.0000 ' + symbol: selected.details.self_delegated_bandwidth.cpu_weight);
+        const _netSelf = RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null? '0.0000 ' + symbol: selected.details.self_delegated_bandwidth.net_weight);
+        this.stakingRatio = (_cpuSelf === 0 && _netSelf === 0) ? 75 : (_cpuSelf / (_cpuSelf + _netSelf)) * 100;
         this.cdr.detectChanges();
-        console.log(_cpu,_net,this.stakingRatio);
+        // console.log(_cpuSelf,_netSelf,this.stakingRatio);
     }
 
     async setStake() {
@@ -616,13 +619,13 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         let prevStake = Math.round(this.aService.selected.getValue().staked * precision);
 
         let nextStakeFloat = parseFloat(this.valuetoStake);
-        console.log(nextStakeFloat);
+        // console.log(nextStakeFloat);
 
         if (this.isManually) {
             const nextStakeCPUFloat = parseFloat(this.cpu_self === '' ? '0' : this.cpu_self);
             const nextStakeNETFloat = parseFloat(this.net_self === '' ? '0' : this.net_self);
 
-            console.log(selected.details.self_delegated_bandwidth);
+            // console.log(selected.details.self_delegated_bandwidth);
             const cpuWeightSTR = selected.details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.cpu_weight;
             const netWeightSTR = selected.details.self_delegated_bandwidth===null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.net_weight;
 
@@ -740,7 +743,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         });
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
         const subs = this.trxFactory.status.subscribe(async (event) => {
-            console.log(event);
+            // console.log(event);
             try{
                 const jsonStatus = JSON.parse(event);
                 if(jsonStatus.error.code === 3080004){
@@ -758,7 +761,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             }catch (e) {
                 if (event === 'done') {
-                    console.log(event);
+                    // console.log(event);
                     await this.aService.refreshFromChain(false );
                      setTimeout(async () => {
                             await this.onAccountChanged(this.aService.selected.getValue());

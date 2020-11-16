@@ -29,7 +29,7 @@ export class ConfirmModalComponent {
     public mode = 'local';
     public errormsg:any = {'friendly':'', 'origin':''};
     public busy = false;
-    public wantBorrow:boolean= false;
+    public wantBorrow:boolean= true;
     options;
     labelHtml;
 
@@ -110,9 +110,14 @@ export class ConfirmModalComponent {
             } else {
 
                 const error = this.network.defaultErrors;
+                console.log(e.json);
+                let msg;
+                if(e.json !== undefined){
+
                 console.log(e.json.error.code);
                 console.log(error.find(elem=>elem.code===e.json.error.code));
-                const msg = error.find(elem=>elem.code===e.json.error.code);
+                msg = error.find(elem=>elem.code===e.json.error.code);
+                }
 
                 if(msg === undefined ){
                     this.errormsg = {'friendly':e, 'origin':''};

@@ -526,14 +526,17 @@ export class Eosjs2Service {
 
         const _div = Math.pow(10, fr);
         const _zero = Number(0).toFixed(fr);
-        if (typeof accountInfo.cpu_weight === 'string') {
-            wei_cpu = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight) / _div);
-            wei_net = Math.round(parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight) / _div);
-        } else {
-            wei_cpu = parseTokenValue(accountInfo.self_delegated_bandwidth.cpu_weight);
-            wei_net = parseTokenValue(accountInfo.self_delegated_bandwidth.net_weight);
-        }
 
+        const cpuWeightSTR = accountInfo.self_delegated_bandwidth===null ? '0.0000 ' + symbol : accountInfo.self_delegated_bandwidth.cpu_weight;
+        const netWeightSTR = accountInfo.self_delegated_bandwidth===null ? '0.0000 ' + symbol : accountInfo.self_delegated_bandwidth.net_weight;
+
+        if (typeof accountInfo.cpu_weight === 'string') {
+            wei_cpu = Math.round(parseTokenValue(cpuWeightSTR) / _div);
+            wei_net = Math.round(parseTokenValue(netWeightSTR) / _div);
+        } else {
+            wei_cpu = parseTokenValue(cpuWeightSTR);
+            wei_net = parseTokenValue(netWeightSTR);
+        }
 
         if (liquid_bal) {
             liquid = Math.round(parseTokenValue(liquid_bal) * _div);
