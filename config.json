@@ -663,6 +663,10 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "usageCpuLimit": 2500,
+        "defaultCredits": 5
+      },
       "system": [
         "eosio",
         "eosio.token",
