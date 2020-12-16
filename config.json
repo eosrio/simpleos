@@ -36,6 +36,10 @@
         "margin": 1.30,
         "default_us": 1000
       },
+      "relay": {
+        "usageCpuLimit": 2500,
+        "defaultCredits": 5
+      },
       "system": [
         "eosio",
         "eosio.token",
