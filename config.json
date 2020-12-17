@@ -37,6 +37,7 @@
         "default_us": 1000
       },
       "relay": {
+        "endpoint":"https://api.eosrio.io:443"
         "usageCpuLimit": 2500,
         "defaultCredits": 5
       },
@@ -660,10 +661,13 @@
         "forum": false,
         "rex": true
       },
-      "borrow": {
-        "enable": false
+       "borrow": {
+        "enable": true,
+        "margin": 1.30,
+        "default_us": 1000
       },
       "relay": {
+        "endpoint":"https://jungle3.cryptolions.io:443"
         "usageCpuLimit": 2500,
         "defaultCredits": 5
       },
