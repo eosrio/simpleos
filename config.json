@@ -38,6 +38,7 @@
         "default_us": 1000
       },
       "relay": {
+        "enable": false,
         "endpoint":"https://api.eosrio.io:443",
         "usageCpuLimit": 2500,
         "defaultCredits": 5
@@ -203,6 +204,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -310,6 +314,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -399,6 +406,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -466,6 +476,9 @@
         "rex": true
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -541,6 +554,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -591,6 +607,9 @@
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -669,6 +688,7 @@
         "default_us": 1000
       },
       "relay": {
+        "enable": true,
         "endpoint":"https://jungle3.cryptolions.io:443",
         "usageCpuLimit": 2500,
         "defaultCredits": 5
@@ -750,6 +770,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -812,6 +835,9 @@
         "rex": true
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -879,6 +905,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -940,6 +969,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.init",
@@ -985,6 +1017,9 @@
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -1040,6 +1075,9 @@
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -1086,6 +1124,9 @@
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
