@@ -32,6 +32,7 @@
         "rex": true
       },
       "borrow": {
+        "endpoint":"https://eos.hyperion.eosrio.io/v2",
         "enable": true,
         "margin": 1.30,
         "default_us": 1000
@@ -662,6 +663,7 @@
         "rex": true
       },
        "borrow": {
+        "endpoint": "https://jungle3history.cryptolions.io/v2",
         "enable": true,
         "margin": 1.30,
         "default_us": 1000
