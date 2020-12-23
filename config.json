@@ -689,7 +689,7 @@
       },
       "relay": {
         "enable": true,
-        "endpoint":"https://eos.relay.eosrio.io",
+        "endpoint":"https://jungle3history.cryptolions.io",
         "usageCpuLimit": 2500,
         "defaultCredits": 5
       },
