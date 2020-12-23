@@ -689,7 +689,7 @@
       },
       "relay": {
         "enable": true,
-        "endpoint":"https://jungle3.cryptolions.io:443",
+        "endpoint":"https://eos.relay.eosrio.io",
         "usageCpuLimit": 2500,
         "defaultCredits": 5
       },
