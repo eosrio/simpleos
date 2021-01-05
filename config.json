@@ -38,7 +38,7 @@
         "default_us": 1000
       },
       "relay": {
-        "enable": false,
+        "enable": true,
         "endpoint":"https://eos.relay.eosrio.io",
         "usageCpuLimit": 2500,
         "defaultCredits": 5
