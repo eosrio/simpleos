@@ -576,7 +576,7 @@ export class SendComponent implements OnInit, OnDestroy {
                 }
             }];
 
-            const resultResource = await this.resource.checkResource(auth,actionsModal, tk_name);
+            const resultResource = await this.resource.checkResource(auth,actionsModal,undefined,undefined, tk_name);
             const resourceActions = await this.resource.getActions(auth);
 
             return {

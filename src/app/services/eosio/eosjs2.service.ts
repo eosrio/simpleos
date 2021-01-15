@@ -64,11 +64,14 @@ export class Eosjs2Service {
 
     public ecc: any;
     rpc: JsonRpc;
+    rpcRelay: JsonRpc;
     public localSigProvider: SimpleosSigProvider;
+    public relaySigProvider: SimpleosSigProvider;
     public activeEndpoint: string;
     public alternativeEndpoints: any[];
     public chainId: string;
     private api: Api;
+    private apiRelay: Api;
 
     private txOpts = {
         blocksBehind: 3,
@@ -119,9 +122,26 @@ export class Eosjs2Service {
         this.localSigProvider = new SimpleosSigProvider(this.rpc);
     }
 
+    initRelayRPC() {
+        console.log(this.defaultChain.relay.endpoint);
+        this.rpcRelay = new JsonRpc(this.activeEndpoint);
+        this.relaySigProvider = new SimpleosSigProvider(this.rpcRelay);
+        console.log('Started RELAY RPC ....');
+    }
+
     createApi(key): Api {
         return new Api({
             rpc: this.rpc,
+            signatureProvider: new JsSignatureProvider([key]),
+            textDecoder: new TextDecoder(),
+            textEncoder: new TextEncoder(),
+        });
+    }
+
+    createApiRelay(key): Api {
+    console.log('Created RELAY API ....');
+        return new Api({
+            rpc: this.rpcRelay,
             signatureProvider: new JsSignatureProvider([key]),
             textDecoder: new TextDecoder(),
             textEncoder: new TextEncoder(),
@@ -132,6 +152,13 @@ export class Eosjs2Service {
         this.api = this.createApi(key);
         setTimeout(() => {
             this.api = null;
+        }, 5000);
+    }
+
+    initAPIRelay(key) {
+        this.apiRelay = this.createApiRelay(key);
+        setTimeout(() => {
+            this.apiRelay = null;
         }, 5000);
     }
 
@@ -149,6 +176,48 @@ export class Eosjs2Service {
             return {packedTransaction};
         }
     }
+    async signRelayTrx(trx: any) {
+
+        trx.actions.unshift({
+            account: 'relayacnt111',
+            name: 'payforcpu',
+            authorization: [{
+                actor: 'relayacnt111',
+                permission: 'freecpu'
+            }],
+            data: {}
+        });
+
+        console.log('trx: ', JSON.stringify(trx));
+
+        const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
+        console.log('requiredKeys: ', requiredKeys);
+
+        try {
+            const packedTransaction = await this.apiRelay.transact(trx, {
+                blocksBehind: 3,
+                expireSeconds: 120,
+                broadcast: false,
+                sign: false,
+            });
+
+
+            const serializedTx = packedTransaction.serializedTransaction;
+            const signArgs = {
+                chainId: this.chainId,
+                requiredKeys,
+                serializedTransaction: serializedTx,
+                abis: [],
+            }
+
+            console.log('signArgs: ', signArgs);
+            const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
+            return {pushTransactionArgs};
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
 
     transact(trx) {
         if (this.api) {
@@ -598,9 +667,9 @@ export class Eosjs2Service {
         const new_net = amountNET;
         let cpu_diff = new_cpu - wei_cpu;
         let net_diff = new_net - wei_net;
-        console.log('current --->', wei_cpu, wei_net);
-        console.log('new ------->', new_cpu, new_net);
-        console.log('diff ------>', cpu_diff, net_diff);
+        // console.log('current --->', wei_cpu, wei_net);
+        // console.log('new ------->', new_cpu, new_net);
+        // console.log('diff ------>', cpu_diff, net_diff);
 
         return await this.processStakeActions(account, permission, cpu_diff, net_diff, ref_cpu, ref_net, liquid, _div, fr, _zero, symbol);
 

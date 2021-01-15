@@ -2,7 +2,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, ViewChil
 import {AccountsService} from '../services/accounts.service';
 import {ClrWizard} from '@clr/angular';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
 import {CryptoService} from '../services/crypto/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
@@ -577,7 +577,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         this.generated = true;
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 10000,

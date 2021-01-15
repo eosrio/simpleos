@@ -44,7 +44,7 @@
 
                                         <fa-icon *ngIf="votedDecay > 0"
                                                  [icon]="['far','long-arrow-alt-down']"></fa-icon>
-                                        {{(votedDecay) | number : '1.2-4'}} %
+                                        {{(votedDecay) | number : precision}} %
 						</span>
                                     </div>
                                 </div>
@@ -306,11 +306,11 @@
                                     </div>
                                     <span class="title">NET Bandwidth</span>
                                     <span class="resource"
-                                          style="float:right; font-size: 14px;">{{net_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                                          style="float:right; font-size: 14px;">{{net_weight_n | number: precision}} {{aService.activeChain['symbol']}}</span>
                                     <div class="resource"><span
-                                            class="highlight-primary">Used {{net_limit['used'] / (1024) | number: '1.2-2'}}
+                                            class="highlight-primary">Used {{net_limit['used'] / (1024) | number: precision}}
                                         KB </span><span class="text-faded">/ {{net_limit.max / (1024)
-                                        | number: '1.2-2'}} KB</span>
+                                        | number: precision}} KB</span>
                                     </div>
                                 </div>
                             </div>
@@ -328,11 +328,11 @@
                       </a>
                   </span>
                                     <span class="resource"
-                                          style="float:right; font-size: 14px;">{{cpu_weight_n | number: '1.0-2'}} {{aService.activeChain['symbol']}}</span>
+                                          style="float:right; font-size: 14px;">{{cpu_weight_n | number: precision}} {{aService.activeChain['symbol']}}</span>
                                     <div class="highlight-primary resource"><span
-                                            class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: '1.2-2'}}
+                                            class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: precision}}
                                         ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
-                                        | number: '1.2-2'}} ms</span>
+                                        | number: precision}} ms</span>
                                     </div>
                                 </div>
                             </div>

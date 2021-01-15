@@ -7,11 +7,11 @@ export const localConfig = {
       "precision": 4,
       "name": "EOS MAINNET",
       "network": "MAINNET",
-      "firstApi": "https://hapi.eosrio.io",
-      "historyApi": "https://api.eossweden.org/v2",
+      "firstApi": "https://api.eosrio.io",
+      "historyApi": "https://eos.hyperion.eosrio.io/v2",
       "hyperionApis": [
-        "https://api.eossweden.org/v2",
-        "https://mainnet.eosn.io/v2"
+        "https://eos.hyperion.eosrio.io/v2",
+        "https://api.eossweden.org/v2"
       ],
       "forumTally": "https://s3.amazonaws.com/api.eosvotes.io/eosvotes/tallies/latest.json",
       "eosrioBP": "eosriobrazil",
@@ -32,9 +32,16 @@ export const localConfig = {
         "rex": true
       },
       "borrow": {
+        "endpoint":"https://eos.hyperion.eosrio.io/v2",
         "enable": true,
         "margin": 1.30,
         "default_us": 1000
+      },
+      "relay": {
+        "enable": true,
+        "endpoint":"https://eos.relay.eosrio.io",
+        "usageCpuLimit": 2500,
+        "defaultCredits": 5
       },
       "system": [
         "eosio",
@@ -44,13 +51,18 @@ export const localConfig = {
       ],
       "endpoints": [
         {
+          "url": "https://api.eosrio.io",
+          "owner": "EOS Rio",
+          "latency": 0
+        },
+        {
           "url": "https://api.eossweden.org",
           "owner": "sw/eden",
           "latency": 0
         },
         {
           "url": "https://eos.greymass.com",
-          "owner": "EOS Greymass",
+          "owner": "Greymass",
           "latency": 0
         },
         {
@@ -59,13 +71,28 @@ export const localConfig = {
           "latency": 0
         },
         {
-          "url": "https://eu.eosdac.io",
-          "owner": "eosDAC",
+          "url": "https://api.main.alohaeos.com",
+          "owner": "Aloha EOS",
           "latency": 0
         },
         {
-          "url": "https://proxy.eosnode.tools",
-          "owner": "Proxy Node",
+          "url": "https://api.eoseoul.io",
+          "owner": "EOSeoul",
+          "latency": 0
+        },
+        {
+          "url": "https://api.eosn.io",
+          "owner": "EOS Nation",
+          "latency": 0
+        },
+        {
+          "url": "https://bp.cryptolions.io",
+          "owner": "CryptoLions",
+          "latency": 0
+        },
+        {
+          "url": "https://eos.eosphere.io",
+          "owner": "EOSphere",
           "latency": 0
         }
       ],
@@ -145,9 +172,9 @@ export const localConfig = {
       "name": "WAX MAINNET",
       "network": "MAINNET",
       "firstApi": "https://wax.eosrio.io",
-      "historyApi": "https://wax.hyperion.eosrio.io/v2",
+      "historyApi": "https://wax.eosrio.io/v2",
       "hyperionApis": [
-        "https://wax.hyperion.eosrio.io/v2",
+        "https://wax.eosrio.io/v2",
         "https://api.waxsweden.org/v2",
         "https://wax.eosusa.news/v2",
         "https://api.wax.alohaeos.com/v2",
@@ -175,6 +202,9 @@ export const localConfig = {
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -257,7 +287,7 @@ export const localConfig = {
       "name": "BOS MAINNET",
       "network": "MAINNET",
       "firstApi": "https://api.bos.eosrio.io",
-      "historyApi": "https://bos.hyperion.eosrio.io/v2",
+      "historyApi": "https://api.bossweden.org/v2",
       "hyperionApis": [
         "https://api.bossweden.org/v2",
         "https://bos.eosn.io/v2",
@@ -284,6 +314,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -294,8 +327,12 @@ export const localConfig = {
         {
           "url": "https://hapi.bos.eosrio.io",
           "owner": "BOS Rio",
-          "latency": 0,
-          "version": "native"
+          "latency": 0
+        },
+        {
+          "url": "https://api.bos.eosrio.io",
+          "owner": "BOS Rio",
+          "latency": 0
         },
         {
           "url": "https://bos.eosargentina.io",
@@ -305,8 +342,7 @@ export const localConfig = {
         {
           "url": "https://api.bossweden.org",
           "owner": "BOS Sweden",
-          "latency": 0,
-          "version": "native"
+          "latency": 0
         },
         {
           "url": "https://api.bos42.io",
@@ -368,6 +404,9 @@ export const localConfig = {
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -439,6 +478,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -486,7 +528,7 @@ export const localConfig = {
       "precision": 4,
       "name": "U°Community",
       "network": "MAINNET",
-      "firstApi": "https://api.uos.network:7889",
+      "firstApi": "https://api.uos.network",
       "historyApi": "https://hapi.uos.network/v2",
       "hyperionApis": [
         "https://hapi.uos.network/v2"
@@ -512,6 +554,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -519,10 +564,14 @@ export const localConfig = {
       ],
       "endpoints": [
         {
-          "url": "https://history.uos.network:7889",
+          "url": "https://api.uos.network",
           "owner": "UOS",
-          "latency": 0,
-          "version": "native"
+          "latency": 0
+        },
+        {
+          "url": "https://history.uos.network",
+          "owner": "UOS",
+          "latency": 0
         }
       ],
       "explorers": []
@@ -558,6 +607,9 @@ export const localConfig = {
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [
@@ -598,14 +650,98 @@ export const localConfig = {
       ]
     },
     {
+      "id": "2a02a0053e5a8cf73a56ba0fda11e4d92e0238a4a2aa74fccf46d5a910746840",
+      "symbol": "EOS",
+      "icon": "jungle.png",
+      "precision": 4,
+      "name": "EOS JUNGLE 3",
+      "network": "TESTNET",
+      "firstApi": "https://jungle3history.cryptolions.io",
+      "historyApi": "https://jungle3history.cryptolions.io/v2",
+      "hyperionApis": [
+        "https://jungle3history.cryptolions.io/v2",
+        "https://jungle3.eosusa.news/v2",
+        "https://jungle3.eosrio.io/v2"
+      ],
+      "forumTally": "",
+      "eosrioBP": "eosriobrazil",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": true,
+        "vote": true,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": true,
+        "forum": false,
+        "rex": true
+      },
+      "borrow": {
+        "endpoint": "https://jungle3history.cryptolions.io/v2",
+        "enable": true,
+        "margin": 1.30,
+        "default_us": 1000
+      },
+      "relay": {
+        "enable": true,
+        "endpoint":"https://eos.relay.eosrio.io",
+        "usageCpuLimit": 2500,
+        "defaultCredits": 5
+      },
+      "system": [
+        "eosio",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+        {
+          "url": "https://jungle3.eossweden.org",
+          "owner": "EOS Sweden",
+          "latency": 0
+        },
+        {
+          "url": "https://jungle3.eosusa.news",
+          "owner": "EOS USA",
+          "latency": 0
+        },
+        {
+          "url": "https://jungle3history.cryptolions.io",
+          "owner": "Cryptolions",
+          "latency": 0
+        },
+        {
+          "url": "https://jungle3.eosrio.io",
+          "owner": "EOS Rio",
+          "latency": 0
+        }
+      ],
+      "explorers": [
+        {
+          "name": "Bloks.io",
+          "account_url": "https://jungle3.bloks.io/account/",
+          "tx_url": "https://jungle3.bloks.io/transaction/"
+        },
+        {
+          "name": "EOSX",
+          "account_url": "https://jungle.eosx.io/account/",
+          "tx_url": "https://jungle.eosx.io/tx/"
+        }
+      ]
+    },
+    {
       "id": "e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473",
       "symbol": "EOS",
       "icon": "jungle.png",
       "precision": 4,
-      "name": "EOS JUNGLE TESTNET",
+      "name": "EOS JUNGLE 2",
       "network": "TESTNET",
-      "firstApi": "https://jungle2.cryptolions.io:443",
-      "historyApi": "https://jungle.hyperion.eosrio.io/v2",
+      "firstApi": "https://jungle.eossweden.org",
+      "historyApi": "https://jungle.eossweden.org/v2",
       "hyperionApis": [
         "https://jungle.hyperion.eosrio.io/v2",
         "https://jungle.eosusa.news/v2",
@@ -634,6 +770,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -641,12 +780,17 @@ export const localConfig = {
       ],
       "endpoints": [
         {
-          "url": "https://jungle2.cryptolions.io:443",
-          "owner": "Jungle 2",
+          "url": "https://jungle.eossweden.org",
+          "owner": "EOS Sweden",
           "latency": 0
         },
         {
-          "url": "http://jungle2.cryptolions.io:80",
+          "url": "https://jungle.eosusa.news",
+          "owner": "EOS USA",
+          "latency": 0
+        },
+        {
+          "url": "https://jungle2.cryptolions.io",
           "owner": "Jungle 2",
           "latency": 0
         }
@@ -666,9 +810,10 @@ export const localConfig = {
       "precision": 4,
       "name": "BOS TESTNET",
       "network": "TESTNET",
-      "firstApi": "https://boscore.eosrio.io",
-      "historyApi": "https://tst.bossweden.org/v2",
+      "firstApi": "https://testnet.bos.eosrio.io",
+      "historyApi": "https://api-bostest.blockzone.net/v2",
       "hyperionApis": [
+        "https://api-bostest.blockzone.net/v2",
         "https://tst.bossweden.org/v2"
       ],
       "forumTally": "",
@@ -692,6 +837,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -699,16 +847,19 @@ export const localConfig = {
       ],
       "endpoints": [
         {
-          "url": "https://boscore.eosrio.io",
+          "url": "https://testnet.bos.eosrio.io",
           "owner": "BOS Rio",
-          "latency": 0,
-          "version": "mongo"
+          "latency": 0
         },
         {
-          "url": "https://bostest.api.blockgo.vip",
-          "owner": "blockgo",
-          "latency": 0,
-          "version": ""
+          "url": "https://tst.bossweden.org",
+          "owner": "BOS Sweden",
+          "latency": 0
+        },
+        {
+          "url": "https://api-bostest.blockzone.net/",
+          "owner": "Blockzone",
+          "latency": 0
         }
       ],
       "explorers": [
@@ -754,6 +905,9 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -785,11 +939,61 @@ export const localConfig = {
       ]
     },
     {
-      "id": "cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a",
+      "id": "cc1e1e603f6ce192256579ce72f118c52127e6cf1b88783cbd73ea1e6aaa5731",
       "symbol": "LLM",
       "icon": "liberland.png",
       "precision": 8,
       "name": "LIBERLAND TESTNET",
+      "network": "TESTNET",
+      "firstApi": "https://liberland-staging.eosio.se",
+      "historyApi": "",
+      "hyperionApis": [],
+      "forumTally": "",
+      "eosrioBP": "",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": false,
+        "vote": false,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": false,
+        "forum": false,
+        "rex": false
+      },
+      "borrow": {
+        "enable": false
+      },
+      "relay": {
+        "enable": false
+      },
+      "system": [
+        "eosio",
+        "eosio.init",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+        {
+          "url": "https://liberland-staging.eosio.se",
+          "owner": "EOS Sweden",
+          "latency": 0,
+          "version": "native"
+        }
+      ],
+      "explorers": []
+    },
+    {
+      "id": "cc7d69ef6216ba33be85e9b256fbfbad4e103c14e0f115b281b2f954838c463a",
+      "symbol": "LLM",
+      "icon": "liberland.png",
+      "precision": 8,
+      "name": "LIBERLAND T2",
       "network": "TESTNET",
       "firstApi": "https://liberland-test.eosio.se",
       "historyApi": "",
@@ -815,6 +1019,65 @@ export const localConfig = {
       "borrow": {
         "enable": false
       },
+      "relay": {
+        "enable": false
+      },
+      "system": [
+        "eosio",
+        "eosio.init",
+        "eosio.token",
+        "eosio.msig"
+      ],
+      "endpoints": [
+        {
+          "url": "https://liberland-test.eosio.se",
+          "owner": "EOS Sweden",
+          "latency": 0,
+          "version": "native"
+        },
+        {
+          "url": "https://staging.liberland.eosrio.io",
+          "owner": "EOS Rio",
+          "latency": 0,
+          "version": "native"
+        }
+      ],
+      "explorers": []
+    },
+    {
+      "id": "7f3f5ae1a73d7c14a72f65f257d41397b966ffcd95c588c50d5081eaa354984c",
+      "symbol": "LLC",
+      "icon": "liberland.png",
+      "precision": 8,
+      "name": "LIBERLAND TEST LEGACY",
+      "network": "TESTNET",
+      "firstApi": "https://liberland.eossweden.org",
+      "historyApi": "",
+      "hyperionApis": [],
+      "forumTally": "",
+      "eosrioBP": "",
+      "proxyRegistry": "",
+      "lastNode": "",
+      "logoSrc": "",
+      "backdrop": "",
+      "features": {
+        "history": true,
+        "send": true,
+        "resource": false,
+        "vote": false,
+        "staking": true,
+        "dapps": true,
+        "addAcc": true,
+        "newAcc": false,
+        "forum": false,
+        "rex": false
+      },
+      "borrow": {
+        "enable": false
+      },
+      "relay": {
+        "enable": false
+      },
       "system": [
         "eosio",
         "eosio.token",
@@ -822,7 +1085,7 @@ export const localConfig = {
       ],
       "endpoints": [
         {
-          "url": "https://liberland-test.eosio.se",
+          "url": "https://liberland.eossweden.org",
           "owner": "EOS Sweden",
           "latency": 0,
           "version": "native"
@@ -861,6 +1124,9 @@ export const localConfig = {
         "rex": false
       },
       "borrow": {
+        "enable": false
+      },
+      "relay": {
         "enable": false
       },
       "system": [

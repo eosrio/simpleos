@@ -216,7 +216,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.votedEOSDecay = 0;
         this.votedDecay = 0;
         this.isManually = false;
-
+        this.precision = '1.0-' + this.aService.activeChain['precision'];
         this.net_limit = {
             used: 0
         };
@@ -685,21 +685,21 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const messageHTML = `<h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precision)}</span></h4>
             ${html}`;
 
-        const [, permission] = this.aService.getStoredKey(account);
+        // const [, permission] = this.aService.getStoredKey(account);
 
         let trx = {} as TrxPayload;
         if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
             try {
                 const actions = await (this.isManually ? this.eosjs.changebwManually(
                     account.name,
-                    permission,
+                    auth.permission,
                     this.cpu_amount_m,
                     this.net_amount_m,
                     tk_name,
                     precision,
                 ) : this.eosjs.changebw(
                     account.name,
-                    permission,
+                    auth.permission,
                     this.stakingDiff,
                     tk_name,
                     this.stakingRatio / 100,

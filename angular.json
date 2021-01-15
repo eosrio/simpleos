@@ -37,7 +37,7 @@
                 "input": "./node_modules/@clr/icons/clr-icons.min.css"
               },
               {
-                "input": "./node_modules/primeng/resources/themes/nova-light/theme.css"
+                "input": "./node_modules/primeng/resources/themes/nova/theme.css"
               },
               {
                 "input": "./node_modules/angular2-toaster/toaster.css"

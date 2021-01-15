@@ -1,35 +1,91 @@
-// Angular core modules
-import {NgModule} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {NgModule} from "@angular/core";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {BrowserModule} from "@angular/platform-browser";
+import {HttpClientModule} from "@angular/common/http";
+import {FlexLayoutModule} from "@angular/flex-layout";
+import {A11yModule} from "@angular/cdk/a11y";
 
-// Electron Bindings
-import {NgxElectronModule} from 'ngx-electron';
 
-// Main Router
-import {AppRoutingModule} from './app-routing.module';
+import {AppComponent} from "./app.component";
+import {LandingComponent} from "./landing/landing.component";
+import {ConfigComponent} from "./dashboard/settings/config.component";
+import {DashboardComponent} from "./dashboard/dashboard.component";
+import {SendComponent} from "./dashboard/send/send.component";
+import {WalletComponent} from "./dashboard/wallet/wallet.component";
+import {CustomChainModalComponent} from "./custom-chain-modal/custom-chain-modal.component";
+import {VoteComponent} from "./dashboard/vote/vote.component";
+import {LockscreenComponent} from "./lockscreen/lockscreen.component";
+import {ResourcesComponent} from "./dashboard/acc_resources/resources.component";
+import {RexComponent} from "./dashboard/rex/rex.component";
+import {ThousandSuffixesPipe} from "./dashboard/rex/thousand-suffixes.pipe";
+import {DappComponent} from "./dashboard/dapp/dapp.component";
+import {InputModalComponent} from "./input-modal/input-modal.component";
+import {ImportModalComponent} from "./import-modal/import-modal.component";
+import {KeygenModalComponent} from "./keygen-modal/keygen-modal.component";
+import {SafePipe} from "./services/safe.pipe";
+import {ConfirmModalComponent} from "./confirm-modal/confirm-modal.component";
+import {AboutComponent} from "./dashboard/about/about.component";
+import {AppRoutingModule} from "./app-routing.module";
 
-// Vmware Clarity Framework
-import {ClarityModule} from '@clr/angular';
+import {AccordionModule} from "primeng/accordion";
+import {TableModule} from "primeng/table";
+import {TooltipModule} from "primeng/tooltip";
+import {PaginatorModule} from "primeng/paginator";
+import {ClarityModule} from "@clr/angular";
 
-// Other Modules
-import {TextMaskModule} from 'angular2-text-mask';
-import {ToasterModule} from 'angular2-toaster';
-import {NgxEchartsModule} from 'ngx-echarts';
-import {NgxJsonViewerModule} from 'ngx-json-viewer';
-import {OrderModule} from 'ngx-order-pipe';
-import {NgxPaginationModule} from 'ngx-pagination';
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
+import {MatFormFieldModule} from "@angular/material/form-field";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatInputModule} from "@angular/material/input";
+import {MatRadioModule} from "@angular/material/radio";
+import {MatCardModule} from "@angular/material/card";
+import {MatListModule} from "@angular/material/list";
+import {MatSelectModule} from "@angular/material/select";
+import {MatSliderModule} from "@angular/material/slider";
+import {MatTabsModule} from "@angular/material/tabs";
+import {MatButtonToggleModule} from "@angular/material/button-toggle";
+import {MatDatepickerModule} from "@angular/material/datepicker";
+import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {MatTreeModule} from "@angular/material/tree";
+import {MatTooltipModule} from "@angular/material/tooltip";
+
+import {MaterialDesignFrameworkModule} from "@ajsf/material";
+
+import {NgxEchartsModule} from "ngx-echarts";
 import * as echarts from 'echarts';
-import {SnotifyModule, SnotifyService, ToastDefaults} from 'ng-snotify';
 
-// Fusejs - fuzzy search
-import {FuseJsModule} from './modules/fusejs/fusejs.module';
-import {MarkdownModule} from 'ngx-markdown';
+import {FuseJsModule} from "./modules/fusejs/fusejs.module";
+
+import {TextMaskModule} from "angular2-text-mask";
+import {ToasterModule} from "angular2-toaster";
+
+import {NgxJsonViewerModule} from "ngx-json-viewer";
+import {OrderModule} from "ngx-order-pipe";
+import {NgxPaginationModule} from "ngx-pagination";
+import {NgxElectronModule} from "ngx-electron";
+import {MarkdownModule} from "ngx-markdown";
+import {SnotifyModule, SnotifyService, ToastDefaults} from "ng-snotify";
+
+// Lottie
+import {LottieModule} from "ngx-lottie";
+import player from 'lottie-web';
+
+/* SERVICES */
+import {Eosjs2Service} from "./services/eosio/eosjs2.service";
+import {ChainService} from "./services/chain.service";
+import {AccountsService} from "./services/accounts.service";
+import {NetworkService} from "./services/network.service";
+import {CryptoService} from "./services/crypto/crypto.service";
+import {RamService} from "./services/ram.service";
+import {LedgerService} from "./services/ledger/ledger.service";
+import {ConnectService} from "./services/connect.service";
+import {BackupService} from "./services/backup.service";
+import {ThemeService} from "./services/theme.service";
 
 // FontAwesome Imports
-import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
+import {FaIconLibrary, FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 
 // FAS
 import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
@@ -94,85 +150,14 @@ import {faTimesCircle} from '@fortawesome/pro-regular-svg-icons/faTimesCircle';
 import {faUserPlus} from '@fortawesome/pro-regular-svg-icons/faUserPlus';
 import {faUserEdit} from '@fortawesome/pro-regular-svg-icons/faUserEdit';
 import {faExternalLink} from '@fortawesome/pro-regular-svg-icons/faExternalLink';
-
-/* COMPONENTS */
-import {AppComponent} from './app.component';
-import {LandingComponent} from './landing/landing.component';
-import {LockscreenComponent} from './lockscreen/lockscreen.component';
-import {DashboardComponent} from './dashboard/dashboard.component';
-import {WalletComponent} from './dashboard/wallet/wallet.component';
-import {SendComponent} from './dashboard/send/send.component';
-import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
-import {VoteComponent} from './dashboard/vote/vote.component';
-import {RexComponent} from './dashboard/rex/rex.component';
-import {DappComponent} from './dashboard/dapp/dapp.component';
-import {AboutComponent} from './dashboard/about/about.component';
-import {ConfigComponent} from './dashboard/settings/config.component';
-import {InputModalComponent} from './input-modal/input-modal.component';
-import {ConfirmModalComponent} from './confirm-modal/confirm-modal.component';
-
-/* CUSTOM PIPES */
-import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
-
-/* SERVICES */
-import {ChainService} from './services/chain.service';
-import {Eosjs2Service} from './services/eosio/eosjs2.service';
-import {NetworkService} from './services/network.service';
-import {CryptoService} from './services/crypto/crypto.service';
-import {AccountsService} from './services/accounts.service';
-import {ConnectService} from './services/connect.service';
-import {RamService} from './services/ram.service';
-import {BackupService} from './services/backup.service';
-import {ThemeService} from './services/theme.service';
-import {LedgerService} from './services/ledger/ledger.service';
-
-// Angular Material
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {MatCheckboxModule} from '@angular/material/checkbox';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
-import {MatRadioModule} from '@angular/material/radio';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {MatSelectModule} from '@angular/material/select';
-import {MatInputModule} from '@angular/material/input';
-import {MatTabsModule} from '@angular/material/tabs';
-import {MatSliderModule} from '@angular/material/slider';
-import {MatDatepickerModule} from '@angular/material/datepicker';
-import {MatListModule} from "@angular/material/list";
-import {FlexLayoutModule} from "@angular/flex-layout";
-import {MatTreeModule} from "@angular/material/tree";
-
-
-// PrimeNG
-import {AccordionModule} from 'primeng/accordion';
-import {TableModule} from 'primeng/table';
-import {TooltipModule} from 'primeng/tooltip';
-import {PaginatorModule} from 'primeng/paginator';
-
-// JSON Schema Form
-import {MaterialDesignFrameworkModule} from '@ajsf/material';
-
-// Lottie
-import {LottieModule} from "ngx-lottie";
-import player from 'lottie-web';
-import { ImportModalComponent } from './import-modal/import-modal.component';
-import {MatTooltipModule} from "@angular/material/tooltip";
-import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
-import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
-import {A11yModule} from "@angular/cdk/a11y";
-import { CustomChainModalComponent } from './custom-chain-modal/custom-chain-modal.component';
-
-//Safepipe to html tags
-import { SafePipe } from './services/safe.pipe';
-import {MatCardModule} from "@angular/material/card";
+import {faTrashAlt} from "@fortawesome/pro-regular-svg-icons/faTrashAlt";
 
 export function playerFactory() {
     return player;
 }
 
+// @ts-ignore
 @NgModule({
-    // entryComponents: [FormComponent],
     declarations: [
         AppComponent,
         LandingComponent,
@@ -205,9 +190,11 @@ export function playerFactory() {
         FontAwesomeModule,
         HttpClientModule,
         MatAutocompleteModule,
+        MatCardModule,
         MatCheckboxModule,
         MatFormFieldModule,
         MatInputModule,
+        MatListModule,
         MatRadioModule,
         MatSelectModule,
         MatSliderModule,
@@ -229,7 +216,7 @@ export function playerFactory() {
         NgxElectronModule,
         MarkdownModule.forRoot(),
         MaterialDesignFrameworkModule,
-        MatListModule,
+        MatInputModule,
         LottieModule.forRoot({
             player: playerFactory,
             useCache: false
@@ -238,8 +225,7 @@ export function playerFactory() {
         MatTooltipModule,
         PaginatorModule,
         A11yModule,
-        SnotifyModule,
-        MatCardModule,
+        SnotifyModule
     ],
     providers: [
         Eosjs2Service,

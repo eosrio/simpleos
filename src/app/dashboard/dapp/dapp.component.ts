@@ -3,7 +3,7 @@ import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
 import {AccountsService} from '../../services/accounts.service';
 import {EOSAccount} from '../../interfaces/account';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
 import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {TransactionFactoryService} from "../../services/eosio/transaction-factory.service";
@@ -155,7 +155,7 @@ export class DappComponent implements OnInit, AfterViewInit {
         });
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 10000,

@@ -1113,6 +1113,27 @@ body .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active 
 	max-height: 35px!important;
 	max-width: 35px!important;
 }
+
+.dont-break-out {
+	width:215px !important;
+	/* These are technically the same, but use both */
+	overflow-wrap: break-word !important;
+	word-wrap: break-word !important;
+
+	-ms-word-break: break-all !important;
+	/* This is the dangerous one in WebKit, as it breaks things wherever */
+	word-break: break-all !important;
+	/* Instead use this non-standard one: */
+	word-break: break-word !important;
+
+	/* Adds a hyphen where the word breaks, if supported (No Blink) */
+	-ms-hyphens: auto !important;
+	-moz-hyphens: auto !important;
+	-webkit-hyphens: auto !important;
+	hyphens: auto !important;
+}
+
+
 /*
 	CHANGE DIRECTLY in the package node_module/ng-snotify/styles/{THEME}/icons.scss  (class used .snotify-icon--info)
 */

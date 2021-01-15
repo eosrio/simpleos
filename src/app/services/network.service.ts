@@ -334,6 +334,9 @@ export class NetworkService {
 
             // define endpoint and initialize rpc
             this.eosjs.initRPC(endpoint, this.activeChain.id, this.activeChain.endpoints);
+            if(this.activeChain.name === 'EOS MAINNET' || this.activeChain.name === 'EOS JUNGLE 3'){
+                this.eosjs.initRelayRPC();
+            }
             this.lastEndpoint = endpoint;
             this.autoMode = false;
             this.defaultChains.find(c => c.id === this.activeChain.id).lastNode = this.lastEndpoint;

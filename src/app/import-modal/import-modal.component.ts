@@ -9,7 +9,7 @@ import {compare2FormPasswords, handleErrorMessage} from '../helpers/aux_function
 import {ClrWizard} from '@clr/angular';
 import {LedgerService} from '../services/ledger/ledger.service';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
 import {environment} from '../../environments/environment';
 import {Numeric} from "eosjs/dist";
 
@@ -343,7 +343,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         }
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 10000,

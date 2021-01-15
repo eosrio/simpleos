@@ -2,14 +2,19 @@ import { Injectable } from '@angular/core';
 import {AccountsService} from "./accounts.service";
 import {Eosjs2Service} from "./eosio/eosjs2.service";
 import {HttpClient} from '@angular/common/http';
-import * as moment from "moment";
 
 interface resourceData {
     needResources:boolean,
+    relay:boolean,
+    relayCredit:{used:number, limit:number},
     borrow:number,
     spend:number,
     precision: number,
     tk_name: String,
+}
+interface creditData {
+    accountName:String,
+    contractName: String
 }
 
 @Injectable({
@@ -33,7 +38,7 @@ export class ResourceService {
             private eosjs:Eosjs2Service,
             private http: HttpClient,) {
 
-            this.resourceInfo={needResources:false,borrow:0,spend:0, precision: 4, tk_name: 'EOS'}
+                this.resourceInfo={needResources:false,relay:false,relayCredit:{used:0, limit:0},borrow:0,spend:0, precision: 4, tk_name: 'EOS'}
 
     }
 
@@ -46,10 +51,13 @@ export class ResourceService {
         try{
             if(actions!== undefined){
                 for(let action of actions){
-                    const url = `https://eos.hyperion.eosrio.io/v2/stats/get_resource_usage?code=eosio&action=${action.name}`;
+                    const stastEndPoint = this.aService.activeChain.borrow.endpoint;
+                    const url = `${stastEndPoint}/stats/get_resource_usage?code=${action.account}&action=${action.name}`;
+
                         const response: any = await this.http.get(url).toPromise();
+
                         if(response){
-                            result.push({cpu:response.cpu.percentiles['95.0'], net:response.net.percentiles['99.0']});
+                            result.push({cpu:response.cpu.percentiles['95.0'] ?? 0, net:response.net.percentiles['99.0'] ?? 0});
                         }
                 }
 
@@ -57,15 +65,56 @@ export class ResourceService {
         } catch (e) {
             console.log(e);
         }
-
-
+        console.log(result);
         const avgUsageCPU_HYPERRION = result.reduce((prev, next) => prev + (next['cpu'] || 0), 0);
         const avgUsageCPU = needCpu === undefined ? avgUsageCPU_HYPERRION : (avgUsageCPU_HYPERRION + needCpu);
 
         const avgUsageNET_HYPERRION = result.reduce((prev, next) => prev + (next['net'] || 0), 0);
         const avgUsageNET = needNet === undefined ? avgUsageNET_HYPERRION : (avgUsageNET_HYPERRION + needNet);
-
+        console.log(avgUsageCPU_HYPERRION,needCpu);
         return {cpu: avgUsageCPU, net: avgUsageNET};
+
+    }
+
+    async checkCredits(actions,acc){
+        try{
+            if(actions!== undefined){
+                for(let action of actions){
+                    const url = `${this.aService.activeChain.relay.endpoint}/checkCredits`;
+                    console.log(action.account, action.name);
+                    const response = await this.http.post(
+                        url,
+                        {accountName: acc,contractName:action.account},
+                        {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDg1NzIzMDN9.6jSfAkIFkDXTH8cTrumzAUlPziSjXsK-ptYmAa8OQFc'}}
+                        ).toPromise();
+                        console.log(response);
+                        if(response){
+                            return {enable: response['availableCredits']>0,used:response['availableCredits'], limit:5};
+                        }
+                        return {enable: false};
+                }
+
+            }
+        } catch (e) {
+            console.log(e);
+        }
+
+    }
+    async sendTxRelay(payload){
+        try{
+            if(payload!== undefined){
+                const url = `https://eos.relay.eosrio.io/pushFreeTx`;
+                const response = await this.http.post(
+                    url,
+                    {serializedTransaction: Array.from(payload.pushTransactionArgs.serializedTransaction), signatures:payload.pushTransactionArgs.signatures},
+                    {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDgxNTQ5OTh9.MwSGmM-ACXS7mL56bfg9uWRGU4TjzlA7U7uLSSKnlLQ'}}
+                    ).toPromise();
+                    console.log(response);
+                    return response;
+            }
+        } catch (e) {
+            console.log(e);
+        }
 
     }
 
@@ -78,86 +127,116 @@ export class ResourceService {
         let targetCpu = 0.0000;
         let targetNet = 0.0000;
         let _needResource = false;
+        let _relay = false;
+        let _relayCredits = {used:0, limit:0};
 
         const tk_nameVal = tkname ?? this.aService.activeChain['symbol'];
         const precision = this.aService.activeChain['precision'];
         const account = this.aService.selected.getValue();
 
-        if(this.aService.activeChain['features']['rex']){
+        // Get avg uS values CPU/NET
+        const avgUsage: any = await this.getAvgTime(actions, needCpu, needNet);
+        console.log(avgUsage);
+        console.log(account.details);
 
-            // Get Rex Informations
-            await this.updateGlobalRexData();
+        //Total staked CPU
+        const totalCPUStaked = ResourceService.asset2Float(account.details.total_resources.cpu_weight);
 
-            if(this.aService.activeChain['borrow']['enable']){
+        //Total staked NET
+        const totalNETStaked = ResourceService.asset2Float(account.details.total_resources.net_weight);
 
-                // Get avg uS values CPU/NET
-                const avgUsage: any = await this.getAvgTime(actions, needCpu, needNet);
+        //If is total withdraw undelegatebw action change resource available to zero
+        const unstake = actions.find(elem => elem.name === 'undelegatebw');
+        if (unstake) {
+            const unstakeCPU = ResourceService.asset2Float(unstake.data.unstake_cpu_quantity);
 
-                //Total staked CPU
-                const totalCPUStaked = ResourceService.asset2Float(account.details.total_resources.cpu_weight);
+            isCPUWithdraw = (totalCPUStaked - unstakeCPU) <= 0 ?? false;
 
-                //Total staked NET
-                const totalNETStaked = ResourceService.asset2Float(account.details.total_resources.net_weight);
+            const unstakeNET = ResourceService.asset2Float(unstake.data.unstake_net_quantity);
 
-                //If is total withdraw undelegatebw action change resource available to zero
-                const unstake = actions.find(elem => elem.name === 'undelegatebw');
-                if (unstake) {
-                    const unstakeCPU = ResourceService.asset2Float(unstake.data.unstake_cpu_quantity);
-
-                    isCPUWithdraw = (totalCPUStaked - unstakeCPU) <= 0 ?? false;
-
-                    const unstakeNET = ResourceService.asset2Float(unstake.data.unstake_net_quantity);
-
-                    isNETWithdraw = (totalNETStaked - unstakeNET) <= 0 ?? false;
-                }
-
-                const maxCPULimit = account.details.cpu_limit.max;
-                const maxNETLimit = account.details.net_limit.max;
-
-                // cost of uS CPU
-                const timeTokenUnitCPU = parseFloat((totalCPUStaked / maxCPULimit).toPrecision(precision));
-
-                // cost of uS NET
-                const timeTokenUnitNET = parseFloat((totalNETStaked / maxNETLimit).toPrecision(precision));
-
-                //Parameters from config.json
-                const defaultUS:number = this.aService.activeChain['borrow']['default_us'];
-                const margin:number = this.aService.activeChain['borrow']['margin'];
-
-                //If is total withdraw is true change resource available to zero before sending actions
-                const totalCPULimitAvailable = isCPUWithdraw ? 0 : account.details.cpu_limit.available;
-                const totalNETLimitAvailable = isNETWithdraw ? 0 : account.details.net_limit.available;
-
-                const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
-                // console.log(newAvgCPU, totalCPULimitAvailable, avgUsageCPU, account);
-                if (totalCPULimitAvailable < avgUsage.cpu) {
-                    targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
-                    _needResource = true;
-                }
-
-                if (totalNETLimitAvailable < avgUsage.net) {
-                    if (isNETWithdraw) {
-                        targetNet = parseFloat((2).toPrecision(precision));
-                    } else {
-                        targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
-                    }
-                    _needResource = true;
-                }
-
-                if (targetCpu > 0) {
-                    this.cpuCost = targetCpu / this.borrowingCost;
-                }
-
-                if (targetNet > 0) {
-                    this.netCost = targetNet / this.borrowingCost;
-                }
-
-                this.totalCost = this.cpuCost + this.netCost;
-            }
+            isNETWithdraw = (totalNETStaked - unstakeNET) <= 0 ?? false;
         }
 
-        this.resourceInfo = { needResources:_needResource, borrow:targetCpu+targetNet, spend:this.totalCost, precision: precision, tk_name: tk_nameVal };
+        const maxCPULimit = account.details.cpu_limit.max;
+        const maxNETLimit = account.details.net_limit.max;
+        console.log(totalCPUStaked, totalNETStaked,maxCPULimit,maxNETLimit);
+        // cost of uS CPU
+        const timeTokenUnitCPU = maxCPULimit!==0?parseFloat((totalCPUStaked / maxCPULimit).toPrecision(precision)):0.0111;
 
+        // cost of uS NET
+        const timeTokenUnitNET = maxNETLimit!==0?parseFloat((totalNETStaked / maxNETLimit).toPrecision(precision)):0.00000086801;
+
+        //If is total withdraw is true change resource available to zero before sending actions
+        const totalCPULimitAvailable = isCPUWithdraw ? 0 : account.details.cpu_limit.available;
+        const totalNETLimitAvailable = isNETWithdraw ? 0 : account.details.net_limit.available;
+
+        // if (totalCPULimitAvailable < avgUsage.cpu || totalNETLimitAvailable < avgUsage.net) {
+
+            //Check first if has free tx push
+            // if(this.aService.activeChain['relay']['enable'] &&  totalCPULimitAvailable < this.aService.activeChain['relay']['usageCpuLimit']) {
+            if(this.aService.activeChain['relay']['enable']) {
+                const result = await this.checkCredits(actions, account.name);
+                if (result['enable']) {
+                    _relay = true;
+                    _relayCredits.used = result['used'];
+                    _relayCredits.limit = result['limit'];
+                }
+                console.log(result);
+            }
+
+            if(this.aService.activeChain['features']['rex']){
+
+                // Get Rex Informations
+                await this.updateGlobalRexData();
+
+                if(this.aService.activeChain['borrow']['enable']){
+
+                    //Parameters from config.json
+                    const defaultUS:number = this.aService.activeChain['borrow']['default_us'];
+                    const margin:number = this.aService.activeChain['borrow']['margin'];
+
+
+                    const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
+                    console.log(targetCpu, targetNet, this.borrowingCost);
+                    console.log(newAvgCPU, totalCPULimitAvailable, timeTokenUnitCPU, precision);
+                    if (totalCPULimitAvailable < avgUsage.cpu) {
+                        targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
+                        _needResource = true;
+                    }
+
+                    if (totalNETLimitAvailable < avgUsage.net) {
+                        if (isNETWithdraw) {
+                            targetNet = parseFloat((2).toPrecision(precision));
+                        } else {
+                            targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
+                        }
+                        _needResource = true;
+                    }
+
+                    console.log(targetCpu, targetNet, this.borrowingCost);
+
+                    if (targetCpu > 0) {
+                        this.cpuCost = targetCpu / this.borrowingCost;
+                        if(this.cpuCost<0.0001){
+                            this.cpuCost=0.0001;
+                        }
+                    }
+
+                    if (targetNet > 0) {
+                            this.netCost = targetNet / this.borrowingCost;
+                        if(this.netCost < 0.0001){
+                            this.netCost = 0.0001;
+                        }
+                    }
+
+                    this.totalCost = this.cpuCost + this.netCost;
+                }
+            }
+        // }
+
+        this.resourceInfo = { needResources:_needResource,relay:_relay,
+            relayCredit:_relayCredits, borrow:targetCpu+targetNet, spend:this.totalCost, precision: precision, tk_name: tk_nameVal };
+        console.log(this.resourceInfo);
         return this.resourceInfo;
     }
 
@@ -203,44 +282,47 @@ export class ResourceService {
         const _netPayment = this.netCost.toFixed(precision) + ' ' + tk_name;
         const net_fund = 0;
 
-        if(this.cpuCost > 0 || this.netCost > 0) {
-            actions.push({
-                account: 'eosio',
-                name: 'deposit',
-                authorization: [auth],
-                data: {
-                    'owner': auth.actor,
-                    'amount': amountRex.toFixed(precision) + ' ' + tk_name
-                }
-            });
-        }
 
-        if(this.cpuCost > 0){
-            actions.push({
-                account: 'eosio',
-                name: 'rentcpu',
-                authorization: [auth],
-                data: {
-                    'from': auth.actor,
-                    'receiver': auth.actor,
-                    'loan_payment': _cpuPayment,
-                    'loan_fund': cpu_fund.toFixed(precision) + ' ' + tk_name
-                }
-            });
-        }
+        if(this.resourceInfo.needResources && !this.resourceInfo.relay){
+            if(this.cpuCost > 0 || this.netCost > 0) {
+                actions.push({
+                    account: 'eosio',
+                    name: 'deposit',
+                    authorization: [auth],
+                    data: {
+                        'owner': auth.actor,
+                        'amount': amountRex.toFixed(precision) + ' ' + tk_name
+                    }
+                });
+            }
 
-        if(this.netCost > 0){
-            actions.push({
-                account: 'eosio',
-                name: 'rentnet',
-                authorization: [auth],
-                data: {
-                    'from': auth.actor,
-                    'receiver': auth.actor,
-                    'loan_payment': _netPayment,
-                    'loan_fund': net_fund.toFixed(precision) + ' ' + tk_name
-                }
-            });
+            if(this.cpuCost > 0){
+                actions.push({
+                    account: 'eosio',
+                    name: 'rentcpu',
+                    authorization: [auth],
+                    data: {
+                        'from': auth.actor,
+                        'receiver': auth.actor,
+                        'loan_payment': _cpuPayment,
+                        'loan_fund': cpu_fund.toFixed(precision) + ' ' + tk_name
+                    }
+                });
+            }
+
+            if(this.netCost > 0){
+                actions.push({
+                    account: 'eosio',
+                    name: 'rentnet',
+                    authorization: [auth],
+                    data: {
+                        'from': auth.actor,
+                        'receiver': auth.actor,
+                        'loan_payment': _netPayment,
+                        'loan_fund': net_fund.toFixed(precision) + ' ' + tk_name
+                    }
+                });
+            }
         }
 
         return actions;

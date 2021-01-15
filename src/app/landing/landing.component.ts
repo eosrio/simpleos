@@ -5,7 +5,7 @@ import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../services/network.service';
 import {CryptoService} from '../services/crypto/crypto.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
 import {RamService} from '../services/ram.service';
 import {HttpClient} from '@angular/common/http';
 import {VotingService} from '../services/voting.service';
@@ -249,7 +249,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		this.wizardnew.close();
 	}
 
-	private showToast(type: string, title: string, body: string) {
+	private showToast(type: ToastType, title: string, body: string) {
 
 		this.config = new ToasterConfig({
 			positionClass: 'toast-top-right',

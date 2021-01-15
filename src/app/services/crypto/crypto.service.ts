@@ -223,7 +223,7 @@ export class CryptoService {
         return [key, value];
     }
 
-    async authenticate(pass, publickey, exportKey?: boolean): Promise<boolean | string> {
+    async authenticate(pass, publickey, exportKey?: boolean, ): Promise<boolean | string> {
         const [key, value] = this.getLocalKey(publickey);
         if (value) {
             if (value.private !== 'ledger') {
@@ -244,6 +244,9 @@ export class CryptoService {
             try {
                 const decryptedKey = await this.decryptPayload(value.private);
                 this.eosjs.initAPI(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
+                if(this.eosjs.defaultChain.name === 'EOS MAINNET' || this.eosjs.defaultChain.name === 'EOS JUNGLE 3'){
+                    this.eosjs.initAPIRelay(decryptedKey.replace(/^"(.+(?="$))"$/, '$1'));
+                }
                 if (exportKey) {
                     return decryptedKey;
                 } else {

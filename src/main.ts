@@ -20,7 +20,7 @@ function angularBoot() {
     }).catch(err => console.log(err));
 }
 
-async function fecthConfigJson() {
+async function fecthConfigJson(): Promise<void> {
     const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/config.json';
 
     let response;
@@ -49,6 +49,7 @@ async function fecthConfigJson() {
         console.log('error saving to localStorage');
     }
 }
+
 async function fecthErrorJson() {
     const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/error.json';
 

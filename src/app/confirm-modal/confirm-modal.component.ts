@@ -3,7 +3,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {CryptoService} from '../services/crypto/crypto.service';
 import {RpcError} from 'eosjs/dist';
-import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterService, ToastType} from 'angular2-toaster';
 import {AccountsService} from '../services/accounts.service';
 import {TransactionFactoryService, TrxModalData} from '../services/eosio/transaction-factory.service';
 import {LedgerService} from "../services/ledger/ledger.service";
@@ -77,10 +77,6 @@ export class ConfirmModalComponent {
 
     }
 
-    changeOption(){
-        console.log(this.options);
-    }
-
     setFocus() {
         setTimeout(() => {
             if (this.pass) {
@@ -91,12 +87,19 @@ export class ConfirmModalComponent {
 
     async processTransaction(trx, handler) {
 
-        if(this.modalData.addActions && this.wantBorrow === undefined) {
+        if((this.modalData.resourceInfo['needResources'] || this.modalData.resourceInfo['relay']) && this.wantBorrow === undefined) {
             return [null, 'Please select a option!'];
         }
 
         try {
-            const result = await this.eosjs.transact(trx);
+            let result;
+            if(this.modalData.resourceInfo['relay'] && this.wantBorrow){
+                const signned = await this.eosjs.signRelayTrx(trx);
+                console.log(signned);
+                result = await this.resource.sendTxRelay(signned);
+            }else{
+                result = await this.eosjs.transact(trx);
+            }
             if (result === 'wrong_pass') {
                 return [null, 'Wrong password!'];
             } else {
@@ -119,7 +122,7 @@ export class ConfirmModalComponent {
                 msg = error.find(elem=>elem.code===e.json.error.code);
                 }
 
-                if(msg === undefined ){
+                if(this.aService.activeChain['borrow']['enable'] === false || msg === undefined ){
                     this.errormsg = {'friendly':e, 'origin':''};
                 }else {
                     this.errormsg = {'friendly':msg['message'], 'origin':e};
@@ -185,7 +188,8 @@ export class ConfirmModalComponent {
             this.confirmationForm.reset();
         } else {
             if (trxResult) {
-                const trxId = trxResult.transaction_id;
+                console.log(typeof trxResult.transaction_id);
+                const trxId = this.modalData.resourceInfo.relay&&this.wantBorrow?trxResult.data.transactionId:trxResult.transaction_id;
                 this.wasClosed = true;
                 this.confirmationForm.reset();
                 setTimeout(() => {
@@ -197,7 +201,7 @@ export class ConfirmModalComponent {
                     this.visibility = false;
                     this.cdr.detectChanges();
                 }, 1500);
-                this.showToast('success', 'Transaction broadcasted', ` TRX ID: ${trxId} <br> Check your history for confirmation.`, {
+                this.showToast('success', 'Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
                     id: trxId
                 });
             } else {
@@ -244,7 +248,7 @@ export class ConfirmModalComponent {
 
             const error = this.network.defaultErrors;
             const msg = error.find(elem=>elem.code===e.json.error.code);
-            if(msg.message === undefined){
+            if(this.aService.activeChain['borrow']['enable'] === false || msg === undefined || msg.message === undefined){
                 this.errormsg = {'friendly':e, 'origin':''};
             }else {
                 this.errormsg = {'friendly':msg.message, 'origin':e};
@@ -257,15 +261,16 @@ export class ConfirmModalComponent {
         }
     }
 
-    private showToast(type: string, title: string, body: string, extraData: any) {
-        const toast: Toast = {
+    private showToast(type: ToastType, title: string, body: string, extraData: any) {
+        let toast: Toast;
+        toast = {
             type: type,
             title: title,
             body: body,
             data: extraData,
-            timeout: 10000,
+            timeout: 8000,
             showCloseButton: true,
-            clickHandler: (data) => {
+            onClickCallback: (data) => {
                 if (data.data['id']) {
                     // Open block explorer on browser
                     if (this.aService.activeChain.explorers) {

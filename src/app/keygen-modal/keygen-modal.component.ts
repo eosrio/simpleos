@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {ClrModal} from "@clr/angular";
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from "angular2-toaster";
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from "angular2-toaster";
 import {CryptoService} from "../services/crypto/crypto.service";
 
 @Component({
@@ -40,7 +40,7 @@ export class KeygenModalComponent implements OnInit {
         this.cc(text, 'Key', 'Please save it on a safe place.');
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 10000,

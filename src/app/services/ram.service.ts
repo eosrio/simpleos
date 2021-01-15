@@ -1,6 +1,6 @@
 import {Injectable, OnInit} from '@angular/core';
 
-import * as socketIo from 'socket.io-client';
+import {io as socketIo } from 'socket.io-client';
 import {BehaviorSubject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import {Eosjs2Service} from './eosio/eosjs2.service';

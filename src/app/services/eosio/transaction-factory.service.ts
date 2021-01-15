@@ -17,7 +17,14 @@ export interface TrxModalData {
     signerAccount?: string;
     transactionPayload: TrxPayload;
     resourceTransactionPayload?: TrxPayload;
-    resourceInfo?:any,
+    resourceInfo?: {
+        needResources:boolean,
+        relay:boolean,
+        relayCredit:any,
+        borrow:number,
+        spend:number,
+        precision: number,
+        tk_name: String, },
     errorFunc?: any;
     addActions?: boolean;
 }
@@ -50,7 +57,15 @@ export class TransactionFactoryService {
             resourceTransactionPayload: {
                 actions: []
             },
-            resourceInfo: null,
+            resourceInfo: {
+                needResources:false,
+                relay:false,
+                relayCredit:{used:0,limit:0},
+                borrow:0.0,
+                spend:0.0,
+                precision: 4,
+                tk_name: 'EOS',
+            },
             errorFunc: null,
             addActions: false,
         });

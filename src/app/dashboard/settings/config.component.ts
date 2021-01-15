@@ -4,7 +4,7 @@ import {Router} from '@angular/router';
 import {AccountsService} from '../../services/accounts.service';
 import {NetworkService} from '../../services/network.service';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
 import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
 import {AppComponent} from '../../app.component';
@@ -172,7 +172,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         }
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 10000,
@@ -587,7 +587,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         const keystore = this.getKeyStore();
         if (keystore[key]) {
             delete keystore[key];
-            this.showToast('success', 'Key removed', `${key} removed`);
+            this.showToast('success', 'Key removed', `<div class="dont-break-out">${key}</div> removed`);
         } else {
             console.log(`${key} not found`);
         }

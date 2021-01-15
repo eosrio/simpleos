@@ -2,7 +2,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit,} from '@
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService,} from 'angular2-toaster';
+import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType,} from 'angular2-toaster';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {HttpClient} from '@angular/common/http';
@@ -842,7 +842,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    private showToast(type: string, title: string, body: string) {
+    private showToast(type: ToastType, title: string, body: string) {
         this.config = new ToasterConfig({
             positionClass: 'toast-top-right',
             timeout: 5000,

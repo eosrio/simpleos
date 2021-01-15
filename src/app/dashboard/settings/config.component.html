@@ -46,7 +46,7 @@
                     <div class="card chains-card">
                         <ng-container *ngFor="let endpoint of network.validEndpoints">
                             <div
-                                    class="card-block chain-section {{network.selectedEP() === endpoint.url?'selected':''}}"
+                                    class="card-block chain-section {{network.selectedEndpoint.value.url === endpoint.url?'selected':''}}"
                                     (click)="selectEndpoint(endpoint)" *ngIf="endpoint.latency !== -1">
                                 {{endpoint.url}}
                                 <span style="float:right">latency: {{endpoint.latency}} ms</span>
