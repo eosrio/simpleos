@@ -13,5 +13,8 @@
 	],
 	"exclude": [
 		"eosjs"
-	]
+	],
+	"angularCompilerOptions": {
+		"preserveWhitespaces": true
+	}
 }

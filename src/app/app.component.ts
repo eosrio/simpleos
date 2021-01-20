@@ -15,7 +15,7 @@ import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
 import {LedgerService} from './services/ledger/ledger.service';
-import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
+import {NotificationService} from './services/notification.service';
 import {EOSAccount} from "./interfaces/account";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 
@@ -83,7 +83,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         private cdr: ChangeDetectorRef,
         private _electronService: ElectronService,
         public theme: ThemeService,
-        private toaster: ToasterService,
+        private toaster: NotificationService,
         private http: HttpClient
     ) {
 
@@ -94,7 +94,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             if (!this.network.activeChain.name.startsWith('LIBERLAND')) {
                 this.activeChain = this.network.defaultChains.find((chain) => chain.name === 'LIBERLAND TESTNET');
                 localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
-                this.network.changeChain(this.activeChain.id);
+                this.network.changeChain(this.activeChain.id).catch(console.log);
             }
 
         } else {
@@ -308,15 +308,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                 break;
             }
             case 'authorizations': {
-                const toast: Toast = {
-                    type: 'info',
-                    title: 'wallet connection',
-                    body: 'external application requested public account info',
-                    timeout: 3000,
-                    showCloseButton: true,
-                    bodyOutputType: BodyOutputType.TrustedHtml,
-                };
-                this.toaster.popAsync(toast);
+                this.toaster.onInfo( 'wallet connection','external application requested public account info');
                 this.transitconnect = true;
                 this.isSimpleosConnect = true;
 
@@ -352,7 +344,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     private changeChain(chainId): boolean {
         if (this.network.defaultChains.find((chain) => chain.id === chainId)) {
             if (this.network.activeChain.id !== chainId) {
-                this.network.changeChain(chainId);
+                this.network.changeChain(chainId).catch(console.log);
             }
             return true;
         } else {

@@ -61,7 +61,7 @@
                             </mat-autocomplete>
                         </mat-form-field>
                         <mat-form-field class="field-width">
-                            <input matInput formControlName="amount" [textMask]="{mask: numberMask}" type="text"
+                            <input matInput formControlName="amount" mask="separator.4" thousandSeparator="," type="text"
                                    placeholder="Amount ({{selectedToken['name']}})" (blur)="checkAmount();">
                             <button type="button" mat-button matSuffix mat-icon-button class="btn btn-info-outline btn-sm btn-max"
                                     (click)="setMax()">

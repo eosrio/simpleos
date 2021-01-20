@@ -40,7 +40,7 @@
                 "input": "./node_modules/primeng/resources/themes/nova/theme.css"
               },
               {
-                "input": "./node_modules/angular2-toaster/toaster.css"
+                "input": "./node_modules/ngx-toastr/toastr.css"
               },
               {
                 "input": "./node_modules/primeng/resources/primeng.min.css"
@@ -50,9 +50,6 @@
               },
               {
                 "input": "./node_modules/animate.css/animate.min.css"
-              },
-              {
-                "input": "./node_modules/ng-snotify/styles/dark.scss"
               },
               {
                 "input": "./src/styles.css"

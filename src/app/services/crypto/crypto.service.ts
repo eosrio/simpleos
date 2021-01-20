@@ -333,6 +333,6 @@ export class CryptoService {
     }
 
     decryptBKP(enval: string, pass: string) {
-        return CryptoJS.AES.decrypt(enval, pass).toString(CryptoJS.enc.Utf8);
+        return CryptoJS.AES.decrypt(pass, enval).toString(CryptoJS.enc["Utf8"]);
     }
 }

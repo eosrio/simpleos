@@ -1,7 +1,6 @@
 import {EventEmitter, Injectable} from '@angular/core';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
-import {BodyOutputType, Toast, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from './eosio/eosjs2.service';
 import {parseTokenValue} from '../helpers/aux_functions';
 import {CryptoService} from './crypto/crypto.service';
@@ -43,7 +42,6 @@ export class AccountsService {
         private http: HttpClient,
         private eosjs: Eosjs2Service,
         private crypto: CryptoService,
-        private toaster: ToasterService,
         private notification: NotificationService,
     ) {
         this.accounts = [];
@@ -674,7 +672,7 @@ export class AccountsService {
                         <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>
                         Amount: ${amountSum.toFixed(precision)} ${symbol} </div>`;
 
-            this.notification.onHtml(html);
+            this.notification.onNotification(html);
         }
         this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
         // console.log(activitypastday);
@@ -758,15 +756,7 @@ export class AccountsService {
             if (idx === -1) {
                 payload.accounts.push(account);
             } else {
-                const toast: Toast = {
-                    type: 'info',
-                    title: 'Import',
-                    body: 'The account ' + account.account_name + ' was already imported! Skipping...',
-                    timeout: 10000,
-                    showCloseButton: true,
-                    bodyOutputType: BodyOutputType.TrustedHtml,
-                };
-                this.toaster.popAsync(toast);
+                this.notification.onInfo('Import','The account ' + account.account_name + ' was already imported! Skipping...');
             }
         });
         payload.updatedOn = new Date();
@@ -819,7 +809,7 @@ export class AccountsService {
                     <div class="snotifyToast__body">Balance: ${balance.toFixed(precision)} ${symbol} <br/> 
                     ${moment(moment(ref_time).local()).fromNow()}</div>`;
 
-                    this.notification.onHtml(html);
+                    this.notification.onNotification(html);
                 }
 
             }

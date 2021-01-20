@@ -1,5 +1,4 @@
 import {Component, OnInit, AfterViewInit, ChangeDetectorRef, OnDestroy} from '@angular/core';
-import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
 import {EOSAccount} from '../../interfaces/account';
@@ -47,8 +46,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     dataDT: any[];
     dataVAL: any[];
     timer: any;
-
-    config: ToasterConfig;
 
     ramMarketFormBuy: FormGroup;
     ramMarketFormSell: FormGroup;
@@ -187,7 +184,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         private eosjs: Eosjs2Service,
         public aService: AccountsService,
         private crypto: CryptoService,
-        private toaster: ToasterService,
         private fb: FormBuilder,
         public ramService: RamService,
         private http: HttpClient,

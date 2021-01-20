@@ -367,6 +367,9 @@ class SimpleosWallet {
                 nodeIntegration: true,
                 webSecurity: !this.serve,
                 devTools: this.devtools,
+                enableRemoteModule: true,
+                contextIsolation: true,
+                sandbox: true
             },
             darkTheme: true,
             width: 1440,

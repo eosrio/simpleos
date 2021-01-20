@@ -15,7 +15,7 @@
 
 			<mat-form-field class="mt-8" style="width: 220px">
 				<input matInput type="text" [placeholder]="mds.inputModal.inputPlaceholder" formControlName="amount"
-					   [textMask]="{mask: numberMask}" (keyup.enter)="submit()">
+					   mask="separator.4" thousandSeparator="," (keyup.enter)="submit()">
 				<button type="button" mat-button matSuffix mat-icon-button class="btn btn-inverse-outline btn-sm btn-max"
 						(click)="setMaxAmount()">
 					MAX

@@ -5,7 +5,7 @@ import {Router} from '@angular/router';
 import {ClrWizard} from '@clr/angular';
 import {NetworkService} from '../services/network.service';
 import {CryptoService} from '../services/crypto/crypto.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
+import {NotificationService} from '../services/notification.service';
 import {RamService} from '../services/ram.service';
 import {HttpClient} from '@angular/common/http';
 import {VotingService} from '../services/voting.service';
@@ -108,7 +108,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 	payloadValid = false;
 	generated = false;
 	generated2 = false;
-	config: ToasterConfig;
 	verifyPanel = false;
 	choosedFil: string;
 	disableIm: boolean;
@@ -164,7 +163,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		private crypto: CryptoService,
 		private fb: FormBuilder,
 		public aService: AccountsService,
-		private toaster: ToasterService,
+		private toaster: NotificationService,
 		public network: NetworkService,
 		private router: Router,
 		private zone: NgZone,
@@ -228,9 +227,9 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 	cc(text, title, body) {
 		window.navigator['clipboard']['writeText'](text).then(() => {
-			this.showToast('success', title + ' copied to clipboard!', body);
+			this.toaster.onSuccess( title + ' copied to clipboard!', body);
 		}).catch(() => {
-			this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+			this.toaster.onError( 'Clipboard didn\'t work!', 'Please try other way.');
 		});
 	}
 
@@ -247,30 +246,6 @@ export class LandingComponent implements OnInit, OnDestroy {
 	resetAndClose() {
 		this.wizardnew.reset();
 		this.wizardnew.close();
-	}
-
-	private showToast(type: ToastType, title: string, body: string) {
-
-		this.config = new ToasterConfig({
-			positionClass: 'toast-top-right',
-			timeout: 10000,
-			newestOnTop: true,
-			tapToDismiss: true,
-			preventDuplicates: false,
-			animation: 'slideDown',
-			limit: 1,
-		});
-
-		const toast: Toast = {
-			type: type,
-			title: title,
-			body: body,
-			timeout: 10000,
-			showCloseButton: true,
-			bodyOutputType: BodyOutputType.TrustedHtml,
-		};
-
-		this.toaster.popAsync(toast);
 	}
 
 	ngOnInit() {
@@ -539,7 +514,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 		// console.log(this.infile);
 		const name = this.infile.name;
 		if (name.split('.')[1] !== 'bkp') {
-			this.showToast('error', 'Wrong file!', '');
+			this.toaster.onError('Wrong file!', '');
 			this.infile = '';
 			return false;
 		}
@@ -567,18 +542,18 @@ export class LandingComponent implements OnInit, OnDestroy {
 							decrypt = this.crypto.decryptBKP(data, pass);
 							arrLS = JSON.parse(decrypt);
 						} catch (e) {
-							this.showToast('error', 'Wrong password, please try again!', '');
+							this.toaster.onError('Wrong password, please try again!', '');
 							console.log('wrong file');
 						}
 					} else {
-						this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
+						this.toaster.onError('This backup file is encrypted, please provide a password!', '');
 					}
 				}
 				if (arrLS) {
 					arrLS.forEach((d) => {
 						localStorage.setItem(d['key'], d['value']);
 					});
-					this.showToast('success', 'Imported with success!', 'Application will restart... wait for it!');
+					this.toaster.onSuccess('Imported with success!', 'Application will restart... wait for it!');
 					LandingComponent.resetApp();
 					this.choosedFil = '';
 					this.disableIm = false;
@@ -590,11 +565,11 @@ export class LandingComponent implements OnInit, OnDestroy {
 					this.busy2 = false;
 				}
 			} catch (e) {
-				this.showToast('error', 'Something went wrong, please try again or contact our support!', '');
+				this.toaster.onError('Something went wrong, please try again or contact our support!', '');
 				console.log('wrong entry');
 			}
 		} else {
-			this.showToast('error', 'Choose your backup file', '');
+			this.toaster.onError('Choose your backup file', '');
 			this.choosedFil = '';
 			this.disableIm = false;
 			this.busy2 = false;

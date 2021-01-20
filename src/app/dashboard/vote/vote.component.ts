@@ -2,7 +2,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit,} from '@
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType,} from 'angular2-toaster';
+import {NotificationService} from '../../services/notification.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {HttpClient} from '@angular/common/http';
@@ -56,7 +56,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     selectedVotes: any[];
     wrongpass: string;
     frmForProxy: FormGroup;
-    config: ToasterConfig;
     numberMask = createNumberMask({
         prefix: '',
         allowDecimal: true,
@@ -136,7 +135,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         public eosjs: Eosjs2Service,
         public crypto: CryptoService,
         private fb: FormBuilder,
-        private toaster: ToasterService,
+        private toaster: NotificationService,
         private cdr: ChangeDetectorRef,
         public app: AppComponent,
         public theme: ThemeService,
@@ -842,27 +841,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    private showToast(type: ToastType, title: string, body: string) {
-        this.config = new ToasterConfig({
-            positionClass: 'toast-top-right',
-            timeout: 5000,
-            newestOnTop: true,
-            tapToDismiss: true,
-            preventDuplicates: false,
-            animation: 'slideDown',
-            limit: 1,
-        });
-        const toast: Toast = {
-            type: type,
-            title: title,
-            body: body,
-            timeout: 5000,
-            showCloseButton: true,
-            bodyOutputType: BodyOutputType.TrustedHtml,
-        };
-        this.toaster.popAsync(toast);
-    }
-
     voteOption(ev) {
         this.busyList = true;
         this.voteService.voteType = ev;
@@ -1084,10 +1062,10 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             });
             this.claimError = '';
             if (voteOnly) {
-                this.showToast('success', 'Vote broadcasted',
+                this.toaster.onSuccess('Vote broadcasted',
                     'Check your history for confirmation.');
             } else {
-                this.showToast('success', 'GBM Rewards Claimed',
+                this.toaster.onSuccess('GBM Rewards Claimed',
                     'Check your history for confirmation.');
             }
             console.log(result);

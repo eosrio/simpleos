@@ -4,7 +4,7 @@ import {Router} from '@angular/router';
 import {AccountsService} from '../../services/accounts.service';
 import {NetworkService} from '../../services/network.service';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
+import {NotificationService} from '../../services/notification.service';
 import {ClrModal, ClrWizard} from '@clr/angular';
 import {BackupService} from '../../services/backup.service';
 import {AppComponent} from '../../app.component';
@@ -53,7 +53,6 @@ export class ConfigComponent implements OnInit, OnDestroy {
     showpkForm: FormGroup;
     passmatch: boolean;
     clearContacts: boolean;
-    config: ToasterConfig;
     infile = '';
     exfile = '';
     disableEx: boolean;
@@ -95,7 +94,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
                 private router: Router,
                 private crypto: CryptoService,
                 public aService: AccountsService,
-                private toaster: ToasterService,
+                private toaster: NotificationService,
                 public backup: BackupService,
                 public app: AppComponent,
                 private _electronService: ElectronService,
@@ -172,27 +171,6 @@ export class ConfigComponent implements OnInit, OnDestroy {
         }
     }
 
-    private showToast(type: ToastType, title: string, body: string) {
-        this.config = new ToasterConfig({
-            positionClass: 'toast-top-right',
-            timeout: 10000,
-            newestOnTop: true,
-            tapToDismiss: true,
-            preventDuplicates: false,
-            animation: 'slideDown',
-            limit: 1,
-        });
-        const toast: Toast = {
-            type: type,
-            title: title,
-            body: body,
-            timeout: 10000,
-            showCloseButton: true,
-            bodyOutputType: BodyOutputType.TrustedHtml,
-        };
-        this.toaster.popAsync(toast);
-    }
-
     ngOnInit() {
         this.chainConnected = this.getChainConnected();
         this.autoBackup = this.backup.automatic === 'true';
@@ -213,9 +191,9 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
     cc(text) {
         window['navigator']['clipboard']['writeText'](text).then(() => {
-            this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+            this.toaster.onSuccess('Key copied to clipboard!', 'Please save it on a safe place.');
         }).catch(() => {
-            this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+            this.toaster.onError( 'Clipboard didn\'t work!', 'Please try other way.');
         });
     }
 
@@ -307,11 +285,11 @@ export class ConfigComponent implements OnInit, OnDestroy {
                 }
                 this.passForm.reset();
                 this.changePassModal = false;
-                this.showToast('success', 'Password changed!', '');
+                this.toaster.onSuccess( 'Password changed!', '');
             } else {
                 this.passForm.get('oldpass').setValue('');
                 this.wrongpass = true;
-                this.showToast('error', 'Wrong password', 'please try again!');
+                this.toaster.onError( 'Wrong password', 'please try again!');
             }
         }
     }
@@ -331,7 +309,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
     clearPin() {
         this.crypto.removePIN();
         this.clearPinModal = false;
-        this.showToast('success', 'Lockscreen PIN removed!', '');
+        this.toaster.onSuccess('Lockscreen PIN removed!', '');
     }
 
     setPIN() {
@@ -341,7 +319,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
             } else {
                 this.crypto.createPIN(this.pinForm.value.pin);
             }
-            this.showToast('success', 'New Lockscreen PIN defined!', '');
+            this.toaster.onSuccess('New Lockscreen PIN defined!', '');
         }
         this.pinModal = false;
     }
@@ -376,7 +354,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.exfile = '';
         this.disableEx = false;
         this.exportBKModal = false;
-        this.showToast('success', 'Backup exported!', '');
+        this.toaster.onSuccess('Backup exported!', '');
         this.backup.updateBackupTime();
         this.backup.getLastBackupTime();
     }
@@ -402,7 +380,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
                 data = this.crypto.decryptBKP(data.toString(), pass);
             }
         } catch (e) {
-            this.showToast('error', 'Wrong password, please try again!', '');
+            this.toaster.onSuccess('Wrong password, please try again!', '');
             this.busy = false;
             this.disableIm = false;
             return;
@@ -412,12 +390,12 @@ export class ConfigComponent implements OnInit, OnDestroy {
             parsedData = JSON.parse(data);
         } catch (e) {
             if (pass === '') {
-                this.showToast('error', 'This backup file is encrypted, please provide a password!', '');
+                this.toaster.onError('This backup file is encrypted, please provide a password!', '');
                 this.busy = false;
                 this.disableIm = false;
                 return;
             } else {
-                this.showToast('error', 'Wrong password, please try again!', '');
+                this.toaster.onError('Wrong password, please try again!', '');
                 this.busy = false;
                 this.disableIm = false;
                 return;
@@ -432,12 +410,12 @@ export class ConfigComponent implements OnInit, OnDestroy {
             this.busy = false;
             this.infile = '';
             this.importBKModal = false;
-            this.showToast('success', 'Backup imported successfully', 'the wallet will restart...');
+            this.toaster.onSuccess('Backup imported successfully', 'the wallet will restart...');
             setTimeout(() => {
                 ConfigComponent.resetApp();
             }, 5000);
         } else {
-            this.showToast('error', 'Invalid backup file!', 'Please try again');
+            this.toaster.onError('Invalid backup file!', 'Please try again');
             this.infile = '';
             this.disableIm = false;
             this.busy = false;
@@ -450,11 +428,11 @@ export class ConfigComponent implements OnInit, OnDestroy {
             localStorage.setItem('simplEOS.autosave', 'true');
             this.backup.automatic = 'true';
             this.backup.startTimeout();
-            this.showToast('success', 'Automatic backup enabled!', 'First backup will be saved in 10 seconds...');
+            this.toaster.onSuccess('Automatic backup enabled!', 'First backup will be saved in 10 seconds...');
         } else {
             localStorage.setItem('simplEOS.autosave', 'false');
             this.backup.automatic = 'false';
-            this.showToast('info', 'Automatic backup disabled!', '');
+            this.toaster.onInfo('Automatic backup disabled!', '');
         }
     }
 
@@ -525,7 +503,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
                         }
                     }, this.pkExposureTime * 1000);
                 } else {
-                    this.showToast('error', 'Invalid password!', 'please try again');
+                    this.toaster.onError('Invalid password!', 'please try again');
                     this.pkError = 'Invalid password!';
                     if (this.timeoutviewpk) {
                         clearTimeout(this.timeoutviewpk);
@@ -533,7 +511,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
                     console.log('WRONG PASS');
                 }
             }).catch((err) => {
-                this.showToast('error', 'Invalid password!', 'please try again');
+                this.toaster.onError('Invalid password!', 'please try again');
                 this.pkError = 'Invalid password!';
                 if (this.timeoutviewpk) {
                     clearTimeout(this.timeoutviewpk);
@@ -553,7 +531,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         const rmIdx = this.aService.accounts.findIndex(a => a.name === name);
         this.aService.accounts.splice(rmIdx, 1);
         if (refresh) {
-            this.showToast('success', 'Account Removed', `${name} removed`);
+            this.toaster.onSuccess('Account Removed', `${name} removed`);
             this.aService.refreshFromChain(true).catch(console.log);
             this.populateAccounts();
             this.aService.select(0);
@@ -587,7 +565,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         const keystore = this.getKeyStore();
         if (keystore[key]) {
             delete keystore[key];
-            this.showToast('success', 'Key removed', `<div class="dont-break-out">${key}</div> removed`);
+            this.toaster.onSuccess('Key removed', `<div class="dont-break-out">${key}</div> removed`);
         } else {
             console.log(`${key} not found`);
         }

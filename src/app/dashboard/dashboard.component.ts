@@ -2,7 +2,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, ViewChil
 import {AccountsService} from '../services/accounts.service';
 import {ClrWizard} from '@clr/angular';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from 'angular2-toaster';
+import {NotificationService} from '../services/notification.service';
 import {CryptoService} from '../services/crypto/crypto.service';
 import {RamService} from '../services/ram.service';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
@@ -18,7 +18,6 @@ import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Router} from "@angular/router";
-import {NotificationService} from "../services/notification.service";
 
 @Component({
     selector: 'app-dashboard',
@@ -93,7 +92,6 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     delegateForm: FormGroup;
     submitTXForm: FormGroup;
     wrongwalletpass = '';
-    config: ToasterConfig;
 
     numberMask = createNumberMask({
         prefix: '',
@@ -124,7 +122,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         public eosjs: Eosjs2Service,
         private fb: FormBuilder,
         public aService: AccountsService,
-        private toaster: ToasterService,
+        private toaster: NotificationService,
         private crypto: CryptoService,
         public network: NetworkService,
         public ram: RamService,
@@ -133,7 +131,6 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         public app: AppComponent,
         private cdr: ChangeDetectorRef,
         private router: Router,
-        public notification: NotificationService,
     ) {
 
         this.newAccountModal = false;
@@ -374,7 +371,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
                                                 this.busy = false;
                                                 this.success = true;
                                                 this.confirmationID = txdata['transaction_id'];
-                                                this.showToast('success', 'Account created', 'Check your history for confirmation.');
+                                                this.toaster.onSuccess('Account created', 'Check your history for confirmation.');
                                                 this.submitTXForm.reset();
                                                 this.aService.refreshFromChain(true).catch(console.log);
                                             }).catch((err) => {
@@ -389,7 +386,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
                             this.busy = false;
                             this.success = true;
                             this.confirmationID = txdata['transaction_id'];
-                            this.showToast('success', 'Account created', 'Check your history for confirmation.');
+                            this.toaster.onSuccess('Account created', 'Check your history for confirmation.');
                             this.submitTXForm.reset();
                             this.aService.refreshFromChain(true).catch(console.log);
                         }
@@ -399,7 +396,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
                         this.confirmationID = txdata['transaction_id'];
                         this.success = true;
                         this.busy = false;
-                        this.showToast('success', 'Account created', 'Check your history for confirmation. Please notify your friend.');
+                        this.toaster.onSuccess('Account created', 'Check your history for confirmation. Please notify your friend.');
                         this.submitTXForm.reset();
                     } else if (this.newAccOptions === 'thispk') {
                         setTimeout(() => {
@@ -411,7 +408,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
                                     this.busy = false;
                                     this.success = true;
                                     this.confirmationID = txdata['transaction_id'];
-                                    this.showToast('success', 'Account created', 'Check your history for confirmation.');
+                                    this.toaster.onSuccess('Account created', 'Check your history for confirmation.');
                                     this.submitTXForm.reset();
                                 }).catch((err) => {
                                     console.log(err);
@@ -458,9 +455,9 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
     cc(text) {
         window['navigator']['clipboard']['writeText'](text).then(() => {
-            this.showToast('success', 'Key copied to clipboard!', 'Please save it on a safe place.');
+            this.toaster.onSuccess('Key copied to clipboard!', 'Please save it on a safe place.');
         }).catch(() => {
-            this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+            this.toaster.onError('Clipboard didn\'t work!', 'Please try other way.');
         });
     }
 
@@ -575,27 +572,6 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
         this.generating = false;
         this.generated = true;
-    }
-
-    private showToast(type: ToastType, title: string, body: string) {
-        this.config = new ToasterConfig({
-            positionClass: 'toast-top-right',
-            timeout: 10000,
-            newestOnTop: true,
-            tapToDismiss: true,
-            preventDuplicates: false,
-            animation: 'slideDown',
-            limit: 1,
-        });
-        const toast: Toast = {
-            type: type,
-            title: title,
-            body: body,
-            timeout: 10000,
-            showCloseButton: true,
-            bodyOutputType: BodyOutputType.TrustedHtml,
-        };
-        this.toaster.popAsync(toast);
     }
 
     tick() {

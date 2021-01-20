@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {ClrModal} from "@clr/angular";
-import {BodyOutputType, Toast, ToasterConfig, ToasterService, ToastType} from "angular2-toaster";
+import {NotificationService} from '../services/notification.service';
 import {CryptoService} from "../services/crypto/crypto.service";
 
 @Component({
@@ -15,12 +15,11 @@ export class KeygenModalComponent implements OnInit {
     prvKey = '';
     pubKey = '';
     agreeKeys = false;
-    private config: ToasterConfig;
     generating = false;
     generated = false;
 
     constructor(
-        private toaster: ToasterService,
+        private toaster: NotificationService,
         private crypto: CryptoService
     ) {
     }
@@ -30,35 +29,14 @@ export class KeygenModalComponent implements OnInit {
 
     cc(text, title, body) {
         window.navigator.clipboard.writeText(text).then(() => {
-            this.showToast('success', title + ' copied to clipboard!', body);
+            this.toaster.onSuccess(title + ' copied to clipboard!', body);
         }).catch(() => {
-            this.showToast('error', 'Clipboard didn\'t work!', 'Please try other way.');
+            this.toaster.onError('Clipboard didn\'t work!', 'Please try other way.');
         });
     }
 
     copy(text: string) {
         this.cc(text, 'Key', 'Please save it on a safe place.');
-    }
-
-    private showToast(type: ToastType, title: string, body: string) {
-        this.config = new ToasterConfig({
-            positionClass: 'toast-top-right',
-            timeout: 10000,
-            newestOnTop: true,
-            tapToDismiss: true,
-            preventDuplicates: false,
-            animation: 'slideDown',
-            limit: 1,
-        });
-        const toast: Toast = {
-            type: type,
-            title: title,
-            body: body,
-            timeout: 10000,
-            showCloseButton: true,
-            bodyOutputType: BodyOutputType.TrustedHtml,
-        };
-        this.toaster.popAsync(toast);
     }
 
     async generateNKeys() {

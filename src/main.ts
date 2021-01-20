@@ -8,7 +8,7 @@ import 'node-fetch';
 import 'hammerjs';
 
 import 'echarts/theme/macarons.js';
-import 'echarts/map/js/world.js';
+// import 'echarts/map/js/world.js';
 import 'echarts/dist/extension/bmap.min.js';
 
 function angularBoot() {
@@ -16,7 +16,7 @@ function angularBoot() {
         enableProdMode();
     }
     platformBrowserDynamic().bootstrapModule(AppModule, {
-        preserveWhitespaces: false
+        preserveWhitespaces: true
     }).catch(err => console.log(err));
 }
 

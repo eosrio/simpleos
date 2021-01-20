@@ -4,7 +4,6 @@ import {AccountsService} from '../../services/accounts.service';
 import {Observable, Subscription} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 import {createNumberMask} from 'text-mask-addons/dist/textMaskAddons';
-import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {CryptoService} from '../../services/crypto/crypto.service';
 import {LedgerService} from '../../services/ledger/ledger.service';
 import {NetworkService} from '../../services/network.service';
@@ -64,7 +63,6 @@ export class SendComponent implements OnInit, OnDestroy {
         includeThousandsSeparator: false,
         decimalLimit: 4,
     });
-    config: ToasterConfig;
     fromAccount: string;
     token_balance = 0.0000;
     selectedToken = {} as any;
@@ -87,7 +85,6 @@ export class SendComponent implements OnInit, OnDestroy {
                 public aService: AccountsService,
                 public eosjs: Eosjs2Service,
                 private crypto: CryptoService,
-                private toaster: ToasterService,
                 private cdr: ChangeDetectorRef,
                 private ledger: LedgerService,
                 private network: NetworkService,

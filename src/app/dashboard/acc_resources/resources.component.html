@@ -83,7 +83,8 @@
                                                            (blur)="updateStakeValue(); checkPercent();"
                                                            [ngModel]="percenttoStake"
                                                            (ngModelChange)="percenttoStake=$event"
-                                                           [textMask]="{mask: percentMask}">
+                                                           mask="separator.1" thousandSeparator="," separatorLimit="100"
+                                                           >
                                                     <span class="suffix" matSuffix>%</span>
                                                 </mat-form-field>
                                             </div>
@@ -93,7 +94,7 @@
                                                            placeholder="Value ({{aService.activeChain['symbol']}})"
                                                            [ngModel]="valuetoStake"
                                                            (ngModelChange)="valuetoStake=$event"
-                                                           [textMask]="{mask: numberMask}"
+                                                           mask="separator.4" thousandSeparator=","
                                                            (blur)="updateStakePercent(); checkValue();">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
@@ -121,7 +122,7 @@
                                                     <input matInput type="text" min="0"
                                                            placeholder="CPU Value" [ngModel]="cpu_self"
                                                            (ngModelChange)="cpu_self=$event"
-                                                           [textMask]="{mask: numberMask}"
+                                                           mask="separator.4" thousandSeparator=","
                                                            (blur)="checkValueManually('cpu');">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
@@ -132,7 +133,7 @@
                                                     <input matInput type="text" min="0"
                                                            placeholder="NET Value" [ngModel]="net_self"
                                                            (ngModelChange)="net_self=$event"
-                                                           [textMask]="{mask: numberMask}"
+                                                           mask="separator.4" thousandSeparator=","
                                                            (blur)="checkValueManually('net');">
                                                     <span class="suffix special-font"
                                                           matSuffix>{{aService.activeChain['symbol']}}</span>
@@ -253,7 +254,7 @@
                                                        (blur)="updateStakeValue(); checkPercent();"
                                                        [ngModel]="percenttoStake"
                                                        (ngModelChange)="percenttoStake=$event"
-                                                       [textMask]="{mask: percentMask}">
+                                                       mask="separator.1" thousandSeparator="," separatorLimit="100">
                                                 <span class="suffix" matSuffix>%</span>
                                             </mat-form-field>
                                         </div>
@@ -262,7 +263,7 @@
                                                 <input matInput type="text" min="1"
                                                        placeholder="Value ({{aService.activeChain['symbol']}})"
                                                        [ngModel]="valuetoStake" (ngModelChange)="valuetoStake=$event"
-                                                       [textMask]="{mask: numberMask}"
+                                                       mask="separator.4" thousandSeparator=","
                                                        (blur)="updateStakePercent(); checkValue();">
                                                 <span class="suffix special-font"
                                                       matSuffix>{{aService.activeChain['symbol']}}</span>
@@ -399,7 +400,7 @@
                                                             style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
                                                 <input matInput type="text" #cpuAmountEos
                                                        placeholder="CPU ({{aService.activeChain['symbol']}})"
-                                                       [textMask]="{mask: numberMask}" formControlName="cpuEos"
+                                                       mask="separator.4" thousandSeparator="," formControlName="cpuEos"
                                                        (keyup)="checkEos(cpuAmountEos.value,'cpu');"/>
                                             </mat-form-field>
 
@@ -408,7 +409,7 @@
                                                             style="width: 80px; display: inline-block !important; margin-top: 10px !important;">
                                                 <input matInput type="text" #netAmountEos
                                                        placeholder="NET ({{aService.activeChain['symbol']}})"
-                                                       [textMask]="{mask: numberMask}" formControlName="netEos"
+                                                       mask="separator.4" thousandSeparator="," formControlName="netEos"
                                                        (keyup)="checkEos(netAmountEos.value,'net');"/>
                                             </mat-form-field>
                                             <mat-error align="start"
@@ -505,7 +506,7 @@
                                         <mat-form-field class="mt-1"
                                                         style="width: 100px; display: inline-block !important;">
                                             <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
-                                                   [textMask]="{mask: numberMask}" formControlName="buyBytes"
+                                                   mask="separator.4" thousandSeparator=","  formControlName="buyBytes"
                                                    (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
                                         </mat-form-field>
                                         <span style="margin: 0 12px;">=</span>
@@ -513,7 +514,7 @@
                                                         style="width: 80px; display: inline-block !important;">
                                             <input matInput type="text" #buyAmountEos
                                                    placeholder="Price in {{aService.activeChain['symbol']}}"
-                                                   [textMask]="{mask: numberMask}" formControlName="buyEos"
+                                                   mask="separator.4" thousandSeparator="," formControlName="buyEos"
                                                    (keyup)="(errormsg2='');convertToBytes()"/>
                                         </mat-form-field>
                                         <!--						<span style="margin: 0 12px;">{{aService.activeChain['symbol']}}</span>-->
@@ -555,7 +556,7 @@
                                         <div class="title" style="margin-top: 40px;">Sell RAM</div>
                                         <mat-form-field class="mt-1"
                                                         style="width: 100px; display: inline-block !important;">
-                                            <input matInput #sellBytes type="text" [textMask]="{mask: numberMask}"
+                                            <input matInput #sellBytes type="text" mask="separator.4" thousandSeparator=","
                                                    placeholder="RAM amount (KB)" formControlName="sellBytes"
                                                    (keyup)="(errormsgeos='');convertToEosSELL()"
                                                    (blur)="checkSellBytes()"/>
@@ -563,7 +564,7 @@
                                         <span style="margin: 0 12px;">=</span>
                                         <mat-form-field lass="mt-1"
                                                         style="width: 80px; display: inline-block !important;">
-                                            <input matInput #sellEos type="text" [textMask]="{mask: numberMask}"
+                                            <input matInput #sellEos type="text" mask="separator.4" thousandSeparator=","
                                                    placeholder="Price in {{aService.activeChain['symbol']}}"
                                                    formControlName="sellEos"
                                                    (keyup)="(errormsgeos='');convertToBytesSELL()"

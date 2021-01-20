@@ -51,22 +51,23 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatTreeModule} from "@angular/material/tree";
 import {MatTooltipModule} from "@angular/material/tooltip";
 
-import {MaterialDesignFrameworkModule} from "@ajsf/material";
+// import {MaterialDesignFrameworkModule} from "@ajsf/material";
 
 import {NgxEchartsModule} from "ngx-echarts";
 import * as echarts from 'echarts';
 
 import {FuseJsModule} from "./modules/fusejs/fusejs.module";
 
-import {TextMaskModule} from "angular2-text-mask";
-import {ToasterModule} from "angular2-toaster";
+import {ToastrModule} from "ngx-toastr";
+import { NgxMaskModule } from "ngx-mask";
+// import {TextMaskModule} from "angular2-text-mask";
+// import {ToasterModule} from "angular2-toaster";
 
 import {NgxJsonViewerModule} from "ngx-json-viewer";
 import {OrderModule} from "ngx-order-pipe";
 import {NgxPaginationModule} from "ngx-pagination";
 import {NgxElectronModule} from "ngx-electron";
 import {MarkdownModule} from "ngx-markdown";
-import {SnotifyModule, SnotifyService, ToastDefaults} from "ng-snotify";
 
 // Lottie
 import {LottieModule} from "ngx-lottie";
@@ -83,6 +84,7 @@ import {LedgerService} from "./services/ledger/ledger.service";
 import {ConnectService} from "./services/connect.service";
 import {BackupService} from "./services/backup.service";
 import {ThemeService} from "./services/theme.service";
+import {NotificationService} from "./services/notification.service";
 
 // FontAwesome Imports
 import {FaIconLibrary, FontAwesomeModule} from "@fortawesome/angular-fontawesome";
@@ -156,7 +158,9 @@ export function playerFactory() {
     return player;
 }
 
-// @ts-ignore
+import { FormlyModule } from '@ngx-formly/core';
+import { FormlyMaterialModule } from '@ngx-formly/material';
+
 @NgModule({
     declarations: [
         AppComponent,
@@ -188,6 +192,8 @@ export function playerFactory() {
         BrowserModule,
         ClarityModule,
         FontAwesomeModule,
+        FormlyModule.forRoot(),
+        FormlyMaterialModule,
         HttpClientModule,
         MatAutocompleteModule,
         MatCardModule,
@@ -205,9 +211,9 @@ export function playerFactory() {
         MatSlideToggleModule,
         MatTreeModule,
         ReactiveFormsModule,
-        TextMaskModule,
+        NgxMaskModule.forRoot(),
         NgxEchartsModule.forRoot({echarts}),
-        ToasterModule.forRoot(),
+        ToastrModule.forRoot(),
         AppRoutingModule,
         NgxJsonViewerModule,
         FuseJsModule,
@@ -215,7 +221,7 @@ export function playerFactory() {
         NgxPaginationModule,
         NgxElectronModule,
         MarkdownModule.forRoot(),
-        MaterialDesignFrameworkModule,
+        // MaterialDesignFrameworkModule,
         MatInputModule,
         LottieModule.forRoot({
             player: playerFactory,
@@ -225,7 +231,7 @@ export function playerFactory() {
         MatTooltipModule,
         PaginatorModule,
         A11yModule,
-        SnotifyModule
+        // SnotifyModule
     ],
     providers: [
         Eosjs2Service,
@@ -238,8 +244,9 @@ export function playerFactory() {
         ConnectService,
         BackupService,
         ThemeService,
-        { provide: 'SnotifyToastConfig', useValue: ToastDefaults},
-        SnotifyService,
+        NotificationService,
+        // { provide: 'SnotifyToastConfig', useValue: ToastDefaults},
+        // SnotifyService,
 
     ],
     bootstrap: [AppComponent],

@@ -3,7 +3,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Eosjs2Service} from '../services/eosio/eosjs2.service';
 import {CryptoService} from '../services/crypto/crypto.service';
 import {RpcError} from 'eosjs/dist';
-import {BodyOutputType, Toast, ToasterService, ToastType} from 'angular2-toaster';
+import {NotificationService} from '../services/notification.service';
 import {AccountsService} from '../services/accounts.service';
 import {TransactionFactoryService, TrxModalData} from '../services/eosio/transaction-factory.service';
 import {LedgerService} from "../services/ledger/ledger.service";
@@ -42,7 +42,7 @@ export class ConfirmModalComponent {
         private cdr: ChangeDetectorRef,
         private eosjs: Eosjs2Service,
         private crypto: CryptoService,
-        private toaster: ToasterService,
+        private toaster: NotificationService,
         private trxFactory: TransactionFactoryService,
         public ledger: LedgerService,
         public network: NetworkService,
@@ -149,7 +149,7 @@ export class ConfirmModalComponent {
             this.errormsg = {'friendly':'Wrong password!', 'origin':''};
             this.trxFactory.status.emit('error');
             this.busy = false;
-            this.showToast('error', 'Authentication fail', `Wrong password`, {});
+            this.toaster.onError('Authentication fail', `Wrong password`);
             return false;
         }
 
@@ -201,13 +201,17 @@ export class ConfirmModalComponent {
                     this.visibility = false;
                     this.cdr.detectChanges();
                 }, 1500);
-                this.showToast('success', 'Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
+                this.toaster.onSuccessEX('Transaction broadcasted',`<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
                     id: trxId
-                });
+                }, this.aService.activeChain.explorers);
+                // this.showToast('success', 'Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
+                //     id: trxId
+                // });
             } else {
                 this.busy = false;
                 this.confirmationForm.reset();
-                this.showToast('error', 'Transaction failed', `${this.errormsg['friendly']}`, {});
+                this.toaster.onError('Transaction failed', `${this.errormsg['friendly']}`);
+                // this.showToast('error', 'Transaction failed', `${this.errormsg['friendly']}`, {});
             }
         }
     }
@@ -235,13 +239,15 @@ export class ConfirmModalComponent {
                     this.visibility = false;
                     this.cdr.detectChanges();
                 }, 3000);
-
-                this.showToast(
-                    'success',
-                    'Transaction broadcasted',
-                    ` TRX ID: ${trxId} <br> Check your history for confirmation.`,
-                    {id: trxId}
-                );
+                this.toaster.onSuccessEX('Transaction broadcasted',`<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
+                    id: trxId
+                },this.aService.activeChain.explorers);
+                // this.showToast(
+                //     'success',
+                //     'Transaction broadcasted',
+                //     ` TRX ID: ${trxId} <br> Check your history for confirmation.`,
+                //     {id: trxId}
+                // );
                 this.errormsg = {'friendly':'', 'origin':''};
             }
         } catch (e) {
@@ -257,35 +263,35 @@ export class ConfirmModalComponent {
             // this.errormsg = e;
             console.log(e);
             this.busy = false;
-            this.showToast('error', 'Transaction failed', `${this.errormsg['friendly']}`, {});
+            this.toaster.onError('Transaction failed', `${this.errormsg['friendly']}`);
         }
     }
 
-    private showToast(type: ToastType, title: string, body: string, extraData: any) {
-        let toast: Toast;
-        toast = {
-            type: type,
-            title: title,
-            body: body,
-            data: extraData,
-            timeout: 8000,
-            showCloseButton: true,
-            onClickCallback: (data) => {
-                if (data.data['id']) {
-                    // Open block explorer on browser
-                    if (this.aService.activeChain.explorers) {
-                        if (this.aService.activeChain.explorers.length > 0) {
-                            const txBase = this.aService.activeChain.explorers[0].tx_url;
-                            window['shell']['openExternal'](txBase + data.data.id);
-                        }
-                    }
-                }
-                return true;
-            },
-            bodyOutputType: BodyOutputType.TrustedHtml,
-        };
-        this.toaster.popAsync(toast);
-    }
+    // private showToast(type: ToastType, title: string, body: string, extraData: any) {
+    //     let toast: Toast;
+    //     toast = {
+    //         type: type,
+    //         title: title,
+    //         body: body,
+    //         data: extraData,
+    //         timeout: 8000,
+    //         showCloseButton: true,
+    //         onClickCallback: (data) => {
+    //             if (data.data['id']) {
+    //                 // Open block explorer on browser
+    //                 if (this.aService.activeChain.explorers) {
+    //                     if (this.aService.activeChain.explorers.length > 0) {
+    //                         const txBase = this.aService.activeChain.explorers[0].tx_url;
+    //                         window['shell']['openExternal'](txBase + data.data.id);
+    //                     }
+    //                 }
+    //             }
+    //             return true;
+    //         },
+    //         bodyOutputType: BodyOutputType.TrustedHtml,
+    //     };
+    //     this.toaster.popAsync(toast);
+    // }
 
     onClose() {
         if (!this.wasClosed) {

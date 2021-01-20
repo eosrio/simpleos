@@ -5,7 +5,6 @@ import {EOSAccount} from '../../interfaces/account';
 import {AbstractControl, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {CryptoService} from '../../services/crypto/crypto.service';
-import {ToasterConfig, ToasterService} from 'angular2-toaster';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {Subscription} from 'rxjs';
@@ -74,7 +73,6 @@ export class RexComponent implements OnDestroy {
         includeThousandsSeparator: false,
         decimalLimit: 4,
     });
-    config: ToasterConfig;
     subscriptions: Subscription[];
     rex_price_chart: any;
     rexPriceChartMerge: any;
@@ -133,7 +131,6 @@ export class RexComponent implements OnDestroy {
         private mds: ModalStateService,
         private eosjs: Eosjs2Service,
         public crypto: CryptoService,
-        private toaster: ToasterService,
         private rexCharts: RexChartsService
     ) {
 

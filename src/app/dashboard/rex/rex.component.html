@@ -175,7 +175,7 @@
 																<input matInput type="text" placeholder="Amount"
 																	   formControlName="EOSamount"
 																	   (blur)="checkStakeAmount();"
-																	   [textMask]="{mask: numberMask}">
+																	   mask="separator.2" thousandSeparator=",">
 																<span class="suffix"
 																	  matSuffix>{{aService.activeChain['symbol']}}</span>
 																<mat-error align="start"
@@ -209,7 +209,7 @@
 																	<input matInput type="text"
 																		   placeholder="Amount from CPU"
 																		   formControlName="cpu"
-																		   [textMask]="{mask: numberMask}">
+																		   mask="separator.4" thousandSeparator=",">
 																	<span class="suffix"
 																		  matSuffix>{{aService.activeChain['symbol']}}</span>
 																	<mat-error align="start"
@@ -240,7 +240,7 @@
 																	<input matInput type="text"
 																		   placeholder="Amount from NET"
 																		   formControlName="net"
-																		   [textMask]="{mask: numberMask}">
+																		   mask="separator.4" thousandSeparator=",">
 																	<span class="suffix"
 																		  matSuffix>{{aService.activeChain['symbol']}}</span>
 																	<mat-error align="start"
@@ -294,7 +294,7 @@
 																<input matInput type="text" placeholder="Amount"
 																	   formControlName="EOSamount"
 																	   (blur)="checkAmount();"
-																	   [textMask]="{mask: numberMask}">
+																	   mask="separator.4" thousandSeparator=",">
 																<span class="suffix"
 																	  matSuffix>{{aService.activeChain['symbol']}}</span>
 																<mat-error align="start" *ngIf="EOSamounterror !== ''">
@@ -354,7 +354,7 @@
 																style="display: inline-block !important; width: 126px;">
 													<input matInput type="text" placeholder="Amount"
 														   formControlName="REXamount"
-														   (blur)="checkSellAmount();" [textMask]="{mask: numberMask}">
+														   (blur)="checkSellAmount();" mask="separator.4" thousandSeparator=",">
 													<span class="suffix" matSuffix>REX</span>
 													<mat-error align="start" *ngIf="REXamounterror !== ''">
 														{{REXamounterror}}
@@ -642,7 +642,7 @@
 															style="display: inline-block !important; width: 120px; margin-right: 40px;">
 												<input matInput type="text" placeholder="CPU"
 													   formControlName="CPUamount" (blur)="updateCpuCost();"
-													   [textMask]="{mask: numberMask}">
+													   mask="separator.4" thousandSeparator=",">
 												<span class="suffix"
 													  matSuffix>{{aService.activeChain['symbol']}}</span>
 												<mat-error align="start" *ngIf="borrowCpuError !== ''">
@@ -653,7 +653,7 @@
 															style="display: inline-block !important; width: 120px; margin-right: 40px;">
 												<input matInput type="text" placeholder="NET"
 													   formControlName="NETamount" (blur)="updateNetCost();"
-													   [textMask]="{mask: numberMask}">
+													   mask="separator.4" thousandSeparator=",">
 												<span class="suffix"
 													  matSuffix>{{aService.activeChain['symbol']}}</span>
 												<mat-error align="start" *ngIf="borrowNetError !== ''">
@@ -687,7 +687,7 @@
 															style="display: inline-block !important; width: 140px;">
 												<input matInput type="text" placeholder="Renewal Fund"
 													   formControlName="renewal" (blur)="checkBorrowAmount();"
-													   [textMask]="{mask: numberMask}">
+													   mask="separator.4" thousandSeparator=",">
 												<span class="suffix"
 													  matSuffix>{{aService.activeChain['symbol']}}</span>
 												<mat-error align="start" *ngIf="EOSamounterror !== ''">
