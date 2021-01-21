@@ -787,53 +787,53 @@ input:not([readonly]) {
 }
 
 /*Prime's accordion*/
-.ui-accordion .ui-accordion-content {
+.p-accordion .p-accordion-content {
 	border: 0 !important;
 	border-top: 0 !important;
 	background-color: transparent !important;
 	color: var(--accordion-content-color) !important;
 }
 
-.ui-accordion-header:focus, .ui-accordion-header a:focus {
+.p-accordion-header:focus, .p-accordion-header a:focus {
 	outline: none;
 	box-shadow: none !important;
 }
 
-.ui-accordion .ui-accordion-header {
+.p-accordion .p-accordion-header {
 	margin-bottom: 0 !important;
 	margin-top: 11px !important;
 }
 
-.ui-accordion .ui-accordion-header a {
+.p-accordion .p-accordion-header a {
 	padding: 0.5em !important;
 	border: 0 !important;
 	background-color: transparent !important;
 	color: var(--accordion-header-color) !important;
 }
 
-.nohighlight-accordion .ui-accordion .ui-state-default {
+.nohighlight-accordion .p-accordion .p-state-default {
 	border: 0 !important;
 	background-color: transparent !important;
 	color: #eeeeee !important;
 }
 
-.nohighlight-accordion .ui-accordion .ui-accordion-header a {
+.nohighlight-accordion .p-accordion .p-accordion-header a {
 	padding: 0.571em 1em;
 	border: 0 ;
 	color: var(--accordion-header-color) !important;
 }
 
-.nohighlight-accordion .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
+.nohighlight-accordion .p-accordion .p-accordion-header a .p-accordion-toggle-icon {
 	color: var(--accordion-header-color) !important;
 }
 
-.ui-accordion .ui-state-default {
+.p-accordion .p-state-default {
 	border: 0 !important;
 	background-color: var(--info-card-bg-hover) !important;
 	color: var(--accordion-header-color) !important;
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
+.p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover a {
 	border: 0 !important;
 	border-radius: 0 0 5px 5px;
 	margin: 0;
@@ -841,7 +841,7 @@ input:not([readonly]) {
 	color:  var(--accordion-header-color-hover);
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
+.p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover {
 	border: 0 !important;
 	background-color: var(--btn-primary-bg) !important;
 	color:  var(--accordion-header-color-hover) !important;
@@ -851,44 +851,44 @@ input:not([readonly]) {
 	transition-property: background-color;
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active:hover a {
+.p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active:hover a {
 	border: 0 !important;
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a {
+.p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a {
 	background-color: transparent !important;
 	border: 0 !important;
 	color: var(--accordion-header-color) !important;
 }
 
-.ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a p-header > div {
+.p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover a p-header > div {
 	color:  var(--accordion-header-color-hover);
 }
 
-.error-accordion .ui-accordion .ui-state-default {
+.error-accordion .p-accordion .p-state-default {
 	border: 0 !important;
 	background-color: transparent !important;
 	/*color: #eeeeee !important;*/
 }
 
-.error-accordion .ui-accordion .ui-accordion-content {
+.error-accordion .p-accordion .p-accordion-content {
 	border: 0 !important;
 	border-top: 0 !important;
 	background-color: transparent !important;
 	color: var(--accordion-content-error-color) !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header a {
+.error-accordion .p-accordion .p-accordion-header a {
 	padding: 0.571em 1em;
 	border: 0 ;
 	color: var(--accordion-header-error-color) !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
+.error-accordion .p-accordion .p-accordion-header a .p-accordion-toggle-icon {
 	color: var(--accordion-header-error-color) !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a {
+.error-accordion .p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover a {
 	border: 0 !important;
 	border-radius: 0 0 5px 5px;
 	margin: 0;
@@ -896,7 +896,7 @@ input:not([readonly]) {
 	color: var(--accordion-header-error-color) !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover {
+.error-accordion .p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover {
 	border: 0 !important;
 	background-color: transparent !important;
 	color: var(--accordion-header-error-color) !important;
@@ -906,27 +906,27 @@ input:not([readonly]) {
 	transition-property: background-color;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active:hover a {
+.error-accordion .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active:hover a {
 	border: 0 !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a {
+.error-accordion .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a {
 	background-color: transparent !important;
 	border: 0 !important;
 	color: var(--accordion-header-error-color) !important;
 }
 
-.error-accordion .ui-accordion .ui-accordion-header:not(.ui-state-active):not(.ui-state-disabled):hover a p-header > div {
+.error-accordion .p-accordion .p-accordion-header:not(.p-state-active):not(.p-state-disabled):hover a p-header > div {
 	color:  var(--accordion-header-color-hover);
 }
 
 /*arrow to the right - when closed*/
-body .ui-accordion .ui-accordion-header a .ui-accordion-toggle-icon {
+body .p-accordion .p-accordion-header a .p-accordion-toggle-icon {
 	color: var(--accordion-header-color);
 }
 
 /*arrow to the bottom - when opened*/
-body .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active a .ui-accordion-toggle-icon {
+body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p-accordion-toggle-icon {
 	color: var(--accordion-header-color);
 }
 
@@ -936,57 +936,99 @@ body .ui-accordion .ui-accordion-header:not(.ui-state-disabled).ui-state-active 
 	color:  var(--modal-title-color) !important;
 }
 
-.ui-table .ui-sortable-column.ui-state-highlight {
+.p-component {
+	font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif !important;
+	font-size: 16px !important;
+	font-weight: normal !important;
+}
+
+.p-link {
+	font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif !important;
+	font-size: 16px !important;
+	font-weight: normal !important;
+}
+
+.p-datatable .p-datatable-header{
+
+	border: 0 !important;
+	background-color: var(--table-th-background) !important;
+}
+.p-datatable .p-datatable-thead{
+	border: 0 !important;
+	color: var(--table-th-color) !important;
+	background-color: var(--table-th-background) !important;
+}
+
+.p-datatable .p-datatable-footer{
+	border: 0 !important;
+	color: var(--table-th-color) !important;
+	background-color: var(--table-th-background) !important;
+}
+
+.p-datatable .p-datatable-scrollable-header, .p-datatable .p-datatable-scrollable-footer{
+	background-color: var(--table-th-background) !important;
+}
+
+.p-datatable .p-sortable-column.p-state-highlight {
 	background-color: transparent !important;
 	color: #0094d2 !important;
 }
 
-.ui-table .ui-sortable-column.ui-state-highlight .ui-sortable-column-icon {
+.p-datatable .p-sortable-column.p-state-highlight .p-sortable-column-icon {
 	color: var(--text-highlight) !important;
 }
 
 
-.ui-table .ui-sortable-column.ui-state-highlight:focus {
+.p-datatable .p-sortable-column.p-state-highlight:focus {
 	outline: none;
 }
-.ui-table .ui-table-caption {
+.p-datatable .p-datatable-caption {
 	color: var(--table-th-color) !important;
 }
 
-.ui-table .ui-table-caption, body .ui-table .ui-table-summary {
+.p-datatable .p-datatable-caption, body .p-datatable .p-datatable-summary {
 	background-color: var(--info-card-background) !important;
 	border: 1px solid transparent !important;
 }
 
-.ui-table .ui-table-thead > tr > th {
+.p-datatable .p-datatable-thead > tr > th {
 	border: 0 !important;
 	color: var(--table-th-color) !important;
 	background-color: var(--table-th-background) !important;
 }
-.ui-table .ui-table-tfoot > tr > td{
+.p-datatable .p-datatable-tfoot > tr > td{
 	color: var(--table-td-color) !important;
 	background-color: var(--tr-even-backgorund) !important;
 	border: none !important;
 }
-.ui-table .ui-table-tbody > tr {
+.p-datatable .p-datatable-tbody > tr {
 	color: var(--table-td-color) !important;
 	background-color: var(--table-tr-background) !important;
+	border-top: 0px !important;
+	border-left: 0px !important;
+	border-right: 0px !important;
+	border-bottom: var(--tr-border-bottom-color)!important;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+	border: 0px !important;
+	color: var(--table-th-color) !important;
+	background-color: var(--table-th-background) !important;
 }
 
-/*.ui-table .ui-table-tbody > tr:nth-child(even) {*/
+/*.p-datatable .p-datatable-tbody > tr:nth-child(even) {*/
 /*	background-color: var(--tr-even-backgorund) !important;*/
 /*}*/
 
-/*.ui-table .ui-table-tbody > tr:nth-child(odd) {*/
+/*.p-datatable .p-datatable-tbody > tr:nth-child(odd) {*/
 /*	background-color: var(--tr-odd-backgorund);*/
 /*}*/
 
 
-.ui-paginator {
+.p-paginator {
 	background-color: var(--table-th-background) !important;
 	border: 0 !important;
 }
-.ui-paginator .ui-paginator-pages .ui-paginator-page.ui-state-active {
+.p-paginator .p-paginator-pages .p-paginator-page.p-state-active {
 	background-color: var(--text-highlight-primary)!important;
 	color: #ffffff;
 }

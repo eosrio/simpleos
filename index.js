@@ -365,11 +365,11 @@ class SimpleosWallet {
             titleBarStyle: 'hiddenInset',
             webPreferences: {
                 nodeIntegration: true,
+                nodeIntegrationInWorker: true,
                 webSecurity: !this.serve,
                 devTools: this.devtools,
                 enableRemoteModule: true,
-                contextIsolation: true,
-                sandbox: true
+                contextIsolation: false
             },
             darkTheme: true,
             width: 1440,

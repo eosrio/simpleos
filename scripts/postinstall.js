@@ -13,4 +13,4 @@ result = result.replace(/node: false/g, 'node: {crypto: true, stream: true}');
 fs.writeFileSync(f_angular, result, 'utf8');
 
 // Copy electron typings
-fs.copyFileSync('src/types/electron.bak', 'node_modules/electron/electron.d.ts');
+// fs.copyFileSync('src/types/electron.bak', 'node_modules/electron/electron.d.ts');

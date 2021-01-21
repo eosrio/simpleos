@@ -82,16 +82,21 @@ export class ResourceService {
                 for(let action of actions){
                     const url = `${this.aService.activeChain.relay.endpoint}/checkCredits`;
                     console.log(action.account, action.name);
-                    const response = await this.http.post(
-                        url,
-                        {accountName: acc,contractName:action.account},
-                        {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDg1NzIzMDN9.6jSfAkIFkDXTH8cTrumzAUlPziSjXsK-ptYmAa8OQFc'}}
+                    try{
+                        const response = await this.http.post(
+                            url,
+                            {accountName: acc,contractName:action.account},
+                            {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDg1NzIzMDN9.6jSfAkIFkDXTH8cTrumzAUlPziSjXsK-ptYmAa8OQFc'}}
                         ).toPromise();
                         console.log(response);
                         if(response){
                             return {enable: response['availableCredits']>0,used:response['availableCredits'], limit:5};
                         }
                         return {enable: false};
+                    }catch (e){
+                        return {enable: false};
+                    }
+
                 }
 
             }
