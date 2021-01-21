@@ -203,7 +203,7 @@
     "primeicons": "^3.0.0-rc.1",
     "primeng": "^9.0.6",
     "quill": "^2.0.0-dev.4",
-    "socket.io": "^2.3.0",
+    "socket.io": "^2.4.0",
     "socket.io-client": "^2.3.0",
     "sudo-prompt": "^9.2.1",
     "tar": "^6.0.2",
