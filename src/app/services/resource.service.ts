@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {AccountsService} from "./accounts.service";
 import {Eosjs2Service} from "./eosio/eosjs2.service";
 import {HttpClient} from '@angular/common/http';
+import {environment} from "../../environments/environment";
 
 interface resourceData {
     needResources:boolean,
@@ -32,7 +33,7 @@ export class ResourceService {
     netCost = 0;
     totalCost = 0;
     resourceInfo: resourceData;
-
+    private jwtToken = environment.JWT_TOKEN;
     constructor(
             private aService:AccountsService,
             private eosjs:Eosjs2Service,
@@ -86,7 +87,7 @@ export class ResourceService {
                         const response = await this.http.post(
                             url,
                             {accountName: acc,contractName:action.account},
-                            {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDg1NzIzMDN9.6jSfAkIFkDXTH8cTrumzAUlPziSjXsK-ptYmAa8OQFc'}}
+                            {headers:{'Content-Type': 'application/json','Authorization': `Bearer ${this.jwtToken}`}}
                         ).toPromise();
                         console.log(response);
                         if(response){
@@ -112,7 +113,7 @@ export class ResourceService {
                 const response = await this.http.post(
                     url,
                     {serializedTransaction: Array.from(payload.pushTransactionArgs.serializedTransaction), signatures:payload.pushTransactionArgs.signatures},
-                    {headers:{'Content-Type': 'application/json','authorization':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiYTI1MTcwZDA4NTM0YWVlZDA2M2EwMDAzZmVlZjk1MDIiLCJpYXQiOjE2MDgxNTQ5OTh9.MwSGmM-ACXS7mL56bfg9uWRGU4TjzlA7U7uLSSKnlLQ'}}
+                    {headers:{'Content-Type': 'application/json','Authorization': `Bearer ${this.jwtToken}`}}
                     ).toPromise();
                     console.log(response);
                     return response;
@@ -120,7 +121,6 @@ export class ResourceService {
         } catch (e) {
             console.log(e);
         }
-
     }
 
     async checkResource(auth, actions, needCpu?, needNet?, tkname?) {

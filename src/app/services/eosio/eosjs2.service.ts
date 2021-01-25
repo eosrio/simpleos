@@ -179,10 +179,10 @@ export class Eosjs2Service {
     async signRelayTrx(trx: any) {
 
         trx.actions.unshift({
-            account: 'relayacnt111',
+            account: 'eosriorelay1',
             name: 'payforcpu',
             authorization: [{
-                actor: 'relayacnt111',
+                actor: 'eosriorelay1',
                 permission: 'freecpu'
             }],
             data: {}

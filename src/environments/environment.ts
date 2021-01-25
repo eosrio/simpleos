@@ -3,9 +3,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-	production: false,
-	VERSION: require('../../package.json').version,
-	COMPILERVERSION: require('../../package.json').compilerVersion
+    production: false,
+    VERSION: require('../../package.json').version,
+    COMPILERVERSION: require('../../package.json').compilerVersion,
+    JWT_TOKEN: ''
 };
 
 /*
