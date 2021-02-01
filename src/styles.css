@@ -355,11 +355,11 @@ body {
 }
 
 .card-text-color {
-	color: var(--text-card-color);
+	color: var(--text-card-color) !important;
 }
 
 .card-title-color {
-	color: var(--text-card-title-color);
+	color: var(--text-card-title-color) !important;
 }
 /*classes for cards ends*/
 
@@ -606,7 +606,7 @@ body {
 /*clarity's modal end*/
 
 .token-title-color {
-	color: var(--token-title-color);
+	color: var(--token-title-color) !important;
 }
 
 .flex-column {
