@@ -6,6 +6,7 @@ export const environment = {
     production: false,
     VERSION: require('../../package.json').version,
     COMPILERVERSION: require('../../package.json').compilerVersion,
+    //TODO REMOVE VALUE BEFORE RELEASE
     JWT_TOKEN: ''
 };
 

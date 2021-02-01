@@ -99,6 +99,11 @@
 
         <br/>
         <div class="my-mat-class">
+            <form [formGroup]="form" (ngSubmit)="formFilled($event)" *ngIf="fields">
+                <formly-form [model]="model" [fields]="fields" [options]="options" [form]="form" ></formly-form>
+                <button type="submit" class="btn btn-primary submit-button" [disabled]="!form.valid">Submit</button>
+            </form>
+
 <!--            <json-schema-form-->
 <!--                    [loadExternalAssets]="true"-->
 <!--                    framework="material-design"-->

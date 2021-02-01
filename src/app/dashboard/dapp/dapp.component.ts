@@ -6,6 +6,9 @@ import {CryptoService} from '../../services/crypto/crypto.service';
 import {Subscription} from 'rxjs';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {TransactionFactoryService} from "../../services/eosio/transaction-factory.service";
+import { FormlyFormOptions, FormlyFieldConfig } from '@ngx-formly/core';
+import {FormlyJsonschema} from "@ngx-formly/core/json-schema";
+import {ResourceService} from "../../services/resource.service";
 
 @Component({
     selector: 'app-dapp',
@@ -46,14 +49,11 @@ export class DappComponent implements OnInit, AfterViewInit {
     price: number;
     name: number;
     symbol: string;
-    form: FormGroup;
     searchForm: FormGroup;
     confirmForm: FormGroup;
 
     actionDesc: string;
     buttonActive: string;
-    public fields: any;
-    public fields2: any[] = [];
 
     selectedAccountSubscription: Subscription;
 
@@ -61,13 +61,20 @@ export class DappComponent implements OnInit, AfterViewInit {
         return Object.prototype.toString.call(what) === '[object Array]';
     }
 
+    form: FormGroup;
+    model: any;
+    options: FormlyFormOptions;
+    fields: FormlyFieldConfig[];
+
     constructor(
         public aService: AccountsService,
         private trxFactory: TransactionFactoryService,
         public eosjs: Eosjs2Service,
         private fb: FormBuilder,
         private cdr: ChangeDetectorRef,
-        private crypto: CryptoService) {
+        private crypto: CryptoService,
+        private formlyJsonschema: FormlyJsonschema,
+        private resource: ResourceService) {
         this.form = new FormGroup({
             fields: new FormControl(JSON.stringify(this.fields)),
         });
@@ -202,6 +209,14 @@ export class DappComponent implements OnInit, AfterViewInit {
         this.symbol = '';
         this.schemaJSON = {};
         this.modelJSON = {};
+        try{
+            this.form = new FormGroup({});
+            this.options = {};
+            this.fields = [];
+            this.model = {};
+        }catch (e) {
+            console.log(e);
+        }
 
         this.eosjs.getSymbolContract(this.contract).then(val => {
             this.symbol = val.rows[0].balance.split(' ')[1];
@@ -244,7 +259,6 @@ export class DappComponent implements OnInit, AfterViewInit {
 
         this.buttonActive = actionName;
         this.actionDesc = '';
-        this.fields2 = [];
         this.fields = [];
         this.busy = false;
         if (this.abiSmartContractStructs.find(action => action.name === actionType).fields.length > 0) {
@@ -260,15 +274,20 @@ export class DappComponent implements OnInit, AfterViewInit {
 
             const SchemaJSON = this.schemaJson(actionType);
             this.schemaJSON = {
-                'schema': {
-                    'type': 'object',
-                    'title': 'ACTION: ' + actionType.toUpperCase(),
-                    'properties': SchemaJSON,
-                },
-
+                "schema": {
+                    "title": "ACTION: " + actionType.toUpperCase(),
+                    "type": "object",
+                    "properties": SchemaJSON,
+                }
             };
-            // console.log(JSON.stringify(this.schemaJSON));
-            this.modelJSON = this.modelJson(actionType);
+            try{
+                this.form = new FormGroup({});
+                this.options = {};
+                this.fields = [this.formlyJsonschema.toFieldConfig(this.schemaJSON.schema)];
+                this.model = {};
+            }catch (e) {
+                console.log(e);
+            }
 
             this.triggerAction = true;
         } else {
@@ -309,20 +328,19 @@ export class DappComponent implements OnInit, AfterViewInit {
                     'int32',
                     'int64',
                     'int128',
-                    'bool'];
+                    // 'bool'
+                ];
                 let typeABI;
-                let typeArr;
                 if (intArr.includes(field.type)) {
-                    typeABI = '"type": "number", "widget": "text",  "value":0';
+                    typeABI = '"type": "integer", "default":0';
                 } else if (arr) {
                     if (intArr.includes(field.type)) {
-                        typeArr = '"type": "number", "widget": "text", "value":0 ,"title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
+                        typeABI = '"type": "number", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
                     } else {
-                        typeArr = '"type": "string", "widget": "text", "value": "", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
+                        typeABI = '"type": "string",  "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", "key": "array_' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
                     }
-                    typeABI = '"type": "array", "items": { "widget": "text", "type":"string", ' + typeArr + ' } ';
                 } else {
-                    typeABI = '"type": "string", "widget": "text", "value": ""';
+                    typeABI = '"type": "string", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
                 }
                 const jsonTxt = '{ "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", ' + typeABI + ' }';
 
@@ -332,131 +350,51 @@ export class DappComponent implements OnInit, AfterViewInit {
         return out;
     }
 
-    modelJson(type: string) {
-        const out = {};
-        this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
-            const arr = (field.type.indexOf('[]') > 0);
-            const field_type = field.type.replace('[]', '');
-            if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
-                const children = this.modelJson(field_type);
-                out[field.name] = [children];
-            } else {
-                const intArr = [
-                    'uint8',
-                    'uint8_t',
-                    'uint16',
-                    'uint16_t',
-                    'uint32',
-                    'uint32_t',
-                    'uint64',
-                    'uint64_t',
-                    'uint128',
-                    'uint128_t',
-                    'int8',
-                    'int16',
-                    'int32',
-                    'int64',
-                    'int128',
-                    'bool'];
-                let typeABI: any;
-                if (intArr.includes(field.type)) {
-                    // typeABI = "number";
-                    typeABI = 0;
-                } else if (arr) {
-                    // typeABI = "array";
-                    typeABI = [];
-                } else {
-                    // typeABI = "string";
-                    typeABI = '';
-                }
-                out[field.name] = typeABI;
-            }
-        });
-        return out;
-    }
-
-    formJson(type: string, name?: string) {
-        const out = [];
-        this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
-            const arr = (field.type.indexOf('[]') > 0);
-            const field_type = field.type.replace('[]', '');
-
-            if (this.abiSmartContractStructs.find(act => act.name === field_type)) {
-                const children = JSON.stringify(this.formJson(field_type, field.name));
-                if (name !== '' && name !== undefined) {
-                    out.push(
-                        JSON.parse('{"key": "' + name + '[].' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"array","items":' + children + '}'));
-                } else {
-                    out.push(JSON.parse('{"key": "' + field.name + '","add": "New","style": {"add": "btn-success"},"type":"object","items":' + children + '}'));
-                }
-
-            } else {
-                const intArr = [
-                    'uint8',
-                    'uint8_t',
-                    'uint16',
-                    'uint16_t',
-                    'uint32',
-                    'uint32_t',
-                    'uint64',
-                    'uint64_t',
-                    'uint128',
-                    'uint128_t',
-                    'int8',
-                    'int16',
-                    'int32',
-                    'int64',
-                    'int128',
-                    'bool'];
-                let typeABI;
-                if (intArr.includes(field.type)) {
-                    // typeABI = "number";
-                    typeABI = '"widget": "text", "type": "number","htmlClass":"actions-class"';
-                } else if (arr) {
-                    // typeABI = "array";
-                    typeABI = '"type": "array", "items": { "widget": "text", "type":"text", "title": "' + field.name.toUpperCase() + '","htmlClass":"actions-class" } ';
-                } else {
-                    // typeABI = "string";
-                    typeABI = '"widget": "text", "type": "text","htmlClass":"actions-class"';
-                }
-                if (name !== '' && name !== undefined) {
-                    out.push(JSON.parse('{"title": "' + field.name + '","key": "' + name + '[].' + field.name + '",' + typeABI + '}'));
-                } else {
-                    out.push(JSON.parse('{"title": "' + field.name + '","key": "' + field.name + '",' + typeABI + '}'));
-                }
-            }
-        });
-        return out;
-    }
-
     formFilled(ev) {
         if (ev) {
             this.busy = false;
             this.wrongpass = '';
-            const fullForm = Object.assign(this.modelJson(this.action), ev['schema']);
+            const fullFormSchema = Object.assign(this.schemaJson(this.action), ev['schema']);
+            const fullForm = this.form.value;
+            console.log(fullFormSchema);
+            console.log(this.form.value);
+
             for (const idx in fullForm) {
                 if (fullForm.hasOwnProperty(idx)) {
                     if (DappComponent.isArray(fullForm[idx])) {
                         fullForm[idx].sort();
                     }
                 }
+                if(fullForm[idx] === null){
+                    fullForm[idx] = '';
+                }
             }
             this.formVal = fullForm;
+
             this.pushAction().catch(console.log);
         }
     }
 
+
     async pushAction() {
         const [auth, publicKey] = this.trxFactory.getAuth();
+        const trx = {actions: [{
+            account: this.contract,
+            name: this.action,
+            authorization: [auth],
+            data: this.formVal
+        }]};
+        await this.resource.checkResource(auth, trx.actions);
+        const resourceActions = await this.resource.getActions(auth);
+
+
         this.trxFactory.modalData.next({
-            transactionPayload: {
-                actions: [{
-                    account: this.contract,
-                    name: this.action,
-                    authorization: [auth],
-                    data: this.formVal
-                }]
+            transactionPayload: trx,
+            resourceTransactionPayload: {
+                actions: resourceActions
             },
+            resourceInfo: this.resource.resourceInfo,
+            addActions: this.resource.resourceInfo.needResources,
             termsHeader: '',
             signerAccount: auth.actor,
             signerPublicKey: publicKey,

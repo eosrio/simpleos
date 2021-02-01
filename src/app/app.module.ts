@@ -160,6 +160,8 @@ export function playerFactory() {
 
 import { FormlyModule } from '@ngx-formly/core';
 import { FormlyMaterialModule } from '@ngx-formly/material';
+import { ObjectTypeComponent } from './type/object-type/object-type.component';
+import { ArrayTypeComponent } from './type/array-type/array-type.component';
 
 @NgModule({
     declarations: [
@@ -182,6 +184,8 @@ import { FormlyMaterialModule } from '@ngx-formly/material';
         KeygenModalComponent,
         CustomChainModalComponent,
         SafePipe,
+        ObjectTypeComponent,
+        ArrayTypeComponent,
     ],
     imports: [
         FormsModule,
@@ -192,7 +196,33 @@ import { FormlyMaterialModule } from '@ngx-formly/material';
         BrowserModule,
         ClarityModule,
         FontAwesomeModule,
-        FormlyModule.forRoot(),
+        FormlyModule.forRoot({
+
+            types: [
+                { name: 'string', extends: 'input' },
+                {
+                    name: 'number',
+                    extends: 'input',
+                    defaultOptions: {
+                        templateOptions: {
+                            type: 'number',
+                        },
+                    },
+                },
+                {
+                    name: 'integer',
+                    extends: 'input',
+                    defaultOptions: {
+                        templateOptions: {
+                            type: 'number',
+                        },
+                    },
+                },
+                { name: 'boolean', extends: 'checkbox' },
+                { name: 'array', component: ArrayTypeComponent},
+                { name: 'object', component: ObjectTypeComponent},
+            ]
+        }),
         FormlyMaterialModule,
         HttpClientModule,
         MatAutocompleteModule,
