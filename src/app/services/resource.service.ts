@@ -13,18 +13,15 @@ interface resourceData {
     precision: number,
     tk_name: String,
 }
-interface creditData {
-    accountName:String,
-    contractName: String
-}
 
 @Injectable({
   providedIn: 'root'
 })
 
-export class ResourceService {
 
+export class ResourceService {
     total_unlent = 0.0;
+
     total_lent = 0.0;
     total_rent = 0.0;
     rexPrice: number;
@@ -33,7 +30,9 @@ export class ResourceService {
     netCost = 0;
     totalCost = 0;
     resourceInfo: resourceData;
+
     private jwtToken = environment.JWT_TOKEN;
+
     constructor(
             private aService:AccountsService,
             private eosjs:Eosjs2Service,

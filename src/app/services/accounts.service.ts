@@ -545,6 +545,7 @@ export class AccountsService {
                         result = response;
                     }
                 } catch (e) {
+                    console.log(e);
                     console.log(`failed to fetch actions: ${api}`);
                 }
             }
@@ -589,9 +590,12 @@ export class AccountsService {
         // check history using hyperion
         const hyperionStatus = await this.getActionsHyperionMulti(account, offset, skip, filter, after, before, parent);
         if (hyperionStatus) {
+
+            console.log('close get action, didnt connect to hyperion!');
             return;
         }
         // fallback to native
+        console.log('start loading history...');
         const _position = pos === 0 ? -1 : pos;
         const _offset = pos === 0 ? -offset : -(offset - 1);
         this.eosjs.getAccountActions(account, _position, _offset).then((val) => {
@@ -627,6 +631,8 @@ export class AccountsService {
         }).catch((err) => {
             console.log(err);
         });
+
+        console.log('finish loading history!');
     }
 
     async checkLastActions(api, account) {
@@ -697,9 +703,6 @@ export class AccountsService {
             this.selectedIdx = index;
             this.selected.next(sel);
 
-            // this.notification.onInfo();
-            // this.notification.onWarning();
-            // this.notification.onError();
             this.fetchTokens(sel.name).catch(console.log);
         }
     }

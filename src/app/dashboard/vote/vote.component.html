@@ -131,23 +131,23 @@
         </div>
     </div>
 
-    <div class="clr-row votepage-row animate"
-         *ngIf="app.compilerVersion === 'DEFAULT' && aService.activeChain.features.vote">
-        <div class="clr-col-lg-12">
-            <div class="card info-card">
-                <div class="card-block" style="padding: 0;">
-                    <p-accordion class="map nohighlight-accordion">
-                        <p-accordionTab header="Block Producers Map (Organization Location)">
-                            <div echarts [options]="options" [merge]="voteService.updateOptions"
-                                 [autoResize]="true" [initOpts]="initOptions"
-                                 class="bp-map">
-                            </div>
-                        </p-accordionTab>
-                    </p-accordion>
-                </div>
-            </div>
-        </div>
-    </div>
+<!--    <div class="clr-row votepage-row animate"-->
+<!--         *ngIf="app.compilerVersion === 'DEFAULT' && aService.activeChain.features.vote">-->
+<!--        <div class="clr-col-lg-12">-->
+<!--            <div class="card info-card">-->
+<!--                <div class="card-block" style="padding: 0;">-->
+<!--                    <p-accordion class="map nohighlight-accordion">-->
+<!--                        <p-accordionTab header="Block Producers Map (Organization Location)">-->
+<!--                            <div echarts [options]="options" [merge]="voteService.updateOptions"-->
+<!--                                 [autoResize]="true" [initOpts]="initOptions"-->
+<!--                                 class="bp-map">-->
+<!--                            </div>-->
+<!--                        </p-accordionTab>-->
+<!--                    </p-accordion>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
 
     <div class="clr-row votepage-row animate" *ngIf="aService.activeChain.features.vote">
         <div class="clr-col-lg-12" *ngIf="voteService">

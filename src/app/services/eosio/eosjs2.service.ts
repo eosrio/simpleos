@@ -784,7 +784,7 @@ export class Eosjs2Service {
         return this.rpc.get_account(name);
     }
 
-    getTokens(name) {
+    getTokens(name): Promise<any> {
         return this.rpc.get_currency_balance('eosio.token', name);
     }
 
