@@ -129,7 +129,6 @@
           "pattern": "^[a-f0-9]+$"
         },
         "krakenkraken": {
-          "memo_size": 10,
           "pattern": "^[0-9]+$"
         },
         "binancecleos": {
