@@ -1,89 +1,97 @@
 <clr-modal [(clrModalOpen)]="visibility" [clrModalStaticBackdrop]="true" (clrModalOpenChange)="onClose()">
-    <h3 class="modal-title" style="display: contents;">Confirm <span class="highlight-primary"
-                                                                     [innerHTML]="modalData.actionTitle"></span></h3>
+    <h3 class="modal-title" style="display: contents;">Confirm <span class="highlight-primary" [innerHTML]="modalData.actionTitle"></span></h3>
+
+
     <div class="modal-body">
-        <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
 
-
-
-        <ng-container *ngIf="modalData.labelHTML === ''">
-            <p-accordion>
-            <p-accordionTab *ngFor="let act of modalData.transactionPayload.actions; let i = index"
-                            header="{{act.name}} on {{act.account}}"
-                            [selected]="i === 0">
-                    <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
-                </p-accordionTab>
-            </p-accordion>
-            <h4 [innerHTML]="modalData.labelHTML | safe: 'html'"></h4>
+        <ng-container *ngIf="loadResourse">
+            <h5 class="mt-0 text-center">Loading <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon></h5>
         </ng-container>
+        <ng-container *ngIf="!loadResourse">
+            <h5 class="mt-0">Account: {{modalData.signerAccount}}</h5>
 
-        <ng-container *ngIf="modalData.resourceInfo['relay']">
-            <mat-card class="info-resource">
-            <h5 class="modal-title ">
-                Hey, we got your back. You have {{modalData.resourceInfo['relayCredit']['limit']}} free transactions per day with SIMPLEOS.
-                <br>
-                <br>
-                You still have {{modalData.resourceInfo['relayCredit']['used']}} free transactions for today including this one.
 
-                <br>
-                <label style="margin-right: 25px">
-                    <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >
-                    yes, please!
-                </label>
-                <label>
-                    <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)"  style="margin-right: 10px" >
-                    no, thanks!
-                </label>
-            </h5>
-            </mat-card>
-        </ng-container>
 
-        <ng-container *ngIf="!modalData.resourceInfo.relay && modalData.resourceInfo.needResources">
-            <mat-card class="info-resource">
-            <h5 class="modal-title ">
-                Ops, not enough resources <a role="tooltip" aria-haspopup="true"
-                                             class="tooltip tooltip-sm tooltip-left" style="margin-left: 7px">
-                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
-                    <span class="tooltip-content">
-                        Looks like you do not have enough network resources to perform this action.<br>
-                    </span>
-                </a><br><br>
-                No problem! We got your back!<br><br>
-                We can rent resources on REX to pay for the resources. It will cost <span class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>.
-                <br>
-                <br>
-                <label style="margin-right: 25px">
-                    <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >
-                    yes, please do it
-                </label>
-                <label>
-                    <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)" style="margin-right: 10px" >
-                    no, thanks
-                </label>
-            </h5>
-            </mat-card>
-        </ng-container>
+            <ng-container *ngIf="modalData.labelHTML === ''">
+                <p-accordion>
+                <p-accordionTab *ngFor="let act of modalData.transactionPayload.actions; let i = index"
+                                header="{{act.name}} on {{act.account}}"
+                                [selected]="i === 0">
+                        <ngx-json-viewer width="300" [json]="act.data" [expanded]="true" class="transit-json"></ngx-json-viewer>
+                    </p-accordionTab>
+                </p-accordion>
+                <h4 [innerHTML]="modalData.labelHTML | safe: 'html'"></h4>
+            </ng-container>
 
-        <ng-container *ngIf="modalData.labelHTML !== ''">
-            <h4 [innerHTML]="modalData.labelHTML | safe: 'html'" ></h4>
-        </ng-container>
+            <ng-container *ngIf="modalData.resourceInfo['relay']">
+                <mat-card class="info-resource">
+                <h5 class="modal-title ">
+                    Hey, we got your back. You have {{modalData.resourceInfo['relayCredit']['limit']}} free transactions per day with SIMPLEOS.
+                    <br>
+                    <br>
+                    You still have {{modalData.resourceInfo['relayCredit']['used']}} free transactions for today including this one.
 
-        <h5 class="mt-0"></h5>
+                    <br>
+                    <label style="margin-right: 25px">
+                        <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >
+                        yes, please!
+                    </label>
+                    <label>
+                        <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)"  style="margin-right: 10px" >
+                        no, thanks!
+                    </label>
+                </h5>
+                </mat-card>
+            </ng-container>
 
-        <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
-            <p-accordion>
-                <p-accordionTab>
-                    <p-header>
-                        <div style="display: contents;" [innerHTML]="modalData.termsHeader"></div>
-                    </p-header>
-                    <div [innerHTML]="modalData.termsHTML"></div>
-                </p-accordionTab>
-            </p-accordion>
+            <ng-container *ngIf="!modalData.resourceInfo.relay && modalData.resourceInfo.needResources">
+                <mat-card class="info-resource">
+                <h5 class="modal-title ">
+                    Ops, not enough resources <a role="tooltip" aria-haspopup="true"
+                                                 class="tooltip tooltip-sm tooltip-left" style="margin-left: 7px">
+                        <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                        <span class="tooltip-content">
+                            Looks like you do not have enough network resources to perform this action.<br>
+                        </span>
+                    </a><br><br>
+                    No problem! We got your back!<br><br>
+                    We can rent resources on REX to pay for the resources. It will cost <span class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>.
+                    <br>
+                    <br>
+                    <label style="margin-right: 25px">
+                        <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >
+                        yes, please do it
+                    </label>
+                    <label>
+                        <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)" style="margin-right: 10px" >
+                        no, thanks
+                    </label>
+                </h5>
+                </mat-card>
+            </ng-container>
+
+            <ng-container *ngIf="modalData.labelHTML !== ''">
+                <h4 [innerHTML]="modalData.labelHTML | safe: 'html'" ></h4>
+            </ng-container>
+
+            <h5 class="mt-0"></h5>
+
+            <ng-container *ngIf="modalData.termsHeader !=='' && modalData.termsHTML !== ''">
+                <p-accordion>
+                    <p-accordionTab>
+                        <p-header>
+                            <div style="display: contents;" [innerHTML]="modalData.termsHeader"></div>
+                        </p-header>
+                        <div [innerHTML]="modalData.termsHTML"></div>
+                    </p-accordionTab>
+                </p-accordion>
+            </ng-container>
         </ng-container>
     </div>
 
     <div class="modal-footer">
-        <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
+        <ng-container *ngIf="!loadResourse">
+            <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
             <div>
                 <ng-container *ngIf="mode === 'local'">
                     <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
@@ -128,6 +136,7 @@
                 </ng-container>
             </div>
         </div>
+        </ng-container>
     </div>
 
 </clr-modal>

@@ -27,6 +27,7 @@ export interface TrxModalData {
         tk_name: String, },
     errorFunc?: any;
     addActions?: boolean;
+    tk_name?: string;
 }
 
 @Injectable({

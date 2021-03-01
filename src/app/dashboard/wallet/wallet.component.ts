@@ -46,6 +46,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
     loading: boolean;
     lottieConfig: Object;
     actionsFilter = [];
+    actions: any[] = [];
     selectedAccountName = '';
     actionMarked = '';
     dateAfter: string;
@@ -140,6 +141,8 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         this.unstaked = this.fullBalance - this.staked - this.unstaking;
         this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
         this.tokens = [];
+        this.actions = [];
+
         this.aService.refreshFromChain(false).catch(console.log);
         this.frmFilters.patchValue({
             selectAction: '',
@@ -152,6 +155,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loading = true;
         this.aService.getAccActions(sel.name).then(() => {
             this.loading = false;
+            this.actions = sel.actions;
         }).catch(console.log);
     }
 
@@ -225,7 +229,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.shouldLazyLoad) {
             let pos = e !== 0 ? e.first : 0;
             let _skip = e !== 0 ? e.first : 0;
-            const account = this.aService.selected.getValue().name;
+            const account = this.aService.selected.getValue();
 
             if (this.paginator.getPage() > this.lastPage) {
                 const diff = this.paginator.getPage() - this.lastPage;
@@ -248,10 +252,10 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
                     }
                 }
             }
-
+            this.actions = [];
             this.loading = true;
             await this.aService.getActions(
-                account,
+                account.name,
                 pos,
                 this.maxRows,
                 _skip,
@@ -259,6 +263,7 @@ export class WalletComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.dateAfter,
                 this.dateBefore,
             );
+            this.actions = account.actions;
             this.loading = false;
             this.paginator.changePage(e);
         }

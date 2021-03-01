@@ -465,8 +465,10 @@
                 </ng-template>
                 <ng-template pTemplate="summary">
                     <div class="ui-helper-clearfix" *ngIf="voteService.hasList">
-						<span *ngIf="voteService.voteType" (click)="voteService.reloadAllProxies()"
-                              style="float: left">
+                        <div class="row">
+                            <div class="col-6">
+                                <span *ngIf="voteService.voteType" (click)="voteService.reloadAllProxies()"
+                                      style="float: left">
 								<a class="btn btn-sm btn-link btn-primary-link" style="max-width: none;"
                                    (click)="voteService.reloadAllProxies()">
 									<fa-icon [spin]="voteService.busy"
@@ -474,11 +476,17 @@
 									Reload All Proxies
 								</a>
 							</span>
-                        <button (click)="processVotes()" class="btn btn-info-outline"
-                                style="margin-top: 10px; margin-right: 25px; float:right;" [disabled]="nVotes > 30"
-                                pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
-                            CONFIRM VOTE{{voteService.voteType ? '' : '(S)'}}
-                        </button>
+                            </div>
+                            <div class="col-6 ">
+                                <button (click)="processVotes()" class="btn btn-info-outline"
+                                        style="margin-top: 10px; margin-right: 25px; float: right;" [disabled]="nVotes > 30"
+                                        pTooltip="Cannot cast more than 30 votes" [tooltipDisabled]="nVotes <= 30">
+                                    CONFIRM VOTE{{voteService.voteType ? '' : '(S)'}}
+                                </button>
+                            </div>
+
+                        </div>
+
                     </div>
                 </ng-template>
             </p-table>

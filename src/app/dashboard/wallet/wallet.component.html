@@ -126,7 +126,7 @@
             <!--HISTORY TABLE-->
             <div class="table-flex history-table" style="max-height: 100%; ">
 
-                <p-table [value]="aService.actions"
+                <p-table [value]="actions"
                          [responsive]="true"
                          [scrollable]="true"
                          [sortOrder]="-1"
@@ -136,7 +136,7 @@
                          sortField="date"
                          sortMode="single"
                          rowExpandMode="single"
-                         scrollHeight="100%">
+                         scrollHeight="flex">
 
                     <ng-template pTemplate="footer">
                         <p-paginator #paginator
@@ -557,6 +557,7 @@
                     <ng-template pTemplate="emptymessage" let-columns>
                         <tr>
                             <td [attr.colspan]="6">
+                                <div style="margin: 0 auto; text-align: center; ">
                                 <fa-layers *ngIf="loading" class="mt-2 mb-1">
                                     <fa-icon [icon]="['far', 'spinner']" [spin]="true" size="2x"
                                              class="highlight-accent"></fa-icon>
@@ -564,6 +565,7 @@
                                 <span *ngIf="!loading">
                                     No records found
                                 </span>
+                                </div>
                             </td>
                         </tr>
                     </ng-template>

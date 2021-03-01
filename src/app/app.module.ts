@@ -295,7 +295,8 @@ export class AppModule {
             faKey,
             faExclamationTriangle,
             faTimesCircle,
-            faGlobe
+            faGlobe,
+            faSpinner
         ]);
 
         // fab brands

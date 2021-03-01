@@ -384,23 +384,18 @@ export class DappComponent implements OnInit, AfterViewInit {
             authorization: [auth],
             data: this.formVal
         }]};
-        await this.resource.checkResource(auth, trx.actions);
-        const resourceActions = await this.resource.getActions(auth);
+        const tk_name = this.aService.activeChain['symbol'];
 
 
         this.trxFactory.modalData.next({
             transactionPayload: trx,
-            resourceTransactionPayload: {
-                actions: resourceActions
-            },
-            resourceInfo: this.resource.resourceInfo,
-            addActions: this.resource.resourceInfo.needResources,
             termsHeader: '',
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             labelHTML: '',
             actionTitle: `${this.action} on ${this.contract}`,
-            termsHTML: ''
+            termsHTML: '',
+            tk_name: tk_name
         });
         const result = await this.trxFactory.launch(publicKey);
         console.log(result);
