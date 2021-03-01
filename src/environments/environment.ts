@@ -2,12 +2,13 @@
 // `ng build ---prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+import {s1} from './_secret';
+
 export const environment = {
     production: false,
     VERSION: require('../../package.json').version,
     COMPILERVERSION: require('../../package.json').compilerVersion,
-    //TODO REMOVE VALUE BEFORE RELEASE
-    JWT_TOKEN: ''
+    JWT_TOKEN: s1
 };
 
 /*
