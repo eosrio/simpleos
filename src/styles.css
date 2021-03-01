@@ -1013,6 +1013,7 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 	border: 0px !important;
 	color: var(--table-th-color) !important;
 	background-color: var(--table-th-background) !important;
+	padding: 0.571rem 0.16rem !important;
 }
 
 /*.p-datatable .p-datatable-tbody > tr:nth-child(even) {*/

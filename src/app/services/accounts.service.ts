@@ -25,7 +25,7 @@ export class AccountsService {
 
     usd_rate = 1;
     tokens = [];
-    actions: any[] = [];
+    public actions: any[] = [];
     totalActions: number;
     sessionTokens = {};
     allowed_actions = [];
@@ -648,12 +648,12 @@ export class AccountsService {
             if (response.actions.length > 0) {
                 response.actions.forEach(act => {
                     if (act['act']['name'] === 'transfer') {
-                        // if (act['act']['data']['amount'] > 0.0001) {
+                        if (act['act']['data']['amount'] > 0.0001) {
                             if (act['act']['data']['to'] === account) {
                                 amountSum += act['act']['data']['amount'];
                                 hasNewReceived = true;
                             }
-                        // }
+                        }
                     }
 
                     const actor = act['act']['authorization'].find(auth => auth.actor === account);

@@ -1,6 +1,7 @@
 import {AfterViewInit, ChangeDetectorRef, Component, NgZone, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
+// @ts-ignore
 import {environment} from '../environments/environment';
 
 import {NetworkService} from './services/network.service';
