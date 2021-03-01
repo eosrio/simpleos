@@ -65,76 +65,80 @@
 }
 
 /*prime's table*/
-/deep/ .maturing-table .ui-table-caption {
+/deep/ .maturing-table .p-datatable-caption {
 	padding: 10px;
 }
 
-/deep/ .maturing-table .ui-table {
+/deep/ .maturing-table .p-datatable {
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
 	margin-top: 20px;
 }
 
-/deep/ .last-table .ui-table {
+/deep/ .last-table .p-datatable {
 	margin-bottom: 40px;
 }
 
-/deep/ .maturing-table .ui-table-tbody {
+/deep/ .maturing-table .p-datatable-tbody {
 	background: var(--info-card-background);
 	transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 	border-radius: 5px;
 	border: 0;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tbody > tr {
+/deep/ .maturing-table .p-datatable-tbody > tr {
 	color: var(--text-highlight);
-	background: transparent;
+	background: transparent !important;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tbody > tr > td {
+/deep/ .maturing-table .p-datatable-tbody > tr > td {
 	border: none;
+	background-color: var(--tr-even-backgorund) !important;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tbody > tr {
+/deep/ .maturing-table .p-datatable .p-datatable-tbody > tr {
 	border-bottom: 1px solid #3f3f3f;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tbody > tr:last-child {
+/deep/ .maturing-table .p-datatable .p-datatable-tbody > tr:last-child {
 	border-bottom: 0;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tbody>tr>td {
+/deep/ .maturing-table .p-datatable .p-datatable-tbody>tr>td {
 	padding: 0.7em .5em;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-thead>tr>th {
+/deep/ .maturing-table .p-datatable .p-datatable-thead>tr>th {
 	padding: 0.7em .5em;
 	border-bottom: 1px solid #262626 !important;
+	font-weight: 500;
+	text-align: center;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-caption {
+/deep/ .maturing-table .p-datatable .p-datatable-caption {
 	border-bottom: 1px solid #262626;
 }
 
-/deep/ .maturing-table .ui-table-tfoot {
+/deep/ .maturing-table .p-datatable-tfoot {
 	background: var(--info-card-background);
 	border: 0;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tfoot > tr {
+/deep/ .maturing-table .p-datatable .p-datatable-tfoot > tr {
 	color: var(--text-highlight);
 	background: transparent;
 }
 
-/deep/ .maturing-table .ui-table .ui-table-tfoot > tr > td {
+/deep/ .maturing-table .p-datatable .p-datatable-tfoot > tr > td {
 	background: transparent;
 	padding: 10px;
+	font-weight: 500;
 }
 
 /*prime's table*/
 
 /deep/ .howto {
-	font-family: metropolis;
+	font-family: metropolis, sans-serif;
 }
 
 /deep/ .howto .ui-accordion-content {
@@ -162,6 +166,7 @@
 /deep/ #rex-tabs .mat-tab-header {
 	background-color: var(--info-card-background);
 	border-radius: 5px 5px 0 0;
+	margin: 0 .6rem;
 }
 
 /deep/ #rex-tabs .mat-tab-label .mat-tab-label-content {
@@ -209,4 +214,9 @@
 	margin-left: auto;
 	margin-right: auto;
 	max-width: 1104px;
+}
+
+.auto-row {
+	margin-left: auto;
+	margin-right: auto;
 }
