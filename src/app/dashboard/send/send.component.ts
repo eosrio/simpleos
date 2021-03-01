@@ -573,22 +573,23 @@ export class SendComponent implements OnInit, OnDestroy {
                 }
             }];
 
-            const resultResource = await this.resource.checkResource(auth,actionsModal,undefined,undefined, tk_name);
-            const resourceActions = await this.resource.getActions(auth);
+            // const resultResource = await this.resource.checkResource(auth,actionsModal,undefined,undefined, tk_name);
+            // const resourceActions = await this.resource.getActions(auth);
 
             return {
                 transactionPayload: {
                     actions: actionsModal
                 },
-                resourceTransactionPayload: {
-                    actions: resourceActions
-                },
-                resourceInfo: resultResource,
-                addActions: resultResource['needResources'],
+                // resourceTransactionPayload: {
+                //     actions: resourceActions
+                // },
+                // resourceInfo: resultResource,
+                // addActions: resultResource['needResources'],
                 actionTitle: actionTitle,
                 labelHTML: messageHTML,
                 termsHeader: termsHeader,
                 termsHTML: termsHtml,
+                tk_name: tk_name
             };
         });
 

@@ -32,6 +32,7 @@ export class ConfirmModalComponent {
     public wantBorrow:boolean= true;
     options;
     labelHtml;
+    public loadResourse:boolean = false;
 
     confirmationForm: FormGroup;
     public modalData: TrxModalData;
@@ -55,16 +56,19 @@ export class ConfirmModalComponent {
         });
 
         this.trxFactory.launcher.subscribe((state) => {
+            this.loadResourse = true;
             this.visibility = state.visibility;
             this.mode = state.mode;
             if (this.visibility) {
                 this.confirmationForm.reset();
                 this.wasClosed = false;
                 this.setFocus();
+                console.log(Date(), this.loadResourse);
+                this.resourceInit().catch(console.log);
             }
         });
 
-        this.trxFactory.modalData.asObservable().subscribe((modalData) => {
+        this.trxFactory.modalData.asObservable().subscribe( (modalData) => {
             this.modalData = modalData;
         });
     }
@@ -75,6 +79,15 @@ export class ConfirmModalComponent {
             this.wantBorrow = e.target.value === "1" ?? false
         }
 
+    }
+    async resourceInit(){
+        const [auth] = this.trxFactory.getAuth();
+        this.modalData.resourceInfo =  await this.resource.checkResource(auth,this.modalData.transactionPayload.actions,undefined,undefined, this.modalData.tk_name);
+        const result = await this.resource.getActions(auth);
+        this.modalData.resourceTransactionPayload = {actions:result};
+        this.loadResourse = false;
+        this.cdr.detectChanges();
+        console.log(Date(), this.loadResourse);
     }
 
     setFocus() {
@@ -144,6 +157,7 @@ export class ConfirmModalComponent {
         let transactionPayload = {actions:[]};
         // Unlock Signer
         try {
+
             await this.crypto.authenticate(pass, this.modalData.signerPublicKey);
         } catch (e) {
             this.errormsg = {'friendly':'Wrong password!', 'origin':''};
@@ -161,6 +175,9 @@ export class ConfirmModalComponent {
             this.cdr.detectChanges();
             return true;
         }
+
+        // const resultResource = await this.resource.checkResource(auth,actionsModal,undefined,undefined, tk_name);
+        // const resourceActions = await this.resource.getActions(auth);
 
         if(this.modalData.addActions){
             if(this.wantBorrow){

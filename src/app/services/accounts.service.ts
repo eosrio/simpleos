@@ -38,6 +38,8 @@ export class AccountsService {
     defaultChains: any[];
     events: EventEmitter<any>;
 
+    httpOptions: any;
+
     constructor(
         private http: HttpClient,
         private eosjs: Eosjs2Service,
@@ -48,6 +50,14 @@ export class AccountsService {
         this.usd_rate = 10.00;
         this.allowed_actions = ['transfer', 'voteproducer', 'undelegatebw', 'delegatebw'];
         this.events = new EventEmitter<any>();
+        this.httpOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Origin,X-Requested-With,Content-Type,Accept',
+                'Retry-After': 1
+            }
+        };
     }
 
     init() {
@@ -173,7 +183,7 @@ export class AccountsService {
         for (const api of this.activeChain.hyperionApis) {
             let url = api + '/state/get_tokens?account=' + account;
             try {
-                const response: any = await this.http.get(url).toPromise();
+                const response: any = await this.http.get(url,this.httpOptions).toPromise();
                 if (response.tokens && response.tokens.length > 0) {
                     return response;
                 }
@@ -193,23 +203,7 @@ export class AccountsService {
         if (!this.loadingTokens && ((Date.now() - this.lastTkLoadTime > 60 * 1000) || this.tokens.length === 0)) {
             this.loadingTokens = true;
             this.sessionTokens[this.selectedIdx] = [];
-            // if (this.activeChain['name'] === 'EOS MAINNET') {
-            //     const data = await this.http.get('https://hapi.eosrio.io/data/v2/tokens/' + account).toPromise();
-            //     this.lastTkLoadTime = Date.now();
-            //     const tokens = Object.keys(data);
-            //     this.loading = false;
-            //     tokens.forEach((idx) => {
-            //         if (data[idx]['symbol'] !== this.activeChain['symbol']) {
-            //             this.registerSymbol(data[idx]);
-            //         }
-            //     });
-            //     this.tokens.sort((a: any, b: any) => {
-            //         return a.usd_value < b.usd_value ? 1 : -1;
-            //     });
-            //     this.accounts[this.selectedIdx]['tokens'] = this.tokens;
-            //     this.loadingTokens = false;
-            //     return this.accounts;
-            // } else {
+
             // Load with hyperion multi
             this.lastTkLoadTime = Date.now();
             const data = await this.getTokenHyperionMulti(account);
@@ -513,13 +507,13 @@ export class AccountsService {
         }
 
         let apis = this.activeChain.hyperionApis;
-        if (!this.activeChain.hyperionProviders) {
-            this.checkHyperionProviders().catch(console.log);
-        } else {
-            if (this.activeChain.hyperionProviders.length > 0) {
-                apis = this.activeChain.hyperionProviders.map(a => a.url);
-            }
-        }
+        // if (!this.activeChain.hyperionProviders) {
+        //     this.checkHyperionProviders().catch(console.log);
+        // } else {
+        //     if (this.activeChain.hyperionProviders.length > 0) {
+        //         apis = this.activeChain.hyperionProviders.map(a => a.url);
+        //     }
+        // }
         this.bestApiHyperion = '';
         let bestUrl = '';
         for (const api of apis) {
@@ -534,7 +528,7 @@ export class AccountsService {
 
                 try {
                     const tref = Date.now();
-                    const response: any = await this.http.get(url).toPromise();
+                    const response: any = await this.http.get(url,this.httpOptions).toPromise();
                     if (response.actions && response.actions.length > 0) {
                         const latency = Date.now() - tref;
                         console.log(`Used ${api} with ${latency} ms latency`);
@@ -591,7 +585,7 @@ export class AccountsService {
         const hyperionStatus = await this.getActionsHyperionMulti(account, offset, skip, filter, after, before, parent);
         if (hyperionStatus) {
 
-            console.log('close get action, didnt connect to hyperion!');
+            console.log('close get action, connect to hyperion!');
             return;
         }
         // fallback to native
@@ -627,7 +621,7 @@ export class AccountsService {
             });
             this.accounts[this.selectedIdx]['actions'] = this.actions;
             this.calcTotalAssets();
-            // this.checkLastActions('').catch(console.log);
+
         }).catch((err) => {
             console.log(err);
         });
@@ -649,7 +643,7 @@ export class AccountsService {
             '&before=' + nowDate.format('YYYY-MM-DD[T]HH:mm:ss');
         console.log(url);
         try {
-            const response: any = await this.http.get(url).toPromise();
+            const response: any = await this.http.get(url,this.httpOptions).toPromise();
 
             if (response.actions.length > 0) {
                 response.actions.forEach(act => {
@@ -956,7 +950,7 @@ export class AccountsService {
         for (const api of this.activeChain.hyperionApis) {
             try {
                 const tref = Date.now();
-                const response: any = await this.http.get(`${api}/history/get_actions?limit=1`).toPromise();
+                const response: any = await this.http.get(`${api}/history/get_actions?limit=1`,this.httpOptions).toPromise();
                 if (response.actions && response.actions.length === 1) {
                     const lastTimestamp = new Date(response.actions[0]['@timestamp'] + 'Z').getTime();
                     const now = Date.now();
