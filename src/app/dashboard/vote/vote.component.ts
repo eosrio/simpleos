@@ -717,6 +717,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             return new Error('Cannot cast more than 30 votes!');
         }
 
+        const tk_name = this.aService.activeChain['symbol'];
+
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
@@ -763,25 +765,17 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         }];
 
-        const resultResource = await this.resource.checkResource(auth,actionsModal);
-        let resourceActions = await this.resource.getActions(auth);
-
-
         this.trxFactory.modalData.next({
             transactionPayload: {
                 actions: actionsModal
             },
-            resourceTransactionPayload: {
-                actions: resourceActions
-            },
-            resourceInfo: resultResource,
-            addActions: resultResource['needResources'],
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: termsHeader,
             termsHTML: termsHtml,
+            tk_name: tk_name,
         });
 
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});

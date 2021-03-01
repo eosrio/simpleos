@@ -720,22 +720,15 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             };
         }
 
-        await this.resource.checkResource(auth, trx.actions);
-        const resourceActions = await this.resource.getActions(auth);
-
         this.trxFactory.modalData.next({
             transactionPayload: trx,
-            resourceTransactionPayload: {
-                actions: resourceActions
-            },
-            resourceInfo: this.resource.resourceInfo,
-            addActions: this.resource.resourceInfo.needResources,
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: '',
             termsHTML: '',
+            tk_name: tk_name,
         });
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
         const subs = this.trxFactory.status.subscribe(async (event) => {
@@ -1004,7 +997,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     async newSell() {
         let termsHeader = ``;
         let termsHtml = ``;
-
+        const tk_name = this.aService.activeChain['symbol'];
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
 
@@ -1038,10 +1031,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
 
-        const resultResource = await this.resource.checkResource(auth, actionsModal);
-        const resourceActions = await this.resource.getActions(auth);
 
-        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+        await this._execTrxFactoryNext(actionsModal,auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,tk_name);
     }
 
     fillBuy() {
@@ -1063,7 +1054,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const bytesAmount = Math.floor(this.ramMarketFormBuy.value.buyBytes * 1024);
         let termsHeader = ``;
         let termsHtml = ``;
-
+        const tk_name = this.aService.activeChain['symbol'];
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
 
@@ -1117,17 +1108,14 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         }];
 
-        const resultResource = await this.resource.checkResource(auth, actionsModal);
-        const resourceActions = await this.resource.getActions(auth);
-
-        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+        await this._execTrxFactoryNext(actionsModal,auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,tk_name);
     }
 
     async newRefund() {
         const namesel = this.aService.selected.getValue().name;
         let termsHeader = ``;
         let termsHtml = ``;
-
+        const tk_name = this.aService.activeChain['symbol'];
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
 
@@ -1153,10 +1141,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         }];
 
-        const resultResource = await this.resource.checkResource(auth, actionsModal);
-        const resourceActions = await this.resource.getActions(auth);
 
-        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+        await this._execTrxFactoryNext(actionsModal,auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,tk_name);
     }
 
     fillUnDelegateRequest(from: string, net: string, cpu: string) {
@@ -1170,7 +1156,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     async newUnDelegateRequest() {
         let termsHeader = ``;
         let termsHtml = ``;
-
+        const tk_name = this.aService.activeChain['symbol'];
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
 
@@ -1208,10 +1194,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         }];
 
-        const resultResource = await this.resource.checkResource(auth, actionsModal);
-        const resourceActions = await this.resource.getActions(auth);
 
-        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+        await this._execTrxFactoryNext(actionsModal,auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,tk_name);
     }
 
     checkEos(eosVal, val) {
@@ -1249,7 +1233,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     async newDelegateRequest() {
         let termsHeader = ``;
         let termsHtml = ``;
-
+        const tk_name = this.aService.activeChain['symbol'];
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
 
@@ -1282,28 +1266,22 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         }];
 
-        const resultResource = await this.resource.checkResource(auth, actionsModal);
-        const resourceActions = await this.resource.getActions(auth);
 
-        await this._execTrxFactoryNext(actionsModal,resourceActions,resultResource['needResources'],auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,resultResource);
+        await this._execTrxFactoryNext(actionsModal,auth.actor,publicKey,actionTitle,messageHTML,termsHeader,termsHtml,tk_name);
     }
 
-    async _execTrxFactoryNext(actionsModal,resourceActions,needResources,actor,publicKey,actionTitle,messageHTML,termsHeader, termsHtml, resultResource?){
+    async _execTrxFactoryNext(actionsModal,actor,publicKey,actionTitle,messageHTML,termsHeader, termsHtml, tk_name){
         this.trxFactory.modalData.next({
             transactionPayload: {
                 actions: actionsModal
             },
-            resourceTransactionPayload: {
-                actions: resourceActions
-            },
-            resourceInfo: resultResource,
-            addActions: needResources,
             signerAccount: actor,
             signerPublicKey: publicKey,
             actionTitle: actionTitle,
             labelHTML: messageHTML,
             termsHeader: termsHeader,
             termsHTML: termsHtml,
+            tk_name: tk_name,
         });
 
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
