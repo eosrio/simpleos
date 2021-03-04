@@ -1,13 +1,21 @@
 
 <div class="container-fluid" style="height: 100%; overflow-x: hidden;">
     <div class="clr-row votepage-row animate" style="padding-top: 30px;">
-        <div class="clr-col-lg-12">
-            <div class="total free-title">VOTE POWER</div>
-            <div class="highlight-primary eos special-font">{{(stakedBalance > 10000) ? ((stakedBalance / 1000) |
-                number: '1.2-4') + "K" : ((stakedBalance) | number: precision) }} {{aService.activeChain['symbol']}}
+        <div class="clr-col-lg-12 text-center">
+            <div class="total free-title">VOTE POWER
+                <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
+                    <fa-icon [icon]="['far','question-circle']" class="highlight-primary"></fa-icon>
+                    <span class="tooltip-content">
+                                Your vote power is the amount of staked tokens with a decay per time you don't refresh the vote
+							</span>
+                </a>
+            </div>
+            <div class="highlight-primary eos special-font">
+                {{(stakedBalance - votedEOSDecay > 10000) ? ((stakedBalance - votedEOSDecay / 1000) |
+                number: '1.2-4') + "K" : ((stakedBalance - votedEOSDecay) | number: precision) }} {{aService.activeChain['symbol']}}
             </div>
 
-            <div *ngIf="aService.activeChain['features']['rex']&&hasRex"
+            <div *ngIf="aService.activeChain['features']['rex'] && hasRex"
                  style="font-size: 16px;" class="free-title">
                 STAKED + REX: <span class="highlight-primary">{{(totalStaked) | number :
                 '1.2-4'}} {{aService.activeChain['symbol']}} </span>

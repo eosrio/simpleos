@@ -6,7 +6,7 @@
 			<mat-tab-group id="rex-tabs" dynamicHeight selectedIndex="0">
 				<mat-tab label="Buy/Sell REX">
 
-					<div class="clr-row justify-content-center">
+					<div class="clr-row justify-content-center auto-row">
 						<div class="clr-col-lg-12">
 							<div class="card info-card first-card">
 								<div class="card-block">
@@ -120,7 +120,7 @@
 										<div class="card-block upper-buycard">
 											<div class="clr-row">
 
-												<div class="clr-col-lg-12 white" style="font-size: 17px;">
+												<div class="clr-col-lg-12 card-title-color" style="font-size: 17px;">
 													Buy REX
 												</div>
 
@@ -341,7 +341,7 @@
 										<div class="card-block upper-buycard" *ngIf="canbuyREX"
 											 style="min-height: 220.5px;">
 
-											<div class="white" style="font-size: 17px;">
+											<div class="card-title-color" style="font-size: 17px;">
 												Sell REX
 											</div>
 											<div style="margin-top: 34px; cursor: pointer"
@@ -400,7 +400,7 @@
 									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
 									 class="maturing-table last-table" [paginator]="true" [rows]="50">
 								<ng-template pTemplate="caption">
-									<div>
+									<div class="card-title-color">
 										<fa-icon matSuffix [icon]="['far', 'lock-open']"></fa-icon>&nbsp;&nbsp;Unstaking
 										REX
 										(maturing)&nbsp;
@@ -462,7 +462,7 @@
 									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
 									 class="maturing-table last-table" [paginator]="true" [rows]="50">
 								<ng-template pTemplate="caption">
-									<div>
+									<div class="card-title-color">
 										<fa-icon matSuffix [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;Staked REX
 										(savings)&nbsp;
 										<a role="tooltip" aria-haspopup="true" class="tooltip tooltip-lg tooltip-left">
@@ -497,7 +497,7 @@
 								</ng-template>
 								<ng-template pTemplate="footer">
 									<tr *ngIf="matBucket.length === 0">
-										<td colspan="4" class="text-center">
+										<td colspan="4" class="text-center text-faded">
 											You don't have any staked REX
 										</td>
 									</tr>
@@ -629,14 +629,14 @@
 
 							<div class="card info-card">
 								<div class="card-block upper-buycard">
-									<div class="white" style="font-size: 17px">Borrow CPU / NET</div>
-									<div class="gray"><span
-										class="highlight-primary">Available:</span> {{totalEOSliquid   | number : '1.0-4'}} {{aService.activeChain['symbol']}}
+									<div class="card-title-color" style="font-size: 17px">Borrow CPU / NET</div>
+									<div class="text-faded">
+										<span class="highlight-primary">Available:</span> {{totalEOSliquid   | number : '1.0-4'}} {{aService.activeChain['symbol']}}
 									</div>
-									<div class="gray" style="margin-top: 7px; font-size: 15px">Enter the amount you want
+									<div class="card-text-color" style="margin-top: 7px; font-size: 15px">Enter the amount you want
 										to borrow for 30 days:
 									</div>
-									<div class="gray">
+									<div class="card-text-color">
 										<form [formGroup]="borrowForm">
 											<mat-form-field class="input-width"
 															style="display: inline-block !important; width: 120px; margin-right: 40px;">
@@ -709,7 +709,7 @@
 									<div class="clr-row">
 										<div class="clr-col-lg-12">
 											<div class="clr-row">
-												<div class="clr-col-lg-3 gray align-self-center">
+												<div class="clr-col-lg-3 card-text-color align-self-center">
 													<div style="padding-bottom: 2px">CPU
 														Cost: {{cpuCost | number : '1.0-4'}}</div>
 													<div style="padding-bottom: 2px">NET
@@ -734,7 +734,7 @@
 									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
 									 class="maturing-table" [paginator]="true" [rows]="50">
 								<ng-template pTemplate="caption">
-									<div>CPU loans</div>
+									<div class="card-title-color">CPU loans</div>
 								</ng-template>
 								<ng-template pTemplate="header">
 									<tr *ngIf="myLoans.cpu.length > 0">
@@ -800,7 +800,7 @@
 								</ng-template>
 								<ng-template pTemplate="footer">
 									<tr *ngIf="myLoans.cpu.length === 0">
-										<td colspan="7" class="text-center">
+										<td colspan="7" class="text-center text-faded">
 											You don't have any CPU loans
 										</td>
 									</tr>
@@ -812,7 +812,7 @@
 									 [responsive]="true" dataKey="amount" [alwaysShowPaginator]="false"
 									 class="maturing-table last-table" [paginator]="true" [rows]="50">
 								<ng-template pTemplate="caption">
-									<div>NET loans</div>
+									<div class="card-title-color">NET loans</div>
 								</ng-template>
 								<ng-template pTemplate="header">
 									<tr *ngIf="myLoans.net.length > 0">
@@ -879,7 +879,7 @@
 								</ng-template>
 								<ng-template pTemplate="footer">
 									<tr *ngIf="myLoans.net.length === 0">
-										<td colspan="7" class="text-center">
+										<td colspan="7" class="text-center text-faded">
 											You don't have any NET loans
 										</td>
 									</tr>

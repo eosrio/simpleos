@@ -1,9 +1,10 @@
 <div class="container-fluid" style="overflow-x: hidden; height: 100%">
     <div class="clr-row animate rexpage-row justify-content-center" style="padding-top: 15px;padding-bottom: 15px;">
         <div class="clr-col-lg-12">
-            <mat-tab-group id="rex-tabs" dynamicHeight selectedIndex="0">
+            <mat-tab-group id="res-tabs" dynamicHeight selectedIndex="0">
                 <mat-tab label="CPU / NET">
-                    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+
+                    <div class="clr-row resourcespage-row animate" style="margin-top: -17px;">
                         <div class="clr-col-lg-6">
                             <div class="card info-card">
                                 <div class="card-block text-center">
@@ -36,16 +37,6 @@
                                                      class="highlight-primary"></fa-icon>
                                             <span class="tooltip-content">This amount represents your total voting power which includes staked EOS from this account and delgated resouces you lent to other accounts and the amount allocated to REX.</span>
                                         </a>
-                                    </div>
-                                    <div *ngIf="aService.activeChain['features']['vote']&&hasVote"
-                                         style="font-size: 16px;" class="free-title">
-                                        VOTE DECAY: <span [ngClass]="votedDecay > 0.0000  ? 'text-warn' : 'text-faded'">
-							{{(votedEOSDecay) | number : '1.2-4'}} {{aService.activeChain['symbol']}}
-
-                                        <fa-icon *ngIf="votedDecay > 0"
-                                                 [icon]="['far','long-arrow-alt-down']"></fa-icon>
-                                        {{(votedDecay) | number : precision}} %
-						</span>
                                     </div>
                                 </div>
 
@@ -84,7 +75,7 @@
                                                            [ngModel]="percenttoStake"
                                                            (ngModelChange)="percenttoStake=$event"
                                                            mask="separator.1" thousandSeparator="," separatorLimit="100"
-                                                           >
+                                                    >
                                                     <span class="suffix" matSuffix>%</span>
                                                 </mat-form-field>
                                             </div>
@@ -338,7 +329,7 @@
                                 </div>
                             </div>
 
-                            <div class="card info-card special-font">
+                            <div class="card info-card special-font" style="margin-bottom: 25px;">
                                 <div class="card-block">
                                     <div class="title">Refund Stake
                                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
@@ -429,7 +420,7 @@
                                     </div>
                                 </div>
                                 <div class="card-block" style="padding: 0">
-                                    <table class="table table-noborder" *ngIf="delegations.length > 0">
+                                    <table class="res-table table table-noborder" *ngIf="delegations.length > 0">
                                         <thead>
                                         <tr>
                                             <th class="left">Account</th>
@@ -506,7 +497,7 @@
                                         <mat-form-field class="mt-1"
                                                         style="width: 100px; display: inline-block !important;">
                                             <input matInput type="text" #buyAmountBytes placeholder="RAM amount (KB)"
-                                                   mask="separator.4" thousandSeparator=","  formControlName="buyBytes"
+                                                   mask="separator.4" thousandSeparator="," formControlName="buyBytes"
                                                    (keyup)="(errormsg2='');convertToEos()" (blur)="checkBuyBytes()"/>
                                         </mat-form-field>
                                         <span style="margin: 0 12px;">=</span>
@@ -556,7 +547,8 @@
                                         <div class="title" style="margin-top: 40px;">Sell RAM</div>
                                         <mat-form-field class="mt-1"
                                                         style="width: 100px; display: inline-block !important;">
-                                            <input matInput #sellBytes type="text" mask="separator.4" thousandSeparator=","
+                                            <input matInput #sellBytes type="text" mask="separator.4"
+                                                   thousandSeparator=","
                                                    placeholder="RAM amount (KB)" formControlName="sellBytes"
                                                    (keyup)="(errormsgeos='');convertToEosSELL()"
                                                    (blur)="checkSellBytes()"/>
@@ -564,7 +556,8 @@
                                         <span style="margin: 0 12px;">=</span>
                                         <mat-form-field lass="mt-1"
                                                         style="width: 80px; display: inline-block !important;">
-                                            <input matInput #sellEos type="text" mask="separator.4" thousandSeparator=","
+                                            <input matInput #sellEos type="text" mask="separator.4"
+                                                   thousandSeparator=","
                                                    placeholder="Price in {{aService.activeChain['symbol']}}"
                                                    formControlName="sellEos"
                                                    (keyup)="(errormsgeos='');convertToBytesSELL()"
