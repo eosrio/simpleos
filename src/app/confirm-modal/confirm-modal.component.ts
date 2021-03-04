@@ -11,13 +11,12 @@ import {NetworkService} from "../services/network.service";
 import {MatInput} from "@angular/material/input";
 import {ResourceService} from "../services/resource.service";
 
-
-
 @Component({
     selector: 'app-confirm-modal',
     templateUrl: './confirm-modal.component.html',
     styleUrls: ['./confirm-modal.component.css']
 })
+
 export class ConfirmModalComponent {
 
     @ViewChild('pass') pass: MatInput;
@@ -209,7 +208,7 @@ export class ConfirmModalComponent {
                 const trxId = this.modalData.resourceInfo.relay&&this.wantBorrow?trxResult.data.transactionId:trxResult.transaction_id;
                 this.wasClosed = true;
                 this.confirmationForm.reset();
-                setTimeout(() => {
+                setTimeout((_) => {
                     this.aService.refreshFromChain(false).catch(e => {
                         console.log(e);
                     });

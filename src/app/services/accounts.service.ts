@@ -636,6 +636,7 @@ export class AccountsService {
         const beforeDate = moment.utc(moment().local()).subtract(1, 'days');
         const precision = this.activeChain['precision'];
         const symbol = this.activeChain['symbol'];
+        let notifications: any[] = [];
 
         let amountSum = 0;
         let url = api + '/history/get_actions?limit=100&skip=0&account=' + account +
@@ -650,12 +651,19 @@ export class AccountsService {
                     if (act['act']['name'] === 'transfer') {
                         if (act['act']['data']['amount'] > 0.0001) {
                             if (act['act']['data']['to'] === account) {
-                                amountSum += act['act']['data']['amount'];
+                                const hasSymbol = notifications.find(e => e.symbol = act['act']['data']['symbol']);
+                                if(notifications.length > 0 && hasSymbol){
+                                    hasSymbol.amountSum += act['act']['data']['amount'];
+                                } else {
+                                    notifications.push({amountSum:act['act']['data']['amount'],symbol:act['act']['data']['symbol']});
+                                }
+
+                                // amountSum += act['act']['data']['amount'];
                                 hasNewReceived = true;
                             }
                         }
                     }
-
+                    console.log(notifications);
                     const actor = act['act']['authorization'].find(auth => auth.actor === account);
                     if (!activitypastday && actor) {
                         activitypastday = true;
@@ -668,11 +676,15 @@ export class AccountsService {
             console.log(`failed to fetch actions: ${api}`);
         }
         if(hasNewReceived){
-            const html = `<div class="snotifyToast__title">Recently received </div>
-                        <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>
-                        Amount: ${amountSum.toFixed(precision)} ${symbol} </div>`;
 
-            this.notification.onNotification(html);
+            notifications.forEach(data=>{
+                const html = `<div class="snotifyToast__title">Recently received </div>
+                        <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>
+                        Amount: ${data.amountSum.toFixed(precision)} ${data.symbol} </div>`;
+
+                this.notification.onNotification(html);
+            });
+
         }
         this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
         // console.log(activitypastday);
