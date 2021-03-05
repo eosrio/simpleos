@@ -178,7 +178,7 @@ class TransitApiService {
         try {
             portfinder.getPortPromise().then((port) => {
                 this.httpServer.listen(port, '127.0.0.1', () => {
-                    console.log('transit api listening on port' + port);
+                    console.log(`Transit API listening on local port: ${port}`);
                 });
             }).catch((err) => {
                 console.log(err);
