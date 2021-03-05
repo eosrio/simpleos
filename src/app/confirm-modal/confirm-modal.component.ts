@@ -104,7 +104,7 @@ export class ConfirmModalComponent {
 			let result;
 			if (this.modalData.resourceInfo['relay'] && this.useFreeTransaction === '1') {
 				const signed = await this.eosjs.signRelayTrx(trx);
-				if (signed) {
+				if (!signed) {
 					return [null, 'Wrong password!'];
 				}
 				result = await this.resource.sendTxRelay(signed);
