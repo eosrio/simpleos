@@ -1,6 +1,6 @@
 import {Injectable, OnInit} from '@angular/core';
 
-import {io as socketIo } from 'socket.io-client';
+import {io as socketIo} from 'socket.io-client';
 import {BehaviorSubject} from 'rxjs';
 import {AccountsService} from './accounts.service';
 import {Eosjs2Service} from './eosio/eosjs2.service';
@@ -21,19 +21,18 @@ export class RamService {
 	rm_quote = 0;
 	rm_supply = 0;
 
-	restrictedChains = [
-		'EOS MAINNET',
-		'LIBERLAND TESTNET',
-		'LIBERLAND T2',
-		'LIBERLAND TEST LEGACY'
-	];
+	restrictedChains = ['EOS MAINNET'];
 
 	constructor(
 		private aService: AccountsService,
 		private eosjs: Eosjs2Service
 	) {
-		this.socket = socketIo('https://hapi.eosrio.io/');
+		this.socket = socketIo('https://hapi.eosrio.io/', {
+			transports: ['websocket']
+		});
+		console.log(this.socket);
 		this.socket.on('ticker', (data) => {
+			console.log('ticker', data);
 			if (data.price) {
 				if (this.aService.activeChain.name === 'EOS MAINNET') {
 					this.ramTicker.next(data);
@@ -42,6 +41,7 @@ export class RamService {
 			}
 		});
 		setInterval(() => {
+			console.log(this.socket.connected);
 			this.reload();
 		}, 60000);
 	}
