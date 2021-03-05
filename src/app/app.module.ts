@@ -67,7 +67,6 @@ import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
 import {NgxElectronModule} from 'ngx-electron';
-import {MarkdownModule} from 'ngx-markdown';
 
 // Lottie
 import {LottieModule} from 'ngx-lottie';
