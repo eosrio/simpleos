@@ -178,7 +178,6 @@ export class Eosjs2Service {
 	}
 
 	async signRelayTrx(trx: any) {
-
 		trx.actions.unshift({
 			account: 'eosriorelay1',
 			name: 'payforcpu',
@@ -188,31 +187,30 @@ export class Eosjs2Service {
 			}],
 			data: {}
 		});
-
 		console.log('trx: ', JSON.stringify(trx));
-
-		const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
-		console.log('requiredKeys: ', requiredKeys);
-
-		try {
-			const packedTransaction = await this.apiRelay.transact(trx, {
-				blocksBehind: 3,
-				expireSeconds: 120,
-				broadcast: false,
-				sign: false,
-			});
-			const serializedTx = packedTransaction.serializedTransaction;
-			const signArgs = {
-				chainId: this.chainId,
-				requiredKeys,
-				serializedTransaction: serializedTx,
-				abis: [],
-			};
-			console.log('signArgs: ', signArgs);
-			const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
-			return {pushTransactionArgs};
-		} catch (e) {
-			console.log(e);
+		if (this.apiRelay) {
+			const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
+			console.log('requiredKeys: ', requiredKeys);
+			try {
+				const packedTransaction = await this.apiRelay.transact(trx, {
+					blocksBehind: 3,
+					expireSeconds: 120,
+					broadcast: false,
+					sign: false,
+				});
+				const serializedTx = packedTransaction.serializedTransaction;
+				const signArgs = {
+					chainId: this.chainId,
+					requiredKeys,
+					serializedTransaction: serializedTx,
+					abis: [],
+				};
+				console.log('signArgs: ', signArgs);
+				const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
+				return {pushTransactionArgs};
+			} catch (e) {
+				console.log(e);
+			}
 		}
 	}
 
@@ -396,10 +394,10 @@ export class Eosjs2Service {
 	}
 
 	async createAccount(creator: string, name: string, owner: string,
-						active: string, delegateAmount: number,
-						rambytes: number, transfer: boolean,
-						giftAmount: number, giftMemo: string, symbol: string,
-						precision: number, permission): Promise<any> {
+	                    active: string, delegateAmount: number,
+	                    rambytes: number, transfer: boolean,
+	                    giftAmount: number, giftMemo: string, symbol: string,
+	                    precision: number, permission): Promise<any> {
 		const _actions = [];
 		const auth = {actor: creator, permission: permission};
 

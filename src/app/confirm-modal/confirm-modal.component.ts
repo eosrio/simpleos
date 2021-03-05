@@ -97,16 +97,16 @@ export class ConfirmModalComponent {
 	}
 
 	async processTransaction(trx, handler) {
-
 		if ((this.modalData.resourceInfo['needResources'] || this.modalData.resourceInfo['relay']) && this.useFreeTransaction === undefined) {
 			return [null, 'Please select a option!'];
 		}
-
 		try {
 			let result;
 			if (this.modalData.resourceInfo['relay'] && this.useFreeTransaction === '1') {
 				const signed = await this.eosjs.signRelayTrx(trx);
-				console.log(signed);
+				if (signed) {
+					return [null, 'Wrong password!'];
+				}
 				result = await this.resource.sendTxRelay(signed);
 			} else {
 				result = await this.eosjs.transact(trx);
