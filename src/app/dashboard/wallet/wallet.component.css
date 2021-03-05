@@ -62,38 +62,42 @@
 /*}*/
 
 
-/deep/ .overview-table .ui-table {
+/deep/ .overview-table .p-datatable {
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	font-family: Metropolis, Avenir Next, Helvetica Neue, Arial, sans-serif;
 	/*overflow-y: scroll;*/
 }
 
-/deep/ .overview-table .ui-table-tbody {
+/deep/ .overview-table .p-datatable-tbody {
 	background: linear-gradient(to bottom, rgba(47, 47, 47, 0.7), rgba(35, 37, 38, 0.86));
 	transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
 	border-radius: 5px;
 	border: 0;
 }
 
-/deep/ .overview-table .ui-table .ui-table-tbody > tr {
+/deep/ .overview-table .p-datatable .p-datatable-tbody > tr {
 	color: var(--table-tr-color);
 	background: transparent;
 }
 
-/deep/ .overview-table .ui-table .ui-table-tbody > tr > td {
+/deep/ .overview-table .p-datatable .p-datatable-tbody > tr > td {
 	border: none;
 }
 
-/deep/ .overview-table .ui-table .ui-table-tbody > tr {
+/deep/ .overview-table .p-datatable .p-datatable-tbody > tr {
 	border-bottom: var(--tr-border-bottom-color);
 }
 
-/deep/ .overview-table .ui-table .ui-table-tbody > tr:last-child {
+/deep/ .overview-table .p-datatable .p-datatable-tbody > tr:last-child {
 	border-bottom: 0;
 }
 
-/deep/ .overview-table .ui-table .ui-table-tbody > tr > td {
+/deep/ .overview-table .p-datatable .p-datatable-tbody > tr > td {
 	padding: 0.7em .5em;
+}
+
+::ng-deep .overview-table .p-datatable .p-sortable-column.p-highlight .p-sortable-column-icon {
+	color: var(--table-th-color);
 }
 
 /*prime's table end*/
@@ -206,7 +210,7 @@ li:last-child {
 	margin-right: 0;
 }
 
-/deep/ .ui-table-summary {
+/deep/ .p-datatable-summary {
 	background-color: #2C2C2C;
 }
 

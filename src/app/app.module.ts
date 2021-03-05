@@ -162,6 +162,8 @@ import { FormlyModule } from '@ngx-formly/core';
 import { FormlyMaterialModule } from '@ngx-formly/material';
 import { ObjectTypeComponent } from './type/object-type/object-type.component';
 import { ArrayTypeComponent } from './type/array-type/array-type.component';
+import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
+import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
 
 @NgModule({
     declarations: [
@@ -296,7 +298,8 @@ export class AppModule {
             faExclamationTriangle,
             faTimesCircle,
             faGlobe,
-            faSpinner
+            faSpinner,
+            faLightbulbOn
         ]);
 
         // fab brands
@@ -352,7 +355,8 @@ export class AppModule {
             faUserEdit,
             faPaperPlane,
             faExternalLink,
-            faTrashAlt
+            faTrashAlt,
+            faBellOn,
         ]);
 
         // fal light

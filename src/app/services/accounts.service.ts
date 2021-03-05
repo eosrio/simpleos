@@ -7,7 +7,7 @@ import {CryptoService} from './crypto/crypto.service';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../interfaces/account';
 import * as moment from 'moment';
-import {NotificationService} from "./notification.service";
+import {NotificationService} from './notification.service';
 
 @Injectable({
     providedIn: 'root',
@@ -183,7 +183,7 @@ export class AccountsService {
         for (const api of this.activeChain.hyperionApis) {
             let url = api + '/state/get_tokens?account=' + account;
             try {
-                const response: any = await this.http.get(url,this.httpOptions).toPromise();
+                const response: any = await this.http.get(url, this.httpOptions).toPromise();
                 if (response.tokens && response.tokens.length > 0) {
                     return response;
                 }
@@ -528,7 +528,7 @@ export class AccountsService {
 
                 try {
                     const tref = Date.now();
-                    const response: any = await this.http.get(url,this.httpOptions).toPromise();
+                    const response: any = await this.http.get(url, this.httpOptions).toPromise();
                     if (response.actions && response.actions.length > 0) {
                         const latency = Date.now() - tref;
                         console.log(`Used ${api} with ${latency} ms latency`);
@@ -637,27 +637,27 @@ export class AccountsService {
         const precision = this.activeChain['precision'];
         const symbol = this.activeChain['symbol'];
         let notifications: any[] = [];
-
         let amountSum = 0;
-        let url = api + '/history/get_actions?limit=100&skip=0&account=' + account +
+        let url = api + '/history/get_actions?limit=100&hot_only=true&skip=0&account=' + account +
             '&after=' + beforeDate.format('YYYY-MM-DD[T]HH:mm:ss') +
             '&before=' + nowDate.format('YYYY-MM-DD[T]HH:mm:ss');
-        console.log(url);
+        console.log(`Last day history check -->`, url);
         try {
-            const response: any = await this.http.get(url,this.httpOptions).toPromise();
-
+            const response: any = await this.http.get(url, this.httpOptions).toPromise();
             if (response.actions.length > 0) {
                 response.actions.forEach(act => {
                     if (act['act']['name'] === 'transfer') {
                         if (act['act']['data']['amount'] > 0.0001) {
                             if (act['act']['data']['to'] === account) {
                                 const hasSymbol = notifications.find(e => e.symbol = act['act']['data']['symbol']);
-                                if(notifications.length > 0 && hasSymbol){
+                                if (notifications.length > 0 && hasSymbol) {
                                     hasSymbol.amountSum += act['act']['data']['amount'];
                                 } else {
-                                    notifications.push({amountSum:act['act']['data']['amount'],symbol:act['act']['data']['symbol']});
+                                    notifications.push({
+                                        amountSum: act['act']['data']['amount'],
+                                        symbol: act['act']['data']['symbol']
+                                    });
                                 }
-
                                 // amountSum += act['act']['data']['amount'];
                                 hasNewReceived = true;
                             }
@@ -670,24 +670,26 @@ export class AccountsService {
                     }
                 });
             }
-
-
         } catch (e) {
+            console.log(e);
             console.log(`failed to fetch actions: ${api}`);
         }
-        if(hasNewReceived){
-
-            notifications.forEach(data=>{
-                const html = `<div class="snotifyToast__title">Recently received </div>
-                        <div class="snotifyToast__body">To:  <i>(${account})</i> <br/>
-                        Amount: ${data.amountSum.toFixed(precision)} ${data.symbol} </div>`;
-
-                this.notification.onNotification(html);
+        if (hasNewReceived) {
+            notifications.forEach(data => {
+                this.notification.onNotification(`
+                     <div class="snotifyToast__subtitle">Notification</div>
+                     <div class="snotifyToast__title">Recently received </div>
+                     <div class="snotifyToast__body">To:  <i>${account}</i> <br/>
+                        Amount: ${data.amountSum.toFixed(precision)} ${data.symbol} </div>`);
             });
-
+        } else {
+            this.notification.onNotification(`
+                    <div class="snotifyToast__subtitle">Notification</div>
+                    <div class="snotifyToast__title">Recently received </div>
+                    <div class="snotifyToast__body">To:  <i>${account}</i> <br/>
+                        Amount: 10.0000 EOS </div>`);
         }
         this.accounts[this.selectedIdx]['activitypastday'] = activitypastday;
-        // console.log(activitypastday);
     }
 
     reloadActions(account) {
@@ -765,7 +767,7 @@ export class AccountsService {
             if (idx === -1) {
                 payload.accounts.push(account);
             } else {
-                this.notification.onInfo('Import','The account ' + account.account_name + ' was already imported! Skipping...');
+                this.notification.onInfo('Import', 'The account ' + account.account_name + ' was already imported! Skipping...');
             }
         });
         payload.updatedOn = new Date();
@@ -809,7 +811,7 @@ export class AccountsService {
                 balance += ref_cpu;
                 const tempDate = refund['request_time'] + '.000Z';
                 ref_time = new Date(tempDate);
-                const dateFormat = "YYYY-MM-DD HH:mm:ss";
+                const dateFormat = 'YYYY-MM-DD HH:mm:ss';
                 const unstakeDate = moment(moment(ref_time).local());
                 const threeDaysAgo = moment().local().subtract(72, 'hours').format(dateFormat);
                 const differenceInHours = moment(unstakeDate).diff(threeDaysAgo, 'hours');
@@ -962,7 +964,7 @@ export class AccountsService {
         for (const api of this.activeChain.hyperionApis) {
             try {
                 const tref = Date.now();
-                const response: any = await this.http.get(`${api}/history/get_actions?limit=1`,this.httpOptions).toPromise();
+                const response: any = await this.http.get(`${api}/history/get_actions?limit=1`, this.httpOptions).toPromise();
                 if (response.actions && response.actions.length === 1) {
                     const lastTimestamp = new Date(response.actions[0]['@timestamp'] + 'Z').getTime();
                     const now = Date.now();

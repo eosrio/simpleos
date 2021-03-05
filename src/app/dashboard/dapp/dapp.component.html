@@ -91,7 +91,7 @@
         </mat-button-toggle-group-->
 
         <button *ngFor="let action of abiSmartContractActions" type="button" class="btn btn-outline btn-info-outline"
-                (click)="getForm(action.type,action.name);" [ngClass]="buttonActive===action.name?'active':''"
+                (click)="getForm(action.type,action.name);" [ngClass]="buttonActive === action.name? 'buttonActive' : ''"
                 style="margin-top: 15px; padding:0px 17px !important;">
             {{action.name}}
         </button>
