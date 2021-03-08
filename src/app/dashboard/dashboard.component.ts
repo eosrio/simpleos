@@ -18,6 +18,15 @@ import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Router} from '@angular/router';
+import {faHome} from "@fortawesome/pro-regular-svg-icons/faHome";
+import {faHistory} from "@fortawesome/pro-regular-svg-icons/faHistory";
+import {faPaperPlane} from "@fortawesome/pro-regular-svg-icons/faPaperPlane";
+import {faMemory} from "@fortawesome/pro-regular-svg-icons/faMemory";
+import {faEdit} from "@fortawesome/pro-regular-svg-icons/faEdit";
+import {faLock} from "@fortawesome/pro-regular-svg-icons/faLock";
+import {faExchangeAlt} from "@fortawesome/pro-regular-svg-icons/faExchangeAlt";
+import {faPuzzlePiece} from "@fortawesome/pro-regular-svg-icons/faPuzzlePiece";
+import {faHeart} from "@fortawesome/pro-solid-svg-icons/faHeart";
 
 @Component({
 	selector: 'app-dashboard',
@@ -118,6 +127,22 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 	validActivePubKey: boolean = false;
 	private ledgerEventsListener: Subscription;
 
+	public faIcons = {
+		regular: {
+			home: faHome,
+			history: faHistory,
+			send: faPaperPlane,
+			memory: faMemory,
+			edit: faEdit,
+			lock: faLock,
+			exchange: faExchangeAlt,
+			puzzle: faPuzzlePiece
+		},
+		solid: {
+			heart: faHeart
+		}
+	}
+
 	constructor(
 		public eosjs: Eosjs2Service,
 		private fb: FormBuilder,
@@ -188,6 +213,10 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 		document.onkeydown = (e) => {
 			if (e.altKey) {
 				switch (e.key) {
+					case 'd': {
+						this.navigateTo('home');
+						break;
+					}
 					case 'v': {
 						this.navigateTo('vote');
 						break;
@@ -561,8 +590,8 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 	async generateKeys() {
 		this.generating = true;
 
-		const activePair = this.crypto.generateKeyPair();
-		const ownerPair = this.crypto.generateKeyPair();
+		const activePair = await this.crypto.generateKeyPair();
+		const ownerPair = await this.crypto.generateKeyPair();
 
 		this.ownerpk = ownerPair.private;
 		this.ownerpub = ownerPair.public;

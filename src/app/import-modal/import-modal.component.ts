@@ -189,7 +189,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
         });
         if (this.aService.accounts.length === 0) {
             await this.aService.importAccounts(this.accountsToImport);
-            await this.router.navigate(['dashboard', 'wallet']);
+            await this.router.navigate(['dashboard', 'home']);
         } else {
             await this.aService.appendAccounts(this.accountsToImport);
         }
@@ -218,7 +218,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
                                 this.aService.importAccounts(this.importedAccounts).then((data: any[]) => {
                                     if (data.length > 0) {
                                         this.crypto.decryptKeys(pubk).then(() => {
-                                            this.router.navigate(['dashboard', 'wallet'])
+                                            this.router.navigate(['dashboard', 'home'])
                                                 .then(() => {
 
                                                 })

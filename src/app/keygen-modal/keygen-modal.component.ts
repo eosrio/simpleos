@@ -41,7 +41,7 @@ export class KeygenModalComponent implements OnInit {
 
     async generateNKeys() {
         this.generating = true;
-        const keypair = this.crypto.generateKeyPair();
+        const keypair = await this.crypto.generateKeyPair();
         this.prvKey = keypair.private;
         this.pubKey = keypair.public;
         this.generating = false;

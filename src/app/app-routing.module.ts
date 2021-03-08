@@ -12,6 +12,7 @@ import {LockGuard} from './guards/lock.guard';
 import {ResourcesComponent} from './dashboard/acc_resources/resources.component';
 import {DappComponent} from './dashboard/dapp/dapp.component';
 import {RexComponent} from './dashboard/rex/rex.component';
+import {AccountHomeComponent} from "./dashboard/account-home/account-home.component";
 
 const routes: Routes = [
 	{
@@ -28,6 +29,10 @@ const routes: Routes = [
 		component: DashboardComponent,
 		canActivate: [LockGuard],
 		children: [
+			{
+				path: 'home',
+				component: AccountHomeComponent
+			},
 			{
 				path: 'wallet',
 				component: WalletComponent,

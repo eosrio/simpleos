@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const socketio = require('socket.io');
+const {Logger} = require('./util');
 
 class SimpleosConnectService {
 
@@ -48,17 +49,17 @@ class SimpleosConnectService {
     startServer(port = 5000) {
         try {
             this.httpServer.listen(port, '127.0.0.1', () => {
-                console.log(`SimplEOS Connect API listening on local port: ${port}`);
+                Logger.info(`SimplEOS Connect API listening on local port: ${port}`);
             });
         } catch (error) {
-            console.log(error);
+            Logger.warn(error);
         }
 
         this.websocketServer.on('connection', this.onConnection);
     }
 
     onConnection(socket) {
-        console.log('new connection');
+        Logger.info('new connection');
 
         socket.on('disconnect', this.onDisconnect);
 
@@ -76,11 +77,11 @@ class SimpleosConnectService {
     }
 
     onDisconnect(reason) {
-        console.log('disconnection reason:', reason);
+        Logger.info('disconnection reason:', reason);
     }
 
     onGetAuthorizations(chainId, callback) {
-        console.log('onGetAuthorizations');
+        Logger.info('onGetAuthorizations');
         this.main.getFocus();
         this.sendMessage('sc_request',
             {message: 'change_chain', chain_id: chainId});
@@ -103,7 +104,7 @@ class SimpleosConnectService {
     }
 
     onLogIn(sessionUuid, authorization, callback) {
-        console.log('onLogIn');
+        Logger.info('onLogIn');
 
         this.currentSessionUuid = sessionUuid;
         this.currentAuthorization = authorization;
@@ -112,7 +113,7 @@ class SimpleosConnectService {
     }
 
     onLogOut(callback) {
-        console.log('onLogOut');
+        Logger.info('onLogOut');
 
         this.currentSessionUuid = '';
         this.currentAuthorization = null;
@@ -121,14 +122,14 @@ class SimpleosConnectService {
     }
 
     onIsLoggedIn(sessionUuid, callback) {
-        console.log('isLoggedIn');
+        Logger.info('isLoggedIn');
 
         callback(
             this.currentSessionUuid === sessionUuid && this.currentAuthorization);
     }
 
     onGetCurrentAuthorization(sessionUuid, callback) {
-        console.log('onGetCurrentAuthorization');
+        Logger.info('onGetCurrentAuthorization');
 
         if (sessionUuid === this.currentSessionUuid) {
             callback(this.currentAuthorization);
@@ -138,7 +139,7 @@ class SimpleosConnectService {
     }
 
     onTransact(transaction, callback) {
-        console.log('onTransact');
+        Logger.info('onTransact');
 
         this.sendMessage('sc_request', {
             message: 'sign',
@@ -151,7 +152,7 @@ class SimpleosConnectService {
             if (data.status !== 'CANCELLED') {
                 this.main.unfocus();
             }
-            console.log(data);
+            Logger.info(data);
             callback(data);
         });
     }

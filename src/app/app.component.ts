@@ -12,7 +12,6 @@ import {BackupService} from './services/backup.service';
 import {BehaviorSubject, Subscription} from 'rxjs';
 import {Eosjs2Service} from './services/eosio/eosjs2.service';
 import {TransactionFactoryService} from './services/eosio/transaction-factory.service';
-import {ElectronService} from 'ngx-electron';
 import {ThemeService} from './services/theme.service';
 import {Title} from '@angular/platform-browser';
 import {LedgerService} from './services/ledger/ledger.service';
@@ -50,7 +49,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 		private trxFactory: TransactionFactoryService,
 		private zone: NgZone,
 		private cdr: ChangeDetectorRef,
-		private _electronService: ElectronService,
 		public theme: ThemeService,
 		private toaster: NotificationService,
 		private http: HttpClient
@@ -95,10 +93,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.startIPCListeners();
 	}
 
-	get maximized(): boolean {
-		return this._electronService.remote.getCurrentWindow().isMaximized();
-	}
-
 	get requiredLedgerInfo() {
 		return {
 			device: this.crypto.requiredLedgerDevice,
@@ -106,6 +100,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 		};
 	}
 
+	maximized = false;
 	confirmForm: FormGroup;
 	wrongpass = '';
 	txerror = '';
@@ -197,6 +192,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 	startIPCListeners() {
 		if (this.connect.ipc) {
+			// Bind electron events
+			this.onElectron = this.onElectron.bind(this);
+			this.connect.ipc.on('electron', this.onElectron);
 
 			// Bind simpleos connect requests
 			this.onSimpleosConnectMessage = this.onSimpleosConnectMessage.bind(this);
@@ -205,19 +203,27 @@ export class AppComponent implements OnInit, AfterViewInit {
 			// Bind transit api requests
 			this.onTransitApiMessage = this.onTransitApiMessage.bind(this);
 			this.connect.ipc.on('request', this.onTransitApiMessage);
-
-			// Bind transit api requests
-			this.onElectron = this.onElectron.bind(this);
-			this.connect.ipc.on('electron', this.onElectron);
 		}
 	}
 
 	private onElectron(event, payload) {
 		if (event) {
-			if (payload.event === 'platform_reply') {
-				console.log('Platform:', payload.content);
-				this.isMac = payload.content === 'darwin';
-				this.cdr.detectChanges();
+			switch (payload.event) {
+				case 'platform_reply': {
+					console.log('Platform:', payload.content);
+					this.isMac = payload.content === 'darwin';
+					this.cdr.detectChanges();
+					break;
+				}
+				case 'isMaximized': {
+					this.maximized = payload.content;
+					this.cdr.detectChanges();
+					break;
+				}
+				default: {
+					console.log('UNHANDLED IPC EVENT!');
+					console.log(event, payload);
+				}
 			}
 		}
 	}
@@ -407,29 +413,19 @@ export class AppComponent implements OnInit, AfterViewInit {
 		this.cdr.detectChanges();
 	}
 
-	public minimizeWindow() {
+	public async minimizeWindow() {
 		console.log('Minimize...');
-		if (this._electronService.isElectronApp) {
-			this._electronService.remote.getCurrentWindow().minimize();
-		}
+		await this.connect.ipc.invoke('window-minimize');
 	}
 
-	public closeWindow() {
+	public async closeWindow() {
 		console.log('Close...');
-		if (this._electronService.isElectronApp) {
-			this._electronService.remote.getCurrentWindow().close();
-		}
+		await this.connect.ipc.invoke('window-close');
 	}
 
-	public maximizeWindow() {
+	public async maximizeWindow() {
 		console.log('Maximize...');
-		if (this._electronService.isElectronApp) {
-			if (this._electronService.remote.getCurrentWindow().isMaximized()) {
-				this._electronService.remote.getCurrentWindow().restore();
-			} else {
-				this._electronService.remote.getCurrentWindow().maximize();
-			}
-		}
+		await this.connect.ipc.invoke('window-maximize');
 	}
 
 	performUpdate() {

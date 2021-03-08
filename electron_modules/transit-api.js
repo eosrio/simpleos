@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const http = require('http');
 const portfinder = require('portfinder');
+const {Logger} = require('./util');
 
 class TransitApiService {
     main;
@@ -64,7 +65,7 @@ class TransitApiService {
         // connect
         this.expressApp.get('/connect', (req, res) => {
 
-            console.log('CONNECT REQUEST');
+            Logger.info('CONNECT REQUEST');
             this.main.getFocus();
 
             this.sendMessage('request', {
@@ -84,7 +85,7 @@ class TransitApiService {
 
         // login
         this.expressApp.get('/login', (req, res) => {
-            console.log('CONNECT REQUEST, account:' + req.query.account);
+            Logger.info('CONNECT REQUEST, account:' + req.query.account);
 
             this.sendMessage('request', {
                 message: 'login',
@@ -120,7 +121,7 @@ class TransitApiService {
 
         // logout
         this.expressApp.get('/logout', (req, res) => {
-            console.log('LOGOUT REQUEST');
+            Logger.info('LOGOUT REQUEST');
 
             this.sendMessage('request', {
                 message: 'logout',
@@ -143,7 +144,7 @@ class TransitApiService {
 
         // disconnect
         this.expressApp.get('/disconnect', (req, res) => {
-            console.log('DISCONNECT REQUEST');
+            Logger.info('DISCONNECT REQUEST');
 
             this.sendMessage('request', {
                 message: 'disconnect',
@@ -178,13 +179,13 @@ class TransitApiService {
         try {
             portfinder.getPortPromise().then((port) => {
                 this.httpServer.listen(port, '127.0.0.1', () => {
-                    console.log(`Transit API listening on local port: ${port}`);
+                    Logger.info(`Transit API listening on local port: ${port}`);
                 });
             }).catch((err) => {
-                console.log(err);
+                Logger.warn(err);
             });
         } catch (e) {
-            console.log(e);
+            Logger.warn(e);
         }
     }
 

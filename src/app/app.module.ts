@@ -163,6 +163,7 @@ import {ObjectTypeComponent} from './type/object-type/object-type.component';
 import {ArrayTypeComponent} from './type/array-type/array-type.component';
 import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
 import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
+import { AccountHomeComponent } from './dashboard/account-home/account-home.component';
 
 @NgModule({
 	declarations: [
@@ -187,6 +188,7 @@ import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
 		SafePipe,
 		ObjectTypeComponent,
 		ArrayTypeComponent,
+		AccountHomeComponent,
 	],
 	imports: [
 		FormsModule,

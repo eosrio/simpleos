@@ -30,9 +30,7 @@ export class RamService {
 		this.socket = socketIo('https://hapi.eosrio.io/', {
 			transports: ['websocket']
 		});
-		console.log(this.socket);
 		this.socket.on('ticker', (data) => {
-			console.log('ticker', data);
 			if (data.price) {
 				if (this.aService.activeChain.name === 'EOS MAINNET') {
 					this.ramTicker.next(data);
@@ -41,7 +39,6 @@ export class RamService {
 			}
 		});
 		setInterval(() => {
-			console.log(this.socket.connected);
 			this.reload();
 		}, 60000);
 	}

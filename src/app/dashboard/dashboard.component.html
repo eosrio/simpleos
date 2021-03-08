@@ -95,41 +95,44 @@
 
             </section>
             <section #sidenavContent class="sidenav-content">
+                <a class="nav-link" routerLinkActive="active" [routerLink]="['home']">
+                    <fa-icon [icon]="faIcons.regular.home"></fa-icon>&nbsp;&nbsp;HOME
+                </a>
                 <a *ngIf="network.activeChain.features['history']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['wallet']">
-                    <fa-icon [icon]="['far', 'history']"></fa-icon>&nbsp;&nbsp;HISTORY
+                    <fa-icon [icon]="faIcons.regular.history"></fa-icon>&nbsp;&nbsp;HISTORY
                 </a>
                 <a *ngIf="network.activeChain.features['send']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['send']">
-                    <fa-icon [icon]="['far', 'paper-plane']"></fa-icon>&nbsp;&nbsp;SEND
+                    <fa-icon [icon]="faIcons.regular.send"></fa-icon>&nbsp;&nbsp;SEND
                 </a>
                 <a *ngIf="network.activeChain.features['resource']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['ram']">
-                    <fa-icon [icon]="['far', 'memory']"></fa-icon>&nbsp;&nbsp;RESOURCES / STAKE
+                    <fa-icon [icon]="faIcons.regular.memory"></fa-icon>&nbsp;&nbsp;RESOURCES / STAKE
                 </a>
                 <a *ngIf="network.activeChain.features['vote'] || network.activeChain.features['staking']"
                    class="nav-link" routerLinkActive="active"
                    [routerLink]="['vote']">
                     <ng-container *ngIf="network.activeChain.features['vote']">
-                        <fa-icon [icon]="['far', 'edit']"></fa-icon>&nbsp;&nbsp;VOTE
+                        <fa-icon [icon]="faIcons.regular.edit"></fa-icon>&nbsp;&nbsp;VOTE
                     </ng-container>
                     <ng-container
                             *ngIf="network.activeChain.features['staking'] && !network.activeChain.features['vote']">
-                        <fa-icon [icon]="['far', 'lock']"></fa-icon>&nbsp;&nbsp;STAKE
+                        <fa-icon [icon]="faIcons.regular.lock"></fa-icon>&nbsp;&nbsp;STAKE
                     </ng-container>
                 </a>
                 <a *ngIf="network.activeChain.features['rex']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['rex']">
-                    <fa-icon [icon]="['far', 'exchange-alt']"></fa-icon>&nbsp;&nbsp;REX
+                    <fa-icon [icon]="faIcons.regular.exchange"></fa-icon>&nbsp;&nbsp;REX
                 </a>
                 <a *ngIf="network.activeChain.features['dapps']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['dapp']">
-                    <fa-icon [icon]="['far', 'puzzle-piece']"></fa-icon>&nbsp;&nbsp;CONTRACTS (beta)
+                    <fa-icon [icon]="faIcons.regular.puzzle"></fa-icon>&nbsp;&nbsp;CONTRACTS (beta)
                 </a>
             </section>
             <section class="placeholder border-r" *ngIf="app.compilerVersion === 'DEFAULT'">
                 <div class="credits">Made with
-                    <fa-icon [icon]="['fas', 'heart']"></fa-icon>
+                    <fa-icon [icon]="faIcons.solid.heart"></fa-icon>
                     by <a class="highlight-accent" [routerLink]="['about']">EOS Rio</a>
                 </div>
                 <div class="version">v{{aService.versionSys}}</div>
@@ -189,7 +192,7 @@
     </clr-wizard-page>
 
     <clr-wizard-page *ngIf="newAccOptions === 'newpk'"
-                     [clrWizardPageNextDisabled]="ownerpub==='' || activepub==='' || (generated?!agreeKeys:false)">
+                     [clrWizardPageNextDisabled]="ownerpub === '' || activepub === '' || (generated?!agreeKeys:false)">
         <ng-template clrPageTitle>Define Keys</ng-template>
         <h5>Selected account: <span class="highlight-primary">{{accountname}}</span></h5>
         <h5>Please enter your desired public keys or click the <span
@@ -323,7 +326,7 @@
     <clr-wizard-page (clrWizardPageOnLoad)="loadLastPage()" [clrWizardPageNextDisabled]="!success">
         <ng-template clrPageTitle>Sign Transaction</ng-template>
         <p-accordion *ngIf="aService.activeChain.name === 'EOS MAINNET'">
-            <p-accordionTab header="By submiting this transaction, you agree to the following Ricardian Contract">
+            <p-accordionTab header="By submitting this transaction, you agree to the following Ricardian Contract">
                 As an authorized party I {{ final_creator }} wish to exercise the authority of {{ final_creator }}
                 to create a new account on this system named {{ final_name }} such that the new account's owner public
                 key shall be {{ final_owner }} and the active public key shall be {{ final_active }}.
@@ -403,7 +406,7 @@
 
 <!--            <br>-->
 
-<!--            &lt;!&ndash;		standart accounts&ndash;&gt;-->
+<!--            &lt;!&ndash; standard accounts&ndash;&gt;-->
 <!--            <div *ngFor="let importedAccount of importedAccounts">-->
 <!--            <span class="label label-blue" style="font-size: medium">-->
 <!--                {{importedAccount['account_name']}}@{{importedAccount['permission']}}-->
