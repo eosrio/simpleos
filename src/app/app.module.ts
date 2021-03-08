@@ -197,7 +197,6 @@ import { ArrayTypeComponent } from './type/array-type/array-type.component';
         ClarityModule,
         FontAwesomeModule,
         FormlyModule.forRoot({
-
             types: [
                 { name: 'string', extends: 'input' },
                 {

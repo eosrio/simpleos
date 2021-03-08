@@ -583,6 +583,55 @@
                     </div>
                     <br>
                 </mat-tab>
+                <mat-tab label="POWER UP">
+                    <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
+                        <div class="clr-col-lg-12">
+                            <div class="card info-card">
+                                <div class="card-block" style="">
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-12">
+                                            <div class="instruction card-title-color expandable special-font">Power Up
+                                                your {{aService.activeChain['symbol']}}
+                                                <a role="tooltip" aria-haspopup="true"
+                                                   class="tooltip tooltip-lg tooltip-right">
+                                                    <fa-icon [icon]="['far','question-circle']"
+                                                             class="highlight-primary"
+                                                             style="font-size: 16px;"></fa-icon>
+                                                    <span class="tooltip-content">Move the slider left to unstake or right to stake. <br> After that, press 'SET STAKE' and confirm with your password.</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="clr-row">
+                                        <div class="clr-col-lg-6">
+                                            <mat-form-field class="input-width">
+                                                <input matInput type="text" min="0"
+                                                       placeholder="CPU Value" [ngModel]="cpu_self"
+                                                       (ngModelChange)="cpu_self=$event"
+                                                       mask="separator.4" thousandSeparator=","
+                                                       (blur)="checkValueManually('cpu');">
+                                                <span class="suffix special-font"
+                                                      matSuffix>{{aService.activeChain['symbol']}}</span>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="clr-col-lg-6">
+                                            <mat-form-field class="input-width">
+                                                <input matInput type="text" min="0"
+                                                       placeholder="NET Value" [ngModel]="net_self"
+                                                       (ngModelChange)="net_self=$event"
+                                                       mask="separator.4" thousandSeparator=","
+                                                       (blur)="checkValueManually('net');">
+                                                <span class="suffix special-font"
+                                                      matSuffix>{{aService.activeChain['symbol']}}</span>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </mat-tab>
             </mat-tab-group>
         </div>
     </div>

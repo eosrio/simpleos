@@ -662,7 +662,8 @@ export class RexComponent implements OnDestroy {
 
         const sub = this.mds.inputModal.event.subscribe((result) => {
             if (result.event === 'done') {
-                this.moveToSavings(parseFloat(result.value)).catch(console.log);
+
+                this.moveToSavings(parseFloat(result.value.toString())).catch(console.log);
                 sub.unsubscribe();
             } else if (result.event === 'close') {
                 sub.unsubscribe();
@@ -682,7 +683,7 @@ export class RexComponent implements OnDestroy {
 
         const sub = this.mds.inputModal.event.subscribe((result) => {
             if (result.event === 'done') {
-                this.moveFromSavings(parseFloat(result.value)).catch(console.log);
+                this.moveFromSavings(parseFloat(result.value.toString())).catch(console.log);
                 sub.unsubscribe();
             } else if (result.event === 'close') {
                 sub.unsubscribe();
@@ -703,7 +704,7 @@ export class RexComponent implements OnDestroy {
 
         const sub = this.mds.inputModal.event.subscribe((result) => {
             if (result.event === 'done') {
-                this.fundLoan(type, parseFloat(result.value), loan_num).catch(console.log);
+                this.fundLoan(type, parseFloat(result.value.toString()), loan_num).catch(console.log);
                 sub.unsubscribe();
             } else if (result.event === 'close') {
                 sub.unsubscribe();
@@ -724,7 +725,7 @@ export class RexComponent implements OnDestroy {
 
         const sub = this.mds.inputModal.event.subscribe((result) => {
             if (result.event === 'done') {
-                this.defundLoan(type, parseFloat(result.value), loan_num).catch(console.log);
+                this.defundLoan(type, parseFloat(result.value.toString()), loan_num).catch(console.log);
                 sub.unsubscribe();
             } else if (result.event === 'close') {
                 sub.unsubscribe();

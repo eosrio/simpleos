@@ -190,9 +190,9 @@ class SimpleosWallet {
 
     appendLock() {
         if (this.isAutoLaunch) {
-            fs.writeFileSync(this.claimRW.lockAutoLaunchFile, process.pid);
+            fs.writeFileSync(this.claimRW.lockAutoLaunchFile, process.pid.toString());
         } else {
-            fs.writeFileSync(this.claimRW.lockLaunchFile, process.pid);
+            fs.writeFileSync(this.claimRW.lockLaunchFile, process.pid.toString());
         }
     }
 
