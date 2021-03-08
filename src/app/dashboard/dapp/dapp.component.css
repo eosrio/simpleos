@@ -53,9 +53,9 @@ li:hover {
 	padding: 0 0 0 !important;
 }
 
-.active {
-	color: var(--btn-color-hover) !important;
-	background-color: var(--btn-background-hover) !important;
+.buttonActive {
+	color: var(--btn-primary-color) !important;
+	background-color: var(--btn-primary-bg) !important;
 }
 
 div#formAction > mat-form-field > input {

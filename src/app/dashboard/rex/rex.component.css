@@ -167,6 +167,7 @@
 	background-color: var(--info-card-background);
 	border-radius: 5px 5px 0 0;
 	margin: 0 .6rem;
+	box-shadow: 1px -1px 5px 3px rgb(0 0 0 / 18%);
 }
 
 /deep/ #rex-tabs .mat-tab-label .mat-tab-label-content {

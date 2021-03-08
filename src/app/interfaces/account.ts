@@ -1,4 +1,5 @@
 export interface EOSAccount {
+	lastActionCheck: number;
 	name: string;
 	details: any;
 	unstaked: number;
@@ -6,7 +7,7 @@ export interface EOSAccount {
 	full_balance: number;
 	staked: number;
 	unstakeTime: string;
-	activitypastday:boolean;
+	pastDayActivity: boolean;
 	actions: any[];
 	type: string;
 	storedKey: string;
