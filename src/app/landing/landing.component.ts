@@ -367,8 +367,8 @@ export class LandingComponent implements OnInit, OnDestroy {
 
 	async generateKeys() {
 		this.generating = true;
-		const activePair = this.crypto.generateKeyPair();
-		const ownerPair = this.crypto.generateKeyPair();
+		const activePair = await this.crypto.generateKeyPair();
+		const ownerPair = await this.crypto.generateKeyPair();
 		this.ownerpk = ownerPair.private;
 		this.ownerpub = ownerPair.public;
 		this.activepk = activePair.private;

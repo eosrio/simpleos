@@ -66,7 +66,7 @@ export class LockscreenComponent implements OnInit {
 	unlock() {
 		let target = ['landing'];
 		if (this.network.networkingReady.getValue() && this.aService.accounts.length > 0) {
-			target = ['dashboard', 'wallet'];
+			target = ['dashboard', 'home'];
 		}
 		if (!this.crypto.unlock(this.pin, target)) {
 			this.wrongpass = true;

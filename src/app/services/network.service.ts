@@ -358,8 +358,8 @@ export class NetworkService {
                     this.aService.initFirst();
                 }
 
-                // navigate to the wallet page
-                await this.router['navigate'](['dashboard', 'wallet']);
+                // navigate to the account home page
+                await this.router['navigate'](['dashboard', 'home']);
 
             } else {
                 if (this.crypto.getLockStatus()) {

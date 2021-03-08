@@ -1104,7 +1104,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		<br><br> You don't need to leave your wallet open, your computer just needs to be turned on.
 		<br><br>This action doesn't expose your private key.  </h5>
 		`;
-        const keypair = this.crypto.generateKeyPair();
+        const keypair = await this.crypto.generateKeyPair();
         const private_key = keypair.private;
         const public_key = keypair.public;
         const _actions = [];
