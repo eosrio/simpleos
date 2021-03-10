@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {environment} from '../../environments/environment';
+import {ipcRenderer} from "electron";
 
 declare const window: any;
 
@@ -26,11 +27,11 @@ export class BackupService {
             this.automatic = 'true';
         }
         if (this.automatic === 'true') {
-            if (window['remote']) {
-                this.bkp_folder = window['remote']['app'].getPath('appData') + '/' + this.prefix + 'Autosave';
+            ipcRenderer.invoke('get-app-path',`${this.prefix}-autosave`).then(value => {
+                this.bkp_folder = value;
                 this.initDir();
                 this.listBackups();
-            }
+            });
         }
     }
 

@@ -53,19 +53,14 @@ export class AppComponent implements OnInit, AfterViewInit {
 		private toaster: NotificationService,
 		private http: HttpClient
 	) {
-
-		console.log('BW', BrowserWindow);
-
 		if (this.compilerVersion === 'LIBERLAND') {
 			this.titleService.setTitle('Liberland Wallet v' + this.version);
 			this.theme.liberlandTheme();
-
 			if (!this.network.activeChain.name.startsWith('LIBERLAND')) {
 				this.activeChain = this.network.defaultChains.find((chain) => chain.name === 'LIBERLAND TESTNET');
 				localStorage.setItem('simplEOS.activeChainID', this.activeChain.id);
 				this.network.changeChain(this.activeChain.id).catch(console.log);
 			}
-
 		} else {
 			this.theme.defaultTheme();
 			this.titleService.setTitle('SimplEOS Wallet v' + this.version);
@@ -75,7 +70,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 			pass: ['', Validators.required],
 		});
 
-		// wait 30 seconds to automatic backup
+		// wait 30 seconds for the first automatic backup
 		this.autobackup.startTimeout();
 
 		this.accSlots = [];

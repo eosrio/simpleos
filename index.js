@@ -455,6 +455,21 @@ class SimpleosWallet {
   }
 
   attachIPCHandlers() {
+    // show error dialog
+    ipcMain.handle('show-error-box', async (event, data) => {
+      dialog.showErrorBox(data.title, data.content);
+    });
+
+    // show message box
+    ipcMain.handle('show-message-box', async (event, options) => {
+      return await dialog.showMessageBox(options);
+    });
+
+    // get app path
+    ipcMain.handle('get-app-path', async (event, suffix) => {
+      return path.join(this.localConfig.basePath, suffix);
+    });
+
     // native prompt for export folder
     ipcMain.handle('read-export-dir', async (event, filename) => {
       // noinspection JSCheckFunctionSignatures

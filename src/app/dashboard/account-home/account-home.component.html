@@ -1,1 +1,8 @@
-<p>account-home works!</p>
+<div class="container-fluid" style="height: 100%;  overflow:hidden;">
+    <div class="clr-row flex-items-xs-between" style="height: 100%;">
+        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;"
+             *ngIf="aService.selected.getValue().name">
+            {{aService.selected.getValue().name}}
+        </div>
+    </div>
+</div>

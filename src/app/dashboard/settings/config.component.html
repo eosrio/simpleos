@@ -195,21 +195,17 @@
                     </a>
                 </div>
                 <div class="card-block">
+                    <span>Location: {{backup.bkp_folder}}</span>
                     <div style="margin-bottom: 20px;">
                         <mat-checkbox [checked]="autoBackup" (change)="toggleAutosave($event)">Automatic Backup&nbsp;
                         </mat-checkbox>
                         <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
                             <fa-icon [icon]="['far','question-circle']" class="highlight-primary"
                                      style="font-size: 16px;"></fa-icon>
-                            <span class="tooltip-content">Automatically backup whenever you open the wallet. The backup file will appear in the
-								<span *ngIf="app.compilerVersion === 'DEFAULT'">"simpleosAutosave"</span>
-								<span *ngIf="app.compilerVersion === 'LIBERLAND'">"liberlandAutosave"</span>
-								 folder that is created on the same place that
-								<span *ngIf="app.compilerVersion === 'DEFAULT'">SimplEOS</span>
-								<span *ngIf="app.compilerVersion === 'LIBERLAND'">the Liberland wallet</span>
-								is installed.</span>
+                            <span class="tooltip-content">Automatically backup whenever you open the wallet.</span>
                         </a>
-                        <div class="info" *ngIf="backup.lastBackupTime !== ''">* Last backup on {{backup.lastBackupTime}}</div>
+                        <div class="info" *ngIf="backup.lastBackupTime !== ''">* Last backup
+                            on {{backup.lastBackupTime}}</div>
                     </div>
                     <button class="btn btn-info-outline" (click)="exportBKModal = true"
                             style="font-weight: 700">EXPORT
