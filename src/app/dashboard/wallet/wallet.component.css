@@ -1,7 +1,6 @@
 .balance {
 	font-size: 25px;
 	margin-bottom: 19px;
-
 }
 
 .eos {
@@ -48,8 +47,8 @@
 	color: var(--text-highlight-primary) !important;
 }
 
-.expandRow {
-	background-color: #1e1f1f !important;
+.expandRow td {
+	background-color: var(--expand-background) !important;
 }
 
 /deep/ .OtherExpandRow {
@@ -187,6 +186,10 @@ li:last-child {
 	transition-property: background-color;
 }
 
+.tr-canexpand:hover td {
+	/*background-color: inherit !important;*/
+}
+
 .vertical-line {
 	border-left: 1px solid #b1b1b1;
 	position: absolute;
@@ -196,8 +199,7 @@ li:last-child {
 }
 
 .tr-expanded > td {
-	background: var(--expand-background);
-
+	background: var(--expand-background) !important;
 	padding: 0.8em .5em;
 }
 

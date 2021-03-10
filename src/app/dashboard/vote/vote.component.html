@@ -274,7 +274,7 @@
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-item let-expanded="expanded" let-index="rowIndex">
-                    <tr [pSelectableRow]="item" class="tr-canexpand" (click)="getProxyVotes(item.account)"
+                    <tr [pSelectableRow]="item" class="tr-canexpand {{expanded?' expandRow ':''}}" (click)="getProxyVotes(item.account)"
                         *ngIf="!busyList && voteService.hasList">
                         <td class="text-right expandable" [pRowToggler]="item">
                             <fa-icon [icon]="['fal', expanded ? 'search-minus' : 'search-plus']"

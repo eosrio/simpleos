@@ -131,6 +131,10 @@
     cursor: pointer;
 }
 
+.expandRow td {
+    background-color: var(--expand-background) !important;
+}
+
 .tr-canexpand:hover {
     cursor: pointer;
     background-color: var(--expand-background) !important;

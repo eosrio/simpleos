@@ -1,8 +1,109 @@
 <div class="container-fluid" style="height: 100%;  overflow:hidden;">
-    <div class="clr-row flex-items-xs-between" style="height: 100%;">
-        <div class="clr-col-md-10 text-center animate flex-column" style="height: 100%; padding: 25px; overflow: auto;"
+    <div class="clr-row flex-items-xs-between animate" style="height: 100%;">
+        <div class="clr-col-12 text-center  flex-column" style="padding: 25px 25px 0 25px; overflow: auto;"
              *ngIf="aService.selected.getValue().name">
             {{aService.selected.getValue().name}}
+
+
+            <div>
+                <div class="balance free-title">
+                    BALANCE
+                    <ng-container *ngIf="aService.activeChain.name === 'EOS MAINNET'">
+                        ${{(fullBalance) * aService.usd_rate | number: '1.2-2'}}
+                    </ng-container>
+                </div>
+                <div class="eos highlight-primary special-font font-weight-bold">
+                    {{fullBalance | number: '1.0-' +
+                aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                </div>
+                <div class="infos free-title">
+                    <span style="padding-right: 15px">
+                      <fa-icon
+                              [icon]="['far', 'lock']"></fa-icon>&nbsp;Staked
+                        <span>{{staked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}</span>
+                    </span>
+                    |
+                    <span style="padding-left: 15px">
+							  <fa-icon [icon]="['far', 'lock-open']"></fa-icon>&nbsp;Unstaked
+                        <span>
+                            {{unstaked | number: '1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}}
+                        </span>
+                        <span *ngIf="unstaking > 0">(+{{(unstaking) | number :'1.0-' +
+                        aService.activeChain['precision']}} {{aService.activeChain['symbol']}} {{unstakeTime}})
+                        </span>
+                    </span>
+                </div>
+
+            </div>
+
+
         </div>
+
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.history"></fa-icon>
+                    <div>HISTORY</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.send"></fa-icon>
+                    <div>SEND</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.history"></fa-icon>
+                    <div>RECEIVE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.memory"></fa-icon>
+                    <div>RESOURCES / STAKE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.edit"></fa-icon>
+                    <div>VOTE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.exchange"></fa-icon>
+                    <div>REX</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clr-col-6">
+            <div class="card info-card card-clickable">
+                <div class="card-block text-center">
+                    <fa-icon [icon]="icons.regular.puzzle"></fa-icon>
+                    <div>CONTRACTS</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

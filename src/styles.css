@@ -419,19 +419,23 @@ body {
 }
 
 .icon-header{
-	color: var(--header-icon-color)!important;
+	color: var(--header-icon-color) !important;
+}
+
+.icon-header clr-icon {
+	color: inherit !important;
 }
 
 .theme-icon {
-	color: var(--theme-icon-color)!important;
+	color: var(--theme-icon-color) !important;
 }
 
 .theme-icon:hover {
-	color: var(--theme-icon-color-hover)!important;
+	color: var(--theme-icon-color-hover) !important;
 }
 
 .row-top-background{
-	background-color: var(--sidenav-background) ;
+	background-color: var(--sidenav-background);
 }
 
 /*.content-area {*/
@@ -1001,15 +1005,15 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 .p-datatable .p-datatable-tbody > tr {
 	color: var(--table-td-color) !important;
 	background-color: var(--table-tr-background) !important;
-	border-top: 0px !important;
-	border-left: 0px !important;
-	border-right: 0px !important;
+	border-top: 0 !important;
+	border-left: 0 !important;
+	border-right: 0 !important;
 	border-bottom: var(--tr-border-bottom-color)!important;
 }
 .p-datatable .p-datatable-tbody > tr > td {
-	border: 0px !important;
+	border: 0 !important;
 	color: var(--table-th-color) !important;
-	background-color: var(--table-th-background) !important;
+	background-color: inherit;
 	padding: 0.571rem 0.16rem !important;
 }
 
