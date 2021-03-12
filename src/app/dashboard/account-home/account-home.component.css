@@ -1,3 +1,10 @@
+.homepage-row {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1250px;
+    margin-bottom: 20px;
+}
+
 .balance {
     font-size: 25px;
     margin-bottom: 19px;
@@ -23,9 +30,61 @@
     font-size: 15px;
 }
 
+::ng-deep .receive-toggle {
+    margin-top: 36px !important;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header-title {
+	text-align: center;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header {
+    height: 65px;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header .mat-content {
+    height: unset !important;
+}
+
+.info-card {
+    height: calc(100% - 1.55rem);
+}
+
 .card-clickable:hover {
     cursor: pointer;
     background-color: var(--info-card-bg-hover);
     transition: background-color 0.3s;
     -webkit-transition: background-color 0.3s;
+}
+
+.btn-card-title {
+    font-size: 24px;
+    margin-top: 10px;
+    letter-spacing: 2px;
+    color: var(--text-card-title-color);
+}
+
+.btn-card-icon {
+    font-size: 24px;
+    filter: drop-shadow(1px 3px 1px var(--main-background));
+    color: var(--text-card-title-color);
+}
+
+.btn-card-body {
+    margin-top: 10px;
+}
+
+.bullet-point {
+    font-size: 6px;
+}
+
+::ng-deep .bullet-point svg {
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+    margin-right: 2px;
+    color: var(--text-highlight-primary);
 }

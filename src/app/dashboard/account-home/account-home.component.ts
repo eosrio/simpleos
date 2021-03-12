@@ -3,15 +3,14 @@ import {AccountsService} from '../../services/accounts.service';
 import {Subscription} from 'rxjs';
 import {NetworkService} from '../../services/network.service';
 import * as moment from 'moment';
-import {faHome} from '@fortawesome/pro-regular-svg-icons/faHome';
 import {faHistory} from '@fortawesome/pro-regular-svg-icons/faHistory';
 import {faPaperPlane} from '@fortawesome/pro-regular-svg-icons/faPaperPlane';
 import {faMemory} from '@fortawesome/pro-regular-svg-icons/faMemory';
 import {faEdit} from '@fortawesome/pro-regular-svg-icons/faEdit';
-import {faLock} from '@fortawesome/pro-regular-svg-icons/faLock';
 import {faExchangeAlt} from '@fortawesome/pro-regular-svg-icons/faExchangeAlt';
 import {faPuzzlePiece} from '@fortawesome/pro-regular-svg-icons/faPuzzlePiece';
-import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
+import {faSquare} from '@fortawesome/pro-solid-svg-icons/faSquare';
+import {faArrowToBottom} from '@fortawesome/pro-regular-svg-icons/faArrowToBottom';
 
 @Component({
 	selector: 'app-account-home',
@@ -21,17 +20,16 @@ import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
 export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
 	icons = {
 		regular: {
-			home: faHome,
 			history: faHistory,
 			send: faPaperPlane,
 			memory: faMemory,
 			edit: faEdit,
-			lock: faLock,
 			exchange: faExchangeAlt,
-			puzzle: faPuzzlePiece
+			puzzle: faPuzzlePiece,
+			arrowBottom: faArrowToBottom,
 		},
 		solid: {
-			heart: faHeart
+			square: faSquare
 		},
 	};
 

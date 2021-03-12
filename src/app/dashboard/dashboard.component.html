@@ -106,19 +106,15 @@
                    [routerLink]="['send']">
                     <fa-icon [icon]="faIcons.regular.send"></fa-icon>&nbsp;&nbsp;SEND
                 </a>
-                <a *ngIf="network.activeChain.features['resource']" class="nav-link" routerLinkActive="active"
+                <a *ngIf="network.activeChain.features['resource'] || network.activeChain.features['staking']" class="nav-link" routerLinkActive="active"
                    [routerLink]="['ram']">
                     <fa-icon [icon]="faIcons.regular.memory"></fa-icon>&nbsp;&nbsp;RESOURCES / STAKE
                 </a>
-                <a *ngIf="network.activeChain.features['vote'] || network.activeChain.features['staking']"
+                <a *ngIf="network.activeChain.features['vote']"
                    class="nav-link" routerLinkActive="active"
                    [routerLink]="['vote']">
                     <ng-container *ngIf="network.activeChain.features['vote']">
                         <fa-icon [icon]="faIcons.regular.edit"></fa-icon>&nbsp;&nbsp;VOTE
-                    </ng-container>
-                    <ng-container
-                            *ngIf="network.activeChain.features['staking'] && !network.activeChain.features['vote']">
-                        <fa-icon [icon]="faIcons.regular.lock"></fa-icon>&nbsp;&nbsp;STAKE
                     </ng-container>
                 </a>
                 <a *ngIf="network.activeChain.features['rex']" class="nav-link" routerLinkActive="active"

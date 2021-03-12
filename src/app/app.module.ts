@@ -164,6 +164,7 @@ import {ArrayTypeComponent} from './type/array-type/array-type.component';
 import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
 import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
 import { AccountHomeComponent } from './dashboard/account-home/account-home.component';
+import {MatExpansionModule} from '@angular/material/expansion';
 
 @NgModule({
 	declarations: [
@@ -243,6 +244,7 @@ import { AccountHomeComponent } from './dashboard/account-home/account-home.comp
 		MatDatepickerModule,
 		MatSlideToggleModule,
 		MatTreeModule,
+		MatExpansionModule,
 		ReactiveFormsModule,
 		NgxMaskModule.forRoot(),
 		NgxEchartsModule.forRoot({echarts}),

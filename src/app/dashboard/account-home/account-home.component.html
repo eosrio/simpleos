@@ -1,6 +1,6 @@
-<div class="container-fluid" style="height: 100%;  overflow:hidden;">
-    <div class="clr-row flex-items-xs-between animate" style="height: 100%;">
-        <div class="clr-col-12 text-center  flex-column" style="padding: 25px 25px 0 25px; overflow: auto;"
+<div class="container-fluid" style="height: 100%; overflow-x:hidden;">
+    <div class="clr-row homepage-row animate">
+        <div class="clr-col-12 text-center  flex-column" style="padding: 25px 25px 0 25px; "
              *ngIf="aService.selected.getValue().name">
             {{aService.selected.getValue().name}}
 
@@ -38,69 +38,151 @@
 
             </div>
 
+        </div>
 
+        <div class="clr-col-12">
+
+            <mat-accordion>
+                <mat-expansion-panel togglePosition="before" class="receive-toggle">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div class="btn-card-title" style=" margin-bottom: 10px; text-align: center; width: 100%;">
+                                <fa-icon class="btn-card-icon" [icon]="icons.regular.arrowBottom" style="margin-right: 5px"></fa-icon> RECEIVE
+                            </div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div>To receive tokens make a transfer to
+                        <span class="highlight-primary" *ngIf="aService.selected.getValue().name">{{aService.selected.getValue().name}}</span></div>
+                </mat-expansion-panel>
+            </mat-accordion>
         </div>
 
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['history']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','wallet']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.history"></fa-icon>
-                    <div>HISTORY</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.history"></fa-icon>
+                    <div class="btn-card-title">HISTORY</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            See your transaction history
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            See the airdrops made to you and all your tokens
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['send']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','send']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.send"></fa-icon>
-                    <div>SEND</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.send"></fa-icon>
+                    <div class="btn-card-title">SEND</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Send transactions
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Save contacts
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['resource'] || network.activeChain.features['staking']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','ram']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.history"></fa-icon>
-                    <div>RECEIVE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.memory"></fa-icon>
+                    <div class="btn-card-title">RESOURCES / STAKE</div>
+
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Manage your account resources (CPU, NET and RAM)
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Stake / Unstake your {{aService.activeChain['symbol']}}
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Delegate external resources
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Power up your account
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['vote']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','vote']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.memory"></fa-icon>
-                    <div>RESOURCES / STAKE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.edit"></fa-icon>
+                    <div class="btn-card-title">VOTE</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Vote for block producers
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Chose a Proxy to vote on your behalf
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['rex']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','rex']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.edit"></fa-icon>
-                    <div>VOTE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.exchange"></fa-icon>
+                    <div class="btn-card-title">REX</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Earn tokens using REX (EOS Resource Exchange)
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Buy / Sell REX
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Borrow resources (CPU & Net) paying a small EOS fee
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-6" *ngIf="network.activeChain.features['dapps']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','dapp']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.exchange"></fa-icon>
-                    <div>REX</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
-                <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.puzzle"></fa-icon>
-                    <div>CONTRACTS</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.puzzle"></fa-icon>
+                    <div class="btn-card-title">CONTRACTS</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Interact with Dapp's contracts
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Perfom Dapp's registered actions
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
