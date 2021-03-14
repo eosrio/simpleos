@@ -3,15 +3,18 @@ import {AccountsService} from '../../services/accounts.service';
 import {Subscription} from 'rxjs';
 import {NetworkService} from '../../services/network.service';
 import * as moment from 'moment';
-import {faHome} from '@fortawesome/pro-regular-svg-icons/faHome';
 import {faHistory} from '@fortawesome/pro-regular-svg-icons/faHistory';
 import {faPaperPlane} from '@fortawesome/pro-regular-svg-icons/faPaperPlane';
 import {faMemory} from '@fortawesome/pro-regular-svg-icons/faMemory';
 import {faEdit} from '@fortawesome/pro-regular-svg-icons/faEdit';
-import {faLock} from '@fortawesome/pro-regular-svg-icons/faLock';
 import {faExchangeAlt} from '@fortawesome/pro-regular-svg-icons/faExchangeAlt';
 import {faPuzzlePiece} from '@fortawesome/pro-regular-svg-icons/faPuzzlePiece';
-import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
+import {faSquare} from '@fortawesome/pro-solid-svg-icons/faSquare';
+import {faArrowToBottom} from '@fortawesome/pro-regular-svg-icons/faArrowToBottom';
+import {faTimes} from '@fortawesome/pro-solid-svg-icons/faTimes';
+import {faClone} from '@fortawesome/pro-regular-svg-icons/faClone';
+import {NotificationService} from '../../services/notification.service';
+import {faQuestionCircle} from '@fortawesome/pro-regular-svg-icons/faQuestionCircle';
 
 @Component({
 	selector: 'app-account-home',
@@ -21,17 +24,19 @@ import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
 export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
 	icons = {
 		regular: {
-			home: faHome,
 			history: faHistory,
 			send: faPaperPlane,
 			memory: faMemory,
 			edit: faEdit,
-			lock: faLock,
 			exchange: faExchangeAlt,
-			puzzle: faPuzzlePiece
+			puzzle: faPuzzlePiece,
+			arrowBottom: faArrowToBottom,
+			clone: faClone,
+			questionCircle: faQuestionCircle,
 		},
 		solid: {
-			heart: faHeart
+			square: faSquare,
+			times: faTimes
 		},
 	};
 
@@ -49,7 +54,8 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	constructor(public aService: AccountsService,
 	            public network: NetworkService,
-	            private cdr: ChangeDetectorRef) {
+	            private cdr: ChangeDetectorRef,
+	            private toaster: NotificationService) {
 		this.staked = 0;
 		this.unstaked = 0;
 	}
@@ -124,6 +130,24 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
 	}
 
+	removeElementWithTransition(target: HTMLDivElement, divBelow: HTMLDivElement) {
+		divBelow.classList.add('animated-translation');
+		target.classList.add('animate__animated', 'animate__fadeOutUp');
+		divBelow.style.transform = `translateY(-${target.getBoundingClientRect().height}px)`;
+		setTimeout(() => {
+			divBelow.classList.remove('animated-translation');
+			target.remove();
+			divBelow.style.transform = '';
+		}, 1000);
+	}
+
+	cc(text) {
+		window['navigator']['clipboard']['writeText'](text).then(() => {
+			this.toaster.onSuccess(`Address ${text} copied to clipboard!`, '');
+		}).catch(() => {
+			this.toaster.onError('Copy to clipboard didn\'t work!', 'Please try other way.');
+		});
+	}
 }
 
 

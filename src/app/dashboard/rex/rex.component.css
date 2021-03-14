@@ -151,7 +151,7 @@
 }
 
 .howto-item {
-	padding: 0 8px 8px 0;
+	padding: 0 8px 12px 0;
 }
 
 .first-card {
@@ -220,4 +220,17 @@
 .auto-row {
 	margin-left: auto;
 	margin-right: auto;
+}
+
+::ng-deep .rex-faq {
+	margin-top: 24px !important;
+}
+
+::ng-deep .rex-faq .mat-expansion-panel-header-title {
+	font-size: 16px;
+	font-weight: 600;
+}
+
+::ng-deep .rex-faq .mat-expansion-panel-content {
+	font-size: 15px;
 }

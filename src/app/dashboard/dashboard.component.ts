@@ -18,15 +18,15 @@ import {AnimationOptions} from 'ngx-lottie';
 import {compare2FormPasswords} from '../helpers/aux_functions';
 import {ImportModalComponent} from '../import-modal/import-modal.component';
 import {Router} from '@angular/router';
-import {faHome} from "@fortawesome/pro-regular-svg-icons/faHome";
-import {faHistory} from "@fortawesome/pro-regular-svg-icons/faHistory";
-import {faPaperPlane} from "@fortawesome/pro-regular-svg-icons/faPaperPlane";
-import {faMemory} from "@fortawesome/pro-regular-svg-icons/faMemory";
-import {faEdit} from "@fortawesome/pro-regular-svg-icons/faEdit";
-import {faLock} from "@fortawesome/pro-regular-svg-icons/faLock";
-import {faExchangeAlt} from "@fortawesome/pro-regular-svg-icons/faExchangeAlt";
-import {faPuzzlePiece} from "@fortawesome/pro-regular-svg-icons/faPuzzlePiece";
-import {faHeart} from "@fortawesome/pro-solid-svg-icons/faHeart";
+import {faHome} from '@fortawesome/pro-regular-svg-icons/faHome';
+import {faHistory} from '@fortawesome/pro-regular-svg-icons/faHistory';
+import {faPaperPlane} from '@fortawesome/pro-regular-svg-icons/faPaperPlane';
+import {faMemory} from '@fortawesome/pro-regular-svg-icons/faMemory';
+import {faEdit} from '@fortawesome/pro-regular-svg-icons/faEdit';
+import {faLock} from '@fortawesome/pro-regular-svg-icons/faLock';
+import {faExchangeAlt} from '@fortawesome/pro-regular-svg-icons/faExchangeAlt';
+import {faPuzzlePiece} from '@fortawesome/pro-regular-svg-icons/faPuzzlePiece';
+import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
 
 @Component({
 	selector: 'app-dashboard',
@@ -141,7 +141,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 		solid: {
 			heart: faHeart
 		}
-	}
+	};
 
 	constructor(
 		public eosjs: Eosjs2Service,

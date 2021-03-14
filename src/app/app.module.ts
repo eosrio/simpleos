@@ -20,6 +20,7 @@ import {ResourcesComponent} from './dashboard/acc_resources/resources.component'
 import {RexComponent} from './dashboard/rex/rex.component';
 import {ThousandSuffixesPipe} from './dashboard/rex/thousand-suffixes.pipe';
 import {DappComponent} from './dashboard/dapp/dapp.component';
+import {AccountHomeComponent} from './dashboard/account-home/account-home.component';
 import {InputModalComponent} from './input-modal/input-modal.component';
 import {ImportModalComponent} from './import-modal/import-modal.component';
 import {KeygenModalComponent} from './keygen-modal/keygen-modal.component';
@@ -50,6 +51,7 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTreeModule} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatExpansionModule} from '@angular/material/expansion';
 
 // import {MaterialDesignFrameworkModule} from "@ajsf/material";
 
@@ -88,7 +90,7 @@ import {NotificationService} from './services/notification.service';
 // FontAwesome Imports
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
-// FAS
+// FAS - Solid Pro
 import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
 import {faTh} from '@fortawesome/pro-solid-svg-icons/faTh';
 import {faCaretDown} from '@fortawesome/pro-solid-svg-icons/faCaretDown';
@@ -96,6 +98,7 @@ import {faSkullCrossbones} from '@fortawesome/pro-solid-svg-icons/faSkullCrossbo
 import {faKey} from '@fortawesome/pro-solid-svg-icons/faKey';
 import {faExclamationTriangle} from '@fortawesome/pro-solid-svg-icons/faExclamationTriangle';
 import {faGlobe} from '@fortawesome/pro-solid-svg-icons/faGlobe';
+import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
 // FAL - Light Pro
 import {faArrowAltToBottom} from '@fortawesome/pro-light-svg-icons/faArrowAltToBottom';
 import {faChevronCircleUp} from '@fortawesome/pro-light-svg-icons/faChevronCircleUp';
@@ -152,6 +155,7 @@ import {faUserPlus} from '@fortawesome/pro-regular-svg-icons/faUserPlus';
 import {faUserEdit} from '@fortawesome/pro-regular-svg-icons/faUserEdit';
 import {faExternalLink} from '@fortawesome/pro-regular-svg-icons/faExternalLink';
 import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
+import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
 
 export function playerFactory() {
 	return player;
@@ -161,9 +165,8 @@ import {FormlyModule} from '@ngx-formly/core';
 import {FormlyMaterialModule} from '@ngx-formly/material';
 import {ObjectTypeComponent} from './type/object-type/object-type.component';
 import {ArrayTypeComponent} from './type/array-type/array-type.component';
-import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
-import {faLightbulbOn} from '@fortawesome/pro-solid-svg-icons/faLightbulbOn';
-import { AccountHomeComponent } from './dashboard/account-home/account-home.component';
+
+
 
 @NgModule({
 	declarations: [
@@ -243,6 +246,7 @@ import { AccountHomeComponent } from './dashboard/account-home/account-home.comp
 		MatDatepickerModule,
 		MatSlideToggleModule,
 		MatTreeModule,
+		MatExpansionModule,
 		ReactiveFormsModule,
 		NgxMaskModule.forRoot(),
 		NgxEchartsModule.forRoot({echarts}),

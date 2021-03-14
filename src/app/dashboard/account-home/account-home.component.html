@@ -1,8 +1,10 @@
-<div class="container-fluid" style="height: 100%;  overflow:hidden;">
-    <div class="clr-row flex-items-xs-between animate" style="height: 100%;">
-        <div class="clr-col-12 text-center  flex-column" style="padding: 25px 25px 0 25px; overflow: auto;"
+<div class="container-fluid" style="height: 100%; overflow-x:hidden;">
+    <div class="clr-row homepage-row animate">
+
+        <div class="clr-col-12 text-center  flex-column" style="padding: 25px 25px 0 25px; "
              *ngIf="aService.selected.getValue().name">
-            {{aService.selected.getValue().name}}
+            <div style="margin-bottom: 10px" class="text-faded">selected account <b
+                    class="highlight-primary to-uppercase">{{aService.selected.getValue().name}}</b></div>
 
 
             <div>
@@ -38,69 +40,197 @@
 
             </div>
 
-
         </div>
 
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div #txSnack class="clr-col-12">
+            <div class="info-snackbar top-home-snackbar animate__animated animate__fadeInDown">
+                <div fxLayout="row" fxLayoutAlign="space-between center">
+                    <div>You have <b>1</b> of <b>3</b> free transactions for today!
+                        <fa-icon [icon]="icons.regular.questionCircle" class="question-icon"
+                                 style="font-size: 15px;"
+                                 [matTooltip]="'Transactions in EOSIO cost resources' + '\n\n' +
+                                 'EOS Rio is sponsoring 5 transactions per day' + '\n\n' +
+													'The only requirement is to vote for us as Block Producers so we can keep funding these awesome features 😉'"
+                                 matTooltipClass="black-tooltip wider-tooltip">
+                        </fa-icon>
+
+                    </div>
+                    <a class="close-btn" (click)="removeElementWithTransition(txSnack,divBelow)">
+                        <fa-icon [icon]="icons.solid.times"></fa-icon>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div #divBelow class="clr-row homepage-row animate mb-20">
+
+
+        <div class="clr-col-12 animated-translation">
+
+            <mat-accordion>
+                <mat-expansion-panel togglePosition="before" class="receive-toggle">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div class="btn-card-title" style=" margin-bottom: 10px; text-align: center; width: 100%;">
+                                <fa-icon class="btn-card-icon" [icon]="icons.regular.arrowBottom"
+                                         style="margin-right: 5px"></fa-icon>
+                                RECEIVE
+                            </div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+
+                    <div fxLayout="row">
+                        <div></div>
+                        <div>
+                            <div class="highlight">To receive tokens make a transfer to your address
+                                <span class="accname-field">
+                                    <b class="highlight-primary letter-spacing"
+                                    *ngIf="aService.selected.getValue().name">{{aService.selected.getValue().name}}</b>
+
+                                    <a class="acc-copy">
+                                        <fa-icon [icon]="icons.regular.clone"
+                                                 (click)="cc(aService.selected.getValue().name)" matTooltip="copy"
+                                                 matTooltipClass="black-tooltip">
+                                        </fa-icon>
+                                    </a>
+                                </span>
+                            </div>
+                            <div style="margin-top: 20px">Or scan the qrcode in the left</div>
+                        </div>
+
+                    </div>
+                </mat-expansion-panel>
+            </mat-accordion>
+        </div>
+
+
+        <div class="clr-col-sm-6 clr-col-12" *ngIf="network.activeChain.features['history']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','wallet']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.history"></fa-icon>
-                    <div>HISTORY</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.history"></fa-icon>
+                    <div class="btn-card-title">HISTORY</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            See your transaction history
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            See the airdrops made to you and all your tokens
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-sm-6 clr-col-12" *ngIf="network.activeChain.features['send']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','send']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.send"></fa-icon>
-                    <div>SEND</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.send"></fa-icon>
+                    <div class="btn-card-title">SEND</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Send transactions
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Save contacts
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-sm-6 clr-col-12"
+             *ngIf="network.activeChain.features['resource'] || network.activeChain.features['staking']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','ram']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.history"></fa-icon>
-                    <div>RECEIVE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.memory"></fa-icon>
+                    <div class="btn-card-title">RESOURCES / STAKE</div>
+
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Manage your account resources (CPU, NET and RAM)
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Stake / Unstake your {{aService.activeChain['symbol']}}
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Delegate external resources
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Power up your account
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-sm-6 clr-col-12" *ngIf="network.activeChain.features['vote']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','vote']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.memory"></fa-icon>
-                    <div>RESOURCES / STAKE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.edit"></fa-icon>
+                    <div class="btn-card-title">VOTE</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Vote for block producers
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Chose a Proxy to vote on your behalf
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-sm-6 clr-col-12" *ngIf="network.activeChain.features['rex']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','rex']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.edit"></fa-icon>
-                    <div>VOTE</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.exchange"></fa-icon>
+                    <div class="btn-card-title">REX</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Earn tokens using REX (EOS Resource Exchange)
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Buy / Sell REX
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Borrow resources (CPU & Net) paying a small EOS fee
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
+        <div class="clr-col-sm-6 clr-col-12" *ngIf="network.activeChain.features['dapps']">
+            <div class="card info-card card-clickable" [routerLink]="['','dashboard','dapp']">
                 <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.exchange"></fa-icon>
-                    <div>REX</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="clr-col-6">
-            <div class="card info-card card-clickable">
-                <div class="card-block text-center">
-                    <fa-icon [icon]="icons.regular.puzzle"></fa-icon>
-                    <div>CONTRACTS</div>
+                    <fa-icon class="btn-card-icon" [icon]="icons.regular.puzzle"></fa-icon>
+                    <div class="btn-card-title">CONTRACTS</div>
+                    <div class="btn-card-body">
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Interact with Dapp's contracts
+                        </div>
+                        <div>
+                            <fa-icon [icon]="icons.solid.square" class="bullet-point"></fa-icon>
+                            Perfom Dapp's registered actions
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

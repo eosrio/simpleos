@@ -75,43 +75,47 @@
 								</div>
 							</div>
 
-							<div class="card info-card" style="margin-bottom: 5px;">
-								<div class="card-block" style="padding: 0;">
-									<p-accordion class="howto nohighlight-accordion">
-										<p-accordionTab
-											header="How to earn with REX - {{aService.activeChain['symbol']}} Resource Exchange?">
-											<div class="howto-item"><span class="highlight-primary">1.</span> Lend
-												your {{aService.activeChain['symbol']}} to a pool
-												(buy REX)
-												to earn a share of this pool's
-												income.
+							<mat-accordion>
+								<mat-expansion-panel togglePosition="before" class="rex-faq">
+									<mat-expansion-panel-header>
+										<mat-panel-title>
+											<div class="matacc-card-title">
+												How to earn with REX - {{aService.activeChain['symbol']}} Resource Exchange?
 											</div>
-											<div class="howto-item"><span class="highlight-primary">2.</span> Dapps and Developers
-												can borrow
-												resources from this pool by
-												paying {{aService.activeChain['symbol']}}.
-											</div>
-											<div class="howto-item"><span class="highlight-primary">3.</span> When you buy REX, you
-												have to wait
-												4 to 5 days to sell the REX.
-												(midnight UTC 4 days after you bought, so it may take a little more than
-												4 days!)
-											</div>
-											<div class="howto-item"><span class="highlight-primary">4.</span> Sell the REX when you
-												are ready to
-												get your {{aService.activeChain['symbol']}} back. You will
-												receive original amount + interest.
-											</div>
-											<div class="howto-item" style="margin-top: 15px">You are guaranteed at least
-												100% of
-												your original
-												amount back, as your REX represents the share
-												of {{aService.activeChain['symbol']}} you lent to the pool.
-											</div>
-										</p-accordionTab>
-									</p-accordion>
-								</div>
-							</div>
+										</mat-panel-title>
+									</mat-expansion-panel-header>
+									<div>
+										<div class="howto-item"><span class="highlight-primary">1.</span> Lend
+											your {{aService.activeChain['symbol']}} to a pool
+											(buy REX)
+											to earn a share of this pool's
+											income.
+										</div>
+										<div class="howto-item"><span class="highlight-primary">2.</span> Dapps and Developers
+											can borrow
+											resources from this pool by
+											paying {{aService.activeChain['symbol']}}.
+										</div>
+										<div class="howto-item"><span class="highlight-primary">3.</span> When you buy REX, you
+											have to wait
+											4 to 5 days to sell the REX.
+											(midnight UTC 4 days after you bought, so it may take a little more than
+											4 days!)
+										</div>
+										<div class="howto-item"><span class="highlight-primary">4.</span> Sell the REX when you
+											are ready to
+											get your {{aService.activeChain['symbol']}} back. You will
+											receive original amount + interest.
+										</div>
+										<div class="howto-item" style="margin-top: 15px">You are guaranteed at least
+											100% of
+											your original
+											amount back, as your REX represents the share
+											of {{aService.activeChain['symbol']}} you lent to the pool.
+										</div>
+									</div>
+								</mat-expansion-panel>
+							</mat-accordion>
 
 							<div class="card info-card buyrex" style="margin-bottom: 5px;">
 								<div class="clr-row">

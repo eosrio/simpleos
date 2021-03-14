@@ -1,3 +1,47 @@
+.homepage-row {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1250px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/*SNACKBAR START*/
+::ng-deep .top-home-snackbar {
+    margin-top: 25px !important;
+}
+
+.info-snackbar {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-color);
+    border-radius: 4px;
+    padding: 14px 16px;
+    min-height: 48px;
+    transform-origin: center;
+    box-shadow: 0 3px 5px -1px rgb(0 0 0 / 20%), 0 6px 10px 0 rgb(0 0 0 / 14%), 0 1px 18px 0 rgb(0 0 0 / 12%);
+}
+
+.close-btn {
+    cursor: pointer;
+    padding: 0 13px;
+}
+
+.close-btn:hover {
+    color: var(--btn-primary-hover);
+    transition: color 0.3s;
+    -webkit-transition: color 0.3s;
+}
+
+.question-icon {
+    color: var(--btn-primary-hover);
+    cursor:pointer;
+    margin-left: 5px;
+    font-size: 16px;
+}
+/*SNACKBAR ENDS*/
+
 .balance {
     font-size: 25px;
     margin-bottom: 19px;
@@ -23,9 +67,83 @@
     font-size: 15px;
 }
 
+
+/*RECEIVE TOGGLE MATERIAL EXPANSION PANEL START*/
+::ng-deep .receive-toggle {
+    margin-top: 25px !important;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header-title {
+	text-align: center;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header {
+    height: 65px;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-header .mat-content {
+    height: unset !important;
+}
+
+::ng-deep .receive-toggle .mat-expansion-panel-body {
+    font-size: 15px;
+    font-family: var(--main-font-family);
+}
+
+.accname-field {
+    /*padding: 5px 7px;*/
+}
+
+.acc-copy {
+    margin-left: 5px;
+    cursor: pointer;
+
+}
+/*RECEIVE TOGGLE MATERIAL EXPANSION PANEL END*/
+
+.info-card {
+    height: calc(100% - 1.55rem);
+}
+
 .card-clickable:hover {
     cursor: pointer;
     background-color: var(--info-card-bg-hover);
     transition: background-color 0.3s;
     -webkit-transition: background-color 0.3s;
+}
+
+.btn-card-title {
+    font-size: 24px;
+    margin-top: 10px;
+    letter-spacing: 2px;
+    color: var(--text-card-title-color);
+}
+
+.btn-card-icon {
+    font-size: 24px;
+    filter: drop-shadow(1px 3px 1px var(--main-background));
+    color: var(--text-card-title-color);
+}
+
+.btn-card-body {
+    margin-top: 10px;
+}
+
+.bullet-point {
+    font-size: 6px;
+}
+
+::ng-deep .bullet-point svg {
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+    margin-right: 2px;
+    color: var(--text-highlight-primary);
+}
+
+.animated-translation {
+    transition: 1s ease-in-out;
 }

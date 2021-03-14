@@ -81,6 +81,7 @@
 	--btn-accent-link-bg-hover: var(--white-color);
 
 	/*typography*/
+	--main-font-family: Metropolis;
 	--special-font-regular: inherit;
 	--special-font-bold: inherit;
 	--special-font-italic: inherit;
@@ -280,6 +281,15 @@ body {
 
 .bold {
 	font-weight: 500;
+}
+
+.to-uppercase {
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.letter-spacing {
+	letter-spacing: 1px;
 }
 /*classes for colors end*/
 
@@ -787,6 +797,31 @@ input:not([readonly]) {
 	color: var(--text-highlight);
 }
 
+/*Material's expansion panel*/
+.mat-expansion-panel {
+	background: var(--info-card-background);
+	color: var(--text-card-color);
+}
+
+.mat-expansion-panel .mat-expansion-panel-header-title, .mat-expansion-panel .mat-expansion-panel-content {
+	color: inherit;
+}
+
+.mat-expansion-panel .mat-expansion-indicator::after {
+	color: inherit;
+}
+
+/*.mat-expansion-panel-header-title {*/
+/*	color: var(--text-card-title-color);*/
+/*}*/
+
+.mat-expansion-panel:hover {
+	background-color: var(--info-card-bg-hover);
+	transition: background-color 0.3s;
+	-webkit-transition: background-color 0.3s;
+}
+
+
 /*Prime's accordion*/
 .p-accordion .p-accordion-content {
 	border: 0 !important;
@@ -1125,6 +1160,10 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 	white-space: pre-line;
 }
 
+.wider-tooltip {
+	max-width: 300px !important;
+}
+
 .mat-form-field-suffix a {
 	color: inherit;
 }
@@ -1207,7 +1246,6 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 	-webkit-hyphens: auto !important;
 	hyphens: auto !important;
 }
-
 
 /*
 	CHANGE DIRECTLY in the package node_module/ng-snotify/styles/{THEME}/icons.scss  (class used .snotify-icon--info)
