@@ -52,8 +52,14 @@ class ClaimRewardsService {
     if (fs.existsSync(basePath + '/autoclaim.json')) {
       const autoclaimConfStr = fs.readFileSync(cPath, 'utf8');
       if (autoclaimConfStr !== '') {
-        const autoclaimConf = JSON.parse(fs.readFileSync(cPath).toString());
-        this.autoClaimEnabled = autoclaimConf['enabled'];
+        const autoclaimContentFile = fs.readFileSync(cPath).toString();
+        if(autoclaimContentFile.includes('{') > 10 ){
+          const autoclaimConf = JSON.parse(fs.readFileSync(cPath).toString());
+          this.autoClaimEnabled = autoclaimConf['enabled'];
+        }else{
+          this.autoClaimEnabled = false;
+        }
+
         if (!this.autoClaimEnabled) {
           ClaimRewardsService.unlinkFile(this.lockAutoLaunchFile);
         }
