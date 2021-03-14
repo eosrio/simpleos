@@ -28,7 +28,9 @@ export class ConfirmModalComponent {
 	public mode = 'local';
 	public errormsg: any = {'friendly': '', 'origin': ''};
 	public busy = false;
-	public useFreeTransaction = '1';
+	public useFreeTransaction = '0';
+	public useBorrowRex = '0';
+	public countLoopUse = 0;
 	options;
 	labelHtml;
 	public loadResource = false;
@@ -72,9 +74,27 @@ export class ConfirmModalComponent {
 		});
 	}
 
-	toggleHelp(e) {
-		if (e.target.value !== undefined) {
-			this.useFreeTransaction = e.target.value;
+	toggleHelp(e, isFree) {
+		if (e.value !== undefined) {
+			if(isFree){
+				this.useFreeTransaction = e.value;
+				if(this.useFreeTransaction === '0'  && this.modalData.resourceInfo['needResources']  && this.countLoopUse < 2){
+					this.countLoopUse++;
+					this.useBorrowRex = '1';
+				}else{
+					this.countLoopUse = 0;
+				}
+			} else{
+				this.useBorrowRex = e.value;
+				if(this.useBorrowRex === '0' && this.modalData.resourceInfo['relay'] && this.countLoopUse < 2){
+					this.countLoopUse++;
+					this.useFreeTransaction = '1';
+				}else{
+					this.countLoopUse = 0;
+				}
+			}
+
+			this.cdr.detectChanges();
 		}
 	}
 
@@ -84,6 +104,12 @@ export class ConfirmModalComponent {
 		const result = await this.resource.getActions(auth);
 		this.modalData.resourceTransactionPayload = {actions: result};
 		this.loadResource = false;
+		if(this.modalData.resourceInfo["relay"]){
+			this.useFreeTransaction = '1';
+			this.useBorrowRex = '0';
+		}else{
+			this.useBorrowRex = '1';
+		}
 		this.cdr.detectChanges();
 		console.log(Date(), this.loadResource);
 	}

@@ -37,8 +37,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     hasRex: boolean;
     hasVote: boolean;
     valuetoStake: string;
-    percenttoStake: string;
-    minToStake = 0.01;
     unstaking: number;
     unstakeTime: string;
     stakeModal: boolean;
@@ -153,7 +151,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.minstake = false;
         this.busyList = false;
         this.valuetoStake = '';
-        this.percenttoStake = '';
         this.unstaking = 0;
         this.unstakeTime = '';
         this.stakeModal = false;
@@ -259,7 +256,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         if (this.aService.activeChain.features['vote']) {
             this.setCheckListVote(selectedAcc.name);
         }
-        this.getCurrentStake();
     }
 
     ngOnDestroy(): void {
@@ -304,12 +300,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
 
             if (this.totalBalance > 0) {
-                this.minToStake = 100 / this.totalBalance;
                 this.valuetoStake = this.stakedBalance.toString();
             } else {
-                this.minToStake = 0;
                 this.valuetoStake = '0';
-                this.percenttoStake = '0';
             }
             this.cpu_weight = selected.details.total_resources.cpu_weight;
             this.net_weight = selected.details.total_resources.net_weight;
@@ -320,10 +313,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.cpu_self = '';
                 this.net_self = '';
             }
-
-            console.log(selected);
-            this.updateStakePercent();
-
             if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
                 this.loadPlacedVotes(selected);
                 this.cpu_weight = selected.details.total_resources.cpu_weight;
@@ -584,81 +573,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
             }
         });
-    }
-
-    getCurrentStake() {
-        if (this.totalBalance > 0) {
-            this.percenttoStake = ((this.stakedBalance / this.totalBalance) *
-                100).toString();
-        }
-        this.valuetoStake = this.stakedBalance.toString();
-    }
-
-    updateStakeValue() {
-        this.stakedisabled = false;
-        this.minstake = false;
-        this.valuetoStake = (this.totalBalance *
-            (parseFloat(this.percenttoStake) / 100)).toString();
-        if (this.valuetoStake === '1') {
-            this.minstake = true;
-        }
-    }
-
-    updateStakePercent() {
-        this.stakedisabled = false;
-        if (this.totalBalance > 0) {
-            this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) /
-                this.totalBalance).toString();
-        }
-    }
-
-    checkPercent() {
-        this.minstake = false;
-        let min;
-        if (this.totalBalance > 0) {
-            min = 100 / this.totalBalance;
-        } else {
-            min = 0;
-        }
-        if (parseFloat(this.percenttoStake) <= min) {
-            this.percenttoStake = min.toString();
-            this.updateStakeValue();
-            this.minstake = true;
-        }
-        if (parseFloat(this.percenttoStake) > 100) {
-            this.percenttoStake = '100';
-            this.updateStakeValue();
-        }
-    }
-
-    checkValue() {
-        this.minstake = false;
-        if (parseFloat(this.valuetoStake) <= 1) {
-            // this.valuetoStake = '1';
-            // this.updateStakePercent();
-            this.minstake = true;
-        }
-        if (parseFloat(this.valuetoStake) > this.totalBalance) {
-            this.valuetoStake = this.totalBalance.toString();
-            this.updateStakePercent();
-        }
-    }
-
-    checkValueManually(op) {
-        this.minstake = false;
-        const sum = parseFloat(this.cpu_self) +parseFloat(this.net_self);
-        if (sum <= 1) {
-            this.minstake = true;
-        }
-        if(this.isManually){
-            if (sum > this.totalBalance) {
-                if(op === 'cpu'){
-                    this.cpu_self = `${this.totalBalance - parseFloat(this.net_self)}`;
-                }else{
-                    this.net_self = `${this.totalBalance - parseFloat(this.cpu_self)}`;
-                }
-            }
-        }
     }
 
     processVotes() {

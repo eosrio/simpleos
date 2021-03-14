@@ -26,7 +26,7 @@
                 <h4 [innerHTML]="modalData.labelHTML | safe: 'html'"></h4>
             </ng-container>
 
-            <ng-container *ngIf="modalData.resourceInfo['relay']">
+            <ng-container *ngIf="modalData.resourceInfo['relay'] && useBorrowRex==='0'">
                 <mat-card class="info-resource">
                     <h5>
                         <fa-icon [icon]="['fas','lightbulb-on']"></fa-icon>
@@ -40,8 +40,8 @@
                         <br>
                         <mat-radio-group [(ngModel)]="useFreeTransaction" class="free-transaction-radio"
                                          aria-label="Select an option" color="accent">
-                            <mat-radio-button value="1">Yes, please!</mat-radio-button>
-                            <mat-radio-button value="0" style="margin-left: 20px;">No, thanks!</mat-radio-button>
+                            <mat-radio-button value="1" (change)="toggleHelp($event,true)">Yes, please!</mat-radio-button>
+                            <mat-radio-button value="0" (change)="toggleHelp($event,true)"style="margin-left: 20px;">No, thanks!</mat-radio-button>
                         </mat-radio-group>
                         <!--                    <label style="margin-right: 25px">-->
                         <!--                        <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >-->
@@ -55,7 +55,7 @@
                 </mat-card>
             </ng-container>
 
-            <ng-container *ngIf="!modalData.resourceInfo.relay && modalData.resourceInfo.needResources">
+            <ng-container *ngIf="modalData.resourceInfo['needResources'] && useFreeTransaction==='0'">
                 <mat-card class="info-resource">
                     <h5 class="modal-title ">
                         Ops, not enough resources <a role="tooltip" aria-haspopup="true"
@@ -70,16 +70,21 @@
                             class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>.
                         <br>
                         <br>
-                        <label style="margin-right: 25px">
-                            <input name="options" type="radio" value="1" (click)="toggleHelp($event)" [checked]="true"
-                                   style="margin-right: 10px">
-                            yes, please do it
-                        </label>
-                        <label>
-                            <input name="options" type="radio" value="0" (click)="toggleHelp($event)"
-                                   style="margin-right: 10px">
-                            no, thanks
-                        </label>
+                        <mat-radio-group [(ngModel)]="useBorrowRex" class="free-transaction-radio"
+                                         aria-label="Select an option" color="accent">
+                            <mat-radio-button value="1" (change)="toggleHelp($event,false)">Yes, please!</mat-radio-button>
+                            <mat-radio-button value="0" (change)="toggleHelp($event,false)" style="margin-left: 20px;">No, thanks!</mat-radio-button>
+                        </mat-radio-group>
+<!--                        <label style="margin-right: 25px">-->
+<!--                            <input name="options" type="radio" value="1" (click)="toggleHelp($event)" [checked]="true"-->
+<!--                                   style="margin-right: 10px">-->
+<!--                            yes, please do it-->
+<!--                        </label>-->
+<!--                        <label>-->
+<!--                            <input name="options" type="radio" value="0" (click)="toggleHelp($event)"-->
+<!--                                   style="margin-right: 10px">-->
+<!--                            no, thanks-->
+<!--                        </label>-->
                     </h5>
                 </mat-card>
             </ng-container>

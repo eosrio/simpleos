@@ -263,6 +263,16 @@ export class Eosjs2Service {
 		return rexpool.rows[0];
 	}
 
+	async getPowerUpState(): Promise<any> {
+		const powerUpState = await this.rpc.get_table_rows({
+			json: true,
+			code: 'eosio',
+			scope: '0',
+			table: 'powup.state',
+		});
+		return powerUpState.rows[0];
+	}
+
 	async getRexData(_account: string): Promise<any> {
 		const rexbal_rows = await this.rpc.get_table_rows({
 			json: true,
@@ -761,6 +771,7 @@ export class Eosjs2Service {
 		return this.getTableRows('eosio', 'eosio', 'global');
 	}
 
+
 	getRamMarketInfo(): Promise<any> {
 		return this.getTableRows('eosio', 'eosio', 'rammarket');
 	}
@@ -805,5 +816,65 @@ export class Eosjs2Service {
 		console.log(`Check format for account name: ${name}`);
 		// return this.format['encodeName'](name);
 		return 1;
+	}
+
+
+	priceFunction(state, utilization): number {
+
+		const maxPrice = parseFloat(state.max_price.split(' ')[0]);
+		const minPrice = parseFloat(state.min_price.split(' ')[0]);
+		let price = minPrice;
+		const new_exponent = parseFloat(state.exponent) - 1.0;
+		if (new_exponent <= 0.0) {
+			return parseFloat(state.max_price);
+		} else {
+			price += (maxPrice - minPrice) * Math.pow(utilization / parseFloat(state.weight), new_exponent);
+		}
+		return price;
+	}
+
+	priceIntegralDelta(state, start_utilization, end_utilization): number {
+		const maxPrice = parseFloat(state.max_price.split(' ')[0]);
+		const minPrice = parseFloat(state.min_price.split(' ')[0]);
+
+		const coefficient = (maxPrice - minPrice) / parseFloat(state.exponent);
+		const start_u = parseFloat(start_utilization) / parseFloat(state.weight);
+		const end_u = parseFloat(end_utilization) / parseFloat(state.weight);
+
+		return minPrice * end_u - minPrice * start_u +
+			coefficient * Math.pow(end_u, parseFloat(state.exponent)) - coefficient * Math.pow(start_u, parseFloat(state.exponent));
+	}
+
+
+	async calculateFeePowerUp(stateOp, frac, max?) {
+		let state:any;
+		const result = await this.getPowerUpState();
+		if(stateOp === 'cpu')
+			state = result.cpu;
+		else
+			state = result.net;
+
+		const amount = (frac * parseFloat(state.weight)) / parseFloat(state.initial_weight_ratio);
+
+		let start_utilization = parseFloat(state.utilization);
+		const end_utilization = start_utilization + amount;
+		const adjustedUtilization = parseFloat(state.adjusted_utilization);
+		let fee = 0.0;
+		if (start_utilization < state.adjusted_utilization) {
+			fee += this.priceFunction(state, adjustedUtilization) *
+				Math.min(amount, adjustedUtilization - start_utilization) / parseFloat(state.weight);
+			start_utilization = adjustedUtilization;
+		}
+
+		if (start_utilization < end_utilization) {
+			fee += this.priceIntegralDelta(state, start_utilization, end_utilization);
+		}
+
+		if (max === undefined || fee / max > 0.99) {
+			return {fee: fee, frac: frac, amount: amount};
+		}
+		const newFrac = Math.round(frac * 1.01);
+		return await this.calculateFeePowerUp(state, newFrac, max);
+
 	}
 }
