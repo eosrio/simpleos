@@ -1407,10 +1407,10 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const actionTitle = `<span class="blue">Password</span>`;
         const messageHTML = `
             <h3 class="modal-title text-white">
-                Powering Up account: <span class="blue">${auth.actor}</span>, 
-                with max payment: <span class="blue">${maxAmount + ' ' + tk_name} </span>
-                <br>
+                Powering Up account: <span class="highlight-primary">${auth.actor}</span>, 
                 giving approximately of CPU: ${Math.round((this.usCPUPowerUp / (1024))*precision)/precision} ms
+                <br>
+                with paying fee of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>
                 
             </h3>
         `;
