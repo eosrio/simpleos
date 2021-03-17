@@ -846,7 +846,7 @@ export class Eosjs2Service {
 	}
 
 
-	async calculateFeePowerUp(stateOp, frac, max?) {
+	async calculateFeePowerUp(stateOp, frac, percent, max?) {
 		let state:any;
 		const result = await this.getPowerUpState();
 		if(stateOp === 'cpu')
@@ -870,11 +870,11 @@ export class Eosjs2Service {
 			fee += this.priceIntegralDelta(state, start_utilization, end_utilization);
 		}
 
-		if (max === undefined || fee / max > 0.99) {
+		if (max === undefined || fee / max > percent) {
 			return {fee: fee, frac: frac, amount: amount};
 		}
 		const newFrac = Math.round(frac * 1.01);
-		return await this.calculateFeePowerUp(state, newFrac, max);
+		return await this.calculateFeePowerUp(state, newFrac,percent, max);
 
 	}
 }

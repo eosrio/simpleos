@@ -631,9 +631,14 @@
 
                                         <div class="clr-col-lg-12">
                                             <ng-container *ngIf="!isManuallyPowerUP">
-                                                <span class="text-warn" >
-                                                   To simplify, on the slider you will use 1% of your available unstake or a max value of 0.1 EOS, or use manually on the check-box above.
-                                                </span>
+                                                <div class="div-info">
+                                                    <h4>
+                                                        <span class="text-warn">Information</span>
+                                                    </h4>
+                                                    <span class="text-warn">
+                                                       To simplify, on the slider you will use 1% of your available unstake or a max value of 0.1 EOS, or use manually on the check-box above.
+                                                    </span>
+                                                </div>
                                                 <mat-slider class="stake-slider"
                                                             [min]="minPowerUp"
                                                             [max]="100"
@@ -666,7 +671,7 @@
                                         <div class="clr-col-lg-{{busyPowerUp?'6':'4'}}">
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
-                                                    Max PowerUp fee:
+                                                    PowerUp fee:
                                                     <ng-container *ngIf="busyPowerUp">
                                                         {{loadingCostLeg}}&nbsp;
                                                         <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon>

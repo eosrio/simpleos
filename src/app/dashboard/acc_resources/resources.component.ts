@@ -40,6 +40,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     bytesbuy: number;
     bytessell: number;
     unstaked: number;
+    unstakedLimited: number;
 
     ram_chart: any;
     ram_chartMerge: any;
@@ -524,15 +525,17 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     updateUnstakePercent() {
         if (!this.powerUpdisabled) {
-            const percent = (0.0001 * 100 / (this.unstaked*0.01));
+            this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
+            this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
+            const maxValueSlider = this.aService.activeChain['powerup']['maxPowerUpSlider'];
+            this.minPowerUp = 0.0001;
+            this.unstakedLimited = this.unstaked*0.01 > maxValueSlider ?maxValueSlider:this.unstaked*0.01;
+            const percent = (this.minPowerUp * 100 / (this.unstakedLimited));
             let exp = -Math.floor(Math.log10(percent) + 1);
             exp = exp < 2 ? 2 : exp;
             const precision = Math.pow(10, exp);
-            this.cpu_frac = 10000000;
-            this.net_frac = 100000000;
-            this.minPowerUp = 0.0001;
             this.percentToPowerUp = (Math.round(percent * precision) / precision).toString();
-            this.valuetoPowerUp = 0.0001;
+            this.valuetoPowerUp = this.minPowerUp;
             this.stepPowerUp = 1 / precision;
 
         }
@@ -597,22 +600,23 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             const precision = Math.pow(10, this.aService.activeChain['precision']);
             const precisionNet = Math.pow(10, this.aService.activeChain['precision'] + 4);
             this.loadingCostLeg = 'Calculating costs...';
-            this.cpu_frac = 10000000;
-            this.net_frac = 100000000;
+            // this.cpu_frac = 10000000;
+            // this.net_frac = 100000000;
             let maxAmount = 0 ;
-
+            const calculatePercent = this.aService.activeChain['powerup']['calculatePercent'];
+            console.log(this.cpu_frac,this.net_frac);
             if(type === undefined){
-                maxAmount = (this.unstaked*0.01) * (parseFloat(this.percentToPowerUp) / 100);
+                maxAmount = this.unstakedLimited * (parseFloat(this.percentToPowerUp) / 100);
             }else{
                 maxAmount = this.valuetoPowerUp;
             }
 
-            const power_net_param = await this.eosjs.calculateFeePowerUp('net', this.net_frac);
+            const power_net_param = await this.eosjs.calculateFeePowerUp('net', this.net_frac, calculatePercent);
 
             const netAmount = Math.round((power_net_param.fee) * precision) / precision;
             const cpuAmount = Math.round((maxAmount - netAmount) * precision) / precision;
 
-            const power_cpu = await this.eosjs.calculateFeePowerUp('cpu', this.cpu_frac, cpuAmount);
+            const power_cpu = await this.eosjs.calculateFeePowerUp('cpu', this.cpu_frac, 0.95, cpuAmount);
 
             this.cpu_frac = power_cpu.frac;
 
@@ -658,9 +662,9 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
                 this.busyPowerUp = false;
                 this.valuetoPowerUp = maxAmount;
-                if(type === undefined){
-                    this.isCheckedPowerUpManually = false;
-                }
+
+                this.isCheckedPowerUpManually = false;
+
             }, 2000);
 
         }
