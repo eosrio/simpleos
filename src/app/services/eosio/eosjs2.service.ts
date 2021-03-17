@@ -869,7 +869,6 @@ export class Eosjs2Service {
                 return {fee: fee, frac: frac, amount: amount};
             }
             const newFrac = Math.round(frac * 1.01);
-            console.log(newFrac);
             return await this.calculateFeePowerUp(state, newFrac, percent, max);
         } catch (e) {
             return {fee: fee, frac: frac, amount: amount};

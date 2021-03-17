@@ -671,7 +671,7 @@
                                         <div class="clr-col-lg-{{busyPowerUp?'6':'4'}}">
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
-                                                    PowerUp fee:
+                                                    {{isManuallyPowerUP?'Max ':''}}PowerUp fee:
                                                     <ng-container *ngIf="busyPowerUp">
                                                         {{loadingCostLeg}}&nbsp;
                                                         <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon>
