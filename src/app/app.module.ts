@@ -69,6 +69,7 @@ import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
 import {NgxElectronModule} from 'ngx-electron';
+import { QRCodeModule } from 'angularx-qrcode';
 
 // Lottie
 import {LottieModule} from 'ngx-lottie';
@@ -268,6 +269,7 @@ import {ArrayTypeComponent} from './type/array-type/array-type.component';
 		MatTooltipModule,
 		PaginatorModule,
 		A11yModule,
+		QRCodeModule
 		// SnotifyModule
 	],
 	providers: [

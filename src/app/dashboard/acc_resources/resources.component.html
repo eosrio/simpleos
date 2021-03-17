@@ -301,8 +301,8 @@
                                     <span class="resource"
                                           style="float:right; font-size: 14px;">{{net_weight_n | number: precision}} {{aService.activeChain['symbol']}}</span>
                                     <div class="resource"><span
-                                            class="highlight-primary">Used {{net_limit['used'] / (1024) | number: precision}}
-                                        KB </span><span class="text-faded">/ {{net_limit.max / (1024)
+                                            class="highlight-primary">Used {{net_limit['used'] / (1000) | number: precision}}
+                                        KB </span><span class="text-faded">/ {{net_limit.max / (1000)
                                         | number: precision}} KB</span>
                                     </div>
                                 </div>
@@ -323,8 +323,8 @@
                                     <span class="resource"
                                           style="float:right; font-size: 14px;">{{cpu_weight_n | number: precision}} {{aService.activeChain['symbol']}}</span>
                                     <div class="highlight-primary resource"><span
-                                            class="highlight-primary">Used {{cpu_limit['used'] / (1024) | number: precision}}
-                                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1024)
+                                            class="highlight-primary">Used {{cpu_limit['used'] / (1000) | number: precision}}
+                                        ms </span><span class="text-faded">/ {{cpu_limit.max / (1000)
                                         | number: precision}} ms</span>
                                     </div>
                                 </div>
@@ -588,7 +588,7 @@
                     <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
                         <div class="clr-col-lg-12">
                             <div class="card info-card">
-                                <div class="card-block" style="">
+                                <div class="card-block" style="min-height: 250px;">
                                     <div class="clr-row">
                                         <div class="clr-col-lg-12">
                                             <div class="instruction card-title-color expandable special-font">Power Up
@@ -598,36 +598,78 @@
                                                     <fa-icon [icon]="['far','question-circle']"
                                                              class="highlight-primary"
                                                              style="font-size: 16px;"></fa-icon>
-                                                    <span class="tooltip-content">Move the slider to use your unstaked token.<br> after that, it will load the information of how <br>much PowerUp usage that was generated <br>from the selected value.</span>
+                                                    <span class="tooltip-content">
+
+                                                        Move the slider to use your unstaked token.<br>
+                                                        Or type manually how much you want to spent.<br>
+                                                        after that, it will load the information of how
+                                                        <br>much PowerUp usage that was generated
+                                                        <br>from the selected value.
+                                                        <br>
+                                                        <br>
+                                                        <span class="text-warn">
+                                                            To simplify the use of powerup, due to the<br>
+                                                            large amounts of resources generated, SimplEOS<br>
+                                                            limited the slider to 1% of its available unstake<br>
+                                                            or if the calculated value of 1% is greater<br>
+                                                            than 0.1000 EOS the limit value will be 0.1 EOS.
+                                                        </span>
+                                                    </span>
                                                 </a>
+                                                <div style="float:right">
+                                                    <mat-checkbox [checked]="isManuallyPowerUP"
+                                                                  (change)="toggleManuallyPowerUp()">
+                                                        Manually
+                                                    </mat-checkbox>
+                                                </div>
                                             </div>
+
                                         </div>
                                     </div>
 
                                     <div class="clr-row">
+
                                         <div class="clr-col-lg-12">
-                                            <mat-slider class="stake-slider"
-                                                        [min]="minPowerUp"
-                                                        [max]="100"
-                                                        [thumbLabel]="true"
-                                                        (change)="updatePowerUpValue()"
-                                                        [tickInterval]="25"
-                                                        [displayWith]="sliderLabelPowerUp"
-                                                        [step]="stepPowerUp"
-                                                        [(ngModel)]="percentToPowerUp">
-                                            </mat-slider>
+                                            <ng-container *ngIf="!isManuallyPowerUP">
+                                                <span class="text-warn" >
+                                                   To simplify, on the slider you will use 1% of your available unstake or a max value of 0.1 EOS, or use manually on the check-box above.
+                                                </span>
+                                                <mat-slider class="stake-slider"
+                                                            [min]="minPowerUp"
+                                                            [max]="100"
+                                                            [thumbLabel]="true"
+                                                            (change)="updatePowerUpValue()"
+                                                            [tickInterval]="25"
+                                                            [displayWith]="sliderLabelPowerUp"
+                                                            [step]="stepPowerUp"
+                                                            [(ngModel)]="percentToPowerUp">
+                                                </mat-slider>
+                                            </ng-container>
+                                            <ng-container *ngIf="isManuallyPowerUP">
+                                                <mat-form-field class="input-width" style="width:150px;">
+                                                    <input matInput type="text" min="0"
+                                                           placeholder="PowerUP fee" [ngModel]="valuetoPowerUp"
+                                                           (ngModelChange)="changePowerUpValueManually($event)"
+                                                           mask="separator.4" thousandSeparator=",">
+                                                    <span class="suffix special-font"
+                                                          matSuffix>{{aService.activeChain['symbol']}}</span>
+
+                                                </mat-form-field>
+                                                <mat-error align="start" *ngIf="errorValuePowerUp !== ''">
+                                                    {{errorValuePowerUp}}
+                                                </mat-error>
+                                            </ng-container>
+
                                         </div>
                                     </div>
                                     <div class="clr-row">
-                                        <div class="clr-col-lg-4">
+                                        <div class="clr-col-lg-{{busyPowerUp?'6':'4'}}">
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
-                                                    Max
-                                                    amount:
+                                                    Max PowerUp fee:
                                                     <ng-container *ngIf="busyPowerUp">
-
-                                                            <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon>
-
+                                                        {{loadingCostLeg}}&nbsp;
+                                                        <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon>
                                                     </ng-container>
                                                     <ng-container *ngIf="!busyPowerUp">
                                                         {{ (((valuetoPowerUp)) | number: precision)}} {{aService.activeChain['symbol']}}
@@ -636,9 +678,9 @@
                                             </div>
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
-                                                    <button (click)="setPowerUp()" class="btn btn-info-outline"
+                                                    <button (click)="isCheckedPowerUpManually?updatePowerUpValue('manually'):setPowerUp()" class="btn btn-info-outline"
                                                             style="margin-top: 14px; font-weight: 700"
-                                                            [disabled]="powerUpdisabled">Power Up
+                                                            [disabled]="powerUpdisabled&&busyPowerUp">{{isCheckedPowerUpManually?'Check':'Power Up'}}
                                                     </button>
                                                 </div>
                                             </div>
@@ -656,7 +698,7 @@
                                                     </a>
                                                 </div>
                                             </ng-container>
-                                            <ng-container *ngFor="let item of totalUsageTDU">
+                                            <ng-container *ngFor="let item of totalUsageTDU; let i = index">
                                                 <div class="card info-card special-font">
                                                     <div class="card-block">
                                                         <div class="progress bottom" [ngClass]="{'danger': item.one_time.cpu > usCPUPowerUp}">
@@ -664,7 +706,7 @@
                                                         </div>
                                                         <div class="title">Action - {{item.action}}</div>
                                                         <div class="resource">
-                                                            <span class="text-faded"> Average usage: CPU: {{((item.one_time.cpu / (1024)) | number: precision)}} ms | NET: {{((item.one_time.net) / (1024) | number: precision)}} ms</span>
+                                                            <span class="text-faded"> Average usage: CPU: {{((item.one_time.cpu / (1000)) | number: precision)}} ms | NET: {{((item.one_time.net) / (1000) | number: precision)}} ms</span>
                                                             <br>
                                                             <ng-container *ngIf="item.limit>0">
                                                                 You can execute this action <span class="highlight-primary">{{(item.limit| number: '1.2-2')}}</span> time(s)
@@ -673,6 +715,13 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <ng-container *ngIf="totalUsageTDU.length > 1 && (i+1) < totalUsageTDU.length">
+                                                    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="5px" style="margin-top: 1.2rem;">
+                                                        <mat-divider fxFlex="1 0" ></mat-divider>
+                                                        <div class="mx-2"><span class="highlight-primary"><b>or</b></span></div>
+                                                        <mat-divider fxFlex="1 0"></mat-divider>
+                                                    </div>
+                                                </ng-container>
                                             </ng-container>
                                         </div>
                                     </div>

@@ -44,23 +44,26 @@
 
 
         <div #txSnack class="clr-col-12">
-            <div class="info-snackbar top-home-snackbar animate__animated animate__fadeInDown">
-                <div fxLayout="row" fxLayoutAlign="space-between center">
-                    <div>You have <b>1</b> of <b>3</b> free transactions for today!
-                        <fa-icon [icon]="icons.regular.questionCircle" class="question-icon"
-                                 style="font-size: 15px;"
-                                 [matTooltip]="'Transactions in EOSIO cost resources' + '\n\n' +
-                                 'EOS Rio is sponsoring 5 transactions per day' + '\n\n' +
+            <ng-container *ngFor="let tx of transactionFree">
+                <div class="info-snackbar top-home-snackbar animate__animated animate__fadeInDown">
+                    <div fxLayout="row" fxLayoutAlign="space-between center">
+                        <div>You have <b>{{tx.used}}</b> of <b>{{tx.limit}}</b> free transactions for today!
+                            <fa-icon [icon]="icons.regular.questionCircle" class="question-icon"
+                                     style="font-size: 15px;"
+                                     [matTooltip]="'Transactions in EOSIO cost resources' + '\n\n' +
+                                 'EOS Rio is sponsoring '+tx.limit+' transactions per day' + '\n\n' +
 													'The only requirement is to vote for us as Block Producers so we can keep funding these awesome features 😉'"
-                                 matTooltipClass="black-tooltip wider-tooltip">
-                        </fa-icon>
+                                     matTooltipClass="black-tooltip wider-tooltip">
+                            </fa-icon>
 
+                        </div>
+                        <a class="close-btn" (click)="removeElementWithTransition(txSnack,divBelow)">
+                            <fa-icon [icon]="icons.solid.times"></fa-icon>
+                        </a>
                     </div>
-                    <a class="close-btn" (click)="removeElementWithTransition(txSnack,divBelow)">
-                        <fa-icon [icon]="icons.solid.times"></fa-icon>
-                    </a>
                 </div>
-            </div>
+            </ng-container>
+
         </div>
     </div>
     <div #divBelow class="clr-row homepage-row animate mb-20">
@@ -96,7 +99,9 @@
                                     </a>
                                 </span>
                             </div>
-                            <div style="margin-top: 20px">Or scan the qrcode in the left</div>
+                            <div style="margin-top: 20px">Or scan the qrcode below</div>
+                            <div style="margin-top: 20px"><qrcode [qrdata]="selectedAccountName" [colorDark]="'#0094d2'" [colorLight]="'#ffffff00'" [width]="160" [margin]="1" [scale]="1" [errorCorrectionLevel]="'Q'"></qrcode></div>
+
                         </div>
 
                     </div>

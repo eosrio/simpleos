@@ -68,9 +68,10 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     hasRex: boolean;
     hasVote: boolean;
     valuetoStake: string;
-    valuetoPowerUp: number;
+    valuetoPowerUp: number = 0;
     percenttoStake: string;
     percentToPowerUp: string;
+    errorValuePowerUp: string='';
     minToStake = 0.00;
     unstaking: number;
     unstakeTime: string;
@@ -100,6 +101,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     stakerr: string;
     stakedisabled: boolean;
     powerUpdisabled: boolean;
+    isCheckedPowerUpManually: boolean =false;
     nbps: number;
     showAdvancedRatio = false;
 
@@ -115,10 +117,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     net_self = '';
     cpu_self = '';
+    powerup_self = '';
     stakingRatio = 75;
 
 
     isManually: boolean;
+    isManuallyPowerUP: boolean;
     autoClaimStatus: boolean;
 
     claimPublicKey = '';
@@ -153,6 +157,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     usNETPowerUp = 0;
     busyPowerUp = false;
     totalUsageTDU = [];
+    loadingCostLeg: string;
     fromUD: string;
     netUD: string;
     cpuUD: string;
@@ -519,13 +524,13 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     updateUnstakePercent() {
         if (!this.powerUpdisabled) {
-            const percent = (0.0001 * 100 / this.unstaked);
+            const percent = (0.0001 * 100 / (this.unstaked*0.01));
             let exp = -Math.floor(Math.log10(percent) + 1);
             exp = exp < 2 ? 2 : exp;
             const precision = Math.pow(10, exp);
             this.cpu_frac = 10000000;
-            this.net_frac = 10000000;
-            this.minPowerUp = Math.round(percent * precision) / precision;
+            this.net_frac = 100000000;
+            this.minPowerUp = 0.0001;
             this.percentToPowerUp = (Math.round(percent * precision) / precision).toString();
             this.valuetoPowerUp = 0.0001;
             this.stepPowerUp = 1 / precision;
@@ -560,23 +565,52 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    toggleManuallyPowerUp(){
+        this.isManuallyPowerUP=!this.isManuallyPowerUP;
+        this.isCheckedPowerUpManually=!this.isCheckedPowerUpManually
+        this.totalUsageTDU = [];
+        if(!this.isManuallyPowerUP){
+            this.updateUnstakePercent();
+        }
+    }
 
-    async updatePowerUpValue() {
+    changePowerUpValueManually(e) {
+        console.log(e);
+        const value = (e===undefined)?0:e;
+        this.errorValuePowerUp = '';
+        this.powerUpdisabled = true;
+        this.isCheckedPowerUpManually = true;
+        console.log(this.minPowerUp, value, this.unstaked);
+        if (value >= this.minPowerUp && value <= this.unstaked){
+            this.valuetoPowerUp = e;
+            this.powerUpdisabled = false;
+        }else{
+            this.errorValuePowerUp = 'Wrong amount!';
+        }
+
+    }
+
+    async updatePowerUpValue(type?) {
         if (!this.powerUpdisabled) {
             this.busyPowerUp = true;
             this.totalUsageTDU = [];
             const precision = Math.pow(10, this.aService.activeChain['precision']);
             const precisionNet = Math.pow(10, this.aService.activeChain['precision'] + 4);
-
+            this.loadingCostLeg = 'Calculating costs...';
             this.cpu_frac = 10000000;
             this.net_frac = 100000000;
+            let maxAmount = 0 ;
 
-            const maxAmout = (this.unstaked) * (parseFloat(this.percentToPowerUp) / 100);
+            if(type === undefined){
+                maxAmount = (this.unstaked*0.01) * (parseFloat(this.percentToPowerUp) / 100);
+            }else{
+                maxAmount = this.valuetoPowerUp;
+            }
 
             const power_net_param = await this.eosjs.calculateFeePowerUp('net', this.net_frac);
 
             const netAmount = Math.round((power_net_param.fee) * precision) / precision;
-            const cpuAmount = Math.round((maxAmout - netAmount) * precision) / precision;
+            const cpuAmount = Math.round((maxAmount - netAmount) * precision) / precision;
 
             const power_cpu = await this.eosjs.calculateFeePowerUp('cpu', this.cpu_frac, cpuAmount);
 
@@ -608,21 +642,27 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 usNewNET: this.usNETPowerUp,
                 total: (power_net_param.fee + power_cpu.fee)
             });
+            this.loadingCostLeg = 'Loading examples...';
+            setTimeout(async () => {
+                // Transfer + DELEGATE + UNDELEGATE
+                const transfer = await this.resource.getAvgTime([{account: 'eosio.token', name: 'transfer'}]);
+                const delegate = await this.resource.getAvgTime([{account: 'eosio', name: 'delegatebw'}]);
+                const undelegate = await this.resource.getAvgTime([{account: 'eosio', name: 'undelegatebw'}]);
 
-            // Transfer + DELEGATE + UNDELEGATE
-            const transfer = await this.resource.getAvgTime([{account: 'eosio.token', name: 'transfer'}]);
-            const delegate = await this.resource.getAvgTime([{account: 'eosio', name: 'delegatebw'}]);
-            const undelegate = await this.resource.getAvgTime([{account: 'eosio', name: 'undelegatebw'}]);
+                if(transfer.cpu>0)
+                    this.totalUsageTDU.push({action: 'TRANSFER', one_time: transfer, limit: this.usCPUPowerUp/transfer.cpu})
+                if(delegate.cpu>0)
+                    this.totalUsageTDU.push({action: 'STAKE', one_time: delegate, limit: this.usCPUPowerUp/delegate.cpu})
+                if(undelegate.cpu>0)
+                    this.totalUsageTDU.push({action: 'UNSTAKE', one_time: undelegate, limit: this.usCPUPowerUp/undelegate.cpu})
 
-            if(transfer.cpu>0)
-                this.totalUsageTDU.push({action: 'TRANSFER', one_time: transfer, limit: this.usCPUPowerUp/transfer.cpu})
-            if(delegate.cpu>0)
-                this.totalUsageTDU.push({action: 'STAKE', one_time: delegate, limit: this.usCPUPowerUp/delegate.cpu})
-            if(undelegate.cpu>0)
-                this.totalUsageTDU.push({action: 'UNSTAKE', one_time: undelegate, limit: this.usCPUPowerUp/undelegate.cpu})
+                this.busyPowerUp = false;
+                this.valuetoPowerUp = maxAmount;
+                if(type === undefined){
+                    this.isCheckedPowerUpManually = false;
+                }
+            }, 2000);
 
-            this.busyPowerUp = false;
-            this.valuetoPowerUp = maxAmout;
         }
     }
 

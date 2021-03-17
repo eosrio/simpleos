@@ -70,8 +70,10 @@ export class ResourceService {
             if (actions !== undefined) {
                 for (let action of actions) {
                     const stastEndPoint = this.aService.activeChain.borrow.endpoint;
-                    const url = `${stastEndPoint}/stats/get_resource_usage?code=${action.account}&action=${action.name}`;
-
+                    let url = `${stastEndPoint}/stats/get_resource_usage?code=${action.account}&action=${action.name}`;
+                    if(action.name === 'transfer' && action.data !== undefined){
+                       url += '&@transfer.to='+action.data.to;
+                    }
                     const response: any = await this.http.get(url,this.httpOptions).toPromise();
 
                     if (response) {

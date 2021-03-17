@@ -1168,17 +1168,22 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 	color: inherit;
 }
 
+/*material divider*/
+.mat-divider{
+	border-top-color: var(--sidenav-active-border-color2) ;
+}
+
 
 /*Notifications*/
 .snotifyToast.ngx-toastr {
 	padding: 15px 25px !important;
 	background-color: var(--update-box-background);
 	color: var(--text-card-color) !important;
-	box-shadow: 1px 3px 8px 2px rgb(0 0 0 / 35%) !important;
+	box-shadow: 1px 3px 8px 2px rgba(0 0 0 0.35) !important;
 }
 
 .snotifyToast.ngx-toastr:hover {
-	box-shadow: 1px 3px 8px 2px rgb(0 0 0 / 80%) !important;
+	box-shadow: 1px 3px 8px 2px rgba(0 0 0 0.80) !important;
 	-webkit-transition-duration: 0.3s;
 	transition-duration: 0.3s;
 	-webkit-transition-property: box-shadow;
@@ -1235,10 +1240,7 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
 	word-wrap: break-word !important;
 
 	-ms-word-break: break-all !important;
-	/* This is the dangerous one in WebKit, as it breaks things wherever */
-	word-break: break-all !important;
-	/* Instead use this non-standard one: */
-	word-break: break-word !important;
+
 
 	/* Adds a hyphen where the word breaks, if supported (No Blink) */
 	-ms-hyphens: auto !important;
