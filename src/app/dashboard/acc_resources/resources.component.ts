@@ -525,12 +525,14 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     updateUnstakePercent() {
         if (!this.powerUpdisabled) {
+            this.totalUsageTDU = [];
             this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
             this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
             const maxValueSlider = this.aService.activeChain['powerup']['maxPowerUpSlider'];
             this.minPowerUp = 0.0001;
             const onePercerntStake = (this.unstaked * 0.01);
-            this.unstakedLimited = onePercerntStake > maxValueSlider ? maxValueSlider : onePercerntStake;
+            console.log(onePercerntStake);
+            this.unstakedLimited = onePercerntStake > maxValueSlider ? maxValueSlider : (onePercerntStake < 0.01 ? this.unstaked : onePercerntStake);
             const percent = (this.minPowerUp * 100 / (this.unstakedLimited));
             let exp = -Math.floor(Math.log10(percent) + 1);
             exp = exp < 2 ? 2 : exp;
@@ -611,14 +613,17 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             }else{
                 maxAmount = this.valuetoPowerUp;
             }
-
+            const state = await this.eosjs.getPowerUpState();
             console.log( maxAmount);
-            const power_net_param = await this.eosjs.calculateFeePowerUp('net', this.net_frac, calculatePercent);
+            const power_net_param = await this.eosjs.calculateFeePowerUp(state.net, this.net_frac, calculatePercent);
 
-            const netAmount = Math.round((power_net_param.fee) * precision) / precision;
-            const cpuAmount = Math.round((maxAmount - netAmount) * precision) / precision;
-
-            const power_cpu = await this.eosjs.calculateFeePowerUp('cpu', this.cpu_frac, calculatePercent, cpuAmount);
+            let netAmount = Math.round((power_net_param.fee) * precision) / precision;
+            let cpuAmount = Math.round((maxAmount - netAmount) * precision) / precision;
+            if(cpuAmount < 0 ){
+                netAmount = 0;
+                cpuAmount = maxAmount;
+            }
+            const power_cpu = await this.eosjs.calculateFeePowerUp(state.cpu, this.cpu_frac, calculatePercent, cpuAmount);
 
             this.cpu_frac = power_cpu.frac;
 
