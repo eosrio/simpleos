@@ -45,9 +45,12 @@ export const localConfig = {
       },
       "powerup":{
         "minCpuFrac": 10000000,
-        "minNetFrac": 100000000,
+        "minNetFrac": 2000000,
         "maxPowerUpSlider": 0.1,
-        "calculatePercent": 0.95
+        "minPercentLimit": 0.003,
+        "minCalculatePercent": 0.5,
+        "maxCalculatePercent":0.95,
+        "daysToRefresh": 7
       },
       "system": [
         "eosio",
@@ -135,7 +138,6 @@ export const localConfig = {
           "pattern": "^[a-f0-9]+$"
         },
         "krakenkraken": {
-          "memo_size": 10,
           "pattern": "^[0-9]+$"
         },
         "binancecleos": {

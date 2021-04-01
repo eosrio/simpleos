@@ -294,8 +294,8 @@
                             <div class="card info-card special-font">
                                 <div class="card-block">
                                     <div class="progress bottom"
-                                         [ngClass]="{'danger': (net_limit['used']/net_limit.max) > 0.85}">
-                                        <progress [value]="net_limit['used']" [max]="net_limit.max"></progress>
+                                         [ngClass]="{'danger': (net_limit.max <= 0 ? 0: net_limit['used']/net_limit.max) > 0.85}">
+                                        <progress [value]="net_limit['used']" [max]="net_limit.max "></progress>
                                     </div>
                                     <span class="title">NET Bandwidth</span>
                                     <span class="resource"
@@ -311,8 +311,8 @@
                             <div class="card info-card special-font">
                                 <div class="card-block">
                                     <div class="progress bottom"
-                                         [ngClass]="{'danger': (cpu_limit['used']/cpu_limit.max) > 0.85}">
-                                        <progress [value]="cpu_limit['used']" [max]="cpu_limit.max"></progress>
+                                         [ngClass]="{'danger': (cpu_limit['max'] <= 0 ? 0 :cpu_limit['used']/cpu_limit['max']) > 0.85}">
+                                        <progress [value]="cpu_limit['used']" [max]="cpu_limit['max']"></progress>
                                     </div>
                                     <span class="title">CPU Bandwidth
                       <a role="tooltip" aria-haspopup="true" class="tooltip tooltip-md tooltip-right">
@@ -584,7 +584,9 @@
                     </div>
                     <br>
                 </mat-tab>
-                <mat-tab label="POWER UP">
+                <ng-container *ngIf="!powerUpdisabled">
+                    <mat-tab label="POWER UP">
+
                     <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
                         <div class="clr-col-lg-12">
                             <div class="card info-card">
@@ -592,7 +594,6 @@
                                     <div class="clr-row">
                                         <div class="clr-col-lg-12">
                                             <div class="instruction card-title-color expandable special-font">Power Up
-                                                your {{aService.activeChain['symbol']}}
                                                 <a role="tooltip" aria-haspopup="true"
                                                    class="tooltip tooltip-lg tooltip-right">
                                                     <fa-icon [icon]="['far','question-circle']"
@@ -630,13 +631,14 @@
                                     <div class="clr-row">
 
                                         <div class="clr-col-lg-12">
+                                            <h4 class="card-title-color">EOS PowerUp allows you to rent resources for 24 hours to perform transactions on EOS MainNet</h4>
                                             <ng-container *ngIf="!isManuallyPowerUP">
                                                 <div class="div-info">
                                                     <h4>
                                                         <span class="text-warn">Information</span>
                                                     </h4>
                                                     <span class="text-warn">
-                                                       To simplify, on the slider you will use 1% of your available unstake or a max value of 0.1 EOS, or use manually on the check-box above.
+                                                       To simplify, on slider you will use 1% of your available unstake or a max value of 0.1 EOS, to any other value use manually on the check-box above.
                                                     </span>
                                                 </div>
                                                 <mat-slider class="stake-slider"
@@ -668,66 +670,72 @@
                                         </div>
                                     </div>
                                     <div class="clr-row">
-                                        <div class="clr-col-lg-{{busyPowerUp?'6':'4'}}">
+                                        <div class="clr-col-lg-9">
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
                                                     {{isManuallyPowerUP?'Max ':''}}PowerUp fee:
-                                                    <ng-container *ngIf="busyPowerUp">
-                                                        {{loadingCostLeg}}&nbsp;
-                                                        <fa-icon [icon]="['far', 'spinner']" [pulse]="true"></fa-icon>
-                                                    </ng-container>
-                                                    <ng-container *ngIf="!busyPowerUp">
-                                                        {{ (((valuetoPowerUp)) | number: precision)}} {{aService.activeChain['symbol']}}
-                                                    </ng-container>
+
+                                                    {{ (((valuetoPowerUp)) | number: precision)}} {{aService.activeChain['symbol']}}
                                                 </div>
                                             </div>
                                             <div class="clr-row">
                                                 <div class="clr-col-lg-12">
-                                                    <button (click)="isCheckedPowerUpManually?updatePowerUpValue('manually'):setPowerUp()" class="btn btn-info-outline"
-                                                            style="margin-top: 14px; font-weight: 700"
-                                                            [disabled]="powerUpdisabled&&busyPowerUp">{{isCheckedPowerUpManually?'Check':'Power Up'}}
-                                                    </button>
+                                                    <div class="title">
+                                                        Things you can do for 24h...
+                                                        <a role="tooltip" aria-haspopup="true"
+                                                           class="tooltip tooltip-lg tooltip-right">
+                                                            <fa-icon [icon]="['far','question-circle']"
+                                                                     class="highlight-primary"
+                                                                     style="font-size: 16px;"></fa-icon>
+                                                            <span class="tooltip-content">Each box shows a choice<br> of what you can do with the<br> amount of PowerUP generated. </span>
+                                                        </a>
+                                                    </div>
+                                                    <ng-container *ngFor="let item of totalUsageTDU; let i = index">
+                                                        <div class="card info-card special-font">
+                                                            <div class="card-block">
+                                                                <div class="progress bottom" [ngClass]="{'danger': item.one_time.cpu > usCPUPowerUp}">
+                                                                    <progress [value]="item.one_time.cpu" [max]="usCPUPowerUp"></progress>
+                                                                </div>
+                                                                <div class="title">Action - {{item.action}}</div>
+                                                                <div class="resource">
+                                                                    <span class="text-faded"> Average usage: CPU: {{((item.one_time.cpu / (1000)) | number: precision)}} ms | NET: {{((item.one_time.net) / (1000) | number: precision)}} ms</span>
+                                                                    <br>
+                                                                    <ng-container *ngIf="item.limit>0">
+                                                                        You can execute this action <span class="highlight-primary">{{(item.limit| number: '1.2-2')}}</span> time(s)
+                                                                    </ng-container>
+                                                                </div>
+                                                                <div style="position: absolute; top:0; right:0; width: auto;height: 30px;">
+                                                                    <button class="btn btn-info-outline" (click)="powerUpPlus(item.action === 'TRANSFER'?10:2,item.one_time.cpu)"
+                                                                            style="margin-top: 5px; min-width: 2.6rem; font-weight: 700"
+                                                                            >+{{item.action === 'TRANSFER'?10:2}}
+                                                                    </button>
+                                                                    <button class="btn btn-info-outline" (click)="powerUpPlus(item.action === 'TRANSFER'?25:10,item.one_time.cpu)"
+                                                                            style="margin-top: 5px; min-width: 2.6rem; font-weight: 700"
+                                                                            >+{{item.action === 'TRANSFER'?25:10}}
+                                                                    </button>
+                                                                    <button class="btn btn-info-outline" (click)="powerUpPlus(item.action === 'TRANSFER'?50:15,item.one_time.cpu)"
+                                                                            style="margin-top:5px; min-width: 2.6rem; font-weight: 700"
+                                                                            >+{{item.action === 'TRANSFER'?50:15}}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ng-container *ngIf="totalUsageTDU.length > 1 && (i+1) < totalUsageTDU.length">
+                                                            <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="5px" style="margin-top: 1.2rem;">
+                                                                <mat-divider fxFlex="1 0" ></mat-divider>
+                                                                <div class="mx-2"><span class="highlight-primary"><b>or</b></span></div>
+                                                                <mat-divider fxFlex="1 0"></mat-divider>
+                                                            </div>
+                                                        </ng-container>
+                                                    </ng-container>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="clr-col-lg-8">
-                                            <ng-container *ngIf="totalUsageTDU.length>0">
-                                                <div class="title">
-                                                    Things you can do for 24h...
-                                                    <a role="tooltip" aria-haspopup="true"
-                                                       class="tooltip tooltip-lg tooltip-right">
-                                                        <fa-icon [icon]="['far','question-circle']"
-                                                                 class="highlight-primary"
-                                                                 style="font-size: 16px;"></fa-icon>
-                                                        <span class="tooltip-content">Each box shows a choice<br> of what you can do with the<br> amount of PowerUP generated. </span>
-                                                    </a>
-                                                </div>
-                                            </ng-container>
-                                            <ng-container *ngFor="let item of totalUsageTDU; let i = index">
-                                                <div class="card info-card special-font">
-                                                    <div class="card-block">
-                                                        <div class="progress bottom" [ngClass]="{'danger': item.one_time.cpu > usCPUPowerUp}">
-                                                            <progress [value]="item.one_time.cpu" [max]="usCPUPowerUp"></progress>
-                                                        </div>
-                                                        <div class="title">Action - {{item.action}}</div>
-                                                        <div class="resource">
-                                                            <span class="text-faded"> Average usage: CPU: {{((item.one_time.cpu / (1000)) | number: precision)}} ms | NET: {{((item.one_time.net) / (1000) | number: precision)}} ms</span>
-                                                            <br>
-                                                            <ng-container *ngIf="item.limit>0">
-                                                                You can execute this action <span class="highlight-primary">{{(item.limit| number: '1.2-2')}}</span> time(s)
-                                                            </ng-container>
-
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <ng-container *ngIf="totalUsageTDU.length > 1 && (i+1) < totalUsageTDU.length">
-                                                    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="5px" style="margin-top: 1.2rem;">
-                                                        <mat-divider fxFlex="1 0" ></mat-divider>
-                                                        <div class="mx-2"><span class="highlight-primary"><b>or</b></span></div>
-                                                        <mat-divider fxFlex="1 0"></mat-divider>
-                                                    </div>
-                                                </ng-container>
-                                            </ng-container>
+                                        <div class="clr-col-lg-3">
+                                            <button (click)="isCheckedPowerUpManually?updatePowerUpValue('manually'):setPowerUp()" class="btn btn-info-outline"
+                                                    style="margin-top: 14px; font-weight: 700"
+                                                    [disabled]="powerUpdisabled&&busyPowerUp">{{isCheckedPowerUpManually?'Check':' PAY Power Up'}}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -735,6 +743,7 @@
                         </div>
                     </div>
                 </mat-tab>
+                </ng-container>
             </mat-tab-group>
         </div>
     </div>

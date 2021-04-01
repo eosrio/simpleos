@@ -71,8 +71,9 @@ export class ResourceService {
                 for (let action of actions) {
                     const stastEndPoint = this.aService.activeChain.borrow.endpoint;
                     let url = `${stastEndPoint}/stats/get_resource_usage?code=${action.account}&action=${action.name}`;
+
                     if(action.name === 'transfer' && action.data !== undefined){
-                       url += '&@transfer.to='+action.data.to;
+                       url = url + `&@transfer.to=bitfinexdep1`;
                     }
                     const response: any = await this.http.get(url,this.httpOptions).toPromise();
 
@@ -110,14 +111,13 @@ export class ResourceService {
         if (actions !== undefined) {
             for (let action of actions) {
                 const url = `${this.aService.activeChain.relay.endpoint}/checkCredits`;
-                console.log(action.account, action.name);
                 try {
                     const response = await this.http.post(
                         url,
                         {accountName: acc, contractName: action.account},
                         {headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${this.jwtToken}`}}
                     ).toPromise();
-                    console.log(response);
+
                     if (response) {
                         result.push({
                             accountName: acc,
@@ -158,7 +158,7 @@ export class ResourceService {
                 return response;
             }
         } catch (e) {
-            console.log(e);
+            return (e);
         }
     }
 

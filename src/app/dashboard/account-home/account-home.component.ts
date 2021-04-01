@@ -49,7 +49,7 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     unstakeTime: string;
     transactionFree: any[];
     tokens: any[];
-    selectedAccountName = '';
+    selectedAccountName = 'none';
 
     private selectedAccountSubscription: Subscription;
     private lastUpdateSubscription: Subscription;
@@ -98,9 +98,9 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.transactionFree = await this.resource.checkCredits([
                         {account: 'eosio',name: 'delegatebw'},
                     ], sel['name']);
+                    this.cdr.detectChanges();
                 }
             }
-            this.cdr.detectChanges();
         });
     }
 

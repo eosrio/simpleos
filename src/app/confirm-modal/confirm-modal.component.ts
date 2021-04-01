@@ -134,8 +134,14 @@ export class ConfirmModalComponent {
 					return [null, 'Wrong password!'];
 				}
 				result = await this.resource.sendTxRelay(signed);
+				if(!result.ok){
+					// console.log(result.error.error);
+					const err:RpcError = result.error.error;
+					return this.handlerError(err, handler);
+				}
 			} else {
 				result = await this.eosjs.transact(trx);
+
 			}
 			if (result === 'wrong_pass') {
 				return [null, 'Wrong password!'];
@@ -143,37 +149,40 @@ export class ConfirmModalComponent {
 				return [result, null];
 			}
 		} catch (e) {
-			console.log('\nCaught exception: ' + e);
-			if (handler) {
-				this.trxFactory.status.emit(JSON.stringify(handler(e), null, 2));
-				return [false, handler(e)];
-			} else {
-
-				const error = this.network.defaultErrors;
-				console.log(e.json);
-				let msg;
-				if (e.json !== undefined) {
-
-					console.log(e.json.error.code);
-					console.log(error.find(elem => elem.code === e.json.error.code));
-					msg = error.find(elem => elem.code === e.json.error.code);
-				}
-
-				if (this.aService.activeChain['borrow']['enable'] === false || msg === undefined) {
-					this.errormsg = {'friendly': e, 'origin': ''};
-				} else {
-					this.errormsg = {'friendly': msg['message'], 'origin': e};
-				}
-
-				if (e instanceof RpcError) {
-					this.trxFactory.status.emit(JSON.stringify(e.json, null, 2));
-					console.log(JSON.stringify(e.json, null, 2));
-				}
-				return [false, null];
-			}
-
+			return this.handlerError(e, handler);
 		}
 	}
+
+	handlerError(e, handler){
+		console.log('\nCaught exception: ' + e);
+		if (handler) {
+			this.trxFactory.status.emit(JSON.stringify(handler(e), null, 2));
+			return [false, handler(e)];
+		} else {
+
+			const error = this.network.defaultErrors;
+			let msg;
+			if (e.json !== undefined) {
+
+				// console.log(e.json.error.code);
+				// console.log(error.find(elem => elem.code === e.json.error.code));
+				msg = error.find(elem => elem.code === e.json.error.code);
+			}
+
+			if (this.aService.activeChain['borrow']['enable'] === false || msg === undefined) {
+				this.errormsg = {'friendly': e.json.error.details[0].message, 'origin': ''};
+			} else {
+				this.errormsg = {'friendly': msg['message'], 'origin': e.json.error.details[0].message};
+			}
+
+			console.log(JSON.stringify(e.json, null, 2));
+			if (e instanceof RpcError) {
+				this.trxFactory.status.emit(JSON.stringify(e.json, null, 2));
+			}
+			return [false, null];
+		}
+	}
+
 
 	async executeAction(pass): Promise<any> {
 		this.busy = true;

@@ -565,7 +565,6 @@ export class AccountsService {
 			this.totalActions = result['total']['value'];
 			this.accounts[this.selectedIdx]['actions'] = this.actions;
 			this.calcTotalAssets();
-			console.log(this.accounts[this.selectedIdx]);
 			if (!this.accounts[this.selectedIdx].lastActionCheck || Date.now() - this.accounts[this.selectedIdx].lastActionCheck > 60000) {
 				await this.checkLastActions(bestUrl, account);
 			}
@@ -587,6 +586,7 @@ export class AccountsService {
 		this.actions = [];
 		// check history using hyperion
 		const hyperionStatus = await this.getActionsHyperionMulti(account, offset, skip, filter, after, before, parent);
+
 		if (hyperionStatus) {
 			this.accounts[this.selectedIdx].lastActionCheck = Date.now();
 			return;
@@ -915,6 +915,31 @@ export class AccountsService {
 			}
 			payload.updatedOn = new Date();
 			payload.accounts = accounts;
+			localStorage.setItem('simpleos.accounts.' + this.eosjs.chainId, JSON.stringify(payload));
+			return true;
+		} else {
+			return null;
+		}
+	}
+	async storeUsageActionData(actionData) {
+		console.log('saving usage action data...');
+		if (actionData.length > 0 && this.accounts) {
+			const data = localStorage.getItem('simpleos.accounts.' + this.eosjs.chainId);
+			let payload;
+			if (data) {
+				try {
+					payload = JSON.parse(data);
+				} catch (e) {
+					console.log(e);
+					return false;
+				}
+			} else {
+				payload = {};
+			}
+
+			payload.usageAction = { updateDate: new Date(),actions:actionData};
+			payload.updatedOn = new Date();
+			payload.accounts = this.accounts;
 			localStorage.setItem('simpleos.accounts.' + this.eosjs.chainId, JSON.stringify(payload));
 			return true;
 		} else {
