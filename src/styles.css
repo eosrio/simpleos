@@ -1294,6 +1294,22 @@ body .p-accordion .p-accordion-header:not(.p-state-disabled).p-state-active a .p
     background-color: var(--info-card-background);
     padding: 0 10px 0 10px;
 }
+/*MATERIAL CHIPS*/
+.mat-chip.mat-standard-chip.mat-chip-selected.mat-primary {
+    background-color: var(--btn-primary-bg)!important;
+    color: var(--btn-info-outline-color-hover) !important;
+}
+
+.mat-chip.mat-standard-chip {
+    background-color: transparent;
+    color: var(--modal-title-color) !important;
+}
+
+.mat-standard-chip{
+    padding: 6px 12px!important;
+    min-height: 25px!important;
+}
+/*END MATERIAL CHIPS*/
 
 /*
 	CHANGE DIRECTLY in the package node_module/ng-snotify/styles/{THEME}/icons.scss  (class used .snotify-icon--info)

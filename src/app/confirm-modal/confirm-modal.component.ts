@@ -34,9 +34,10 @@ export class ConfirmModalComponent {
 	options;
 	labelHtml;
 	public loadResource = false;
-
+	public selectedAuth:string = 'active';
 	confirmationForm: FormGroup;
 	public modalData: TrxModalData;
+	public allAuth: any;
 
 	constructor(
 		public aService: AccountsService,
@@ -60,6 +61,8 @@ export class ConfirmModalComponent {
 			this.loadResource = true;
 			this.visibility = state.visibility;
 			this.mode = state.mode;
+			const [auth] = this.trxFactory.getAuth();
+			this.selectedAuth = auth.permission;
 			if (this.visibility) {
 				this.confirmationForm.reset();
 				this.wasClosed = false;
@@ -67,6 +70,8 @@ export class ConfirmModalComponent {
 				console.log(Date(), this.loadResource);
 				this.resourceInit().catch(console.log);
 			}
+			this.allAuth = this.trxFactory.getAllAuth();
+			console.log(this.allAuth);
 		});
 
 		this.trxFactory.modalData.asObservable().subscribe((modalData) => {
@@ -78,7 +83,7 @@ export class ConfirmModalComponent {
 		if (e.value !== undefined) {
 			if(isFree){
 				this.useFreeTransaction = e.value;
-				if(this.useFreeTransaction === '0'  && this.modalData.resourceInfo['needResources']  && this.countLoopUse < 2){
+				if(this.useFreeTransaction === '0'  && this.modalData.resourceInfo['needResources']  && this.countLoopUse < 1){
 					this.countLoopUse++;
 					this.useBorrowRex = '1';
 				}else{
@@ -86,7 +91,7 @@ export class ConfirmModalComponent {
 				}
 			} else{
 				this.useBorrowRex = e.value;
-				if(this.useBorrowRex === '0' && this.modalData.resourceInfo['relay'] && this.countLoopUse < 2){
+				if(this.useBorrowRex === '0' && this.modalData.resourceInfo['relay'] && this.countLoopUse < 1){
 					this.countLoopUse++;
 					this.useFreeTransaction = '1';
 				}else{
@@ -98,8 +103,9 @@ export class ConfirmModalComponent {
 		}
 	}
 
-	async resourceInit() {
-		const [auth] = this.trxFactory.getAuth();
+	async resourceInit(authSelected?) {
+
+		const [auth] = authSelected ?? this.trxFactory.getAuth();
 		this.modalData.resourceInfo = await this.resource.checkResource(auth, this.modalData.transactionPayload.actions, undefined, undefined, this.modalData.tk_name);
 		const result = await this.resource.getActions(auth);
 		this.modalData.resourceTransactionPayload = {actions: result};
@@ -111,7 +117,21 @@ export class ConfirmModalComponent {
 			this.useBorrowRex = '1';
 		}
 		this.cdr.detectChanges();
-		console.log(Date(), this.loadResource);
+	}
+
+	async selectAuth([auth,publicKey]){
+		this.selectedAuth = auth.permission;
+		this.modalData.signerAccount = auth.actor;
+		this.modalData.signerPublicKey = publicKey;
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
+		await this.changeAuthTransactionPayload([auth]);
+		await this.resourceInit([auth,publicKey]);
+		console.log(this.modalData);
+	}
+
+	async changeAuthTransactionPayload([auth]){
+		this.modalData.transactionPayload.actions.forEach((act,idx)=>{
+			this.modalData.transactionPayload.actions[idx].authorization = [auth];		});
 	}
 
 	setFocus() {
@@ -135,50 +155,51 @@ export class ConfirmModalComponent {
 				}
 				result = await this.resource.sendTxRelay(signed);
 				if(!result.ok){
-					// console.log(result.error.error);
 					const err:RpcError = result.error.error;
 					return this.handlerError(err, handler);
 				}
 			} else {
 				result = await this.eosjs.transact(trx);
-
 			}
+
 			if (result === 'wrong_pass') {
 				return [null, 'Wrong password!'];
 			} else {
 				return [result, null];
 			}
+
 		} catch (e) {
 			return this.handlerError(e, handler);
 		}
 	}
 
-	handlerError(e, handler){
+	handlerError(e, handler?){
 		console.log('\nCaught exception: ' + e);
 		if (handler) {
 			this.trxFactory.status.emit(JSON.stringify(handler(e), null, 2));
+			this.busy = false;
 			return [false, handler(e)];
 		} else {
 
 			const error = this.network.defaultErrors;
 			let msg;
 			if (e.json !== undefined) {
-
-				// console.log(e.json.error.code);
-				// console.log(error.find(elem => elem.code === e.json.error.code));
 				msg = error.find(elem => elem.code === e.json.error.code);
 			}
 
 			if (this.aService.activeChain['borrow']['enable'] === false || msg === undefined) {
-				this.errormsg = {'friendly': e.json.error.details[0].message, 'origin': ''};
+				if(e.json!==undefined)
+					this.errormsg = {'friendly': e.json.error.details[0].message, 'origin': ''};
+				else
+					this.errormsg = {'friendly': e, 'origin': ''};
 			} else {
 				this.errormsg = {'friendly': msg['message'], 'origin': e.json.error.details[0].message};
 			}
 
-			console.log(JSON.stringify(e.json, null, 2));
 			if (e instanceof RpcError) {
 				this.trxFactory.status.emit(JSON.stringify(e.json, null, 2));
 			}
+			this.busy = false;
 			return [false, null];
 		}
 	}
@@ -188,9 +209,9 @@ export class ConfirmModalComponent {
 		this.busy = true;
 		this.errormsg = {'friendly': '', 'origin': ''};
 		let transactionPayload = {actions: []};
+
 		// Unlock Signer
 		try {
-
 			await this.crypto.authenticate(pass, this.modalData.signerPublicKey);
 		} catch (e) {
 			this.errormsg = {'friendly': 'Wrong password!', 'origin': ''};
@@ -209,10 +230,7 @@ export class ConfirmModalComponent {
 			return true;
 		}
 
-		// const resultResource = await this.resource.checkResource(auth,actionsModal,undefined,undefined, tk_name);
-		// const resourceActions = await this.resource.getActions(auth);
-
-		if (this.modalData.addActions) {
+		if (this.modalData.resourceInfo.needResources) {
 			if (this.useFreeTransaction === '1') {
 				this.modalData.resourceTransactionPayload.actions.forEach(act => {
 					transactionPayload.actions.push(act);
@@ -225,6 +243,7 @@ export class ConfirmModalComponent {
 		});
 
 		console.log(transactionPayload);
+
 		// Sign and push transaction
 		const [trxResult, err] = await this.processTransaction(
 			transactionPayload,
@@ -254,14 +273,10 @@ export class ConfirmModalComponent {
 				this.toaster.onSuccessEX('Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
 					id: trxId
 				}, this.aService.activeChain.explorers);
-				// this.showToast('success', 'Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
-				//     id: trxId
-				// });
 			} else {
 				this.busy = false;
 				this.confirmationForm.reset();
 				this.toaster.onError('Transaction failed', `${this.errormsg['friendly']}`);
-				// this.showToast('error', 'Transaction failed', `${this.errormsg['friendly']}`, {});
 			}
 		}
 	}
@@ -292,56 +307,23 @@ export class ConfirmModalComponent {
 				this.toaster.onSuccessEX('Transaction broadcasted', `<div class="dont-break-out"> TRX ID: ${trxId}</div> <br> Check your history for confirmation.`, {
 					id: trxId
 				}, this.aService.activeChain.explorers);
-				// this.showToast(
-				//     'success',
-				//     'Transaction broadcasted',
-				//     ` TRX ID: ${trxId} <br> Check your history for confirmation.`,
-				//     {id: trxId}
-				// );
+
 				this.errormsg = {'friendly': '', 'origin': ''};
 			}
 		} catch (e) {
-
-			const error = this.network.defaultErrors;
-			const msg = error.find(elem => elem.code === e.json.error.code);
-			if (this.aService.activeChain['borrow']['enable'] === false || msg === undefined || msg.message === undefined) {
-				this.errormsg = {'friendly': e, 'origin': ''};
-			} else {
-				this.errormsg = {'friendly': msg.message, 'origin': e};
-			}
-
-			// this.errormsg = e;
-			console.log(e);
-			this.busy = false;
-			this.toaster.onError('Transaction failed', `${this.errormsg['friendly']}`);
+			this.handlerError(e);
+			// const error = this.network.defaultErrors;
+			// const msg = error.find(elem => elem.code === e.json.error.code);
+			// if (this.aService.activeChain['borrow']['enable'] === false || msg === undefined || msg.message === undefined) {
+			// 	this.errormsg = {'friendly': e, 'origin': ''};
+			// } else {
+			// 	this.errormsg = {'friendly': msg.message, 'origin': e};
+			// }
+			// // console.log(e);
+			// this.busy = false;
+			// this.toaster.onError('Transaction failed', `${this.errormsg['friendly']}`);
 		}
 	}
-
-	// private showToast(type: ToastType, title: string, body: string, extraData: any) {
-	//     let toast: Toast;
-	//     toast = {
-	//         type: type,
-	//         title: title,
-	//         body: body,
-	//         data: extraData,
-	//         timeout: 8000,
-	//         showCloseButton: true,
-	//         onClickCallback: (data) => {
-	//             if (data.data['id']) {
-	//                 // Open block explorer on browser
-	//                 if (this.aService.activeChain.explorers) {
-	//                     if (this.aService.activeChain.explorers.length > 0) {
-	//                         const txBase = this.aService.activeChain.explorers[0].tx_url;
-	//                         window['shell']['openExternal'](txBase + data.data.id);
-	//                     }
-	//                 }
-	//             }
-	//             return true;
-	//         },
-	//         bodyOutputType: BodyOutputType.TrustedHtml,
-	//     };
-	//     this.toaster.popAsync(toast);
-	// }
 
 	onClose() {
 		if (!this.wasClosed) {

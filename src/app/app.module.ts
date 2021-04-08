@@ -52,6 +52,7 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTreeModule} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatExpansionModule} from '@angular/material/expansion';
+import {MatChipsModule} from'@angular/material/chips';
 
 // import {MaterialDesignFrameworkModule} from "@ajsf/material";
 
@@ -235,6 +236,7 @@ import {ArrayTypeComponent} from './type/array-type/array-type.component';
 		MatAutocompleteModule,
 		MatCardModule,
 		MatCheckboxModule,
+		MatChipsModule,
 		MatFormFieldModule,
 		MatInputModule,
 		MatListModule,

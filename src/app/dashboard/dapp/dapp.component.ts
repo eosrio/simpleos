@@ -366,7 +366,12 @@ export class DappComponent implements OnInit, AfterViewInit {
                     }
                 }
                 if(fullForm[idx] === null){
-                    fullForm[idx] = '';
+                    if (DappComponent.isArray(fullForm[idx]))
+                        fullForm[idx] = [];
+                    else{
+                        fullForm[idx] = '';
+                    }
+
                 }
             }
             this.formVal = fullForm;

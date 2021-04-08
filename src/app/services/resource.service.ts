@@ -72,15 +72,15 @@ export class ResourceService {
                     const stastEndPoint = this.aService.activeChain.borrow.endpoint;
                     let url = `${stastEndPoint}/stats/get_resource_usage?code=${action.account}&action=${action.name}`;
 
-                    if(action.name === 'transfer' && action.data !== undefined){
-                       url = url + `&@transfer.to=bitfinexdep1`;
+                    if (action.name === 'transfer' && action.data !== undefined) {
+                        url = url + `&@transfer.to=bitfinexdep1`;
                     }
-                    const response: any = await this.http.get(url,this.httpOptions).toPromise();
+                    const response: any = await this.http.get(url, this.httpOptions).toPromise();
 
                     if (response) {
                         result.push({
-                            code:action.account,
-                            action:action.name,
+                            code: action.account,
+                            action: action.name,
                             cpu: response.cpu.percentiles['95.0'] ?? 0,
                             net: response.net.percentiles['99.0'] ?? 0
                         });
@@ -180,7 +180,7 @@ export class ResourceService {
 
         // Get avg uS values CPU/NET
         const avgUsage: any = await this.getAvgTime(actions, needCpu, needNet);
-        console.log(avgUsage);
+        // console.log(avgUsage);
 
         //Total staked CPU
         const totalCPUStaked = ResourceService.asset2Float(account.details.total_resources.cpu_weight);
@@ -200,8 +200,8 @@ export class ResourceService {
             isNETWithdraw = (totalNETStaked - unstakeNET) <= 0 ?? false;
         }
         const accStd = await this.eosjs.getAccountInfo('eosriobrazil');
-        const totalCPUStakedStd = accStd.cpu_weight/precision;
-        const totalNETStakedStd = accStd.net_weight/precision;
+        const totalCPUStakedStd = ResourceService.asset2Float(accStd.total_resources.cpu_weight);
+        const totalNETStakedStd = ResourceService.asset2Float(accStd.total_resources.net_weight);
 
         const maxCPULimit = accStd.cpu_limit.max;
         const maxNETLimit = accStd.net_limit.max;
@@ -214,89 +214,96 @@ export class ResourceService {
         //If is total withdraw is true change resource available to zero before sending actions
         const totalCPULimitAvailable = isCPUWithdraw ? 0 : account.details.cpu_limit.available;
         const totalNETLimitAvailable = isNETWithdraw ? 0 : account.details.net_limit.available;
+        const acc = await this.eosjs.getAccountInfo(account.name);
+        // console.log({
+        //     account:acc,
+        //     totalCPUStaked: totalCPUStaked,
+        //     totalNETStaked: totalNETStaked,
+        //     maxCPULimit: maxCPULimit,
+        //     maxNETLimit: maxNETLimit,
+        //     timeTokenUnitCPU: timeTokenUnitCPU,
+        //     timeTokenUnitNET: timeTokenUnitNET,
+        //     totalCPULimitAvailable: totalCPULimitAvailable,
+        //     totalNETLimitAvailable: totalNETLimitAvailable,
+        //     avgUsageCpu:avgUsage.cpu,
+        //     avgUsageNet:avgUsage.net,
+        // });
 
-        console.log({
-            totalCPUStaked: totalCPUStaked,
-            totalNETStaked: totalNETStaked,
-            maxCPULimit: maxCPULimit,
-            maxNETLimit: maxNETLimit,
-            timeTokenUnitCPU: timeTokenUnitCPU,
-            timeTokenUnitNET: timeTokenUnitNET,
-            totalCPULimitAvailable: totalCPULimitAvailable,
-            totalNETLimitAvailable: totalNETLimitAvailable,
-        });
-        // if (totalCPULimitAvailable < avgUsage.cpu || totalNETLimitAvailable < avgUsage.net) {
 
-        //Check first if has free tx push
-        // if(this.aService.activeChain['relay']['enable'] &&  totalCPULimitAvailable < this.aService.activeChain['relay']['usageCpuLimit']) {
-        if (this.aService.activeChain['relay']['enable']) {
-            const result:any = await this.checkCredits(actions, account.name);
-            console.log(result);
-            if (result[0]['enable']) {
-                _relay = true;
-                _relayCredits.used = result['used'];
-                _relayCredits.limit = result['limit'];
+        if (totalCPULimitAvailable < avgUsage.cpu || totalNETLimitAvailable < avgUsage.net) {
+
+            //Check first if has free tx push
+            if (this.aService.activeChain['relay']['enable'] && totalCPULimitAvailable < this.aService.activeChain['relay']['usageCpuLimit']) {
+                if (this.aService.activeChain['relay']['enable']) {
+                    const result: any = await this.checkCredits(actions, account.name);
+                    console.log(result);
+                    if (result[0]['enable']) {
+                        _relay = true;
+                        _relayCredits.used = result[0]['used'];
+                        _relayCredits.limit = result[0]['limit'];
+                    }
+                    console.log(result);
+                }
             }
-            console.log(result);
-        }
 
-        if (this.aService.activeChain['features']['rex']) {
+            if (this.aService.activeChain['features']['rex']) {
 
-            // Get Rex Informations
-            await this.updateGlobalRexData();
+                // Get Rex Informations
+                await this.updateGlobalRexData();
 
-            if (this.aService.activeChain['borrow']['enable']) {
+                if (this.aService.activeChain['borrow']['enable']) {
 
-                //Parameters from config.json
-                const defaultUS: number = this.aService.activeChain['borrow']['default_us'];
-                const margin: number = this.aService.activeChain['borrow']['margin'];
+                    //Parameters from config.json
+                    const defaultUS: number = this.aService.activeChain['borrow']['default_us'];
+                    const margin: number = this.aService.activeChain['borrow']['margin'];
 
 
-                const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
+                    const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
 
-                if (totalCPULimitAvailable < newAvgCPU) {
-                    targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
-                    _needResource = true;
-                }
-
-                if (totalNETLimitAvailable < avgUsage.net) {
-                    if (isNETWithdraw) {
-                        targetNet = parseFloat((2).toPrecision(precision));
-                    } else {
-                        targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
+                    if (totalCPULimitAvailable < newAvgCPU) {
+                        targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
+                        _needResource = true;
                     }
-                    _needResource = true;
-                }
 
-                console.log({
-                    targetCpu: targetCpu,
-                    targetNet: targetNet,
-                    borrowingCost: this.borrowingCost,
-                    newAvgCPU: newAvgCPU,
-                    totalCPULimitAvailable: totalCPULimitAvailable,
-                    totalNETLimitAvailable: totalNETLimitAvailable,
-                    timeTokenUnitCPU: timeTokenUnitCPU,
-                    precision: precision
-                });
-
-                if (targetCpu > 0) {
-                    this.cpuCost = targetCpu / this.borrowingCost;
-                    if (this.cpuCost < 0.0001) {
-                        this.cpuCost = 0.0001;
+                    if (totalNETLimitAvailable < avgUsage.net) {
+                        if (isNETWithdraw) {
+                            targetNet = parseFloat((2).toPrecision(precision));
+                        } else {
+                            targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
+                        }
+                        _needResource = true;
                     }
-                }
 
-                if (targetNet > 0) {
-                    this.netCost = targetNet / this.borrowingCost;
-                    if (this.netCost < 0.0001) {
-                        this.netCost = 0.0001;
+                    // console.log({
+                    //     targetCpu: targetCpu,
+                    //     targetNet: targetNet,
+                    //     borrowingCost: this.borrowingCost,
+                    //     newAvgCPU: newAvgCPU,
+                    //     totalCPULimitAvailable: totalCPULimitAvailable,
+                    //     totalNETLimitAvailable: totalNETLimitAvailable,
+                    //     timeTokenUnitCPU: timeTokenUnitCPU,
+                    //     precision: precision
+                    // });
+
+                    if (targetCpu > 0) {
+                        this.cpuCost = targetCpu / this.borrowingCost;
+                        if (this.cpuCost < 0.0001) {
+                            this.cpuCost = 0.0001;
+                        }
                     }
+
+                    if (targetNet > 0) {
+                        this.netCost = targetNet / this.borrowingCost;
+                        if (this.netCost < 0.0001) {
+                            this.netCost = 0.0001;
+                        }
+                    }
+
+                    this.totalCost = this.cpuCost + this.netCost;
                 }
 
-                this.totalCost = this.cpuCost + this.netCost;
             }
         }
-        // }
 
         this.resourceInfo = {
             needResources: _needResource,
@@ -307,7 +314,7 @@ export class ResourceService {
             precision: precision,
             tk_name: tk_nameVal
         };
-        console.log(this.resourceInfo);
+
         return this.resourceInfo;
     }
 

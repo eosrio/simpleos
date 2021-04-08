@@ -141,6 +141,7 @@ export class LedgerService {
             this.checkingApp = true;
 
             // listen for check response
+            console.log(this.connect.ipc);
             this.connect.ipc.once('ledger_reply', (event, args) => {
                 if (args.event === 'check_app') {
                     console.log(args);

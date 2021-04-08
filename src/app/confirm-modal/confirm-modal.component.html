@@ -40,17 +40,12 @@
                         <br>
                         <mat-radio-group [(ngModel)]="useFreeTransaction" class="free-transaction-radio"
                                          aria-label="Select an option" color="accent">
-                            <mat-radio-button value="1" (change)="toggleHelp($event,true)">Yes, please!</mat-radio-button>
-                            <mat-radio-button value="0" (change)="toggleHelp($event,true)"style="margin-left: 20px;">No, thanks!</mat-radio-button>
+                            <mat-radio-button value="1" (change)="toggleHelp($event,true)">Yes, please!
+                            </mat-radio-button>
+                            <mat-radio-button value="0" (change)="toggleHelp($event,true)" style="margin-left: 20px;">
+                                No, thanks!
+                            </mat-radio-button>
                         </mat-radio-group>
-                        <!--                    <label style="margin-right: 25px">-->
-                        <!--                        <input name="options" type="radio" value="1" (click)="toggleHelp({},$event)" [checked]="true" style="margin-right: 10px" >-->
-                        <!--                        yes, please!-->
-                        <!--                    </label>-->
-                        <!--                    <label>-->
-                        <!--                        <input name="options" type="radio" value="0" (click)="toggleHelp({},$event)"  style="margin-right: 10px" >-->
-                        <!--                        no, thanks!-->
-                        <!--                    </label>-->
                     </h5>
                 </mat-card>
             </ng-container>
@@ -72,19 +67,12 @@
                         <br>
                         <mat-radio-group [(ngModel)]="useBorrowRex" class="free-transaction-radio"
                                          aria-label="Select an option" color="accent">
-                            <mat-radio-button value="1" (change)="toggleHelp($event,false)">Yes, please!</mat-radio-button>
-                            <mat-radio-button value="0" (change)="toggleHelp($event,false)" style="margin-left: 20px;">No, thanks!</mat-radio-button>
+                            <mat-radio-button value="1" (change)="toggleHelp($event,false)">Yes, please!
+                            </mat-radio-button>
+                            <mat-radio-button value="0" (change)="toggleHelp($event,false)" style="margin-left: 20px;">
+                                No, thanks!
+                            </mat-radio-button>
                         </mat-radio-group>
-<!--                        <label style="margin-right: 25px">-->
-<!--                            <input name="options" type="radio" value="1" (click)="toggleHelp($event)" [checked]="true"-->
-<!--                                   style="margin-right: 10px">-->
-<!--                            yes, please do it-->
-<!--                        </label>-->
-<!--                        <label>-->
-<!--                            <input name="options" type="radio" value="0" (click)="toggleHelp($event)"-->
-<!--                                   style="margin-right: 10px">-->
-<!--                            no, thanks-->
-<!--                        </label>-->
                     </h5>
                 </mat-card>
             </ng-container>
@@ -111,37 +99,51 @@
     <div class="modal-footer">
         <ng-container *ngIf="!loadResource">
             <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
-                <div>
-                    <ng-container *ngIf="mode === 'local'">
-                        <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
-                            <mat-form-field style="margin-top: 15px;">
-                                <input matInput
-                                       cdkTrapFocus
-                                       #pass="matInput"
-                                       type="password"
-                                       formControlName="pass"
-                                       (keyup.enter)="executeAction(pass.value);"
-                                       placeholder="Password">
-                            </mat-form-field>
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="highlight-primary my-2">Choose sign with:</h5>
+                        <mat-chip-list aria-label="Authorization selection">
+                            <mat-chip *ngFor="let perm of allAuth;let idx = index"
+                                      (click)="selectAuth([perm.auth,perm.pubKey])"
+                                      [selected]="perm.auth.permission===selectedAuth">
+                                {{perm.auth.permission}}
+                            </mat-chip>
+                        </mat-chip-list>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <ng-container *ngIf="mode === 'local'">
+                            <form [formGroup]="confirmationForm" fxLayout="row" fxLayoutAlign="end center">
+                                <mat-form-field style="margin-top: 15px;">
+                                    <input matInput
+                                           cdkTrapFocus
+                                           #pass="matInput"
+                                           type="password"
+                                           formControlName="pass"
+                                           (keyup.enter)="executeAction(pass.value);"
+                                           placeholder="Password">
+                                </mat-form-field>
 
-                            <button type="button" class="btn btn-info-outline"
-                                    (click)="executeAction(pass.value);" [disabled]="busy">
-                                Confirm
-                                <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-                            </button>
+                                <button type="button" class="btn btn-info-outline"
+                                        (click)="executeAction(pass.value);" [disabled]="busy">
+                                    Confirm
+                                    <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                                </button>
 
-                        </form>
-                    </ng-container>
+                            </form>
+                        </ng-container>
 
-                    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px"
-                         *ngIf="mode === 'ledger'">
+                        <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px"
+                             *ngIf="mode === 'ledger'">
                     <span class="text-faded">device: {{requiredLedgerInfo.device}}
                         - slot: {{requiredLedgerInfo.slot}}</span>
-                        <button type="button" class="btn btn-info-outline"
-                                style="margin-top: 12px;" (click)="signLedger()">
-                            sign with ledger
-                            <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-                        </button>
+                            <button type="button" class="btn btn-info-outline"
+                                    style="margin-top: 12px;" (click)="signLedger()">
+                                sign with ledger
+                                <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="error error-modal-footer" *ngIf="errormsg['friendly']!==''">

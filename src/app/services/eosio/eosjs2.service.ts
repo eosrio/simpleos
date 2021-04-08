@@ -187,10 +187,8 @@ export class Eosjs2Service {
             }],
             data: {}
         });
-        console.log('trx: ', JSON.stringify(trx));
         if (this.apiRelay) {
             const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
-            console.log('requiredKeys: ', requiredKeys);
             try {
                 const packedTransaction = await this.apiRelay.transact(trx, {
                     blocksBehind: 3,
@@ -205,7 +203,6 @@ export class Eosjs2Service {
                     serializedTransaction: serializedTx,
                     abis: [],
                 };
-                console.log('signArgs: ', signArgs);
                 const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
                 return {pushTransactionArgs};
             } catch (e) {

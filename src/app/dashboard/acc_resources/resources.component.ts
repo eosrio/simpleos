@@ -529,7 +529,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             if (!this.isDestroyed) {
                 this.cdr.detectChanges();
             }
-            console.log(this.minToStake);
+            // console.log(this.minToStake);
         }
     }
 
@@ -605,7 +605,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     changePowerUpValueManually(e) {
-        console.log(e);
+        // console.log(e);
         const value = (e === undefined) ? 0 : e;
         this.errorValuePowerUp = '';
         this.powerUpdisabled = true;
@@ -646,11 +646,11 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const precisionNet = Math.pow(10, this.aService.activeChain['precision'] + 4);
-        const userDetails2 = await this.eosjs.getAccountInfo('eosriobrazil');
-        const cpu_weight = userDetails2.cpu_weight / precision;
-        const net_weight = userDetails2.net_weight / precision;
-        this.timeUsCost = Math.round(((cpu_weight / userDetails2.cpu_limit.max) / 3) * precision) / precision;
-        this.timeUsCostNet = Math.round(((net_weight / userDetails2.net_limit.max) / 3) * precisionNet) / precisionNet;
+        const userDetails = await this.aService.selected.getValue().details;
+        const cpu_weight = userDetails.cpu_weight / precision;
+        const net_weight = userDetails.net_weight / precision;
+        this.timeUsCost = Math.round(((cpu_weight / userDetails.cpu_limit.max) * 3) * precision) / precision;
+        this.timeUsCostNet = Math.round(((net_weight / userDetails.net_limit.max) * 3 ) * precisionNet) / precisionNet;
     }
 
     async powerUpPlus(qtd, usCpu) {
@@ -695,7 +695,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             let netAmount = power_net_param.fee;
             let cpuAmount = maxAmount - power_net_param.fee;
-            console.log(power_net_param.fee,cpuAmount);
+            // console.log(power_net_param.fee,cpuAmount);
             // if (cpuAmount <= 0) {
             //     netAmount = 0;
             //     cpuAmount = maxAmount;
@@ -710,8 +710,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             this.cpu_frac = power_cpu.frac;
 
-            const powerCpuAmount = Math.round(power_cpu.amount);
-            const powerNETAmount = Math.round(power_net_param.amount);
+            const powerCpuAmount = Math.round(power_cpu.amount)/precision;
+            const powerNETAmount = Math.round(power_net_param.amount)/precision;
             this.usCPUPowerUp = Math.round(powerCpuAmount * this.timeUsCost);
             this.usNETPowerUp = Math.round(powerNETAmount * this.timeUsCostNet);
 
@@ -1344,6 +1344,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
+        console.log( this.mode);
         let actionsModal = [{
             account: 'eosio',
             name: 'refund',

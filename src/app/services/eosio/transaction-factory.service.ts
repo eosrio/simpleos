@@ -26,7 +26,6 @@ export interface TrxModalData {
         precision: number,
         tk_name: String, },
     errorFunc?: any;
-    addActions?: boolean;
     tk_name?: string;
 }
 
@@ -68,7 +67,6 @@ export class TransactionFactoryService {
                 tk_name: 'EOS',
             },
             errorFunc: null,
-            addActions: false,
         });
     }
 
@@ -141,6 +139,35 @@ export class TransactionFactoryService {
             return [{actor: actor.name, permission: _permission}, publicKey];
         } else {
             return [null, null];
+        }
+    }
+
+    getAllAuth(account?: any) {
+
+        // get selected account if none was provided
+        const actor = account ?? this.aService.selected.getValue();
+
+        // lookup active key
+        let _permission = '';
+        let publicKey = '';
+        // list all permissions
+        let authArr = [];
+            for (const perm of actor.details.permissions) {
+                if (perm.required_auth.keys.length > 0) {
+                    if (this.crypto.checkPublicKey(perm.required_auth.keys[0].key)) {
+                        _permission = perm.perm_name;
+                        publicKey = perm.required_auth.keys[0].key;
+                        authArr.push({auth:{actor: actor.name, permission: _permission},pubKey: publicKey});
+                        //break;
+                    }
+                }
+            // }
+        }
+
+        if (authArr.length >0) {
+            return authArr;
+        } else {
+            return null;
         }
     }
 }

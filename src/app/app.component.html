@@ -132,32 +132,46 @@
 
     <div class="modal-footer">
         <div fxLayout="column" style="width: 100%; padding: 0 .15rem;" >
-            <div>
-                <ng-container *ngIf="mode === 'local'">
-                    <form [formGroup]="confirmForm" class="confirmForm"  fxLayout="row" fxLayoutAlign="end center">
-                        <mat-form-field style="margin-top: 15px;">
-                            <input matInput #pass type="password" placeholder="Password"
-                                   formControlName="pass" (keyup.enter)="signExternalAction()">
-                            <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
-                                {{wrongpass}}
-                            </mat-hint>
-                        </mat-form-field>
+            <div class="row">
+                <div class="col-12">
+                    <h5 class="highlight-primary my-2">Choose sign with:</h5>
+                    <mat-chip-list aria-label="Authorization selection">
+                        <mat-chip *ngFor="let perm of allAuth;let idx = index"
+                                  (click)="selectAuth([perm.auth,perm.pubKey])"
+                                  [selected]="perm.auth.permission===selectedAuth">
+                            {{perm.auth.permission}}
+                        </mat-chip>
+                    </mat-chip-list>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <ng-container *ngIf="mode === 'local'">
+                        <form [formGroup]="confirmForm" class="confirmForm"  fxLayout="row" fxLayoutAlign="end center">
+                            <mat-form-field style="margin-top: 15px;">
+                                <input matInput #pass type="password" placeholder="Password"
+                                       formControlName="pass" (keyup.enter)="signExternalAction()">
+                                <mat-hint class="error" align="start" *ngIf="wrongpass !== ''">
+                                    {{wrongpass}}
+                                </mat-hint>
+                            </mat-form-field>
 
+                            <button type="button" class="btn btn-info-outline"
+                                    [disabled]="!confirmForm.valid || busy" (click)="signExternalAction()">
+                                Confirm
+                                <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
+                            </button>
+                        </form>
+                    </ng-container>
+
+                    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" *ngIf="mode === 'ledger'">
+                        <span class="text-faded">device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
                         <button type="button" class="btn btn-info-outline"
-                                [disabled]="!confirmForm.valid || busy" (click)="signExternalAction()">
-                            Confirm
+                                style="margin-top: 12px;" (click)="signExternalAction()">
+                            sign with ledger
                             <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
                         </button>
-                    </form>
-                </ng-container>
-
-                <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" *ngIf="mode === 'ledger'">
-                    <span class="text-faded">device: {{requiredLedgerInfo.device}} - slot: {{requiredLedgerInfo.slot}}</span>
-                    <button type="button" class="btn btn-info-outline"
-                            style="margin-top: 12px;" (click)="signExternalAction()">
-                        sign with ledger
-                        <fa-icon [icon]="['far','spinner']" [spin]="true" *ngIf="busy"></fa-icon>
-                    </button>
+                    </div>
                 </div>
             </div>
             <div class="error error-modal-footer" *ngIf="txerror !== ''">

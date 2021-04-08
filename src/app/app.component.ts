@@ -51,7 +51,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 		private cdr: ChangeDetectorRef,
 		public theme: ThemeService,
 		private toaster: NotificationService,
-		private http: HttpClient
+		private http: HttpClient,
+
 	) {
 		if (this.compilerVersion === 'LIBERLAND') {
 			this.titleService.setTitle('Liberland Wallet v' + this.version);
@@ -132,6 +133,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 	private isSimpleosConnect: boolean;
 
 	mode = 'local';
+
+	public allAuth: any;
+	public selectedAuth:string = 'active';
 
 	ngOnInit(): void {
 		this.connect.ipc.send('electron', 'request_os');
@@ -460,7 +464,30 @@ export class AppComponent implements OnInit, AfterViewInit {
 			}
 			this.selectedAccount.next(responseData);
 			this.aService.select(idx);
+			this.mode = this.crypto.getPrivateKeyMode(key);
+			this.selectedAuth = responseData.permission;
+			this.allAuth = this.trxFactory.getAllAuth();
 		}
+	}
+
+	async selectAuth([auth,publicKey]){
+		this.mode = this.crypto.getPrivateKeyMode(publicKey);
+		this.selectedAuth = auth.permission;
+		let responseData;
+		if (this.isSimpleosConnect) {
+			responseData = {
+				actor: auth.actor,
+				permission: auth.permission,
+				key: publicKey,
+			};
+		} else {
+			responseData = {
+				accountName: auth.actor,
+				permission: auth.permission,
+				publicKey: publicKey,
+			};
+		}
+		this.selectedAccount.next(responseData);
 	}
 
 	signResponse(data) {
