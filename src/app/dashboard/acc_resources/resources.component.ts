@@ -103,6 +103,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     stakerr: string;
     stakedisabled: boolean;
     powerUpdisabled: boolean;
+    unStakeTooLow: boolean;
     isCheckedPowerUpManually: boolean = false;
     nbps: number;
     showAdvancedRatio = false;
@@ -405,6 +406,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
             ]
         };
+        this.unStakeTooLow = false;
         this.powerUpdisabled = true;
     }
 
@@ -547,13 +549,15 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.unstakedLimited = 0;
         this.valuetoPowerUp = 0;
         this.percentToPowerUp = '0.0';
-        if (!this.powerUpdisabled) {
+        this.minPowerUp = 0.0002;
+        this.unStakeTooLow = this.unstaked > this.minPowerUp ;
+        if (this.unStakeTooLow) {
 
             this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
             this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
             const maxValueSlider = this.aService.activeChain['powerup']['maxPowerUpSlider'];
 
-            this.minPowerUp = 0.0002;
+
             const onePercerntStake = (this.unstaked * 0.01);
 
             this.unstakedLimited = onePercerntStake > maxValueSlider ? maxValueSlider : (onePercerntStake < 0.01 ? this.unstaked : onePercerntStake);
@@ -598,23 +602,21 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     toggleManuallyPowerUp() {
         this.isManuallyPowerUP = !this.isManuallyPowerUP;
         this.isCheckedPowerUpManually = !this.isCheckedPowerUpManually
-        this.totalUsageTDU = [];
-        if (!this.isManuallyPowerUP) {
-            this.updateUnstakePercent();
-        }
+       //this.totalUsageTDU = [];
+        //if (this.isManuallyPowerUP) {
+        //    this.updatePowerUpValue('manually');
+        //}
     }
 
     changePowerUpValueManually(e) {
         // console.log(e);
         const value = (e === undefined) ? 0 : e;
         this.errorValuePowerUp = '';
-        this.powerUpdisabled = true;
-        this.isCheckedPowerUpManually = true;
-        console.log(this.minPowerUp, value, this.unstaked);
         if (value >= this.minPowerUp && value <= this.unstaked) {
             this.valuetoPowerUp = e;
-            this.powerUpdisabled = false;
+            this.updatePowerUpValue('manually');
         } else {
+            this.totalUsageTDU = [];
             this.errorValuePowerUp = 'Wrong amount!';
         }
 
@@ -646,7 +648,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const precisionNet = Math.pow(10, this.aService.activeChain['precision'] + 4);
-        const userDetails = await this.aService.selected.getValue().details;
+        // const userDetails = await this.aService.selected.getValue().details;
+        const userDetails = await this.eosjs.getAccountInfo('eosriobrazil');
         const cpu_weight = userDetails.cpu_weight / precision;
         const net_weight = userDetails.net_weight / precision;
         this.timeUsCost = Math.round(((cpu_weight / userDetails.cpu_limit.max) * 3) * precision) / precision;

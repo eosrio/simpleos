@@ -170,13 +170,16 @@ export class LedgerService {
                 this.deviceName = payload.data.deviceModel.productName;
                 console.log(`Device connected: ${this.deviceName}`);
                 this.checkingApp = true;
+                this.appReady = false;
                 this.openPanel.emit(true);
                 this.checkEosApp();
             } else if (payload.data.type === 'remove') {
+                this.connect.ipc.send('ledger', {event: 'check_app'});
                 this.openPanel.emit(false);
                 this.deviceName = '';
                 this.appReady = false;
                 this.checkingApp = false;
+                this.reading = false;
                 console.log(`Device Removed: ${payload.data.deviceModel["productName"]}`);
             } else {
                 console.log(event);

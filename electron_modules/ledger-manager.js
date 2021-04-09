@@ -196,6 +196,7 @@ class LedgerManager {
                 this.setupListener();
             }
             if (args.event === 'check_app') {
+                Logger.info('ckecking status app');
                 const status = await this.getEosAppStatus();
                 this.main.win.webContents.send('ledger_reply', {
                     event: 'check_app',
@@ -204,13 +205,13 @@ class LedgerManager {
             }
             if (args.event === 'read_slots') {
 
+                if (!this.transport) {
+                    await this.openTransport();
+                }
+
                 if (!this.deviceDescriptor) {
                     this.reportDeviceError();
                     return;
-                }
-
-                if (!this.transport) {
-                    await this.openTransport();
                 }
 
                 if (this.transport) {
@@ -278,21 +279,18 @@ class LedgerManager {
         } else {
             Logger.info('-------------- TRANSPORT ERROR ------------');
             Logger.info(e);
-            Logger.info(this.transport);
+            Logger.info(JSON.stringify(this.transport));
             Logger.info('-------------------------------------');
         }
     }
 
     async assertTransport() {
-        if (!this.transport) {
-            Logger.info('starting transport...');
-            await this.openTransport();
-        } else {
-            if (this.transport.disconnected) {
-                await this.transport.close();
-                this.transport = null;
-            }
+        if(this.transport){
+            await this.transport.close();
         }
+        this.transport = null;
+        Logger.info('starting transport...');
+        await this.openTransport();
     }
 
     async getEosAppStatus() {
@@ -319,9 +317,8 @@ class LedgerManager {
         this.listener = Transport.listen({
             next: (event) => {
                 const strEV = JSON.stringify(event)
-                // Logger.info(JSON.stringify(event));
                 if (event.type === 'add') {
-                    this.deviceDescriptor = event.descriptor;
+                    this.deviceDescriptor = event['descriptor'];
                 } else if (event.type === 'remove') {
                     this.deviceDescriptor = null;
                 }
@@ -329,31 +326,6 @@ class LedgerManager {
                     this.main.win.webContents.send('ledger', {
                         event: 'listener_event',
                         data: JSON.parse(strEV),
-                        //     {
-                        //     "type": event.type,
-                        //     "descriptor":event.descriptor,
-                        //     "device": {
-                        //         "vendorId": event.device.vendorId,
-                        //         "productId": event.device.productId,
-                        //         "path": event.device.path,
-                        //         "serialNumber": event.device.serialNumber,
-                        //         "manufacturer": event.device.manufacturer,
-                        //         "product": event.device.product,
-                        //         "release": event.device.release,
-                        //         "interface": event.device.interface,
-                        //         "usagePage": event.device.usagePage,
-                        //         "usage": event.device.usage,
-                        //     },
-                        //     "deviceModel": {
-                        //         "id": event.deviceModel.id,
-                        //         "productName": event.deviceModel.productName,
-                        //         "productIdMM": event.deviceModel.productIdMM,
-                        //         "legacyUsbProductId": event.deviceModel.legacyUsbProductId,
-                        //         "usbOnly": event.deviceModel.usbOnly,
-                        //         "memorySize": event.deviceModel.memorySize,
-                        //         "blockSize": event.deviceModel.blockSize
-                        //     }
-                        // },
                     });
 
                 } catch (e) {
@@ -376,8 +348,9 @@ class LedgerManager {
         });
     }
 
-    setTransport(t) {
+    async setTransport(t) {
         this.transport = t;
+        Logger.info(JSON.stringify(this.transport));
         Logger.info('transport ready');
     }
 
@@ -386,8 +359,9 @@ class LedgerManager {
             if (this.deviceDescriptor) {
                 Logger.info('attempting to open descriptor: ' + this.deviceDescriptor);
                 try {
-                    Transport.open(this.deviceDescriptor).then((t) => {
-                        this.setTransport(t);
+                    Transport.open(this.deviceDescriptor).then( async (t) => {
+                        await this.setTransport(t);
+                        Logger.info(`opened descriptor:${this.deviceDescriptor} with success!`);
                         resolve();
                     }).catch((err) => {
                         Logger.warn('Failed to open transport with: ' + this.deviceDescriptor);
@@ -408,8 +382,8 @@ class LedgerManager {
                                 } else {
                                     Logger.info('permissions updated');
                                     this.rootRequested = false;
-                                    Transport.open(this.deviceDescriptor).then((t) => {
-                                        this.setTransport(t);
+                                    Transport.open(this.deviceDescriptor).then( async (t) => {
+                                        await this.setTransport(t);
                                         resolve();
                                     });
                                 }

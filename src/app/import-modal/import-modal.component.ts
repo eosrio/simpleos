@@ -88,8 +88,12 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     loadLedgerAccounts() {
         this.usingLedger = true;
         this.ledgerError = '';
-        console.log('reading ledger slots...');
-        this.ledger.readSlots(0, 5);
+        if(this.ledger.appReady){
+            console.log('reading ledger slots...');
+            this.ledger.readSlots(0, 5);
+        }else{
+            this.ledgerError = 'error reading accounts from device! make sure the EOS app is open or device is connected!';
+        }
         if (!this.ledgerEventsListener) {
             this.ledgerEventsListener = this.ledger.ledgerEvents.subscribe((value) => {
                 if (value.event === 'new_account') {
@@ -147,6 +151,7 @@ export class ImportModalComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.ledgerError = '';
         this.createForms();
         this.creatSubscriptions();
     }

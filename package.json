@@ -154,7 +154,7 @@
 		"@fortawesome/pro-regular-svg-icons": "5.15.2",
 		"@fortawesome/pro-solid-svg-icons": "5.15.2",
 		"@ledgerhq/hw-transport": "5.48.0",
-		"@ledgerhq/hw-transport-node-hid": "5.48.0",
+
 		"@ngx-formly/core": "5.10.14",
 		"@ngx-formly/material": "5.10.14",
 		"@webcomponents/webcomponentsjs": "2.5.0",
@@ -219,6 +219,7 @@
 		"@angular/compiler-cli": "^11.2.4",
 		"@angular/language-service": "^11.2.4",
 		"@electron/typescript-definitions": "8.8.0",
+		"@ledgerhq/hw-transport-node-hid": "5.48.0",
 		"@types/crypto-js": "^4.0.1",
 		"@types/echarts": "^4.9.4",
 		"@types/express": "4.17.11",
