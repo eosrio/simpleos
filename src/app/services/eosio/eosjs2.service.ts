@@ -868,7 +868,7 @@ export class Eosjs2Service {
             if (type === 'C' && (fee / max) > percent) {
                 return {fee: fee, frac: frac, amount: amount};
             }
-
+            // console.log(amount,max,amount / max,percent)
             if (type === 'A' && (amount / max) > percent) {
                 return {fee: fee, frac: frac, amount: amount};
             }

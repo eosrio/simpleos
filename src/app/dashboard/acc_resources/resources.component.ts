@@ -235,12 +235,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.precision = '1.0-' + this.aService.activeChain['precision'];
         this.net_limit = {
             used: 0,
-            max:0
+            max: 0
         };
 
         this.cpu_limit = {
             used: 0,
-            max:0
+            max: 0
         };
 
         this.ramMarketFormBuy = this.fb.group({
@@ -561,7 +561,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             const precision = Math.pow(10, this.aService.activeChain['precision']);
             this.percentToPowerUp = (Math.round(percent * precision) / precision).toString();
             this.valuetoPowerUp = this.minPowerUp;
-            this.stepPowerUp = Math.round(percent * 100)/100 ;
+            this.stepPowerUp = Math.round(percent * 100) / 100;
 
             await this.updatePowerUpValue();
 
@@ -650,20 +650,31 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const cpu_weight = userDetails.cpu_weight / precision;
         const net_weight = userDetails.net_weight / precision;
         this.timeUsCost = Math.round(((cpu_weight / userDetails.cpu_limit.max) * 3) * precision) / precision;
-        this.timeUsCostNet = Math.round(((net_weight / userDetails.net_limit.max) * 3 ) * precisionNet) / precisionNet;
+        this.timeUsCostNet = Math.round(((net_weight / userDetails.net_limit.max) * 3) * precisionNet) / precisionNet;
     }
 
     async powerUpPlus(qtd, usCpu) {
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
-        const amountPowerPlus = Math.round((qtd * usCpu) / this.timeUsCost);
+        const amountPowerPlus = (Math.round((qtd * usCpu) / this.timeUsCost))*precision;
 
         const power_cpu = await this.eosjs.calculateFeePowerUp(this.state['cpu'], min_cpu_frac, 1, 'A', amountPowerPlus);
-        const powerCpuAmount = Math.round(power_cpu.amount);
+        const powerCpuAmount = Math.round(power_cpu.amount) / precision;
         const newFee = this.valuetoPowerUp + Math.round(power_cpu.fee * precision) / precision;
-
+        const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
+        // console.log({
+        //     usCpu:usCpu,
+        //     min_cpu_frac: min_cpu_frac,
+        //     power_cpu: power_cpu,
+        //     newFee: newFee,
+        //     fee: this.valuetoPowerUp,
+        //     amountPowerPlus: amountPowerPlus,
+        //     powerCpuAmount: powerCpuAmount,
+        //     usCPUPowerUp: this.usCPUPowerUp,
+        //     newUsCPU: newUsCPU,
+        // });
         if (newFee <= this.unstakedLimited) {
-            this.usCPUPowerUp += Math.round(powerCpuAmount * this.timeUsCost);
+            this.usCPUPowerUp = newUsCPU;
             this.valuetoPowerUp = newFee;
             this.percentToPowerUp = (this.valuetoPowerUp * 100 / (this.unstakedLimited)).toFixed(2);
             // // Transfer + DELEGATE + UNDELEGATE
@@ -673,6 +684,18 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     async updatePowerUpValue(type?) {
+        let maxAmount;
+
+        if (type === undefined) {
+            maxAmount = this.unstakedLimited * (parseFloat(this.percentToPowerUp) / 100);
+        } else {
+            maxAmount = this.valuetoPowerUp;
+        }
+
+        if (!(maxAmount >= this.minPowerUp)) {
+            maxAmount = this.minPowerUp;
+        }
+
         if (!this.powerUpdisabled) {
             this.busyPowerUp = true;
             const precision = Math.pow(10, this.aService.activeChain['precision']);
@@ -681,15 +704,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             let calculatePercent;
             const minPercentLimit = this.aService.activeChain['powerup']['minPercentLimit'];
             const minCalculatePercent = this.aService.activeChain['powerup']['minCalculatePercent'];
-            const maxCalculatePercent =  this.aService.activeChain['powerup']['maxCalculatePercent'];
-
-            let maxAmount;
-
-            if (type === undefined) {
-                maxAmount = this.unstakedLimited * (parseFloat(this.percentToPowerUp) / 100);
-            } else {
-                maxAmount = this.valuetoPowerUp;
-            }
+            const maxCalculatePercent = this.aService.activeChain['powerup']['maxCalculatePercent'];
 
             const power_net_param = await this.eosjs.calculateFeePowerUp(this.state['net'], this.net_frac, 1);
 
@@ -701,17 +716,17 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             //     cpuAmount = maxAmount;
             // }
 
-            if(maxAmount < minPercentLimit ){
+            if (maxAmount < minPercentLimit) {
                 calculatePercent = minCalculatePercent;
-            }else{
+            } else {
                 calculatePercent = maxCalculatePercent;
             }
             const power_cpu = await this.eosjs.calculateFeePowerUp(this.state['cpu'], this.cpu_frac, calculatePercent, 'C', cpuAmount);
 
             this.cpu_frac = power_cpu.frac;
 
-            const powerCpuAmount = Math.round(power_cpu.amount)/precision;
-            const powerNETAmount = Math.round(power_net_param.amount)/precision;
+            const powerCpuAmount = Math.round(power_cpu.amount) / precision;
+            const powerNETAmount = Math.round(power_net_param.amount) / precision;
             this.usCPUPowerUp = Math.round(powerCpuAmount * this.timeUsCost);
             this.usNETPowerUp = Math.round(powerNETAmount * this.timeUsCostNet);
 
@@ -743,10 +758,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             this.isCheckedPowerUpManually = false;
 
+        } else {
+            await this.updateUnstakePercent();
         }
     }
 
-    updateExemples(){
+    updateExemples() {
         this.totalUsageTDU[0] = {
             action: 'TRANSFER',
             one_time: this.localStorage.usageAction.actions[0]['transfer'],
@@ -1344,7 +1361,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
         this.mode = this.crypto.getPrivateKeyMode(publicKey);
-        console.log( this.mode);
+        console.log(this.mode);
         let actionsModal = [{
             account: 'eosio',
             name: 'refund',
