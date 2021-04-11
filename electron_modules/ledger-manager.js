@@ -1,4 +1,9 @@
-const Transport = require('@ledgerhq/hw-transport-node-hid').default;
+// const Transport = require('@ledgerhq/hw-transport-node-hid').default;
+
+// import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
+
+const TransportNodeHid = require('@ledgerhq/hw-transport-node-hid').default;
+
 const {ipcMain} = require('electron');
 const bippath = require('bip32-path');
 const fetch = require('node-fetch');
@@ -166,7 +171,7 @@ class LedgerManager {
     }
 
     async init() {
-        const hid_status = await Transport.isSupported();
+        const hid_status = await TransportNodeHid.isSupported();
         Logger.info(`HID Status: ${hid_status}`);
         if (!hid_status) {
             Logger.info('HID Supported:', hid_status);
@@ -314,7 +319,7 @@ class LedgerManager {
         if (this.listener) {
             this.listener.unsubscribe();
         }
-        this.listener = Transport.listen({
+        this.listener = TransportNodeHid.listen({
             next: (event) => {
                 const strEV = JSON.stringify(event)
                 if (event.type === 'add') {
@@ -359,7 +364,7 @@ class LedgerManager {
             if (this.deviceDescriptor) {
                 Logger.info('attempting to open descriptor: ' + this.deviceDescriptor);
                 try {
-                    Transport.open(this.deviceDescriptor).then( async (t) => {
+                    TransportNodeHid.open(this.deviceDescriptor).then( async (t) => {
                         await this.setTransport(t);
                         Logger.info(`opened descriptor:${this.deviceDescriptor} with success!`);
                         resolve();
@@ -382,7 +387,7 @@ class LedgerManager {
                                 } else {
                                     Logger.info('permissions updated');
                                     this.rootRequested = false;
-                                    Transport.open(this.deviceDescriptor).then( async (t) => {
+                                    TransportNodeHid.open(this.deviceDescriptor).then( async (t) => {
                                         await this.setTransport(t);
                                         resolve();
                                     });
