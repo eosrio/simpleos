@@ -35,7 +35,7 @@
         "endpoint":"https://eos.hyperion.eosrio.io/v2",
         "enable": true,
         "margin": 1.30,
-        "default_us": 1000
+        "default_us": 3000
       },
       "relay": {
         "enable": true,
