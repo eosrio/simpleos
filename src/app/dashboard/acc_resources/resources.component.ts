@@ -682,20 +682,21 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const newFee = this.valuetoPowerUp + Math.round(power_cpu.fee * precision) / precision;
         const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
 
-        // console.log({
-        //     usCpu:usCpu,
-        //     min_cpu_frac: min_cpu_frac,
-        //     power_cpu: power_cpu,
-        //     newFee: newFee,
-        //     fee: this.valuetoPowerUp,
-        //     amountPowerPlus: amountPowerPlus,
-        //     powerCpuAmount: powerCpuAmount,
-        //     usCPUPowerUp: this.usCPUPowerUp,
-        //     newUsCPU: newUsCPU,
-        // });
+        console.log({
+            usCpu:usCpu,
+            min_cpu_frac: min_cpu_frac,
+            power_cpu: power_cpu,
+            newFee: newFee,
+            fee: this.valuetoPowerUp,
+            amountPowerPlus: amountPowerPlus,
+            powerCpuAmount: powerCpuAmount,
+            usCPUPowerUp: this.usCPUPowerUp,
+            newUsCPU: newUsCPU,
+        });
         if (newFee <= this.unstakedLimited) {
             this.usCPUPowerUp = newUsCPU;
             this.valuetoPowerUp = newFee;
+            this.cpu_frac += Math.round(power_cpu.frac);
             this.percentToPowerUp = (this.valuetoPowerUp * 100 / (this.unstakedLimited)).toFixed(2);
             // // Transfer + DELEGATE + UNDELEGATE
             this.updateExemples();
@@ -722,11 +723,9 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
             this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
 
-            const maxCalculatePercent = this.aService.activeChain['powerup']['maxCalculatePercent'];
-
             const power_net_param = await this.eosjs.calcPowerUp(this.state['net'], this.net_frac, {maxFee:0, maxPower:0});
 
-            let netAmount = Math.ceil(power_net_param.fee*precision)/precision;
+            let netAmount = Math.ceil(power_net_param.fee * precision) / precision;
             let cpuAmount = (maxAmount - netAmount);
             const power_cpu =  await this.eosjs.calcPowerUp(this.state['cpu'], this.cpu_frac, {maxFee:cpuAmount, maxPower:0});
 
@@ -737,27 +736,26 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.usCPUPowerUp = Math.round(powerCpuAmount * this.timeUsCost);
             this.usNETPowerUp = Math.round(powerNETAmount * this.timeUsCostNet);
 
-            // console.log({
-            //     calculatePercent: maxCalculatePercent,
-            //     net: netAmount,
-            //     cpu: cpuAmount,
-            //     maxAmount: maxAmount,
-            //     cpuFrac: this.cpu_frac,
-            //     netFrac: this.net_frac,
-            //     amountCpu: power_cpu.amount,
-            //     amountNet: power_net_param.amount,
-            //     timeUsCostCPU: this.timeUsCost,
-            //     timeUsCostNET: this.timeUsCostNet,
-            //     powerCpuAmount: powerCpuAmount,
-            //     powerNETAmount: powerNETAmount,
-            //     usNewCPU: this.usCPUPowerUp,
-            //     usNewNET: this.usNETPowerUp,
-            //     percentToPowerUp: this.percentToPowerUp,
-            //     netFee:power_net_param.fee,
-            //     cpuFee:power_cpu.fee,
-            //     total: (power_net_param.fee + power_cpu.fee),
-            //     totalPrecision: (netAmount + cpuAmount)
-            // });
+            console.log({
+                net: netAmount,
+                cpu: cpuAmount,
+                maxAmount: maxAmount,
+                cpuFrac: this.cpu_frac,
+                netFrac: this.net_frac,
+                amountCpu: power_cpu.amount,
+                amountNet: power_net_param.amount,
+                timeUsCostCPU: this.timeUsCost,
+                timeUsCostNET: this.timeUsCostNet,
+                powerCpuAmount: powerCpuAmount,
+                powerNETAmount: powerNETAmount,
+                usNewCPU: this.usCPUPowerUp,
+                usNewNET: this.usNETPowerUp,
+                percentToPowerUp: this.percentToPowerUp,
+                netFee:power_net_param.fee,
+                cpuFee:power_cpu.fee,
+                total: (power_net_param.fee + power_cpu.fee),
+                totalPrecision: (netAmount + cpuAmount)
+            });
 
             // Transfer + DELEGATE + UNDELEGATE
             this.updateExemples();

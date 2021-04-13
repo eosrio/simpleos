@@ -233,7 +233,7 @@ export class ConfirmModalComponent {
 
         transactionPayload.actions = this.transactionPayload();
 
-
+        console.log(transactionPayload);
         // Sign and push transaction
         const [trxResult, err] = await this.processTransaction(
             transactionPayload,
