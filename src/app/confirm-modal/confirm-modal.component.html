@@ -61,7 +61,7 @@
                         </span>
                     </a><br><br>
                         No problem! We got your back!<br><br>
-                        We can rent resources on REX to pay for the resources. It will cost <span
+                        We can rent resources on Power UP to pay for the resources. It will cost <span
                             class="highlight-secondary">{{resource.resourceInfo['spend'].toFixed(resource.resourceInfo['precision']) + ' ' + resource.resourceInfo['tk_name']}}</span>.
                         <br>
                         <br>
@@ -101,7 +101,7 @@
             <div fxLayout="column" style="width: 100%; padding: 0 .15rem;">
                 <div class="row">
                     <div class="col-12">
-                        <h5 class="highlight-primary my-2">Choose sign with:</h5>
+                        <h5 class="highlight-primary my-2">Sign with:</h5>
                         <mat-chip-list aria-label="Authorization selection">
                             <mat-chip *ngFor="let perm of allAuth;let idx = index"
                                       (click)="selectAuth([perm.auth,perm.pubKey])"

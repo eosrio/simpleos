@@ -57,7 +57,7 @@ export class ConfirmModalComponent {
 			pass: ['', [Validators.required]]
 		});
 
-		this.trxFactory.launcher.subscribe((state) => {
+		this.trxFactory.launcher.subscribe(async (state) => {
 			this.loadResource = true;
 			this.visibility = state.visibility;
 			this.mode = state.mode;
@@ -68,7 +68,13 @@ export class ConfirmModalComponent {
 				this.wasClosed = false;
 				this.setFocus();
 				console.log(Date(), this.loadResource);
-				this.resourceInit().catch(console.log);
+				await this.resourceInit();
+				if(this.modalData.resourceInfo["relay"]){
+					this.useFreeTransaction = '1';
+					this.useBorrowRex = '0';
+				}else{
+					this.useBorrowRex = '1';
+				}
 			}
 			this.allAuth = this.trxFactory.getAllAuth();
 			console.log(this.allAuth);
@@ -108,14 +114,10 @@ export class ConfirmModalComponent {
 		const [auth] = authSelected ?? this.trxFactory.getAuth();
 		this.modalData.resourceInfo = await this.resource.checkResource(auth, this.modalData.transactionPayload.actions, undefined, undefined, this.modalData.tk_name);
 		const result = await this.resource.getActions(auth);
+		console.log(result);
 		this.modalData.resourceTransactionPayload = {actions: result};
 		this.loadResource = false;
-		if(this.modalData.resourceInfo["relay"]){
-			this.useFreeTransaction = '1';
-			this.useBorrowRex = '0';
-		}else{
-			this.useBorrowRex = '1';
-		}
+
 		this.cdr.detectChanges();
 	}
 
@@ -231,7 +233,7 @@ export class ConfirmModalComponent {
 		}
 
 		if (this.modalData.resourceInfo.needResources) {
-			if (this.useFreeTransaction === '1') {
+			if (this.useBorrowRex === '1') {
 				this.modalData.resourceTransactionPayload.actions.forEach(act => {
 					transactionPayload.actions.push(act);
 				});
@@ -242,7 +244,7 @@ export class ConfirmModalComponent {
 			transactionPayload.actions.push(act);
 		});
 
-		console.log(transactionPayload);
+		console.log(this.modalData.resourceTransactionPayload,transactionPayload);
 
 		// Sign and push transaction
 		const [trxResult, err] = await this.processTransaction(

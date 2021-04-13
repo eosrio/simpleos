@@ -676,6 +676,34 @@
                                             </ng-container>
                                         </div>
                                     </div>
+
+                                    <ng-container *ngIf="unStakeTooLow">
+                                        <div class="clr-row  ">
+                                            <div class="clr-col-lg-12 ">
+                                                <mat-checkbox style="float:right;" [checked]="isThisReceiverPowerUP"
+                                                              (change)="toggleReceiverPowerUp()">
+                                                    To this account
+                                                </mat-checkbox>
+                                            </div>
+                                        </div>
+                                        <ng-container *ngIf="!isThisReceiverPowerUP">
+                                            <div class="clr-row  ">
+                                                <div class="clr-col-lg-12 ">
+                                                    <mat-form-field class="input-width" style="float:right;max-width: 200px;">
+                                                        <input matInput type="text" placeholder="Buy to (account name)"
+                                                               maxlength="12" [ngModel]="powerUpToReceiver"
+                                                               (blur)="checkPowerUpReceiver($event)">
+
+                                                    </mat-form-field>
+                                                    <mat-error style="clear:both;float:right;" *ngIf="errorPowerUpTo !== ''">
+                                                        {{errorPowerUpTo}}
+                                                    </mat-error>
+                                                </div>
+                                            </div>
+                                        </ng-container>
+                                    </ng-container>
+
+
                                     <div class="clr-row">
                                         <ng-container *ngIf="unStakeTooLow">
                                             <div class="clr-col-lg-9">
@@ -752,11 +780,12 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="clr-col-lg-3">
+                                            <div class="clr-col-lg-3 d-flex justify-content-end">
                                                 <button (click)="setPowerUp()"
                                                         class="btn btn-info-outline"
                                                         style="margin-top: 14px; font-weight: 700"
-                                                        [disabled]="unStakeTooLow&&busyPowerUp">{{'PAY Power Up'}}
+                                                        [disabled]="errorPowerUpTo!==''||errorValuePowerUp!==''">
+                                                    {{'PAY Power Up'}}
                                                 </button>
                                             </div>
                                         </ng-container>
