@@ -856,7 +856,7 @@ export class AccountsService {
 	}
 
 	async refreshFromChain(refreshAll, refreshOthers?: string[]) {
-		console.log(this.isRefreshing);
+		// console.log(this.isRefreshing);
 		if (this.isRefreshing) {
 			return;
 		}

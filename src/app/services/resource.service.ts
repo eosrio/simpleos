@@ -268,7 +268,6 @@ export class ResourceService {
                 const power_net = await this.eosjs.calcPowerUp(state['net'], this.net_frac, {maxFee:0, maxPower:0});
                 let netAmount = Math.ceil(power_net.fee*prCalc)/prCalc;
                 this.totalCost = (Math.round((power_cpu.fee + netAmount) * prCalc) / prCalc);
-                console.log(amountPowerCpuPlus,power_net,netAmount,this.totalCost);
                 _needResource = true;
             }
 

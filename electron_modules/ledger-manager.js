@@ -197,6 +197,7 @@ class LedgerManager {
                     });
                 }
             }
+
             if (args.event === 'start_listener') {
                 this.setupListener();
             }
@@ -417,8 +418,8 @@ class LedgerManager {
         let result;
         try {
             result = await api.transact(trxdata, {
-                blocksBehind: 3,
-                expireSeconds: 300,
+                useLastIrreversible: true,
+                expireSeconds: 360,
                 sign: false,
                 broadcast: false,
             });
@@ -433,13 +434,14 @@ class LedgerManager {
         let response;
         for (let i = 0; i < chunks.length; i++) {
             try {
-                Logger.info(`Sending chunk ${i} with ${chunks[i].length} bytes...`);
+
                 response = await this.transport.send(LC.CLA, LC.SIGN, i === 0 ? LC.FIRST : LC.MORE, 0x00, chunks[i]);
             } catch (e) {
                 this.handleError(e);
                 return null;
             }
         }
+
         if (response.length >= 64) {
             const K1 = Numeric.KeyType.k1;
             const sig = new Signature({type: K1, data: response.slice(0, 65)}, constructElliptic(K1));

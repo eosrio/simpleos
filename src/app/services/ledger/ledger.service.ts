@@ -104,8 +104,19 @@ export class LedgerService {
         });
     }
 
-    async sign(transaction: any, slotNumber: number, rpcEndpoint: string): Promise<any> {
+    async sign(transaction: any, slotNumber: number, rpcEndpoint: string, onlySign: boolean): Promise<any> {
         return new Promise((resolve, reject) => {
+
+            if(onlySign)
+                transaction.actions.unshift({
+                    account: 'eosriorelay1',
+                    name: 'payforcpu',
+                    authorization: [{
+                        actor: 'eosriorelay1',
+                        permission: 'freecpu'
+                    }],
+                    data: {}
+                });
 
             const ledgerSignatureRequest = {
                 event: 'sign_trx',
@@ -120,7 +131,12 @@ export class LedgerService {
                 if (args.data) {
                     if (args.event === 'sign_trx') {
                         try {
-                            const trxResult = await this.pushSignedTrx(args.data);
+                            let trxResult;
+                            if(onlySign)
+                                trxResult = {pushTransactionArgs:args.data};
+                            else
+                                trxResult = await this.pushSignedTrx(args.data);
+
                             resolve(trxResult);
                         } catch (e) {
                             reject(e);

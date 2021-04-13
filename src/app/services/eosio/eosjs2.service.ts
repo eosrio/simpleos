@@ -74,8 +74,8 @@ export class Eosjs2Service {
     private apiRelay: Api;
 
     private txOpts = {
-        blocksBehind: 3,
-        expireSeconds: 120,
+        useLastIrreversible: true,
+        expireSeconds: 360,
         broadcast: true,
         sign: true,
     };
@@ -164,8 +164,8 @@ export class Eosjs2Service {
 
     async signTrx(trx: any, shouldBroadcast: boolean): Promise<any> {
         const packedTransaction = await this.api.transact(trx, {
-            blocksBehind: 3,
-            expireSeconds: 120,
+            useLastIrreversible: true,
+            expireSeconds: 360,
             broadcast: false,
             sign: true,
         });
@@ -191,8 +191,8 @@ export class Eosjs2Service {
             const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
             try {
                 const packedTransaction = await this.apiRelay.transact(trx, {
-                    blocksBehind: 3,
-                    expireSeconds: 120,
+                    useLastIrreversible: true,
+                    expireSeconds: 360,
                     broadcast: false,
                     sign: false,
                 });
@@ -203,6 +203,7 @@ export class Eosjs2Service {
                     serializedTransaction: serializedTx,
                     abis: [],
                 };
+                console.log(signArgs);
                 const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
                 return {pushTransactionArgs};
             } catch (e) {
@@ -215,8 +216,8 @@ export class Eosjs2Service {
     transact(trx) {
         if (this.api) {
             return this.api.transact(trx, {
-                blocksBehind: 3,
-                expireSeconds: 120,
+                useLastIrreversible: true,
+                expireSeconds: 360,
             });
         } else {
             return new Promise(resolve => {

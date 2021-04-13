@@ -49,7 +49,7 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     unstakeTime: string;
     transactionFree: any[];
     tokens: any[];
-    selectedAccountName = 'none';
+    selectedAccountName:string;
 
     private selectedAccountSubscription: Subscription;
     private lastUpdateSubscription: Subscription;
@@ -61,12 +61,14 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
                 private toaster: NotificationService) {
         this.staked = 0;
         this.unstaked = 0;
+        this.selectedAccountName = 'none';
     }
 
     ngOnInit(): void {
         this.lastUpdateSubscription = this.aService.lastUpdate.asObservable().subscribe(value => {
             if (value.account === this.aService.selected.getValue().name) {
                 this.updateBalances();
+                this.cdr.detectChanges();
             }
         });
     }
@@ -98,10 +100,11 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.transactionFree = await this.resource.checkCredits([
                         {account: 'eosio',name: 'delegatebw'},
                     ], sel['name']);
-                    this.cdr.detectChanges();
                 }
             }
+            this.cdr.detectChanges();
         });
+        this.cdr.detectChanges();
     }
 
 

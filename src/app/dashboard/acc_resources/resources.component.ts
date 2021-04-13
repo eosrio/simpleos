@@ -79,8 +79,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     minToStake = 0.00;
     unstaking: number;
     unstakeTime: string;
-    stakeModal: boolean;
-    voteModal: boolean;
     isValidAccount: boolean;
     nVotes = 0;
     nVotesProxy = 0;
@@ -92,7 +90,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     singleSelectionBP: any;
     selectedVotes: any[];
     wrongpass: string;
-    frmForProxy: FormGroup;
     percentMask = createNumberMask({
         prefix: '',
         allowDecimal: true,
@@ -107,7 +104,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     powerUpdisabled: boolean;
     unStakeTooLow: boolean;
     isCheckedPowerUpManually: boolean = false;
-    nbps: number;
     showAdvancedRatio = false;
 
     location: string[];
@@ -128,7 +124,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     isManually: boolean;
     isManuallyPowerUP: boolean;
     isThisReceiverPowerUP: boolean = true;
-    autoClaimStatus: boolean;
 
     claimPublicKey = '';
     public claimError: string;
@@ -136,11 +131,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     public gbmLastClaim: string;
     public gbmNextClaim: string;
     public claimReady: boolean;
-    public gbmEstimatedDaily = 0;
-    public voteRewardsDaily = 0;
-    public claimSetupWarning = '';
     public basePath = '';
-    enableAutoClaim: boolean;
     enableLinkAuth: boolean;
 
 
@@ -451,6 +442,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             .asObservable()
             .subscribe((selected: any) => {
                 this.onAccountChanged(selected).catch(console.log);
+                this.cdr.detectChanges();
             });
         this.subscriptions.push(sub);
     }
@@ -531,10 +523,10 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             this.getRexBalance(selected.name);
 
-            if (!this.isDestroyed) {
-                this.cdr.detectChanges();
-            }
             // console.log(this.minToStake);
+        }
+        if (!this.isDestroyed) {
+            this.cdr.detectChanges();
         }
     }
 

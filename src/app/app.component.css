@@ -238,3 +238,26 @@
 .header-actions a {
 	padding: 0;
 }
+
+
+.info-resource {
+	background-color: var(--btn-primary-bg) !important;
+	margin-top: 10px;
+	color: var(--btn-primary-color);
+}
+
+::ng-deep .info-resource h5 {
+	color: var(--btn-primary-color) !important;
+}
+
+.free-transaction-radio .mat-radio-button {
+	margin-top: 10px;
+}
+
+::ng-deep .free-transaction-radio .mat-radio-outer-circle {
+	border-color: var(--btn-primary-color) !important;
+}
+
+::ng-deep .free-transaction-radio .mat-radio-inner-circle {
+	background-color: var(--btn-primary-color) !important;
+}
