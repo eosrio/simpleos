@@ -419,7 +419,7 @@ class LedgerManager {
         try {
             result = await api.transact(trxdata, {
                 useLastIrreversible: true,
-                expireSeconds: 360,
+                expireSeconds: 300,
                 sign: false,
                 broadcast: false,
             });

@@ -75,7 +75,7 @@ export class Eosjs2Service {
 
     private txOpts = {
         useLastIrreversible: true,
-        expireSeconds: 360,
+        expireSeconds: 240,
         broadcast: true,
         sign: true,
     };
@@ -165,7 +165,7 @@ export class Eosjs2Service {
     async signTrx(trx: any, shouldBroadcast: boolean): Promise<any> {
         const packedTransaction = await this.api.transact(trx, {
             useLastIrreversible: true,
-            expireSeconds: 360,
+            expireSeconds: 240,
             broadcast: false,
             sign: true,
         });
@@ -192,7 +192,7 @@ export class Eosjs2Service {
             try {
                 const packedTransaction = await this.apiRelay.transact(trx, {
                     useLastIrreversible: true,
-                    expireSeconds: 360,
+                    expireSeconds: 240,
                     broadcast: false,
                     sign: false,
                 });

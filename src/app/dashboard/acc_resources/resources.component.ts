@@ -1007,7 +1007,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                     await this.aService.refreshFromChain(false);
                     setTimeout(async () => {
                         await this.onAccountChanged(this.aService.selected.getValue());
-                    }, 2000);
+                    }, 1800);
                     subs.unsubscribe();
                 }
                 if (event === 'modal_closed') {
@@ -1517,13 +1517,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const maxAmount = this.valuetoPowerUp.toFixed(precision);
         const actionTitle = `<span class="blue">Password</span>`;
         const messageHTML = `
-            <h3 class="modal-title text-white">
-                Powering Up account: <span class="highlight-primary">${auth.actor}</span>, 
-                giving approximately of CPU: ${Math.round((this.usCPUPowerUp / (1000)) * precision) / precision} ms
-                <br>
-                with paying fee of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>
+            <h5 class="modal-title text-white">
+                You are Powering Up <span class="highlight-primary">${this.powerUpToReceiver !=='' ? this.powerUpToReceiver+' account': 'this account'}</span> , 
+                with fee costs of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>,
+                giving approximately of CPU: <span class="highlight-primary">${Math.round((this.usCPUPowerUp / (1000)) * precision) / precision} ms</span>
                 
-            </h3>
+            </h5>
         `;
 
         let actionsModal = [{
@@ -1583,7 +1582,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                         await this.aService.refreshFromChain(false);
                         setTimeout(async () => {
                             await this.onAccountChanged(this.aService.selected.getValue());
-                        }, 2000);
+                        }, 1800);
                     } catch (e) {
                         console.error(e);
                     }

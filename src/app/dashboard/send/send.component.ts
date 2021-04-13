@@ -629,7 +629,7 @@ export class SendComponent implements OnInit, OnDestroy {
                                 }
                             }
 
-                        }, 2000);
+                        }, 1800);
                     }
                 } catch (e) {
                     console.error(e);
