@@ -528,7 +528,7 @@ export class Eosjs2Service {
                 let _expired;
                 const _t = setTimeout(() => {
                     _expired = true;
-                    resolve1();
+                    resolve1(undefined);
                 }, 2000);
 
                 // check on primary endpoint
@@ -537,11 +537,11 @@ export class Eosjs2Service {
                     if (result && result.account_names.length > 0) {
                         resolve1(result.account_names);
                     } else {
-                        resolve1();
+                        resolve1(undefined);
                     }
                 } catch (e) {
                     console.log(this.rpc.endpoint, e.message);
-                    resolve1();
+                    resolve1(undefined);
                 }
 
                 if (!_expired) {
@@ -571,12 +571,12 @@ export class Eosjs2Service {
                             console.log(api.url, e.message);
                             api.failed = true;
                         }
-                        innerResolve();
+                        innerResolve(undefined);
                     }));
                 }
             }
 
-            // 5 second timeout if any account has returned, otherwise we wait for all edpoints to return
+            // 5 second timeout if any account has returned, otherwise we wait for all endpoints to return
             let expired;
             const timeout = setTimeout(() => {
                 if (accounts.size > 0) {

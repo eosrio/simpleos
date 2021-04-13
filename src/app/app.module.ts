@@ -52,25 +52,21 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTreeModule} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatExpansionModule} from '@angular/material/expansion';
-import {MatChipsModule} from'@angular/material/chips';
+import {MatChipsModule} from '@angular/material/chips';
 
 // import {MaterialDesignFrameworkModule} from "@ajsf/material";
-
 import {NgxEchartsModule} from 'ngx-echarts';
 import * as echarts from 'echarts';
-
-import {FuseJsModule} from './modules/fusejs/fusejs.module';
 
 import {ToastrModule} from 'ngx-toastr';
 import {NgxMaskModule} from 'ngx-mask';
 // import {TextMaskModule} from "angular2-text-mask";
 // import {ToasterModule} from "angular2-toaster";
-
 import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
 import {NgxElectronModule} from 'ngx-electron';
-import { QRCodeModule } from 'angularx-qrcode';
+import {QRCodeModule} from 'angularx-qrcode';
 
 // Lottie
 import {LottieModule} from 'ngx-lottie';
@@ -158,16 +154,14 @@ import {faUserEdit} from '@fortawesome/pro-regular-svg-icons/faUserEdit';
 import {faExternalLink} from '@fortawesome/pro-regular-svg-icons/faExternalLink';
 import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
 import {faBellOn} from '@fortawesome/pro-regular-svg-icons/faBellOn';
-
-export function playerFactory() {
-	return player;
-}
-
 import {FormlyModule} from '@ngx-formly/core';
 import {FormlyMaterialModule} from '@ngx-formly/material';
 import {ObjectTypeComponent} from './type/object-type/object-type.component';
 import {ArrayTypeComponent} from './type/array-type/array-type.component';
 
+export function playerFactory() {
+	return player;
+}
 
 
 @NgModule({
@@ -256,7 +250,6 @@ import {ArrayTypeComponent} from './type/array-type/array-type.component';
 		ToastrModule.forRoot(),
 		AppRoutingModule,
 		NgxJsonViewerModule,
-		FuseJsModule,
 		OrderModule,
 		NgxPaginationModule,
 		NgxElectronModule,

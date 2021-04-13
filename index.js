@@ -13,9 +13,6 @@ const {
   dialog,
 } = require('electron');
 
-// TODO: remove remote lib
-require('@electron/remote/main').initialize();
-
 const path = require('path');
 const {version, productName, compilerVersion} = require('./package.json');
 const {spawn} = require('child_process');
@@ -353,7 +350,7 @@ class SimpleosWallet {
 
     this.webContents = this.win.webContents;
 
-    this.webContents.on('did-finish-load', (e) => {
+    this.webContents.on('did-finish-load', () => {
       this.win.setTitle(productName);
       this.win.setIcon(_icon);
     });
@@ -426,7 +423,7 @@ class SimpleosWallet {
     this.win.once('ready-to-show', () => {
       Logger.info('main window is ready');
       this.win.show();
-      setTimeout(args1 => {
+      setTimeout(() => {
         if (this.bounds.isMaximized) {
           this.win.maximize();
         }

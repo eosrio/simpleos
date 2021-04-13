@@ -19,9 +19,6 @@ import {NotificationService} from './services/notification.service';
 import {EOSAccount} from './interfaces/account';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 
-import {BrowserWindow} from '@electron/remote';
-
-
 export interface LedgerSlot {
 	publicKey: string;
 	account: string;

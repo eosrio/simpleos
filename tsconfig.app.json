@@ -10,11 +10,5 @@
 	],
 	"include": [
 		"src/**/*.d.ts"
-	],
-	"exclude": [
-		"eosjs"
-	],
-//	"angularCompilerOptions": {
-//		"preserveWhitespaces": true
-//	}
+	]
 }
