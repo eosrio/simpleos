@@ -29,6 +29,8 @@ export class ResourceService {
     cpuCost = 0;
     netCost = 0;
     totalCost = 0;
+    cpu_frac = 0;
+    net_frac = 0;
     acumulateNeedCPU = 0;
     acumulateNeedNET = 0;
     resourceInfo: resourceData;
@@ -176,6 +178,7 @@ export class ResourceService {
 
         const tk_nameVal = tkname ?? this.aService.activeChain['symbol'];
         const precision = this.aService.activeChain['precision'];
+        const prCalc = Math.pow(10,precision);
         const account = this.aService.selected.getValue();
 
         // Get avg uS values CPU/NET
@@ -214,7 +217,14 @@ export class ResourceService {
         //If is total withdraw is true change resource available to zero before sending actions
         const totalCPULimitAvailable = isCPUWithdraw ? 0 : account.details.cpu_limit.available;
         const totalNETLimitAvailable = isNETWithdraw ? 0 : account.details.net_limit.available;
-        const acc = await this.eosjs.getAccountInfo(account.name);
+        const acc = await this.eosjs.getAccountInfo('eosriobrazil');
+
+        //Parameters from config.json
+        const defaultUS: number = this.aService.activeChain['borrow']['default_us'];
+        const margin: number = this.aService.activeChain['borrow']['margin'];
+
+
+        const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
         // console.log({
         //     account:acc,
         //     totalCPUStaked: totalCPUStaked,
@@ -246,63 +256,72 @@ export class ResourceService {
                 }
             }
 
-            if (this.aService.activeChain['features']['rex']) {
+            if(this.aService.activeChain['powerup']){
 
-                // Get Rex Informations
-                await this.updateGlobalRexData();
+                const avgUsagePUP: any = await this.getAvgTime([{ account: 'eosio',name: 'powerup',}], needCpu, needNet);
+                const state = await this.eosjs.getPowerUpState();
+                this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
+                this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
+                const amountPowerCpuPlus = ((newAvgCPU+avgUsagePUP.cpu) / timeTokenUnitCPU) * prCalc;
 
-                if (this.aService.activeChain['borrow']['enable']) {
-
-                    //Parameters from config.json
-                    const defaultUS: number = this.aService.activeChain['borrow']['default_us'];
-                    const margin: number = this.aService.activeChain['borrow']['margin'];
-
-
-                    const newAvgCPU = (avgUsage.cpu + defaultUS) * margin;
-
-                    if (totalCPULimitAvailable < newAvgCPU) {
-                        targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
-                        _needResource = true;
-                    }
-
-                    if (totalNETLimitAvailable < avgUsage.net) {
-                        if (isNETWithdraw) {
-                            targetNet = parseFloat((2).toPrecision(precision));
-                        } else {
-                            targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
-                        }
-                        _needResource = true;
-                    }
-
-                    // console.log({
-                    //     targetCpu: targetCpu,
-                    //     targetNet: targetNet,
-                    //     borrowingCost: this.borrowingCost,
-                    //     newAvgCPU: newAvgCPU,
-                    //     totalCPULimitAvailable: totalCPULimitAvailable,
-                    //     totalNETLimitAvailable: totalNETLimitAvailable,
-                    //     timeTokenUnitCPU: timeTokenUnitCPU,
-                    //     precision: precision
-                    // });
-
-                    if (targetCpu > 0) {
-                        this.cpuCost = targetCpu / this.borrowingCost;
-                        if (this.cpuCost < 0.0001) {
-                            this.cpuCost = 0.0001;
-                        }
-                    }
-
-                    if (targetNet > 0) {
-                        this.netCost = targetNet / this.borrowingCost;
-                        if (this.netCost < 0.0001) {
-                            this.netCost = 0.0001;
-                        }
-                    }
-
-                    this.totalCost = this.cpuCost + this.netCost;
-                }
-
+                const power_cpu = await this.eosjs.calcPowerUp(state['cpu'], this.cpu_frac, {maxFee:0, maxPower:amountPowerCpuPlus});
+                const power_net = await this.eosjs.calcPowerUp(state['net'], this.net_frac, {maxFee:0, maxPower:0});
+                let netAmount = Math.ceil(power_net.fee*prCalc)/prCalc;
+                this.totalCost = (Math.round((power_cpu.fee + netAmount) * prCalc) / prCalc);
+                console.log(amountPowerCpuPlus,power_net,netAmount,this.totalCost);
+                _needResource = true;
             }
+
+            // if (this.aService.activeChain['features']['rex']) {
+            //
+            //     // Get Rex Informations
+            //     await this.updateGlobalRexData();
+            //
+            //     if (this.aService.activeChain['borrow']['enable']) {
+            //
+            //         if (totalCPULimitAvailable < newAvgCPU) {
+            //             targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
+            //             _needResource = true;
+            //         }
+            //
+            //         if (totalNETLimitAvailable < avgUsage.net) {
+            //             if (isNETWithdraw) {
+            //                 targetNet = parseFloat((2).toPrecision(precision));
+            //             } else {
+            //                 targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
+            //             }
+            //             _needResource = true;
+            //         }
+            //
+            //         // console.log({
+            //         //     targetCpu: targetCpu,
+            //         //     targetNet: targetNet,
+            //         //     borrowingCost: this.borrowingCost,
+            //         //     newAvgCPU: newAvgCPU,
+            //         //     totalCPULimitAvailable: totalCPULimitAvailable,
+            //         //     totalNETLimitAvailable: totalNETLimitAvailable,
+            //         //     timeTokenUnitCPU: timeTokenUnitCPU,
+            //         //     precision: precision
+            //         // });
+            //
+            //         if (targetCpu > 0) {
+            //             this.cpuCost = targetCpu / this.borrowingCost;
+            //             if (this.cpuCost < 0.0001) {
+            //                 this.cpuCost = 0.0001;
+            //             }
+            //         }
+            //
+            //         if (targetNet > 0) {
+            //             this.netCost = targetNet / this.borrowingCost;
+            //             if (this.netCost < 0.0001) {
+            //                 this.netCost = 0.0001;
+            //             }
+            //         }
+            //
+            //         // this.totalCost = this.cpuCost + this.netCost;
+            //     }
+            //
+            // }
         }
 
         this.resourceInfo = {
@@ -359,49 +378,63 @@ export class ResourceService {
         const cpu_fund = 0;
         const _netPayment = this.netCost.toFixed(precision) + ' ' + tk_name;
         const net_fund = 0;
-
-
-        if (this.resourceInfo.needResources && !this.resourceInfo.relay) {
-            if (this.cpuCost > 0 || this.netCost > 0) {
-                actions.push({
-                    account: 'eosio',
-                    name: 'deposit',
-                    authorization: [auth],
-                    data: {
-                        'owner': auth.actor,
-                        'amount': amountRex.toFixed(precision) + ' ' + tk_name
-                    }
-                });
-            }
-
-            if (this.cpuCost > 0) {
-                actions.push({
-                    account: 'eosio',
-                    name: 'rentcpu',
-                    authorization: [auth],
-                    data: {
-                        'from': auth.actor,
-                        'receiver': auth.actor,
-                        'loan_payment': _cpuPayment,
-                        'loan_fund': cpu_fund.toFixed(precision) + ' ' + tk_name
-                    }
-                });
-            }
-
-            if (this.netCost > 0) {
-                actions.push({
-                    account: 'eosio',
-                    name: 'rentnet',
-                    authorization: [auth],
-                    data: {
-                        'from': auth.actor,
-                        'receiver': auth.actor,
-                        'loan_payment': _netPayment,
-                        'loan_fund': net_fund.toFixed(precision) + ' ' + tk_name
-                    }
-                });
-            }
+        if (this.resourceInfo.needResources){
+            actions.push({
+                account: 'eosio',
+                name: 'powerup',
+                authorization: [auth],
+                data: {
+                    'payer': auth.actor,
+                    'receiver': auth.actor,
+                    'days': 1,
+                    'cpu_frac': this.cpu_frac,
+                    'net_frac': this.net_frac,
+                    'max_payment': this.totalCost + ' ' + tk_name
+                }
+            });
         }
+
+        // if (this.resourceInfo.needResources && !this.resourceInfo.relay) {
+        //     if (this.cpuCost > 0 || this.netCost > 0) {
+        //         actions.push({
+        //             account: 'eosio',
+        //             name: 'deposit',
+        //             authorization: [auth],
+        //             data: {
+        //                 'owner': auth.actor,
+        //                 'amount': amountRex.toFixed(precision) + ' ' + tk_name
+        //             }
+        //         });
+        //     }
+        //
+        //     if (this.cpuCost > 0) {
+        //         actions.push({
+        //             account: 'eosio',
+        //             name: 'rentcpu',
+        //             authorization: [auth],
+        //             data: {
+        //                 'from': auth.actor,
+        //                 'receiver': auth.actor,
+        //                 'loan_payment': _cpuPayment,
+        //                 'loan_fund': cpu_fund.toFixed(precision) + ' ' + tk_name
+        //             }
+        //         });
+        //     }
+        //
+        //     if (this.netCost > 0) {
+        //         actions.push({
+        //             account: 'eosio',
+        //             name: 'rentnet',
+        //             authorization: [auth],
+        //             data: {
+        //                 'from': auth.actor,
+        //                 'receiver': auth.actor,
+        //                 'loan_payment': _netPayment,
+        //                 'loan_fund': net_fund.toFixed(precision) + ' ' + tk_name
+        //             }
+        //         });
+        //     }
+        // }
 
         return actions;
     }

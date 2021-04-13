@@ -843,7 +843,7 @@ export class Eosjs2Service {
     }
 
 
-    async calculateFeePowerUp(state, frac, percent, type?, max?) {
+    async calculateFeePowerUp(state, frac) {
 
         const amount = (frac * parseFloat(state.weight)) / parseFloat(state.initial_weight_ratio);
         let fee = 0.0;
@@ -862,21 +862,25 @@ export class Eosjs2Service {
                 fee += this.priceIntegralDelta(state, start_utilization, end_utilization);
             }
             // console.log({fee: fee, frac: frac, amount: amount,percent:percent,compare:(fee / max)});
-            if(type === undefined && max === undefined)
-                return {fee: fee, frac: frac, amount: amount};
-
-            if (type === 'C' && (fee / max) > percent) {
-                return {fee: fee, frac: frac, amount: amount};
-            }
-            // console.log(amount,max,amount / max,percent)
-            if (type === 'A' && (amount / max) > percent) {
-                return {fee: fee, frac: frac, amount: amount};
-            }
-            const newFrac = Math.round(frac * 1.01);
-            return await this.calculateFeePowerUp(state, newFrac, percent, type, max);
+            return {fee: fee, frac: frac, amount: amount};
         } catch (e) {
             return {fee: fee, frac: frac, amount: amount};
         }
 
+    }
+
+    async calcPowerUp(state, frac, {maxFee, maxPower}){
+        let new_FRAC = 0;
+        let powerup = await this.calculateFeePowerUp(state, frac);
+
+        if(maxFee!==0)
+            new_FRAC = Math.ceil((maxFee * frac) / powerup.fee);
+        else if(maxPower!==0)
+            new_FRAC = (maxPower*frac) / powerup.amount;
+
+        if(new_FRAC > 0)
+            powerup = await this.calculateFeePowerUp(state, new_FRAC);
+
+        return powerup;
     }
 }
