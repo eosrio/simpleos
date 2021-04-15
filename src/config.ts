@@ -34,8 +34,8 @@ export const localConfig = {
       "borrow": {
         "endpoint":"https://eos.hyperion.eosrio.io/v2",
         "enable": true,
-        "margin": 1.30,
-        "default_us": 1000
+        "margin": 2,
+        "default_us": 3000
       },
       "relay": {
         "enable": true,
@@ -47,10 +47,7 @@ export const localConfig = {
         "minCpuFrac": 10000000,
         "minNetFrac": 2000000,
         "maxPowerUpSlider": 0.1,
-        "minPercentLimit": 0.003,
-        "minCalculatePercent": 0.5,
-        "maxCalculatePercent":0.95,
-        "daysToRefresh": 7
+        "daysToRefresh": 3
       },
       "system": [
         "eosio",
