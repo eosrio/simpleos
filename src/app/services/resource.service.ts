@@ -3,6 +3,7 @@ import {AccountsService} from "./accounts.service";
 import {Eosjs2Service} from "./eosio/eosjs2.service";
 import {HttpClient} from '@angular/common/http';
 import {environment} from "../../environments/environment";
+import {parseTokenValue} from '../helpers/aux_functions';
 
 interface resourceData {
     needResources: boolean,
@@ -60,10 +61,6 @@ export class ResourceService {
             }
         };
 
-    }
-
-    static asset2Float(asset) {
-        return parseFloat(asset.split(' ')[0]);
     }
 
     async getAvgTime(actions, needCpu?, needNet?) {
@@ -183,41 +180,36 @@ export class ResourceService {
 
         // Get avg uS values CPU/NET
         const avgUsage: any = await this.getAvgTime(actions, needCpu, needNet);
-        // console.log(avgUsage);
 
         //Total staked CPU
-        const totalCPUStaked = ResourceService.asset2Float(account.details.total_resources.cpu_weight);
+        const totalCPUStaked = parseTokenValue(account.details.total_resources.cpu_weight);
 
         //Total staked NET
-        const totalNETStaked = ResourceService.asset2Float(account.details.total_resources.net_weight);
+        const totalNETStaked = parseTokenValue(account.details.total_resources.net_weight);
 
         //If is total withdraw undelegatebw action change resource available to zero
         const unstake = actions.find(elem => elem.name === 'undelegatebw');
         if (unstake) {
-            const unstakeCPU = ResourceService.asset2Float(unstake.data.unstake_cpu_quantity);
+            const unstakeCPU = parseTokenValue(unstake.data.unstake_cpu_quantity);
 
             isCPUWithdraw = (totalCPUStaked - unstakeCPU) <= 0 ?? false;
 
-            const unstakeNET = ResourceService.asset2Float(unstake.data.unstake_net_quantity);
+            const unstakeNET = parseTokenValue(unstake.data.unstake_net_quantity);
 
             isNETWithdraw = (totalNETStaked - unstakeNET) <= 0 ?? false;
         }
-        const accStd = await this.eosjs.getAccountInfo('eosriobrazil');
-        const totalCPUStakedStd = ResourceService.asset2Float(accStd.total_resources.cpu_weight);
-        const totalNETStakedStd = ResourceService.asset2Float(accStd.total_resources.net_weight);
 
-        const maxCPULimit = accStd.cpu_limit.max;
-        const maxNETLimit = accStd.net_limit.max;
+        const timeCost = await this.eosjs.getTimeUsCost(precision);
+
         // cost of uS CPU
-        const timeTokenUnitCPU = parseFloat((totalCPUStakedStd / maxCPULimit).toPrecision(precision));
+        const timeTokenUnitCPU = timeCost['cpuCost'];
 
         // cost of uS NET
-        const timeTokenUnitNET = parseFloat((totalNETStakedStd / maxNETLimit).toPrecision(precision));
+        // const timeTokenUnitNET = timeCost['netCost'];
 
         //If is total withdraw is true change resource available to zero before sending actions
         const totalCPULimitAvailable = isCPUWithdraw ? 0 : account.details.cpu_limit.available;
         const totalNETLimitAvailable = isNETWithdraw ? 0 : account.details.net_limit.available;
-        const acc = await this.eosjs.getAccountInfo('eosriobrazil');
 
         //Parameters from config.json
         const defaultUS: number = this.aService.activeChain['borrow']['default_us'];
@@ -246,13 +238,11 @@ export class ResourceService {
             if (this.aService.activeChain['relay']['enable'] && totalCPULimitAvailable < this.aService.activeChain['relay']['usageCpuLimit']) {
                 if (this.aService.activeChain['relay']['enable']) {
                     const result: any = await this.checkCredits(actions, account.name);
-                    console.log(result);
                     if (result[0]['enable']) {
                         _relay = true;
                         _relayCredits.used = result[0]['used'];
                         _relayCredits.limit = result[0]['limit'];
                     }
-                    console.log(result);
                 }
             }
 
@@ -266,61 +256,12 @@ export class ResourceService {
 
                 const power_cpu = await this.eosjs.calcPowerUp(state['cpu'], this.cpu_frac, {maxFee:0, maxPower:amountPowerCpuPlus});
                 const power_net = await this.eosjs.calcPowerUp(state['net'], this.net_frac, {maxFee:0, maxPower:0});
-                let netAmount = Math.ceil(power_net.fee*prCalc)/prCalc;
-                this.totalCost = (Math.round((power_cpu.fee + netAmount) * prCalc) / prCalc);
+                const Amount = Math.ceil(power_cpu.fee*prCalc)/prCalc + Math.ceil(power_net.fee*prCalc)/prCalc;
+                this.cpu_frac = Math.trunc(Math.floor(power_cpu.frac));
+                this.totalCost = (Math.round((Amount) * prCalc) / prCalc);
                 _needResource = true;
             }
 
-            // if (this.aService.activeChain['features']['rex']) {
-            //
-            //     // Get Rex Informations
-            //     await this.updateGlobalRexData();
-            //
-            //     if (this.aService.activeChain['borrow']['enable']) {
-            //
-            //         if (totalCPULimitAvailable < newAvgCPU) {
-            //             targetCpu = parseFloat(((newAvgCPU - totalCPULimitAvailable) * timeTokenUnitCPU).toPrecision(precision));
-            //             _needResource = true;
-            //         }
-            //
-            //         if (totalNETLimitAvailable < avgUsage.net) {
-            //             if (isNETWithdraw) {
-            //                 targetNet = parseFloat((2).toPrecision(precision));
-            //             } else {
-            //                 targetNet = parseFloat(((avgUsage.net - totalNETLimitAvailable) * timeTokenUnitNET).toPrecision(precision));
-            //             }
-            //             _needResource = true;
-            //         }
-            //
-            //         // console.log({
-            //         //     targetCpu: targetCpu,
-            //         //     targetNet: targetNet,
-            //         //     borrowingCost: this.borrowingCost,
-            //         //     newAvgCPU: newAvgCPU,
-            //         //     totalCPULimitAvailable: totalCPULimitAvailable,
-            //         //     totalNETLimitAvailable: totalNETLimitAvailable,
-            //         //     timeTokenUnitCPU: timeTokenUnitCPU,
-            //         //     precision: precision
-            //         // });
-            //
-            //         if (targetCpu > 0) {
-            //             this.cpuCost = targetCpu / this.borrowingCost;
-            //             if (this.cpuCost < 0.0001) {
-            //                 this.cpuCost = 0.0001;
-            //             }
-            //         }
-            //
-            //         if (targetNet > 0) {
-            //             this.netCost = targetNet / this.borrowingCost;
-            //             if (this.netCost < 0.0001) {
-            //                 this.netCost = 0.0001;
-            //             }
-            //         }
-            //
-            //         // this.totalCost = this.cpuCost + this.netCost;
-            //     }
-            //
-            // }
         }
 
         this.resourceInfo = {
@@ -337,17 +278,17 @@ export class ResourceService {
     }
 
     calculateRexPrice(rexpool) {
-        const S0 = ResourceService.asset2Float(rexpool.total_lendable);
+        const S0 = parseTokenValue(rexpool.total_lendable);
         const S1 = S0 + 1.0000;
-        const R0 = ResourceService.asset2Float(rexpool.total_rex);
+        const R0 = parseTokenValue(rexpool.total_rex);
         const R1 = (S1 * R0) / S0;
         const rex_amount = R1 - R0;
         this.rexPrice = 1.0000 / rex_amount;
     }
 
     calculateBorrowingCost(rexpool) {
-        const F0 = ResourceService.asset2Float(rexpool.total_rent);
-        const T0 = ResourceService.asset2Float(rexpool.total_unlent);
+        const F0 = parseTokenValue(rexpool.total_rent);
+        const T0 = parseTokenValue(rexpool.total_unlent);
         const I = 1.0000;
         let out = ((I * T0) / (I + F0));
         if (out < 0) {
@@ -356,27 +297,21 @@ export class ResourceService {
         this.borrowingCost = out;
     }
 
-    private async updateGlobalRexData() {
-        await this.eosjs.getRexPool().then((data) => {
-            this.total_unlent = ResourceService.asset2Float(data.total_unlent);
-            this.total_lent = ResourceService.asset2Float(data.total_lent);
-            this.total_rent = ResourceService.asset2Float(data.total_rent);
-            this.calculateRexPrice(data);
-            this.calculateBorrowingCost(data);
-        });
-    }
+    // private async updateGlobalRexData() {
+    //     await this.eosjs.getRexPool().then((data) => {
+    //         this.total_unlent = parseTokenValue(data.total_unlent);
+    //         this.total_lent = parseTokenValue(data.total_lent);
+    //         this.total_rent = parseTokenValue(data.total_rent);
+    //         this.calculateRexPrice(data);
+    //         this.calculateBorrowingCost(data);
+    //     });
+    // }
 
     async getActions(auth) {
         let actions = [];
 
-        let precision = this.aService.activeChain['precision'];
         let tk_name = this.aService.activeChain['symbol'];
 
-        const amountRex = this.totalCost;
-        const _cpuPayment = this.cpuCost.toFixed(precision) + ' ' + tk_name;
-        const cpu_fund = 0;
-        const _netPayment = this.netCost.toFixed(precision) + ' ' + tk_name;
-        const net_fund = 0;
         if (this.resourceInfo.needResources){
             actions.push({
                 account: 'eosio',
@@ -392,48 +327,6 @@ export class ResourceService {
                 }
             });
         }
-
-        // if (this.resourceInfo.needResources && !this.resourceInfo.relay) {
-        //     if (this.cpuCost > 0 || this.netCost > 0) {
-        //         actions.push({
-        //             account: 'eosio',
-        //             name: 'deposit',
-        //             authorization: [auth],
-        //             data: {
-        //                 'owner': auth.actor,
-        //                 'amount': amountRex.toFixed(precision) + ' ' + tk_name
-        //             }
-        //         });
-        //     }
-        //
-        //     if (this.cpuCost > 0) {
-        //         actions.push({
-        //             account: 'eosio',
-        //             name: 'rentcpu',
-        //             authorization: [auth],
-        //             data: {
-        //                 'from': auth.actor,
-        //                 'receiver': auth.actor,
-        //                 'loan_payment': _cpuPayment,
-        //                 'loan_fund': cpu_fund.toFixed(precision) + ' ' + tk_name
-        //             }
-        //         });
-        //     }
-        //
-        //     if (this.netCost > 0) {
-        //         actions.push({
-        //             account: 'eosio',
-        //             name: 'rentnet',
-        //             authorization: [auth],
-        //             data: {
-        //                 'from': auth.actor,
-        //                 'receiver': auth.actor,
-        //                 'loan_payment': _netPayment,
-        //                 'loan_fund': net_fund.toFixed(precision) + ' ' + tk_name
-        //             }
-        //         });
-        //     }
-        // }
 
         return actions;
     }

@@ -42,29 +42,30 @@
 
         </div>
 
-
-        <div #txSnack class="clr-col-12">
-            <ng-container *ngFor="let tx of transactionFree">
-                <div class="info-snackbar top-home-snackbar animate__animated animate__fadeInDown">
-                    <div fxLayout="row" fxLayoutAlign="space-between center">
-                        <div>You have <b>{{tx.used}}</b> of <b>{{tx.limit}}</b> free transactions for today!
-                            <fa-icon [icon]="icons.regular.questionCircle" class="question-icon"
-                                     style="font-size: 15px;"
-                                     [matTooltip]="'Transactions in EOSIO cost resources' + '\n\n' +
+        <ng-container *ngIf="aService.activeChain['relay']['enable']">
+            <div #txSnack class="clr-col-12">
+                <ng-container  *ngFor="let tx of transactionFree">
+                    <div class="info-snackbar top-home-snackbar animate__animated animate__fadeInDown">
+                        <div fxLayout="row" fxLayoutAlign="space-between center">
+                            <div>You have <b>{{tx.used}}</b> of <b>{{tx.limit}}</b> free transactions for today!
+                                <fa-icon [icon]="icons.regular.questionCircle" class="question-icon"
+                                         style="font-size: 15px;"
+                                         [matTooltip]="'Transactions in EOSIO cost resources' + '\n\n' +
                                  'EOS Rio is sponsoring '+tx.limit+' transactions per day' + '\n\n' +
 													'The only requirement is to vote for us as Block Producers so we can keep funding these awesome features 😉'"
-                                     matTooltipClass="black-tooltip wider-tooltip">
-                            </fa-icon>
+                                         matTooltipClass="black-tooltip wider-tooltip">
+                                </fa-icon>
 
+                            </div>
+                            <a class="close-btn" (click)="removeElementWithTransition(txSnack,divBelow)">
+                                <fa-icon [icon]="icons.solid.times"></fa-icon>
+                            </a>
                         </div>
-                        <a class="close-btn" (click)="removeElementWithTransition(txSnack,divBelow)">
-                            <fa-icon [icon]="icons.solid.times"></fa-icon>
-                        </a>
                     </div>
-                </div>
-            </ng-container>
+                </ng-container>
 
-        </div>
+            </div>
+        </ng-container>
     </div>
     <div #divBelow class="clr-row homepage-row animate mb-20">
 

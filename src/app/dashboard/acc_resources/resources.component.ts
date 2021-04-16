@@ -15,6 +15,8 @@ import {Subscription} from 'rxjs';
 import {RexComponent} from '../rex/rex.component';
 import {ResourceService} from '../../services/resource.service';
 
+import * as BN from 'bn.js';
+
 const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
     '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
     '8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,' +
@@ -424,7 +426,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.net_weight = d.total_resources.net_weight;
                 this.net_weight_n = parseFloat(this.net_weight.split(' ')[0]);
                 this.listbw(selected.name);
-                this.state = await this.eosjs.getPowerUpState();
+                
             }
         });
 
@@ -491,10 +493,12 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 // console.log(selected);
                 await this.updateUsageAction();
-                await this.getTimeUsCost();
+                const timeCost = await this.eosjs.getTimeUsCost(this.aService.activeChain['precision']);
+                this.timeUsCost = timeCost['cpuCost'];
+                this.timeUsCostNet = timeCost['netCost'];
                 await this.updateUnstakePercent();
+                this.updateStakePercent();
             }
-            this.updateStakePercent();
 
             if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
                 await this.updateRatio(selected);
@@ -658,41 +662,16 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    async getTimeUsCost() {
-
-        const precision = Math.pow(10, this.aService.activeChain['precision']);
-        const precisionNet = Math.pow(10, this.aService.activeChain['precision'] + 4);
-        // const userDetails = await this.aService.selected.getValue().details;
-        const userDetails = await this.eosjs.getAccountInfo('eosriobrazil');
-        const cpu_weight = userDetails.cpu_weight / precision;
-        const net_weight = userDetails.net_weight / precision;
-        this.timeUsCost = Math.round(((cpu_weight / userDetails.cpu_limit.max) * 3) * precision) / precision;
-        this.timeUsCostNet = Math.round(((net_weight / userDetails.net_limit.max) * 3) * precisionNet) / precisionNet;
-    }
-
     async powerUpPlus(qtd, usCpu) {
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
-
         const amountPowerPlus = (Math.round(qtd * usCpu) / this.timeUsCost)*precision;
-
         const power_cpu = await this.eosjs.calcPowerUp(this.state['cpu'], min_cpu_frac, {maxFee:0, maxPower:amountPowerPlus});
 
         const powerCpuAmount = Math.round(power_cpu.amount) / precision;
         const newFee = this.valuetoPowerUp + Math.round(power_cpu.fee * precision) / precision;
         const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
 
-        console.log({
-            usCpu:usCpu,
-            min_cpu_frac: min_cpu_frac,
-            power_cpu: power_cpu,
-            newFee: newFee,
-            fee: this.valuetoPowerUp,
-            amountPowerPlus: amountPowerPlus,
-            powerCpuAmount: powerCpuAmount,
-            usCPUPowerUp: this.usCPUPowerUp,
-            newUsCPU: newUsCPU,
-        });
         if (newFee <= this.unstakedLimited) {
             this.usCPUPowerUp = newUsCPU;
             this.valuetoPowerUp = newFee;
@@ -727,35 +706,15 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             let netAmount = Math.ceil(power_net_param.fee * precision) / precision;
             let cpuAmount = (maxAmount - netAmount);
+
             const power_cpu =  await this.eosjs.calcPowerUp(this.state['cpu'], this.cpu_frac, {maxFee:cpuAmount, maxPower:0});
 
             this.cpu_frac = power_cpu.frac;
 
             const powerCpuAmount = Math.round(power_cpu.amount) / precision;
             const powerNETAmount = Math.round(power_net_param.amount) / precision;
-            this.usCPUPowerUp = Math.round(powerCpuAmount * this.timeUsCost);
-            this.usNETPowerUp = Math.round(powerNETAmount * this.timeUsCostNet);
-
-            console.log({
-                net: netAmount,
-                cpu: cpuAmount,
-                maxAmount: maxAmount,
-                cpuFrac: this.cpu_frac,
-                netFrac: this.net_frac,
-                amountCpu: power_cpu.amount,
-                amountNet: power_net_param.amount,
-                timeUsCostCPU: this.timeUsCost,
-                timeUsCostNET: this.timeUsCostNet,
-                powerCpuAmount: powerCpuAmount,
-                powerNETAmount: powerNETAmount,
-                usNewCPU: this.usCPUPowerUp,
-                usNewNET: this.usNETPowerUp,
-                percentToPowerUp: this.percentToPowerUp,
-                netFee:power_net_param.fee,
-                cpuFee:power_cpu.fee,
-                total: (power_net_param.fee + power_cpu.fee),
-                totalPrecision: (netAmount + cpuAmount)
-            });
+            this.usCPUPowerUp = Math.floor(powerCpuAmount * this.timeUsCost);
+            this.usNETPowerUp = Math.floor(powerNETAmount * this.timeUsCostNet);
 
             // Transfer + DELEGATE + UNDELEGATE
             this.updateExemples();
@@ -773,18 +732,18 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     updateExemples() {
         this.totalUsageTDU[0] = {
             action: 'TRANSFER',
-            one_time: this.localStorage.usageAction.actions[0]['transfer'],
-            limit: this.usCPUPowerUp / this.localStorage.usageAction.actions[0]['transfer']['cpu'],
+            one_time: this.localStorage['usageAction']['actions'][0]['transfer'],
+            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][0]['transfer']['cpu'],
         };
         this.totalUsageTDU[1] = {
             action: 'STAKE',
-            one_time: this.localStorage.usageAction.actions[1]['stake'],
-            limit: this.usCPUPowerUp / this.localStorage.usageAction.actions[1]['stake']['cpu'],
+            one_time: this.localStorage['usageAction']['actions'][1]['stake'],
+            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][1]['stake']['cpu'],
         };
         this.totalUsageTDU[2] = {
             action: 'UNSTAKE',
-            one_time: this.localStorage.usageAction.actions[2]['unstake'],
-            limit: this.usCPUPowerUp / this.localStorage.usageAction.actions[2]['unstake']['cpu'],
+            one_time: this.localStorage['usageAction']['actions'][2]['unstake'],
+            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][2]['unstake']['cpu'],
         };
     }
 

@@ -45,9 +45,9 @@
       },
       "powerup":{
         "minCpuFrac": 10000000,
-        "minNetFrac": 2000000,
+        "minNetFrac": 500000,
         "maxPowerUpSlider": 0.1,
-        "daysToRefresh": 3
+        "daysToRefresh": 2
       },
       "system": [
         "eosio",

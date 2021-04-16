@@ -3,6 +3,8 @@ import {SignatureProvider, SignatureProviderArgs} from 'eosjs/dist/eosjs-api-int
 import {Api, JsonRpc} from 'eosjs';
 import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
 import {JsSignatureProvider, PrivateKey, PublicKey} from 'eosjs/dist/eosjs-jssig';
+import * as BN from 'bn.js';
+
 
 import {
     convertFraction,
@@ -819,30 +821,34 @@ export class Eosjs2Service {
 
     priceFunction(state, utilization): number {
 
-        const maxPrice = parseFloat(state.max_price.split(' ')[0]);
-        const minPrice = parseFloat(state.min_price.split(' ')[0]);
+        const maxPrice = parseTokenValue(state.max_price);
+        const minPrice = parseTokenValue(state.min_price);
         let price = minPrice;
+
+        const weight = parseFloat(state.weight);
         const new_exponent = parseFloat(state.exponent) - 1.0;
         if (new_exponent <= 0.0) {
-            return parseFloat(state.max_price);
+            return maxPrice;
         } else {
-            price += (maxPrice - minPrice) * Math.pow(utilization / parseFloat(state.weight), new_exponent);
+            price += (maxPrice - minPrice) * Math.pow(utilization / weight, new_exponent);
         }
         return price;
     }
 
     priceIntegralDelta(state, start_utilization, end_utilization): number {
-        const maxPrice = parseFloat(state.max_price.split(' ')[0]);
-        const minPrice = parseFloat(state.min_price.split(' ')[0]);
+        const maxPrice = parseTokenValue(state.max_price);
+        const minPrice = parseTokenValue(state.min_price);
 
-        const coefficient = (maxPrice - minPrice) / parseFloat(state.exponent);
-        const start_u = parseFloat(start_utilization) / parseFloat(state.weight);
-        const end_u = parseFloat(end_utilization) / parseFloat(state.weight);
+        const exp = parseFloat(state.exponent);
+        const weight = parseFloat(state.weight);
 
-        return minPrice * end_u - minPrice * start_u +
-            coefficient * Math.pow(end_u, parseFloat(state.exponent)) - coefficient * Math.pow(start_u, parseFloat(state.exponent));
+        const coefficient = (maxPrice - minPrice) / exp;
+        const start_u = start_utilization / weight;
+        const end_u = end_utilization / weight;
+
+        return (minPrice * end_u) - (minPrice * start_u) +
+            (coefficient * Math.pow(end_u, exp)) - (coefficient * Math.pow(start_u, exp));
     }
-
 
     async calculateFeePowerUp(state, frac) {
 
@@ -854,8 +860,13 @@ export class Eosjs2Service {
             const end_utilization = start_utilization + amount;
             const adjustedUtilization = parseFloat(state.adjusted_utilization);
             if (start_utilization < state.adjusted_utilization) {
-                fee += this.priceFunction(state, adjustedUtilization) *
-                    Math.min(amount, adjustedUtilization - start_utilization) / parseFloat(state.weight);
+
+                const price = this.priceFunction(state, adjustedUtilization);
+                // const min = Math.min(amount, adjustedUtilization - start_utilization) / parseFloat(state.weight);
+                const min = Math.min(amount, adjustedUtilization - start_utilization);
+                const k = min / parseFloat(state.weight);
+
+                fee += price * k;
                 start_utilization = adjustedUtilization;
             }
 
@@ -875,13 +886,29 @@ export class Eosjs2Service {
         let powerup = await this.calculateFeePowerUp(state, frac);
 
         if(maxFee!==0)
-            new_FRAC = Math.ceil((maxFee * frac) / powerup.fee);
+            new_FRAC = Math.floor((maxFee * frac) / powerup.fee);
         else if(maxPower!==0)
-            new_FRAC = (maxPower*frac) / powerup.amount;
+            new_FRAC = (maxPower * frac) / powerup.amount;
 
         if(new_FRAC > 0)
             powerup = await this.calculateFeePowerUp(state, new_FRAC);
 
         return powerup;
     }
+
+    async getTimeUsCost(pr) {
+
+        const precision = Math.pow(10, pr);
+        const precisionNet = Math.pow(10, pr + 4);
+        // const userDetails = await this.aService.selected.getValue().details;
+        const userDetails = await this.getAccountInfo('eosriobrazil');
+        const cpu_weight = userDetails.cpu_weight / precision;
+        const net_weight = userDetails.net_weight / precision;
+        const timeUsCost = Math.round(((userDetails.cpu_limit.max / cpu_weight)) * precision) / precision;
+        const timeUsCostNet = Math.round(((userDetails.net_limit.max/ net_weight)) * precisionNet) / precisionNet;
+
+        return {cpuCost:timeUsCost,netCost:timeUsCostNet};
+    }
+
+
 }
