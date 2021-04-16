@@ -426,7 +426,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.net_weight = d.total_resources.net_weight;
                 this.net_weight_n = parseFloat(this.net_weight.split(' ')[0]);
                 this.listbw(selected.name);
-                
+
             }
         });
 
@@ -665,10 +665,10 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     async powerUpPlus(qtd, usCpu) {
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
-        const amountPowerPlus = (Math.round(qtd * usCpu) / this.timeUsCost)*precision;
+        const amountPowerPlus = (Math.round(qtd * usCpu) / this.timeUsCost);
         const power_cpu = await this.eosjs.calcPowerUp(this.state['cpu'], min_cpu_frac, {maxFee:0, maxPower:amountPowerPlus});
 
-        const powerCpuAmount = Math.round(power_cpu.amount) / precision;
+        const powerCpuAmount = Math.round(power_cpu.amount);
         const newFee = this.valuetoPowerUp + Math.round(power_cpu.fee * precision) / precision;
         const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
 
@@ -711,8 +711,8 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             this.cpu_frac = power_cpu.frac;
 
-            const powerCpuAmount = Math.round(power_cpu.amount) / precision;
-            const powerNETAmount = Math.round(power_net_param.amount) / precision;
+            const powerCpuAmount = Math.round(power_cpu.amount);
+            const powerNETAmount = Math.round(power_net_param.amount);
             this.usCPUPowerUp = Math.floor(powerCpuAmount * this.timeUsCost);
             this.usNETPowerUp = Math.floor(powerNETAmount * this.timeUsCostNet);
 
@@ -1477,9 +1477,9 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const actionTitle = `<span class="blue">Password</span>`;
         const messageHTML = `
             <h5 class="modal-title text-white">
-                You are Powering Up <span class="highlight-primary">${this.powerUpToReceiver !=='' ? this.powerUpToReceiver+' account': 'this account'}</span> , 
-                with fee costs of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>,
-                giving approximately of CPU: <span class="highlight-primary">${Math.round((this.usCPUPowerUp / (1000)) * precision) / precision} ms</span>
+                You are renting resources on Power UP to <span class="highlight-primary">${this.powerUpToReceiver !=='' ? this.powerUpToReceiver+' account': 'this account'}</span> , 
+                with maximum fee costs of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>, and
+                approximately CPU resource of  <span class="highlight-primary">${Math.round((this.usCPUPowerUp / (1000)) * precision) / precision} ms</span> for 24 hours.
                 
             </h5>
         `;

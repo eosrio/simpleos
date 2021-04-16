@@ -902,8 +902,8 @@ export class Eosjs2Service {
         const precisionNet = Math.pow(10, pr + 4);
         // const userDetails = await this.aService.selected.getValue().details;
         const userDetails = await this.getAccountInfo('eosriobrazil');
-        const cpu_weight = userDetails.cpu_weight / precision;
-        const net_weight = userDetails.net_weight / precision;
+        const cpu_weight = userDetails.cpu_weight;
+        const net_weight = userDetails.net_weight ;
         const timeUsCost = Math.round(((userDetails.cpu_limit.max / cpu_weight)) * precision) / precision;
         const timeUsCostNet = Math.round(((userDetails.net_limit.max/ net_weight)) * precisionNet) / precisionNet;
 

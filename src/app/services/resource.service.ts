@@ -252,7 +252,7 @@ export class ResourceService {
                 const state = await this.eosjs.getPowerUpState();
                 this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
                 this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
-                const amountPowerCpuPlus = ((newAvgCPU+avgUsagePUP.cpu) / timeTokenUnitCPU) * prCalc;
+                const amountPowerCpuPlus = ((newAvgCPU+avgUsagePUP.cpu) / timeTokenUnitCPU);
 
                 const power_cpu = await this.eosjs.calcPowerUp(state['cpu'], this.cpu_frac, {maxFee:0, maxPower:amountPowerCpuPlus});
                 const power_net = await this.eosjs.calcPowerUp(state['net'], this.net_frac, {maxFee:0, maxPower:0});
