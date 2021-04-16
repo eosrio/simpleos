@@ -77,6 +77,7 @@ export class SendComponent implements OnInit, OnDestroy {
         'gateiowallet', 'eosusrwallet', 'binancecleos',
         'novadaxstore', 'floweosaccnt', 'coinwwallet1'];
     memoMsg = 'optional';
+    memoMsgModal = 'optional';
 
     private selectedAccountName = '';
     private subscriptions: Subscription[] = [];
@@ -117,6 +118,7 @@ export class SendComponent implements OnInit, OnDestroy {
         this.contactForm = this.fb.group({
             account: ['', Validators.required],
             name: ['', Validators.required],
+            memo: [''],
         });
         this.searchForm = this.fb.group({
             search: ['']
@@ -174,28 +176,8 @@ export class SendComponent implements OnInit, OnDestroy {
     checkExchangeAccount() {
         const memo = this.sendForm.get('memo');
         const acc = this.sendForm.value.to.toLowerCase();
-        const exchanges = this.aService.activeChain['exchanges'];
         if (this.knownExchanges.includes(acc)) {
-            console.log(exchanges[acc].pattern.toString());
-            if (exchanges[acc]) {
-                if (exchanges[acc].memo_size) {
-                    const memo_size = parseInt(exchanges[acc].memo_size, 10);
-                    memo.setValidators([
-                        Validators.required,
-                        Validators.pattern(exchanges[acc].pattern),
-                        Validators.minLength(memo_size),
-                        Validators.maxLength(memo_size)
-                    ]);
-                } else {
-                    memo.setValidators([
-                        Validators.required,
-                        Validators.pattern(exchanges[acc].pattern)
-                    ]);
-                    console.log('only pattern');
-                }
-            } else {
-                memo.setValidators([Validators.required]);
-            }
+            this.checkConfigExchange(memo,acc);
             this.memoMsg = 'required';
             memo.updateValueAndValidity();
             console.log(memo);
@@ -229,7 +211,8 @@ export class SendComponent implements OnInit, OnDestroy {
                     this.insertNewContact({
                         type: 'contact',
                         name: acc.account_name,
-                        account: acc.account_name
+                        account: acc.account_name,
+                        default_memo: acc.memo === undefined? '' : acc.memo
                     }, true);
                 }
                 this.addDividers();
@@ -339,6 +322,7 @@ export class SendComponent implements OnInit, OnDestroy {
                 this.eosjs.checkAccountName(this.contactForm.value.account.toLowerCase());
                 this.contactForm.controls['account'].setErrors(null);
                 this.adderrormsg = '';
+                this.checkExchangeAccountModal();
                 this.eosjs.getAccountInfo(this.contactForm.value.account.toLowerCase()).then(() => {
                     this.contactForm.controls['account'].setErrors(null);
                     this.adderrormsg = '';
@@ -352,6 +336,46 @@ export class SendComponent implements OnInit, OnDestroy {
             }
         } else {
             this.adderrormsg = '';
+        }
+    }
+
+    checkConfigExchange(memo,acc){
+
+        const exchanges = this.aService.activeChain['exchanges'];
+        console.log(exchanges[acc].pattern.toString());
+        if (exchanges[acc]) {
+            if (exchanges[acc].memo_size) {
+                const memo_size = parseInt(exchanges[acc].memo_size, 10);
+                memo.setValidators([
+                    Validators.required,
+                    Validators.pattern(exchanges[acc].pattern),
+                    Validators.minLength(memo_size),
+                    Validators.maxLength(memo_size)
+                ]);
+            } else {
+                memo.setValidators([
+                    Validators.required,
+                    Validators.pattern(exchanges[acc].pattern)
+                ]);
+                console.log('only pattern');
+            }
+        } else {
+            memo.setValidators([Validators.required]);
+        }
+    }
+
+    checkExchangeAccountModal() {
+        const memo = this.contactForm.get('memo');
+        const acc = this.contactForm.value.account.toLowerCase();
+        if (this.knownExchanges.includes(acc)) {
+            this.checkConfigExchange(memo,acc);
+            this.memoMsgModal = 'required';
+            memo.updateValueAndValidity();
+            console.log(memo);
+        } else {
+            this.memoMsgModal = 'optional';
+            memo.setValidators(null);
+            memo.updateValueAndValidity();
         }
     }
 
@@ -419,7 +443,9 @@ export class SendComponent implements OnInit, OnDestroy {
                 this.insertNewContact({
                     type: 'contact',
                     name: this.contactForm.value.name,
-                    account: this.contactForm.value.account.toLowerCase()
+                    account: this.contactForm.value.account.toLowerCase(),
+                    default_memo: this.contactForm.value.memo
+
                 }, false);
                 this.newContactModal = false;
                 this.addDividers();
@@ -453,7 +479,8 @@ export class SendComponent implements OnInit, OnDestroy {
                 this.insertNewContact({
                     type: 'contact',
                     name: this.sendForm.value['alias'],
-                    account: this.sendForm.value.to.toLowerCase()
+                    account: this.sendForm.value.to.toLowerCase(),
+                    memo: this.sendForm.value.memo
                 }, false);
                 this.addDividers();
                 this.storeContacts();
@@ -491,8 +518,10 @@ export class SendComponent implements OnInit, OnDestroy {
         this.contactExist = true;
         this.sendForm.patchValue({
             to: contact.account,
-            alias: contact.name
+            alias: contact.name,
+            memo: contact.default_memo===undefined?'':contact.default_memo
         });
+        this.checkExchangeAccount();
     }
 
     storeContacts() {
@@ -657,10 +686,12 @@ export class SendComponent implements OnInit, OnDestroy {
         console.log(contact);
         this.contactForm.patchValue({
             account: contact.account,
-            name: contact.name
+            name: contact.name,
+            memo: contact.default_memo===undefined?'':contact.default_memo
         });
         this.editContactModal = true;
         this.selectedEditContact = contact;
+        this.checkExchangeAccountModal();
     }
 
     doEditContact() {
@@ -668,6 +699,7 @@ export class SendComponent implements OnInit, OnDestroy {
             return el.account === this.selectedEditContact.account;
         });
         this.contacts[index].name = this.contactForm.get('name').value;
+        this.contacts[index].default_memo = this.contactForm.get('memo').value;
         this.editContactModal = false;
         this.selectedEditContact = null;
         this.contactForm.reset();

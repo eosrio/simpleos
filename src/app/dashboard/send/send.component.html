@@ -160,7 +160,7 @@
         <form [formGroup]="contactForm">
             <mat-form-field>
                 <input matInput #addAccount type="text" formControlName="account"
-                       placeholder="Account name"
+                       placeholder="Account name (required)"
                        class="text-lowercase" maxlength="12" (blur)="checkAccountModal()">
                 <mat-error align="start" *ngIf="adderrormsg !== ''">
                     {{adderrormsg}}
@@ -168,7 +168,10 @@
                 <mat-hint align="end">{{addAccount.value.length}} / 12</mat-hint>
             </mat-form-field>
             <mat-form-field>
-                <input matInput type="text" formControlName="name" placeholder="Contact name">
+                <input matInput type="text" formControlName="name" placeholder="Contact name (optional)">
+            </mat-form-field>
+            <mat-form-field>
+                <input matInput type="text" formControlName="memo" placeholder="Memo ({{memoMsgModal}})">
             </mat-form-field>
         </form>
     </div>
@@ -192,7 +195,10 @@
             </mat-form-field>
             <mat-form-field>
                 <input matInput type="text" (keyup.enter)="doEditContact()" formControlName="name"
-                       placeholder="Contact name">
+                       placeholder="Contact name ">
+            </mat-form-field>
+            <mat-form-field>
+                <input matInput type="text" formControlName="memo" placeholder="Memo ({{memoMsgModal}})">
             </mat-form-field>
         </form>
     </div>
