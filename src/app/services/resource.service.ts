@@ -199,7 +199,7 @@ export class ResourceService {
             isNETWithdraw = (totalNETStaked - unstakeNET) <= 0 ?? false;
         }
 
-        const timeCost = await this.eosjs.getTimeUsCost(precision);
+        const timeCost = await this.eosjs.getTimeUsCost(precision,account.details);
 
         // cost of uS CPU
         const timeTokenUnitCPU = timeCost['cpuCost'];

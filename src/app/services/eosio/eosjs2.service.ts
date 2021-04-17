@@ -862,7 +862,6 @@ export class Eosjs2Service {
             if (start_utilization < state.adjusted_utilization) {
 
                 const price = this.priceFunction(state, adjustedUtilization);
-                // const min = Math.min(amount, adjustedUtilization - start_utilization) / parseFloat(state.weight);
                 const min = Math.min(amount, adjustedUtilization - start_utilization);
                 const k = min / parseFloat(state.weight);
 
@@ -896,12 +895,15 @@ export class Eosjs2Service {
         return powerup;
     }
 
-    async getTimeUsCost(pr) {
+    async getTimeUsCost(pr,acc_details?) {
 
         const precision = Math.pow(10, pr);
         const precisionNet = Math.pow(10, pr + 4);
-        // const userDetails = await this.aService.selected.getValue().details;
-        const userDetails = await this.getAccountInfo('eosriobrazil');
+        let userDetails;
+        if(acc_details!==undefined&&acc_details.cpu_limit.max>0)
+            userDetails = acc_details;
+        else
+            userDetails = await this.getAccountInfo('eosriobrazil');
         const cpu_weight = userDetails.cpu_weight;
         const net_weight = userDetails.net_weight ;
         const timeUsCost = Math.round(((userDetails.cpu_limit.max / cpu_weight)) * precision) / precision;

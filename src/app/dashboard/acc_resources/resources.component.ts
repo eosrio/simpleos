@@ -493,7 +493,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 // console.log(selected);
                 await this.updateUsageAction();
-                const timeCost = await this.eosjs.getTimeUsCost(this.aService.activeChain['precision']);
+                const timeCost = await this.eosjs.getTimeUsCost(this.aService.activeChain['precision'], selected.details);
                 this.timeUsCost = timeCost['cpuCost'];
                 this.timeUsCostNet = timeCost['netCost'];
                 await this.updateUnstakePercent();
@@ -665,17 +665,17 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
     async powerUpPlus(qtd, usCpu) {
         const precision = Math.pow(10, this.aService.activeChain['precision']);
         const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
-        const amountPowerPlus = (Math.round(qtd * usCpu) / this.timeUsCost);
+        const amountPowerPlus = (Math.ceil(qtd * usCpu) / this.timeUsCost);
         const power_cpu = await this.eosjs.calcPowerUp(this.state['cpu'], min_cpu_frac, {maxFee:0, maxPower:amountPowerPlus});
 
         const powerCpuAmount = Math.round(power_cpu.amount);
-        const newFee = this.valuetoPowerUp + Math.round(power_cpu.fee * precision) / precision;
+        const newFee = Math.ceil((this.valuetoPowerUp + power_cpu.fee) * precision) / precision;
         const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
 
         if (newFee <= this.unstakedLimited) {
             this.usCPUPowerUp = newUsCPU;
             this.valuetoPowerUp = newFee;
-            this.cpu_frac += Math.round(power_cpu.frac);
+            this.cpu_frac += Math.floor(power_cpu.frac);
             this.percentToPowerUp = (this.valuetoPowerUp * 100 / (this.unstakedLimited)).toFixed(2);
             // // Transfer + DELEGATE + UNDELEGATE
             this.updateExemples();
