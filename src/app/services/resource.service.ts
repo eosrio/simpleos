@@ -311,6 +311,8 @@ export class ResourceService {
         let actions = [];
 
         let tk_name = this.aService.activeChain['symbol'];
+        const precision = this.aService.activeChain['precision'];
+        const max_payment = this.totalCost.toFixed(precision);
 
         if (this.resourceInfo.needResources){
             actions.push({
@@ -323,7 +325,7 @@ export class ResourceService {
                     'days': 1,
                     'cpu_frac': this.cpu_frac,
                     'net_frac': this.net_frac,
-                    'max_payment': this.totalCost + ' ' + tk_name
+                    'max_payment': `${max_payment} ${tk_name}`
                 }
             });
         }

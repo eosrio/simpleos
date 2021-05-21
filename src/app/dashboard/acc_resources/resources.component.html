@@ -580,6 +580,9 @@
                     </div>
                     <br>
                 </mat-tab>
+                <ng-container *ngIf="!powerUpdisabled">
+
+
                 <mat-tab label="POWER UP">
 
                     <div class="clr-row resourcespage-row animate" style="padding-top: 15px;">
@@ -741,7 +744,7 @@
                                                                         <br>
                                                                         <ng-container *ngIf="item.limit>0">
                                                                             You can execute this action <span
-                                                                                class="highlight-primary">{{(item.limit| number: '1.2-2')}}</span>
+                                                                                class="highlight-primary">{{item.limit|number}}</span>
                                                                             time(s)
                                                                         </ng-container>
                                                                     </div>
@@ -794,6 +797,8 @@
                         </div>
                     </div>
                 </mat-tab>
+                </ng-container>
+
             </mat-tab-group>
         </div>
     </div>

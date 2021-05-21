@@ -298,6 +298,7 @@ export class DappComponent implements OnInit, AfterViewInit {
 
     schemaJson(type: string) {
         const out = {};
+        const tempOut = {};
         this.abiSmartContractStructs.find(action => action.name === type).fields.forEach(field => {
             const arr = (field.type.indexOf('[]') > 0);
             const field_type = field.type.replace('[]', '');
@@ -332,21 +333,23 @@ export class DappComponent implements OnInit, AfterViewInit {
                 ];
                 let typeABI;
                 if (intArr.includes(field.type)) {
-                    typeABI = '"type": "integer", "default":0';
-                } else if (arr) {
-                    if (intArr.includes(field.type)) {
-                        typeABI = '"type": "number", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
-                    } else {
-                        typeABI = '"type": "string",  "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", "key": "array_' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
+                    typeABI = '"type": "number", "default":0';
+                } else if(arr){
+                    if(intArr.includes(field_type)){
+                        typeABI = '"type": "array","items":[{"type":"number","default":0}]';
+                    }else{
+                        typeABI = '"type": "array","items":[{"type":"string"}]';
                     }
                 } else {
-                    typeABI = '"type": "string", "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '"';
+                    typeABI = '"type": "string"';
                 }
+
                 const jsonTxt = '{ "title": "' + field.name.charAt(0).toUpperCase() + field.name.slice(1) + '", ' + typeABI + ' }';
 
                 out[field.name] = JSON.parse(jsonTxt);
             }
         });
+        console.log(out);
         return out;
     }
 

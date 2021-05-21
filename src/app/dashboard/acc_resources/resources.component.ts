@@ -667,7 +667,6 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
         const amountPowerPlus = (Math.ceil(qtd * usCpu) / this.timeUsCost);
         const power_cpu = await this.eosjs.calcPowerUp(this.state['cpu'], min_cpu_frac, {maxFee:0, maxPower:amountPowerPlus});
-
         const powerCpuAmount = Math.round(power_cpu.amount);
         const newFee = Math.ceil((this.valuetoPowerUp + power_cpu.fee) * precision) / precision;
         const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
@@ -702,9 +701,9 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
             this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
 
-            const power_net_param = await this.eosjs.calcPowerUp(this.state['net'], this.net_frac, {maxFee:0, maxPower:0});
+            const power_net = await this.eosjs.calcPowerUp(this.state['net'], this.net_frac, {maxFee:0, maxPower:0});
 
-            let netAmount = Math.ceil(power_net_param.fee * precision) / precision;
+            let netAmount = Math.ceil(power_net.fee * precision) / precision;
             let cpuAmount = (maxAmount - netAmount);
 
             const power_cpu =  await this.eosjs.calcPowerUp(this.state['cpu'], this.cpu_frac, {maxFee:cpuAmount, maxPower:0});
@@ -712,7 +711,7 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cpu_frac = power_cpu.frac;
 
             const powerCpuAmount = Math.round(power_cpu.amount);
-            const powerNETAmount = Math.round(power_net_param.amount);
+            const powerNETAmount = Math.round(power_net.amount);
             this.usCPUPowerUp = Math.floor(powerCpuAmount * this.timeUsCost);
             this.usNETPowerUp = Math.floor(powerNETAmount * this.timeUsCostNet);
 
@@ -724,6 +723,27 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             this.isCheckedPowerUpManually = false;
 
+            console.log({
+                net: netAmount,
+                cpu: cpuAmount,
+                maxAmount: maxAmount,
+                cpuFrac: this.cpu_frac,
+                netFrac: this.net_frac,
+                amountCpu: power_cpu.amount,
+                amountNet: power_net.amount,
+                timeUsCostCPU: this.timeUsCost,
+                timeUsCostNET: this.timeUsCostNet,
+                powerCpuAmount: powerCpuAmount,
+                powerNETAmount: powerNETAmount,
+                usNewCPU: this.usCPUPowerUp,
+                usNewNET: this.usNETPowerUp,
+                percentToPowerUp: this.percentToPowerUp,
+                netFee:power_net.fee,
+                cpuFee:power_cpu.fee,
+                total: (power_net.fee + power_cpu.fee),
+                totalPrecision: (netAmount + cpuAmount)
+            });
+
         } else {
             await this.updateUnstakePercent();
         }
@@ -733,17 +753,17 @@ export class ResourcesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.totalUsageTDU[0] = {
             action: 'TRANSFER',
             one_time: this.localStorage['usageAction']['actions'][0]['transfer'],
-            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][0]['transfer']['cpu'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][0]['transfer']['cpu']),
         };
         this.totalUsageTDU[1] = {
             action: 'STAKE',
             one_time: this.localStorage['usageAction']['actions'][1]['stake'],
-            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][1]['stake']['cpu'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][1]['stake']['cpu']),
         };
         this.totalUsageTDU[2] = {
             action: 'UNSTAKE',
             one_time: this.localStorage['usageAction']['actions'][2]['unstake'],
-            limit: this.usCPUPowerUp / this.localStorage['usageAction']['actions'][2]['unstake']['cpu'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][2]['unstake']['cpu']),
         };
     }
 
