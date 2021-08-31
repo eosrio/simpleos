@@ -206,7 +206,7 @@
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "sudo-prompt": "^9.2.1",
-    "tar": "^6.0.2",
+    "tar": "^6.1.9",
     "text-mask-addons": "3.8.0",
     "tslib": "^2.0.0",
     "@webcomponents/webcomponentsjs": "^2.4.3"
