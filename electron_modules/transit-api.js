@@ -65,7 +65,6 @@ class TransitApiService {
         this.expressApp.get('/connect', (req, res) => {
 
             console.log('CONNECT REQUEST');
-            this.main.getFocus();
 
             this.sendMessage('request', {
                 message: 'connect',
