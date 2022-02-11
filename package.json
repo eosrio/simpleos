@@ -155,7 +155,7 @@
     "@fortawesome/pro-solid-svg-icons": "^5.13.0",
     "@ledgerhq/hw-transport": "5.15.0",
     "@ledgerhq/hw-transport-node-hid": "5.15.0",
-    "ajv": "^6.12.2",
+    "ajv": "^6.12.3",
     "angular2-text-mask": "9.0.0",
     "angular2-toaster": "8.0.0",
     "animate.css": "^4.1.0",
