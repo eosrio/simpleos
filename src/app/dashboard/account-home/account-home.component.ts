@@ -15,7 +15,7 @@ import {faTimes} from '@fortawesome/pro-solid-svg-icons/faTimes';
 import {faClone} from '@fortawesome/pro-regular-svg-icons/faClone';
 import {NotificationService} from '../../services/notification.service';
 import {faQuestionCircle} from '@fortawesome/pro-regular-svg-icons/faQuestionCircle';
-import {ResourceService} from "../../services/resource.service";
+import {ResourceService} from '../../services/resource.service';
 
 @Component({
     selector: 'app-account-home',
@@ -49,7 +49,7 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     unstakeTime: string;
     transactionFree: any[];
     tokens: any[];
-    selectedAccountName:string;
+    selectedAccountName: string;
 
     private selectedAccountSubscription: Subscription;
     private lastUpdateSubscription: Subscription;
@@ -73,12 +73,12 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.selectedAccountSubscription.unsubscribe();
         this.lastUpdateSubscription.unsubscribe();
     }
 
-    ngAfterViewInit() {
+    ngAfterViewInit(): void {
 
         if (this.network.networkingReady.getValue()) {
             // this.getInfo().catch(console.log);
@@ -93,13 +93,16 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         this.selectedAccountSubscription = this.aService.selected.asObservable().subscribe(async (sel) => {
-            if (sel['name']) {
-                if (this.selectedAccountName !== sel['name']) {
-                    this.selectedAccountName = sel['name'];
+            if (sel.name) {
+                if (this.selectedAccountName !== sel.name) {
+                    this.selectedAccountName = sel.name;
                     this.onAccountChanged(sel);
                     this.transactionFree = await this.resource.checkCredits([
-                        {account: 'eosio',name: 'delegatebw'},
-                    ], sel['name']);
+                        {
+                            account: 'eosio',
+                            name: 'delegatebw'
+                        },
+                    ], sel.name);
                 }
             }
             this.cdr.detectChanges();
@@ -108,7 +111,7 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
 
-    onAccountChanged(sel) {
+    onAccountChanged(sel): void {
         this.fullBalance = sel.full_balance;
         this.staked = sel.staked;
         this.unstaking = sel.unstaking;
@@ -133,14 +136,14 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         // }).catch(console.log);
     }
 
-    updateBalances() {
+    updateBalances(): void {
         const sel = this.aService.selected.getValue();
         this.fullBalance = sel.full_balance;
         this.staked = sel.staked;
         this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
     }
 
-    removeElementWithTransition(target: HTMLDivElement, divBelow: HTMLDivElement) {
+    removeElementWithTransition(target: HTMLDivElement, divBelow: HTMLDivElement): void {
         divBelow.classList.add('animated-translation');
         target.classList.add('animate__animated', 'animate__fadeOutUp');
         divBelow.style.transform = `translateY(-${target.getBoundingClientRect().height}px)`;
@@ -151,8 +154,8 @@ export class AccountHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         }, 1000);
     }
 
-    cc(text) {
-        window['navigator']['clipboard']['writeText'](text).then(() => {
+    cc(text): void {
+        window.navigator.clipboard.writeText(text).then(() => {
             this.toaster.onSuccess(`Address ${text} copied to clipboard!`, '');
         }).catch(() => {
             this.toaster.onError('Copy to clipboard didn\'t work!', 'Please try other way.');
