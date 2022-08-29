@@ -1,8 +1,9 @@
 import {Injectable} from '@angular/core';
 import {SignatureProvider, SignatureProviderArgs} from 'eosjs/dist/eosjs-api-interfaces';
-import {Api, JsonRpc} from 'eosjs';
-import {PushTransactionArgs} from 'eosjs/dist/eosjs-rpc-interfaces';
-import {JsSignatureProvider, PrivateKey, PublicKey} from 'eosjs/dist/eosjs-jssig';
+import {Api, JsonRpc} from 'enf-eosjs';
+import {PushTransactionArgs} from 'enf-eosjs/dist/eosjs-rpc-interfaces';
+import {JsSignatureProvider} from 'enf-eosjs/dist/eosjs-jssig';
+import {PrivateKey, PublicKey} from 'eosjs/dist/eosjs-jssig';
 import * as BN from 'bn.js';
 
 
@@ -173,7 +174,7 @@ export class Eosjs2Service {
             sign: true,
         });
         if (shouldBroadcast) {
-            const result = await this.api.pushSignedTransaction(packedTransaction);
+            const result = await this.api.pushSignedTransaction(packedTransaction as PushTransactionArgs);
             return {result, packedTransaction};
         } else {
             return {packedTransaction};
@@ -199,16 +200,18 @@ export class Eosjs2Service {
                     broadcast: false,
                     sign: false,
                 });
-                const serializedTx = packedTransaction.serializedTransaction;
-                const signArgs = {
-                    chainId: this.chainId,
-                    requiredKeys,
-                    serializedTransaction: serializedTx,
-                    abis: [],
-                };
-                console.log(signArgs);
-                const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
-                return {pushTransactionArgs};
+                if ('serializedTransaction' in packedTransaction) {
+                    const serializedTx = packedTransaction.serializedTransaction;
+                    const signArgs = {
+                        chainId: this.chainId,
+                        requiredKeys,
+                        serializedTransaction: serializedTx,
+                        abis: [],
+                    };
+                    console.log(signArgs);
+                    const pushTransactionArgs = await this.apiRelay.signatureProvider.sign(signArgs);
+                    return {pushTransactionArgs};
+                }
             } catch (e) {
                 console.log(e);
             }
@@ -775,6 +778,7 @@ export class Eosjs2Service {
     getChainUserres(): Promise<any> {
         return this.getTableRows('eosio', 'eosio', 'userres');
     }
+
     getChainInfo(): Promise<any> {
         return this.getTableRows('eosio', 'eosio', 'global');
     }
@@ -826,36 +830,36 @@ export class Eosjs2Service {
         return 1;
     }
 
-    async calcPowerUp(state, frac, {maxFee, maxPower}){
+    async calcPowerUp(state, frac, {maxFee, maxPower}) {
         let new_FRAC = 0;
         let powerup = await this.calculateFeePowerUp(state, frac);
-        if(maxFee!==0)
+        if (maxFee !== 0)
             new_FRAC = Math.floor((maxFee * frac) / powerup.fee);
-        else if(maxPower!==0)
+        else if (maxPower !== 0)
             new_FRAC = (maxPower * frac) / powerup.amount;
 
-        if(new_FRAC > 0)
+        if (new_FRAC > 0)
             powerup = await this.calculateFeePowerUp(state, new_FRAC);
 
         return powerup;
     }
 
-    async getTimeUsCost(pr,acc_details?) {
+    async getTimeUsCost(pr, acc_details?) {
 
         const precision = Math.pow(10, pr);
         const precisionNet = Math.pow(10, pr + 4);
         let userDetails;
-        if(acc_details!==undefined&&acc_details.cpu_limit.max>0)
+        if (acc_details !== undefined && acc_details.cpu_limit.max > 0)
             userDetails = acc_details;
         else
             userDetails = await this.getAccountInfo('eosriobrazil');
         const cpu_weight = userDetails.cpu_weight;
-        const net_weight = userDetails.net_weight ;
+        const net_weight = userDetails.net_weight;
         console.log(userDetails);
         const timeUsCost = Math.round(((userDetails.cpu_limit.max / cpu_weight)) * precision) / precision;
-        const timeUsCostNet = Math.round(((userDetails.net_limit.max/ net_weight)) * precisionNet) / precisionNet;
+        const timeUsCostNet = Math.round(((userDetails.net_limit.max / net_weight)) * precisionNet) / precisionNet;
 
-        return {cpuCost:timeUsCost,netCost:timeUsCostNet};
+        return {cpuCost: timeUsCost, netCost: timeUsCostNet};
     }
 
     calculateFee(state: any, frac: number): any {
@@ -865,7 +869,7 @@ export class Eosjs2Service {
         const precision2 = new BN(1000000000000000);
 
         if (utilization_increase.lte(zero)) return 0;
-        console.log(utilization_increase.toNumber(),state);
+        console.log(utilization_increase.toNumber(), state);
         let fee = 0.0;
         let start_utilization = new BN(state.utilization);
         let end_utilization = start_utilization.add(utilization_increase);

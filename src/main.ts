@@ -11,7 +11,7 @@ import 'echarts/theme/macarons.js';
 // import 'echarts/map/js/world.js';
 import 'echarts/dist/extension/bmap.min.js';
 
-function angularBoot() {
+function angularBoot(): void {
     if (environment.production) {
         enableProdMode();
     }
@@ -50,7 +50,7 @@ async function fecthConfigJson(): Promise<void> {
     }
 }
 
-async function fecthErrorJson() {
+async function fecthErrorJson(): Promise<void> {
     const url = 'https://raw.githubusercontent.com/eosrio/simpleos/master/error.json';
 
     let response;
@@ -81,16 +81,11 @@ async function fecthErrorJson() {
 }
 
 (async () => {
-
     if (!localStorage.getItem('simplEOS.activeChainID')) {
         localStorage.setItem('simplEOS.activeChainID', 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906');
     }
-
     await fecthConfigJson();
-
     await fecthErrorJson();
-
-
     // Launch Main Application
     angularBoot();
 })();

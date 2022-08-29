@@ -15,13 +15,14 @@ import {RexComponent} from '../rex/rex.component';
 import {AppComponent} from '../../app.component';
 import {ThemeService} from '../../services/theme.service';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
-import {JsSignatureProvider, PrivateKey} from 'eosjs/dist/eosjs-jssig';
 import {SortEvent} from 'primeng/api';
-import {Api, RpcError} from 'eosjs';
-import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../../interfaces/account';
 import {ResourceService} from '../../services/resource.service';
 import {ElectronService} from '../../services/electron.service';
+
+import {Api, RpcError, Numeric} from 'enf-eosjs';
+import {JsSignatureProvider} from 'enf-eosjs/dist/eosjs-jssig';
+import {PrivateKey} from '../../helpers/PrivateKey';
 
 @Component({
     selector: 'app-vote',
@@ -320,16 +321,15 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 if (selected.details.voter_info) {
                     let weeks = 52;
                     let blockTimestampEpoch = 946684800;
-                    const precision2 = Math.pow(10, this.aService.activeChain.precision);
                     if (this.aService.activeChain.symbol === 'WAX') {
                         weeks = 13;
                         blockTimestampEpoch = 946684800;
                     }
                     this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
-                    this.totalStaked = (selected.details.voter_info.staked / precision2);
+                    this.totalStaked = (selected.details.voter_info.staked / precision);
                     const a = (moment().unix() - blockTimestampEpoch);
                     const b = parseInt('' + (a / 604800), 10) / weeks;
-                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision2);
+                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
                     this.votedEOSDecay = this.totalStaked - decayEOS;
                     if (selected.details.voter_info.last_vote_weight > 0) {
                         this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
@@ -693,13 +693,13 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 const jsonStatus = JSON.parse(event);
                 if (jsonStatus.error.code === 3080004) {
                     const valueSTR = jsonStatus.error.details[0].message.split('us)');
-                    const cpu = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ''), 10);
+                    const cpu = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''), 10);
                     await this.resource.checkResource(auth, actionsModal, cpu);
                 }
 
                 if (jsonStatus.error.code === 3080002) {
                     const valueSTR = jsonStatus.error.details[0].message.split('>');
-                    const net = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ''), 10);
+                    const net = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''), 10);
                     await this.resource.checkResource(auth, actionsModal, undefined, net);
                 }
             } catch (e) {

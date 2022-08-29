@@ -27,6 +27,11 @@ import {faLock} from '@fortawesome/pro-regular-svg-icons/faLock';
 import {faExchangeAlt} from '@fortawesome/pro-regular-svg-icons/faExchangeAlt';
 import {faPuzzlePiece} from '@fortawesome/pro-regular-svg-icons/faPuzzlePiece';
 import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
+import {GetAccountResult} from 'eosjs/dist/eosjs-rpc-interfaces';
+
+interface ExtendedGetAccountResult extends GetAccountResult {
+    tokens: any;
+}
 
 @Component({
     selector: 'app-dashboard',
@@ -280,7 +285,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     }
 
     openTX(value): void {
-        window.shell.openExternal(this.aService.activeChain.explorers[0].tx_url + value);
+        // window.shell.openExternal(this.aService.activeChain.explorers[0].tx_url + value);
     }
 
     ngAfterViewInit(): void {
@@ -429,10 +434,10 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
                         this.submitTXForm.reset();
                     } else if (this.newAccOptions === 'thispk') {
                         setTimeout(() => {
-                            this.eosjs.getAccountInfo(this.final_name).then((acc_data) => {
-                                this.eosjs.getTokens(acc_data.account_name).then((tokens) => {
-                                    acc_data.tokens = tokens;
-                                    this.aService.appendNewAccount(acc_data).catch(console.log);
+                            this.eosjs.getAccountInfo(this.final_name).then((accData: ExtendedGetAccountResult) => {
+                                this.eosjs.getTokens(accData.account_name).then((tokens) => {
+                                    accData.tokens = tokens;
+                                    this.aService.appendNewAccount(accData).catch(console.log);
                                     this.wrongwalletpass = '';
                                     this.busy = false;
                                     this.success = true;
