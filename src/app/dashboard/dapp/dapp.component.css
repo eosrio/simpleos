@@ -66,25 +66,25 @@ div#formAction > mat-form-field > input {
 	margin-top: 1rem;
 }
 
-/deep/ .my-mat-class .close-button {
+::ng-deep .my-mat-class .close-button {
 	fill: #737373 !important;
 }
 
-/deep/ .my-mat-class .close-button:hover {
+::ng-deep .my-mat-class .close-button:hover {
 	fill: #c92100 !important;
 }
 
-/deep/ .tokenModal .modal-dialog {
+::ng-deep .tokenModal .modal-dialog {
 	width: auto !important;
 	min-width: 24rem !important;
 	max-width: 65rem !important;
 }
 
-/deep/ .legend {
+::ng-deep .legend {
 	color: #0079b8;
 }
 
-/deep/ .array-item {
+::ng-deep .array-item {
 	box-shadow: 0 3px 1px -2px rgba(110, 110, 110, 0.2), 0 2px 2px 0 rgba(128, 128, 128, 0.14), 0 1px 5px 0 rgba(161, 161, 161, 0.12) !important;
 }
 
@@ -139,30 +139,30 @@ div#formAction > mat-form-field > input {
 /*	background-color: rgba(0,0,0,.42);*/
 /*}*/
 
-/deep/ .tokenModal .mat-form-field-appearance-standard .mat-form-field-label {
+::ng-deep .tokenModal .mat-form-field-appearance-standard .mat-form-field-label {
 	color:  var(--input-label);
 }
 
-/deep/ .tokenModal .mat-form-field.mat-focused .mat-form-field-label {
+::ng-deep .tokenModal .mat-form-field.mat-focused .mat-form-field-label {
 	color: var(--text-highlight-primary) !important;
 }
 
-/deep/ .tokenModal .mat-form-field-appearance-standard .mat-form-field-underline {
+::ng-deep .tokenModal .mat-form-field-appearance-standard .mat-form-field-underline {
 	background-color: var(--input-label) !important;
 }
 
-/deep/ .tokenModal .mat-form-field-wrapper .mat-form-field-ripple {
+::ng-deep .tokenModal .mat-form-field-wrapper .mat-form-field-ripple {
 	background-color: var(--text-highlight-primary) !important;
 }
 
-/deep/ .tokenModal .mat-form-field-wrapper .mat-input-element {
+::ng-deep .tokenModal .mat-form-field-wrapper .mat-input-element {
 	caret-color: var(--text-highlight)!important;
 }
 
-/deep/ .tokenModal .mat-form-field-wrapper .mat-form-field-autofill-control {
+::ng-deep .tokenModal .mat-form-field-wrapper .mat-form-field-autofill-control {
 	color: var(--text-highlight) !important;
 }
 
-/deep/ .tokenModal .mat-form-field {
+::ng-deep .tokenModal .mat-form-field {
 	padding: 0 20px 0 0 !important;
 }

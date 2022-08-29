@@ -65,12 +65,14 @@ import {NgxMaskModule} from 'ngx-mask';
 import {NgxJsonViewerModule} from 'ngx-json-viewer';
 import {OrderModule} from 'ngx-order-pipe';
 import {NgxPaginationModule} from 'ngx-pagination';
-import {NgxElectronModule} from 'ngx-electron';
+
+// TODO: cleanup usage
+// import {NgxElectronModule} from 'ngx-electron';
 import {QRCodeModule} from 'angularx-qrcode';
 
 // Lottie
 import {LottieModule} from 'ngx-lottie';
-import player from 'lottie-web';
+import player, {LottiePlayer} from 'lottie-web';
 
 /* SERVICES */
 import {Eosjs2Service} from './services/eosio/eosjs2.service';
@@ -159,223 +161,215 @@ import {FormlyMaterialModule} from '@ngx-formly/material';
 import {ObjectTypeComponent} from './type/object-type/object-type.component';
 import {ArrayTypeComponent} from './type/array-type/array-type.component';
 
-export function playerFactory() {
-	return player;
+export function playerFactory(): LottiePlayer {
+    return player;
 }
 
 
 @NgModule({
-	declarations: [
-		AppComponent,
-		LandingComponent,
-		DashboardComponent,
-		SendComponent,
-		WalletComponent,
-		VoteComponent,
-		ConfigComponent,
-		AboutComponent,
-		LockscreenComponent,
-		ResourcesComponent,
-		DappComponent,
-		RexComponent,
-		ThousandSuffixesPipe,
-		ConfirmModalComponent,
-		InputModalComponent,
-		ImportModalComponent,
-		KeygenModalComponent,
-		CustomChainModalComponent,
-		SafePipe,
-		ObjectTypeComponent,
-		ArrayTypeComponent,
-		AccountHomeComponent,
-	],
-	imports: [
-		FormsModule,
-		AccordionModule,
-		TableModule,
-		TooltipModule,
-		BrowserAnimationsModule,
-		BrowserModule,
-		ClarityModule,
-		FontAwesomeModule,
-		FormlyModule.forRoot({
-
-			types: [
-				{name: 'string', extends: 'input'},
-				{
-					name: 'number',
-					extends: 'input',
-					defaultOptions: {
-						templateOptions: {
-							type: 'number',
-						},
-					},
-				},
-				{
-					name: 'integer',
-					extends: 'input',
-					defaultOptions: {
-						templateOptions: {
-							type: 'number',
-						},
-					},
-				},
-				{name: 'boolean', extends: 'checkbox'},
-				{name: 'array', component: ArrayTypeComponent},
-				{name: 'object', component: ObjectTypeComponent},
-			]
-		}),
-		FormlyMaterialModule,
-		HttpClientModule,
-		MatAutocompleteModule,
-		MatCardModule,
-		MatCheckboxModule,
-		MatChipsModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatListModule,
-		MatRadioModule,
-		MatSelectModule,
-		MatSliderModule,
-		MatProgressBarModule,
-		MatTabsModule,
-		MatButtonToggleModule,
-		MatDatepickerModule,
-		MatSlideToggleModule,
-		MatTreeModule,
-		MatExpansionModule,
-		ReactiveFormsModule,
-		NgxMaskModule.forRoot(),
-		NgxEchartsModule.forRoot({echarts}),
-		ToastrModule.forRoot(),
-		AppRoutingModule,
-		NgxJsonViewerModule,
-		OrderModule,
-		NgxPaginationModule,
-		NgxElectronModule,
-		// MarkdownModule.forRoot(),
-		// MaterialDesignFrameworkModule,
-		MatInputModule,
-		LottieModule.forRoot({
-			player: playerFactory,
-			useCache: false
-		}),
-		FlexLayoutModule,
-		MatTooltipModule,
-		PaginatorModule,
-		A11yModule,
-		QRCodeModule
-		// SnotifyModule
-	],
-	providers: [
-		Eosjs2Service,
-		ChainService,
-		AccountsService,
-		NetworkService,
-		CryptoService,
-		RamService,
-		LedgerService,
-		ConnectService,
-		BackupService,
-		ThemeService,
-		NotificationService,
-		// { provide: 'SnotifyToastConfig', useValue: ToastDefaults},
-		// SnotifyService,
-
-	],
-	bootstrap: [AppComponent],
+    declarations: [
+        AppComponent,
+        LandingComponent,
+        DashboardComponent,
+        SendComponent,
+        WalletComponent,
+        VoteComponent,
+        ConfigComponent,
+        AboutComponent,
+        LockscreenComponent,
+        ResourcesComponent,
+        DappComponent,
+        RexComponent,
+        ThousandSuffixesPipe,
+        ConfirmModalComponent,
+        InputModalComponent,
+        ImportModalComponent,
+        KeygenModalComponent,
+        CustomChainModalComponent,
+        SafePipe,
+        ObjectTypeComponent,
+        ArrayTypeComponent,
+        AccountHomeComponent,
+    ],
+    imports: [
+        FormsModule,
+        AccordionModule,
+        TableModule,
+        TooltipModule,
+        BrowserAnimationsModule,
+        BrowserModule,
+        ClarityModule,
+        FontAwesomeModule,
+        FormlyModule.forRoot({
+            types: [
+                {name: 'string', extends: 'input'},
+                {
+                    name: 'number',
+                    extends: 'input',
+                    defaultOptions: {
+                        templateOptions: {
+                            type: 'number',
+                        },
+                    },
+                },
+                {
+                    name: 'integer',
+                    extends: 'input',
+                    defaultOptions: {
+                        templateOptions: {
+                            type: 'number',
+                        },
+                    },
+                },
+                {name: 'boolean', extends: 'checkbox'},
+                {name: 'array', component: ArrayTypeComponent},
+                {name: 'object', component: ObjectTypeComponent},
+            ]
+        }),
+        FormlyMaterialModule,
+        HttpClientModule,
+        MatAutocompleteModule,
+        MatCardModule,
+        MatCheckboxModule,
+        MatChipsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatListModule,
+        MatRadioModule,
+        MatSelectModule,
+        MatSliderModule,
+        MatProgressBarModule,
+        MatTabsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatSlideToggleModule,
+        MatTreeModule,
+        MatExpansionModule,
+        ReactiveFormsModule,
+        NgxMaskModule.forRoot(),
+        NgxEchartsModule.forRoot({echarts}),
+        ToastrModule.forRoot(),
+        AppRoutingModule,
+        NgxJsonViewerModule,
+        OrderModule,
+        NgxPaginationModule,
+        // NgxElectronModule,
+        MatInputModule,
+        LottieModule.forRoot({
+            player: playerFactory
+        }),
+        FlexLayoutModule,
+        MatTooltipModule,
+        PaginatorModule,
+        A11yModule,
+        QRCodeModule
+    ],
+    providers: [
+        Eosjs2Service,
+        ChainService,
+        AccountsService,
+        NetworkService,
+        CryptoService,
+        RamService,
+        LedgerService,
+        ConnectService,
+        BackupService,
+        ThemeService,
+        NotificationService,
+    ],
+    bootstrap: [AppComponent],
 })
 export class AppModule {
-	constructor(library: FaIconLibrary) {
+    constructor(library: FaIconLibrary) {
 
-		const icons = [];
+        const icons = [];
 
-		// fas solid
-		icons.push(...[
-			faHeart,
-			faTh,
-			faCaretDown,
-			faSkullCrossbones,
-			faKey,
-			faExclamationTriangle,
-			faTimesCircle,
-			faGlobe,
-			faSpinner,
-			faLightbulbOn
-		]);
+        // fas solid
+        icons.push(...[
+            faHeart,
+            faTh,
+            faCaretDown,
+            faSkullCrossbones,
+            faKey,
+            faExclamationTriangle,
+            faTimesCircle,
+            faGlobe,
+            faSpinner,
+            faLightbulbOn
+        ]);
 
-		// fab brands
-		icons.push(...[
-			faTelegramPlane,
-			faTwitter,
-			faGithub,
-			faYoutube,
-			faFacebook,
-			faReddit,
-			faKeybase,
-			faWeixin
-		]);
+        // fab brands
+        icons.push(...[
+            faTelegramPlane,
+            faTwitter,
+            faGithub,
+            faYoutube,
+            faFacebook,
+            faReddit,
+            faKeybase,
+            faWeixin
+        ]);
 
-		// far regular
-		icons.push(...[
-			faSignOutAlt,
-			faExclamationCircle,
-			faUndo,
-			faQuestionCircle,
-			faSpinner,
-			faExchangeAlt,
-			faDonate,
-			faUndoAlt,
-			faHandHoldingUsd,
-			faUser,
-			faReceipt,
-			faEdit,
-			faLock,
-			faLockOpen,
-			faParachuteBox,
-			faCheck,
-			faHourglass,
-			faEye,
-			faEyeSlash,
-			faClone,
-			faHistory,
-			faPaperPlane,
-			faMemory,
-			faPuzzlePiece,
-			faBoxBallot,
-			faUserMinus,
-			faAngleRight,
-			faTimes,
-			faLongArrowAltDown,
-			faSearch,
-			faSync,
-			faPencil,
-			faMinus,
-			faPlus,
-			faTimesCircle,
-			faUserPlus,
-			faUserEdit,
-			faPaperPlane,
-			faExternalLink,
-			faTrashAlt,
-			faBellOn,
-		]);
+        // far regular
+        icons.push(...[
+            faSignOutAlt,
+            faExclamationCircle,
+            faUndo,
+            faQuestionCircle,
+            faSpinner,
+            faExchangeAlt,
+            faDonate,
+            faUndoAlt,
+            faHandHoldingUsd,
+            faUser,
+            faReceipt,
+            faEdit,
+            faLock,
+            faLockOpen,
+            faParachuteBox,
+            faCheck,
+            faHourglass,
+            faEye,
+            faEyeSlash,
+            faClone,
+            faHistory,
+            faPaperPlane,
+            faMemory,
+            faPuzzlePiece,
+            faBoxBallot,
+            faUserMinus,
+            faAngleRight,
+            faTimes,
+            faLongArrowAltDown,
+            faSearch,
+            faSync,
+            faPencil,
+            faMinus,
+            faPlus,
+            faTimesCircle,
+            faUserPlus,
+            faUserEdit,
+            faPaperPlane,
+            faExternalLink,
+            faTrashAlt,
+            faBellOn,
+        ]);
 
-		// fal light
-		icons.push(...[
-			faPaperPlane,
-			faArrowAltToBottom,
-			faChevronCircleUp,
-			faChevronCircleDown,
-			faCog,
-			faSearchMinus,
-			faSearchPlus
-		]);
+        // fal light
+        icons.push(...[
+            faPaperPlane,
+            faArrowAltToBottom,
+            faChevronCircleUp,
+            faChevronCircleDown,
+            faCog,
+            faSearchMinus,
+            faSearchPlus
+        ]);
 
-		icons.forEach((iconDef) => {
-			library.addIcons(iconDef);
-		});
-	}
+        icons.forEach((iconDef) => {
+            library.addIcons(iconDef);
+        });
+    }
 
-	// FaIconLibrary.addIconPacks(far, fas, fab, fal);
+    // FaIconLibrary.addIconPacks(far, fas, fab, fal);
 }

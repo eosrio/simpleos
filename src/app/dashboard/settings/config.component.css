@@ -52,11 +52,11 @@
     padding-left: .5rem;
 }
 
-/deep/ .modal-pin {
+::ng-deep .modal-pin {
     overflow-y: hidden !important;
 }
 
-/deep/ .modal-pin>:last-child {
+::ng-deep .modal-pin>:last-child {
 	 margin-bottom: 16px;
 }
 
@@ -65,13 +65,13 @@
 }
 
 
-/deep/ .chain-selector .mat-select-value  {
+::ng-deep .chain-selector .mat-select-value  {
 	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 21px;
 }
 
-/deep/ .mat-optgroup-label  {
+::ng-deep .mat-optgroup-label  {
 	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 14px !important;
@@ -79,24 +79,24 @@
 	height: 2.5em!important;
 }
 
-/deep/ .chain-option.mat-option{
+::ng-deep .chain-option.mat-option{
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px !important;
 }
 
-/deep/ .mat-select-panel {
+::ng-deep .mat-select-panel {
 	background: var(--info-card-background);
 }
 
-/deep/ .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
+::ng-deep .mat-primary .chain-option.mat-option.mat-selected:not(.mat-option-disabled) {
 	color: var(--text-highlight-primary);
 }
 
-/deep/ .mat-select-arrow {
+::ng-deep .mat-select-arrow {
     color: var(--text-card-color);
 }
 
-/deep/ .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
+::ng-deep .mat-form-field.mat-focused.mat-primary .mat-select-arrow {
 	color: var(--text-highlight-primary) !important;
 }
 

@@ -33,7 +33,7 @@ form {
     display: inline-block;
 }
 
-/deep/ .mat-form-field-appearance-legacy .mat-hint {
+::ng-deep .mat-form-field-appearance-legacy .mat-hint {
     color: #b1b1b1;
 }
 
@@ -128,7 +128,7 @@ mat-option:not(.last) {
     border-bottom: 1px solid #404040;
 }
 
-/deep/ .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
+::ng-deep .mat-autocomplete-panel .mat-option.mat-selected:not(.mat-active):not(:hover) {
     background: var(--info-card-bg-hover);
 }
 
@@ -157,23 +157,23 @@ mat-option:not(.last) {
   min-width: 0;
 }
 
-/deep/ .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-underline {
+::ng-deep .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-underline {
 	background-color: var(--token-title-color);
 }
 
-/deep/ .token-title-color .searchform input {
+::ng-deep .token-title-color .searchform input {
 	color: var(--token-title-color) !important;
 }
 
-/deep/ .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-label {
+::ng-deep .token-title-color .searchform .mat-form-field-appearance-legacy .mat-form-field-label {
 	color: var(--token-title-color);;
 }
 
-/deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-label {
+::ng-deep .token-title-color .mat-form-field.mat-focused .mat-form-field-label {
 	color: var(--destaque-color-token);
 }
 
-/deep/ .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
+::ng-deep .token-title-color .mat-form-field.mat-focused .mat-form-field-ripple {
 	background-color: var(--destaque-color-token);
 }
 

@@ -271,8 +271,9 @@
             <span style="margin: 0 12px;">=</span>
 
             <mat-form-field style="width: 100px; display: inline-block !important;">
-                <input matInput placeholder="Price in {{aService.activeChain['symbol']}}" disabled readonly
-                       value="{{ram.ramPriceEOS * (ramAmount.value/1024) | number: '1.0-4'}} {{aService.activeChain['symbol']}}">
+                <input matInput placeholder="Price in {{aService.activeChain['symbol']}}"
+                       disabled readonly
+                       value="{{ramToEOS(ramAmount.value) | number: '1.0-4'}} {{aService.activeChain['symbol']}}">
             </mat-form-field>
 
             <!--Amount to Gift-->

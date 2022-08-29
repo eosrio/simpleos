@@ -20,7 +20,7 @@
     border-right: 1px solid var(--sidenav-active-border-color2);
 }
 
-/deep/ .sidenav-header svg {
+::ng-deep .sidenav-header svg {
     width: 90% !important;
 }
 
@@ -89,21 +89,21 @@
 }
 
 /*material's tabs*/
-/deep/ #header-tabs .mat-tab-header {
+::ng-deep #header-tabs .mat-tab-header {
     background-color: var(--sidenav-background);
     /*height: 4.5rem;*/
 }
 
-/deep/ #header-tabs .mat-tab-labels {
+::ng-deep #header-tabs .mat-tab-labels {
     /*height: 4.5rem;*/
 }
 
-/deep/ #header-tabs .mat-tab-label {
+::ng-deep #header-tabs .mat-tab-label {
     height: 5.1rem !important;
     /*height: 4.5rem !important;*/
 }
 
-/deep/ #header-tabs .mat-tab-body-wrapper {
+::ng-deep #header-tabs .mat-tab-body-wrapper {
     height: 0;
 }
 
@@ -174,14 +174,14 @@
 }
 
 /*START TAB SELECTED ACTIVE */
-/deep/ .mat-tab-label-active {
+::ng-deep .mat-tab-label-active {
     background-color: var(--mat-tab-active);
     opacity: 1 !important;
 }
 
 /*END TAB SELECTED ACTIVE */
 
-/deep/ .container-fluid {
+::ng-deep .container-fluid {
     padding-right: 13px;
 }
 

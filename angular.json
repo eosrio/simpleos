@@ -16,7 +16,8 @@
             "allowedCommonJsDependencies": [
               "hammerjs",
               "echarts/theme/macarons.js",
-              "echarts/dist/extension/bmap.min.js"
+              "echarts/dist/extension/bmap.min.js",
+              "node-domexception"
             ],
             "aot": true,
             "outputPath": "./ng-dist",

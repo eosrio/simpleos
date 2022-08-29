@@ -6,9 +6,9 @@
             <form [formGroup]="searchForm">
                 <mat-form-field class="C clr-col-lg-7">
                     <input type="text" #search formControlName="search" matInput placeholder="Search..."
-                           (keyup.enter)="searchDapp($event.target.value)">
+                           (keyup.enter)="searchDapp(search.value)">
                     <fa-icon matSuffix [icon]="['far', 'search']" size="lg"
-                             (click)="searchDapp(searchForm.value.search)"></fa-icon>
+                             (click)="searchDapp(search.value)"></fa-icon>
                     <mat-error align="start" *ngIf="errormsg !== ''">
                         {{errormsg}}
                     </mat-error>

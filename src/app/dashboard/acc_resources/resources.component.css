@@ -132,39 +132,39 @@ tr:nth-child(odd) {
 }
 
 /*meterial's slider*/
-/deep/ .mat-accent .mat-slider-thumb {
+::ng-deep .mat-accent .mat-slider-thumb {
 	background-color: #0094d2;
 }
 
-/deep/ .mat-accent .mat-slider-track-fill {
+::ng-deep .mat-accent .mat-slider-track-fill {
 	background-color: #0094d2;
 }
 
-/deep/ .mat-accent .mat-slider-thumb-label {
+::ng-deep .mat-accent .mat-slider-thumb-label {
 	background-color: #0094d2;
 }
 
-/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb {
+::ng-deep .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb {
 	background-color: #a4a4a4;
 }
 
-/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb-label {
+::ng-deep .mat-slider-min-value.mat-slider-thumb-label-showing .mat-slider-thumb-label {
 	background-color: #a4a4a4;
 }
 
-/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb {
+::ng-deep .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb {
 	background-color: #a4a4a4;
 }
 
-/deep/ .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb-label {
+::ng-deep .mat-slider-min-value.mat-slider-thumb-label-showing.cdk-focused .mat-slider-thumb-label {
 	background-color: #8d8d8d;
 }
 
-/deep/ .mat-slider-horizontal .mat-slider-track-background {
+::ng-deep .mat-slider-horizontal .mat-slider-track-background {
 	height: 3px;
 }
 
-/deep/ .mat-slider-horizontal .mat-slider-track-wrapper {
+::ng-deep .mat-slider-horizontal .mat-slider-track-wrapper {
 	height: 3px;
 }
 
@@ -180,7 +180,7 @@ tr:nth-child(odd) {
 	color: darkgrey;
 }
 
-/deep/ .stake-slider .mat-slider-thumb-label-text::after {
+::ng-deep .stake-slider .mat-slider-thumb-label-text::after {
 	content: '%';
 }
 
@@ -196,16 +196,16 @@ tr:nth-child(odd) {
 	box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.22);
 }
 
-/deep/ #res-tabs .mat-tab-label .mat-tab-label-content {
+::ng-deep #res-tabs .mat-tab-label .mat-tab-label-content {
 	font-size: 17px !important;
 	color: var(--vote-tab-color);
 }
 
-/deep/  #res-tabs .mat-tab-label-active {
+::ng-deep  #res-tabs .mat-tab-label-active {
 	background-color: var(--vote-tab-active);
 }
 
-/deep/  #res-tabs .mat-tab-label-active .mat-tab-label-content {
+::ng-deep  #res-tabs .mat-tab-label-active .mat-tab-label-content {
 	color: var(--vote-tab-active-color);
 }
 

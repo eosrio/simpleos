@@ -1,4 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit,} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {VotingService} from '../../services/voting.service';
 import {AccountsService} from '../../services/accounts.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
@@ -14,14 +14,14 @@ import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
 import {RexComponent} from '../rex/rex.component';
 import {AppComponent} from '../../app.component';
 import {ThemeService} from '../../services/theme.service';
-import {TransactionFactoryService, TrxPayload} from '../../services/eosio/transaction-factory.service';
-import {ElectronService} from 'ngx-electron';
+import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {JsSignatureProvider, PrivateKey} from 'eosjs/dist/eosjs-jssig';
 import {SortEvent} from 'primeng/api';
 import {Api, RpcError} from 'eosjs';
 import {Numeric} from 'eosjs/dist';
 import {EOSAccount} from '../../interfaces/account';
-import {ResourceService} from "../../services/resource.service";
+import {ResourceService} from '../../services/resource.service';
+import {ElectronService} from '../../services/electron.service';
 
 @Component({
     selector: 'app-vote',
@@ -58,7 +58,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         prefix: '',
         allowDecimal: true,
         includeThousandsSeparator: false,
-        decimalLimit: this.aService.activeChain['precision'],
+        decimalLimit: this.aService.activeChain.precision,
     });
     percentMask = createNumberMask({
         prefix: '',
@@ -85,12 +85,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         height: 400,
     };
 
-    net_weight = '';
-    cpu_weight = '';
-    net_self = '';
-    cpu_self = '';
-    cpu_weight_n = 0;
-    net_weight_n = 0;
+    netWeight = '';
+    cpuWeight = '';
+    netSelf = '';
+    cpuSelf = '';
+    cpuWeightN = 0;
+    netWeightN = 0;
     stakingRatio = 75;
 
     listProxyVote = [];
@@ -100,8 +100,6 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     private selectedProxy = '';
 
     isManually: boolean;
-    private keytar: any;
-    private fs: any;
     autoClaimStatus: boolean;
 
     claimPublicKey = '';
@@ -113,9 +111,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
     public claimReady: boolean;
     public gbmEstimatedDaily = 0;
     public voteRewardsDaily = 0;
-    private autoClaimConfig = {};
+    private autoClaimConfig: any = {};
     private selectedAccountName = '';
-    private last_claim_time: number;
+    private lastClaimTime: number;
     public claimSetupWarning = '';
     public basePath = '';
     enableAutoClaim: boolean;
@@ -140,11 +138,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         private electron: ElectronService,
         private resource: ResourceService
     ) {
-
-        this.keytar = this.electron.remote.require('keytar');
-        this.fs = this.electron.remote.require('fs');
-        this.basePath = this.electron.remote.app.getPath('appData') + '/simpleos-config';
-
+        this.basePath = this.electron.app.getPath('appData') + '/simpleos-config';
         this.isValidAccount = true;
         this.max = 100;
         this.min = 0;
@@ -200,9 +194,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 },
             },
             tooltip: {
-                formatter: (params) => '<strong>' + params['data']['location'] +
-                    '</strong><br> Rank: ' + params['data']['position'] +
-                    '<br> Status:  ' + params['data']['status'],
+                formatter: (params) => '<strong>' + params.data.location +
+                    '</strong><br> Rank: ' + params.data.position +
+                    '<br> Status:  ' + params.data.status,
             },
             animationDuration: 1500,
             animationEasingUpdate: 'quinticInOut',
@@ -251,9 +245,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         };
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         const selectedAcc = this.aService.selected.getValue();
-        if (this.aService.activeChain.features['vote']) {
+        if (this.aService.activeChain.features.vote) {
             this.setCheckListVote(selectedAcc.name);
         }
     }
@@ -276,14 +270,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.subscriptions.push(sub);
     }
 
-    onAccountChanged(selected: EOSAccount) {
+    onAccountChanged(selected: EOSAccount): void {
         this.totalStaked = 0;
         this.votedDecay = 0;
         this.votedEOSDecay = 0;
-        if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
-            const precision = Math.pow(10, this.aService.activeChain['precision']);
-            this.precision = '1.0-' + this.aService.activeChain['precision'];
-            if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+        if (selected && selected.name && this.selectedAccountName !== selected.name) {
+            const precision = Math.pow(10, this.aService.activeChain.precision);
+            this.precision = '1.0-' + this.aService.activeChain.precision;
+            if (!this.aService.activeChain.name.startsWith('LIBERLAND')) {
                 this.voteService.currentVoteType(selected);
                 if (this.voteService.proxies.length === 0 ||
                     this.voteService.bps.length === 0) {
@@ -304,38 +298,38 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             } else {
                 this.valuetoStake = '0';
             }
-            this.cpu_weight = selected.details.total_resources.cpu_weight;
-            this.net_weight = selected.details.total_resources.net_weight;
-            if(selected.details.self_delegated_bandwidth){
-                this.cpu_self = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
-                this.net_self = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
-            }else{
-                this.cpu_self = '';
-                this.net_self = '';
+            this.cpuWeight = selected.details.total_resources.cpu_weight;
+            this.netWeight = selected.details.total_resources.net_weight;
+            if (selected.details.self_delegated_bandwidth) {
+                this.cpuSelf = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                this.netSelf = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
+            } else {
+                this.cpuSelf = '';
+                this.netSelf = '';
             }
-            if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+            if (!this.aService.activeChain.name.startsWith('LIBERLAND')) {
                 this.loadPlacedVotes(selected);
-                this.cpu_weight = selected.details.total_resources.cpu_weight;
-                this.net_weight = selected.details.total_resources.net_weight;
-                const _cpu = RexComponent.asset2Float(this.cpu_weight);
-                const _net = RexComponent.asset2Float(this.net_weight);
-                this.cpu_weight_n = _cpu;
-                this.net_weight_n = _net;
-                this.stakingRatio = (_cpu / (_cpu + _net)) * 100;
+                this.cpuWeight = selected.details.total_resources.cpu_weight;
+                this.netWeight = selected.details.total_resources.net_weight;
+                const cpu = RexComponent.asset2Float(this.cpuWeight);
+                const net = RexComponent.asset2Float(this.netWeight);
+                this.cpuWeightN = cpu;
+                this.netWeightN = net;
+                this.stakingRatio = (cpu / (cpu + net)) * 100;
 
                 if (selected.details.voter_info) {
                     let weeks = 52;
-                    let block_timestamp_epoch = 946684800;
-                    let precision = Math.pow(10, this.aService.activeChain['precision']);
-                    if (this.aService.activeChain['symbol'] === 'WAX') {
+                    let blockTimestampEpoch = 946684800;
+                    const precision2 = Math.pow(10, this.aService.activeChain.precision);
+                    if (this.aService.activeChain.symbol === 'WAX') {
                         weeks = 13;
-                        block_timestamp_epoch = 946684800;
+                        blockTimestampEpoch = 946684800;
                     }
                     this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
-                    this.totalStaked = (selected.details.voter_info.staked / precision);
-                    const a = (moment().unix() - block_timestamp_epoch);
+                    this.totalStaked = (selected.details.voter_info.staked / precision2);
+                    const a = (moment().unix() - blockTimestampEpoch);
                     const b = parseInt('' + (a / 604800), 10) / weeks;
-                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
+                    const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision2);
                     this.votedEOSDecay = this.totalStaked - decayEOS;
                     if (selected.details.voter_info.last_vote_weight > 0) {
                         this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
@@ -345,7 +339,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.hasVote = false;
             }
             this.getRexBalance(selected.name);
-            if (this.aService.activeChain['name'] === 'WAX MAINNET') {
+            if (this.aService.activeChain.name === 'WAX MAINNET') {
                 this.checkWaxGBMdata(selected.name).catch(console.log);
                 this.checkVoterRewards(selected.name).catch(console.log);
                 this.verifyAutoClaimSetup(selected).catch(console.log);
@@ -357,8 +351,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    extOpen(value) {
-        window['shell']['openExternal'](value);
+    extOpen(value): void {
+        // window.shell.openExternal(value);
     }
 
     sliderLabel(value: number): string {
@@ -366,27 +360,27 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         return val.toString();
     }
 
-    updateRatio() {
+    updateRatio(): void {
         console.log(this.stakingRatio);
     }
 
-    updateBalances() {
+    updateBalances(): void {
         const selectedAcc = this.aService.selected.getValue();
         this.totalBalance = selectedAcc.full_balance;
         this.stakedBalance = selectedAcc.staked;
         if (selectedAcc.details.voter_info) {
 
             let weeks = 52;
-            let block_timestamp_epoch = 946684800;
-            const precision = Math.pow(10, this.aService.activeChain['precision']);
-            if (this.aService.activeChain['symbol'] === 'WAX') {
+            let blockTimestampEpoch = 946684800;
+            const precision = Math.pow(10, this.aService.activeChain.precision);
+            if (this.aService.activeChain.symbol === 'WAX') {
                 weeks = 13;
-                block_timestamp_epoch = 946684800;
+                blockTimestampEpoch = 946684800;
             }
 
             this.hasVote = true;
             this.totalStaked = (selectedAcc.details.voter_info.staked / precision);
-            const a = (moment().unix() - block_timestamp_epoch);
+            const a = (moment().unix() - blockTimestampEpoch);
             const b = parseInt('' + (a / 604800), 10) / weeks;
             const decayEOS = (selectedAcc.details.voter_info.last_vote_weight /
                 Math.pow(2, b) / precision);
@@ -403,8 +397,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.getRexBalance(selectedAcc.name);
     }
 
-    getRexBalance(acc) {
-        if (this.aService.activeChain.features['rex']) {
+    getRexBalance(acc): void {
+        if (this.aService.activeChain.features.rex) {
             this.eosjs.getRexData(acc).then(async (rexdata) => {
                 let amount = 0;
                 if (rexdata.rexbal !== undefined) {
@@ -418,42 +412,43 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    storeConfig() {
+    storeConfig(): void {
         try {
             const filename = this.basePath + '/autoclaim.json';
             const data = JSON.stringify(this.autoClaimConfig, null, '\t');
-            this.fs.writeFileSync(filename, data);
+            this.electron.fs.writeFileSync(filename, data);
         } catch (e) {
             console.log(e);
         }
 
     }
 
-    toggleAutoClaim(check?) {
+    toggleAutoClaim(check?): boolean {
         try {
             const filename = this.basePath + '/autoclaim.json';
-            if (this.fs.existsSync(filename)) {
-                const data = JSON.parse(this.fs.readFileSync(filename));
+            if (this.electron.fs.existsSync(filename)) {
+                const data = JSON.parse(this.electron.fs.readFileSync(filename).toString());
                 if (check) {
-                    return data['enabled'];
+                    return data.enabled;
                 }
-                data['enabled'] = !(data['enabled']);
-                this.enableAutoClaim = data['enabled'];
-                this.autoClaimStatus = data['enabled'];
+                data.enabled = !(data.enabled);
+                this.enableAutoClaim = data.enabled;
+                this.autoClaimStatus = data.enabled;
                 console.log(data);
-                this.fs.writeFileSync(filename, JSON.stringify(data, null, '\t'));
+                this.electron.fs.writeFileSync(filename, JSON.stringify(data, null, '\t'));
             } else {
                 const data = JSON.stringify(this.autoClaimConfig, null, '\t');
-                this.fs.writeFileSync(filename, data);
+                this.electron.fs.writeFileSync(filename, data);
             }
 
         } catch (e) {
             console.log(e);
         }
         this.verifyAutoClaimSetup(this.aService.selected.getValue()).catch(console.log);
+        return false;
     }
 
-    IsJsonString(str) {
+    IsJsonString(str): boolean {
         try {
             JSON.parse(str);
         } catch (e) {
@@ -462,48 +457,48 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         return true;
     }
 
-    async verifyAutoClaimSetup(selected) {
+    async verifyAutoClaimSetup(selected): Promise<void> {
         // this.autoClaimStatus = false;
         this.claimSetupWarning = '';
         const filename = this.basePath + '/autoclaim.json';
-        if (!this.fs.existsSync(filename)) {
+        if (!this.electron.fs.existsSync(filename)) {
             console.log('autoclaim file not present, creating...');
         } else {
-            if (this.IsJsonString(this.fs.readFileSync(filename))) {
-                this.autoClaimConfig = JSON.parse(this.fs.readFileSync(filename));
+            if (this.IsJsonString(this.electron.fs.readFileSync(filename))) {
+                this.autoClaimConfig = JSON.parse(this.electron.fs.readFileSync(filename).toString()) as any;
             } else {
                 this.storeConfig();
             }
 
         }
-        if (this.autoClaimConfig['enabled']) {
+        if (this.autoClaimConfig.enabled) {
             if (this.autoClaimConfig['WAX-GBM']) {
-                const accJob = this.autoClaimConfig['WAX-GBM']['jobs'].find(j => j.account === selected.name);
+                const accJob = this.autoClaimConfig['WAX-GBM'].jobs.find(j => j.account === selected.name);
                 if (accJob) {
                     const details = await this.eosjs.rpc.get_account(selected.name);
                     if (details) {
                         const perms = details.permissions;
-                        const claim_perm = perms.find(p => p.perm_name === 'claim');
-                        if (claim_perm) {
-                            const claim_key = claim_perm.required_auth.keys[0].key;
-                            const new_claim_key = Numeric.convertLegacyPublicKey(claim_key);
-                            let privKey = await this.keytar.getPassword('simpleos', new_claim_key);
+                        const claimPerm = perms.find(p => p.perm_name === 'claim');
+                        if (claimPerm) {
+                            const claimKey = claimPerm.required_auth.keys[0].key;
+                            const newClaimKey = Numeric.convertLegacyPublicKey(claimKey);
+                            let privKey = await this.electron.keytar.getPassword('simpleos', newClaimKey);
                             if (!privKey) {
-                                privKey = await this.keytar.getPassword('simpleos', claim_key);
+                                privKey = await this.electron.keytar.getPassword('simpleos', claimKey);
                                 if (privKey) {
-                                    this.keytar.setPassword('simpleos', new_claim_key, privKey);
+                                    this.electron.keytar.setPassword('simpleos', newClaimKey, privKey);
                                 }
                             }
                             if (privKey) {
                                 try {
                                     const savedKey = PrivateKey.fromString(privKey).getPublicKey().toString();
-                                    if (new_claim_key === savedKey) {
-                                        this.checkLinkedAuth(selected.name).then((req_link) => {
-                                            if (req_link.length === 0) {
+                                    if (newClaimKey === savedKey) {
+                                        this.checkLinkedAuth(selected.name).then((reqLink) => {
+                                            if (reqLink.length === 0) {
                                                 this.autoClaimStatus = true;
-                                                this.claimPublicKey = new_claim_key;
+                                                this.claimPublicKey = newClaimKey;
                                             } else {
-                                                this.claimSetupWarning = `Linkauth missing for (${req_link.join(', ')}). Please renew your claim key or set the permission links manually.`;
+                                                this.claimSetupWarning = `Linkauth missing for (${reqLink.join(', ')}). Please renew your claim key or set the permission links manually.`;
                                             }
                                         });
                                     } else {
@@ -528,16 +523,16 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    getProxyVotes(account) {
+    getProxyVotes(account): void {
         this.listProxyVote = [];
         this.eosjs.getAccountInfo(account).then(v => {
-            if (v['voter_info']) {
-                this.listProxyVote = v['voter_info']['producers'];
+            if (v.voter_info) {
+                this.listProxyVote = v.voter_info.producers;
             }
         });
     }
 
-    setCheckListVote(selAcc) {
+    setCheckListVote(selAcc): void {
         this.subscriptions.push(
             this.voteService.listReady.asObservable().subscribe((state) => {
                 if (state) {
@@ -553,14 +548,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.aService.accounts.forEach((a) => {
             if (a) {
                 if (a.name === selAcc) {
-                    if (a.details['voter_info']) {
+                    if (a.details.voter_info) {
                         if (!this.voteService.voteType) {
-                            const currentVotes = a.details['voter_info']['producers'];
+                            const currentVotes = a.details.voter_info.producers;
                             this.voteService.bps.forEach((elem) => {
                                 elem.checked = currentVotes.indexOf(elem.account) !== -1;
                             });
                         } else {
-                            const currentVotes = a.details['voter_info']['proxy'];
+                            const currentVotes = a.details.voter_info.proxy;
                             this.voteService.proxies.forEach((elem) => {
                                 elem.checked = currentVotes.indexOf(elem.account) !== -1;
                             });
@@ -575,7 +570,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
-    processVotes() {
+    processVotes(): void {
         this.selectedVotes = [];
         if (this.voteService.voteType && !this.voteService.hasList) {
             this.selectedVotes = [this.selectedProxy];
@@ -598,7 +593,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.setVote();
     }
 
-    updateCounter() {
+    updateCounter(): void {
         let val = 0;
         this.voteService.bps.forEach((bp) => {
             if (bp.checked) {
@@ -608,15 +603,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.nVotes = val;
     }
 
-    updateCounterProxy(proxy) {
+    updateCounterProxy(proxy): void {
         this.voteService.proxies.forEach((px) => {
             px.checked = px.account === proxy;
         });
         this.nVotes = 1;
     }
 
-    async setVote() {
-
+    async setVote(): Promise<any> {
         const voter = this.aService.selected.getValue();
         let proxy = '';
         let currentVotes = [];
@@ -631,7 +625,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             return new Error('Cannot cast more than 30 votes!');
         }
 
-        const tk_name = this.aService.activeChain['symbol'];
+        const tokenName = this.aService.activeChain.symbol;
 
         // Transaction Signature
         const [auth, publicKey] = this.trxFactory.getAuth();
@@ -643,7 +637,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const actionTitle = `<span class="blue">vote</span>`;
 
         const messageHTML = `<h4 class="text-white">Do you confirm voting on the following ${this.voteService.voteType ? 'Proxy' : 'BPs'}?</h4>
-        
+
         <h5 class="mt-0">${this.selectedVotes.join(', ')}</h5>`;
 
         if (this.aService.activeChain.name === 'EOS MAINNET') {
@@ -668,14 +662,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 system to be used on my behalf or on behalf of another, is forbidden and doing so violates this
                 contract.`;
         }
-        let actionsModal = [{
+        const actionsModal = [{
             account: 'eosio',
             name: 'voteproducer',
             authorization: [auth],
             data: {
-                'voter': voter.name,
-                'proxy': this.voteService.voteType ? proxy : '',
-                'producers': this.voteService.voteType ? '' : currentVotes,
+                voter: voter.name,
+                proxy: this.voteService.voteType ? proxy : '',
+                producers: this.voteService.voteType ? '' : currentVotes,
             }
         }];
 
@@ -685,30 +679,30 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             },
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
-            actionTitle: actionTitle,
+            actionTitle,
             labelHTML: messageHTML,
-            termsHeader: termsHeader,
+            termsHeader,
             termsHTML: termsHtml,
-            tk_name: tk_name,
+            tk_name: tokenName,
         });
 
         this.trxFactory.launcher.emit({visibility: true, mode: this.mode});
-        const subs = this.trxFactory.status.subscribe( async (event) => {
+        const subs = this.trxFactory.status.subscribe(async (event) => {
 
-            try{
+            try {
                 const jsonStatus = JSON.parse(event);
-                if(jsonStatus.error.code === 3080004){
+                if (jsonStatus.error.code === 3080004) {
                     const valueSTR = jsonStatus.error.details[0].message.split('us)');
-                    const cpu = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
+                    const cpu = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ''), 10);
                     await this.resource.checkResource(auth, actionsModal, cpu);
                 }
 
-                if(jsonStatus.error.code === 3080002){
+                if (jsonStatus.error.code === 3080002) {
                     const valueSTR = jsonStatus.error.details[0].message.split('>');
-                    const net = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ""));
-                    await this.resource.checkResource(auth, actionsModal, undefined,net);
+                    const net = parseInt(valueSTR[0].replace(/[^0-9\.]+/g, ''), 10);
+                    await this.resource.checkResource(auth, actionsModal, undefined, net);
                 }
-            }catch (e) {
+            } catch (e) {
                 if (event === 'done') {
                     setTimeout(() => {
                         this.aService.refreshFromChain(false).then(() => {
@@ -730,17 +724,17 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
-    loadPlacedVotes(selectedAccount) {
-        if (selectedAccount.details['voter_info']) {
+    loadPlacedVotes(selectedAccount): void {
+        if (selectedAccount.details.voter_info) {
             if (!this.voteService.voteType) {
-                const currentVotes = selectedAccount.details['voter_info']['producers'];
+                const currentVotes = selectedAccount.details.voter_info.producers;
                 this.nVotes = currentVotes.length;
                 this.voteService.bps.forEach((elem) => {
                     elem.checked = currentVotes.indexOf(elem.account) !== -1;
                 });
                 this.updateCounter();
             } else {
-                const currentVotes = selectedAccount.details['voter_info']['proxy'];
+                const currentVotes = selectedAccount.details.voter_info.proxy;
                 this.nVotesProxy = currentVotes !== '' ? 1 : 0;
                 this.voteService.proxies.forEach((elem) => {
                     elem.checked = currentVotes.indexOf(elem.account) !== -1;
@@ -749,7 +743,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    voteOption(ev) {
+    voteOption(ev): void {
         this.busyList = true;
         this.voteService.voteType = ev;
         const acc = this.aService.selected.getValue();
@@ -762,9 +756,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.busyList = false;
                 this.setCheckListVote(acc.name);
                 this.loadPlacedVotes(acc);
-                if (!this.cdr['destroyed']) {
-                    this.cdr.detectChanges();
-                }
+                this.cdr.detectChanges();
             }).catch(err => {
                 console.log('Load Account List Producers Error:', err);
             });
@@ -773,16 +765,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.busyList = false;
                 this.setCheckListVote(acc.name);
                 this.loadPlacedVotes(acc);
-                if (!this.cdr['destroyed']) {
-                    this.cdr.detectChanges();
-                }
+                this.cdr.detectChanges();
             }).catch(err => {
                 console.log('Load Account List Proxies Error:', err);
             });
         }
     }
 
-    validateProxy(account) {
+    validateProxy(account): void {
         this.eosjs.getAccountInfo(account).then(() => {
             this.isValidAccount = true;
             this.selectedProxy = account;
@@ -798,7 +788,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             return;
         }
         for (const api of this.aService.activeChain.hyperionApis) {
-            let url = api + '/history/get_actions?account=' + account + '&filter=eosio:linkauth';
+            const url = api + '/history/get_actions?account=' + account + '&filter=eosio:linkauth';
             try {
                 const response: any = await this.http.get(url).toPromise();
                 if (response.actions && response.actions.length > 0) {
@@ -815,9 +805,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         const result = await this.checkLinkedAuthHyperionMulti(account);
         console.log(result);
         const required = ['claimgbmvote', 'claimgenesis', 'voteproducer'];
-        if (result['actions'].length > 0) {
-            for (const a of result['actions']) {
-                const idx = required.indexOf(a['act']['data']['type']);
+        if (result.actions.length > 0) {
+            for (const a of result.actions) {
+                const idx = required.indexOf(a.act.data.type);
                 if (idx !== -1) {
                     required.splice(idx, 1);
                 }
@@ -826,7 +816,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         return required;
     }
 
-    claimGBMrewards() {
+    claimGBMRewards(): void {
         if (this.autoClaimStatus) {
             this.claimDirect(false).catch(console.log);
         } else {
@@ -835,14 +825,14 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.checkWaxGBMdata(this.aService.selected.getValue().name).catch(console.log);
     }
 
-    async claimWithActive() {
+    async claimWithActive(): Promise<void> {
         const [auth, publicKey] = this.trxFactory.getAuth();
         console.log(auth);
         const messageHTML = `
 		<h5 class="white mb-0">Performing eosio::claimgenesis and eosio::claimgbmvote actions</h5>
 		`;
-        const _actions = [];
-        _actions.push({
+        const actions = [];
+        actions.push({
             account: 'eosio',
             name: 'claimgenesis',
             authorization: [auth],
@@ -850,7 +840,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 claimer: auth.actor,
             },
         });
-        _actions.push({
+        actions.push({
             account: 'eosio',
             name: 'claimgbmvote',
             authorization: [auth],
@@ -859,7 +849,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             },
         });
         await this.trxFactory.launch(publicKey, {
-            transactionPayload: {actions: _actions},
+            transactionPayload: {actions},
             termsHeader: '',
             signerAccount: auth.actor,
             signerPublicKey: publicKey,
@@ -893,32 +883,32 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.detectChanges();
     }
 
-    async claimDirect(voteOnly) {
+    async claimDirect(voteOnly): Promise<void> {
         const [auth] = this.trxFactory.getAuth();
         // check current votes
         const accountData = await this.eosjs.rpc.get_account(auth.actor);
-        let _producers = [];
-        let _proxy = '';
-        if (accountData['voter_info']) {
-            if (accountData['voter_info']['proxy'] !== '') {
+        let producers = [];
+        let proxy = '';
+        if (accountData.voter_info) {
+            if (accountData.voter_info.proxy !== '') {
                 // voting on proxy
-                _proxy = accountData['voter_info']['proxy'];
+                proxy = accountData.voter_info.proxy;
             } else {
                 // voting on producers
-                _producers = accountData['voter_info']['producers'];
+                producers = accountData.voter_info.producers;
             }
         }
-        const claim_private_key = await this.keytar.getPassword('simpleos', this.claimPublicKey);
-        const signatureProvider = new JsSignatureProvider([claim_private_key]);
+        const claimPrivateKey = await this.electron.keytar.getPassword('simpleos', this.claimPublicKey);
+        const signatureProvider = new JsSignatureProvider([claimPrivateKey]);
         const rpc = this.eosjs.rpc;
         const api = new Api({
             rpc,
             signatureProvider,
-            textDecoder: new TextDecoder,
-            textEncoder: new TextEncoder,
+            textDecoder: new TextDecoder(),
+            textEncoder: new TextEncoder(),
         });
-        const _actions = [];
-        _actions.push({
+        const actions = [];
+        actions.push({
             account: 'eosio',
             name: 'voteproducer',
             authorization: [
@@ -928,13 +918,13 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 }],
             data: {
                 voter: auth.actor,
-                proxy: _proxy,
-                producers: _producers,
+                proxy,
+                producers,
             },
         });
 
         if (!voteOnly) {
-            _actions.push({
+            actions.push({
                 account: 'eosio',
                 name: 'claimgenesis',
                 authorization: [
@@ -947,7 +937,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                 },
             });
 
-            _actions.push({
+            actions.push({
                 account: 'eosio',
                 name: 'claimgbmvote',
                 authorization: [
@@ -963,7 +953,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 
         try {
             const result = await api.transact({
-                actions: _actions,
+                actions,
             }, {
                 blocksBehind: 3,
                 expireSeconds: 30,
@@ -1004,12 +994,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    toggleLinkAuth() {
+    toggleLinkAuth(): void {
         this.enableLinkAuth = !this.enableLinkAuth;
         this.cdr.detectChanges();
     }
 
-    async createClaimPermission() {
+    async createClaimPermission(): Promise<void> {
         const [auth, publicKey] = this.trxFactory.getAuth();
         const messageHTML = `
 		<h5 class="white mb-0">
@@ -1019,12 +1009,12 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
 		<br><br>This action doesn't expose your private key.  </h5>
 		`;
         const keypair = await this.crypto.generateKeyPair();
-        const private_key = keypair.private;
-        const public_key = keypair.public;
-        const _actions = [];
+        const privateKey = keypair.private;
+        const publicKey2 = keypair.public;
+        const actions = [];
         let changeKey = true;
         if (auth.permission === 'active' || auth.permission === 'owner') {
-            _actions.push({
+            actions.push({
                 account: 'eosio',
                 name: 'updateauth',
                 authorization: [auth],
@@ -1034,7 +1024,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
                     parent: 'active',
                     auth: {
                         threshold: 1,
-                        keys: [{key: public_key, weight: 1}],
+                        keys: [{key: publicKey2, weight: 1}],
                         accounts: [],
                         waits: [],
                     },
@@ -1045,39 +1035,39 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         if (this.enableLinkAuth) {
-            const req_link = await this.checkLinkedAuth(auth.actor);
-            for (const link_type of req_link) {
-                _actions.push({
+            const reqLink = await this.checkLinkedAuth(auth.actor);
+            for (const linkType of reqLink) {
+                actions.push({
                     account: 'eosio',
                     name: 'linkauth',
                     authorization: [auth],
                     data: {
                         account: auth.actor,
                         code: 'eosio',
-                        type: link_type,
+                        type: linkType,
                         requirement: 'claim',
                     },
                 });
             }
         }
-        const results = await this.trxFactory.launch(publicKey, {
-            transactionPayload: {actions: _actions},
+        const results = await this.trxFactory.launch(publicKey2, {
+            transactionPayload: {actions},
             termsHeader: '',
             signerAccount: auth.actor,
-            signerPublicKey: publicKey,
+            signerPublicKey: publicKey2,
             labelHTML: messageHTML,
             actionTitle: 'auto-claim setup',
             termsHTML: ''
         });
         if (results === 'done') {
             if (!changeKey) {
-                this.keytar.setPassword('simpleos', publicKey, this.crypto.getPK());
-                this.claimPublicKey = publicKey;
-                this.configureAutoClaim(auth.actor, publicKey, 'claim');
+                this.electron.keytar.setPassword('simpleos', publicKey2, this.crypto.getPK()[0]);
+                this.claimPublicKey = publicKey2;
+                this.configureAutoClaim(auth.actor, publicKey2, 'claim');
             } else {
-                this.keytar.setPassword('simpleos', public_key, private_key);
-                this.claimPublicKey = public_key;
-                this.configureAutoClaim(auth.actor, public_key, 'claim');
+                this.electron.keytar.setPassword('simpleos', publicKey2, privateKey);
+                this.claimPublicKey = publicKey2;
+                this.configureAutoClaim(auth.actor, publicKey2, 'claim');
             }
             this.autoClaimStatus = true;
             this.checkWaxGBMdata(this.aService.selected.getValue().name).then(() => {
@@ -1088,7 +1078,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    configureAutoClaim(accountName, publicKey, permission) {
+    configureAutoClaim(accountName, publicKey, permission): void {
         if (!this.autoClaimConfig['WAX-GBM']) {
             this.autoClaimConfig['WAX-GBM'] = {
                 apis: this.aService.activeChain.endpoints.map(e => e.url),
@@ -1096,43 +1086,43 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             };
         }
         const newObj = {
-            'account': accountName,
-            'public_key': publicKey,
-            'permission': permission,
-            'last_claim': this.last_claim_time,
-            'total_rewards': 0,
-            'next_claim_time': this.last_claim_time + (24 * 60 * 60 * 1000),
+            account: accountName,
+            public_key: publicKey,
+            permission,
+            last_claim: this.lastClaimTime,
+            total_rewards: 0,
+            next_claim_time: this.lastClaimTime + (24 * 60 * 60 * 1000),
         };
-        const idx = this.autoClaimConfig['WAX-GBM']['jobs'].findIndex(
+        const idx = this.autoClaimConfig['WAX-GBM'].jobs.findIndex(
             j => j.account === accountName);
         if (idx === -1) {
-            this.autoClaimConfig['WAX-GBM']['jobs'].push(newObj);
+            this.autoClaimConfig['WAX-GBM'].jobs.push(newObj);
         } else {
-            this.autoClaimConfig['WAX-GBM']['jobs'][idx] = newObj;
+            this.autoClaimConfig['WAX-GBM'].jobs[idx] = newObj;
         }
         this.storeConfig();
     }
 
-    private async checkVoterRewards(name: string) {
-        const voter = (await this.eosjs.rpc.get_account(name))['voter_info'];
-        const _gstate = (await this.eosjs.rpc.get_table_rows({
+    private async checkVoterRewards(name: string): Promise<void> {
+        const voter = (await this.eosjs.rpc.get_account(name)).voter_info;
+        const gstate = (await this.eosjs.rpc.get_table_rows({
             code: 'eosio',
             scope: 'eosio',
             table: 'global',
-        }))['rows'][0];
-        if(voter){
+        })).rows[0];
+        if (voter) {
             const unpaidVoteShare = ((1000 * 60 * 60 * 24) / 1000000) *
-                parseFloat(voter['unpaid_voteshare_change_rate']);
-            const voterBucket = parseFloat(_gstate['voters_bucket']) / 100000000;
-            const globalUnpaidVoteShare = parseFloat(_gstate['total_unpaid_voteshare']);
+                parseFloat(voter.unpaid_voteshare_change_rate);
+            const voterBucket = parseFloat(gstate.voters_bucket) / 100000000;
+            const globalUnpaidVoteShare = parseFloat(gstate.total_unpaid_voteshare);
             this.voteRewardsDaily = voterBucket * (unpaidVoteShare / globalUnpaidVoteShare);
-        }else{
+        } else {
             this.voteRewardsDaily = 0;
         }
 
     }
 
-    private async checkWaxGBMdata(name: any) {
+    private async checkWaxGBMdata(name: any): Promise<void> {
 
         const results = await this.eosjs.rpc.get_table_rows({
             json: true,
@@ -1142,9 +1132,9 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         });
         const data = results.rows[0];
         if (data) {
-            this.gbmBalance = parseFloat(data['balance'].split(' ')[0]);
-            this.gbmLastClaim = data['last_claim_time'];
-            this.last_claim_time = moment(moment.utc(this.gbmLastClaim).toDate()).toDate().getTime();
+            this.gbmBalance = parseFloat(data.balance.split(' ')[0]);
+            this.gbmLastClaim = data.lastClaimTime;
+            this.lastClaimTime = moment(moment.utc(this.gbmLastClaim).toDate()).toDate().getTime();
             this.gbmLastClaim = moment(moment.utc(this.gbmLastClaim).toDate()).local().format('DD-MM-YYYY HH:mm');
             if (this.gbmBalance > 0) {
                 this.gbmEstimatedDaily = parseFloat(
@@ -1152,8 +1142,8 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
             } else {
                 this.gbmEstimatedDaily = 0;
             }
-            this.gbmNextClaim = moment.utc(this.last_claim_time).add(1, 'day').fromNow();
-            this.claimReady = ((this.last_claim_time) + (24 * 60 * 60 * 1000) <=
+            this.gbmNextClaim = moment.utc(this.lastClaimTime).add(1, 'day').fromNow();
+            this.claimReady = ((this.lastClaimTime) + (24 * 60 * 60 * 1000) <=
                 Date.now());
 
         } else {
@@ -1162,7 +1152,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    customTableSort(event: SortEvent) {
+    customTableSort(event: SortEvent): void {
         event.data.sort((data1, data2) => {
             if (event.field === 'total_votes') {
                 event.field = 'total_votes_num';
@@ -1185,7 +1175,7 @@ export class VoteComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
-    processLiberlandVotes() {
-        window['shell']['openExternal']('https://vote.liberland.org');
+    processLiberlandVotes(): void {
+        // window.shell.openExternal('https://vote.liberland.org');
     }
 }

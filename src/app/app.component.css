@@ -222,15 +222,15 @@
 /*}*/
 
 /*JSON formatter*/
-/deep/ .segment-key {
+::ng-deep .segment-key {
 	color: var(--text-highlight) !important;
 }
 
-/deep/ .transit-json .ngx-json-viewer {
+::ng-deep .transit-json .ngx-json-viewer {
 	font-family: 'open sans' !important;
 }
 
-/deep/ .transit-json .ngx-json-viewer .segment-type-string > .segment-main > .segment-value {
+::ng-deep .transit-json .ngx-json-viewer .segment-type-string > .segment-main > .segment-value {
 	color: #f34d4d !important;
 }
 /*JSON formatter end*/

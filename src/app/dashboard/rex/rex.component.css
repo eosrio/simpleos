@@ -65,71 +65,71 @@
 }
 
 /*prime's table*/
-/deep/ .maturing-table .p-datatable-caption {
+::ng-deep .maturing-table .p-datatable-caption {
 	padding: 10px;
 }
 
-/deep/ .maturing-table .p-datatable {
+::ng-deep .maturing-table .p-datatable {
 	box-shadow: 1px 3px 8px 2px rgba(0, 0, 0, 0.22);
 	font-family: Metropolis,Avenir Next,Helvetica Neue,Arial, sans-serif;
 	margin-top: 20px;
 }
 
-/deep/ .last-table .p-datatable {
+::ng-deep .last-table .p-datatable {
 	margin-bottom: 40px;
 }
 
-/deep/ .maturing-table .p-datatable-tbody {
+::ng-deep .maturing-table .p-datatable-tbody {
 	background: var(--info-card-background);
 	transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 	border-radius: 5px;
 	border: 0;
 }
 
-/deep/ .maturing-table .p-datatable-tbody > tr {
+::ng-deep .maturing-table .p-datatable-tbody > tr {
 	color: var(--text-highlight);
 	background: transparent !important;
 }
 
-/deep/ .maturing-table .p-datatable-tbody > tr > td {
+::ng-deep .maturing-table .p-datatable-tbody > tr > td {
 	border: none;
 	background-color: var(--tr-even-backgorund) !important;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-tbody > tr {
+::ng-deep .maturing-table .p-datatable .p-datatable-tbody > tr {
 	border-bottom: 1px solid #3f3f3f;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-tbody > tr:last-child {
+::ng-deep .maturing-table .p-datatable .p-datatable-tbody > tr:last-child {
 	border-bottom: 0;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-tbody>tr>td {
+::ng-deep .maturing-table .p-datatable .p-datatable-tbody>tr>td {
 	padding: 0.7em .5em;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-thead>tr>th {
+::ng-deep .maturing-table .p-datatable .p-datatable-thead>tr>th {
 	padding: 0.7em .5em;
 	border-bottom: 1px solid #262626 !important;
 	font-weight: 500;
 	text-align: center;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-caption {
+::ng-deep .maturing-table .p-datatable .p-datatable-caption {
 	border-bottom: 1px solid #262626;
 }
 
-/deep/ .maturing-table .p-datatable-tfoot {
+::ng-deep .maturing-table .p-datatable-tfoot {
 	background: var(--info-card-background);
 	border: 0;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-tfoot > tr {
+::ng-deep .maturing-table .p-datatable .p-datatable-tfoot > tr {
 	color: var(--text-highlight);
 	background: transparent;
 }
 
-/deep/ .maturing-table .p-datatable .p-datatable-tfoot > tr > td {
+::ng-deep .maturing-table .p-datatable .p-datatable-tfoot > tr > td {
 	background: transparent;
 	padding: 10px;
 	font-weight: 500;
@@ -137,16 +137,16 @@
 
 /*prime's table*/
 
-/deep/ .howto {
+::ng-deep .howto {
 	font-family: metropolis, sans-serif;
 }
 
-/deep/ .howto .ui-accordion-content {
+::ng-deep .howto .ui-accordion-content {
 	background: none;
 	padding-left: 21px;
 }
 
-/deep/ .howto .ui-accordion .ui-accordion-header {
+::ng-deep .howto .ui-accordion .ui-accordion-header {
 	padding-left: .75rem;
 }
 
@@ -163,51 +163,51 @@
 	margin-top: 1rem;
 }
 
-/deep/ #rex-tabs .mat-tab-header {
+::ng-deep #rex-tabs .mat-tab-header {
 	background-color: var(--info-card-background);
 	border-radius: 5px 5px 0 0;
 	margin: 0 .6rem;
 	box-shadow: 1px -1px 5px 3px rgb(0 0 0 / 18%);
 }
 
-/deep/ #rex-tabs .mat-tab-label .mat-tab-label-content {
+::ng-deep #rex-tabs .mat-tab-label .mat-tab-label-content {
 	font-size: 17px !important;
 	color: var(--vote-tab-color);
 }
 
-/deep/  #rex-tabs .mat-tab-label-active {
+::ng-deep  #rex-tabs .mat-tab-label-active {
 	background-color: var(--vote-tab-active);
 }
 
-/deep/  #rex-tabs .mat-tab-label-active .mat-tab-label-content {
+::ng-deep  #rex-tabs .mat-tab-label-active .mat-tab-label-content {
 	color: var(--vote-tab-active-color);
 }
 
 
-/deep/ .time-selector .mat-select-value {
+::ng-deep .time-selector .mat-select-value {
 	color: var(--text-highlight-primary);
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 }
 
-/deep/ .time-selector-option.mat-option {
+::ng-deep .time-selector-option.mat-option {
 	font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
 	font-size: 15px !important;
 	/*background-color: #333333;*/
 }
 
-/deep/ .mat-select-panel {
+::ng-deep .mat-select-panel {
 	background: var(--info-card-background)
 }
 
-/deep/ .mat-primary .time-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
+::ng-deep .mat-primary .time-selector-option.mat-option.mat-selected:not(.mat-option-disabled) {
 	color: var(--text-highlight-primary);
 }
 
-/deep/ .time-selector .mat-select-arrow {
+::ng-deep .time-selector .mat-select-arrow {
 	color: rgb(177, 177, 177);
 }
 
-/deep/ .time-selector.mat-form-field.mat-focused.mat-primary .mat-select-arrow {
+::ng-deep .time-selector.mat-form-field.mat-focused.mat-primary .mat-select-arrow {
 	color: var(--text-highlight-primary) !important;
 }
 

@@ -11,7 +11,6 @@ import {NetworkService} from '../../services/network.service';
 import * as moment from 'moment';
 import {TransactionFactoryService} from '../../services/eosio/transaction-factory.service';
 import {Eosjs2Service} from '../../services/eosio/eosjs2.service';
-import {ElectronService} from "ngx-electron";
 import {start} from "repl";
 import {ResourceService} from "../../services/resource.service";
 
@@ -90,7 +89,6 @@ export class SendComponent implements OnInit, OnDestroy {
                 private ledger: LedgerService,
                 private network: NetworkService,
                 private trxFactory: TransactionFactoryService,
-                private electron: ElectronService,
                 private resource: ResourceService
     ) {
         this.sendModal = false;
@@ -391,7 +389,7 @@ export class SendComponent implements OnInit, OnDestroy {
             });
         } else {
             if (!silent) {
-                this.electron.remote.dialog.showErrorBox('Error', 'duplicated entry');
+                // this.electron.remote.dialog.showErrorBox('Error', 'duplicated entry');
             }
         }
     }
