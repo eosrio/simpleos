@@ -3,7 +3,7 @@ import {SignatureProvider, SignatureProviderArgs} from 'eosjs/dist/eosjs-api-int
 import {Api, JsonRpc} from 'enf-eosjs';
 import {PushTransactionArgs} from 'enf-eosjs/dist/eosjs-rpc-interfaces';
 import {JsSignatureProvider} from 'enf-eosjs/dist/eosjs-jssig';
-import {PrivateKey, PublicKey} from 'eosjs/dist/eosjs-jssig';
+import {PrivateKey, PublicKey} from '../../helpers/KeyConversions';
 import * as BN from 'bn.js';
 
 
@@ -168,7 +168,6 @@ export class Eosjs2Service {
 
     async signTrx(trx: any, shouldBroadcast: boolean): Promise<any> {
         const packedTransaction = await this.api.transact(trx, {
-            useLastIrreversible: true,
             expireSeconds: 240,
             broadcast: false,
             sign: true,
@@ -195,7 +194,6 @@ export class Eosjs2Service {
             const requiredKeys = await this.apiRelay.signatureProvider.getAvailableKeys();
             try {
                 const packedTransaction = await this.apiRelay.transact(trx, {
-                    useLastIrreversible: true,
                     expireSeconds: 240,
                     broadcast: false,
                     sign: false,
@@ -222,7 +220,6 @@ export class Eosjs2Service {
     transact(trx) {
         if (this.api) {
             return this.api.transact(trx, {
-                useLastIrreversible: true,
                 expireSeconds: 360,
             });
         } else {
@@ -232,14 +229,14 @@ export class Eosjs2Service {
         }
     }
 
-    async getTableRows(_code: string, _scope: string, _table: string) {
+    async getTableRows(code: string, scope: string, table: string): Promise<any> {
         if (this.rpc) {
             try {
                 return this.rpc.get_table_rows({
                     json: true,
-                    code: _code,
-                    scope: _scope,
-                    table: _table,
+                    code,
+                    scope,
+                    table,
                 });
             } catch (e) {
                 console.log(e);
@@ -248,12 +245,12 @@ export class Eosjs2Service {
         }
     }
 
-    async getMainnetTableRows(_code: string, _scope: string, _table: string) {
+    async getMainnetTableRows(code: string, scope: string, table: string): Promise<any> {
         const tempRpc = new JsonRpc(this.defaultMainnetEndpoint);
         return tempRpc.get_table_rows({
-            code: _code,
-            scope: _scope,
-            table: _table,
+            code,
+            scope,
+            table,
         });
     }
 
@@ -413,15 +410,15 @@ export class Eosjs2Service {
                         giftAmount: number, giftMemo: string, symbol: string,
                         precision: number, permission): Promise<any> {
         const _actions = [];
-        const auth = {actor: creator, permission: permission};
+        const auth = {actor: creator, permission};
 
         _actions.push({
             account: 'eosio',
             name: 'newaccount',
             authorization: [auth],
             data: {
-                creator: creator,
-                name: name,
+                creator,
+                name,
                 owner: makeSingleKeyAuth(owner),
                 active: makeSingleKeyAuth(active),
             },
@@ -446,7 +443,7 @@ export class Eosjs2Service {
                 from: creator, receiver: name,
                 stake_net_quantity: makeAsset(delegateAmount * 0.3, symbol, precision),
                 stake_cpu_quantity: makeAsset(delegateAmount * 0.7, symbol, precision),
-                transfer: transfer,
+                transfer,
             },
         });
 
@@ -493,7 +490,7 @@ export class Eosjs2Service {
                                 reject1();
                             }
                             try {
-                                acc_data['tokens'] = await this.rpc.get_currency_balance('eosio.token', acc);
+                                acc_data.tokens = await this.rpc.get_currency_balance('eosio.token', acc);
                             } catch (e) {
                                 console.log(e);
                             }
@@ -708,7 +705,7 @@ export class Eosjs2Service {
         }
 
         const acts = [];
-        const auth = {actor: account, permission: permission};
+        const auth = {actor: account, permission};
 
         if (cpu_diff < 0 && net_diff >= 0) {
             // Unstake CPU & Stake NET
@@ -761,7 +758,7 @@ export class Eosjs2Service {
                 {
                     account: 'eosio',
                     name: 'refund',
-                    authorization: [{actor: account, permission: permission}],
+                    authorization: [{actor: account, permission}],
                     data: {owner: account},
                 }],
         }, this.txOpts);
@@ -818,7 +815,7 @@ export class Eosjs2Service {
                 {
                     account: contract,
                     name: action,
-                    authorization: [{actor: account, permission: permission}],
+                    authorization: [{actor: account, permission}],
                     data: form,
                 }],
         });
@@ -833,13 +830,16 @@ export class Eosjs2Service {
     async calcPowerUp(state, frac, {maxFee, maxPower}) {
         let new_FRAC = 0;
         let powerup = await this.calculateFeePowerUp(state, frac);
-        if (maxFee !== 0)
+        if (maxFee !== 0) {
             new_FRAC = Math.floor((maxFee * frac) / powerup.fee);
-        else if (maxPower !== 0)
+        }
+        else if (maxPower !== 0) {
             new_FRAC = (maxPower * frac) / powerup.amount;
+ }
 
-        if (new_FRAC > 0)
+        if (new_FRAC > 0) {
             powerup = await this.calculateFeePowerUp(state, new_FRAC);
+        }
 
         return powerup;
     }
@@ -849,10 +849,12 @@ export class Eosjs2Service {
         const precision = Math.pow(10, pr);
         const precisionNet = Math.pow(10, pr + 4);
         let userDetails;
-        if (acc_details !== undefined && acc_details.cpu_limit.max > 0)
+        if (acc_details !== undefined && acc_details.cpu_limit.max > 0) {
             userDetails = acc_details;
-        else
+        }
+        else {
             userDetails = await this.getAccountInfo('eosriobrazil');
+        }
         const cpu_weight = userDetails.cpu_weight;
         const net_weight = userDetails.net_weight;
         console.log(userDetails);
@@ -868,11 +870,11 @@ export class Eosjs2Service {
         // 10e15
         const precision2 = new BN(1000000000000000);
 
-        if (utilization_increase.lte(zero)) return 0;
+        if (utilization_increase.lte(zero)) { return 0; }
         console.log(utilization_increase.toNumber(), state);
         let fee = 0.0;
         let start_utilization = new BN(state.utilization);
-        let end_utilization = start_utilization.add(utilization_increase);
+        const end_utilization = start_utilization.add(utilization_increase);
         const weight = new BN(state.weight);
 
         const minPrice = parseTokenValue(state.min_price);
@@ -913,7 +915,7 @@ export class Eosjs2Service {
             fee += priceIntegralDelta(start_utilization, end_utilization);
         }
 
-        return {fee: fee, frac: frac, amount: utilization_increase.toNumber()};
+        return {fee, frac, amount: utilization_increase.toNumber()};
     }
 
     async calculateFeePowerUp(state, frac) {
@@ -939,9 +941,9 @@ export class Eosjs2Service {
                 fee += this.priceIntegralDelta(state, start_utilization, end_utilization);
             }
             // console.log({fee: fee, frac: frac, amount: amount,percent:percent,compare:(fee / max)});
-            return {fee: fee, frac: frac, amount: amount};
+            return {fee, frac, amount};
         } catch (e) {
-            return {fee: fee, frac: frac, amount: amount};
+            return {fee, frac, amount};
         }
 
     }

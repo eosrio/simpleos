@@ -1,0 +1,35 @@
+{
+  "name": "simpleos-electron-backend",
+  "description": "SimpleEOS Wallet Electron-Node Backend",
+  "author": {
+    "name": "EOS Rio",
+    "email": "contact@eosrio.io"
+  },
+  "version": "1.0.7",
+  "main": "main.js",
+  "private": true,
+  "dependencies": {
+    "@ledgerhq/hw-transport": "6.27.2",
+    "@ledgerhq/hw-transport-node-hid": "6.27.2",
+    "easy-auto-launch": "^6.0.2",
+    "elliptic": "^6.5.4",
+    "asn1-ber": "1.2.2",
+    "fastify": "^4.5.3",
+    "fastify-cors": "^6.1.0",
+    "level": "^8.0.0",
+    "enf-eosjs": "^23.0.0-rc3",
+    "keytar": "^7.9.0",
+    "moment": "^2.29.4",
+    "portfinder": "^1.0.32",
+    "node-schedule": "2.1.0",
+    "node-fetch": "^2.6.1",
+    "open": "^8.4.0",
+    "socket.io": "4.5.1",
+    "bip32-path": "0.4.2",
+    "sudo-prompt": "9.2.1",
+    "usb": "2.5.0",
+    "tar": "6.1.11",
+    "electron-context-menu": "^3.5.0"
+
+  }
+}

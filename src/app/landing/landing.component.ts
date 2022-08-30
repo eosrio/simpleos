@@ -11,7 +11,7 @@ import {HttpClient} from '@angular/common/http';
 import {VotingService} from '../services/voting.service';
 import {AppComponent} from '../app.component';
 import {ThemeService} from '../services/theme.service';
-import {Subscription} from 'rxjs';
+import {lastValueFrom, Subscription} from 'rxjs';
 import {LedgerService} from '../services/ledger/ledger.service';
 import {AnimationOptions} from 'ngx-lottie';
 import {AnimationItem} from 'lottie-web';
@@ -395,7 +395,7 @@ export class LandingComponent implements OnInit, OnDestroy {
         }
     }
 
-    makeRelayRequest() {
+    makeRelayRequest(): void {
         const reqData = {
             name: this.accountname.toLowerCase(),
             active: this.activepub,
@@ -404,7 +404,7 @@ export class LandingComponent implements OnInit, OnDestroy {
             refund_memo: this.refundForm.get('memo').value
         };
         if (this.validateExchangeMemo(reqData.refund_account, reqData.refund_memo)) {
-            this.http.post('https://br.eosrio.io/account_creation_api/request_account', reqData).subscribe((data) => {
+            lastValueFrom(this.http.post('https://br.eosrio.io/account_creation_api/request_account', reqData)).then((data: any) => {
                 if (data.status === 'OK') {
                     this.requestId = data.requestId;
                     this.requestError = '';
@@ -420,7 +420,7 @@ export class LandingComponent implements OnInit, OnDestroy {
         }
     }
 
-    makeMemo() {
+    makeMemo(): void {
         this.memo = this.accountname.toLowerCase() + '-' + this.ownerpub + '-' + this.activepub;
     }
 

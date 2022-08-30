@@ -1,0 +1,672 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var VotingService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VotingService = void 0;
+const core_1 = require("@angular/core");
+const http_1 = require("@angular/common/http");
+const rxjs_1 = require("rxjs");
+const accounts_service_1 = require("./accounts.service");
+const moment = require("moment");
+const eosjs2_service_1 = require("./eosio/eosjs2.service");
+let VotingService = VotingService_1 = class VotingService {
+    constructor(eosjs, http, aService, ref) {
+        this.eosjs = eosjs;
+        this.http = http;
+        this.aService = aService;
+        this.ref = ref;
+        this.busy = false;
+        this.listReady = new rxjs_1.Subject();
+        this.activeCounter = 50;
+        this.loadingProds = false;
+        this.loadingProxs = false;
+        this.maxProxies = 1000;
+        this.hasList = true;
+        this.bps = [];
+        this.proxies = [];
+        this.uniqueProxies = new Set();
+        this.data = [];
+        this.initList = false;
+        this.initListProx = false;
+        this.chainActive = false;
+        this.totalActivatedStake = 0;
+        this.totalProducerVoteWeight = 0;
+        this.stakePercent = 0;
+        this.isOnline = false;
+        this.lastState = false;
+        this.lastChain = '';
+        this.lastAcc = '';
+        // EOSJS Status watcher
+        this.eosjs.online.asObservable().subscribe(value => {
+            this.isOnline = value;
+            if (value !== this.lastState) {
+                this.lastState = value;
+                // console.log('ONLINE VALUE:', value);
+                if (value) {
+                    this.callLoader();
+                }
+            }
+        });
+        // Account status watcher
+        this.aService.selected.asObservable().subscribe((acc) => {
+            if (acc && acc.name) {
+                this.selectedAccount = acc;
+                if (this.bps.length === 0 && !this.initList) {
+                    if (this.lastAcc !== acc.name || this.lastChain !== this.aService.activeChain.name) {
+                        this.lastAcc = acc.name;
+                        this.lastChain = this.aService.activeChain.name;
+                        this.callLoader();
+                    }
+                }
+            }
+        });
+    }
+    static amountFilter(value, args) {
+        let exp;
+        const suffixes = ['k', 'M', 'G', 'T', 'P', 'E'];
+        if (Number.isNaN(value)) {
+            return null;
+        }
+        if (value < 1000) {
+            return value.toFixed(args);
+        }
+        exp = Math.floor(Math.log(value) / Math.log(1000));
+        return (value / Math.pow(1000, exp)).toFixed(args) + suffixes[exp - 1];
+    }
+    callLoader() {
+        // console.log('attempt to load BPs', this.aService.selected.getValue().name, this.isOnline);
+        if (this.aService.selected.getValue().name && this.isOnline) {
+            this.listProducers().catch((e => {
+                console.log(e);
+            }));
+        }
+    }
+    clearLists() {
+        this.bps = [];
+        this.proxies = [];
+        this.uniqueProxies.clear();
+    }
+    clearMap() {
+        this.data = [];
+        this.updateOptions = {
+            series: [{
+                    data: this.data
+                }]
+        };
+    }
+    currentVoteType(sel) {
+        const myAccount = sel;
+        if (myAccount.name) {
+            if (myAccount.details['voter_info'] !== null) {
+                if (myAccount.details['voter_info']['producers'].length > 0) {
+                    this.voteType = 0;
+                }
+                else if (myAccount.details['voter_info']['proxy'] !== '') {
+                    this.voteType = 1;
+                }
+                else {
+                    this.voteType = 0;
+                }
+            }
+            else {
+                this.voteType = 0;
+            }
+        }
+    }
+    listProducers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.loadingProds) {
+                return;
+            }
+            if (this.aService.activeChain.name.startsWith('LIBERLAND')) {
+                return;
+            }
+            this.setWeightParams();
+            if (this.bps.length > 0) {
+                return;
+            }
+            if (!this.initList && !this.loadingProds && this.aService.selected.getValue().name) {
+                this.loadingProds = true;
+                const producers = yield this.eosjs.listProducers();
+                const global_data = yield this.eosjs.getChainInfo();
+                this.totalProducerVoteWeight = parseFloat(global_data.rows[0]['total_producer_vote_weight']);
+                const total_votes = this.totalProducerVoteWeight;
+                // Pass 1 - Add accounts
+                const myAccount = this.aService.selected.getValue();
+                console.log('account', myAccount);
+                this.bps = [];
+                this.hasList = producers.rows.length > 0;
+                producers.rows.forEach((prod, idx) => {
+                    const vote_pct = Math.round((100 * prod['total_votes'] / total_votes) * 1000) / 1000;
+                    let voted;
+                    if (myAccount.details && myAccount.details['voter_info']) {
+                        voted = myAccount.details['voter_info']['producers'].indexOf(prod['owner']) !== -1;
+                    }
+                    else {
+                        voted = false;
+                    }
+                    const _total = this.convertVotes(prod['total_votes']);
+                    const producerMetadata = {
+                        name: prod['owner'],
+                        account: prod['owner'],
+                        key: prod['producer_key'],
+                        location: '',
+                        geo: [],
+                        position: idx + 1,
+                        status: '',
+                        total_votes: _total.str,
+                        total_votes_num: _total.num,
+                        total_votes_eos: vote_pct + '%',
+                        social: '',
+                        email: '',
+                        website: prod.url,
+                        logo_256: '',
+                        code: '',
+                        checked: voted,
+                        chainId: this.aService.activeChain.id
+                    };
+                    this.bps.push(producerMetadata);
+                });
+                this.initList = true;
+                this.listReady.next(true);
+                this.loadingProds = false;
+                // Pass 2 - Enhance metadata
+                this.activeCounter = 50;
+                // Cache expires in 6 hours
+                const expiration = (1000 * 60 * 60 * 6);
+                const requestQueue = [];
+                let fullCache = {};
+                // Load cached data, single entry per chain
+                const path = 'simplEOS.producers.' + this.aService.activeChain.id;
+                const stored_data = localStorage.getItem(path);
+                if (stored_data) {
+                    fullCache = JSON.parse(stored_data);
+                }
+                producers.rows.forEach((prod, idx) => {
+                    let cachedPayload = null;
+                    if (stored_data) {
+                        cachedPayload = fullCache[prod['owner']];
+                        if (cachedPayload) {
+                            if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
+                                // Expired
+                                requestQueue.push({ producer: prod, index: idx });
+                            }
+                            else {
+                                // Load from cache
+                                this.bps[idx] = cachedPayload['meta'];
+                                if (idx < 21) {
+                                    this.bps[idx]['status'] = 'producing';
+                                }
+                                else {
+                                    this.bps[idx]['status'] = 'standby';
+                                }
+                                if (idx < 50) {
+                                    this.addPin(this.bps[idx]);
+                                }
+                            }
+                        }
+                        else {
+                            // New entry
+                            requestQueue.push({ producer: prod, index: idx });
+                        }
+                    }
+                    else {
+                        // New entry
+                        requestQueue.push({ producer: prod, index: idx });
+                    }
+                });
+                this.processReqQueue(requestQueue);
+            }
+        });
+    }
+    processReqQueue(queue) {
+        const filteredBatch = [];
+        // console.log('Processing ' + queue.length + ' bp.json requests');
+        const filename = '/bp.json';
+        queue.forEach((item) => {
+            if (item.producer.url !== '') {
+                const url = item.producer.url.endsWith('.json') ? item.producer.url : item.producer.url + filename;
+                if (url !== '') {
+                    filteredBatch.push(item);
+                }
+            }
+        });
+        // console.log('Fecthing BP.JSON data...');
+        this.http.post('http://proxy.eosrio.io:4200/batchRequest', filteredBatch).subscribe((data) => {
+            // Load cache
+            let fullCache = JSON.parse(localStorage.getItem('simplEOS.producers.' + this.aService.activeChain.id));
+            if (!fullCache) {
+                fullCache = {};
+            }
+            data.forEach((item) => {
+                if (item && JSON.stringify(item) !== null) {
+                    if (item['org']) {
+                        const org = item['org'];
+                        let loc = ' - ';
+                        let geo = [];
+                        if (org['location']) {
+                            loc = (org.location.name) ? (org.location.name + ', ' + org.location.country) : (org.location.country);
+                            geo = [org.location.latitude, org.location.longitude];
+                        }
+                        const logo_256 = (org['branding']) ? org['branding']['logo_256'] : '';
+                        const idx = this.bps.findIndex((el) => {
+                            return el.account === item['producer_account_name'];
+                        });
+                        if (idx !== -1) {
+                            if (idx < 21) {
+                                this.bps[idx]['status'] = 'producing';
+                            }
+                            else {
+                                this.bps[idx]['status'] = 'standby';
+                            }
+                            // console.log('POS: ' + this.bps[idx].position + ' | ' + this.bps[idx].name);
+                            this.bps[idx].name = org['candidate_name'];
+                            this.bps[idx].account = item['producer_account_name'];
+                            this.bps[idx].location = loc;
+                            this.bps[idx].geo = geo;
+                            this.bps[idx].social = org['social'] || {};
+                            this.bps[idx].email = org['email'];
+                            this.bps[idx].website = org['website'];
+                            this.bps[idx].logo_256 = logo_256;
+                            this.bps[idx].code = org['code_of_conduct'];
+                            this.bps[idx].chainId = this.aService.activeChain.id;
+                            if (idx < 50) {
+                                this.addPin(this.bps[idx]);
+                            }
+                            // Add to cache
+                            // const payload =
+                            fullCache[item['producer_account_name']] = {
+                                lastUpdate: new Date(),
+                                meta: this.bps[idx],
+                                source: item.url
+                            };
+                        }
+                    }
+                }
+            });
+            // Save cache
+            localStorage.setItem('simplEOS.producers.' + this.aService.activeChain.id, JSON.stringify(fullCache));
+        });
+    }
+    setWeightParams() {
+        this.weeks = 52;
+        this.block_timestamp_epoch = 946684800;
+        this.precision = Math.pow(10, this.aService.activeChain['precision']);
+        if (this.aService.activeChain['symbol'] === 'WAX') {
+            this.weeks = 13;
+            this.block_timestamp_epoch = 946684800;
+        }
+        this.conversionFactor = parseInt('' + ((moment().unix() - this.block_timestamp_epoch) / 604800), 10) / this.weeks;
+    }
+    getProxyListHyperionMulti() {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (const api of this.aService.activeChain.hyperionApis) {
+                const url = api + '/state/get_voters?proxy=true&skip=0&limit=' + this.maxProxies;
+                try {
+                    const data = yield this.http.get(url).toPromise();
+                    if (data.voters && data.voters.length > 0) {
+                        return data;
+                    }
+                }
+                catch (e) {
+                    console.log(`failed to fetch proxy list from: ${api}`);
+                }
+            }
+            return null;
+        });
+    }
+    listProxies() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.setWeightParams();
+            let registry = null;
+            if (this.proxies.length > 0) {
+                return;
+            }
+            if (!this.loadingProxs && this.initListProx === false && this.aService.selected.getValue().name) {
+                this.loadingProxs = true;
+                this.proxies = [];
+                this.uniqueProxies.clear();
+                const myAccount = this.aService.selected.getValue();
+                if (this.aService.activeChain['proxyRegistry'] === '') {
+                    const result = yield this.getProxyListHyperionMulti();
+                    if (result) {
+                        this.hasList = result['voters'].length > 0;
+                        let voted = false;
+                        let idx = 0;
+                        for (const item of result['voters']) {
+                            if (myAccount.details['voter_info']) {
+                                voted = myAccount.details['voter_info']['proxy'] === item['account'];
+                            }
+                            const _total = this.convertVotes(item['weight']);
+                            const proxiesMetadata = {
+                                name: '-',
+                                account: item['account'],
+                                key: '',
+                                location: '',
+                                geo: [],
+                                position: idx + 1,
+                                status: '',
+                                total_votes: _total.str,
+                                total_votes_num: _total.num,
+                                social: { steemit: '', telegram: '', twitter: '', wechat: '' },
+                                website: '',
+                                logo_256: '',
+                                checked: voted,
+                                chainId: this.aService.activeChain.id,
+                                philosophy: '',
+                                background: '',
+                                slogan: '',
+                                weight: item['weight'],
+                                reg: false
+                            };
+                            if (!this.uniqueProxies.has(proxiesMetadata.account)) {
+                                this.proxies.push(proxiesMetadata);
+                                this.uniqueProxies.add(proxiesMetadata.account);
+                            }
+                            idx++;
+                        }
+                    }
+                }
+                else {
+                    const results = yield this.eosjs.getProxies(this.aService.activeChain['proxyRegistry']);
+                    if (results) {
+                        registry = results;
+                        this.hasList = registry.rows.length > 0;
+                        console.log('ListProxies returned ' + results.rows.length + ' proxies');
+                        let voted = false;
+                        let idx = 0;
+                        for (const prox of results.rows) {
+                            if (myAccount.details['voter_info']) {
+                                voted = myAccount.details['voter_info']['proxy'] === prox['owner'];
+                            }
+                            const proxiesMetadata = {
+                                name: prox['owner'],
+                                account: prox['owner'],
+                                key: '',
+                                location: '',
+                                geo: [],
+                                position: idx + 1,
+                                status: '',
+                                total_votes: 0,
+                                total_votes_num: 0,
+                                social: {
+                                    steemit: prox.steemit,
+                                    telegram: prox.telegram,
+                                    twitter: prox.twitter,
+                                    wechat: prox.wechat
+                                },
+                                website: prox.website,
+                                logo_256: prox.logo_256,
+                                checked: voted,
+                                chainId: this.aService.activeChain.id,
+                                philosophy: prox.philosophy,
+                                background: prox.background,
+                                slogan: prox.slogan,
+                                weight: prox['total_votes'],
+                                reg: true
+                            };
+                            if (!this.uniqueProxies.has(proxiesMetadata.account)) {
+                                this.proxies.push(proxiesMetadata);
+                                this.uniqueProxies.add(proxiesMetadata.account);
+                            }
+                            idx++;
+                        }
+                    }
+                    else {
+                        this.hasList = false;
+                    }
+                }
+                this.initListProx = true;
+                this.listReady.next(true);
+                this.loadingProxs = false;
+                // Pass 2 - Enhance metadata
+                this.activeCounter = 50;
+                // Cache expires in 6 hours
+                const expiration = (1000 * 60 * 60 * 6);
+                const requestQueue = [];
+                let fullCache = {};
+                // Load cached data, single entry per chain
+                const path = 'simplEOS.proxies.' + this.aService.activeChain.id;
+                const stored_data = localStorage.getItem(path);
+                if (stored_data) {
+                    fullCache = JSON.parse(stored_data);
+                }
+                this.proxies.forEach((prox, idx) => {
+                    let cachedPayload = null;
+                    if (stored_data) {
+                        cachedPayload = fullCache[prox['account']];
+                        if (cachedPayload) {
+                            if (new Date().getTime() - new Date(cachedPayload.lastUpdate).getTime() > expiration) {
+                                // Expired
+                                // console.log('expired', expiration);
+                                requestQueue.push({ proxy: prox['account'], index: idx });
+                            }
+                            else if (this.proxies[idx].checked !== cachedPayload['meta']['checked']) {
+                                // Load from cache
+                                cachedPayload['meta']['checked'] = this.proxies[idx].checked;
+                                this.proxies[idx] = cachedPayload['meta'];
+                            }
+                            else {
+                                // Load from cache
+                                this.proxies[idx] = cachedPayload['meta'];
+                            }
+                        }
+                        else {
+                            // New entry
+                            requestQueue.push({ proxy: prox['account'], index: idx });
+                        }
+                    }
+                    else {
+                        // New entry
+                        // console.log('New entry from hyperion');
+                        requestQueue.push({ proxy: prox['account'], index: idx });
+                    }
+                });
+                // console.log('After');
+                // console.log(this.proxies);
+                if (requestQueue.length > 0) {
+                    this.processReqQueueProxy(requestQueue, registry).then(() => {
+                        console.log('success');
+                    }).catch(err => {
+                        console.log('error', err);
+                    });
+                }
+                // Load cache
+                this.lazyLoadProxies().catch(console.log);
+                // Save cache
+                // localStorage.setItem('simplEOS.proxies.' + this.aService.activeChain.id, JSON.stringify(fullCache));
+            }
+        });
+    }
+    convertVotes(weight) {
+        if (weight) {
+            const totalEos = (weight / Math.pow(2, this.conversionFactor) / this.precision);
+            return {
+                str: VotingService_1.amountFilter(totalEos, '2') + ' ' + this.aService.activeChain['symbol'],
+                num: totalEos
+            };
+        }
+        else {
+            return {
+                str: '0',
+                num: 0
+            };
+        }
+    }
+    processReqQueueProxy(queue, preloaded_proxies) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let proxies = preloaded_proxies;
+            if (!preloaded_proxies) {
+                proxies = yield this.eosjs.getProxies(this.aService.activeChain['proxyRegistry']);
+            }
+            // Load cache
+            let fullCache = JSON.parse(localStorage.getItem('simplEOS.proxies.' + this.aService.activeChain.id));
+            if (!fullCache) {
+                fullCache = {};
+            }
+            queue.forEach(prox => {
+                const idx = this.proxies.findIndex((el) => el.account === prox['proxy']);
+                if (idx !== -1 && idx !== undefined) {
+                    fullCache[prox['proxy']] = {
+                        lastUpdate: new Date(),
+                        meta: this.proxies[idx]
+                    };
+                }
+            });
+            proxies.rows.forEach((prox) => {
+                const idx = queue.findIndex((el) => el.proxy === prox['owner']);
+                if (idx !== -1 && idx !== undefined) {
+                    this.proxies[idx].name = prox['name'];
+                    this.proxies[idx].account = prox['owner'];
+                    this.proxies[idx].key = '';
+                    this.proxies[idx].location = '';
+                    this.proxies[idx].geo = [];
+                    this.proxies[idx].status = '';
+                    this.proxies[idx].social = {
+                        steemit: prox.steemit,
+                        telegram: prox.telegram,
+                        twitter: prox.twitter,
+                        wechat: prox.wechat
+                    };
+                    this.proxies[idx].website = prox.website;
+                    this.proxies[idx].logo_256 = prox.logo_256;
+                    this.proxies[idx].philosophy = prox.philosophy;
+                    this.proxies[idx].background = prox.background;
+                    this.proxies[idx].slogan = prox.slogan;
+                    this.proxies[idx].reg = true;
+                    // Add to cache
+                    fullCache[prox['owner']] = {
+                        lastUpdate: new Date(),
+                        meta: this.proxies[idx]
+                    };
+                }
+            });
+            localStorage.setItem('simplEOS.proxies.' + this.aService.activeChain.id, JSON.stringify(fullCache));
+        });
+    }
+    addPin(bp) {
+        if (bp.geo.length === 2) {
+            const name = bp['name'];
+            const account = bp['account'];
+            const lat = bp['geo'][0];
+            const lon = bp['geo'][1];
+            if ((lon < 180 && lon > -180) && (lat < 90 && lat > -90)) {
+                if (this.data.length < 50) {
+                    if (this.data.findIndex(o => o.owner === account) === -1) {
+                        this.data.push({
+                            name: name,
+                            owner: account,
+                            symbol: (bp['status'] === 'standby') ? 'circle' : 'diamond',
+                            symbolSize: (bp['status'] === 'standby') ? 8 : 10,
+                            itemStyle: {
+                                color: (bp['status'] === 'standby') ? '#feff4b' : '#6cff46',
+                                borderWidth: 0
+                            },
+                            value: [lon, lat],
+                            location: bp['location'],
+                            position: bp['position'],
+                            status: bp['status']
+                        });
+                    }
+                    this.updateOptions = {
+                        series: [{
+                                data: this.data
+                            }]
+                    };
+                }
+            }
+        }
+    }
+    getVotersHyperion(proxy, limit, skip) {
+        const url = this.aService.activeChain.historyApi + `/state/get_voters?proxy=${proxy}&skip=${skip}&limit=${limit}`;
+        return this.http.get(url).toPromise();
+    }
+    fillMissingProxies() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.busy) {
+                this.busy = true;
+                for (const proxy of this.proxies) {
+                    if (proxy.total_votes_num === 0) {
+                        // console.log(proxy);
+                        const results = yield this.eosjs.rpc.get_table_rows({
+                            json: true,
+                            code: 'eosio',
+                            scope: 'eosio',
+                            table: 'voters',
+                            lower_bound: proxy.account,
+                            limit: 1
+                        });
+                        const _total = this.convertVotes(results['rows'][0].last_vote_weight);
+                        proxy.total_votes_num = _total.num;
+                        proxy.total_votes = _total.str;
+                    }
+                }
+                this.busy = false;
+                this.sortProxies();
+            }
+        });
+    }
+    sortProxies() {
+        this.proxies.sort((a, b) => {
+            return b.total_votes_num - a.total_votes_num;
+        });
+        const _tempSet = new Set();
+        const _tempArr = [];
+        this.proxies.forEach((elem, idx) => {
+            if (!_tempSet.has(elem.account)) {
+                elem.position = idx + 1;
+                _tempSet.add(elem.account);
+                _tempArr.push(elem);
+            }
+        });
+        this.proxies = _tempArr;
+        this.ref.tick();
+    }
+    lazyLoadProxies() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.aService.activeChain.historyApi !== '') {
+                const results = yield this.getVotersHyperion(true, 400, 0);
+                for (const result of results.voters) {
+                    const _total = this.convertVotes(result.weight);
+                    const _proxy = this.proxies.find(p => p.account === result.account);
+                    if (_proxy) {
+                        _proxy.total_votes_num = _total.num;
+                        _proxy.total_votes = _total.str;
+                    }
+                }
+            }
+            this.sortProxies();
+        });
+    }
+    reloadAllProxies() {
+        this.fillMissingProxies().catch(console.log);
+    }
+};
+VotingService = VotingService_1 = __decorate([
+    (0, core_1.Injectable)({
+        providedIn: 'root'
+    }),
+    __metadata("design:paramtypes", [eosjs2_service_1.Eosjs2Service,
+        http_1.HttpClient,
+        accounts_service_1.AccountsService,
+        core_1.ApplicationRef])
+], VotingService);
+exports.VotingService = VotingService;
+//# sourceMappingURL=voting.service.js.map

@@ -1,0 +1,82 @@
+{
+  "appId": "simpleos",
+  "directories": {
+    "output": "release/",
+    "buildResources": "build"
+  },
+  "files": [
+    "**/*",
+    "!**/*.ts",
+    "!*.map",
+    "!package.json",
+    "!package-lock.json",
+    {
+      "from": "../dist",
+      "filter": ["**/*"]
+    }
+  ],
+  "afterSign": "electron-builder-notarize",
+  "mac": {
+    "hardenedRuntime": true,
+    "entitlements": "scripts/entitlements.mac.plist",
+    "category": "public.app-category.finance",
+    "target": [
+      "dmg"
+    ],
+    "icon": "icons/simpleos/icon.icns"
+  },
+  "dmg": {
+    "format": "UDZO",
+    "title": "${productName} ${version}"
+  },
+  "linux": {
+    "executableName": "simpleos",
+    "target": [
+      "appImage",
+      "deb"
+    ],
+    "icon": "icons/simpleos",
+    "category": "Network",
+    "desktop": {
+      "Name": "SimplEOS",
+      "GenericName": "SimplEOS Wallet",
+      "X-GNOME-FullName": "simpleos",
+      "Comment": "SimplEOS Blockchain Wallet",
+      "Type": "Application",
+      "Terminal": "false",
+      "StartupNotify": "false",
+      "Categories": "Network;"
+    }
+  },
+  "snap": {
+    "confinement": "classic",
+    "grade": "stable"
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "icons/simpleos/icon.ico"
+  },
+  "appx": {
+    "backgroundColor": "#232526",
+    "languages": [
+      "en-US"
+    ],
+    "showNameOnTiles": true,
+    "identityName": "EOSRio.SimplEOS"
+  },
+  "nsis": {
+    "oneClick": true,
+    "createDesktopShortcut": true
+  },
+  "protocols": [
+    {
+      "name": "simpleos",
+      "role": "Viewer",
+      "schemes": [
+        "simpleos"
+      ]
+    }
+  ]
+}

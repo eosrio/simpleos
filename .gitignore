@@ -57,6 +57,8 @@ ng-dist
 autoclaim.json
 89CE3D98-5C8A-4D0C-BE65-90992326460C.pfx
 /src/environments/_secret.ts
+/src/environments/_secret.js
+/src/environments/_secret.js.map
 
 .yarn
 .angular

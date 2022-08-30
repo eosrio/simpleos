@@ -18,7 +18,9 @@
               "echarts/theme/macarons.js",
               "echarts/dist/extension/bmap.min.js",
               "node-domexception",
-              "node-fetch"
+              "node-fetch",
+              "enf-eosjs/dist/eosjs-jssig",
+              "enf-eosjs"
             ],
             "aot": true,
             "outputPath": "./ng-dist",
@@ -47,11 +49,20 @@
               "node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js",
               "node_modules/@clr/icons/clr-icons.min.js",
               "node_modules/moment/min/moment.min.js",
-              "node_modules/echarts/dist/echarts.min.js",
-              "electron_modules/native.js"
+              "node_modules/echarts/dist/echarts.min.js"
             ]
           },
           "configurations": {
+            "web": {
+              "optimization": false,
+              "outputHashing": "none",
+              "sourceMap": true,
+              "namedChunks": false,
+              "aot": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": false
+            },
             "production": {
               "budgets": [
                 {
@@ -87,6 +98,9 @@
             "browserTarget": "simpleos-wallet:build"
           },
           "configurations": {
+            "web": {
+              "browserTarget": "simpleos-wallet:build:web"
+            },
             "production": {
               "browserTarget": "simpleos-wallet:build:production"
             }

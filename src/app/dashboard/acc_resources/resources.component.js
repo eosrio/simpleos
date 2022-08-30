@@ -1,0 +1,1406 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ResourcesComponent = void 0;
+const core_1 = require("@angular/core");
+const forms_1 = require("@angular/forms");
+const http_1 = require("@angular/common/http");
+const textMaskAddons_1 = require("text-mask-addons/dist/textMaskAddons");
+const accounts_service_1 = require("../../services/accounts.service");
+const crypto_service_1 = require("../../services/crypto/crypto.service");
+const ram_service_1 = require("../../services/ram.service");
+const moment = require("moment");
+const transaction_factory_service_1 = require("../../services/eosio/transaction-factory.service");
+const eosjs2_service_1 = require("../../services/eosio/eosjs2.service");
+const rex_component_1 = require("../rex/rex.component");
+const resource_service_1 = require("../../services/resource.service");
+const _handleIcon = 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,' +
+    '4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,' +
+    '8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,' +
+    '24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z';
+let ResourcesComponent = class ResourcesComponent {
+    constructor(eosjs, aService, crypto, fb, ramService, http, trxFactory, cdr, resource) {
+        this.eosjs = eosjs;
+        this.aService = aService;
+        this.crypto = crypto;
+        this.fb = fb;
+        this.ramService = ramService;
+        this.http = http;
+        this.trxFactory = trxFactory;
+        this.cdr = cdr;
+        this.resource = resource;
+        this.ramPriceEOS = 0;
+        this.total_ram_bytes_reserved = 0;
+        this.total_ram_stake = 0;
+        this.max_ram_size = 0;
+        this.feeBuy = 0;
+        this.feeSell = 0;
+        this.ram_quota = 0;
+        this.ram_usage = 0;
+        this.valuetoPowerUp = 0;
+        this.percenttoStake = '0';
+        this.powerUpToReceiver = '';
+        this.errorPowerUpTo = '';
+        this.errorValuePowerUp = '';
+        this.minToStake = 0.00;
+        this.nVotes = 0;
+        this.nVotesProxy = 0;
+        this.percentMask = (0, textMaskAddons_1.createNumberMask)({
+            prefix: '',
+            allowDecimal: true,
+            includeThousandsSeparator: false,
+            decimalLimit: 1,
+            integerLimit: 3,
+        });
+        this.isCheckedPowerUpManually = false;
+        this.showAdvancedRatio = false;
+        this.initOptions = {
+            renderer: 'z',
+            width: 1000,
+            height: 400,
+        };
+        this.net_self = '';
+        this.cpu_self = '';
+        this.stakingRatio = 75;
+        this.isThisReceiverPowerUP = true;
+        this.claimPublicKey = '';
+        this.gbmBalance = 0;
+        this.basePath = '';
+        this.cpu_weight = '';
+        this.cpu_weight_n = 0;
+        this.cpu_amount_m = 0;
+        this.net_weight = '';
+        this.net_weight_n = 0;
+        this.net_amount_m = 0;
+        this.delegations = [];
+        this.delegated_net = 0;
+        this.delegated_cpu = 0;
+        this.cpu_frac = 0;
+        this.net_frac = 0;
+        this.timeUsCost = 0;
+        this.timeUsCostNet = 0;
+        this.usCPUPowerUp = 0;
+        this.usNETPowerUp = 0;
+        this.busyPowerUp = false;
+        this.totalUsageTDU = [];
+        this.cpuD = '';
+        this.netD = '';
+        this.errormsgD = '';
+        this.errormsgD2 = '';
+        this.errormsgD3 = '';
+        this.wrongpassbuy = '';
+        this.wrongpasssell = '';
+        this.wrongpassundelegate = '';
+        this.wrongpassdelegate = '';
+        this.errormsg = '';
+        this.errormsg2 = '';
+        this.errormsgeos = '';
+        this.numberMask = (0, textMaskAddons_1.createNumberMask)({
+            prefix: '',
+            allowDecimal: true,
+            includeThousandsSeparator: false,
+            decimalLimit: 4
+        });
+        this.mode = 'local';
+        this.selectedAccountName = '';
+        this.isDestroyed = false;
+        this.subscriptions = [];
+        this.precision = '';
+        this.busy = false;
+        this.dataDT = [];
+        this.dataVAL = [];
+        this.ram_chartMerge = [];
+        this.wrongpassbuy = '';
+        this.wrongpasssell = '';
+        this.wrongpassundelegate = '';
+        this.wrongpassdelegate = '';
+        this.errormsg = '';
+        this.errormsg2 = '';
+        this.errormsgeos = '';
+        this.errormsgD = '';
+        this.errormsgD2 = '';
+        this.errormsgD3 = '';
+        this.totalBalance = 0;
+        this.stakedBalance = 0;
+        this.totalStaked = 0;
+        this.votedEOSDecay = 0;
+        this.votedDecay = 0;
+        this.isManually = false;
+        this.precision = '1.0-' + this.aService.activeChain['precision'];
+        this.net_limit = {
+            used: 0,
+            max: 0
+        };
+        this.cpu_limit = {
+            used: 0,
+            max: 0
+        };
+        this.ramMarketFormBuy = this.fb.group({
+            buyBytes: [0, forms_1.Validators.required],
+            buyEos: [0],
+            accountBuy: ['to this account', forms_1.Validators.required],
+            anotherAcc: ['']
+        });
+        this.delegateForm = this.fb.group({
+            netEos: [0, forms_1.Validators.min(0)],
+            cpuEos: [0, forms_1.Validators.min(0)],
+            receiverAcc: ['', forms_1.Validators.required]
+        });
+        this.ramMarketFormSell = this.fb.group({
+            sellEos: [0],
+            sellBytes: [0, forms_1.Validators.required]
+        });
+        this.passBuyForm = this.fb.group({
+            pass: ''
+        });
+        this.passSellForm = this.fb.group({
+            pass: ''
+        });
+        this.passUnDelegateForm = this.fb.group({
+            pass: ''
+        });
+        this.passDelegateForm = this.fb.group({
+            pass: ''
+        });
+        this.passRefundForm = this.fb.group({
+            pass: ''
+        });
+        this.ram_chart = {
+            title: {
+                left: 'center',
+                subtext: 'daily RAM price chart',
+                subtextStyle: {
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                },
+                top: '20'
+            },
+            grid: {
+                height: '67%',
+                width: '70%',
+                right: '47',
+            },
+            tooltip: {
+                trigger: 'axis',
+                position: function (pt) {
+                    return [pt[0], '20%'];
+                },
+                formatter: function (params) {
+                    params = params[0];
+                    return moment(params.name)
+                        .format('HH:mm[\n]DD/MM/YYYY') + ' : ' + params.value.toFixed(6);
+                },
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: [],
+                axisLine: {
+                    lineStyle: {
+                        color: '#B7B7B7', // cor da linha x
+                    },
+                },
+                axisLabel: {
+                    textStyle: {
+                        color: '#B7B7B7', // cor do texto da linha x
+                    },
+                    formatter: function (params) {
+                        return moment(params).format('HH:mm[\n]DD/MM');
+                    },
+                },
+            },
+            yAxis: {
+                type: 'value',
+                boundaryGap: [0, '100%'],
+                axisLine: {
+                    lineStyle: {
+                        color: '#B7B7B7', // cor da linha y
+                    },
+                },
+                axisLabel: {
+                    textStyle: {
+                        color: '#B7B7B7', // cor do texto da linha y
+                    },
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#3c3a3a', // cor das linhas no meio
+                    }
+                },
+                scale: true
+            },
+            dataZoom: [{
+                    show: true,
+                    realtime: true,
+                    start: 60,
+                    end: 100,
+                    handleIcon: _handleIcon,
+                    handleSize: '80%',
+                    handleStyle: {
+                        color: '#fff',
+                        shadowBlur: 3,
+                        shadowColor: 'rgba(0, 0, 0, 0.7)',
+                        shadowOffsetX: 2,
+                        shadowOffsetY: 2
+                    }, textStyle: {
+                        color: '#FFFFFF',
+                    },
+                    'labelFormatter': function (params, out) {
+                        return moment(out).format('HH:mm[\n]DD/MM');
+                    },
+                    dataBackground: {
+                        lineStyle: {
+                            color: 'rgba(0, 148, 210, 0.5'
+                        },
+                        areaStyle: {
+                            color: 'rgba(0, 143, 203, 0.5'
+                        }
+                    }
+                }, {
+                    type: 'inside',
+                    realtime: true,
+                    start: 60,
+                    end: 100,
+                    bottom: 0
+                }],
+            series: [
+                {
+                    name: 'RAM price',
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    sampling: 'average',
+                    itemStyle: {
+                        normal: {
+                            color: 'rgb(0, 148, 210)' // cor da linha
+                        }
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [{
+                                    offset: 0, color: 'rgb(149, 223, 255, 0.6)' // cor do gradiente em cima
+                                }, {
+                                    offset: 1, color: 'rgb(0, 143, 203, 0.6)' // cor do gradiente embaixo
+                                }],
+                        }
+                    },
+                    data: []
+                }
+            ]
+        };
+        this.unStakeTooLow = false;
+        this.powerUpdisabled = true;
+    }
+    ngOnInit() {
+        this.loadHistory();
+        this.ramService.reload();
+        this.aService.selected.asObservable().subscribe((selected) => __awaiter(this, void 0, void 0, function* () {
+            if (selected.details) {
+                this.ramPriceEOS = this.ramService.ramPriceEOS;
+                const d = selected.details;
+                this.ram_quota = d.ram_quota;
+                this.ram_usage = d.ram_usage;
+                this.cpu_limit = d.cpu_limit;
+                this.net_limit = d.net_limit;
+                if (!selected.pastDayActivity) {
+                    this.cpu_limit['used'] = 0;
+                    this.net_limit['used'] = 0;
+                }
+                this.cpu_weight = d.total_resources.cpu_weight;
+                this.cpu_weight_n = parseFloat(this.cpu_weight.split(' ')[0]);
+                this.net_weight = d.total_resources.net_weight;
+                this.net_weight_n = parseFloat(this.net_weight.split(' ')[0]);
+                this.listbw(selected.name);
+            }
+        }));
+    }
+    ngOnDestroy() {
+        this.isDestroyed = true;
+        this.subscriptions.forEach(s => {
+            s.unsubscribe();
+        });
+    }
+    ngAfterViewInit() {
+        const sub = this.aService.selected
+            .asObservable()
+            .subscribe((selected) => {
+            this.onAccountChanged(selected).catch(console.log);
+            this.cdr.detectChanges();
+        });
+        this.subscriptions.push(sub);
+    }
+    onAccountChanged(selected) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.totalStaked = 0;
+            this.votedDecay = 0;
+            this.votedEOSDecay = 0;
+            this.isDestroyed = false;
+            this.localStorage = {};
+            // if (selected && selected['name'] && this.selectedAccountName !== selected['name']) {
+            if (selected && selected['name']) {
+                this.precision = '1.0-' + this.aService.activeChain['precision'];
+                this.unstakeTime = moment.utc(selected.unstakeTime).add(72, 'hours').fromNow();
+                this.selectedAccountName = selected.name;
+                this.totalBalance = selected.full_balance;
+                this.stakedBalance = selected.staked;
+                this.unstaking = selected.unstaking;
+                this.unstaked = selected.full_balance - selected.staked - selected.unstaking;
+                if (this.totalBalance > 0) {
+                    this.minToStake = 0;
+                    this.valuetoStake = this.stakedBalance.toString();
+                }
+                else {
+                    this.minToStake = 0;
+                    this.valuetoStake = '0';
+                    this.percenttoStake = '0';
+                }
+                this.cpu_weight = selected.details.total_resources.cpu_weight;
+                this.net_weight = selected.details.total_resources.net_weight;
+                if (selected.details.self_delegated_bandwidth) {
+                    this.cpu_self = selected.details.self_delegated_bandwidth.cpu_weight.split(' ')[0];
+                    this.net_self = selected.details.self_delegated_bandwidth.net_weight.split(' ')[0];
+                }
+                else {
+                    this.cpu_self = '';
+                    this.net_self = '';
+                }
+                if (this.aService.activeChain['powerup'] !== undefined) {
+                    this.state = yield this.eosjs.getPowerUpState();
+                    this.powerUpdisabled = (this.unstaked <= 0);
+                    const data = localStorage.getItem('simpleos.accounts.' + this.eosjs.chainId);
+                    try {
+                        this.localStorage = JSON.parse(data);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                    // console.log(selected);
+                    yield this.updateUsageAction();
+                    const timeCost = yield this.eosjs.getTimeUsCost(this.aService.activeChain['precision'], selected.details);
+                    this.timeUsCost = timeCost['cpuCost'];
+                    this.timeUsCostNet = timeCost['netCost'];
+                    yield this.updateUnstakePercent();
+                    this.updateStakePercent();
+                }
+                if (!this.aService.activeChain['name'].startsWith('LIBERLAND')) {
+                    yield this.updateRatio(selected);
+                    if (selected.details.voter_info) {
+                        let weeks = 52;
+                        let block_timestamp_epoch = 946684800;
+                        let precision = Math.pow(10, this.aService.activeChain['precision']);
+                        if (this.aService.activeChain['symbol'] === 'WAX') {
+                            weeks = 13;
+                            block_timestamp_epoch = 946684800;
+                        }
+                        this.hasVote = (selected.details.voter_info.producers.length > 0 || selected.details.voter_info.proxy !== '');
+                        this.totalStaked = (selected.details.voter_info.staked / precision);
+                        const a = (moment().unix() - block_timestamp_epoch);
+                        const b = parseInt('' + (a / 604800), 10) / weeks;
+                        const decayEOS = (selected.details.voter_info.last_vote_weight / Math.pow(2, b) / precision);
+                        this.votedEOSDecay = this.totalStaked - decayEOS;
+                        if (selected.details.voter_info.last_vote_weight > 0) {
+                            this.votedDecay = 100 - Math.round(((decayEOS * 100) / this.totalStaked) * 1000) / 1000;
+                        }
+                    }
+                }
+                else {
+                    this.hasVote = false;
+                }
+                this.getRexBalance(selected.name);
+                // console.log(this.minToStake);
+            }
+            if (!this.isDestroyed) {
+                this.cdr.detectChanges();
+            }
+        });
+    }
+    updateStakePercent() {
+        this.stakedisabled = false;
+        if (this.totalBalance > 0) {
+            this.percenttoStake = ((parseFloat(this.valuetoStake) * 100) /
+                this.totalBalance).toString();
+        }
+    }
+    updateUnstakePercent() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.totalUsageTDU = [];
+            this.unstakedLimited = 0;
+            this.valuetoPowerUp = 0;
+            this.percentToPowerUp = '0.0';
+            this.minPowerUp = 0.0002;
+            this.unStakeTooLow = this.unstaked >= this.minPowerUp;
+            if (this.unStakeTooLow) {
+                this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
+                this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
+                const maxValueSlider = this.aService.activeChain['powerup']['maxPowerUpSlider'];
+                const onePercerntStake = (this.unstaked * 0.01);
+                this.unstakedLimited = onePercerntStake > maxValueSlider ? maxValueSlider : (onePercerntStake < 0.01 ? this.unstaked : onePercerntStake);
+                const percent = (this.minPowerUp * 100 / (this.unstakedLimited));
+                const precision = Math.pow(10, this.aService.activeChain['precision']);
+                this.percentToPowerUp = (Math.round(percent * precision) / precision).toString();
+                this.valuetoPowerUp = this.minPowerUp;
+                this.stepPowerUp = Math.round(percent * 100) / 100;
+                yield this.updatePowerUpValue();
+            }
+        });
+    }
+    getRexBalance(acc) {
+        if (this.aService.activeChain.features['rex']) {
+            this.eosjs.getRexData(acc).then((rexdata) => __awaiter(this, void 0, void 0, function* () {
+                // console.log(rexdata);
+                // console.log(!rexdata.rexbal);
+                let amount = 0;
+                if (rexdata.rexbal !== undefined) {
+                    const balance = rexdata.rexbal.rex_balance.split(' ');
+                    amount = parseFloat(balance[0]);
+                }
+                this.hasRex = amount > 0;
+            }));
+        }
+        else {
+            this.hasRex = false;
+        }
+    }
+    updateStakeValue() {
+        this.stakedisabled = false;
+        this.minstake = false;
+        this.valuetoStake = (this.totalBalance *
+            (parseFloat(this.percenttoStake) / 100)).toString();
+        if (this.valuetoStake === '1') {
+            this.minstake = true;
+        }
+    }
+    toggleManuallyPowerUp() {
+        this.isManuallyPowerUP = !this.isManuallyPowerUP;
+        this.isCheckedPowerUpManually = !this.isCheckedPowerUpManually;
+    }
+    toggleReceiverPowerUp() {
+        this.isThisReceiverPowerUP = !this.isThisReceiverPowerUP;
+        this.errorPowerUpTo = '';
+        this.powerUpToReceiver = '';
+    }
+    checkPowerUpReceiver(ev) {
+        console.log(ev.target.value);
+        this.errorPowerUpTo = '';
+        if (ev.target.value !== '') {
+            try {
+                this.eosjs.checkAccountName(ev.target.value.toLowerCase());
+                this.eosjs.getAccountInfo(ev.target.value.toLowerCase()).then(() => {
+                    this.powerUpToReceiver = ev.target.value;
+                }).catch(() => {
+                    this.errorPowerUpTo = 'account does not exist';
+                });
+            }
+            catch (e) {
+                this.errorPowerUpTo = e.message;
+            }
+        }
+        else {
+            this.errormsg = '';
+        }
+    }
+    changePowerUpValueManually(e) {
+        const value = (e === undefined) ? 0 : e;
+        this.errorValuePowerUp = '';
+        if (value >= this.minPowerUp && value <= this.unstaked) {
+            this.valuetoPowerUp = e;
+            this.updatePowerUpValue('manually');
+        }
+        else {
+            this.totalUsageTDU = [];
+            this.errorValuePowerUp = 'Wrong amount!';
+        }
+    }
+    updateUsageAction() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const daysToRefresh = this.aService.activeChain['powerup']['daysToRefresh'];
+            let date = new Date();
+            date.setDate(date.getDate() + daysToRefresh);
+            const updateDate = this.localStorage.usageAction === undefined ? new Date() : new Date(this.localStorage.usageAction.updateDate);
+            if (this.localStorage.usageAction === undefined || updateDate.getTime() > date.getTime()) {
+                const transfer = yield this.resource.getAvgTime([{ account: 'eosio.token', name: 'transfer', data: [] }]);
+                const delegate = yield this.resource.getAvgTime([{ account: 'eosio', name: 'delegatebw' }]);
+                const undelegate = yield this.resource.getAvgTime([{ account: 'eosio', name: 'undelegatebw' }]);
+                let action = [];
+                if (transfer.cpu > 0)
+                    action.push({ transfer: transfer });
+                if (delegate.cpu > 0)
+                    action.push({ stake: delegate });
+                if (undelegate.cpu > 0)
+                    action.push({ unstake: undelegate });
+                yield this.aService.storeUsageActionData(action);
+            }
+        });
+    }
+    powerUpPlus(qtd, usCpu) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const precision = Math.pow(10, this.aService.activeChain['precision']);
+            const min_cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
+            const amountPowerPlus = (Math.ceil(qtd * usCpu) / this.timeUsCost);
+            const power_cpu = yield this.eosjs.calcPowerUp(this.state['cpu'], min_cpu_frac, { maxFee: 0, maxPower: amountPowerPlus });
+            const powerCpuAmount = Math.round(power_cpu.amount);
+            const newFee = Math.ceil((this.valuetoPowerUp + power_cpu.fee) * precision) / precision;
+            const newUsCPU = this.usCPUPowerUp + Math.round(powerCpuAmount * this.timeUsCost);
+            if (newFee <= this.unstakedLimited) {
+                this.usCPUPowerUp = newUsCPU;
+                this.valuetoPowerUp = newFee;
+                this.cpu_frac += Math.floor(power_cpu.frac);
+                this.percentToPowerUp = (this.valuetoPowerUp * 100 / (this.unstakedLimited)).toFixed(2);
+                // // Transfer + DELEGATE + UNDELEGATE
+                this.updateExemples();
+            }
+        });
+    }
+    updatePowerUpValue(type) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let maxAmount;
+            const precision = Math.pow(10, this.aService.activeChain['precision']);
+            if (type === undefined) {
+                maxAmount = Math.round((this.unstakedLimited * (parseFloat(this.percentToPowerUp) / 100)) * precision) / precision;
+            }
+            else {
+                maxAmount = Math.round(this.valuetoPowerUp * precision) / precision;
+            }
+            if (!(maxAmount >= this.minPowerUp)) {
+                maxAmount = this.minPowerUp;
+            }
+            if (!this.powerUpdisabled) {
+                this.busyPowerUp = true;
+                this.cpu_frac = this.aService.activeChain['powerup']['minCpuFrac'];
+                this.net_frac = this.aService.activeChain['powerup']['minNetFrac'];
+                const power_net = yield this.eosjs.calcPowerUp(this.state['net'], this.net_frac, { maxFee: 0, maxPower: 0 });
+                let netAmount = Math.ceil(power_net.fee * precision) / precision;
+                let cpuAmount = (maxAmount - netAmount);
+                const power_cpu = yield this.eosjs.calcPowerUp(this.state['cpu'], this.cpu_frac, { maxFee: cpuAmount, maxPower: 0 });
+                this.cpu_frac = power_cpu.frac;
+                const powerCpuAmount = Math.round(power_cpu.amount);
+                const powerNETAmount = Math.round(power_net.amount);
+                this.usCPUPowerUp = Math.floor(powerCpuAmount * this.timeUsCost);
+                this.usNETPowerUp = Math.floor(powerNETAmount * this.timeUsCostNet);
+                // Transfer + DELEGATE + UNDELEGATE
+                this.updateExemples();
+                this.busyPowerUp = false;
+                this.valuetoPowerUp = maxAmount;
+                this.isCheckedPowerUpManually = false;
+                console.log({
+                    net: netAmount,
+                    cpu: cpuAmount,
+                    maxAmount: maxAmount,
+                    cpuFrac: this.cpu_frac,
+                    netFrac: this.net_frac,
+                    amountCpu: power_cpu.amount,
+                    amountNet: power_net.amount,
+                    timeUsCostCPU: this.timeUsCost,
+                    timeUsCostNET: this.timeUsCostNet,
+                    powerCpuAmount: powerCpuAmount,
+                    powerNETAmount: powerNETAmount,
+                    usNewCPU: this.usCPUPowerUp,
+                    usNewNET: this.usNETPowerUp,
+                    percentToPowerUp: this.percentToPowerUp,
+                    netFee: power_net.fee,
+                    cpuFee: power_cpu.fee,
+                    total: (power_net.fee + power_cpu.fee),
+                    totalPrecision: (netAmount + cpuAmount)
+                });
+            }
+            else {
+                yield this.updateUnstakePercent();
+            }
+        });
+    }
+    updateExemples() {
+        this.totalUsageTDU[0] = {
+            action: 'TRANSFER',
+            one_time: this.localStorage['usageAction']['actions'][0]['transfer'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][0]['transfer']['cpu']),
+        };
+        this.totalUsageTDU[1] = {
+            action: 'STAKE',
+            one_time: this.localStorage['usageAction']['actions'][1]['stake'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][1]['stake']['cpu']),
+        };
+        this.totalUsageTDU[2] = {
+            action: 'UNSTAKE',
+            one_time: this.localStorage['usageAction']['actions'][2]['unstake'],
+            limit: Math.floor(this.usCPUPowerUp / this.localStorage['usageAction']['actions'][2]['unstake']['cpu']),
+        };
+    }
+    checkPercent() {
+        this.minstake = false;
+        let min = 0;
+        if (parseFloat(this.percenttoStake) <= min) {
+            this.percenttoStake = min.toString();
+            this.updateStakeValue();
+            this.minstake = true;
+        }
+        if (parseFloat(this.percenttoStake) > 100) {
+            this.percenttoStake = '100';
+            this.updateStakeValue();
+        }
+    }
+    checkValue() {
+        this.minstake = parseFloat(this.valuetoStake) <= 1;
+        if (parseFloat(this.valuetoStake) > this.totalBalance) {
+            this.valuetoStake = this.totalBalance.toString();
+            this.updateStakePercent();
+        }
+    }
+    checkValueManually(op) {
+        this.minstake = false;
+        const sum = parseFloat(this.cpu_self) + parseFloat(this.net_self);
+        if (sum <= 1) {
+            this.minstake = true;
+        }
+        if (this.isManually) {
+            if (sum > this.totalBalance) {
+                if (op === 'cpu') {
+                    this.cpu_self = `${this.totalBalance - parseFloat(this.net_self)}`;
+                }
+                else {
+                    this.net_self = `${this.totalBalance - parseFloat(this.cpu_self)}`;
+                }
+            }
+        }
+    }
+    sliderLabel(value) {
+        const val = parseInt(value.toString(), 10);
+        return val.toString();
+    }
+    sliderLabelPowerUp(value) {
+        const val = parseFloat(value.toString());
+        return val.toString();
+    }
+    callUpdateRatio() {
+        const selected = this.aService.selected.getValue();
+        // console.log(this.stakingRatio);
+        this.updateRatio(selected).catch(console.log);
+    }
+    updateRatio(selected) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.cpu_weight = selected.details.total_resources.cpu_weight;
+            this.net_weight = selected.details.total_resources.net_weight;
+            const _cpu = rex_component_1.RexComponent.asset2Float(selected.details.total_resources.cpu_weight);
+            const _net = rex_component_1.RexComponent.asset2Float(selected.details.total_resources.net_weight);
+            this.cpu_weight_n = _cpu;
+            this.net_weight_n = _net;
+            const symbol = this.aService.activeChain['symbol'];
+            const _cpuSelf = rex_component_1.RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.cpu_weight);
+            const _netSelf = rex_component_1.RexComponent.asset2Float(selected.details.self_delegated_bandwidth === null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.net_weight);
+            this.stakingRatio = (_cpuSelf === 0 && _netSelf === 0) ? 75 : (_cpuSelf / (_cpuSelf + _netSelf)) * 100;
+            this.cdr.detectChanges();
+            // console.log(_cpuSelf,_netSelf,this.stakingRatio);
+        });
+    }
+    setStake() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.stakerr = '';
+            const precisionVal = this.aService.activeChain['precision'];
+            const symbol = this.aService.activeChain['symbol'];
+            const precision = Math.pow(10, this.aService.activeChain['precision']);
+            const selected = this.aService.selected.getValue();
+            let prevStake = Math.round(this.aService.selected.getValue().staked * precision);
+            let nextStakeFloat = parseFloat(this.valuetoStake);
+            // console.log(nextStakeFloat);
+            if (this.isManually) {
+                const nextStakeCPUFloat = parseFloat(this.cpu_self === '' ? '0' : this.cpu_self);
+                const nextStakeNETFloat = parseFloat(this.net_self === '' ? '0' : this.net_self);
+                // console.log(selected.details.self_delegated_bandwidth);
+                const cpuWeightSTR = selected.details.self_delegated_bandwidth === null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.cpu_weight;
+                const netWeightSTR = selected.details.self_delegated_bandwidth === null ? '0.0000 ' + symbol : selected.details.self_delegated_bandwidth.net_weight;
+                const cpu_self = rex_component_1.RexComponent.asset2Float(cpuWeightSTR);
+                const net_self = rex_component_1.RexComponent.asset2Float(netWeightSTR);
+                nextStakeFloat = nextStakeCPUFloat + nextStakeNETFloat;
+                prevStake = Math.round((cpu_self + net_self) * precision);
+                this.valuetoStake = `${nextStakeFloat}`;
+                this.cpu_amount_m = nextStakeCPUFloat * precision;
+                this.net_amount_m = nextStakeNETFloat * precision;
+            }
+            yield this.updateRatio(selected);
+            const nextStakeInt = Math.round(nextStakeFloat * precision);
+            const diff = nextStakeInt - prevStake;
+            this.stakingDiff = diff;
+            this.stakingHRV = (Math.abs(this.stakingDiff) / precision).toFixed(precisionVal) + ' ' + this.aService.activeChain['symbol'];
+            this.wrongpass = '';
+            if (diff !== 0) {
+                this.newSetStake().catch(console.log);
+            }
+            else {
+                this.stakerr = 'Value has not changed';
+            }
+        });
+    }
+    newSetStake() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.busy = true;
+            this.wrongpass = '';
+            const account = this.aService.selected.getValue();
+            const tk_name = this.aService.activeChain['symbol'];
+            const precision = this.aService.activeChain['precision'];
+            this.wrongpass = '';
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            let actionTitle = ``;
+            let html = ``;
+            let action = '';
+            if (this.stakingDiff > 0) {
+                action = 'stake';
+                html = `<h5 class="mt-0">After staking, this tokens will be locked for at least 3 days.</h5>`;
+                actionTitle = `Stake <span class="blue">+${this.stakingHRV}</span> ?`;
+            }
+            else if (this.stakingDiff < 0) {
+                action = 'unstake';
+                html = `<h5 class="mt-0">Your tokens will be free for transfers after 3 days.</h5>`;
+                actionTitle = `Unstake <span class="blue">${this.stakingHRV}</span> ?`;
+            }
+            const messageHTML = `<h4 class="text-white">Total staked will be: <span class="blue">${parseFloat(this.valuetoStake).toFixed(precision)}</span></h4>
+            ${html}`;
+            // const [, permission] = this.aService.getStoredKey(account);
+            let trx = {};
+            if (this.aService.activeChain['name'].indexOf('LIBERLAND') === -1) {
+                try {
+                    const actions = yield (this.isManually ? this.eosjs.changebwManually(account.name, auth.permission, this.cpu_amount_m, this.net_amount_m, tk_name, precision) : this.eosjs.changebw(account.name, auth.permission, this.stakingDiff, tk_name, this.stakingRatio / 100, precision));
+                    trx = { actions: actions };
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            }
+            else {
+                trx = {
+                    actions: [{
+                            account: 'eosio',
+                            name: action,
+                            authorization: [auth],
+                            data: {
+                                'acnt': account.name,
+                                'quantity': this.stakingHRV,
+                            }
+                        }]
+                };
+            }
+            this.trxFactory.modalData.next({
+                transactionPayload: trx,
+                signerAccount: auth.actor,
+                signerPublicKey: publicKey,
+                actionTitle: actionTitle,
+                labelHTML: messageHTML,
+                termsHeader: '',
+                termsHTML: '',
+                tk_name: tk_name,
+            });
+            this.trxFactory.launcher.emit({ visibility: true, mode: this.mode });
+            const subs = this.trxFactory.status.subscribe((event) => __awaiter(this, void 0, void 0, function* () {
+                // console.log(event);
+                try {
+                    const jsonStatus = JSON.parse(event);
+                    if (jsonStatus.error.code === 3080004) {
+                        const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                        const cpu = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''));
+                        yield this.resource.checkResource(auth, trx.actions, cpu);
+                    }
+                    if (jsonStatus.error.code === 3080002) {
+                        const valueSTR = jsonStatus.error.details[0].message.split('>');
+                        const net = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''));
+                        yield this.resource.checkResource(auth, trx.actions, undefined, net);
+                    }
+                }
+                catch (e) {
+                    if (event === 'done') {
+                        // console.log(event);
+                        yield this.aService.refreshFromChain(false);
+                        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                            yield this.onAccountChanged(this.aService.selected.getValue());
+                        }), 1800);
+                        subs.unsubscribe();
+                    }
+                    if (event === 'modal_closed') {
+                        subs.unsubscribe();
+                    }
+                }
+            }));
+        });
+    }
+    listbw(account_name) {
+        this.eosjs.listDelegations(account_name).then((results) => {
+            if (results.rows.length > 0) {
+                this.delegations = [];
+                this.delegated_net = 0;
+                this.delegated_cpu = 0;
+                results.rows.forEach((entry) => {
+                    if (entry.from !== entry.to) {
+                        entry.net_weight = entry.net_weight.split(' ')[0];
+                        entry.cpu_weight = entry.cpu_weight.split(' ')[0];
+                        this.delegated_net += parseFloat(entry.net_weight);
+                        this.delegated_cpu += parseFloat(entry.cpu_weight);
+                        this.delegations.push(entry);
+                    }
+                });
+            }
+            else {
+                this.delegations = [];
+                this.delegated_net = 0;
+                this.delegated_cpu = 0;
+            }
+        });
+    }
+    convertToBytes() {
+        if (this.ramPriceEOS > 0) {
+            this.ramMarketFormBuy.patchValue({
+                buyBytes: (this.ramMarketFormBuy.get('buyEos').value / this.ramPriceEOS)
+            });
+            this.feeBuy = this.feeCalculator(this.ramMarketFormBuy.get('buyEos').value);
+        }
+    }
+    convertToEos() {
+        if (this.ramPriceEOS > 0) {
+            this.ramMarketFormBuy.patchValue({
+                buyEos: (this.ramMarketFormBuy.get('buyBytes').value * this.ramPriceEOS)
+            });
+            this.feeBuy = this.feeCalculator(this.ramMarketFormBuy.get('buyEos').value);
+        }
+    }
+    convertToEosSELL() {
+        if (this.ramPriceEOS > 0) {
+            this.ramMarketFormSell.patchValue({
+                sellEos: (this.ramMarketFormSell.get('sellBytes').value * this.ramPriceEOS)
+            });
+            this.feeSell = this.feeCalculator(this.ramMarketFormSell.get('sellEos').value);
+        }
+    }
+    convertToBytesSELL() {
+        if (this.ramPriceEOS > 0) {
+            this.ramMarketFormSell.patchValue({
+                sellBytes: (this.ramMarketFormSell.get('sellEos').value / this.ramPriceEOS)
+            });
+            this.feeSell = this.feeCalculator(this.ramMarketFormSell.get('sellEos').value);
+        }
+    }
+    bytesFilter(bytes) {
+        const units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
+        const number = Math.floor(Math.log(bytes) / Math.log(1024));
+        if (number > 0) {
+            return (bytes / Math.pow(1024, Math.floor(number))).toFixed(4) + ' ' + units[number];
+        }
+        else {
+            return bytes + ' ' + units[number];
+        }
+    }
+    feeCalculator(eosprice) {
+        return eosprice * .005;
+    }
+    updateChart() {
+        this.ram_chartMerge = {
+            xAxis: {
+                data: this.dataDT
+            },
+            series: {
+                data: this.dataVAL
+            }
+        };
+    }
+    loadHistory() {
+        let i = 0;
+        try {
+            this.http.get('https://hapi.eosrio.io/ram/history1D').subscribe((data) => {
+                data.reverse();
+                data.forEach((val) => {
+                    this.dataDT.push(val.time);
+                    this.dataVAL.push(val.price);
+                    i++;
+                });
+                this.updateChart();
+                let j = 0;
+                this.ramService.ramTicker.asObservable().subscribe((ramdata) => {
+                    if (ramdata) {
+                        if (ramdata.price) {
+                            const dt = new Date(ramdata.time);
+                            this.ramPriceEOS = ramdata.price;
+                            this.dataDT.push(dt.toISOString());
+                            this.dataVAL.push(ramdata.price);
+                            this.updateChart();
+                            j++;
+                        }
+                    }
+                });
+            });
+        }
+        catch (e) {
+            console.log('Failed to get RAM information', e);
+        }
+    }
+    checkAccountName() {
+        if (this.ramMarketFormBuy.value.anotherAcc !== '') {
+            try {
+                this.eosjs.checkAccountName(this.ramMarketFormBuy.value.anotherAcc.toLowerCase());
+                this.ramMarketFormBuy.controls['anotherAcc'].setErrors(null);
+                this.errormsg = '';
+                this.eosjs.getAccountInfo(this.ramMarketFormBuy.value.anotherAcc.toLowerCase()).then(() => {
+                    this.ramMarketFormBuy.controls['anotherAcc'].setErrors(null);
+                    this.errormsg = '';
+                }).catch(() => {
+                    this.ramMarketFormBuy.controls['anotherAcc'].setErrors({ 'incorrect': true });
+                    this.errormsg = 'account does not exist';
+                });
+            }
+            catch (e) {
+                this.ramMarketFormBuy.controls['anotherAcc'].setErrors({ 'incorrect': true });
+                this.errormsg = e.message;
+            }
+        }
+        else {
+            this.errormsg = '';
+        }
+    }
+    checkAccName() {
+        if (this.delegateForm.value.receiverAcc !== '') {
+            try {
+                this.eosjs.checkAccountName(this.delegateForm.value.receiverAcc.toLowerCase());
+                this.delegateForm.controls['receiverAcc'].setErrors(null);
+                this.errormsgD = '';
+                this.eosjs.getAccountInfo(this.delegateForm.value.receiverAcc.toLowerCase()).then(() => {
+                    this.delegateForm.controls['receiverAcc'].setErrors(null);
+                    this.errormsgD = '';
+                }).catch(() => {
+                    this.delegateForm.controls['receiverAcc'].setErrors({ 'incorrect': true });
+                    this.errormsgD = 'account does not exist';
+                });
+            }
+            catch (e) {
+                this.delegateForm.controls['receiverAcc'].setErrors({ 'incorrect': true });
+                this.errormsgD = e.message;
+            }
+        }
+        else {
+            this.errormsg = '';
+        }
+    }
+    checkBuyBytes() {
+        if (this.ramMarketFormBuy.value.buyBytes > 0) {
+            this.aService.selected.asObservable().subscribe((sel) => {
+                if (sel) {
+                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking;
+                    // this.unstakeTime = moment.utc(sel.unstakeTime).add(72, 'hours').fromNow();
+                }
+            });
+            if (this.unstaked > this.ramMarketFormBuy.get('buyEos').value) {
+                this.ramMarketFormBuy.controls['buyBytes'].setErrors(null);
+                this.ramMarketFormBuy.controls['buyEos'].setErrors(null);
+                this.errormsg2 = '';
+                return true;
+            }
+            else {
+                this.ramMarketFormBuy.controls['buyEos'].setErrors({ 'incorrect': true });
+                this.errormsg2 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
+                return false;
+            }
+        }
+        else {
+            this.ramMarketFormBuy.controls['buyBytes'].setErrors({ 'incorrect': true });
+            this.errormsg2 = 'must fill RAM amount or price';
+            return false;
+        }
+    }
+    checkSellBytes() {
+        if (this.ramMarketFormSell.value.sellBytes > 0) {
+            if ((this.ram_quota - this.ram_usage) > (this.ramMarketFormSell.get('sellBytes').value) * 1024) {
+                this.ramMarketFormSell.controls['sellBytes'].setErrors(null);
+                this.ramMarketFormSell.controls['sellEos'].setErrors(null);
+                this.errormsgeos = '';
+                return true;
+            }
+            else {
+                this.ramMarketFormSell.controls['sellEos'].setErrors({ 'incorrect': true });
+                this.errormsgeos = 'not enough RAM!';
+                return false;
+            }
+        }
+        else {
+            this.ramMarketFormSell.controls['sellBytes'].setErrors({ 'incorrect': true });
+            this.errormsgeos = 'must fill RAM amount or price';
+            return false;
+        }
+    }
+    fillSell() {
+        if (this.checkSellBytes()) {
+            this.seller = this.aService.selected.getValue().name;
+            this.bytessell = Math.floor(this.ramMarketFormSell.get('sellBytes').value * 1024);
+            this.newSell().catch(console.log);
+        }
+    }
+    newSell() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = `<h3 class="modal-title text-white"><span class="blue">${this.seller}</span> sell <span
+            class="blue">${this.bytesFilter(this.bytessell)} </span></h3>
+        <h5>
+            <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
+            <span style="color:#bdbdbd;">RAM fee ${this.feeSell.toFixed(6)} ${this.aService.activeChain['symbol']} </span>
+        </h5>
+        `;
+            if (this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the sellram Terms & Conditions';
+                termsHtml = `The sellram action sells unused RAM for tokens.
+                <br><br>
+                As an authorized party I <span class="blue">${this.seller}</span> wish to sell <span class="blue">${this.bytessell}</span> bytes of unused RAM from
+                account <span class="blue">${this.seller}</span>.`;
+            }
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'sellram',
+                    authorization: [auth],
+                    data: {
+                        'account': this.seller,
+                        'bytes': this.bytessell
+                    }
+                }];
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    fillBuy() {
+        if (this.checkBuyBytes()) {
+            // this.passBuyModal = true;
+            // this.wrongpassbuy = '';
+            this.receiver = this.aService.selected.getValue().name;
+            this.payer = this.aService.selected.getValue().name;
+            this.bytesbuy = Math.floor(this.ramMarketFormBuy.get('buyBytes').value * 1024);
+            const accountBuy = this.ramMarketFormBuy.get('accountBuy').value;
+            if (accountBuy === 'to another account') {
+                this.receiver = this.ramMarketFormBuy.get('anotherAcc').value;
+            }
+            this.newBuy().catch(console.log);
+        }
+    }
+    newBuy() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const bytesAmount = Math.floor(this.ramMarketFormBuy.value.buyBytes * 1024);
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = ` <h3 class="modal-title text-white"><span class="blue">${this.payer}</span> buy <span
+            class="blue">${this.bytesFilter(bytesAmount)} </span> to ${this.receiver}
+        </h3>
+        <h5>
+            <span class="modal-title" style="color:#bdbdbd; font-size: 15px;">* 1KB = 1024 bytes </span>
+            <span style="color:#bdbdbd;">RAM fee ${this.feeBuy.toFixed(6)} ${this.aService.activeChain['symbol']} </span>
+        </h5>
+        `;
+            // Mainnet terms
+            if (this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the buyrambytes Terms & Conditions';
+                termsHtml = `This action will attempt to reserve about <span class="blue">${this.bytesbuy}</span> bytes of RAM on behalf of <span class="blue">${this.receiver}</span>.
+                <br><br>
+                <span class="blue">${this.payer}</span> authorizes this contract to transfer sufficient EOS tokens to buy the RAM based upon the
+                current
+                price as determined by the market maker algorithm.
+                <br><br>
+                {{payer}} accepts that a 0.5% fee will be charged on the amount spent and that the actual RAM received
+                may be
+                slightly less than expected due to the approximations necessary to enable this service. <span class="blue">${this.payer}</span>
+                accepts that
+                a 0.5% fee will be charged if and when they sell the RAM received. <span class="blue">${this.payer}</span> accepts that rounding
+                errors
+                resulting from limits of computational precision may result in less RAM being allocated. <span class="blue">${this.payer}</span>
+                acknowledges
+                that the supply of RAM may be increased at any time up to the limits of off-the-shelf computer equipment
+                and
+                that this may result in RAM selling for less than purchase price. <span class="blue">${this.payer}</span> acknowledges that the price
+                of RAM
+                may increase or decrease over time according to supply and demand. <span class="blue">${this.payer}</span> acknowledges that RAM is
+                non-transferrable. <span class="blue">${this.payer}</span> acknowledges RAM currently in use by their account cannot be sold until it
+                is
+                freed and that freeing RAM may be subject to terms of other contracts.`;
+            }
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'buyrambytes',
+                    authorization: [auth],
+                    data: {
+                        'payer': this.payer,
+                        'receiver': this.receiver,
+                        'bytes': this.bytesbuy
+                    }
+                }];
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    newRefund() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const namesel = this.aService.selected.getValue().name;
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = `<h3 class="modal-title text-white">Request Refund to <span class="blue">${this.aService.selected.getValue().name}</span></h3>`;
+            if (this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the refund Terms & Conditions';
+                termsHtml = ` The intent of the <span class="blue">refund</span> action is to return previously
+                unstaked tokens to an account after the unstaking period has elapsed.
+                <br><br>As an authorized party I <span class="blue">${this.aService.selected.getValue().name}</span> wish to
+                have the unstaked tokens of <span class="blue">${this.aService.selected.getValue().name}</span> returned.`;
+            }
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            console.log(this.mode);
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'refund',
+                    authorization: [auth],
+                    data: {
+                        'owner': namesel
+                    }
+                }];
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    fillUnDelegateRequest(from, net, cpu) {
+        this.fromUD = from;
+        this.netUD = net;
+        this.cpuUD = cpu;
+        this.accNow = this.aService.selected.getValue().name;
+        this.newUnDelegateRequest().catch(console.log);
+    }
+    newUnDelegateRequest() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = ` <h3 class="modal-title text-white">Are you sure you want to undelegate <span class="blue">NET</span> and <span
+            class="blue"> CPU</span> from <span class="blue">${this.fromUD}</span></h3>
+            <div>This resources will be removed from <span class="blue">${this.fromUD}</span> and will return to you.</div>
+            <div>Please make sure the account <span class="blue">${this.fromUD}</span> has some eos staked, otherwise the account may lose all its
+                resources
+            </div>
+            `;
+            if (this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the undelegatebw  Terms & Conditions';
+                termsHtml = ` The intent of the undelegatebw action is to unstake tokens from CPU and/or bandwidth.
+                <br><br>
+                As an authorized party I <span class="blue">${this.accNow}</span> wish to unstake <span class="blue">${this.cpuUD}</span> EOS from CPU and
+                <span class="blue">${this.netUD}</span> EOS from bandwidth from the tokens owned by <span class="blue">${this.accNow}</span> previously delegated for
+                the use of delegatee <span class="blue">${this.fromUD}</span>.
+                <br><br>
+                If I as signer am not the beneficial owner of these tokens I stipulate I have proof that I’ve been
+                authorized to take this action by their beneficial owner(s).`;
+            }
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'undelegatebw',
+                    authorization: [auth],
+                    data: {
+                        'from': this.accNow,
+                        'receiver': this.fromUD,
+                        'unstake_cpu_quantity': this.cpuUD + ' ' + this.aService.activeChain['symbol'],
+                        'unstake_net_quantity': this.netUD + ' ' + this.aService.activeChain['symbol']
+                    }
+                }];
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    checkEos(eosVal, val) {
+        if (eosVal > 0) {
+            const sel = this.aService.selected.getValue();
+            if (sel) {
+                if (val === 'net') {
+                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('cpuEos').value;
+                }
+                else {
+                    this.unstaked = sel.full_balance - sel.staked - sel.unstaking - this.delegateForm.get('netEos').value;
+                }
+            }
+            if (this.unstaked > eosVal) {
+                this.errormsgD3 = '';
+                return true;
+            }
+            else {
+                this.errormsgD3 = 'not enough unstaked ' + this.aService.activeChain['symbol'] + '!';
+                return false;
+            }
+        }
+        else {
+            this.errormsgD3 = 'must fill NET and CPU amount';
+            return false;
+        }
+    }
+    fillDelegateRequest() {
+        this.accTo = this.delegateForm.get('receiverAcc').value;
+        this.netD = parseFloat(this.delegateForm.get('netEos').value).toFixed(this.aService.activeChain['precision']);
+        this.cpuD = parseFloat(this.delegateForm.get('cpuEos').value).toFixed(this.aService.activeChain['precision']);
+        this.accNow = this.aService.selected.getValue().name;
+        this.newDelegateRequest().catch(console.log);
+    }
+    newDelegateRequest() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = ` <h3 class="modal-title text-white">Are you sure you want to delegate <span class="blue">NET</span> and <span
+            class="blue"> CPU</span> to <span class="blue">${this.accTo}</span></h3> `;
+            if (this.aService.activeChain.name === 'EOS MAINNET') {
+                termsHeader = 'By submiting this transaction, you agree to the delegatebw Terms & Conditions';
+                termsHtml = ` The intent of the delegatebw action is to stake tokens for bandwidth and/or CPU and optionally transfer
+                ownership.
+                <br><br>
+                As an authorized party I <span class="blue">${this.accNow}</span> wish to stake <span class="blue">${this.cpuD}</span> EOS for CPU and <span class="blue">${this.netD}</span> EOS for
+                bandwidth from the liquid tokens of <span class="blue">${this.accNow}</span> for the use of delegatee <span class="blue">${this.accTo}</span>.
+                <br><br>
+                As signer I stipulate that, if I am not the beneficial owner of these tokens, I have proof that I’ve
+                been authorized to
+                take this action by their beneficial owner(s).`;
+            }
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'delegatebw',
+                    authorization: [auth],
+                    data: {
+                        'from': this.accNow,
+                        'receiver': this.accTo,
+                        'stake_cpu_quantity': this.cpuD + ' ' + this.aService.activeChain['symbol'],
+                        'stake_net_quantity': this.netD + ' ' + this.aService.activeChain['symbol'],
+                        'transfer': 0
+                    }
+                }];
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    setPowerUp() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let termsHeader = ``;
+            let termsHtml = ``;
+            const tk_name = this.aService.activeChain['symbol'];
+            const precision = this.aService.activeChain['precision'];
+            // Transaction Signature
+            const [auth, publicKey] = this.trxFactory.getAuth();
+            const maxAmount = this.valuetoPowerUp.toFixed(precision);
+            const actionTitle = `<span class="blue">Password</span>`;
+            const messageHTML = `
+            <h5 class="modal-title text-white">
+                You are renting resources on Power UP to <span class="highlight-primary">${this.powerUpToReceiver !== '' ? this.powerUpToReceiver + ' account' : 'this account'}</span> , 
+                with maximum fee costs of <span class="highlight-primary">${maxAmount + ' ' + tk_name} </span>, and
+                approximately CPU resource of  <span class="highlight-primary">${Math.round((this.usCPUPowerUp / (1000)) * precision) / precision} ms</span> for 24 hours.
+                
+            </h5>
+        `;
+            let actionsModal = [{
+                    account: 'eosio',
+                    name: 'powerup',
+                    authorization: [auth],
+                    data: {
+                        'payer': auth.actor,
+                        'receiver': this.powerUpToReceiver !== '' ? this.powerUpToReceiver : auth.actor,
+                        'days': 1,
+                        'cpu_frac': this.cpu_frac,
+                        'net_frac': this.net_frac,
+                        'max_payment': maxAmount + ' ' + tk_name
+                    }
+                }];
+            this.mode = this.crypto.getPrivateKeyMode(publicKey);
+            yield this._execTrxFactoryNext(actionsModal, auth.actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name);
+        });
+    }
+    _execTrxFactoryNext(actionsModal, actor, publicKey, actionTitle, messageHTML, termsHeader, termsHtml, tk_name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.trxFactory.modalData.next({
+                transactionPayload: {
+                    actions: actionsModal
+                },
+                signerAccount: actor,
+                signerPublicKey: publicKey,
+                actionTitle: actionTitle,
+                labelHTML: messageHTML,
+                termsHeader: termsHeader,
+                termsHTML: termsHtml,
+                tk_name: tk_name,
+            });
+            this.trxFactory.launcher.emit({ visibility: true, mode: this.mode });
+            const subs = this.trxFactory.status.subscribe((event) => __awaiter(this, void 0, void 0, function* () {
+                // console.log(event);
+                try {
+                    const jsonStatus = JSON.parse(event);
+                    if (jsonStatus.error.code === 3080004) {
+                        const valueSTR = jsonStatus.error.details[0].message.split('us)');
+                        const cpu = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''));
+                        yield this.resource.checkResource(actor, actionsModal, cpu);
+                    }
+                    if (jsonStatus.error.code === 3080002) {
+                        const valueSTR = jsonStatus.error.details[0].message.split('>');
+                        const net = parseInt(valueSTR[0].replace(/[^0-9.]+/g, ''));
+                        yield this.resource.checkResource(actor, actionsModal, undefined, net);
+                    }
+                }
+                catch (e) {
+                    if (event === 'done') {
+                        try {
+                            yield this.aService.refreshFromChain(false);
+                            setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                                yield this.onAccountChanged(this.aService.selected.getValue());
+                            }), 1800);
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
+                        subs.unsubscribe();
+                    }
+                    if (event === 'modal_closed') {
+                        subs.unsubscribe();
+                    }
+                }
+            }));
+        });
+    }
+};
+ResourcesComponent = __decorate([
+    (0, core_1.Component)({
+        selector: 'app-ram-market',
+        templateUrl: './resources.component.html',
+        styleUrls: ['./resources.component.css']
+    }),
+    __metadata("design:paramtypes", [eosjs2_service_1.Eosjs2Service,
+        accounts_service_1.AccountsService,
+        crypto_service_1.CryptoService,
+        forms_1.FormBuilder,
+        ram_service_1.RamService,
+        http_1.HttpClient,
+        transaction_factory_service_1.TransactionFactoryService,
+        core_1.ChangeDetectorRef,
+        resource_service_1.ResourceService])
+], ResourcesComponent);
+exports.ResourcesComponent = ResourcesComponent;
+//# sourceMappingURL=resources.component.js.map
