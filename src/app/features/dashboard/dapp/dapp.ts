@@ -101,9 +101,8 @@ const CURATED_DAPPS: DappEntry[] = [
   imports: [FormsModule],
   template: `
     <div class="dapp-view">
-      <h2>DApps</h2>
-
       @if (!activeDapp()) {
+        <h2>DApps</h2>
         <!-- Launcher view -->
         <div class="launcher">
           <p class="page-desc">Open Antelope dApps securely inside SimplEOS. Signing requests are handled by the wallet — your keys never leave the app.</p>
@@ -190,7 +189,9 @@ const CURATED_DAPPS: DappEntry[] = [
     </div>
   `,
   styles: [`
+    :host { display: block; height: 100%; }
     .dapp-view { max-width: 900px; }
+    .dapp-view:has(.browser-chrome) { max-width: none; height: 100%; }
     h2 { font-size: 24px; margin-bottom: var(--sp-2); }
     .page-desc { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-5); }
 
@@ -336,17 +337,15 @@ const CURATED_DAPPS: DappEntry[] = [
     .browser-chrome {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      margin: calc(-1 * var(--sp-8, 0px));
+      height: 100%;
     }
 
     .browser-bar {
       display: flex;
       align-items: center;
       gap: var(--sp-3);
-      padding: var(--sp-3) var(--sp-4);
-      background: var(--bg-raised);
-      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      padding: var(--sp-2) var(--sp-4);
+      background: var(--bg-deep);
       border-bottom: 1px solid var(--border-subtle);
     }
     .nav-btn {

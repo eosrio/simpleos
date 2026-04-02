@@ -475,6 +475,8 @@ import { UiStateService } from '../../core/services/ui-state.service';
     }
     .content.fullscreen {
       padding: 0;
+      display: flex;
+      flex-direction: column;
     }
   `],
 })
