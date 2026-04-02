@@ -403,7 +403,17 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	makePayload() {
-		if (PublicKey.fromString(this.ownerpub).toLegacyString() !== "" && PublicKey.fromString(this.activepub).toLegacyString() !== "") {
+		let ownerKeyValid = false;
+		let activeKeyValid = false;
+		try {
+			const ownerKey = PublicKey.fromString(this.ownerpub);
+			const activeKey = PublicKey.fromString(this.activepub);
+			ownerKeyValid = ownerKey.toLegacyString() !== "";
+			activeKeyValid = activeKey.toLegacyString() !== "";
+		} catch (e) {
+			console.error('Error validating public key:', e);
+		}
+		if (ownerKeyValid && activeKeyValid) {
 			console.log('Generating account payload');
 			this.newAccountPayload = btoa(JSON.stringify({
 				n: this.accountname.toLowerCase(),

@@ -207,16 +207,12 @@
     "primeicons": "^3.0.0-rc.1",
     "primeng": "^9.0.6",
     "quill": "^2.0.3",
-    "request": "^2.88.2",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "sudo-prompt": "^9.2.1",
     "tar": "^6.2.1",
     "text-mask-addons": "3.8.0",
-    "tough-cookie": "^4.1.4",
-    "tslib": "^2.0.0",
-    "word-wrap": "^1.2.5",
-    "xml2js": "^0.6.2"
+    "tslib": "^2.0.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "0.901.6",
