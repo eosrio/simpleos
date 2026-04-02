@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { invoke } from '@tauri-apps/api/core';
 
 // ── Types matching Rust backend ──
@@ -37,7 +37,6 @@ export interface Permission {
 }
 
 export interface TableRowsParams {
-  chain_id: string;
   code: string;
   table: string;
   scope: string;
@@ -83,6 +82,19 @@ export interface ChainFeatures {
   history: boolean;
 }
 
+export interface EndpointState {
+  url: string;
+  owner?: string;
+  latency_ms: number;
+}
+
+export interface ActiveEndpoints {
+  rpc: string;
+  hyperion: string;
+  rpc_endpoints: EndpointState[];
+  hyperion_endpoints: EndpointState[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
 
@@ -112,46 +124,72 @@ export class TauriIpcService {
     return invoke<void>('remove_key', { chainId, publicKey });
   }
 
-  // ── Chain ──
+  // ── Network / Providers ──
 
-  async getChainInfo(endpoint: string): Promise<ChainInfo> {
-    return invoke<ChainInfo>('get_chain_info', { endpoint });
+  /** Register RPC + Hyperion endpoints for a chain. Call once per chain on startup. */
+  async initChainProviders(
+    chainId: string,
+    rpcEndpoints: { url: string; owner?: string }[],
+    hyperionEndpoints: string[],
+  ): Promise<void> {
+    return invoke<void>('init_chain_providers', {
+      chainId,
+      rpcEndpoints,
+      hyperionEndpoints,
+    });
   }
 
-  async getAccount(endpoint: string, accountName: string): Promise<AccountInfo> {
-    return invoke<AccountInfo>('get_account', { endpoint, accountName });
+  /** Run parallel health checks on all RPC endpoints. Returns sorted state. */
+  async checkRpcEndpoints(chainId: string): Promise<EndpointState[]> {
+    return invoke<EndpointState[]>('check_rpc_endpoints', { chainId });
   }
 
-  async getBalances(endpoint: string, account: string, code: string, symbol: string): Promise<string[]> {
-    return invoke<string[]>('get_balances', { endpoint, account, code, symbol });
+  /** Run health checks on all Hyperion endpoints. */
+  async checkHyperionEndpoints(chainId: string): Promise<EndpointState[]> {
+    return invoke<EndpointState[]>('check_hyperion_endpoints', { chainId });
   }
 
-  async getAbi(endpoint: string, accountName: string): Promise<any> {
-    return invoke<any>('get_abi', { endpoint, accountName });
+  /** Get the currently active endpoints for a chain. */
+  async getActiveEndpoints(chainId: string): Promise<ActiveEndpoints> {
+    return invoke<ActiveEndpoints>('get_active_endpoints', { chainId });
   }
 
-  async getTableRows(endpoint: string, params: TableRowsParams): Promise<TableRowsResult> {
-    return invoke<TableRowsResult>('get_table_rows', { endpoint, params });
+  // ── Chain queries (all go through provider with automatic failover) ──
+
+  async getChainInfo(chainId: string): Promise<ChainInfo> {
+    return invoke<ChainInfo>('get_chain_info', { chainId });
   }
 
-  async getProducers(endpoint: string, limit: number): Promise<any> {
-    return invoke<any>('get_producers', { endpoint, limit });
+  async getAccount(chainId: string, accountName: string): Promise<AccountInfo> {
+    return invoke<AccountInfo>('get_account', { chainId, accountName });
   }
 
-  async getActionsHistory(hyperionUrl: string, account: string, limit: number, skip: number): Promise<any> {
-    return invoke<any>('get_actions_history', { hyperionUrl, account, limit, skip });
+  async getBalances(chainId: string, account: string, code: string, symbol: string): Promise<string[]> {
+    return invoke<string[]>('get_balances', { chainId, account, code, symbol });
   }
 
-  async getTokens(hyperionUrl: string, account: string): Promise<any> {
-    return invoke<any>('get_tokens', { hyperionUrl, account });
+  async getAbi(chainId: string, accountName: string): Promise<any> {
+    return invoke<any>('get_abi', { chainId, accountName });
   }
 
-  async lookupKeyAccounts(endpoint: string, publicKey: string): Promise<{ account_names: string[] }> {
-    return invoke<{ account_names: string[] }>('lookup_key_accounts', { endpoint, publicKey });
+  async getTableRows(chainId: string, params: TableRowsParams): Promise<TableRowsResult> {
+    return invoke<TableRowsResult>('get_table_rows', { chainId, params });
   }
 
-  async checkEndpointHealth(endpoint: string, expectedChainId: string): Promise<boolean> {
-    return invoke<boolean>('check_endpoint_health', { endpoint, expectedChainId });
+  async getProducers(chainId: string, limit: number): Promise<any> {
+    return invoke<any>('get_producers', { chainId, limit });
+  }
+
+  async lookupKeyAccounts(chainId: string, publicKey: string): Promise<{ account_names: string[] }> {
+    return invoke<{ account_names: string[] }>('lookup_key_accounts', { chainId, publicKey });
+  }
+
+  async getActionsHistory(chainId: string, account: string, limit: number, skip: number): Promise<any> {
+    return invoke<any>('get_actions_history', { chainId, account, limit, skip });
+  }
+
+  async getTokens(chainId: string, account: string): Promise<any> {
+    return invoke<any>('get_tokens', { chainId, account });
   }
 
   // ── Config ──

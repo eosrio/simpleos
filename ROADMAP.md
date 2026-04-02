@@ -37,16 +37,16 @@
 - [x] Minimal RPC client (ureq, sync HTTP) `done`
 - [x] Antelope types (Name, Asset, Action, Transaction, ChainInfo, AccountInfo) `done`
 - [x] Chain config with default endpoints (Vaulta, WAX, Telos) `done`
-- [ ] Connect to chain and verify chain_id `todo`
-- [ ] get_account → parse full account data (balances, resources, permissions) `todo`
-- [ ] get_key_accounts → discover accounts from public key `todo`
-- [ ] get_currency_balance → fetch token balances `todo`
-- [ ] get_table_rows → generic table queries `todo`
-- [ ] get_producers → load BP list with metadata `todo`
-- [ ] Hyperion get_actions → transaction history with pagination `todo`
-- [ ] Hyperion get_tokens → multi-token discovery `todo`
-- [ ] Endpoint health check with latency measurement `todo`
-- [ ] Automatic endpoint failover `todo`
+- [x] Connect to chain and verify chain_id `done`
+- [x] get_account → parse full account data (balances, resources, permissions) `done`
+- [x] get_key_accounts → discover accounts from public key `done`
+- [x] get_currency_balance → fetch token balances `done`
+- [x] get_table_rows → generic table queries `done`
+- [x] get_producers → load BP list with metadata `done`
+- [x] Hyperion get_actions → transaction history with pagination `done`
+- [x] Hyperion get_tokens → multi-token discovery `done`
+- [x] Endpoint health check with latency measurement `done`
+- [x] Automatic endpoint failover `done`
 
 ### Rust Backend — Transaction Signing
 - [x] secp256k1 ECDSA signing with k256 crate `done`
@@ -262,10 +262,10 @@
 
 | Phase | Total | Done | WIP | Todo |
 |-------|-------|------|-----|------|
-| Phase 1 — Secure Core | 53 | 19 | 1 | 33 |
+| Phase 1 — Secure Core | 53 | 29 | 1 | 23 |
 | Phase 2 — Feature Parity | 65 | 9 | 0 | 56 |
 | Phase 3 — Production Ready | 23 | 0 | 0 | 23 |
 | Phase 4 — Post-Launch | 16 | 0 | 0 | 16 |
-| **Total** | **157** | **29** | **1** | **128** |
+| **Total** | **157** | **39** | **1** | **118** |
 
 *Last updated: 2026-04-02*

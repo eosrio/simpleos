@@ -84,28 +84,27 @@ export class ChainFeaturesService {
    * Call this when switching chains or connecting.
    */
   async detect() {
-    const endpoint = this.wallet.activeEndpoint();
-    if (!endpoint) return;
+    const chain = this.wallet.activeChain();
+    if (!chain) return;
 
     this.loading.set(true);
     try {
       const caps = { ...DEFAULT_CAPABILITIES };
 
       // Probe system contract ABI for available actions
-      const abiActions = await this.probeAbiActions(endpoint);
+      const abiActions = await this.probeAbiActions(chain.id);
 
       // Staking detection
       caps.staking = abiActions.has('delegatebw');
 
       // PowerUp detection
       if (abiActions.has('powerup')) {
-        // Verify PowerUp is actually active by checking state table
-        caps.powerup = await this.tableExists(endpoint, 'eosio', 'eosio', 'powup.state');
+        caps.powerup = await this.tableExists(chain.id, 'eosio', 'eosio', 'powup.state');
       }
 
       // REX detection
       if (abiActions.has('buyrex')) {
-        caps.rex = await this.tableExists(endpoint, 'eosio', 'eosio', 'rexpool');
+        caps.rex = await this.tableExists(chain.id, 'eosio', 'eosio', 'rexpool');
       }
 
       // RAM model detection
@@ -206,9 +205,9 @@ export class ChainFeaturesService {
     this.capabilities.set(caps);
   }
 
-  private async probeAbiActions(endpoint: string): Promise<Set<string>> {
+  private async probeAbiActions(chainId: string): Promise<Set<string>> {
     try {
-      const abi = await this.ipc.getAbi(endpoint, 'eosio');
+      const abi = await this.ipc.getAbi(chainId, 'eosio');
       const actions = new Set<string>();
       if (abi?.abi?.actions) {
         for (const action of abi.abi.actions) {
@@ -221,10 +220,10 @@ export class ChainFeaturesService {
     }
   }
 
-  private async tableExists(endpoint: string, code: string, scope: string, table: string): Promise<boolean> {
+  private async tableExists(chainId: string, code: string, scope: string, table: string): Promise<boolean> {
     try {
-      const result = await this.ipc.getTableRows(endpoint, {
-        chain_id: '', code, scope, table, limit: 1, json: true,
+      const result = await this.ipc.getTableRows(chainId, {
+        code, scope, table, limit: 1, json: true,
       });
       return result.rows.length > 0;
     } catch {
