@@ -392,7 +392,11 @@ export class Eosjs2Service {
 
     async loadPublicKey(pubkey: PublicKey): Promise<any> {
         return new Promise(async (resolve, reject2) => {
-            if (pubkey.validate()) {
+            let isValid = false;
+        try {
+            isValid = pubkey.toLegacyString() !== "";
+        } catch(e) {}
+        if (isValid) {
                 const tempAccData = [];
                 const account_names = await this.getKeyAccountsMulti(pubkey.toString());
                 console.log(account_names);

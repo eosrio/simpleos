@@ -4,6 +4,9 @@ process.defaultApp = true;
 const systemVersion = process.getSystemVersion();
 console.log(systemVersion);
 
+const remoteMain = require('@electron/remote/main');
+remoteMain.initialize();
+
 const {
     app,
     BrowserWindow,
@@ -364,7 +367,7 @@ class SimpleosWallet {
             paintWhenInitiallyHidden: true,
             titleBarStyle: 'hiddenInset',
             webPreferences: {
-                nodeIntegration: true,
+                nodeIntegration: true, contextIsolation: false,
                 webSecurity: !this.serve,
                 devTools: this.devtools,
             },
@@ -395,6 +398,7 @@ class SimpleosWallet {
             }
         });
 
+        remoteMain.enable(this.win.webContents);
         this.win.once('ready-to-show', () => {
             console.log('window is ready to show');
             this.win.show();

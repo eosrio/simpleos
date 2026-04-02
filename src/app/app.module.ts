@@ -30,21 +30,21 @@ import {MarkdownModule} from 'ngx-markdown';
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
 // FAS
-import {faHeart} from '@fortawesome/pro-solid-svg-icons/faHeart';
-import {faTh} from '@fortawesome/pro-solid-svg-icons/faTh';
-import {faCaretDown} from '@fortawesome/pro-solid-svg-icons/faCaretDown';
-import {faSkullCrossbones} from '@fortawesome/pro-solid-svg-icons/faSkullCrossbones';
-import {faKey} from '@fortawesome/pro-solid-svg-icons/faKey';
-import {faExclamationTriangle} from '@fortawesome/pro-solid-svg-icons/faExclamationTriangle';
-import {faGlobe} from '@fortawesome/pro-solid-svg-icons/faGlobe';
+import {faHeart} from '@fortawesome/free-solid-svg-icons/faHeart';
+import {faTh} from '@fortawesome/free-solid-svg-icons/faTh';
+import {faCaretDown} from '@fortawesome/free-solid-svg-icons/faCaretDown';
+import {faSkullCrossbones} from '@fortawesome/free-solid-svg-icons/faSkullCrossbones';
+import {faKey} from '@fortawesome/free-solid-svg-icons/faKey';
+import {faExclamationTriangle} from '@fortawesome/free-solid-svg-icons/faExclamationTriangle';
+import {faGlobe} from '@fortawesome/free-solid-svg-icons/faGlobe';
 
 // FAL - Light Pro
-import {faArrowAltToBottom} from '@fortawesome/pro-light-svg-icons/faArrowAltToBottom';
-import {faChevronCircleUp} from '@fortawesome/pro-light-svg-icons/faChevronCircleUp';
-import {faChevronCircleDown} from '@fortawesome/pro-light-svg-icons/faChevronCircleDown';
-import {faCog} from '@fortawesome/pro-light-svg-icons/faCog';
-import {faSearchMinus} from '@fortawesome/pro-light-svg-icons/faSearchMinus';
-import {faSearchPlus} from '@fortawesome/pro-light-svg-icons/faSearchPlus';
+import {faArrowDown as faArrowAltToBottom} from '@fortawesome/free-solid-svg-icons/faArrowDown';
+import {faChevronCircleUp} from '@fortawesome/free-solid-svg-icons/faChevronCircleUp';
+import {faChevronCircleDown} from '@fortawesome/free-solid-svg-icons/faChevronCircleDown';
+import {faCog} from '@fortawesome/free-solid-svg-icons/faCog';
+import {faSearchMinus} from '@fortawesome/free-solid-svg-icons/faSearchMinus';
+import {faSearchPlus} from '@fortawesome/free-solid-svg-icons/faSearchPlus';
 
 // FAB - Brands Free
 import {faTelegramPlane} from '@fortawesome/free-brands-svg-icons/faTelegramPlane';
@@ -56,44 +56,44 @@ import {faReddit} from '@fortawesome/free-brands-svg-icons/faReddit';
 import {faKeybase} from '@fortawesome/free-brands-svg-icons/faKeybase';
 import {faWeixin} from '@fortawesome/free-brands-svg-icons/faWeixin';
 // FAR - Regular Pro
-import {faSignOutAlt} from '@fortawesome/pro-regular-svg-icons/faSignOutAlt';
-import {faExclamationCircle} from '@fortawesome/pro-regular-svg-icons/faExclamationCircle';
-import {faUndo} from '@fortawesome/pro-regular-svg-icons/faUndo';
-import {faQuestionCircle} from '@fortawesome/pro-regular-svg-icons/faQuestionCircle';
-import {faSpinner} from '@fortawesome/pro-regular-svg-icons/faSpinner';
-import {faExchangeAlt} from '@fortawesome/pro-regular-svg-icons/faExchangeAlt';
-import {faDonate} from '@fortawesome/pro-regular-svg-icons/faDonate';
-import {faUndoAlt} from '@fortawesome/pro-regular-svg-icons/faUndoAlt';
-import {faHandHoldingUsd} from '@fortawesome/pro-regular-svg-icons/faHandHoldingUsd';
-import {faUser} from '@fortawesome/pro-regular-svg-icons/faUser';
-import {faReceipt} from '@fortawesome/pro-regular-svg-icons/faReceipt';
-import {faEdit} from '@fortawesome/pro-regular-svg-icons/faEdit';
-import {faLock} from '@fortawesome/pro-regular-svg-icons/faLock';
-import {faLockOpen} from '@fortawesome/pro-regular-svg-icons/faLockOpen';
-import {faParachuteBox} from '@fortawesome/pro-regular-svg-icons/faParachuteBox';
-import {faCheck} from '@fortawesome/pro-regular-svg-icons/faCheck';
-import {faHourglass} from '@fortawesome/pro-regular-svg-icons/faHourglass';
-import {faEye} from '@fortawesome/pro-regular-svg-icons/faEye';
-import {faEyeSlash} from '@fortawesome/pro-regular-svg-icons/faEyeSlash';
-import {faClone} from '@fortawesome/pro-regular-svg-icons/faClone';
-import {faHistory} from '@fortawesome/pro-regular-svg-icons/faHistory';
-import {faPaperPlane} from '@fortawesome/pro-regular-svg-icons/faPaperPlane';
-import {faMemory} from '@fortawesome/pro-regular-svg-icons/faMemory';
-import {faPuzzlePiece} from '@fortawesome/pro-regular-svg-icons/faPuzzlePiece';
-import {faBoxBallot} from '@fortawesome/pro-regular-svg-icons/faBoxBallot';
-import {faUserMinus} from '@fortawesome/pro-regular-svg-icons/faUserMinus';
-import {faAngleRight} from '@fortawesome/pro-regular-svg-icons/faAngleRight';
-import {faTimes} from '@fortawesome/pro-regular-svg-icons/faTimes';
-import {faLongArrowAltDown} from '@fortawesome/pro-regular-svg-icons/faLongArrowAltDown';
-import {faSearch} from '@fortawesome/pro-regular-svg-icons/faSearch';
-import {faSync} from '@fortawesome/pro-regular-svg-icons/faSync';
-import {faPencil} from '@fortawesome/pro-regular-svg-icons/faPencil';
-import {faPlus} from '@fortawesome/pro-regular-svg-icons/faPlus';
-import {faMinus} from '@fortawesome/pro-regular-svg-icons/faMinus';
-import {faTimesCircle} from '@fortawesome/pro-regular-svg-icons/faTimesCircle';
-import {faUserPlus} from '@fortawesome/pro-regular-svg-icons/faUserPlus';
-import {faUserEdit} from '@fortawesome/pro-regular-svg-icons/faUserEdit';
-import {faExternalLink} from '@fortawesome/pro-regular-svg-icons/faExternalLink';
+import {faSignOutAlt} from '@fortawesome/free-solid-svg-icons/faSignOutAlt';
+import {faExclamationCircle} from '@fortawesome/free-solid-svg-icons/faExclamationCircle';
+import {faUndo} from '@fortawesome/free-solid-svg-icons/faUndo';
+import {faQuestionCircle} from '@fortawesome/free-solid-svg-icons/faQuestionCircle';
+import {faSpinner} from '@fortawesome/free-solid-svg-icons/faSpinner';
+import {faExchangeAlt} from '@fortawesome/free-solid-svg-icons/faExchangeAlt';
+import {faDonate} from '@fortawesome/free-solid-svg-icons/faDonate';
+import {faUndoAlt} from '@fortawesome/free-solid-svg-icons/faUndoAlt';
+import {faHandHoldingUsd} from '@fortawesome/free-solid-svg-icons/faHandHoldingUsd';
+import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
+import {faReceipt} from '@fortawesome/free-solid-svg-icons/faReceipt';
+import {faEdit} from '@fortawesome/free-solid-svg-icons/faEdit';
+import {faLock} from '@fortawesome/free-solid-svg-icons/faLock';
+import {faLockOpen} from '@fortawesome/free-solid-svg-icons/faLockOpen';
+import {faParachuteBox} from '@fortawesome/free-solid-svg-icons/faParachuteBox';
+import {faCheck} from '@fortawesome/free-solid-svg-icons/faCheck';
+import {faHourglass} from '@fortawesome/free-solid-svg-icons/faHourglass';
+import {faEye} from '@fortawesome/free-solid-svg-icons/faEye';
+import {faEyeSlash} from '@fortawesome/free-solid-svg-icons/faEyeSlash';
+import {faClone} from '@fortawesome/free-solid-svg-icons/faClone';
+import {faHistory} from '@fortawesome/free-solid-svg-icons/faHistory';
+import {faPaperPlane} from '@fortawesome/free-solid-svg-icons/faPaperPlane';
+import {faMemory} from '@fortawesome/free-solid-svg-icons/faMemory';
+import {faPuzzlePiece} from '@fortawesome/free-solid-svg-icons/faPuzzlePiece';
+import {faBoxOpen as faBoxBallot} from '@fortawesome/free-solid-svg-icons/faBoxOpen';
+import {faUserMinus} from '@fortawesome/free-solid-svg-icons/faUserMinus';
+import {faAngleRight} from '@fortawesome/free-solid-svg-icons/faAngleRight';
+import {faTimes} from '@fortawesome/free-solid-svg-icons/faTimes';
+import {faLongArrowAltDown} from '@fortawesome/free-solid-svg-icons/faLongArrowAltDown';
+import {faSearch} from '@fortawesome/free-solid-svg-icons/faSearch';
+import {faSync} from '@fortawesome/free-solid-svg-icons/faSync';
+import {faPencilAlt as faPencil} from '@fortawesome/free-solid-svg-icons/faPencilAlt';
+import {faPlus} from '@fortawesome/free-solid-svg-icons/faPlus';
+import {faMinus} from '@fortawesome/free-solid-svg-icons/faMinus';
+import {faTimesCircle} from '@fortawesome/free-solid-svg-icons/faTimesCircle';
+import {faUserPlus} from '@fortawesome/free-solid-svg-icons/faUserPlus';
+import {faUserEdit} from '@fortawesome/free-solid-svg-icons/faUserEdit';
+import {faExternalLinkAlt as faExternalLink} from '@fortawesome/free-solid-svg-icons/faExternalLinkAlt';
 
 /* COMPONENTS */
 import {AppComponent} from './app.component';
@@ -157,7 +157,7 @@ import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
 import { ImportModalComponent } from './import-modal/import-modal.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
-import {faTrashAlt} from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
+import {faTrashAlt} from '@fortawesome/free-solid-svg-icons/faTrashAlt';
 import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
 import {A11yModule} from "@angular/cdk/a11y";
 import { CustomChainModalComponent } from './custom-chain-modal/custom-chain-modal.component';
@@ -302,28 +302,30 @@ export class AppModule {
             faPaperPlane,
             faMemory,
             faPuzzlePiece,
-            faBoxBallot,
+
             faUserMinus,
             faAngleRight,
             faTimes,
             faLongArrowAltDown,
             faSearch,
+        faArrowAltToBottom, faBoxBallot,
+        faPencil, faExternalLink,
             faSync,
-            faPencil,
+
             faMinus,
             faPlus,
             faTimesCircle,
             faUserPlus,
             faUserEdit,
             faPaperPlane,
-            faExternalLink,
+
             faTrashAlt
         ]);
 
         // fal light
         icons.push(...[
             faPaperPlane,
-            faArrowAltToBottom,
+
             faChevronCircleUp,
             faChevronCircleDown,
             faCog,

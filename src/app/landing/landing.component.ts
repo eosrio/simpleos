@@ -403,7 +403,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 	}
 
 	makePayload() {
-		if (PublicKey.fromString(this.ownerpub).validate() && PublicKey.fromString(this.activepub).validate()) {
+		if (PublicKey.fromString(this.ownerpub).toLegacyString() !== "" && PublicKey.fromString(this.activepub).toLegacyString() !== "") {
 			console.log('Generating account payload');
 			this.newAccountPayload = btoa(JSON.stringify({
 				n: this.accountname.toLowerCase(),
