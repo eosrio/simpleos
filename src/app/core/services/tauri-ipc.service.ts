@@ -126,6 +126,10 @@ export class TauriIpcService {
     return invoke<string[]>('get_balances', { endpoint, account, code, symbol });
   }
 
+  async getAbi(endpoint: string, accountName: string): Promise<any> {
+    return invoke<any>('get_abi', { endpoint, accountName });
+  }
+
   async getTableRows(endpoint: string, params: TableRowsParams): Promise<TableRowsResult> {
     return invoke<TableRowsResult>('get_table_rows', { endpoint, params });
   }
