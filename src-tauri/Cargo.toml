@@ -1,0 +1,60 @@
+[package]
+name = "simpleos"
+version = "2.0.0-alpha.0"
+description = "SimplEOS - Antelope Desktop Wallet"
+authors = ["Igor Lins e Silva", "EOS Rio"]
+license = "MIT"
+repository = "https://github.com/eosrio/simpleos"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "simpleos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.6", features = [] }
+
+[dependencies]
+# Framework
+tauri = { version = "2.10.3", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-store = "2"
+tauri-plugin-shell = "2"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client (minimal dep tree, sync)
+ureq = { version = "2", features = ["json"] }
+
+# Crypto (RustCrypto suite - audited, pure Rust)
+k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa"] }
+sha2 = "0.10"
+aes-gcm = "0.10"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+hmac = "0.12"
+zeroize = { version = "1", features = ["derive"] }
+rand = "0.8"
+
+# ABI serialization
+# rs_abieos = "*"  # TODO: uncomment when ready to integrate
+
+# OS keychain
+keyring = "3"
+
+# USB HID for Ledger
+# hidapi = "2"  # TODO: uncomment in Phase 2
+
+# Error handling
+thiserror = "2"
+
+# Logging
+log = "0.4"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
