@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { UiStateService } from '../../core/services/ui-state.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,8 +10,8 @@ import { ThemeService } from '../../core/services/theme.service';
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="dashboard">
-      <!-- Account tabs (one per imported account, each locked to its chain) -->
-      @if (wallet.accounts().length > 0) {
+      <!-- Account tabs (hidden in fullscreen) -->
+      @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
         <div class="account-tabs">
           @for (account of wallet.accounts(); track account.name; let i = $index) {
             <button class="account-tab"
@@ -35,6 +36,7 @@ import { ThemeService } from '../../core/services/theme.service';
       }
 
       <div class="main-area">
+        @if (!ui.fullscreen()) {
         <nav class="sidebar">
           <div class="sidebar-header">
             <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="sidebar-logo" />
@@ -94,14 +96,12 @@ import { ThemeService } from '../../core/services/theme.service';
                 </a>
               </li>
             }
-            @if (wallet.activeChain()?.features?.dapps) {
-              <li>
-                <a routerLink="dapp" routerLinkActive="active">
-                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
-                  Contracts
-                </a>
-              </li>
-            }
+            <li>
+              <a routerLink="dapp" routerLinkActive="active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                DApps
+              </a>
+            </li>
 
             <!-- BP-only section -->
             @if (wallet.isProducer()) {
@@ -155,8 +155,9 @@ import { ThemeService } from '../../core/services/theme.service';
             <span class="version">v2.0.0-alpha</span>
           </div>
         </nav>
+        }
 
-        <main class="content">
+        <main class="content" [class.fullscreen]="ui.fullscreen()">
           @if (wallet.isWatchOnly()) {
             <div class="watch-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -472,12 +473,16 @@ import { ThemeService } from '../../core/services/theme.service';
       overflow-y: auto;
       background: var(--bg-base);
     }
+    .content.fullscreen {
+      padding: 0;
+    }
   `],
 })
 export class DashboardComponent {
   constructor(
     public wallet: WalletStateService,
     public theme: ThemeService,
+    public ui: UiStateService,
   ) {}
 
   selectAccount(index: number) {

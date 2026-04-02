@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
+import { UiStateService } from '../../../core/services/ui-state.service';
 
 interface DappEntry {
   name: string;
@@ -156,27 +157,33 @@ const CURATED_DAPPS: DappEntry[] = [
           </div>
         </div>
       } @else {
-        <!-- Active dApp view (browser placeholder) -->
-        <div class="browser-bar">
-          <button class="nav-btn" (click)="closeDapp()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          <div class="browser-url">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>{{ activeDapp()!.url }}</span>
+        <!-- Active dApp view (fullscreen browser) -->
+        <div class="browser-chrome">
+          <div class="browser-bar">
+            <button class="nav-btn" (click)="closeDapp()" title="Back to catalog">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <button class="nav-btn" title="Reload">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <div class="browser-url">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>{{ activeDapp()!.url }}</span>
+            </div>
+            <span class="browser-account">{{ wallet.selectedAccount()?.name ?? '' }}</span>
+            <span class="browser-dapp-name">{{ activeDapp()!.name }}</span>
           </div>
-          <span class="browser-dapp-name">{{ activeDapp()!.name }}</span>
-        </div>
 
-        <div class="browser-frame">
-          <div class="browser-placeholder">
-            <div class="placeholder-icon">{{ activeDapp()!.icon }}</div>
-            <h3>{{ activeDapp()!.name }}</h3>
-            <p>Built-in browser will load here.</p>
-            <p class="placeholder-hint">The Tauri webview will render the dApp with the Anchor signing bridge injected. In browser preview mode, this is a placeholder.</p>
-            <a class="external-link" [href]="activeDapp()!.url" target="_blank" rel="noopener">
-              Open in external browser ↗
-            </a>
+          <div class="browser-frame">
+            <div class="browser-placeholder">
+              <div class="placeholder-icon">{{ activeDapp()!.icon }}</div>
+              <h3>{{ activeDapp()!.name }}</h3>
+              <p>Built-in browser will load here.</p>
+              <p class="placeholder-hint">The Tauri webview will render the dApp with the Anchor signing bridge injected. In browser preview mode, this is a placeholder.</p>
+              <a class="external-link" [href]="activeDapp()!.url" target="_blank" rel="noopener">
+                Open in external browser ↗
+              </a>
+            </div>
           </div>
         </div>
       }
@@ -325,7 +332,14 @@ const CURATED_DAPPS: DappEntry[] = [
     }
     .dapp-card:hover .dapp-arrow { color: var(--accent); }
 
-    /* Browser view */
+    /* Fullscreen browser chrome */
+    .browser-chrome {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: calc(-1 * var(--sp-8, 0px));
+    }
+
     .browser-bar {
       display: flex;
       align-items: center;
@@ -363,12 +377,19 @@ const CURATED_DAPPS: DappEntry[] = [
       color: var(--text-body);
     }
 
+    .browser-account {
+      font-family: var(--font-data);
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-muted);
+      padding: 2px var(--sp-2);
+      border-radius: var(--radius-full);
+    }
+
     .browser-frame {
+      flex: 1;
       background: var(--bg-base);
-      border: 1px solid var(--border-subtle);
-      border-top: none;
-      border-radius: 0 0 var(--radius-md) var(--radius-md);
-      min-height: 500px;
+      border-top: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -396,7 +417,14 @@ export class DappComponent {
   activeCategory = signal<string>('all');
   activeDapp = signal<DappEntry | null>(null);
 
-  constructor(public wallet: WalletStateService) {}
+  constructor(
+    public wallet: WalletStateService,
+    private ui: UiStateService,
+  ) {}
+
+  ngOnDestroy() {
+    this.ui.fullscreen.set(false);
+  }
 
   filteredDapps(): DappEntry[] {
     const query = this.searchQuery().toLowerCase();
@@ -416,10 +444,12 @@ export class DappComponent {
 
   openDapp(dapp: DappEntry) {
     this.activeDapp.set(dapp);
+    this.ui.fullscreen.set(true);
   }
 
   closeDapp() {
     this.activeDapp.set(null);
+    this.ui.fullscreen.set(false);
   }
 
   onUrlEnter() {
