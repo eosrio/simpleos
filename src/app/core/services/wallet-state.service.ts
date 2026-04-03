@@ -82,6 +82,7 @@ export class WalletStateService {
       console.warn('Tauri backend not available, using mock mode');
       this.hasTauri.set(false);
       this.locked.set(false);
+      this.chains.set(MOCK_CHAINS);
       this.accounts.set(MOCK_ACCOUNTS);
     }
   }
@@ -244,6 +245,16 @@ export class WalletStateService {
 }
 
 // ── Mock accounts for design testing (when Tauri backend is not available) ──
+
+const MOCK_CHAINS: ChainConfig[] = [
+  { id: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906', name: 'Vaulta', symbol: 'EOS', precision: 4, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: true, history: true } },
+  { id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', name: 'WAX', symbol: 'WAX', precision: 8, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: false, powerup: true, resource: true, dapps: true, history: true } },
+  { id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11', name: 'Telos', symbol: 'TLOS', precision: 4, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: true, history: true } },
+  { id: 'ultra-chain-id', name: 'Ultra', symbol: 'UOS', precision: 4, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
+  { id: 'fio-chain-id', name: 'FIO', symbol: 'FIO', precision: 9, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: false, rex: false, powerup: false, resource: false, dapps: false, history: true } },
+  { id: 'libre-chain-id', name: 'Libre', symbol: 'LIBRE', precision: 4, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
+  { id: 'xpr-chain-id', name: 'XPR', symbol: 'XPR', precision: 4, endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
+];
 
 const MOCK_ACCOUNTS: WalletAccount[] = [
   {

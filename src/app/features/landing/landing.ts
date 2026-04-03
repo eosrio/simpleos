@@ -8,6 +8,24 @@ import { NetworkService } from '../../core/services/network.service';
 type OnboardingStep = 'home' | 'watch' | 'import' | 'backup';
 type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'failed';
 
+interface ChainOption {
+  index: number;
+  name: string;
+  symbol: string;
+  icon: string;
+  color: string;
+}
+
+const CHAIN_VISUALS: Record<string, { icon: string; color: string }> = {
+  'Vaulta': { icon: 'assets/chains/vaulta.png', color: '#0094d2' },
+  'WAX':    { icon: 'assets/chains/wax.png',    color: '#f5a623' },
+  'Telos':  { icon: 'assets/chains/telos.png',  color: '#7c3aed' },
+  'Ultra':  { icon: 'assets/chains/ultra.svg',  color: '#8b5cf6' },
+  'FIO':    { icon: 'assets/chains/fio.svg',    color: '#3b82f6' },
+  'Libre':  { icon: 'assets/chains/libre.svg',  color: '#22c55e' },
+  'XPR':    { icon: 'assets/chains/xpr.svg',    color: '#d946ef' },
+};
+
 @Component({
   selector: 'app-landing',
   standalone: true,
@@ -36,38 +54,46 @@ type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'failed';
 
           @case ('home') {
 
-            <div class="chain-select-group">
-              <label>SELECT CHAIN</label>
-              <select class="form-input"
-                      [value]="selectedChainIndex()"
-                      (change)="onChainSelect(+$any($event.target).value)">
-                @for (chain of wallet.chains(); track chain.id; let i = $index) {
-                  <option [value]="i">{{ chain.name }} ({{ chain.symbol }})</option>
-                }
-              </select>
+            <!-- Chain grid -->
+            <div class="chain-grid">
+              @for (chain of chainOptions(); track chain.index) {
+                <button class="chain-tile"
+                        [class.selected]="selectedChainIndex() === chain.index"
+                        [style.--chain-color]="chain.color"
+                        (click)="onChainSelect(chain.index)">
+                  <img [src]="chain.icon" [alt]="chain.name" class="chain-icon" />
+                  <span class="chain-name">{{ chain.name }}</span>
+                  <span class="chain-symbol">{{ chain.symbol }}</span>
+                  @if (selectedChainIndex() === chain.index) {
+                    <span class="chain-check">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                  }
+                </button>
+              }
+            </div>
 
-              <!-- Connection status -->
-              <div class="connection-status" [class]="connectionStatus()">
-                @switch (connectionStatus()) {
-                  @case ('connecting') {
-                    <span class="status-dot pulse"></span>
-                    <span>Connecting to {{ selectedChain()?.name }}...</span>
-                  }
-                  @case ('connected') {
-                    <span class="status-dot connected"></span>
-                    <span>Connected — {{ network.healthyCount() }} healthy endpoint{{ network.healthyCount() !== 1 ? 's' : '' }}</span>
-                  }
-                  @case ('failed') {
-                    <span class="status-dot failed"></span>
-                    <span>Connection failed</span>
-                    <button class="retry-btn" (click)="connectToChain()">RETRY</button>
-                  }
-                  @default {
-                    <span class="status-dot"></span>
-                    <span>Not connected</span>
-                  }
+            <!-- Connection status -->
+            <div class="connection-status" [class]="connectionStatus()">
+              @switch (connectionStatus()) {
+                @case ('connecting') {
+                  <span class="status-dot pulse"></span>
+                  <span>Connecting to {{ selectedChain()?.name }}...</span>
                 }
-              </div>
+                @case ('connected') {
+                  <span class="status-dot connected"></span>
+                  <span>Connected to {{ selectedChain()?.name }} — {{ network.healthyCount() }} endpoint{{ network.healthyCount() !== 1 ? 's' : '' }}</span>
+                }
+                @case ('failed') {
+                  <span class="status-dot failed"></span>
+                  <span>Connection failed</span>
+                  <button class="retry-btn" (click)="connectToChain()">RETRY</button>
+                }
+                @default {
+                  <span class="status-dot"></span>
+                  <span>Select a chain to connect</span>
+                }
+              }
             </div>
 
             <div class="entry-paths">
@@ -364,9 +390,69 @@ type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'failed';
       to { opacity: 1; }
     }
 
-    /* Chain selector */
-    .chain-select-group {
-      margin-bottom: var(--sp-6);
+    /* Chain grid */
+    .chain-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-5);
+    }
+
+    .chain-tile {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-4) var(--sp-2);
+      background: var(--bg-raised);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    }
+    .chain-tile:hover {
+      border-color: var(--chain-color);
+      background: var(--bg-hover);
+      transform: translateY(-2px);
+    }
+    .chain-tile.selected {
+      border-color: var(--chain-color);
+      background: color-mix(in srgb, var(--chain-color) 8%, var(--bg-raised));
+      box-shadow: 0 0 12px color-mix(in srgb, var(--chain-color) 20%, transparent);
+    }
+
+    .chain-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-full);
+      object-fit: contain;
+    }
+
+    .chain-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .chain-symbol {
+      font-family: var(--font-data);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .chain-check {
+      position: absolute;
+      top: var(--sp-1);
+      right: var(--sp-1);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--chain-color);
+      color: #fff;
     }
 
     .connection-status {
@@ -659,6 +745,13 @@ export class LandingComponent implements OnInit {
   importing = signal(false);
 
   selectedChain = computed(() => this.wallet.chains()[this.selectedChainIndex()]);
+
+  chainOptions = computed<ChainOption[]>(() =>
+    this.wallet.chains().map((chain, index) => {
+      const visuals = CHAIN_VISUALS[chain.name] ?? { icon: 'assets/chains/generic.svg', color: '#6b6f85' };
+      return { index, name: chain.name, symbol: chain.symbol, icon: visuals.icon, color: visuals.color };
+    })
+  );
 
   constructor(
     private ipc: TauriIpcService,
