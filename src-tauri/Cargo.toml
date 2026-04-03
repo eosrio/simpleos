@@ -32,6 +32,7 @@ ureq = { version = "2", features = ["json"] }
 # Crypto (RustCrypto suite - audited, pure Rust)
 k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa"] }
 sha2 = "0.10"
+ripemd = "0.1"
 aes-gcm = "0.10"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 hmac = "0.12"

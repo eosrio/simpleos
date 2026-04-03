@@ -1,4 +1,5 @@
 use k256::ecdsa::{Signature, SigningKey};
+use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
 
@@ -7,23 +8,21 @@ use crate::error::Error;
 /// Sign a serialized transaction for an Antelope chain.
 ///
 /// Produces the signing digest: SHA256(chain_id_bytes + serialized_transaction + 32_zero_bytes)
-/// Then signs with secp256k1 ECDSA and returns the signature in Antelope wire format.
+/// Then signs with secp256k1 ECDSA and returns the signature in `SIG_K1_...` format.
 pub fn sign_transaction(
     chain_id_hex: &str,
     serialized_transaction: &[u8],
     private_key_bytes: &[u8],
 ) -> Result<String, Error> {
-    // Build signing digest
     let chain_id_bytes = hex_decode(chain_id_hex)
         .map_err(|e| Error::Signing(format!("Invalid chain_id hex: {}", e)))?;
 
     let mut hasher = Sha256::new();
     hasher.update(&chain_id_bytes);
     hasher.update(serialized_transaction);
-    hasher.update(&[0u8; 32]); // context-free data digest
+    hasher.update(&[0u8; 32]);
     let digest = hasher.finalize();
 
-    // Sign with secp256k1
     let signing_key = SigningKey::from_bytes(private_key_bytes.into())
         .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
 
@@ -31,16 +30,14 @@ pub fn sign_transaction(
         .sign_prehash_recoverable(&digest)
         .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
 
-    // Encode in Antelope SIG_K1_ format
-    let sig_bytes = encode_k1_signature(&signature, recovery_id)?;
-
-    Ok(sig_bytes)
+    encode_k1_signature(&signature, recovery_id)
 }
 
 /// Derive the public key (EOS format) from a WIF private key.
+/// Returns (raw_private_key_bytes, "EOS..." public key string).
 pub fn public_key_from_wif(wif: &str) -> Result<(Vec<u8>, String), Error> {
     let mut decoded = wif_decode(wif)?;
-    let private_key_bytes = &decoded[1..33]; // Skip version byte
+    let private_key_bytes = &decoded[1..33];
 
     let signing_key = SigningKey::from_bytes(private_key_bytes.into())
         .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
@@ -49,7 +46,6 @@ pub fn public_key_from_wif(wif: &str) -> Result<(Vec<u8>, String), Error> {
     let compressed = verifying_key.to_encoded_point(true);
     let pub_bytes = compressed.as_bytes().to_vec();
 
-    // Format as EOS public key
     let pub_key_str = encode_eos_public_key(&pub_bytes);
 
     let priv_bytes = private_key_bytes.to_vec();
@@ -58,50 +54,40 @@ pub fn public_key_from_wif(wif: &str) -> Result<(Vec<u8>, String), Error> {
     Ok((priv_bytes, pub_key_str))
 }
 
-// ── Encoding helpers ──
+// ── RIPEMD160 + Encoding helpers ──
 
-fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
-    if hex.len() % 2 != 0 {
-        return Err("Odd-length hex string".into());
-    }
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(|e| e.to_string()))
-        .collect()
+fn ripemd160(data: &[u8]) -> [u8; 20] {
+    let mut hasher = Ripemd160::new();
+    hasher.update(data);
+    let result = hasher.finalize();
+    let mut out = [0u8; 20];
+    out.copy_from_slice(&result);
+    out
 }
 
 fn encode_k1_signature(signature: &Signature, recovery_id: k256::ecdsa::RecoveryId) -> Result<String, Error> {
     let r = signature.r().to_bytes();
     let s = signature.s().to_bytes();
 
-    let mut sig_data = vec![recovery_id.to_byte() + 27 + 4]; // compressed flag
+    let mut sig_data = Vec::with_capacity(65);
+    sig_data.push(recovery_id.to_byte() + 27 + 4); // compressed flag
     sig_data.extend_from_slice(&r);
     sig_data.extend_from_slice(&s);
 
     // RIPEMD160 checksum with "K1" suffix
-    let mut check_data = sig_data.clone();
-    check_data.extend_from_slice(b"K1");
+    let mut check_buf = sig_data.clone();
+    check_buf.extend_from_slice(b"K1");
+    let checksum = ripemd160(&check_buf);
 
-    // Use SHA256 twice as a substitute for RIPEMD160 checksum
-    // TODO: implement proper RIPEMD160 or use ripemd crate
-    let hash1 = Sha256::digest(&check_data);
-    let checksum = &hash1[..4];
+    sig_data.extend_from_slice(&checksum[..4]);
 
-    let mut final_data = sig_data;
-    final_data.extend_from_slice(checksum);
-
-    Ok(format!("SIG_K1_{}", bs58_encode(&final_data)))
+    Ok(format!("SIG_K1_{}", bs58_encode(&sig_data)))
 }
 
 fn encode_eos_public_key(compressed_pub: &[u8]) -> String {
-    // RIPEMD160 checksum over the compressed public key
-    // TODO: implement proper RIPEMD160
-    let hash = Sha256::digest(compressed_pub);
-    let checksum = &hash[..4];
-
+    let checksum = ripemd160(compressed_pub);
     let mut data = compressed_pub.to_vec();
-    data.extend_from_slice(checksum);
-
+    data.extend_from_slice(&checksum[..4]);
     format!("EOS{}", bs58_encode(&data))
 }
 
@@ -127,12 +113,21 @@ fn wif_decode(wif: &str) -> Result<Vec<u8>, Error> {
     Ok(payload.to_vec())
 }
 
+fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
+    if hex.len() % 2 != 0 {
+        return Err("Odd-length hex string".into());
+    }
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(|e| e.to_string()))
+        .collect()
+}
+
 // ── Base58 (no external crate) ──
 
 const BASE58_CHARS: &[u8] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 fn bs58_encode(data: &[u8]) -> String {
-    // Convert bytes to big integer
     let mut digits: Vec<u32> = vec![0];
     for &byte in data {
         let mut carry = byte as u32;
@@ -186,4 +181,33 @@ fn bs58_decode(input: &str) -> Result<Vec<u8>, String> {
     }
     digits.reverse();
     Ok(digits.iter().map(|&d| d as u8).collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wif_to_public_key() {
+        // Well-known EOS test key pair
+        let wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3";
+        let expected_pub = "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV";
+
+        let (priv_bytes, pub_key) = public_key_from_wif(wif).unwrap();
+        assert_eq!(pub_key, expected_pub);
+        assert_eq!(priv_bytes.len(), 32);
+    }
+
+    #[test]
+    fn wif_invalid_checksum() {
+        let bad_wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD4"; // last char changed
+        let result = public_key_from_wif(bad_wif);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn wif_too_short() {
+        let result = public_key_from_wif("5K");
+        assert!(result.is_err());
+    }
 }

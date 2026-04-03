@@ -26,8 +26,8 @@
 - [x] Zeroizing in-memory session (ZeroizingSecret, auto-lock timeout) `done`
 - [x] OS keychain integration via keyring crate `done`
 - [x] Key index management per chain `done`
-- [ ] WIF private key import (decode, validate checksum, derive public key) `wip`
-- [ ] RIPEMD160 for proper EOS public key encoding `todo`
+- [x] WIF private key import (decode, validate checksum, derive public key) `done`
+- [x] RIPEMD160 for proper EOS public key encoding `done`
 - [ ] Key generation (secp256k1 keypair, WIF encode) `todo`
 - [ ] Passphrase change (re-encrypt all keys) `todo`
 - [ ] Backup export (encrypted JSON) `todo`
@@ -51,7 +51,7 @@
 ### Rust Backend — Transaction Signing
 - [x] secp256k1 ECDSA signing with k256 crate `done`
 - [x] Signing digest: SHA256(chain_id + serialized_trx + 32 zero bytes) `done`
-- [ ] Proper RIPEMD160 checksum for SIG_K1_ encoding `todo`
+- [x] Proper RIPEMD160 checksum for SIG_K1_ encoding `done`
 - [ ] rs_abieos integration for action data serialization `todo`
 - [ ] TAPOS (ref block) from get_info for transaction headers `todo`
 - [ ] Transaction construction (build + serialize + sign + push) `todo`
