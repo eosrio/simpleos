@@ -17,6 +17,12 @@ pub enum Error {
     #[error("RPC error: {0}")]
     Rpc(String),
 
+    /// HTTP response error from an RPC endpoint. The endpoint is reachable but
+    /// rejected the request (e.g. 4xx/5xx with a JSON error body). Callers
+    /// should propagate this without triggering failover.
+    #[error("RPC response error: {0}")]
+    RpcResponse(String),
+
     #[error("Signing error: {0}")]
     Signing(String),
 

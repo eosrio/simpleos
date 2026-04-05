@@ -1,5 +1,10 @@
+pub mod bls;
 pub mod chain_config;
+pub mod discovery;
+pub mod powerup;
 pub mod provider;
 pub mod rpc;
+pub mod serialize;
 pub mod signing;
+pub mod transaction;
 pub mod types;

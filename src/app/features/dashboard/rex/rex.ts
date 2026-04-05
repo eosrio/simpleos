@@ -13,7 +13,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
         <div class="section-card">
           <h3>Buy REX</h3>
           <div class="form-group">
-            <label>Amount ({{ wallet.activeChain()?.symbol ?? 'EOS' }})</label>
+            <label>Amount ({{ wallet.activeChain().symbol }})</label>
             <input class="form-input" type="text" placeholder="0.0000" />
           </div>
           <button class="btn-primary">BUY REX</button>

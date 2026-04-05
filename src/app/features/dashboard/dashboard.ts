@@ -1,22 +1,30 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { UiStateService } from '../../core/services/ui-state.service';
+import { ConfirmModalComponent } from '../../shared/confirm-modal';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmModalComponent],
   template: `
     <div class="dashboard">
       <!-- Account tabs (hidden in fullscreen) -->
       @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
         <div class="account-tabs">
-          @for (account of wallet.accounts(); track account.name; let i = $index) {
+          @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
             <button class="account-tab"
                     [class.active]="i === wallet.selectedIndex()"
                     [class.watch-only]="account.mode === 'watch'"
+                    [class.drag-over]="dragOverIndex === i"
+                    draggable="true"
+                    (dragstart)="onDragStart($event, i)"
+                    (dragover)="onDragOver($event, i)"
+                    (dragleave)="onDragLeave()"
+                    (drop)="onDrop($event, i)"
+                    (dragend)="onDragEnd()"
                     (click)="selectAccount(i)">
               <span class="tab-name">
                 {{ account.name }}
@@ -26,10 +34,10 @@ import { UiStateService } from '../../core/services/ui-state.service';
                   </span>
                 }
               </span>
-              <span class="tab-balance">{{ account.info.core_liquid_balance ?? '—' }}</span>
+              <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
             </button>
           }
-          <button class="account-tab add-tab" title="Add account">
+          <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
@@ -88,7 +96,7 @@ import { UiStateService } from '../../core/services/ui-state.service';
                 <span class="shortcut">Alt+V</span>
               </a>
             </li>
-            @if (wallet.activeChain()?.features?.rex) {
+            @if (wallet.activeChain().features.rex) {
               <li>
                 <a routerLink="rex" routerLinkActive="active">
                   <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -143,8 +151,22 @@ import { UiStateService } from '../../core/services/ui-state.service';
             </li>
           </ul>
 
-          <!-- Theme toggle + version -->
+          <!-- Lock toggle + Theme toggle + version -->
           <div class="sidebar-footer">
+            @if (wallet.securityMode() === 'ManualToggle') {
+              <button class="lock-toggle" (click)="toggleLock()" [title]="wallet.locked() ? 'Unlock wallet' : 'Lock wallet'">
+                @if (wallet.locked()) {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                }
+              </button>
+            }
+            @if (wallet.securityMode() === 'SignPerUse') {
+              <span class="mode-badge" title="Passphrase required for each transaction">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </span>
+            }
             <button class="theme-toggle" (click)="theme.toggleBaseTheme()" title="Toggle light/dark theme">
               @if (theme.baseTheme() === 'dark') {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -168,6 +190,8 @@ import { UiStateService } from '../../core/services/ui-state.service';
           <router-outlet />
         </main>
       </div>
+
+      <app-confirm-modal />
     </div>
   `,
   styles: [`
@@ -224,6 +248,19 @@ import { UiStateService } from '../../core/services/ui-state.service';
       font-size: 11px;
       color: var(--text-muted);
       margin-top: 1px;
+    }
+
+    .account-tab[draggable="true"] {
+      cursor: grab;
+    }
+    .account-tab[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    .account-tab.drag-over {
+      border-left: 2px solid var(--accent);
+    }
+    :host-context(.dragging) .account-tab {
+      opacity: 0.7;
     }
 
     .add-tab {
@@ -374,6 +411,29 @@ import { UiStateService } from '../../core/services/ui-state.service';
       margin-top: var(--sp-3);
     }
 
+    .lock-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .lock-toggle:hover {
+      border-color: var(--accent);
+      color: var(--text-bright);
+    }
+    .mode-badge {
+      display: flex;
+      align-items: center;
+      color: var(--accent);
+      opacity: 0.6;
+    }
     .theme-toggle {
       display: flex;
       align-items: center;
@@ -481,18 +541,73 @@ import { UiStateService } from '../../core/services/ui-state.service';
   `],
 })
 export class DashboardComponent {
+  dragSourceIndex: number | null = null;
+  dragOverIndex: number | null = null;
+
   constructor(
     public wallet: WalletStateService,
     public theme: ThemeService,
     public ui: UiStateService,
+    private router: Router,
   ) {}
+
+  onDragStart(event: DragEvent, index: number) {
+    this.dragSourceIndex = index;
+    event.dataTransfer!.effectAllowed = 'move';
+    event.dataTransfer!.setData('text/plain', String(index));
+  }
+
+  onDragOver(event: DragEvent, index: number) {
+    if (this.dragSourceIndex === null || this.dragSourceIndex === index) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    this.dragOverIndex = index;
+  }
+
+  onDragLeave() {
+    this.dragOverIndex = null;
+  }
+
+  onDrop(event: DragEvent, targetIndex: number) {
+    event.preventDefault();
+    if (this.dragSourceIndex === null || this.dragSourceIndex === targetIndex) return;
+    this.wallet.reorderAccount(this.dragSourceIndex, targetIndex);
+    // Update theme to match newly selected account
+    const account = this.wallet.selectedAccount();
+    if (account) this.theme.setChainByName(account.chainName);
+    this.dragSourceIndex = null;
+    this.dragOverIndex = null;
+  }
+
+  onDragEnd() {
+    this.dragSourceIndex = null;
+    this.dragOverIndex = null;
+  }
 
   selectAccount(index: number) {
     this.wallet.selectAccount(index);
-    // Apply chain theme from the selected account
     const account = this.wallet.accounts()[index];
     if (account) {
       this.theme.setChainByName(account.chainName);
+    }
+  }
+
+  addAccount() {
+    this.router.navigate(['/landing']);
+  }
+
+  async toggleLock() {
+    if (this.wallet.locked()) {
+      // Prompt for passphrase — use a simple prompt for now
+      const passphrase = prompt('Enter passphrase to unlock');
+      if (passphrase) {
+        const success = await this.wallet.unlock(passphrase);
+        if (!success) {
+          alert('Invalid passphrase');
+        }
+      }
+    } else {
+      await this.wallet.lock();
     }
   }
 }

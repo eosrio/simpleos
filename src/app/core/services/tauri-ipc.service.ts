@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { Store } from '@tauri-apps/plugin-store';
 
 // ── Types matching Rust backend ──
 
@@ -16,6 +18,12 @@ export interface ChainInfo {
   last_irreversible_block_time?: string;
 }
 
+export interface ResourceLimit {
+  used?: number;
+  available?: number;
+  max?: number;
+}
+
 export interface AccountInfo {
   account_name: string;
   core_liquid_balance?: string;
@@ -23,6 +31,8 @@ export interface AccountInfo {
   ram_usage?: number;
   net_weight?: number;
   cpu_weight?: number;
+  cpu_limit?: ResourceLimit;
+  net_limit?: ResourceLimit;
   permissions: Permission[];
   voter_info?: any;
   total_resources?: any;
@@ -54,9 +64,25 @@ export interface TableRowsResult {
   next_key?: string;
 }
 
+export interface AccountAuthority {
+  account_name: string;
+  permission_name: string;
+}
+
+export interface KeyAccountsResult {
+  account_names: string[];
+  authorities: AccountAuthority[];
+}
+
 export interface ImportResult {
   public_key: string;
   accounts: string[];
+}
+
+export interface TokenConfig {
+  contract: string;
+  symbol: string;
+  precision: number;
 }
 
 export interface ChainConfig {
@@ -65,10 +91,13 @@ export interface ChainConfig {
   symbol: string;
   precision: number;
   icon?: string;
+  token_contract: string;
+  extra_tokens: TokenConfig[];
   endpoints: { url: string; owner?: string }[];
   hyperion_apis: string[];
   explorers: { name: string; url: string; tx_url?: string; account_url?: string }[];
   features: ChainFeatures;
+  testnet?: boolean;
 }
 
 export interface ChainFeatures {
@@ -88,6 +117,28 @@ export interface EndpointState {
   latency_ms: number;
 }
 
+export interface DiscoveryProgress {
+  phase: 'producers' | 'bp_json' | 'testing' | 'done';
+  message: string;
+  progress: number;
+  endpoints_found: number;
+  healthy_count: number;
+}
+
+export interface CachedEndpointsResult {
+  endpoints: DiscoveredEndpoint[];
+  cached_at: number;
+  fresh: boolean;
+}
+
+export interface DiscoveredEndpoint {
+  url: string;
+  endpoint_type: 'Api' | 'Hyperion';
+  producer: string;
+  latency_ms: number;
+  healthy: boolean;
+}
+
 export interface ActiveEndpoints {
   rpc: string;
   hyperion: string;
@@ -95,10 +146,51 @@ export interface ActiveEndpoints {
   hyperion_endpoints: EndpointState[];
 }
 
+// ── Anchor Import Types ──
+
+export interface AnchorWalletEntry {
+  account: string;
+  authority: string;
+  chain_id: string;
+  chain_name: string;
+  symbol: string;
+  pubkey: string;
+  mode: string;
+  is_testnet: boolean;
+  hd_path: string | null;
+  has_private_key: boolean;
+}
+
+export interface ParsedAnchorBackup {
+  entries: AnchorWalletEntry[];
+  has_encrypted_keys: boolean;
+  total_hot_keys: number;
+  total_ledger_keys: number;
+}
+
+export interface ImportSelection {
+  account: string;
+  authority: string;
+  chain_id: string;
+  pubkey: string;
+  import_mode: 'full' | 'watch';
+}
+
+export interface AnchorImportResult {
+  imported_full: number;
+  imported_watch: number;
+  skipped: number;
+  errors: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
 
   // ── Wallet ──
+
+  async hasWallet(): Promise<boolean> {
+    return invoke<boolean>('has_wallet');
+  }
 
   async isLocked(): Promise<boolean> {
     return invoke<boolean>('is_locked');
@@ -108,8 +200,32 @@ export class TauriIpcService {
     return invoke<boolean>('unlock', { passphrase });
   }
 
+  async getSecurityMode(): Promise<string> {
+    return invoke<string>('get_security_mode');
+  }
+
+  async setSecurityMode(mode: string): Promise<void> {
+    return invoke<void>('set_security_mode', { mode });
+  }
+
+  async needsPassphraseForSigning(): Promise<boolean> {
+    return invoke<boolean>('needs_passphrase_for_signing');
+  }
+
+  async needsLockscreen(): Promise<boolean> {
+    return invoke<boolean>('needs_lockscreen');
+  }
+
   async lock(): Promise<void> {
     return invoke<void>('lock');
+  }
+
+  async derivePublicKey(wif: string): Promise<string> {
+    return invoke<string>('derive_public_key', { wif });
+  }
+
+  async importKeyWithSession(wif: string, chainId: string): Promise<ImportResult> {
+    return invoke<ImportResult>('import_key_with_session', { wif, chainId });
   }
 
   async importPrivateKey(wif: string, chainId: string, passphrase: string): Promise<ImportResult> {
@@ -118,6 +234,26 @@ export class TauriIpcService {
 
   async listPublicKeys(chainId: string): Promise<string[]> {
     return invoke<string[]>('list_public_keys', { chainId });
+  }
+
+  async exportPrivateKey(chainId: string, publicKey: string): Promise<string> {
+    return invoke<string>('export_private_key', { chainId, publicKey });
+  }
+
+  async testKeyring(): Promise<string[]> {
+    return invoke<string[]>('test_keyring');
+  }
+
+  async changePassphrase(oldPassphrase: string, newPassphrase: string): Promise<void> {
+    return invoke<void>('change_passphrase', { oldPassphrase, newPassphrase });
+  }
+
+  async generateKeyPair(): Promise<{ wif: string; public_key: string }> {
+    return invoke<{ wif: string; public_key: string }>('generate_key_pair');
+  }
+
+  async resetWallet(): Promise<void> {
+    return invoke<void>('reset_wallet');
   }
 
   async removeKey(chainId: string, publicKey: string): Promise<void> {
@@ -180,21 +316,255 @@ export class TauriIpcService {
     return invoke<any>('get_producers', { chainId, limit });
   }
 
-  async lookupKeyAccounts(chainId: string, publicKey: string): Promise<{ account_names: string[] }> {
-    return invoke<{ account_names: string[] }>('lookup_key_accounts', { chainId, publicKey });
+  async lookupKeyAccounts(chainId: string, publicKey: string): Promise<KeyAccountsResult> {
+    return invoke<KeyAccountsResult>('lookup_key_accounts', { chainId, publicKey });
   }
 
-  async getActionsHistory(chainId: string, account: string, limit: number, skip: number): Promise<any> {
-    return invoke<any>('get_actions_history', { chainId, account, limit, skip });
+  async getActionsHistory(chainId: string, account: string, limit: number, skip: number, filters?: { actName?: string; after?: string; before?: string }): Promise<any> {
+    return invoke<any>('get_actions_history', {
+      chainId, account, limit, skip,
+      actName: filters?.actName ?? null,
+      after: filters?.after ?? null,
+      before: filters?.before ?? null,
+    });
   }
 
   async getTokens(chainId: string, account: string): Promise<any> {
     return invoke<any>('get_tokens', { chainId, account });
   }
 
+  // ── Discovery ──
+
+  async loadCachedEndpoints(chainId: string): Promise<CachedEndpointsResult> {
+    return invoke<CachedEndpointsResult>('load_cached_endpoints', { chainId });
+  }
+
+  async discoverEndpoints(chainId: string): Promise<DiscoveredEndpoint[]> {
+    return invoke<DiscoveredEndpoint[]>('discover_endpoints', { chainId });
+  }
+
+  async onDiscoveryProgress(callback: (progress: DiscoveryProgress) => void): Promise<UnlistenFn> {
+    return listen<DiscoveryProgress>('discovery-progress', (event) => {
+      callback(event.payload);
+    });
+  }
+
+  // ── Transactions ──
+
+  async signAndPush(chainId: string, publicKey: string, actions: any[]): Promise<{ transaction_id: string }> {
+    return invoke<{ transaction_id: string }>('sign_and_push', { chainId, publicKey, actions });
+  }
+
+  async signAndPushWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<{ transaction_id: string }> {
+    return invoke<{ transaction_id: string }>('sign_and_push_with_passphrase', { chainId, publicKey, passphrase, actions });
+  }
+
+  // ── PowerUp ──
+
+  async getPowerUpInfo(chainId: string, account: string): Promise<any> {
+    return invoke<any>('get_powerup_info', { chainId, account });
+  }
+
+  async estimatePowerUp(chainId: string, cpuFrac: number, netFrac: number): Promise<any> {
+    return invoke<any>('estimate_powerup', { chainId, cpuFrac, netFrac });
+  }
+
+  // ── Ledger ──
+
+  async ledgerListDevices(): Promise<string[]> {
+    return invoke<string[]>('ledger_list_devices');
+  }
+
+  async ledgerGetAppConfig(): Promise<{ major: number; minor: number; patch: number; allow_unknown: boolean; verbose: boolean }> {
+    return invoke('ledger_get_app_config');
+  }
+
+  async ledgerGetPublicKey(account: number, index: number, confirm: boolean): Promise<string> {
+    return invoke<string>('ledger_get_public_key', { account, index, confirm });
+  }
+
+  async ledgerDiscoverKeys(maxIndex: number): Promise<{ path: string; public_key: string; index: number }[]> {
+    return invoke('ledger_discover_keys', { maxIndex });
+  }
+
+  async ledgerSignAndPush(chainId: string, accountIndex: number, actions: any[]): Promise<{ transaction_id: string }> {
+    return invoke('ledger_sign_and_push', { chainId, accountIndex, actions });
+  }
+
+  /** Start background polling for Ledger device connect/disconnect events. */
+  async ledgerWatchDevices(): Promise<void> {
+    return invoke<void>('ledger_watch_devices');
+  }
+
+  /** Listen for Ledger device connection events. Returns an unlisten function. */
+  async onLedgerConnected(callback: (deviceName: string) => void): Promise<UnlistenFn> {
+    return listen<string>('ledger-connected', (event) => {
+      callback(event.payload);
+    });
+  }
+
+  /** Listen for Ledger device disconnection events. Returns an unlisten function. */
+  async onLedgerDisconnected(callback: (deviceName: string) => void): Promise<UnlistenFn> {
+    return listen<string>('ledger-disconnected', (event) => {
+      callback(event.payload);
+    });
+  }
+
+  // ── Finalizer Keys (BLS) ──
+
+  async generateFinalizerKey(chainId: string): Promise<{ finalizer_key: string; proof_of_possession: string }> {
+    return invoke<{ finalizer_key: string; proof_of_possession: string }>('generate_finalizer_key', { chainId });
+  }
+
+  async listFinalizerKeys(chainId: string): Promise<string[]> {
+    return invoke<string[]>('list_finalizer_keys', { chainId });
+  }
+
+  async getFinalizerPop(chainId: string, finalizerKey: string): Promise<{ finalizer_key: string; proof_of_possession: string }> {
+    return invoke<{ finalizer_key: string; proof_of_possession: string }>('get_finalizer_pop', { chainId, finalizerKey });
+  }
+
+  // ── FIO ──
+
+  async fioGetFee(chainId: string, endPoint: string, fioAddress: string): Promise<{ fee: number }> {
+    return invoke<{ fee: number }>('fio_get_fee', { chainId, endPoint, fioAddress });
+  }
+
+  async fioGetPubAddress(chainId: string, fioAddress: string): Promise<{ public_address: string }> {
+    return invoke<{ public_address: string }>('fio_get_pub_address', { chainId, fioAddress });
+  }
+
+  // ── PIN ──
+
+  async setPin(passphrase: string, pin: string): Promise<void> {
+    return invoke<void>('set_pin', { passphrase, pin });
+  }
+
+  async unlockWithPin(pin: string): Promise<boolean> {
+    return invoke<boolean>('unlock_with_pin', { pin });
+  }
+
+  async hasPin(): Promise<boolean> {
+    return invoke<boolean>('has_pin');
+  }
+
+  async removePin(): Promise<void> {
+    return invoke<void>('remove_pin');
+  }
+
+  // ── Backup ──
+
+  async exportBackup(passphrase: string): Promise<string> {
+    return invoke<string>('export_backup', { passphrase });
+  }
+
+  async importBackup(json: string, passphrase: string): Promise<number> {
+    return invoke<number>('import_backup', { json, passphrase });
+  }
+
+  // ── Anchor Import ──
+
+  async parseAnchorBackup(json: string): Promise<ParsedAnchorBackup> {
+    return invoke<ParsedAnchorBackup>('parse_anchor_backup', { json });
+  }
+
+  async verifyAnchorPassword(json: string, password: string): Promise<boolean> {
+    return invoke<boolean>('verify_anchor_password', { json, password });
+  }
+
+  async importAnchorEntries(
+    json: string,
+    anchorPassword: string,
+    simpleosPassphrase: string,
+    selections: ImportSelection[],
+  ): Promise<AnchorImportResult> {
+    return invoke<AnchorImportResult>('import_anchor_entries', {
+      json,
+      anchorPassword,
+      simpleosPassphrase,
+      selections,
+    });
+  }
+
   // ── Config ──
 
   async getChainsConfig(): Promise<ChainConfig[]> {
     return invoke<ChainConfig[]>('get_chains_config');
+  }
+
+  // ── DApp Browser ──
+
+  async openDappBrowser(url: string, x: number, y: number, width: number, height: number): Promise<void> {
+    return invoke<void>('open_dapp_browser', { url, x, y, width, height });
+  }
+
+  async closeDappBrowser(): Promise<void> {
+    return invoke<void>('close_dapp_browser');
+  }
+
+  async navigateDapp(url: string): Promise<void> {
+    return invoke<void>('navigate_dapp', { url });
+  }
+
+  async resizeDappBrowser(x: number, y: number, width: number, height: number): Promise<void> {
+    return invoke<void>('resize_dapp_browser', { x, y, width, height });
+  }
+
+  async reloadDapp(): Promise<void> {
+    return invoke<void>('reload_dapp');
+  }
+
+  async dappGoBack(): Promise<void> {
+    return invoke<void>('dapp_go_back');
+  }
+
+  async dappGoForward(): Promise<void> {
+    return invoke<void>('dapp_go_forward');
+  }
+
+  async dappResolveSigning(requestId: string, result: any): Promise<void> {
+    return invoke<void>('dapp_resolve_signing', { requestId, result });
+  }
+
+  async dappRejectSigning(requestId: string, reason: string): Promise<void> {
+    return invoke<void>('dapp_reject_signing', { requestId, reason });
+  }
+
+  async onDappSigningRequest(callback: (request: { id: string; actions: any[]; chainId: string | null; origin: string }) => void): Promise<UnlistenFn> {
+    return listen<string>('dapp-signing-request', (event) => {
+      try {
+        const parsed = JSON.parse(event.payload);
+        callback(parsed);
+      } catch { /* ignore malformed */ }
+    });
+  }
+
+  // ── Local Store (non-sensitive persistence via tauri-plugin-store) ──
+
+  private store: Store | null = null;
+
+  private async getStore(): Promise<Store> {
+    if (!this.store) {
+      this.store = await Store.load('wallet-state.json');
+    }
+    return this.store;
+  }
+
+  async storeSet(key: string, value: any): Promise<void> {
+    const store = await this.getStore();
+    await store.set(key, value);
+    await store.save();
+  }
+
+  async storeGet<T>(key: string): Promise<T | null> {
+    const store = await this.getStore();
+    const val = await store.get<T>(key);
+    return val ?? null;
+  }
+
+  async storeDelete(key: string): Promise<void> {
+    const store = await this.getStore();
+    await store.delete(key);
+    await store.save();
   }
 }

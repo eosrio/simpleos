@@ -1,5 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
+import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
+
+interface VoterRow {
+  owner: string;
+  staked: number;
+  is_proxy: boolean;
+  proxy: string;
+  producers: string[];
+  last_vote_weight: string;
+}
 
 @Component({
   selector: 'app-bp-votes',
@@ -15,70 +25,50 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-label">TOTAL VOTES</span>
-          <span class="stat-value">482.3M EOS</span>
+          <span class="stat-value">{{ totalVotes() }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">UNIQUE VOTERS</span>
-          <span class="stat-value">1,847</span>
+          <span class="stat-label">VOTERS FOUND</span>
+          <span class="stat-value">{{ voters().length }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">PROXY VOTES</span>
-          <span class="stat-value">312.1M EOS</span>
+          <span class="stat-label">PROXY VOTERS</span>
+          <span class="stat-value">{{ proxyCount() }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">DIRECT VOTES</span>
-          <span class="stat-value">170.2M EOS</span>
+          <span class="stat-label">DIRECT VOTERS</span>
+          <span class="stat-value">{{ directCount() }}</span>
         </div>
       </div>
 
       <div class="section-card">
         <h3>Top Voters</h3>
-        <p class="section-desc">Largest vote weight contributors to {{ wallet.selectedAccount()?.name }}</p>
+        <p class="section-desc">Largest vote weight contributors to {{ wallet.selectedAccount().name }}</p>
 
-        <div class="voters-table">
-          <div class="table-header">
-            <span>#</span>
-            <span>Account</span>
-            <span>Vote Weight</span>
-            <span>Type</span>
-            <span>Last Vote</span>
+        @if (loadingVoters()) {
+          <p class="section-desc">Loading voter data...</p>
+        } @else if (voters().length === 0) {
+          <p class="section-desc">No voter data found.</p>
+        } @else {
+          <div class="voters-table">
+            <div class="table-header">
+              <span>#</span>
+              <span>Account</span>
+              <span>Staked</span>
+              <span>Type</span>
+            </div>
+            @for (voter of voters(); track voter.owner; let i = $index) {
+              <div class="table-row">
+                <span class="rank">{{ i + 1 }}</span>
+                <span class="data account">{{ voter.owner }}</span>
+                <span class="data">{{ formatStaked(voter.staked) }}</span>
+                <span class="type-badge" [class.proxy]="voter.is_proxy" [class.direct]="!voter.is_proxy">
+                  {{ voter.is_proxy ? 'Proxy' : 'Direct' }}
+                </span>
+              </div>
+            }
           </div>
-          <div class="table-row">
-            <span class="rank">1</span>
-            <span class="data account">bigproxy.gm</span>
-            <span class="data">142,380,000</span>
-            <span class="type-badge proxy">Proxy</span>
-            <span>3 hours ago</span>
-          </div>
-          <div class="table-row">
-            <span class="rank">2</span>
-            <span class="data account">whaleaccount</span>
-            <span class="data">89,240,000</span>
-            <span class="type-badge direct">Direct</span>
-            <span>1 day ago</span>
-          </div>
-          <div class="table-row">
-            <span class="rank">3</span>
-            <span class="data account">proxy4nation</span>
-            <span class="data">67,100,000</span>
-            <span class="type-badge proxy">Proxy</span>
-            <span>4 hours ago</span>
-          </div>
-          <div class="table-row">
-            <span class="rank">4</span>
-            <span class="data account">stakeholder1</span>
-            <span class="data">34,500,000</span>
-            <span class="type-badge direct">Direct</span>
-            <span>2 days ago</span>
-          </div>
-          <div class="table-row">
-            <span class="rank">5</span>
-            <span class="data account">communityacc</span>
-            <span class="data">28,900,000</span>
-            <span class="type-badge direct">Direct</span>
-            <span>5 days ago</span>
-          </div>
-        </div>
+        }
       </div>
     </div>
   `,
@@ -117,7 +107,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
     .voters-table { font-size: 13px; }
     .table-header, .table-row {
       display: grid;
-      grid-template-columns: 0.4fr 1.5fr 1.2fr 0.8fr 1fr;
+      grid-template-columns: 0.4fr 1.5fr 1.2fr 0.8fr;
       padding: var(--sp-3) var(--sp-2);
       border-bottom: 1px solid var(--border-subtle);
       align-items: center;
@@ -142,5 +132,101 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
   `],
 })
 export class BpVotesComponent {
-  constructor(public wallet: WalletStateService) {}
+  voters = signal<VoterRow[]>([]);
+  loadingVoters = signal(false);
+  totalVotes = signal('—');
+  proxyCount = signal(0);
+  directCount = signal(0);
+
+  constructor(
+    public wallet: WalletStateService,
+    private ipc: TauriIpcService,
+  ) {
+    effect(() => {
+      const acct = this.wallet.selectedAccount();
+      if (acct?.isProducer) {
+        this.loadProducerVoteWeight(acct.chainId, acct.name);
+        this.loadVoters(acct.chainId, acct.name);
+      }
+    });
+  }
+
+  private async loadProducerVoteWeight(chainId: string, account: string) {
+    try {
+      const result = await this.ipc.getTableRows(chainId, {
+        code: 'eosio', table: 'producers', scope: 'eosio',
+        lower_bound: account, upper_bound: account, limit: 1, json: true,
+      });
+      const row = result?.rows?.[0];
+      if (row?.total_votes) {
+        this.totalVotes.set(this.formatVoteWeight(row.total_votes));
+      }
+    } catch { /* offline */ }
+  }
+
+  private async loadVoters(chainId: string, account: string) {
+    this.loadingVoters.set(true);
+    try {
+      // Fetch voters table and filter for those voting for this producer
+      // This is expensive on-chain — we scan in batches
+      const found: VoterRow[] = [];
+      let lower = '';
+      const limit = 500;
+      let iterations = 0;
+
+      while (iterations < 10) { // cap at 5000 voters scanned
+        const result = await this.ipc.getTableRows(chainId, {
+          code: 'eosio', table: 'voters', scope: 'eosio',
+          lower_bound: lower, limit, json: true,
+        });
+        const rows: any[] = result?.rows ?? [];
+        if (rows.length === 0) break;
+
+        for (const row of rows) {
+          const prods: string[] = row.producers ?? [];
+          if (prods.includes(account)) {
+            found.push({
+              owner: row.owner,
+              staked: row.staked ?? 0,
+              is_proxy: row.is_proxy === 1,
+              proxy: row.proxy ?? '',
+              producers: prods,
+              last_vote_weight: row.last_vote_weight ?? '0',
+            });
+          }
+        }
+
+        if (!result?.more) break;
+        lower = result.next_key ?? rows[rows.length - 1].owner;
+        iterations++;
+      }
+
+      // Sort by staked amount descending
+      found.sort((a, b) => b.staked - a.staked);
+      this.voters.set(found);
+      this.proxyCount.set(found.filter(v => v.is_proxy).length);
+      this.directCount.set(found.filter(v => !v.is_proxy).length);
+    } catch {
+      this.voters.set([]);
+    } finally {
+      this.loadingVoters.set(false);
+    }
+  }
+
+  formatStaked(staked: number): string {
+    const tokens = staked / 10000;
+    if (tokens >= 1e6) return (tokens / 1e6).toFixed(1) + 'M';
+    if (tokens >= 1e3) return (tokens / 1e3).toFixed(1) + 'K';
+    return tokens.toFixed(4);
+  }
+
+  private formatVoteWeight(votes: string): string {
+    const n = parseFloat(votes);
+    if (isNaN(n) || n === 0) return '0';
+    if (n >= 1e15) return (n / 1e15).toFixed(1) + 'P';
+    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    return n.toFixed(0);
+  }
 }

@@ -27,8 +27,8 @@ pub struct Session {
     /// The derived master key for decrypting private keys from the keyring.
     /// Only present when unlocked.
     master_key: Option<SecretKey>,
-    /// When the session was last used.
-    last_activity: Instant,
+    /// When the session was last used (pub for testing timeout behavior).
+    pub last_activity: Instant,
 }
 
 impl Session {

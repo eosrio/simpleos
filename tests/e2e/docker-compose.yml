@@ -1,0 +1,45 @@
+# SimplEOS E2E Test Suite — Local Antelope Chain
+#
+# Spins up a single-node Antelope chain with system contracts deployed.
+# Used for wallet integration testing against real nodeos APIs.
+#
+# Port convention: default port + 10000 for clean separation.
+#
+# Usage:
+#   docker compose up -d        # Start the chain
+#   bun run tests/e2e/test.ts   # Run the test suite
+
+name: simpleos-test
+
+services:
+
+  nodeos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SPRING_VERSION: ${SPRING_VERSION:-1.2.2}
+        CDT_VERSION: ${CDT_VERSION:-4.1.1}
+    container_name: simpleos-test-nodeos
+    ports:
+      - "${NODEOS_HTTP_PORT:-18888}:8888"
+      - "${NODEOS_SHIP_PORT:-18080}:8080"
+    volumes:
+      - nodeos-data:/data/nodeos
+    networks:
+      - simpleos-test
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8888/v1/chain/get_info"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  nodeos-data:
+    driver: local
+
+networks:
+  simpleos-test:
+    name: simpleos-test
+    driver: bridge

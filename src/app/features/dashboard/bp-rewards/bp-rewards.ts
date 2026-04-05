@@ -1,5 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
+import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
+import { TransactionService } from '../../../core/services/transaction.service';
+
+interface ClaimAction {
+  timestamp: string;
+  trx_id: string;
+  data: any;
+}
 
 @Component({
   selector: 'app-bp-rewards',
@@ -15,58 +23,48 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-label">UNCLAIMED</span>
-          <span class="stat-value positive">1,247.3200 EOS</span>
+          <span class="stat-value positive">{{ unclaimedPay() }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">LAST CLAIM</span>
-          <span class="stat-value">2 days ago</span>
+          <span class="stat-value">{{ lastClaimTime() }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">DAILY EST.</span>
-          <span class="stat-value">~623.66 EOS</span>
+          <span class="stat-label">CLAIMS</span>
+          <span class="stat-value">{{ claimHistory().length }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">RANK</span>
-          <span class="stat-value">#{{ wallet.selectedAccount()?.producerRank ?? '—' }}</span>
+          <span class="stat-value">#{{ wallet.selectedAccount().producerRank ?? '—' }}</span>
         </div>
       </div>
 
       <div class="section-card">
         <div class="section-header">
           <h3>Claim History</h3>
-          <button class="btn-primary">CLAIM REWARDS</button>
+          <button class="btn-primary" (click)="onClaimRewards()" [disabled]="busy()">CLAIM REWARDS</button>
         </div>
 
-        <div class="history-table">
-          <div class="table-header">
-            <span>Date</span>
-            <span>Block Pay</span>
-            <span>Vote Pay</span>
-            <span>Total</span>
-            <span>TX</span>
+        @if (loadingHistory()) {
+          <p class="loading-text">Loading claim history...</p>
+        } @else if (claimHistory().length === 0) {
+          <p class="loading-text">No claim history found.</p>
+        } @else {
+          <div class="history-table">
+            <div class="table-header">
+              <span>Date</span>
+              <span>Amount</span>
+              <span>TX</span>
+            </div>
+            @for (claim of claimHistory(); track claim.trx_id) {
+              <div class="table-row">
+                <span>{{ formatDate(claim.timestamp) }}</span>
+                <span class="data positive">{{ formatClaimAmount(claim) }}</span>
+                <span class="tx-link">{{ claim.trx_id.slice(0, 8) }}...{{ claim.trx_id.slice(-4) }}</span>
+              </div>
+            }
           </div>
-          <div class="table-row">
-            <span>Mar 31, 2026</span>
-            <span class="data">312.4100</span>
-            <span class="data">311.2500</span>
-            <span class="data positive">623.6600 EOS</span>
-            <span class="tx-link">a3f2...8b1c</span>
-          </div>
-          <div class="table-row">
-            <span>Mar 30, 2026</span>
-            <span class="data">298.8800</span>
-            <span class="data">305.1200</span>
-            <span class="data positive">604.0000 EOS</span>
-            <span class="tx-link">7d1e...4a2f</span>
-          </div>
-          <div class="table-row">
-            <span>Mar 29, 2026</span>
-            <span class="data">315.2200</span>
-            <span class="data">318.7800</span>
-            <span class="data positive">634.0000 EOS</span>
-            <span class="tx-link">c9b5...e3d7</span>
-          </div>
-        </div>
+        }
       </div>
     </div>
   `,
@@ -154,5 +152,108 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
   `],
 })
 export class BpRewardsComponent {
-  constructor(public wallet: WalletStateService) {}
+  busy = signal(false);
+  loadingHistory = signal(false);
+  claimHistory = signal<ClaimAction[]>([]);
+  unclaimedPay = signal('—');
+  lastClaimTime = signal('—');
+
+  constructor(
+    public wallet: WalletStateService,
+    private ipc: TauriIpcService,
+    private tx: TransactionService,
+  ) {
+    effect(() => {
+      const acct = this.wallet.selectedAccount();
+      if (acct?.isProducer) {
+        this.loadRewardsData(acct.chainId, acct.name);
+        this.loadClaimHistory(acct.chainId, acct.name);
+      }
+    });
+  }
+
+  private async loadRewardsData(chainId: string, account: string) {
+    try {
+      const result = await this.ipc.getTableRows(chainId, {
+        code: 'eosio', table: 'producers', scope: 'eosio',
+        lower_bound: account, upper_bound: account, limit: 1, json: true,
+      });
+      const row = result?.rows?.[0];
+      if (row) {
+        // Unclaimed: unpaid_blocks from producer table (approximate display)
+        const unpaid = row.unpaid_blocks ?? 0;
+        this.unclaimedPay.set(unpaid > 0 ? `${unpaid} blocks` : 'None');
+        // Last claim time
+        if (row.last_claim_time && row.last_claim_time !== '1970-01-01T00:00:00.000') {
+          this.lastClaimTime.set(this.relativeTime(row.last_claim_time));
+        } else {
+          this.lastClaimTime.set('Never');
+        }
+      }
+    } catch { /* offline */ }
+  }
+
+  private async loadClaimHistory(chainId: string, account: string) {
+    this.loadingHistory.set(true);
+    try {
+      const result = await this.ipc.getActionsHistory(chainId, account, 20, 0, { actName: 'claimrewards' });
+      const raw: any[] = result?.actions ?? [];
+      this.claimHistory.set(raw.map((a: any) => ({
+        timestamp: a['@timestamp'] ?? '',
+        trx_id: a.trx_id ?? '',
+        data: a.act?.data ?? {},
+      })));
+    } catch {
+      this.claimHistory.set([]);
+    } finally {
+      this.loadingHistory.set(false);
+    }
+  }
+
+  async onClaimRewards() {
+    const account = this.wallet.selectedAccount();
+    if (!account) return;
+    this.busy.set(true);
+    try {
+      const keys = await this.ipc.listPublicKeys(account.chainId);
+      if (keys.length === 0) return;
+      const result = await this.tx.confirm({
+        chainId: account.chainId, publicKey: keys[0],
+        actions: [{
+          account: 'eosio', name: 'claimrewards',
+          authorization: [{ actor: account.name, permission: 'active' }],
+          data: { owner: account.name },
+        }],
+        title: 'Claim Rewards',
+      });
+      if (result) {
+        await this.wallet.refreshAccount(this.wallet.selectedIndex());
+        await this.loadRewardsData(account.chainId, account.name);
+        await this.loadClaimHistory(account.chainId, account.name);
+      }
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  formatDate(iso: string): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  formatClaimAmount(claim: ClaimAction): string {
+    // Hyperion claimrewards actions may have inline traces with transfer amounts
+    // Fall back to showing the action happened
+    return 'Claimed';
+  }
+
+  private relativeTime(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
 }

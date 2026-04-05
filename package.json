@@ -9,7 +9,14 @@
     "test": "ng test",
     "tauri": "tauri",
     "tauri:dev": "env -u GTK_PATH -u GTK_EXE_PREFIX -u GDK_PIXBUF_MODULEDIR -u GDK_PIXBUF_MODULE_FILE -u GTK_IM_MODULE_FILE -u GIO_MODULE_DIR -u LOCPATH tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "e2e": "bun run tests/e2e/test.ts",
+    "e2e:run": "bun run tests/e2e/test.ts run",
+    "e2e:test": "bun run tests/e2e/test.ts test",
+    "e2e:clean": "bun run tests/e2e/test.ts clean",
+    "e2e:rust": "cd src-tauri && PATH=\"$HOME/.cargo/bin:$PATH\" cargo test --test e2e_wallet --test e2e_signing -- --test-threads=1",
+    "e2e:rust:lib": "cd src-tauri && PATH=\"$HOME/.cargo/bin:$PATH\" cargo test --lib",
+    "e2e:all": "bun run e2e:run && bun run e2e:rust"
   },
   "private": true,
   "packageManager": "bun@1.3.11",

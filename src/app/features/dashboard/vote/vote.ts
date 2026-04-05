@@ -1,7 +1,17 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { ChainFeaturesService } from '../../../core/services/chain-features.service';
+import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
+import { TransactionService } from '../../../core/services/transaction.service';
+
+interface ProducerRow {
+  owner: string;
+  url: string;
+  location: string;
+  total_votes: string;
+  is_active: number;
+}
 
 @Component({
   selector: 'app-vote',
@@ -15,7 +25,7 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
       <div class="summary-row">
         <div class="summary-card">
           <span class="summary-label">TOTAL</span>
-          <span class="summary-value">{{ wallet.selectedAccount()?.info?.core_liquid_balance ?? '0.0000' }}</span>
+          <span class="summary-value">{{ wallet.selectedAccount().info.core_liquid_balance ?? '0.0000' }}</span>
         </div>
         <div class="summary-card">
           <span class="summary-label">STAKED</span>
@@ -23,7 +33,7 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
         </div>
         <div class="summary-card">
           <span class="summary-label">VOTE DECAY</span>
-          <span class="summary-value decay">—</span>
+          <span class="summary-value" [class.decay]="voteDecayPct() > 10">{{ voteDecayDisplay() }}</span>
         </div>
       </div>
 
@@ -31,12 +41,12 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
       @if (features.hasStaking() && !features.capabilities().fioStaking) {
         <div class="section-card">
           <div class="section-header">
-            <h3>Stake your {{ wallet.activeChain()?.symbol ?? 'tokens' }}</h3>
+            <h3>Stake your {{ wallet.activeChain().symbol }}</h3>
             <span class="panel-badge">{{ formatUnstakeDelay() }} unstake</span>
           </div>
 
           @if (features.isFreeChain()) {
-            <p class="section-desc">Staking is optional — it provides voting weight and transaction priority on {{ wallet.selectedAccount()?.chainName }}.</p>
+            <p class="section-desc">Staking is optional — it provides voting weight and transaction priority on {{ wallet.selectedAccount().chainName }}.</p>
           } @else {
             <p class="section-desc">Staked tokens are used for voting and resource allocation. You can unstake at any time.</p>
           }
@@ -56,14 +66,14 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
 
           <div class="stake-split">
             <div class="form-group">
-              <label>CPU ({{ wallet.activeChain()?.symbol }})</label>
+              <label>CPU ({{ wallet.activeChain().symbol }})</label>
               <input class="form-input" type="text"
                      [value]="cpuAmount()"
                      (input)="cpuAmount.set($any($event.target).value)"
                      placeholder="0.0000" />
             </div>
             <div class="form-group">
-              <label>NET ({{ wallet.activeChain()?.symbol }})</label>
+              <label>NET ({{ wallet.activeChain().symbol }})</label>
               <input class="form-input" type="text"
                      [value]="netAmount()"
                      (input)="netAmount.set($any($event.target).value)"
@@ -90,7 +100,7 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
           }
 
           <div class="btn-row">
-            <button class="btn-primary">SET STAKE</button>
+            <button class="btn-primary" (click)="onSetStake()">SET STAKE</button>
             <button class="btn-text" (click)="showAdvanced.set(!showAdvanced())">
               {{ showAdvanced() ? 'Hide' : 'Advanced' }}
             </button>
@@ -149,37 +159,42 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
           <p class="section-desc">Select up to 30 block producers to vote for. Your vote weight is based on your staked tokens.</p>
 
           <div class="search-bar">
-            <input class="form-input" type="text" placeholder="Search producers..." />
+            <input class="form-input" type="text" placeholder="Search producers..."
+                   [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
           </div>
 
           <div class="vote-selection">
             <span class="vote-count">{{ selectedProducers().length }} / 30 selected</span>
-            <button class="btn-primary" [disabled]="selectedProducers().length === 0">CONFIRM VOTE(S)</button>
+            <button class="btn-primary" [disabled]="selectedProducers().length === 0"
+                    (click)="onConfirmVote()">CONFIRM VOTE(S)</button>
           </div>
 
-          <div class="producers-table">
-            <div class="table-header">
-              <span class="col-check"></span>
-              <span class="col-rank">#</span>
-              <span class="col-name">Name</span>
-              <span class="col-location">Location</span>
-              <span class="col-votes">Total Votes</span>
-            </div>
-
-            <!-- Mock producers -->
-            @for (bp of mockProducers; track bp.owner; let i = $index) {
-              <div class="table-row" [class.selected]="selectedProducers().includes(bp.owner)"
-                   (click)="toggleProducer(bp.owner)">
-                <span class="col-check">
-                  <span class="checkbox" [class.checked]="selectedProducers().includes(bp.owner)"></span>
-                </span>
-                <span class="col-rank">{{ i + 1 }}</span>
-                <span class="col-name data">{{ bp.owner }}</span>
-                <span class="col-location">{{ bp.location }}</span>
-                <span class="col-votes data">{{ bp.votes }}</span>
+          @if (loadingProducers()) {
+            <p class="section-desc">Loading producers...</p>
+          } @else {
+            <div class="producers-table">
+              <div class="table-header">
+                <span class="col-check"></span>
+                <span class="col-rank">#</span>
+                <span class="col-name">Name</span>
+                <span class="col-votes">Total Votes</span>
+                <span class="col-url">URL</span>
               </div>
-            }
-          </div>
+
+              @for (bp of filteredProducers(); track bp.owner; let i = $index) {
+                <div class="table-row" [class.selected]="selectedProducers().includes(bp.owner)"
+                     (click)="toggleProducer(bp.owner)">
+                  <span class="col-check">
+                    <span class="checkbox" [class.checked]="selectedProducers().includes(bp.owner)"></span>
+                  </span>
+                  <span class="col-rank">{{ i + 1 }}</span>
+                  <span class="col-name data">{{ bp.owner }}</span>
+                  <span class="col-votes data">{{ formatVotes(bp.total_votes) }}</span>
+                  <span class="col-url truncate">{{ bp.url }}</span>
+                </div>
+              }
+            </div>
+          }
         }
 
         @if (voteTab() === 'proxy') {
@@ -187,10 +202,12 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
 
           <div class="form-group">
             <label>Proxy account</label>
-            <input class="form-input" type="text" placeholder="Enter proxy account name" />
+            <input class="form-input" type="text" placeholder="Enter proxy account name"
+                   [value]="proxyAccount()" (input)="proxyAccount.set($any($event.target).value)" />
           </div>
 
-          <button class="btn-primary">CONFIRM VOTE</button>
+          <button class="btn-primary" [disabled]="!proxyAccount()"
+                  (click)="onConfirmProxy()">CONFIRM VOTE</button>
         }
       </div>
     </div>
@@ -317,6 +334,8 @@ import { ChainFeaturesService } from '../../../core/services/chain-features.serv
       border-bottom: 1px solid var(--border-subtle);
       align-items: center;
     }
+    .col-url { font-size: 11px; color: var(--text-disabled); }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .table-header {
       font-size: 11px; font-weight: 500; color: var(--text-muted);
       text-transform: uppercase; letter-spacing: 0.5px;
@@ -402,31 +421,187 @@ export class VoteComponent {
   cpuRatio = signal(75);
   showAdvanced = signal(false);
   selectedProducers = signal<string[]>([]);
+  searchQuery = signal('');
+  proxyAccount = signal('');
 
-  mockProducers = [
-    { owner: 'eosriobrazil', location: 'Brazil', votes: '482.3M' },
-    { owner: 'eosswedenbp', location: 'Sweden', votes: '451.1M' },
-    { owner: 'eosnationftw', location: 'Canada', votes: '438.7M' },
-    { owner: 'teamgreymass', location: 'Canada', votes: '421.2M' },
-    { owner: 'eosflytomars', location: 'China', votes: '398.5M' },
-    { owner: 'newdex.bp', location: 'China', votes: '387.9M' },
-    { owner: 'atticlabeosb', location: 'USA', votes: '372.4M' },
-    { owner: 'eoslaomaocom', location: 'Japan', votes: '356.8M' },
-    { owner: 'big.one', location: 'China', votes: '341.2M' },
-    { owner: 'eoscannonchn', location: 'China', votes: '328.6M' },
-  ];
+  // Real producer data
+  producers = signal<ProducerRow[]>([]);
+  loadingProducers = signal(false);
+
+  filteredProducers = computed(() => {
+    const q = this.searchQuery().toLowerCase();
+    const list = this.producers();
+    if (!q) return list;
+    return list.filter(bp => bp.owner.includes(q) || bp.url?.toLowerCase().includes(q));
+  });
 
   constructor(
     public wallet: WalletStateService,
     public features: ChainFeaturesService,
+    private ipc: TauriIpcService,
+    private tx: TransactionService,
   ) {
     effect(() => {
       const account = this.wallet.selectedAccount();
       if (account) {
-        this.features.setMockCapabilities(account.chainName);
+        if (this.wallet.hasTauri()) {
+          this.features.detect();
+        } else {
+          this.features.setMockCapabilities(account.chainName);
+        }
+        this.loadProducers(account.chainId);
+        this.loadCurrentVotes(account);
       }
     });
   }
+
+  private async loadProducers(chainId: string) {
+    this.loadingProducers.set(true);
+    try {
+      const result = await this.ipc.getProducers(chainId, 200);
+      const rows: ProducerRow[] = (result?.rows ?? [])
+        .filter((r: any) => r.is_active === 1 || parseFloat(r.total_votes) > 0)
+        .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
+      this.producers.set(rows);
+    } catch {
+      this.producers.set([]);
+    } finally {
+      this.loadingProducers.set(false);
+    }
+  }
+
+  private loadCurrentVotes(account: any) {
+    const voterInfo = account.info?.voter_info;
+    if (voterInfo?.producers?.length) {
+      this.selectedProducers.set([...voterInfo.producers]);
+    } else {
+      this.selectedProducers.set([]);
+    }
+    if (voterInfo?.proxy) {
+      this.proxyAccount.set(voterInfo.proxy);
+    }
+  }
+
+  // ── Helpers ──
+
+  private sym(): string { return this.wallet.activeChain()?.symbol ?? 'EOS'; }
+  private prec(): number { return this.wallet.activeChain()?.precision ?? 4; }
+  private qty(amount: string): string { return `${parseFloat(amount || '0').toFixed(this.prec())} ${this.sym()}`; }
+  private me(): string { return this.wallet.selectedAccount()?.name ?? ''; }
+  private auth() { return [{ actor: this.me(), permission: 'active' }]; }
+
+  private async confirmAction(title: string, actions: any[]) {
+    const account = this.wallet.selectedAccount();
+    if (!account) return;
+    const keys = await this.ipc.listPublicKeys(account.chainId);
+    if (keys.length === 0) return;
+    const result = await this.tx.confirm({ chainId: account.chainId, publicKey: keys[0], actions, title });
+    if (result) {
+      await this.wallet.refreshAccount(this.wallet.selectedIndex());
+    }
+  }
+
+  // ── Actions ──
+
+  async onSetStake() {
+    const cpu = this.cpuAmount(), net = this.netAmount();
+    if (!cpu && !net) return;
+    await this.confirmAction('Stake Resources', [{
+      account: 'eosio', name: 'delegatebw', authorization: this.auth(),
+      data: { from: this.me(), receiver: this.me(), stake_net_quantity: this.qty(net), stake_cpu_quantity: this.qty(cpu), transfer: false },
+    }]);
+  }
+
+  async onConfirmVote() {
+    const prods = [...this.selectedProducers()].sort();
+    if (prods.length === 0) return;
+
+    const isFio = this.wallet.activeChain()?.name === 'FIO';
+    const data: any = { voter: this.me(), proxy: '', producers: prods };
+
+    // FIO requires fio_address and max_fee
+    if (isFio) {
+      data.fio_address = '';
+      data.max_fee = await this.fioFee('vote_producer');
+    }
+
+    await this.confirmAction('Vote for Producers', [{
+      account: 'eosio', name: 'voteproducer', authorization: this.auth(), data,
+    }]);
+  }
+
+  async onConfirmProxy() {
+    const proxy = this.proxyAccount().trim();
+    if (!proxy) return;
+
+    const isFio = this.wallet.activeChain()?.name === 'FIO';
+
+    if (isFio) {
+      // FIO uses a separate voteproxy action
+      const maxFee = await this.fioFee('proxy_vote');
+      await this.confirmAction('Vote via Proxy', [{
+        account: 'eosio', name: 'voteproxy', authorization: this.auth(),
+        data: { proxy, fio_address: '', actor: this.me(), max_fee: maxFee },
+      }]);
+    } else {
+      await this.confirmAction('Vote via Proxy', [{
+        account: 'eosio', name: 'voteproducer', authorization: this.auth(),
+        data: { voter: this.me(), proxy, producers: [] },
+      }]);
+    }
+  }
+
+  /** Fetch FIO fee for a given endpoint. */
+  private async fioFee(endPoint: string): Promise<number> {
+    const acct = this.wallet.selectedAccount();
+    if (!acct) return 2000000000;
+    try {
+      const result = await this.ipc.fioGetFee(acct.chainId, endPoint, '');
+      return result?.fee ?? 2000000000;
+    } catch {
+      return 2000000000;
+    }
+  }
+
+  // ── Vote Decay ──
+
+  /**
+   * EOSIO vote decay: votes lose weight over time unless refreshed.
+   * Weight = staked * 2^(weeks_since_epoch / 52)
+   * The last_vote_weight in voter_info captures the weight at the time of voting.
+   * Current weight = staked * 2^(current_weeks / 52)
+   * Decay % = 1 - (last_vote_weight / current_weight) * 100
+   */
+  voteDecayPct = computed(() => {
+    const acct = this.wallet.selectedAccount();
+    if (!acct) return 0;
+    const voterInfo = acct.info?.voter_info;
+    if (!voterInfo) return 0;
+
+    const lastVoteWeight = parseFloat(voterInfo.last_vote_weight ?? '0');
+    if (lastVoteWeight <= 0) return 0;
+
+    const staked = voterInfo.staked ?? ((acct.info.cpu_weight ?? 0) + (acct.info.net_weight ?? 0));
+    if (staked <= 0) return 0;
+
+    // EOSIO epoch: January 1, 2000 00:00:00 UTC
+    const epochMs = Date.UTC(2000, 0, 1);
+    const nowWeeks = (Date.now() - epochMs) / (7 * 24 * 3600 * 1000);
+    const currentWeight = (staked / 10000) * Math.pow(2, nowWeeks / 52);
+
+    if (currentWeight <= 0) return 0;
+    const decay = (1 - lastVoteWeight / currentWeight) * 100;
+    return Math.max(0, Math.min(100, decay));
+  });
+
+  voteDecayDisplay = computed(() => {
+    const pct = this.voteDecayPct();
+    if (pct <= 0) return 'none';
+    if (pct < 1) return '<1%';
+    return `${pct.toFixed(1)}%`;
+  });
+
+  // ── Formatters ──
 
   formatStake(): string {
     const acct = this.wallet.selectedAccount();
@@ -441,15 +616,26 @@ export class VoteComponent {
     return `${Math.round(sec / 86400)}-day`;
   }
 
+  formatVotes(votes: string): string {
+    const n = parseFloat(votes);
+    if (isNaN(n) || n === 0) return '0';
+    // Votes are stored as a large float representing weight, not token count
+    // Convert to a readable number
+    if (n >= 1e15) return (n / 1e15).toFixed(1) + 'P';
+    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toFixed(0);
+  }
+
   onSliderChange(value: string) {
     this.stakePercent.set(+value);
   }
 
   toggleProducer(owner: string) {
     this.selectedProducers.update(list => {
-      if (list.includes(owner)) {
-        return list.filter(p => p !== owner);
-      }
+      if (list.includes(owner)) return list.filter(p => p !== owner);
       if (list.length >= 30) return list;
       return [...list, owner];
     });

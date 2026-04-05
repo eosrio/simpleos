@@ -53,19 +53,24 @@ pub struct ChainInfo {
 }
 
 /// Account info response from get_account.
+/// Note: some chains return numeric fields as strings, so we use a flexible deserializer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountInfo {
     pub account_name: String,
     #[serde(default)]
     pub core_liquid_balance: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
     pub ram_quota: Option<i64>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
     pub ram_usage: Option<i64>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
     pub net_weight: Option<i64>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
     pub cpu_weight: Option<i64>,
+    #[serde(default)]
+    pub cpu_limit: Option<ResourceLimit>,
+    #[serde(default)]
+    pub net_limit: Option<ResourceLimit>,
     #[serde(default)]
     pub permissions: Vec<Permission>,
     #[serde(default)]
@@ -76,6 +81,64 @@ pub struct AccountInfo {
     pub self_delegated_bandwidth: Option<serde_json::Value>,
     #[serde(default)]
     pub refund_request: Option<serde_json::Value>,
+}
+
+/// Resource usage limits (CPU or NET) from get_account.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceLimit {
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
+    pub used: Option<i64>,
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
+    pub available: Option<i64>,
+    #[serde(default, deserialize_with = "deserialize_flexible_i64")]
+    pub max: Option<i64>,
+}
+
+/// Deserialize a value that may be either an i64 or a string containing an i64.
+fn deserialize_flexible_i64<'de, D>(deserializer: D) -> Result<Option<i64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de;
+
+    struct FlexibleI64Visitor;
+
+    impl<'de> de::Visitor<'de> for FlexibleI64Visitor {
+        type Value = Option<i64>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("an i64, a string containing an i64, or null")
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
+            Ok(Some(v))
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
+            Ok(Some(v as i64))
+        }
+
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
+            Ok(Some(v as i64))
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            if v.is_empty() {
+                return Ok(None);
+            }
+            v.parse::<i64>().map(Some).map_err(de::Error::custom)
+        }
+    }
+
+    deserializer.deserialize_any(FlexibleI64Visitor)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,10 +209,20 @@ pub struct ProducerInfo {
     pub is_active: Option<u8>,
 }
 
+/// An account + permission discovered via key lookup.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountAuthority {
+    pub account_name: String,
+    pub permission_name: String,
+}
+
 /// Result from key accounts lookup.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyAccountsResult {
     pub account_names: Vec<String>,
+    /// Detailed authority info (account + permission). Populated when available.
+    #[serde(default)]
+    pub authorities: Vec<AccountAuthority>,
 }
 
 /// Result for import operation.
@@ -157,4 +230,11 @@ pub struct KeyAccountsResult {
 pub struct ImportResult {
     pub public_key: String,
     pub accounts: Vec<String>,
+}
+
+/// Result for key generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyPairResult {
+    pub wif: String,
+    pub public_key: String,
 }

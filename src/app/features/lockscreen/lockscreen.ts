@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
+import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 
 @Component({
   selector: 'app-lockscreen',
@@ -22,30 +23,68 @@ import { WalletStateService } from '../../core/services/wallet-state.service';
         </div>
 
         <h1 class="brand">Simpl<span class="brand-accent">EOS</span></h1>
-        <p class="subtitle">Enter your passphrase to unlock</p>
 
-        <form class="unlock-form" (ngSubmit)="onUnlock()">
-          <div class="input-group">
-            <input
-              type="password"
-              [value]="passphrase()"
-              (input)="passphrase.set($any($event.target).value)"
-              placeholder="Passphrase"
-              autofocus
-              autocomplete="current-password"
-            />
-          </div>
-
-          @if (error()) {
-            <p class="error-msg">{{ error() }}</p>
+        @if (pinAvailable() && !showPassphrase()) {
+          <p class="subtitle">Enter your PIN to unlock</p>
+          <form class="unlock-form" (ngSubmit)="onPinUnlock()">
+            <div class="input-group">
+              <input
+                type="password"
+                inputmode="numeric"
+                maxlength="6"
+                [value]="pin()"
+                (input)="pin.set($any($event.target).value)"
+                placeholder="PIN"
+                autofocus
+                autocomplete="off"
+              />
+            </div>
+            @if (error()) {
+              <p class="error-msg">{{ error() }}</p>
+            }
+            <button type="submit" class="btn-primary" [disabled]="!pin()">
+              Unlock
+            </button>
+          </form>
+          <a class="import-link" (click)="showPassphrase.set(true)">Use passphrase instead</a>
+        } @else {
+          <p class="subtitle">Enter your passphrase to unlock</p>
+          <form class="unlock-form" (ngSubmit)="onUnlock()">
+            <div class="input-group">
+              <input
+                type="password"
+                [value]="passphrase()"
+                (input)="passphrase.set($any($event.target).value)"
+                placeholder="Passphrase"
+                autofocus
+                autocomplete="current-password"
+              />
+            </div>
+            @if (error()) {
+              <p class="error-msg">{{ error() }}</p>
+            }
+            <button type="submit" class="btn-primary" [disabled]="!passphrase()">
+              Unlock
+            </button>
+          </form>
+          @if (pinAvailable()) {
+            <a class="import-link" (click)="showPassphrase.set(false)">Use PIN instead</a>
           }
-
-          <button type="submit" class="btn-primary" [disabled]="!passphrase()">
-            Unlock
-          </button>
-        </form>
+        }
 
         <a class="import-link" (click)="goToImport()">Import a key</a>
+
+        @if (showResetConfirm()) {
+          <div class="reset-confirm">
+            <p>This will delete all keys and wallet data. This cannot be undone.</p>
+            <div class="reset-actions">
+              <button class="btn-cancel" (click)="showResetConfirm.set(false)">Cancel</button>
+              <button class="btn-danger" (click)="onReset()">Erase Everything</button>
+            </div>
+          </div>
+        } @else {
+          <a class="reset-link" (click)="showResetConfirm.set(true)">Reset wallet</a>
+        }
 
         <span class="version">v2.0.0-alpha</span>
       </div>
@@ -195,6 +234,52 @@ import { WalletStateService } from '../../core/services/wallet-state.service';
       color: var(--accent-hover);
     }
 
+    .reset-link {
+      font-size: 12px;
+      color: var(--text-disabled);
+      cursor: pointer;
+      transition: color 150ms ease;
+      text-decoration: none;
+    }
+    .reset-link:hover { color: var(--negative); }
+
+    .reset-confirm {
+      width: 320px;
+      padding: var(--sp-4);
+      background: var(--bg-raised);
+      border: 1px solid var(--negative);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+    .reset-confirm p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: var(--sp-4);
+    }
+    .reset-actions {
+      display: flex;
+      gap: var(--sp-3);
+    }
+    .btn-cancel, .btn-danger {
+      flex: 1;
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+    }
+    .btn-cancel {
+      background: var(--bg-base);
+      color: var(--text-muted);
+    }
+    .btn-danger {
+      background: var(--negative);
+      color: #fff;
+      border-color: var(--negative);
+    }
+
     .version {
       font-size: 11px;
       color: var(--text-disabled);
@@ -232,13 +317,28 @@ import { WalletStateService } from '../../core/services/wallet-state.service';
 })
 export class LockscreenComponent {
   passphrase = signal('');
+  pin = signal('');
   error = signal('');
   logoHover = signal(false);
+  showResetConfirm = signal(false);
+  pinAvailable = signal(false);
+  showPassphrase = signal(false);
 
   constructor(
     private wallet: WalletStateService,
     private router: Router,
-  ) {}
+    private ipc: TauriIpcService,
+  ) {
+    this.checkPin();
+  }
+
+  private async checkPin() {
+    try {
+      this.pinAvailable.set(await this.ipc.hasPin());
+    } catch {
+      this.pinAvailable.set(false);
+    }
+  }
 
   async onUnlock() {
     this.error.set('');
@@ -254,7 +354,41 @@ export class LockscreenComponent {
     }
   }
 
+  async onPinUnlock() {
+    this.error.set('');
+    try {
+      const success = await this.ipc.unlockWithPin(this.pin());
+      if (success) {
+        this.wallet.locked.set(false);
+        // Restore accounts
+        const restored = await this.wallet.restoreAccounts();
+        if (!restored) {
+          await this.wallet.loadAccounts();
+        } else {
+          this.wallet.refreshAllAccounts();
+        }
+        this.router.navigate(['/dashboard']);
+      } else {
+        this.error.set('Invalid PIN');
+      }
+    } catch {
+      this.error.set('Invalid PIN');
+    }
+  }
+
   goToImport() {
     this.router.navigate(['/landing']);
+  }
+
+  async onReset() {
+    try {
+      await this.ipc.resetWallet();
+      this.wallet.vaultExists.set(false);
+      this.wallet.locked.set(false);
+      this.wallet.accounts.set([]);
+      this.router.navigate(['/landing']);
+    } catch (e) {
+      this.error.set('Reset failed: ' + e);
+    }
   }
 }

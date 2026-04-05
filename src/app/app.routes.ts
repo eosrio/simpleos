@@ -30,6 +30,6 @@ export const routes: Routes = [
       { path: '', redirectTo: 'wallet', pathMatch: 'full' },
     ],
   },
-  { path: '', redirectTo: 'lockscreen', pathMatch: 'full' },
-  { path: '**', redirectTo: 'lockscreen' },
+  { path: '', redirectTo: 'landing', pathMatch: 'full' },
+  { path: '**', redirectTo: 'landing' },
 ];

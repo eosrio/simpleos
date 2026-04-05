@@ -29,7 +29,7 @@ import { Component } from '@angular/core';
         </div>
 
         <div class="credits">
-          <p>Originally created by <strong>EOS Rio</strong></p>
+          <p>Developed by <strong>EOS Rio</strong></p>
           <p class="license">Open source under MIT License</p>
         </div>
       </div>

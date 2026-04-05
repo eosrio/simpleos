@@ -6,9 +6,15 @@ export const authGuard: CanActivateFn = () => {
   const wallet = inject(WalletStateService);
   const router = inject(Router);
 
-  if (wallet.locked()) {
+  if (!wallet.vaultExists() && wallet.accounts().length === 0) {
+    router.navigate(['/landing']);
+    return false;
+  }
+
+  if (wallet.vaultExists() && wallet.locked()) {
     router.navigate(['/lockscreen']);
     return false;
   }
+
   return true;
 };
