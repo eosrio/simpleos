@@ -256,6 +256,20 @@ export class TauriIpcService {
     return invoke<void>('reset_wallet');
   }
 
+  // ── Tray / Window ──
+
+  async setCloseToTray(enabled: boolean): Promise<void> {
+    return invoke<void>('set_close_to_tray', { enabled });
+  }
+
+  async getCloseToTray(): Promise<boolean> {
+    return invoke<boolean>('get_close_to_tray');
+  }
+
+  async showMainWindow(): Promise<void> {
+    return invoke<void>('show_main_window');
+  }
+
   async removeKey(chainId: string, publicKey: string): Promise<void> {
     return invoke<void>('remove_key', { chainId, publicKey });
   }
@@ -357,6 +371,10 @@ export class TauriIpcService {
 
   async signAndPushWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<{ transaction_id: string }> {
     return invoke<{ transaction_id: string }>('sign_and_push_with_passphrase', { chainId, publicKey, passphrase, actions });
+  }
+
+  async signDigest(chainId: string, publicKey: string, digestHex: string): Promise<string> {
+    return invoke<string>('sign_digest', { chainId, publicKey, digestHex });
   }
 
   // ── PowerUp ──
@@ -494,8 +512,8 @@ export class TauriIpcService {
 
   // ── DApp Browser ──
 
-  async openDappBrowser(url: string, x: number, y: number, width: number, height: number): Promise<void> {
-    return invoke<void>('open_dapp_browser', { url, x, y, width, height });
+  async openDappBrowser(url: string, title: string): Promise<void> {
+    return invoke<void>('open_dapp_browser', { url, title });
   }
 
   async closeDappBrowser(): Promise<void> {
@@ -504,10 +522,6 @@ export class TauriIpcService {
 
   async navigateDapp(url: string): Promise<void> {
     return invoke<void>('navigate_dapp', { url });
-  }
-
-  async resizeDappBrowser(x: number, y: number, width: number, height: number): Promise<void> {
-    return invoke<void>('resize_dapp_browser', { x, y, width, height });
   }
 
   async reloadDapp(): Promise<void> {

@@ -298,6 +298,18 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
               <button class="btn-ghost btn-small" (click)="lockWallet()">LOCK NOW</button>
             </div>
 
+            <!-- Close to Tray -->
+            <div class="setting-item">
+              <div>
+                <span class="setting-label">Close to Tray</span>
+                <span class="setting-desc">Keep the wallet running in the background when the window is closed, so dApps can request signatures instantly.</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" [checked]="closeToTray()" (change)="onCloseToTrayChange($any($event.target).checked)" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
             <!-- Quick PIN -->
             <div class="setting-item">
               <div>
@@ -817,6 +829,49 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
       font-size: 12px;
     }
 
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 22px;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: transform 150ms ease, background 150ms ease;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+    }
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translate(18px, -50%);
+      background: var(--accent);
+    }
+
     /* Account list */
     .account-list { margin-bottom: var(--sp-2); }
     .account-row {
@@ -889,6 +944,7 @@ export class SettingsComponent {
   ) {
     this.loadPinStatus();
     this.loadAutoLockSetting();
+    this.loadCloseToTraySetting();
   }
 
   async setMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
@@ -1056,6 +1112,32 @@ export class SettingsComponent {
         document.removeEventListener('mousemove', resetActivity);
       }
     }, 10000); // Check every 10 seconds
+  }
+
+  // ── Close to Tray ──
+
+  closeToTray = signal(true);
+
+  private async loadCloseToTraySetting() {
+    try {
+      const saved = await this.ipc.storeGet<boolean>('closeToTray');
+      // Default to true when the setting has never been written.
+      const enabled = saved === null ? true : saved;
+      this.closeToTray.set(enabled);
+      // Re-sync to backend in case this is a fresh process and the user
+      // had previously disabled the feature — the Rust default on boot is
+      // true and reads from the store, but pushing again is harmless and
+      // guarantees the two sides agree.
+      await this.ipc.setCloseToTray(enabled);
+    } catch { /* ignore */ }
+  }
+
+  async onCloseToTrayChange(enabled: boolean) {
+    this.closeToTray.set(enabled);
+    await this.ipc.storeSet('closeToTray', enabled);
+    try {
+      await this.ipc.setCloseToTray(enabled);
+    } catch { /* ignore — backend will re-read on next start */ }
   }
 
   // ── PIN ──

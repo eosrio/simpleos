@@ -1,5 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { TransactionService, TxAction } from '../core/services/transaction.service';
 import { WalletStateService } from '../core/services/wallet-state.service';
 
@@ -106,7 +107,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
                 @if (links.length > 0) {
                   <div class="explorer-links">
                     @for (link of links; track link.name) {
-                      <a class="explorer-link" [href]="link.url" target="_blank" rel="noopener">
+                      <button type="button" class="explorer-link" (click)="openExplorer(link.url)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round">
@@ -115,7 +116,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
                           <line x1="10" y1="14" x2="21" y2="3"/>
                         </svg>
                         {{ link.name }}
-                      </a>
+                      </button>
                     }
                   </div>
                 }
@@ -450,7 +451,9 @@ import { WalletStateService } from '../core/services/wallet-state.service';
       color: var(--accent);
       font-size: 12px;
       font-weight: 500;
+      font-family: var(--font-body);
       text-decoration: none;
+      cursor: pointer;
       transition: background 150ms ease, border-color 150ms ease;
     }
 
@@ -495,6 +498,15 @@ export class ConfirmModalComponent {
     public tx: TransactionService,
     public wallet: WalletStateService,
   ) {}
+
+  /** Open an explorer URL in the system's default browser via Tauri shell plugin. */
+  async openExplorer(url: string): Promise<void> {
+    try {
+      await openUrl(url);
+    } catch (e) {
+      console.error('Failed to open explorer URL', url, e);
+    }
+  }
 
   /** Close modal when clicking the overlay background (not the modal itself). */
   onOverlayClick(event: MouseEvent) {

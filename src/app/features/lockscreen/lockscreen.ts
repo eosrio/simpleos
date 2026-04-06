@@ -3,13 +3,19 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
+import { LoaderService } from '../../core/services/loader.service';
+import { WindowControlsComponent } from '../../shared/window-controls';
 
 @Component({
   selector: 'app-lockscreen',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, WindowControlsComponent],
   template: `
     <div class="lockscreen">
+      <div class="lock-titlebar" data-tauri-drag-region>
+        <div class="lock-titlebar-fill" data-tauri-drag-region></div>
+        <app-window-controls />
+      </div>
       <div class="lockscreen-inner">
         <!-- Animated logo -->
         <div class="logo-container"
@@ -92,12 +98,34 @@ import { TauriIpcService } from '../../core/services/tauri-ipc.service';
   `,
   styles: [`
     .lockscreen {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
       background: var(--bg-deep);
       overflow: hidden;
+    }
+
+    /* Custom titlebar — transparent overlay so it doesn't interrupt the
+       centered unlock layout. Drag region covers the full width minus
+       window controls. */
+    .lock-titlebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      display: flex;
+      align-items: stretch;
+      z-index: 10;
+      -webkit-app-region: drag;
+    }
+    .lock-titlebar-fill {
+      flex: 1 1 auto;
+    }
+    :host-context(html.os-mac) .lock-titlebar {
+      padding-left: 84px;
     }
 
     .lockscreen-inner {
@@ -328,6 +356,7 @@ export class LockscreenComponent {
     private wallet: WalletStateService,
     private router: Router,
     private ipc: TauriIpcService,
+    private loader: LoaderService,
   ) {
     this.checkPin();
   }
@@ -342,29 +371,43 @@ export class LockscreenComponent {
 
   async onUnlock() {
     this.error.set('');
+    this.loader.show('Unlocking wallet', 'Decrypting your vault');
+    // Let the overlay paint before we start the CPU-heavy decrypt.
+    await this.loader.yieldToPaint();
     try {
       const success = await this.wallet.unlock(this.passphrase());
       if (success) {
+        this.loader.update('Loading accounts', 'Fetching chain data');
         this.router.navigate(['/dashboard']);
       } else {
         this.error.set('Invalid passphrase');
       }
     } catch {
       this.error.set('Failed to unlock wallet');
+    } finally {
+      this.loader.hide();
     }
   }
 
   async onPinUnlock() {
     this.error.set('');
+    this.loader.show('Unlocking wallet', 'Deriving key from PIN');
+    // Let the overlay paint before we hand off to the 70-round Rijndael
+    // key derivation — otherwise the user sees a frozen UI.
+    await this.loader.yieldToPaint();
     try {
       const success = await this.ipc.unlockWithPin(this.pin());
       if (success) {
+        this.loader.update('Decrypting vault', 'Verifying stored keys');
         this.wallet.locked.set(false);
         // Restore accounts
+        this.loader.update('Restoring accounts', 'Loading cached data');
         const restored = await this.wallet.restoreAccounts();
         if (!restored) {
+          this.loader.update('Fetching accounts', 'Connecting to blockchain');
           await this.wallet.loadAccounts();
         } else {
+          this.loader.update('Syncing balances', 'Refreshing chain data');
           this.wallet.refreshAllAccounts();
         }
         this.router.navigate(['/dashboard']);
@@ -373,6 +416,8 @@ export class LockscreenComponent {
       }
     } catch {
       this.error.set('Invalid PIN');
+    } finally {
+      this.loader.hide();
     }
   }
 

@@ -606,8 +606,13 @@ export class VoteComponent {
   formatStake(): string {
     const acct = this.wallet.selectedAccount();
     if (!acct) return '0.0000';
-    const total = ((acct.info.cpu_weight ?? 0) + (acct.info.net_weight ?? 0)) / 10000;
-    return total.toFixed(4);
+    // Actual staked tokens for voting power live in voter_info.staked (raw int, precision 4).
+    // cpu_weight/net_weight represent resource delegation, which is a separate concept.
+    const staked = acct.info?.voter_info?.staked;
+    if (typeof staked === 'number' && staked > 0) {
+      return (staked / 10000).toFixed(4);
+    }
+    return '0.0000';
   }
 
   formatUnstakeDelay(): string {
@@ -616,17 +621,27 @@ export class VoteComponent {
     return `${Math.round(sec / 86400)}-day`;
   }
 
+  /**
+   * EOSIO producer total_votes is a time-weighted sum: staked_tokens * 2^(weeks_since_epoch / 52).
+   * Remove the growth factor to display the underlying token amount that voters have staked.
+   */
+  private voteGrowthFactor(): number {
+    const epochMs = Date.UTC(2000, 0, 1);
+    const nowWeeks = (Date.now() - epochMs) / (7 * 24 * 3600 * 1000);
+    return Math.pow(2, nowWeeks / 52);
+  }
+
   formatVotes(votes: string): string {
     const n = parseFloat(votes);
-    if (isNaN(n) || n === 0) return '0';
-    // Votes are stored as a large float representing weight, not token count
-    // Convert to a readable number
-    if (n >= 1e15) return (n / 1e15).toFixed(1) + 'P';
-    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
-    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-    return n.toFixed(0);
+    if (isNaN(n) || n <= 0) return '0';
+    const tokens = n / this.voteGrowthFactor();
+    const symbol = this.wallet.activeChain().symbol;
+    let body: string;
+    if (tokens >= 1e9) body = (tokens / 1e9).toFixed(2) + 'B';
+    else if (tokens >= 1e6) body = (tokens / 1e6).toFixed(2) + 'M';
+    else if (tokens >= 1e3) body = (tokens / 1e3).toFixed(2) + 'K';
+    else body = tokens.toFixed(2);
+    return `${body} ${symbol}`;
   }
 
   onSliderChange(value: string) {

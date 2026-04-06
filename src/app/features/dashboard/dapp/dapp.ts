@@ -1,11 +1,14 @@
-import { Component, signal, computed, OnDestroy, viewChild, ElementRef, inject } from '@angular/core';
+import { Component, signal, computed, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { UiStateService } from '../../../core/services/ui-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
+import { AlertService } from '../../../core/services/alert.service';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
+import { deflateRaw, inflateRaw } from 'pako';
+import { SigningRequest } from '@wharfkit/signing-request';
 
 interface DappEntry {
   name: string;
@@ -229,38 +232,21 @@ const CURATED_DAPPS: DappEntry[] = [
           }
         </div>
       } @else {
-        <!-- Active dApp view (fullscreen browser) -->
-        <div class="browser-chrome">
-          <div class="browser-bar">
-            <button class="nav-btn" (click)="closeDapp()" title="Back to catalog">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <!-- Active dApp status (DApp is open in a separate window) -->
+        <div class="dapp-active-status">
+          <div class="status-icon">{{ activeDapp()!.icon }}</div>
+          <h3>{{ activeDapp()!.name }}</h3>
+          <p class="status-url">{{ currentUrl() }}</p>
+          <p class="status-hint">The DApp is open in a separate window.<br>Signing requests will appear here.</p>
+          <div class="status-actions">
+            <button class="btn-status" (click)="focusDappWindow()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+              Focus Window
             </button>
-            <div class="nav-separator"></div>
-            <button class="nav-btn" (click)="goBack()" title="Back">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <button class="btn-status close" (click)="closeDapp()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Close DApp
             </button>
-            <button class="nav-btn" (click)="goForward()" title="Forward">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-            <button class="nav-btn" (click)="reloadDapp()" title="Reload">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            </button>
-            <div class="browser-url" [class.secure]="isSecureOrigin()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>{{ currentUrl() }}</span>
-            </div>
-            <span class="browser-account">{{ wallet.selectedAccount().name }}</span>
-            <span class="browser-dapp-name">{{ activeDapp()!.name }}</span>
-          </div>
-
-          <!-- The Tauri child webview is positioned over this element -->
-          <div class="browser-frame" #browserFrame>
-            @if (loading()) {
-              <div class="frame-loading">
-                <div class="loading-spinner"></div>
-                <span>Loading {{ activeDapp()!.name }}...</span>
-              </div>
-            }
           </div>
         </div>
       }
@@ -269,7 +255,6 @@ const CURATED_DAPPS: DappEntry[] = [
   styles: [`
     :host { display: block; height: 100%; }
     .dapp-view { max-width: 900px; }
-    .dapp-view:has(.browser-chrome) { max-width: none; height: 100%; }
     h2 { font-size: 24px; margin-bottom: var(--sp-2); }
     .page-desc { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-5); }
 
@@ -399,49 +384,31 @@ const CURATED_DAPPS: DappEntry[] = [
       font-size: 11px; cursor: pointer;
     }
 
-    /* Browser chrome */
-    .browser-chrome { display: flex; flex-direction: column; height: 100%; }
-    .browser-bar {
-      display: flex; align-items: center; gap: var(--sp-2);
-      padding: var(--sp-2) var(--sp-4);
-      background: var(--bg-deep); border-bottom: 1px solid var(--border-subtle);
-    }
-    .nav-separator { width: 1px; height: 18px; background: var(--border-subtle); margin: 0 var(--sp-1); }
-    .nav-btn {
-      display: flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border: none; border-radius: var(--radius-sm);
-      background: transparent; color: var(--text-muted); cursor: pointer;
-      transition: background 150ms ease, color 150ms ease;
-    }
-    .nav-btn:hover { background: var(--bg-hover); color: var(--text-bright); }
-    .browser-url {
-      display: flex; align-items: center; gap: var(--sp-2);
-      flex: 1; font-family: var(--font-data); font-size: 12px; color: var(--text-muted);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--bg-base); border-radius: var(--radius-sm);
-      border: 1px solid var(--border-subtle); min-width: 0; overflow: hidden;
-    }
-    .browser-url svg { flex-shrink: 0; color: var(--text-muted); }
-    .browser-url.secure svg { color: var(--positive); }
-    .browser-url span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .browser-dapp-name { font-size: 12px; font-weight: 500; color: var(--text-body); white-space: nowrap; }
-    .browser-account {
-      font-family: var(--font-data); font-size: 11px; color: var(--accent);
-      background: var(--accent-muted); padding: 2px var(--sp-2);
-      border-radius: var(--radius-full); white-space: nowrap;
-    }
-    .browser-frame { flex: 1; background: var(--bg-base); position: relative; }
-    .frame-loading {
-      position: absolute; inset: 0;
+    /* Active DApp status panel */
+    .dapp-active-status {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: var(--sp-3); color: var(--text-disabled); font-size: 13px;
+      text-align: center; padding: var(--sp-8); gap: var(--sp-3);
+      min-height: 300px;
     }
-    .loading-spinner {
-      width: 24px; height: 24px;
-      border: 2px solid var(--border-subtle); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
+    .status-icon { font-size: 48px; margin-bottom: var(--sp-2); }
+    .dapp-active-status h3 { font-size: 20px; font-weight: 600; color: var(--text-bright); margin: 0; }
+    .status-url {
+      font-family: var(--font-data); font-size: 12px; color: var(--text-muted);
+      padding: var(--sp-1) var(--sp-3); background: var(--bg-raised);
+      border-radius: var(--radius-sm); margin: 0;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-hint { font-size: 13px; color: var(--text-disabled); margin: var(--sp-2) 0 var(--sp-4); line-height: 1.5; }
+    .status-actions { display: flex; gap: var(--sp-3); }
+    .btn-status {
+      display: flex; align-items: center; gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-4); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm); background: var(--bg-raised);
+      color: var(--text-body); font-size: 13px; cursor: pointer;
+      transition: background 150ms ease;
+    }
+    .btn-status:hover { background: var(--bg-hover); }
+    .btn-status.close { border-color: var(--negative); color: var(--negative); }
+    .btn-status.close:hover { background: rgba(239, 68, 68, 0.1); }
   `],
 })
 export class DappComponent implements OnDestroy {
@@ -449,7 +416,6 @@ export class DappComponent implements OnDestroy {
   activeCategory = signal<string>('all');
   activeDapp = signal<DappEntry | null>(null);
   currentUrl = signal('');
-  loading = signal(false);
 
   // Custom dApp form
   showAddDapp = signal(false);
@@ -462,20 +428,15 @@ export class DappComponent implements OnDestroy {
   // Sessions
   sessions = signal<DappSession[]>([]);
 
-  browserFrame = viewChild<ElementRef>('browserFrame');
-
   wallet = inject(WalletStateService);
   private ui = inject(UiStateService);
   private ipc = inject(TauriIpcService);
   private tx = inject(TransactionService);
-  private resizeObserver: ResizeObserver | null = null;
+  private alert = inject(AlertService);
   private unlistenNav: UnlistenFn | null = null;
   private unlistenSign: UnlistenFn | null = null;
-
-  isSecureOrigin = computed(() => {
-    const url = this.currentUrl();
-    return url.startsWith('https://');
-  });
+  private unlistenClose: UnlistenFn | null = null;
+  private unlistenEsr: UnlistenFn | null = null;
 
   constructor() {
     this.loadPinnedDapps();
@@ -504,21 +465,17 @@ export class DappComponent implements OnDestroy {
   openDapp(dapp: DappEntry) {
     this.activeDapp.set(dapp);
     this.currentUrl.set(dapp.url);
-    this.loading.set(true);
-    this.ui.fullscreen.set(true);
 
     // Create/update session
     this.ensureSession(dapp);
 
-    setTimeout(() => this.mountWebview(dapp.url));
+    this.mountWebview(dapp.url, dapp.name);
   }
 
   closeDapp() {
     this.teardownWebview();
     this.activeDapp.set(null);
     this.currentUrl.set('');
-    this.loading.set(false);
-    this.ui.fullscreen.set(false);
   }
 
   onUrlEnter() {
@@ -631,50 +588,145 @@ export class DappComponent implements OnDestroy {
     this.saveSessions();
   }
 
-  // ── Webview Lifecycle ──
+  // ── Webview Window Lifecycle ──
 
-  private async mountWebview(url: string) {
-    const el = this.browserFrame()?.nativeElement as HTMLElement | undefined;
-    if (!el) return;
+  async focusDappWindow() {
+    const { Window } = await import('@tauri-apps/api/window');
+    const win = await Window.getByLabel('dapp-browser');
+    if (win) await win.setFocus();
+  }
 
-    // Listen for navigation events
+  private async mountWebview(url: string, title: string) {
+    // Listen for navigation events from the DApp window
     this.unlistenNav = await listen<string>('dapp-navigation', (event) => {
       this.currentUrl.set(event.payload);
-      this.loading.set(false);
     });
 
-    // Listen for signing requests from the bridge
+    // Listen for the DApp window being closed by the user
+    this.unlistenClose = await listen('dapp-closed', () => {
+      this.closeDapp();
+    });
+
+    // Listen for ESR (EOSIO Signing Request) URIs intercepted from esr:// navigations
+    this.unlistenEsr = await listen<string>('dapp-esr-request', async (event) => {
+      await this.handleEsrRequest(event.payload);
+    });
+
+    // Listen for signing requests from the injected bridge (fallback)
     this.unlistenSign = await this.ipc.onDappSigningRequest(async (request) => {
       await this.handleSigningRequest(request);
     });
 
-    const rect = el.getBoundingClientRect();
     try {
-      await this.ipc.openDappBrowser(url, rect.left, rect.top, rect.width, rect.height);
+      await this.ipc.openDappBrowser(url, title);
     } catch (err) {
-      console.error('[dapp] Failed to open webview:', err);
-      this.loading.set(false);
+      console.error('[dapp] Failed to open webview window:', err);
+      this.closeDapp();
     }
-
-    this.resizeObserver = new ResizeObserver(() => {
-      const r = el.getBoundingClientRect();
-      this.ipc.resizeDappBrowser(r.left, r.top, r.width, r.height);
-    });
-    this.resizeObserver.observe(el);
   }
 
   private teardownWebview() {
-    this.resizeObserver?.disconnect();
-    this.resizeObserver = null;
     this.unlistenNav?.();
     this.unlistenNav = null;
+    this.unlistenClose?.();
+    this.unlistenClose = null;
+    this.unlistenEsr?.();
+    this.unlistenEsr = null;
     this.unlistenSign?.();
     this.unlistenSign = null;
     this.ipc.closeDappBrowser();
-    this.ui.fullscreen.set(false);
   }
 
-  // ── Signing Request Handler ──
+  // ── ESR (EOSIO Signing Request) Handler ──
+
+  private async getEsrOptions() {
+    return {
+      zlib: { deflateRaw, inflateRaw },
+      abiProvider: {
+        getAbi: async (account: any) => {
+          const name = String(account);
+          const chainId = this.wallet.selectedAccount()?.chainId;
+          if (!chainId) throw new Error('No active chain');
+          const result = await this.ipc.getAbi(chainId, name);
+          return result;
+        },
+      },
+    };
+  }
+
+  private async handleEsrRequest(esrUri: string) {
+    const account = this.wallet.selectedAccount();
+    if (!account) {
+      this.alert.warning('No active account — cannot process signing request');
+      return;
+    }
+
+    console.log('[dapp] Processing ESR request...');
+
+    try {
+      const opts = await this.getEsrOptions();
+
+      // Normalize the URI — anchor-link may use esr:, esr://, esr-anchor:, etc.
+      let uri = esrUri;
+      if (uri.startsWith('esr-anchor:')) uri = 'esr:' + uri.slice('esr-anchor:'.length);
+      if (uri.startsWith('anchor:')) uri = 'esr:' + uri.slice('anchor:'.length);
+
+      const request = SigningRequest.from(uri, opts);
+      const esrChainId = request.getChainId().hexString;
+      // Use the active account's chain ID for key lookup — it matches the keystore
+      const chainId = account.chainId;
+      const signer = { actor: account.name, permission: 'active' };
+
+      console.log('[dapp] ESR chain:', esrChainId, 'account chain:', chainId, 'identity:', request.isIdentity());
+
+      // Fetch chain info for TaPoS context
+      const info = await this.ipc.getChainInfo(chainId);
+      const ctx = {
+        timestamp: info.head_block_time,
+        block_num: info.last_irreversible_block_num,
+        ref_block_num: info.last_irreversible_block_num & 0xffff,
+        ref_block_prefix: parseInt(info.last_irreversible_block_id.slice(16, 24).match(/../g)!.reverse().join(''), 16),
+        expire_seconds: 120,
+      };
+
+      const abis = await request.fetchAbis(opts.abiProvider);
+      const resolved = request.resolve(abis, signer, ctx);
+
+      const keys = await this.ipc.listPublicKeys(chainId);
+      if (keys.length === 0) {
+        this.alert.error(`No signing key available for chain ${chainId}`);
+        return;
+      }
+
+      // Sign the resolved request digest
+      const digest = resolved.signingDigest.hexString;
+      console.log('[dapp] Signing digest:', digest);
+      const signature = await this.ipc.signDigest(chainId, keys[0], digest);
+      console.log('[dapp] Signature obtained');
+
+      // Build and POST the callback
+      const callback = resolved.getCallback([signature]);
+      if (callback && callback.url) {
+        if (callback.background) {
+          const res = await fetch(callback.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(callback.payload),
+          });
+          console.log('[dapp] ESR callback POSTed to', callback.url, 'status:', res.status);
+        } else {
+          console.log('[dapp] ESR foreground callback:', callback.url);
+        }
+      } else {
+        console.log('[dapp] ESR request has no callback');
+      }
+    } catch (e: any) {
+      console.error('[dapp] ESR handling failed:', e);
+      this.alert.error(`Signing request failed: ${e?.message ?? e}`);
+    }
+  }
+
+  // ── Signing Request Handler (injected bridge fallback) ──
 
   private async handleSigningRequest(request: { id: string; actions: any[]; chainId: string | null; origin: string }) {
     const account = this.wallet.selectedAccount();
@@ -683,13 +735,6 @@ export class DappComponent implements OnDestroy {
       return;
     }
 
-    // Validate origin — check if session is authorized
-    if (!this.isSessionAuthorized(request.origin)) {
-      // Auto-authorize for now (session was created when dApp opened)
-      // In a stricter mode, we could show a consent dialog here
-    }
-
-    // Use the chain from request if available, otherwise use active account's chain
     const chainId = request.chainId || account.chainId;
 
     try {
@@ -701,7 +746,6 @@ export class DappComponent implements OnDestroy {
 
       const dappName = this.activeDapp()?.name ?? request.origin;
 
-      // Show the confirmation modal via TransactionService
       const result = await this.tx.confirm({
         chainId,
         publicKey: keys[0],

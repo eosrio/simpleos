@@ -5,4 +5,5 @@ pub mod dapp;
 #[cfg(feature = "ledger")]
 pub mod ledger;
 pub mod network;
+pub mod tray;
 pub mod wallet;

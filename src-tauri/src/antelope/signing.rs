@@ -110,6 +110,49 @@ pub fn sign_transaction(
     )))
 }
 
+/// Sign a pre-computed 32-byte digest directly (for ESR identity proofs, etc.).
+/// Returns the signature in `SIG_K1_...` format.
+pub fn sign_digest(
+    digest_hex: &str,
+    private_key_bytes: &[u8],
+) -> Result<String, Error> {
+    let digest_bytes = hex_decode(digest_hex)
+        .map_err(|e| Error::Signing(format!("Invalid digest hex: {}", e)))?;
+    if digest_bytes.len() != 32 {
+        return Err(Error::Signing("Digest must be 32 bytes".into()));
+    }
+    let digest = GenericArray::clone_from_slice(&digest_bytes);
+
+    if private_key_bytes.len() != 32 {
+        return Err(Error::Signing("Private key must be 32 bytes".into()));
+    }
+    let priv_array = GenericArray::from_slice(private_key_bytes);
+    let priv_scalar = NonZeroScalar::from_repr(*priv_array)
+        .into_option()
+        .ok_or_else(|| Error::Signing("Invalid private key scalar".into()))?;
+    let scalar: Scalar = *priv_scalar.as_ref();
+
+    for attempt in 0u32..CANONICAL_GRIND_MAX_ATTEMPTS {
+        let ad = attempt.to_le_bytes();
+        let (signature, recovery_id) = scalar
+            .try_sign_prehashed_rfc6979::<Sha256>(&digest, &ad)
+            .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
+
+        let recid = recovery_id.ok_or_else(|| {
+            Error::Signing("No recovery id produced".into())
+        })?;
+
+        if is_canonical(&signature) {
+            return encode_k1_signature(&signature, recid);
+        }
+    }
+
+    Err(Error::Signing(format!(
+        "Could not produce canonical signature after {} attempts",
+        CANONICAL_GRIND_MAX_ATTEMPTS
+    )))
+}
+
 /// Check that both `r` and `s` components have the high bit clear in their
 /// most-significant byte. This is the Antelope `is_canonical` rule — stricter
 /// than BIP-0062 low-S because it also applies to `r`.

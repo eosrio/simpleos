@@ -1,11 +1,16 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
+import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 import { WalletStateService } from './core/services/wallet-state.service';
 import { ThemeService } from './core/services/theme.service';
+import { ResizeHandlesComponent } from './shared/resize-handles';
+import { FullscreenLoaderComponent } from './shared/fullscreen-loader';
+import { AlertPanelComponent } from './shared/alert-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ResizeHandlesComponent, FullscreenLoaderComponent, AlertPanelComponent],
   template: `
     @if (ready()) {
       <router-outlet />
@@ -14,6 +19,9 @@ import { ThemeService } from './core/services/theme.service';
         <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="splash-logo" />
       </div>
     }
+    <app-resize-handles />
+    <app-fullscreen-loader />
+    <app-alert-panel />
   `,
   styles: [`
     .splash {
@@ -49,6 +57,34 @@ export class AppComponent implements OnInit {
     console.log('[app] ngOnInit: ENTERED');
     console.log('[app] hasTauri initial:', this.wallet.hasTauri());
     console.log('[app] current URL:', this.router.url);
+
+    // Mark the document with the OS family so the custom titlebar can reserve
+    // space for macOS traffic lights (which are preserved via titleBarStyle: "Overlay").
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent || '';
+      const platform = (navigator as any).platform || '';
+      if (/Mac/i.test(platform) || /Mac/i.test(ua)) {
+        document.documentElement.classList.add('os-mac');
+      } else if (/Win/i.test(platform) || /Windows/i.test(ua)) {
+        document.documentElement.classList.add('os-win');
+      } else {
+        document.documentElement.classList.add('os-linux');
+      }
+    }
+
+    // Listen for "Lock Wallet" menu item clicks from the system tray.
+    // Registered unconditionally: `hasTauri()` is still false at this point
+    // (it only flips inside initialize() below), and listen() rejects cleanly
+    // in a non-Tauri context so the .catch() handles the web case.
+    listen('tray-lock-request', async () => {
+      console.log('[app] tray requested wallet lock');
+      // Close any open dapp child webview — it's a native OS layer that renders
+      // on top of all Angular content including the lockscreen.
+      await invoke<void>('close_dapp_browser').catch(() => {});
+      await this.wallet.lock();
+      await this.router.navigate(['/lockscreen']);
+    }).catch(err => console.warn('[app] tray-lock-request listen failed:', err));
+
     await this.wallet.initialize();
     console.log('[app] ngOnInit: initialization complete, routing...');
 

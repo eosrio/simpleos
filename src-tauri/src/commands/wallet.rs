@@ -39,7 +39,9 @@ pub fn is_locked(wallet: State<AppWallet>) -> Result<bool, Error> {
     Ok(wallet.0.is_locked())
 }
 
-#[tauri::command]
+// Run off the webview main thread: PBKDF2/Argon2 derivation is CPU-heavy
+// and would otherwise freeze the UI (and any fullscreen loader animation).
+#[tauri::command(async)]
 pub fn unlock(passphrase: String, wallet: State<AppWallet>) -> Result<bool, Error> {
     wallet.0.unlock(&passphrase)?;
     Ok(true)
@@ -53,7 +55,8 @@ pub fn lock(wallet: State<AppWallet>) -> Result<(), Error> {
 
 // ── Key Management ──
 
-#[tauri::command]
+// async: takes a passphrase and derives the vault key to store the new key — off-thread.
+#[tauri::command(async)]
 pub fn import_private_key(
     app: tauri::AppHandle,
     wif: String,
@@ -179,6 +182,20 @@ pub async fn sign_transaction(
         packed_trx,
         signature,
     })
+}
+
+/// Sign a raw 32-byte digest (hex-encoded) with the private key matching
+/// the given public key on the specified chain. Used for ESR identity proofs.
+#[tauri::command]
+pub async fn sign_digest(
+    chain_id: String,
+    public_key: String,
+    digest_hex: String,
+    wallet: State<'_, AppWallet>,
+) -> Result<String, Error> {
+    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
+    let signature = crate::antelope::signing::sign_digest(&digest_hex, &private_key_bytes)?;
+    Ok(signature)
 }
 
 // ── Passphrase ──
@@ -312,7 +329,8 @@ pub fn get_finalizer_pop(
 // ── PIN ──
 
 /// Set a quick-unlock PIN. Encrypts the passphrase with a PIN-derived key.
-#[tauri::command]
+// async: derives two keys + encrypts — keep off the main thread.
+#[tauri::command(async)]
 pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>, app: tauri::AppHandle) -> Result<(), Error> {
     use crate::keystore::derive;
 
@@ -334,7 +352,10 @@ pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>, app: t
 }
 
 /// Unlock wallet using PIN. Decrypts stored passphrase, then unlocks normally.
-#[tauri::command]
+// async: PIN key derivation + decrypt + passphrase-based vault unlock.
+// This is the slowest single command in the app — must run off the main thread
+// or the loader animation stays frozen until the command returns.
+#[tauri::command(async)]
 pub fn unlock_with_pin(pin: String, app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<bool, Error> {
     use crate::keystore::derive;
 
@@ -380,12 +401,14 @@ pub fn remove_pin(app: tauri::AppHandle) -> Result<(), Error> {
 
 // ── Backup ──
 
-#[tauri::command]
+// async: encrypts every key in the vault — off-thread.
+#[tauri::command(async)]
 pub fn export_backup(passphrase: String, wallet: State<AppWallet>) -> Result<String, Error> {
     wallet.0.export_backup(&passphrase)
 }
 
-#[tauri::command]
+// async: Anchor's non-standard 70-round Rijndael is particularly slow — off-thread.
+#[tauri::command(async)]
 pub fn import_backup(json: String, passphrase: String, wallet: State<AppWallet>) -> Result<usize, Error> {
     wallet.0.import_backup(&json, &passphrase)
 }

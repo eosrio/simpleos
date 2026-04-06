@@ -4,13 +4,17 @@ pub mod error;
 pub mod keystore;
 #[cfg(feature = "ledger")]
 pub mod ledger;
+pub mod tray;
 
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::{Manager, WindowEvent};
+use tauri_plugin_store::StoreExt;
 
 use antelope::provider::ProviderState;
 use keystore::store::{FileKeyStore, OsKeyStore};
 use keystore::wallet::WalletService;
+use tray::TrayState;
 
 /// Thread-safe wrapper for WalletService to use as Tauri managed state.
 pub struct AppWallet(pub Arc<WalletService>);
@@ -55,8 +59,28 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(ProviderState::new())
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
+        .on_window_event(|window, event| {
+            // Intercept close on the main window so it hides to the tray
+            // instead of exiting the app. The tray "Quit" menu item flips
+            // `quitting` so a subsequent close is allowed through.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() != "main" {
+                    return;
+                }
+                let app = window.app_handle();
+                if let Some(state) = app.try_state::<TrayState>() {
+                    if !state.quitting.load(Ordering::SeqCst)
+                        && state.close_to_tray.load(Ordering::SeqCst)
+                    {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
+                }
+            }
+        })
         .setup(move |app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -64,11 +88,6 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
-
-                // Auto-open DevTools in debug builds
-                if let Some(window) = app.get_webview_window("main") {
-                    window.open_devtools();
-                }
             }
 
             // Pick key store backend: OS keyring if it works, file-based fallback
@@ -85,6 +104,23 @@ pub fn run() {
 
             let wallet = AppWallet(Arc::new(WalletService::new(store, chain_ids)));
             app.manage(wallet);
+
+            // Load close-to-tray preference from the shared store that the
+            // frontend Settings page writes to. Defaults to `true` so the
+            // wallet stays resident and can handle signing requests quickly.
+            let close_to_tray = match app.handle().store("wallet-state.json") {
+                Ok(store) => store
+                    .get("closeToTray")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(true),
+                Err(e) => {
+                    log::warn!("[tray] failed to read wallet-state.json ({e}), defaulting close_to_tray=true");
+                    true
+                }
+            };
+            app.manage(TrayState::new(close_to_tray));
+
+            tray::setup_tray(app)?;
 
             Ok(())
         })
@@ -103,6 +139,7 @@ pub fn run() {
             commands::wallet::remove_key,
             commands::wallet::sign_and_push,
             commands::wallet::sign_transaction,
+            commands::wallet::sign_digest,
             commands::wallet::change_passphrase,
             commands::wallet::get_security_mode,
             commands::wallet::set_security_mode,
@@ -120,6 +157,10 @@ pub fn run() {
             commands::wallet::remove_pin,
             commands::wallet::reset_wallet,
             commands::wallet::test_keyring,
+            // Tray / window
+            commands::tray::set_close_to_tray,
+            commands::tray::get_close_to_tray,
+            commands::tray::show_main_window,
             // Network (provider-managed, with failover)
             commands::network::init_chain_providers,
             commands::network::check_rpc_endpoints,
@@ -150,7 +191,6 @@ pub fn run() {
             commands::dapp::open_dapp_browser,
             commands::dapp::close_dapp_browser,
             commands::dapp::navigate_dapp,
-            commands::dapp::resize_dapp_browser,
             commands::dapp::reload_dapp,
             commands::dapp::dapp_go_back,
             commands::dapp::dapp_go_forward,

@@ -3,54 +3,59 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { UiStateService } from '../../core/services/ui-state.service';
+import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
+import { WindowControlsComponent } from '../../shared/window-controls';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmModalComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmModalComponent, WindowControlsComponent],
   template: `
     <div class="dashboard">
-      <!-- Account tabs (hidden in fullscreen) -->
-      @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
-        <div class="account-tabs">
-          @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
-            <button class="account-tab"
-                    [class.active]="i === wallet.selectedIndex()"
-                    [class.watch-only]="account.mode === 'watch'"
-                    [class.drag-over]="dragOverIndex === i"
-                    draggable="true"
-                    (dragstart)="onDragStart($event, i)"
-                    (dragover)="onDragOver($event, i)"
-                    (dragleave)="onDragLeave()"
-                    (drop)="onDrop($event, i)"
-                    (dragend)="onDragEnd()"
-                    (click)="selectAccount(i)">
-              <span class="tab-name">
-                {{ account.name }}
-                @if (account.mode === 'watch') {
-                  <span class="watch-badge" title="Watch-only — no keys imported">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </span>
-                }
-              </span>
-              <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
-            </button>
-          }
-          <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
+      <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls -->
+      <div class="titlebar">
+        <div class="titlebar-brand" data-tauri-drag-region>
+          <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="titlebar-logo" data-tauri-drag-region />
+          <span class="titlebar-name" data-tauri-drag-region>Simpl<span class="accent">EOS</span></span>
         </div>
-      }
+        @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
+          <div class="account-tabs">
+            @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
+              <button class="account-tab"
+                      [class.active]="i === wallet.selectedIndex()"
+                      [class.watch-only]="account.mode === 'watch'"
+                      [class.drag-over]="dragOverIndex === i"
+                      draggable="true"
+                      (dragstart)="onDragStart($event, i)"
+                      (dragover)="onDragOver($event, i)"
+                      (dragleave)="onDragLeave()"
+                      (drop)="onDrop($event, i)"
+                      (dragend)="onDragEnd()"
+                      (click)="selectAccount(i)">
+                <span class="tab-name">
+                  {{ account.name }}
+                  @if (account.mode === 'watch') {
+                    <span class="watch-badge" title="Watch-only — no keys imported">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                  }
+                </span>
+                <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
+              </button>
+            }
+            <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        }
+        <div class="titlebar-drag-fill" data-tauri-drag-region></div>
+        <app-window-controls />
+      </div>
 
       <div class="main-area">
         @if (!ui.fullscreen()) {
         <nav class="sidebar">
-          <div class="sidebar-header">
-            <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="sidebar-logo" />
-            <span class="sidebar-brand">Simpl<span class="accent">EOS</span></span>
-          </div>
-
           <!-- Active account info -->
           <div class="account-card" [class.watch-card]="wallet.isWatchOnly()">
             @if (wallet.selectedAccount(); as account) {
@@ -167,6 +172,9 @@ import { ConfirmModalComponent } from '../../shared/confirm-modal';
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </span>
             }
+            <button class="theme-toggle" (click)="lockWallet()" title="Lock wallet">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </button>
             <button class="theme-toggle" (click)="theme.toggleBaseTheme()" title="Toggle light/dark theme">
               @if (theme.baseTheme() === 'dark') {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -202,13 +210,67 @@ import { ConfirmModalComponent } from '../../shared/confirm-modal';
       background: var(--bg-base);
     }
 
-    /* ── Account tabs (top bar) ── */
-    .account-tabs {
+    /* ── Custom titlebar (browser-style: tabs + drag region + window controls) ── */
+    .titlebar {
       display: flex;
+      align-items: stretch;
       background: var(--bg-deep);
       border-bottom: 1px solid var(--border-subtle);
-      overflow-x: auto;
       min-height: 40px;
+      /* Entire strip acts as a drag handle where children don't opt out. */
+      -webkit-app-region: drag;
+    }
+
+    /* Brand area on the far left of the titlebar — logo + wordmark.
+       Acts as a drag region (entire area is -webkit-app-region: drag
+       via inherited titlebar rule; image and span have data-tauri-drag-region
+       set explicitly for Tauri's JS drag handler). */
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: 0 var(--sp-4) 0 var(--sp-4);
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    :host-context(html.os-mac) .titlebar-brand {
+      /* Reserve space for native traffic lights positioned at x=14. */
+      padding-left: 84px;
+    }
+    .titlebar-logo {
+      width: 20px;
+      height: 20px;
+      filter: drop-shadow(0 0 6px rgba(0, 148, 210, 0.25));
+      pointer-events: none;
+    }
+    .titlebar-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      color: var(--text-bright);
+      pointer-events: none;
+    }
+    .titlebar-name .accent { color: var(--accent); }
+
+    .titlebar-drag-fill {
+      /* Chrome-style minimum drag region after the tabs / + button.
+         Grows to consume remaining space so users always have somewhere
+         to grab the window. */
+      flex: 1 1 120px;
+      min-width: 120px;
+      align-self: stretch;
+    }
+
+    /* ── Account tabs (inside the titlebar) ── */
+    .account-tabs {
+      display: flex;
+      align-items: stretch;
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow-x: auto;
+      /* Buttons inside are interactive — opt out of drag. */
+      -webkit-app-region: no-drag;
     }
 
     .account-tab {
@@ -291,27 +353,6 @@ import { ConfirmModalComponent } from '../../shared/confirm-modal';
       flex-direction: column;
       padding: var(--sp-5) 0;
       transition: background-image 300ms ease;
-    }
-
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: 0 var(--sp-5);
-      margin-bottom: var(--sp-5);
-    }
-
-    .sidebar-logo {
-      width: 32px;
-      height: 32px;
-      filter: drop-shadow(0 0 6px rgba(0, 148, 210, 0.2));
-    }
-
-    .sidebar-brand {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-bright);
-      letter-spacing: 0.5px;
     }
 
     .accent { color: var(--accent); }
@@ -537,6 +578,7 @@ import { ConfirmModalComponent } from '../../shared/confirm-modal';
       padding: 0;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
   `],
 })
@@ -549,6 +591,7 @@ export class DashboardComponent {
     public theme: ThemeService,
     public ui: UiStateService,
     private router: Router,
+    private ipc: TauriIpcService,
   ) {}
 
   onDragStart(event: DragEvent, index: number) {
@@ -594,6 +637,13 @@ export class DashboardComponent {
 
   addAccount() {
     this.router.navigate(['/landing']);
+  }
+
+  async lockWallet() {
+    // Close the DApp window before navigating to the lockscreen
+    await this.ipc.closeDappBrowser();
+    await this.wallet.lock();
+    this.router.navigate(['/lockscreen']);
   }
 
   async toggleLock() {

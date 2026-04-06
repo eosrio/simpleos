@@ -9,6 +9,27 @@
   overflow: hidden;
 }
 
+/* ═══ CUSTOM TITLEBAR (transparent overlay at top) ═══ */
+.landing-titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: stretch;
+  z-index: 10;
+  -webkit-app-region: drag;
+  pointer-events: auto;
+}
+.landing-titlebar-fill {
+  flex: 1 1 auto;
+}
+html.os-mac .landing-titlebar {
+  /* Keep traffic lights visible; drag region covers the rest. */
+  padding-left: 84px;
+}
+
 .bg-noise {
   position: fixed;
   inset: 0;
@@ -39,7 +60,8 @@
   z-index: 1;
   width: 580px;
   max-width: calc(100vw - 48px);
-  padding: var(--sp-8) 0 var(--sp-10);
+  /* Top padding accounts for the 36px fixed titlebar overlay. */
+  padding: calc(36px + var(--sp-6)) 0 var(--sp-10);
 }
 
 /* ═══ TOP BAR ═══ */

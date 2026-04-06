@@ -20,7 +20,10 @@
         "minHeight": 640,
         "resizable": true,
         "fullscreen": false,
-        "center": true
+        "center": true,
+        "decorations": false,
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": { "x": 14, "y": 14 }
       }
     ],
     "security": {}

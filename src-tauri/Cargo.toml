@@ -24,10 +24,11 @@ tauri-build = { version = "2.5.6", features = [] }
 
 [dependencies]
 # Framework
-tauri = { version = "2.10.3", features = ["devtools", "unstable"] }
+tauri = { version = "2.10.3", features = ["devtools", "unstable", "tray-icon", "image-png"] }
 tauri-plugin-log = "2"
 tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
+tauri-plugin-window-state = "2"
 
 # URL parsing (for dapp webview navigation)
 url = "2"

@@ -107,22 +107,22 @@ pub fn default_chains() -> Vec<ChainConfig> {
             ],
             explorers: vec![
                 Explorer {
-                    name: "Vaultascan".into(),
+                    name: "EOSscan".into(),
                     url: "https://eosscan.io".into(),
-                    tx_url: Some("https://eosscan.io/transaction/{txid}".into()),
+                    tx_url: Some("https://eosscan.io/tx/{txid}".into()),
                     account_url: Some("https://eosscan.io/account/{account}".into()),
+                },
+                Explorer {
+                    name: "Unicove".into(),
+                    url: "https://unicove.com/en/vaulta".into(),
+                    tx_url: Some("https://unicove.com/en/vaulta/transaction/{txid}".into()),
+                    account_url: Some("https://unicove.com/en/vaulta/account/{account}".into()),
                 },
                 Explorer {
                     name: "EOS Authority".into(),
                     url: "https://eosauthority.com".into(),
                     tx_url: Some("https://eosauthority.com/transaction/{txid}?network=eos".into()),
                     account_url: Some("https://eosauthority.com/account/{account}?network=eos".into()),
-                },
-                Explorer {
-                    name: "Bloks.io".into(),
-                    url: "https://bloks.io".into(),
-                    tx_url: Some("https://bloks.io/transaction/{txid}".into()),
-                    account_url: Some("https://bloks.io/account/{account}".into()),
                 },
             ],
             features: ChainFeatures {

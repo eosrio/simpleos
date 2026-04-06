@@ -1,4 +1,6 @@
 import { Component, effect, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 
@@ -10,11 +12,22 @@ interface HistoryAction {
   name: string;
   data: Record<string, any>;
   irreversible: boolean;
+  /** First authorizer ("actor") from act.authorization, if present. */
+  actor: string;
 }
+
+/** A structured value node used to render arbitrary action data. */
+type ValueNode =
+  | { kind: 'primitive'; key: string; value: string; mono?: boolean }
+  | { kind: 'table'; key: string; headers: string[]; rows: string[][] }
+  | { kind: 'list'; key: string; items: string[] }
+  | { kind: 'object'; key: string; children: ValueNode[] }
+  | { kind: 'objectList'; key: string; groups: ValueNode[][] };
 
 @Component({
   selector: 'app-wallet',
   standalone: true,
+  imports: [NgTemplateOutlet],
   template: `
     <div class="wallet-view">
       @if (wallet.loading()) {
@@ -162,55 +175,140 @@ interface HistoryAction {
                 <div class="action-row" [class.expanded]="expandedIndex() === $index"
                      (click)="toggleExpand($index)">
                   <div class="action-summary">
-                    <div class="action-icon" [innerHTML]="actionIcon(action)"></div>
+                    <div class="action-icon">
+                      @switch (iconKey(action)) {
+                        @case ('incoming') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                          </svg>
+                        }
+                        @case ('outgoing') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+                          </svg>
+                        }
+                        @case ('lock') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        }
+                        @case ('unlock') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                          </svg>
+                        }
+                        @case ('vote') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                          </svg>
+                        }
+                        @case ('ram') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                            <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+                          </svg>
+                        }
+                        @case ('reward') {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                          </svg>
+                        }
+                        @default {
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
+                        }
+                      }
+                    </div>
                     <div class="action-info">
-                      <span class="action-label">{{ actionLabel(action) }}</span>
+                      <div class="action-line-1">
+                        <span class="action-label">{{ actionLabel(action) }}</span>
+                        <span class="contract-badge data" [title]="action.contract + '::' + action.name">
+                          {{ action.contract }}
+                        </span>
+                      </div>
                       <span class="action-detail-text">{{ actionDetail(action) }}</span>
                     </div>
                     <div class="action-right">
-                      <span class="action-amount" [class.positive]="isIncoming(action)">{{ actionAmount(action) }}</span>
-                      <span class="action-time">{{ relativeTime(action.timestamp) }}</span>
+                      <div class="action-line-1 right-line">
+                        @if (actionAmount(action); as amt) {
+                          <span class="action-amount" [class.positive]="isIncoming(action)">{{ amt }}</span>
+                        } @else if (action.actor) {
+                          <span class="action-actor data">{{ action.actor }}</span>
+                        }
+                      </div>
+                      <div class="action-meta-line">
+                        <span class="action-time">{{ relativeTime(action.timestamp) }}</span>
+                        <span class="action-hash data">#{{ action.trx_id.slice(0, 8) }}</span>
+                      </div>
                     </div>
                   </div>
 
                   @if (expandedIndex() === $index) {
                     <div class="action-expanded" (click)="$event.stopPropagation()">
-                      <div class="expanded-fields">
-                        <div class="exp-row">
-                          <span class="exp-key">Transaction</span>
-                          <span class="exp-value data">{{ action.trx_id.slice(0, 24) }}...</span>
+                      <!-- Transaction metadata card -->
+                      <div class="meta-card">
+                        <div class="meta-row">
+                          <span class="meta-key">Transaction</span>
+                          <span class="meta-value data mono-sm">{{ shortHash(action.trx_id) }}</span>
+                          <button class="icon-btn" title="Copy transaction id"
+                                  (click)="copy(action.trx_id); $event.stopPropagation()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                          </button>
                         </div>
-                        <div class="exp-row">
-                          <span class="exp-key">Block</span>
-                          <span class="exp-value data">{{ action.block_num }}</span>
+                        <div class="meta-row">
+                          <span class="meta-key">Block</span>
+                          <span class="meta-value data">{{ action.block_num }}</span>
                         </div>
-                        <div class="exp-row">
-                          <span class="exp-key">Contract</span>
-                          <span class="exp-value data">{{ action.contract }}</span>
+                        <div class="meta-row">
+                          <span class="meta-key">Contract</span>
+                          <span class="meta-value data">{{ action.contract }}::{{ action.name }}</span>
                         </div>
-                        <div class="exp-row">
-                          <span class="exp-key">Action</span>
-                          <span class="exp-value">{{ action.name }}</span>
+                        <div class="meta-row">
+                          <span class="meta-key">Timestamp</span>
+                          <span class="meta-value">{{ formatTimestamp(action.timestamp) }}</span>
                         </div>
-                        @for (field of dataFields(action); track field.key) {
-                          <div class="exp-row">
-                            <span class="exp-key">{{ field.key }}</span>
-                            <span class="exp-value data">{{ field.value }}</span>
+                      </div>
+
+                      <!-- Action data card -->
+                      @if (richDataNodes(action); as nodes) {
+                        @if (nodes.length > 0) {
+                          <div class="data-card">
+                            <div class="data-card-header">Data</div>
+                            <div class="data-card-body">
+                              @for (node of nodes; track node.key) {
+                                <ng-container [ngTemplateOutlet]="valueNodeTpl"
+                                              [ngTemplateOutletContext]="{ $implicit: node, depth: 0 }"/>
+                              }
+                            </div>
                           </div>
                         }
-                      </div>
-                      @if (explorerTxUrl(action.trx_id); as url) {
-                        <a class="explorer-link" [href]="url" target="_blank" rel="noopener"
-                           (click)="$event.stopPropagation()">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                               stroke="currentColor" stroke-width="2"
-                               stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                            <polyline points="15 3 21 3 21 9"/>
-                            <line x1="10" y1="14" x2="21" y2="3"/>
-                          </svg>
-                          View on explorer
-                        </a>
+                      }
+
+                      @if (explorerTxLinks(action.trx_id); as links) {
+                        @if (links.length > 0) {
+                          <div class="explorer-links">
+                            <span class="explorer-links-label">View on</span>
+                            @for (link of links; track link.name) {
+                              <button type="button" class="explorer-link"
+                                      (click)="openExplorer(link.url); $event.stopPropagation()">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2.2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                  <polyline points="15 3 21 3 21 9"/>
+                                  <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                                {{ link.name }}
+                              </button>
+                            }
+                          </div>
+                        }
                       }
                     </div>
                   }
@@ -244,6 +342,68 @@ interface HistoryAction {
         }
       }
     </div>
+
+    <!-- Recursive renderer for ValueNode tree -->
+    <ng-template #valueNodeTpl let-node let-depth="depth">
+      @switch (node.kind) {
+        @case ('primitive') {
+          <div class="dv-row" [style.padding-left.px]="depth * 12">
+            <span class="dv-key">{{ node.key }}</span>
+            <span class="dv-value" [class.data]="node.mono !== false">{{ node.value }}</span>
+          </div>
+        }
+        @case ('list') {
+          <div class="dv-row" [style.padding-left.px]="depth * 12">
+            <span class="dv-key">{{ node.key }}</span>
+            <span class="dv-value data">[{{ node.items.length }}] {{ node.items.join(', ') }}</span>
+          </div>
+        }
+        @case ('table') {
+          <div class="dv-block" [style.padding-left.px]="depth * 12">
+            <div class="dv-block-header">{{ node.key }} <span class="dv-count">({{ node.rows.length }})</span></div>
+            <div class="dv-table-wrap">
+              <table class="dv-table">
+                <thead>
+                  <tr>
+                    @for (h of node.headers; track h) { <th>{{ h }}</th> }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of node.rows; track $index) {
+                    <tr>
+                      @for (cell of row; track $index) { <td class="data">{{ cell }}</td> }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        @case ('object') {
+          <div class="dv-block" [style.padding-left.px]="depth * 12">
+            <div class="dv-block-header">{{ node.key }}</div>
+            @for (child of node.children; track child.key) {
+              <ng-container [ngTemplateOutlet]="valueNodeTpl"
+                            [ngTemplateOutletContext]="{ $implicit: child, depth: depth + 1 }"/>
+            }
+          </div>
+        }
+        @case ('objectList') {
+          <div class="dv-block" [style.padding-left.px]="depth * 12">
+            <div class="dv-block-header">{{ node.key }} <span class="dv-count">({{ node.groups.length }})</span></div>
+            @for (group of node.groups; track $index) {
+              <div class="dv-group">
+                <div class="dv-group-index">#{{ $index }}</div>
+                @for (child of group; track child.key) {
+                  <ng-container [ngTemplateOutlet]="valueNodeTpl"
+                                [ngTemplateOutletContext]="{ $implicit: child, depth: depth + 1 }"/>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </ng-template>
   `,
   styles: [`
     .wallet-view { max-width: 800px; }
@@ -522,15 +682,40 @@ interface HistoryAction {
     .action-info {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
       flex: 1;
       min-width: 0;
+    }
+
+    .action-line-1 {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      min-width: 0;
+    }
+    .right-line {
+      justify-content: flex-end;
     }
 
     .action-label {
       font-size: 13px;
       font-weight: 500;
       color: var(--text-bright);
+      flex-shrink: 0;
+    }
+
+    .contract-badge {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      padding: 1px 6px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 160px;
     }
 
     .action-detail-text {
@@ -546,8 +731,9 @@ interface HistoryAction {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 1px;
+      gap: 2px;
       flex-shrink: 0;
+      min-width: 0;
     }
 
     .action-amount {
@@ -559,59 +745,231 @@ interface HistoryAction {
 
     .action-amount.positive { color: var(--positive); }
 
-    .action-time {
-      font-size: 11px;
-      color: var(--text-disabled);
-    }
-
-    /* Expanded row */
-    .action-expanded {
-      padding: 0 var(--sp-5) var(--sp-4) calc(32px + var(--sp-5) + var(--sp-3));
-    }
-
-    .expanded-fields {
-      background: var(--bg-base);
-      border-radius: var(--radius-sm);
-      padding: var(--sp-3);
-      margin-bottom: var(--sp-2);
-    }
-
-    .exp-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 2px 0;
-    }
-
-    .exp-key {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: capitalize;
-    }
-
-    .exp-value {
+    .action-actor {
       font-size: 12px;
       color: var(--text-body);
-      text-align: right;
-      max-width: 55%;
+      font-weight: 500;
+      max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .data { font-family: var(--font-data); }
+    .action-meta-line {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
 
+    .action-time {
+      font-size: 11px;
+      color: var(--text-disabled);
+    }
+
+    .action-hash {
+      font-size: 10px;
+      color: var(--text-disabled);
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-base);
+    }
+
+    /* Expanded row */
+    .action-expanded {
+      padding: 0 var(--sp-5) var(--sp-4) calc(32px + var(--sp-5) + var(--sp-3));
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+    }
+
+    .data { font-family: var(--font-data); }
+    .mono-sm { font-size: 11px; letter-spacing: 0.2px; }
+
+    /* Meta card (transaction metadata) */
+    .meta-card {
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+      padding: var(--sp-3);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-2);
+      padding: 2px 0;
+    }
+    .meta-key {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .meta-value {
+      font-size: 12px;
+      color: var(--text-body);
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+    .icon-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: color 150ms, background 150ms;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { color: var(--accent); background: var(--bg-hover); }
+
+    /* Data card (action arguments) */
+    .data-card {
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .data-card-header {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: var(--sp-2) var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .data-card-body {
+      padding: var(--sp-2) var(--sp-3);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Recursive value renderer */
+    .dv-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      padding: 3px 0;
+      min-width: 0;
+    }
+    .dv-key {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: capitalize;
+      flex-shrink: 0;
+    }
+    .dv-value {
+      font-size: 12px;
+      color: var(--text-body);
+      text-align: right;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-width: 65%;
+    }
+    .dv-block {
+      display: flex;
+      flex-direction: column;
+      padding: 4px 0;
+    }
+    .dv-block-header {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: capitalize;
+      padding-bottom: 4px;
+    }
+    .dv-count {
+      color: var(--text-disabled);
+      font-size: 10px;
+      font-weight: normal;
+    }
+    .dv-group {
+      border-left: 2px solid var(--border-subtle);
+      padding-left: var(--sp-2);
+      margin: 4px 0;
+      position: relative;
+    }
+    .dv-group-index {
+      font-size: 10px;
+      color: var(--text-disabled);
+      font-family: var(--font-data);
+      margin-bottom: 2px;
+    }
+    .dv-table-wrap {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .dv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .dv-table th {
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      padding: 4px 8px 4px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+    .dv-table td {
+      color: var(--text-body);
+      padding: 4px 8px 4px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+      word-break: break-word;
+    }
+    .dv-table tr:last-child td { border-bottom: none; }
+
+    .explorer-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--sp-2);
+      padding-top: var(--sp-1);
+    }
+    .explorer-links-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-right: 2px;
+    }
     .explorer-link {
       display: inline-flex;
       align-items: center;
-      gap: var(--sp-1);
+      gap: 5px;
       font-size: 11px;
       font-weight: 500;
       color: var(--accent);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
       text-decoration: none;
-      transition: opacity 150ms;
+      font-family: var(--font-body);
+      transition: background 150ms, border-color 150ms, color 150ms;
     }
-    .explorer-link:hover { opacity: 0.8; }
+    .explorer-link:hover {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
     .load-more {
       display: block;
@@ -749,11 +1107,14 @@ export class WalletComponent {
       const mapped: HistoryAction[] = raw.map((a: any) => ({
         trx_id: a.trx_id ?? '',
         block_num: a.block_num ?? 0,
-        timestamp: a['@timestamp'] ?? '',
+        // Hyperion emits `@timestamp` without a timezone (e.g. "2026-04-05T22:39:56.000").
+        // JS parses unqualified ISO date-times as *local time*, so append "Z" to force UTC.
+        timestamp: this.normalizeTimestamp(a['@timestamp'] ?? a.timestamp ?? ''),
         contract: a.act?.account ?? '',
         name: a.act?.name ?? '',
         data: a.act?.data ?? {},
         irreversible: a.irreversible ?? false,
+        actor: a.act?.authorization?.[0]?.actor ?? '',
       }));
 
       if (skip === 0) {
@@ -815,7 +1176,8 @@ export class WalletComponent {
 
   actionDetail(a: HistoryAction): string {
     if (a.name === 'transfer') {
-      return `${a.data['from'] ?? ''} → ${a.data['to'] ?? ''}`;
+      const memo = a.data['memo'] ? ` · ${a.data['memo']}` : '';
+      return `${a.data['from'] ?? ''} → ${a.data['to'] ?? ''}${memo}`;
     }
     if (a.name === 'delegatebw' || a.name === 'undelegatebw') {
       return `${a.data['from'] ?? ''} → ${a.data['receiver'] ?? ''}`;
@@ -826,7 +1188,43 @@ export class WalletComponent {
       if (a.data['proxy']) return `proxy: ${a.data['proxy']}`;
       return '';
     }
-    return a.contract;
+    if (a.name === 'buyram' || a.name === 'buyrambytes') {
+      return `${a.data['payer'] ?? ''} → ${a.data['receiver'] ?? ''}`;
+    }
+    if (a.name === 'updateauth') {
+      return `${a.data['account'] ?? ''} · ${a.data['permission'] ?? ''}`;
+    }
+    // Generic: build a compact preview of the first few data fields.
+    return this.genericDataPreview(a.data);
+  }
+
+  /** Pick the most useful compact preview from an arbitrary action data payload. */
+  private genericDataPreview(data: Record<string, any>): string {
+    if (!data) return '';
+    const entries = Object.entries(data);
+    if (entries.length === 0) return '';
+
+    const parts: string[] = [];
+    for (const [key, value] of entries) {
+      if (parts.length >= 2) break;
+      if (value === null || value === undefined) continue;
+
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          parts.push(`${value.length} ${key}`);
+        }
+      } else if (typeof value === 'object') {
+        // Skip nested objects — too noisy for a one-line preview.
+        continue;
+      } else {
+        const str = String(value);
+        if (str.length === 0) continue;
+        // Truncate long primitives so they don't dominate the row.
+        const trimmed = str.length > 28 ? str.slice(0, 26) + '…' : str;
+        parts.push(`${key}: ${trimmed}`);
+      }
+    }
+    return parts.join(' · ');
   }
 
   actionAmount(a: HistoryAction): string {
@@ -863,50 +1261,171 @@ export class WalletComponent {
     return a.data['to'] === this.wallet.selectedAccount()?.name;
   }
 
-  actionIcon(a: HistoryAction): string {
-    const svg = (d: string) =>
-      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  iconKey(a: HistoryAction): string {
     switch (a.name) {
-      case 'transfer':
-        return this.isIncoming(a)
-          ? svg('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>')
-          : svg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>');
-      case 'delegatebw': case 'buyrex':
-        return svg('<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>');
-      case 'undelegatebw': case 'sellrex':
-        return svg('<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>');
-      case 'voteproducer':
-        return svg('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>');
-      case 'buyram': case 'buyrambytes': case 'sellram':
-        return svg('<rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>');
-      case 'claimrewards':
-        return svg('<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>');
-      default:
-        return svg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>');
+      case 'transfer': return this.isIncoming(a) ? 'incoming' : 'outgoing';
+      case 'delegatebw': case 'buyrex': return 'lock';
+      case 'undelegatebw': case 'sellrex': return 'unlock';
+      case 'voteproducer': return 'vote';
+      case 'buyram': case 'buyrambytes': case 'sellram': return 'ram';
+      case 'claimrewards': return 'reward';
+      default: return 'generic';
     }
   }
 
-  dataFields(a: HistoryAction): { key: string; value: string }[] {
+  /**
+   * Build a tree of ValueNodes from an action's data payload.
+   * Renders primitives inline, arrays of uniformly-shaped objects as mini tables,
+   * arrays of primitives as a compact list, and mixed/object trees recursively.
+   */
+  richDataNodes(a: HistoryAction): ValueNode[] {
     if (!a.data) return [];
-    return Object.entries(a.data).map(([key, value]) => ({
-      key,
-      value: typeof value === 'object' ? JSON.stringify(value) : String(value),
-    }));
+    return Object.entries(a.data).map(([k, v]) => this.buildValueNode(k, v));
   }
 
-  explorerTxUrl(trxId: string): string | null {
+  private buildValueNode(key: string, value: any): ValueNode {
+    if (value === null || value === undefined) {
+      return { kind: 'primitive', key, value: '—', mono: false };
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return { kind: 'primitive', key, value: '[]' };
+      }
+      // Array of primitives
+      if (value.every(v => v === null || typeof v !== 'object')) {
+        return {
+          kind: 'list',
+          key,
+          items: value.map(v => (v === null ? 'null' : String(v))),
+        };
+      }
+      // Array of objects: if shape is uniform (shared scalar-only keys), render as table
+      const allObjects = value.every(v => v && typeof v === 'object' && !Array.isArray(v));
+      if (allObjects) {
+        const firstKeys = Object.keys(value[0]);
+        const sameShape = value.every(
+          v => Object.keys(v).length === firstKeys.length
+            && firstKeys.every(k => k in v),
+        );
+        const scalarOnly = sameShape && firstKeys.every(k =>
+          value.every(v => v[k] === null || typeof v[k] !== 'object'),
+        );
+        if (sameShape && scalarOnly && firstKeys.length > 0) {
+          return {
+            kind: 'table',
+            key,
+            headers: firstKeys,
+            rows: value.map(v =>
+              firstKeys.map(k => (v[k] === null ? '' : String(v[k]))),
+            ),
+          };
+        }
+        // Uniform-ish objects but with nested content — render as list of groups
+        return {
+          kind: 'objectList',
+          key,
+          groups: value.map(v =>
+            Object.entries(v).map(([ck, cv]) => this.buildValueNode(ck, cv)),
+          ),
+        };
+      }
+      // Mixed array — fall back to stringified list
+      return {
+        kind: 'list',
+        key,
+        items: value.map(v =>
+          typeof v === 'object' ? JSON.stringify(v) : String(v),
+        ),
+      };
+    }
+
+    if (typeof value === 'object') {
+      const entries = Object.entries(value);
+      if (entries.length === 0) {
+        return { kind: 'primitive', key, value: '{}' };
+      }
+      return {
+        kind: 'object',
+        key,
+        children: entries.map(([ck, cv]) => this.buildValueNode(ck, cv)),
+      };
+    }
+
+    // Primitive
+    return {
+      kind: 'primitive',
+      key,
+      value: String(value),
+      mono: typeof value !== 'boolean',
+    };
+  }
+
+  shortHash(hash: string): string {
+    if (!hash) return '';
+    if (hash.length <= 20) return hash;
+    return `${hash.slice(0, 10)}…${hash.slice(-8)}`;
+  }
+
+  formatTimestamp(iso: string): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+  }
+
+  async copy(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard may be unavailable — silently ignore.
+    }
+  }
+
+  async openExplorer(url: string): Promise<void> {
+    try {
+      await openUrl(url);
+    } catch (e) {
+      console.error('Failed to open explorer URL', url, e);
+    }
+  }
+
+  /** All configured explorers that expose a transaction URL for the active chain. */
+  explorerTxLinks(trxId: string): { name: string; url: string }[] {
     const chain = this.wallet.activeChain();
-    if (!chain?.explorers?.length) return null;
-    const explorer = chain.explorers.find((e: any) => e.tx_url);
-    if (!explorer?.tx_url) return null;
-    return explorer.tx_url.replace('{txid}', trxId);
+    if (!chain?.explorers?.length || !trxId) return [];
+    return chain.explorers
+      .filter((e: any) => e?.tx_url)
+      .map((e: any) => ({
+        name: e.name,
+        url: e.tx_url.replace('{txid}', trxId),
+      }));
+  }
+
+  /**
+   * Force an ISO timestamp to be parsed as UTC.
+   * Hyperion returns `@timestamp` as "2026-04-05T22:39:56.000" with no tz suffix,
+   * which `new Date()` interprets as local time and breaks relative/absolute displays.
+   */
+  private normalizeTimestamp(iso: string): string {
+    if (!iso) return '';
+    // Already has a timezone suffix ("Z" or ±HH:MM) → trust it.
+    if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)) return iso;
+    return iso + 'Z';
   }
 
   relativeTime(iso: string): string {
     if (!iso) return '';
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return '';
+    // Clamp negative diffs to 0 so clock skew / slightly-future timestamps show "just now".
+    const diff = Math.max(0, Date.now() - t);
+    const secs = Math.floor(diff / 1000);
+    if (secs < 60) return 'just now';
+    const mins = Math.floor(secs / 60);
     if (mins < 60) return `${mins}m ago`;
     const hours = Math.floor(mins / 60);
     if (hours < 24) return `${hours}h ago`;

@@ -1,80 +1,94 @@
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl};
 
 const DAPP_LABEL: &str = "dapp-browser";
 
-fn get_dapp_webview(app: &AppHandle) -> Option<tauri::Webview> {
-    app.get_webview(DAPP_LABEL)
+fn get_dapp_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
+    app.get_webview_window(DAPP_LABEL)
 }
 
-/// Open an in-app child webview positioned over the specified rectangle
-/// within the main window.
+/// Open a DApp in a separate managed WebviewWindow.
+///
+/// This avoids the z-order and coordinate issues of child webviews on Linux/X11.
+/// The DApp window is a standalone OS window with the Anchor bridge injected.
 #[tauri::command]
 pub async fn open_dapp_browser(
     app: AppHandle,
     url: String,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
+    title: String,
 ) -> Result<(), String> {
-    // Close existing dapp webview if any
-    if let Some(wv) = get_dapp_webview(&app) {
-        let _ = wv.close();
+    // Close existing dapp window if any
+    if let Some(win) = get_dapp_window(&app) {
+        let _ = win.close();
     }
 
     let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
 
-    let main_window = app
-        .get_window("main")
-        .ok_or("Main window not found")?;
-
-    // Clone handle for the on_navigation closure
     let nav_handle = app.clone();
 
-    let builder =
-        tauri::webview::WebviewBuilder::new(DAPP_LABEL, WebviewUrl::External(parsed.clone()))
-            .initialization_script(ANCHOR_BRIDGE_SCRIPT)
-            .on_navigation(move |nav_url| {
-                // Emit navigation event to the main webview so the Angular chrome bar
-                // can update the displayed URL.
-                let url_str = nav_url.to_string();
-                let _ = nav_handle.emit_to("main", "dapp-navigation", &url_str);
+    let dapp_window = tauri::WebviewWindowBuilder::new(
+        &app,
+        DAPP_LABEL,
+        WebviewUrl::External(parsed.clone()),
+    )
+    .title(format!("{} — SimplEOS", title))
+    .inner_size(1024.0, 768.0)
+    .min_inner_size(480.0, 360.0)
+    .resizable(true)
+    .center()
+    .initialization_script(ANCHOR_BRIDGE_SCRIPT)
+    .initialization_script(WHEEL_SCROLL_FIX_SCRIPT)
+    .on_navigation(move |nav_url| {
+        let url_str = nav_url.to_string();
+        let scheme = nav_url.scheme();
 
-                // CSP: Block non-HTTPS navigations (except localhost for dev)
-                let scheme = nav_url.scheme();
-                if scheme != "https" && scheme != "http" {
-                    // Block data:, javascript:, blob: navigations
-                    log::warn!("[dapp] Blocked navigation to non-HTTP scheme: {}", scheme);
-                    return false;
-                }
-                // Allow localhost/127.0.0.1 for development
-                let host = nav_url.host_str().unwrap_or("");
-                if scheme == "http" && host != "localhost" && host != "127.0.0.1" {
-                    log::warn!("[dapp] Blocked insecure HTTP navigation to: {}", host);
-                    return false;
-                }
-                true
-            });
+        // Intercept ESR (EOSIO Signing Request) URIs — these are how
+        // anchor-link DApps trigger wallet signing via the `esr://` protocol.
+        if scheme == "esr" || scheme == "esr-anchor" || scheme == "anchor" {
+            log::info!("[dapp] Intercepted ESR request: {}", &url_str);
+            let _ = nav_handle.emit_to("main", "dapp-esr-request", &url_str);
+            return false; // Block the navigation — we handle it ourselves
+        }
 
-    main_window
-        .add_child(
-            builder,
-            LogicalPosition::new(x, y),
-            LogicalSize::new(width, height),
-        )
-        .map_err(|e| e.to_string())?;
+        let _ = nav_handle.emit_to("main", "dapp-navigation", &url_str);
 
-    // Emit the initial URL so the chrome bar picks it up immediately
+        // Allow about:blank (used by some sites for iframes/popups)
+        if scheme == "about" {
+            return true;
+        }
+        if scheme != "https" && scheme != "http" {
+            log::warn!("[dapp] Blocked navigation to non-HTTP scheme: {}", scheme);
+            return false;
+        }
+        let host = nav_url.host_str().unwrap_or("");
+        if scheme == "http" && host != "localhost" && host != "127.0.0.1" {
+            log::warn!("[dapp] Blocked insecure HTTP navigation to: {}", host);
+            return false;
+        }
+        true
+    })
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    // Emit the initial URL
     let _ = app.emit_to("main", "dapp-navigation", parsed.to_string());
+
+    // When the dapp window is closed (by the user clicking X), notify the main
+    // window so Angular can reset its state.
+    let close_handle = app.clone();
+    dapp_window.on_window_event(move |event| {
+        if let tauri::WindowEvent::Destroyed = event {
+            let _ = close_handle.emit_to("main", "dapp-closed", ());
+        }
+    });
 
     Ok(())
 }
 
-/// Close the dapp browser webview.
+/// Close the DApp browser window.
 #[tauri::command]
 pub async fn close_dapp_browser(app: AppHandle) -> Result<(), String> {
-    if let Some(wv) = get_dapp_webview(&app) {
-        wv.close().map_err(|e| e.to_string())?;
+    if let Some(win) = get_dapp_window(&app) {
+        win.close().map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -82,63 +96,46 @@ pub async fn close_dapp_browser(app: AppHandle) -> Result<(), String> {
 /// Navigate the dapp browser to a new URL.
 #[tauri::command]
 pub async fn navigate_dapp(app: AppHandle, url: String) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
     let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
-    wv.navigate(parsed).map_err(|e| e.to_string())
-}
-
-/// Resize and reposition the dapp browser webview.
-#[tauri::command]
-pub async fn resize_dapp_browser(
-    app: AppHandle,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
-    wv.set_position(LogicalPosition::new(x, y))
-        .map_err(|e| e.to_string())?;
-    wv.set_size(LogicalSize::new(width, height))
-        .map_err(|e| e.to_string())
+    win.navigate(parsed).map_err(|e| e.to_string())
 }
 
 /// Reload the current dapp page.
 #[tauri::command]
 pub async fn reload_dapp(app: AppHandle) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
-    wv.eval("location.reload()").map_err(|e: tauri::Error| e.to_string())
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
+    win.eval("location.reload()").map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Navigate back in the dapp browser history.
 #[tauri::command]
 pub async fn dapp_go_back(app: AppHandle) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
-    wv.eval("history.back()").map_err(|e: tauri::Error| e.to_string())
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
+    win.eval("history.back()").map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Navigate forward in the dapp browser history.
 #[tauri::command]
 pub async fn dapp_go_forward(app: AppHandle) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
-    wv.eval("history.forward()").map_err(|e: tauri::Error| e.to_string())
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
+    win.eval("history.forward()").map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Deliver a signing result back to the dapp webview.
-/// Called by the main window after the user approves/rejects a signing request.
 #[tauri::command]
 pub async fn dapp_resolve_signing(
     app: AppHandle,
     request_id: String,
     result: serde_json::Value,
 ) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
     let json = serde_json::to_string(&result).map_err(|e| e.to_string())?;
     let script = format!(
         "window.__simpleos_bridge && window.__simpleos_bridge._resolveRequest('{}', {})",
         request_id, json
     );
-    wv.eval(&script).map_err(|e: tauri::Error| e.to_string())
+    win.eval(&script).map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Reject a signing request back to the dapp webview.
@@ -148,13 +145,13 @@ pub async fn dapp_reject_signing(
     request_id: String,
     reason: String,
 ) -> Result<(), String> {
-    let wv = get_dapp_webview(&app).ok_or("DApp browser not open")?;
+    let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
     let script = format!(
         "window.__simpleos_bridge && window.__simpleos_bridge._rejectRequest('{}', '{}')",
         request_id,
         reason.replace('\'', "\\'")
     );
-    wv.eval(&script).map_err(|e: tauri::Error| e.to_string())
+    win.eval(&script).map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Anchor protocol bridge injected into every dapp webview.
@@ -239,17 +236,12 @@ const ANCHOR_BRIDGE_SCRIPT: &str = r#"
     };
 
     // ── Anchor Link Transport Impersonation ──
-    // When anchor-link tries to create a transport, we intercept it.
-    // This works because anchor-link checks for `window.AnchorLinkBrowserTransport`
-    // or similar injection points.
-
     class SimpleOSTransport {
         constructor(options) {
             this.options = options || {};
         }
 
         async prepare(request, session) {
-            // Return the request as-is (no QR code needed for embedded wallet)
             return request;
         }
 
@@ -257,7 +249,6 @@ const ANCHOR_BRIDGE_SCRIPT: &str = r#"
         async hideLoading() {}
 
         async sign(resolved) {
-            // Extract actions from the resolved signing request
             const actions = [];
             if (resolved && resolved.transaction) {
                 const trx = resolved.transaction;
@@ -283,17 +274,9 @@ const ANCHOR_BRIDGE_SCRIPT: &str = r#"
             return result;
         }
 
-        async onSuccess(request, result) {
-            // Optional: notify dApp of success
-        }
-
-        async onFailure(request, error) {
-            // Optional: notify dApp of failure
-        }
-
-        async onRequest(request, cancel) {
-            // For link-based flow — we handle inline
-        }
+        async onSuccess(request, result) {}
+        async onFailure(request, error) {}
+        async onRequest(request, cancel) {}
     }
 
     // Expose transport globally so anchor-link can find it
@@ -301,19 +284,59 @@ const ANCHOR_BRIDGE_SCRIPT: &str = r#"
     window.SimpleOSTransport = SimpleOSTransport;
 
     // ── UAL (Universal Authenticator Library) Support ──
-    // Some dApps use UAL and look for registered authenticators.
-    // We register as an Anchor-compatible authenticator.
-
     if (!window.__simpleos_ual_registered) {
         window.__simpleos_ual_registered = true;
-
-        // Override ScatterJS / eos-transit detection
         window.scatter = window.scatter || null;
-
-        // Signal readiness
         window.dispatchEvent(new CustomEvent('simpleos:ready', { detail: { version: '2.0.0' } }));
     }
 
     console.log('[SimplEOS] Anchor signing bridge loaded (v2.0)');
+})();
+"#;
+
+/// WebKitGTK wheel scroll fix — injected into the DApp window on Linux.
+///
+/// WebKitGTK's smooth-scrolling is broken, making mouse wheel scrolling extremely
+/// sluggish. This intercepts wheel events and applies the delta directly via
+/// scrollBy(), bypassing the broken smooth-scroll pipeline.
+///
+/// Refs:
+///   https://github.com/tauri-apps/tauri/issues/3308
+///   https://bugs.webkit.org/show_bug.cgi?id=210460
+const WHEEL_SCROLL_FIX_SCRIPT: &str = r#"
+(function() {
+    'use strict';
+    if (!/Linux/i.test(navigator.userAgent)) return;
+
+    var LINE_HEIGHT = 40;
+    var PAGE_HEIGHT = 400;
+
+    function isScrollable(el) {
+        var s = getComputedStyle(el);
+        var oy = s.overflowY, ox = s.overflowX;
+        return ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) ||
+               ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth);
+    }
+
+    function findScrollable(target) {
+        var node = target;
+        while (node && node !== document.body && node !== document.documentElement) {
+            if (isScrollable(node)) return node;
+            node = node.parentElement;
+        }
+        return document.scrollingElement || document.documentElement;
+    }
+
+    window.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) return;
+        var el = findScrollable(e.target);
+        if (!el) return;
+        var dx = e.deltaX, dy = e.deltaY;
+        if (e.deltaMode === 1) { dx *= LINE_HEIGHT; dy *= LINE_HEIGHT; }
+        else if (e.deltaMode === 2) { dx *= PAGE_HEIGHT; dy *= PAGE_HEIGHT; }
+        if (dx === 0 && dy === 0) return;
+        e.preventDefault();
+        el.scrollBy({ left: dx, top: dy, behavior: 'instant' });
+    }, { passive: false });
 })();
 "#;

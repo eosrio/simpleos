@@ -5,6 +5,7 @@ import { TauriIpcService, ChainConfig, DiscoveryProgress, AccountAuthority, Anch
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { NetworkService } from '../../core/services/network.service';
 import { ChainIconComponent } from '../../shared/chain-icon';
+import { WindowControlsComponent } from '../../shared/window-controls';
 
 type WizardStep = 'chain' | 'action' | 'form';
 type ActionType = 'watch' | 'import' | 'backup' | 'anchor' | 'ledger';
@@ -43,12 +44,18 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [FormsModule, ChainIconComponent],
+  imports: [FormsModule, ChainIconComponent, WindowControlsComponent],
   template: `
     <div class="wizard">
       <!-- Background grain overlay -->
       <div class="bg-noise"></div>
       <div class="bg-glow" [style.--glow-color]="activeGlowColor()"></div>
+
+      <!-- Custom titlebar (transparent, overlays the wizard) -->
+      <div class="landing-titlebar" data-tauri-drag-region>
+        <div class="landing-titlebar-fill" data-tauri-drag-region></div>
+        <app-window-controls />
+      </div>
 
       <div class="wizard-container">
 

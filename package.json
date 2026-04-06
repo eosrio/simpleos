@@ -30,6 +30,8 @@
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@tauri-apps/plugin-store": "^2.4.2",
+    "@wharfkit/signing-request": "^3.4.0",
+    "pako": "^2.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -38,6 +40,7 @@
     "@angular/cli": "^22.0.0-next.4",
     "@angular/compiler-cli": "^22.0.0-next.0",
     "@tauri-apps/cli": "^2.10.1",
+    "@types/pako": "^2.0.4",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
