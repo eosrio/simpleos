@@ -84,7 +84,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
           @if (tx.phase() === 'signing') {
             <div class="modal-body status-phase">
               <div class="spinner"></div>
-              <p class="status-text">Signing and broadcasting...</p>
+              <p class="status-text">{{ tx.request()?.isLogin ? 'Signing identity proof...' : 'Signing and broadcasting...' }}</p>
             </div>
           }
 
@@ -98,27 +98,29 @@ import { WalletStateService } from '../core/services/wallet-state.service';
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </div>
-              <h3 class="status-title">Transaction Sent</h3>
-              <div class="tx-id-row">
-                <span class="tx-id-label">TX ID</span>
-                <span class="tx-id data">{{ tx.result()?.transaction_id?.slice(0, 16) }}...</span>
-              </div>
-              @if (explorerLinks(); as links) {
-                @if (links.length > 0) {
-                  <div class="explorer-links">
-                    @for (link of links; track link.name) {
-                      <button type="button" class="explorer-link" (click)="openExplorer(link.url)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                          <polyline points="15 3 21 3 21 9"/>
-                          <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                        {{ link.name }}
-                      </button>
-                    }
-                  </div>
+              <h3 class="status-title">{{ tx.request()?.isLogin ? 'Login Successful' : 'Transaction Sent' }}</h3>
+              @if (!tx.request()?.isLogin) {
+                <div class="tx-id-row">
+                  <span class="tx-id-label">TX ID</span>
+                  <span class="tx-id data">{{ tx.result()?.transaction_id }}</span>
+                </div>
+                @if (explorerLinks(); as links) {
+                  @if (links.length > 0) {
+                    <div class="explorer-links">
+                      @for (link of links; track link.name) {
+                        <button type="button" class="explorer-link" (click)="openExplorer(link.url)">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-width="2"
+                               stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                          </svg>
+                          {{ link.name }}
+                        </button>
+                      }
+                    </div>
+                  }
                 }
               }
             </div>
@@ -421,8 +423,9 @@ import { WalletStateService } from '../core/services/wallet-state.service';
     }
 
     .tx-id {
-      font-size: 13px;
+      font-size: 11px;
       color: var(--text-body);
+      word-break: break-all;
     }
 
     .error-detail {
@@ -526,10 +529,16 @@ export class ConfirmModalComponent {
   /** Extract key/value pairs from action data for display. */
   actionFields(action: TxAction): { key: string; value: string }[] {
     if (!action.data) return [];
-    return Object.entries(action.data).map(([key, value]) => ({
-      key,
-      value: typeof value === 'object' ? JSON.stringify(value) : String(value),
-    }));
+    const isFioAction = action.account?.startsWith('fio.');
+    return Object.entries(action.data).map(([key, value]) => {
+      let display = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      // Format FIO max_fee from SUFs to human-readable FIO tokens
+      if (isFioAction && key === 'max_fee' && typeof value === 'number') {
+        const fioAmount = (value / 1e9).toFixed(2);
+        display = `~${fioAmount} FIO`;
+      }
+      return { key, value: display };
+    });
   }
 
   /** Check if a value looks like a token amount (e.g., "1.0000 EOS"). */

@@ -20,11 +20,9 @@ async fn test_chain_is_reachable_and_returns_info() {
     let mut pm = common::make_provider(&chain_id).await;
 
     let info = pm
-        .rpc_call(
-            "/v1/chain/get_info",
-            &serde_json::json!({}),
-            |json| Ok(json),
-        )
+        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
+            Ok(json)
+        })
         .await
         .expect("get_info should succeed");
 
@@ -238,8 +236,14 @@ async fn test_get_rammarket_returns_bancor_state() {
 
     let rows = result["rows"].as_array().expect("rows should be an array");
     assert!(!rows.is_empty(), "rammarket should have data");
-    assert!(rows[0].get("base").is_some(), "rammarket must have base field");
-    assert!(rows[0].get("quote").is_some(), "rammarket must have quote field");
+    assert!(
+        rows[0].get("base").is_some(),
+        "rammarket must have base field"
+    );
+    assert!(
+        rows[0].get("quote").is_some(),
+        "rammarket must have quote field"
+    );
 }
 
 // ── ABI fetching (used by feature detection) ──

@@ -29,8 +29,7 @@ pub struct Apdu {
 
 /// Open a connection to any connected Ledger device.
 pub fn open_ledger() -> Result<HidDevice, Error> {
-    let api = HidApi::new()
-        .map_err(|e| Error::Ledger(format!("Failed to init HID: {}", e)))?;
+    let api = HidApi::new().map_err(|e| Error::Ledger(format!("Failed to init HID: {}", e)))?;
 
     // Try all known Ledger product IDs (Nano S, S+, X, Stax, Flex)
     for device_info in api.device_list() {
@@ -42,19 +41,19 @@ pub fn open_ledger() -> Result<HidDevice, Error> {
         }
     }
 
-    Err(Error::Ledger("No Ledger device found. Is it connected and unlocked?".into()))
+    Err(Error::Ledger(
+        "No Ledger device found. Is it connected and unlocked?".into(),
+    ))
 }
 
 /// List connected Ledger devices. Returns product strings.
 pub fn list_ledgers() -> Result<Vec<String>, Error> {
-    let api = HidApi::new()
-        .map_err(|e| Error::Ledger(format!("Failed to init HID: {}", e)))?;
+    let api = HidApi::new().map_err(|e| Error::Ledger(format!("Failed to init HID: {}", e)))?;
 
     let mut devices = Vec::new();
     for info in api.device_list() {
         if info.vendor_id() == LEDGER_VID {
-            let name = info.product_string()
-                .unwrap_or("Ledger Device");
+            let name = info.product_string().unwrap_or("Ledger Device");
             devices.push(name.to_string());
         }
     }
@@ -116,7 +115,8 @@ fn send_raw(device: &HidDevice, data: &[u8]) -> Result<(), Error> {
             offset += chunk_len;
         }
 
-        device.write(&packet)
+        device
+            .write(&packet)
             .map_err(|e| Error::Ledger(format!("HID write failed: {}", e)))?;
 
         seq += 1;
@@ -133,7 +133,8 @@ fn recv_raw(device: &HidDevice) -> Result<Vec<u8>, Error> {
 
     loop {
         let mut packet = vec![0u8; PACKET_SIZE + 1];
-        let read = device.read_timeout(&mut packet, 30_000) // 30 second timeout
+        let read = device
+            .read_timeout(&mut packet, 30_000) // 30 second timeout
             .map_err(|e| Error::Ledger(format!("HID read failed: {}", e)))?;
 
         if read == 0 {
@@ -164,7 +165,10 @@ fn recv_raw(device: &HidDevice) -> Result<Vec<u8>, Error> {
         let pkt_seq = ((packet[pos] as u16) << 8) | (packet[pos + 1] as u16);
         pos += 2;
         if pkt_seq != seq {
-            return Err(Error::Ledger(format!("Sequence mismatch: expected {}, got {}", seq, pkt_seq)));
+            return Err(Error::Ledger(format!(
+                "Sequence mismatch: expected {}, got {}",
+                seq, pkt_seq
+            )));
         }
 
         // First packet has total length
@@ -198,8 +202,12 @@ fn recv_raw(device: &HidDevice) -> Result<Vec<u8>, Error> {
         0x9000 => Ok(data), // Success
         0x6985 => Err(Error::Ledger("User rejected the request on device".into())),
         0x6A82 => Err(Error::Ledger("EOS app not open on Ledger".into())),
-        0x6D00 => Err(Error::Ledger("Unknown command. Is the EOS app open?".into())),
-        0x6E00 => Err(Error::Ledger("Wrong app. Please open the EOS app on your Ledger".into())),
+        0x6D00 => Err(Error::Ledger(
+            "Unknown command. Is the EOS app open?".into(),
+        )),
+        0x6E00 => Err(Error::Ledger(
+            "Wrong app. Please open the EOS app on your Ledger".into(),
+        )),
         0x6B00 => Err(Error::Ledger("Invalid parameter".into())),
         _ => Err(Error::Ledger(format!("Ledger error: 0x{:04X}", sw))),
     }

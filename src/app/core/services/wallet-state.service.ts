@@ -170,21 +170,20 @@ export class WalletStateService {
       // Check if this account is a producer
       try {
         const producers = await this.ipc.getProducers(chainId, 200);
-        if (producers?.rows) {
-          const bp = producers.rows.find((r: any) => r.owner === accountName);
-          if (bp) {
-            account.isProducer = true;
-            account.producerUrl = bp.url;
-            // Find rank
-            const sorted = producers.rows
-              .filter((r: any) => r.is_active === 1)
-              .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
-            const rank = sorted.findIndex((r: any) => r.owner === accountName);
-            if (rank >= 0) account.producerRank = rank + 1;
-          }
+        const bpList = producers?.rows ?? producers?.producers ?? [];
+        const bp = bpList.find((r: any) => r.owner === accountName);
+        if (bp) {
+          account.isProducer = true;
+          account.producerUrl = bp.url;
+          const sorted = bpList
+            .filter((r: any) => r.is_active === 1 || r.is_active === true)
+            .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
+          const rank = sorted.findIndex((r: any) => r.owner === accountName);
+          if (rank >= 0) account.producerRank = rank + 1;
         }
-      } catch {
-        // Producer check is non-critical
+        console.log(`[wallet] addWatch producer check: ${accountName}@${chain.name} isProducer=${!!account.isProducer} rank=${account.producerRank ?? '—'}`);
+      } catch (e) {
+        console.warn(`[wallet] addWatch producer check failed for ${accountName}@${chain.name}:`, e);
       }
 
       // Add to accounts list and persist
@@ -215,12 +214,40 @@ export class WalletStateService {
           if (bal.length > 0) {
             info.core_liquid_balance = bal[0];
           }
-        } catch { /* keep whatever get_account returned */ }
+        } catch (e) {
+          console.warn(`[wallet] getBalances failed for ${account.name} on ${chain.name}:`, e);
+        }
       }
 
       const extraBalances = chain ? await this.fetchExtraTokenBalances(chain, account.name) : [];
+
+      // Detect producer status
+      let isProducer = false;
+      let producerRank: number | undefined;
+      let producerUrl = account.producerUrl;
+      try {
+        const producers = await this.ipc.getProducers(account.chainId, 200);
+        const bpList = producers?.rows ?? producers?.producers ?? [];
+        const bp = bpList.find((r: any) => r.owner === account.name);
+        if (bp) {
+          isProducer = true;
+          producerUrl = bp.url;
+          const sorted = bpList
+            .filter((r: any) => r.is_active === 1 || r.is_active === true)
+            .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
+          const rank = sorted.findIndex((r: any) => r.owner === account.name);
+          if (rank >= 0) producerRank = rank + 1;
+        }
+        console.log(`[wallet] producer check: ${account.name}@${account.chainName} isProducer=${isProducer} rank=${producerRank ?? '—'}`);
+      } catch (e) {
+        // Keep existing value on failure so cached state survives
+        isProducer = account.isProducer ?? false;
+        producerRank = account.producerRank;
+        console.warn(`[wallet] producer check failed for ${account.name}@${account.chainName}:`, e);
+      }
+
       this.accounts.update(list =>
-        list.map((a, i) => i === index ? { ...a, info, extraBalances } : a)
+        list.map((a, i) => i === index ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a)
       );
     } catch (e: any) {
       console.warn(`[wallet] refreshAccount FAILED for ${account.name}:`, e);
@@ -339,7 +366,9 @@ export class WalletStateService {
                   try {
                     const bal = await this.ipc.getBalances(chain.id, name, chain.token_contract, chain.symbol);
                     if (bal.length > 0) info.core_liquid_balance = bal[0];
-                  } catch { /* keep get_account default */ }
+                  } catch (e) {
+                    console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
+                  }
                 }
                 const extraBalances = await this.fetchExtraTokenBalances(chain, name);
                 allAccounts.push({

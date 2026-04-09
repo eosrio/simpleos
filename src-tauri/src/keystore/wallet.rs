@@ -84,7 +84,9 @@ impl WalletService {
                 // No vault token yet — this shouldn't happen if has_wallet is true,
                 // but accept the passphrase and create the token now (migration case)
                 let encrypted = derive::encrypt(VAULT_VERIFY_PLAINTEXT, &master_key, MASTER_SALT)?;
-                let _ = self.store.store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted);
+                let _ = self
+                    .store
+                    .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted);
             }
         }
 
@@ -98,9 +100,14 @@ impl WalletService {
     /// Called during first key import.
     fn ensure_vault(&self, master_key: &[u8]) -> Result<(), Error> {
         // Only create if it doesn't exist yet
-        if self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY).is_err() {
+        if self
+            .store
+            .load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY)
+            .is_err()
+        {
             let encrypted = derive::encrypt(VAULT_VERIFY_PLAINTEXT, master_key, MASTER_SALT)?;
-            self.store.store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted)?;
+            self.store
+                .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted)?;
         }
         Ok(())
     }
@@ -140,9 +147,9 @@ impl WalletService {
     pub fn needs_lockscreen(&self) -> bool {
         let mode = self.security_mode();
         match mode {
-            SecurityMode::SessionUnlock => true,  // Must unlock before anything
-            SecurityMode::SignPerUse => false,     // Load directly, prompt on sign
-            SecurityMode::ManualToggle => false,   // Load directly, user toggles
+            SecurityMode::SessionUnlock => true, // Must unlock before anything
+            SecurityMode::SignPerUse => false,   // Load directly, prompt on sign
+            SecurityMode::ManualToggle => false, // Load directly, user toggles
         }
     }
 
@@ -214,18 +221,13 @@ impl WalletService {
 
     /// Decrypt and return the raw private key bytes for a given public key.
     /// Requires the wallet to be unlocked.
-    pub fn decrypt_key(
-        &self,
-        chain_id: &str,
-        public_key: &str,
-    ) -> Result<Vec<u8>, Error> {
+    pub fn decrypt_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
         let mut session = self.session.lock().unwrap();
         let master_key = session.master_key().ok_or(Error::WalletLocked)?;
 
         let encrypted = self.store.load_key(chain_id, public_key)?;
-        let private_key_bytes =
-            derive::decrypt(&encrypted, master_key, MASTER_SALT)
-                .map_err(|_| Error::InvalidPassphrase)?;
+        let private_key_bytes = derive::decrypt(&encrypted, master_key, MASTER_SALT)
+            .map_err(|_| Error::InvalidPassphrase)?;
 
         Ok(private_key_bytes)
     }
@@ -271,13 +273,23 @@ impl WalletService {
     }
 
     /// Store raw encrypted bytes under chain_id + key_name.
-    pub fn store_raw_key(&self, chain_id: &str, key_name: &str, encrypted: &[u8]) -> Result<(), Error> {
+    pub fn store_raw_key(
+        &self,
+        chain_id: &str,
+        key_name: &str,
+        encrypted: &[u8],
+    ) -> Result<(), Error> {
         self.store.store_key(chain_id, key_name, encrypted)
     }
 
     /// Load raw encrypted bytes for chain_id + key_name.
     pub fn load_raw_key(&self, chain_id: &str, key_name: &str) -> Result<Vec<u8>, Error> {
         self.store.load_key(chain_id, key_name)
+    }
+
+    /// Delete a raw key entry (chain_id + key_name).
+    pub fn delete_raw_key(&self, chain_id: &str, key_name: &str) -> Result<(), Error> {
+        self.store.delete_key(chain_id, key_name)
     }
 
     // ── Passphrase Change ──
@@ -307,13 +319,11 @@ impl WalletService {
             for pub_key in &public_keys {
                 // Decrypt with old
                 let encrypted = self.store.load_key(chain_id, pub_key)?;
-                let private_key_bytes =
-                    derive::decrypt(&encrypted, &old_master, MASTER_SALT)
-                        .map_err(|_| Error::InvalidPassphrase)?;
+                let private_key_bytes = derive::decrypt(&encrypted, &old_master, MASTER_SALT)
+                    .map_err(|_| Error::InvalidPassphrase)?;
 
                 // Re-encrypt with new master key
-                let re_encrypted =
-                    derive::encrypt(&private_key_bytes, &new_master, MASTER_SALT)?;
+                let re_encrypted = derive::encrypt(&private_key_bytes, &new_master, MASTER_SALT)?;
 
                 // Overwrite
                 self.store.store_key(chain_id, pub_key, &re_encrypted)?;
@@ -323,7 +333,8 @@ impl WalletService {
 
         // Update vault verification token with new master key
         let new_token = derive::encrypt(VAULT_VERIFY_PLAINTEXT, &new_master, MASTER_SALT)?;
-        self.store.store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &new_token)?;
+        self.store
+            .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &new_token)?;
 
         // Update session
         let mut session = self.session.lock().unwrap();
@@ -348,18 +359,19 @@ impl WalletService {
     // ── Verification ──
 
     /// Store a test key directly (for diagnostics).
-    pub fn store_test_key(&self, chain_id: &str, public_key: &str, data: &[u8]) -> Result<(), Error> {
+    pub fn store_test_key(
+        &self,
+        chain_id: &str,
+        public_key: &str,
+        data: &[u8],
+    ) -> Result<(), Error> {
         self.store.store_key(chain_id, public_key, data)
     }
 
     /// Verify that a stored key can be decrypted and produces the expected public key.
     /// This is a self-test: import → decrypt → derive pubkey → compare.
     /// Handles both EOS... and PUB_K1_... public key formats.
-    pub fn verify_key_integrity(
-        &self,
-        chain_id: &str,
-        public_key: &str,
-    ) -> Result<bool, Error> {
+    pub fn verify_key_integrity(&self, chain_id: &str, public_key: &str) -> Result<bool, Error> {
         let private_key_bytes = self.decrypt_key(chain_id, public_key)?;
 
         // Re-derive public key from the decrypted private key
@@ -427,12 +439,16 @@ impl WalletService {
 
         let version = backup["version"].as_str().unwrap_or("");
         if version != "simpleos-v2" {
-            return Err(Error::Serialization(format!("Unknown backup version: {}", version)));
+            return Err(Error::Serialization(format!(
+                "Unknown backup version: {}",
+                version
+            )));
         }
 
         // Verify passphrase against the backup's vault token
         let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
-        let vault_token_hex = backup["vault_token"].as_str()
+        let vault_token_hex = backup["vault_token"]
+            .as_str()
             .ok_or_else(|| Error::Serialization("Missing vault_token".into()))?;
         let vault_token = hex::decode(vault_token_hex)
             .map_err(|e| Error::Serialization(format!("Invalid hex: {}", e)))?;
@@ -443,7 +459,8 @@ impl WalletService {
         self.ensure_vault(&master_key)?;
 
         // Import each key
-        let keys = backup["keys"].as_array()
+        let keys = backup["keys"]
+            .as_array()
             .ok_or_else(|| Error::Serialization("Missing keys array".into()))?;
 
         let mut count = 0usize;
@@ -612,8 +629,8 @@ mod tests {
         // Simulate timeout by directly manipulating the session
         {
             let mut session = w.session.lock().unwrap();
-            session.last_activity = std::time::Instant::now()
-                - std::time::Duration::from_secs(301); // > 5 min
+            session.last_activity = std::time::Instant::now() - std::time::Duration::from_secs(301);
+            // > 5 min
         }
 
         assert!(w.is_locked());
@@ -830,7 +847,9 @@ mod tests {
         assert_eq!(decrypted, priv_bytes);
 
         // Verify integrity check passes
-        assert!(w.verify_key_integrity(TEST_CHAIN, &result.public_key).unwrap());
+        assert!(w
+            .verify_key_integrity(TEST_CHAIN, &result.public_key)
+            .unwrap());
 
         // Verify signing works
         let sig = signing::sign_transaction(TEST_CHAIN, &[0u8; 32], &decrypted).unwrap();
@@ -861,7 +880,7 @@ mod tests {
         assert!(!w.is_locked());
 
         w.set_security_mode(SecurityMode::SignPerUse);
-        assert!(!w.needs_lockscreen());       // no lockscreen on load
+        assert!(!w.needs_lockscreen()); // no lockscreen on load
         assert!(w.needs_passphrase_for_signing()); // always needs passphrase
         assert!(w.is_locked()); // session was wiped when switching to SignPerUse
     }
@@ -876,7 +895,9 @@ mod tests {
         assert!(w.decrypt_key(TEST_CHAIN, TEST_PUB).is_err());
 
         // But decrypt_key_with_passphrase works
-        let priv_bytes = w.decrypt_key_with_passphrase(TEST_CHAIN, TEST_PUB, TEST_PASS).unwrap();
+        let priv_bytes = w
+            .decrypt_key_with_passphrase(TEST_CHAIN, TEST_PUB, TEST_PASS)
+            .unwrap();
         assert_eq!(priv_bytes.len(), 32);
 
         // Wrong passphrase fails
@@ -895,7 +916,7 @@ mod tests {
         w.set_security_mode(SecurityMode::ManualToggle);
         w.lock();
 
-        assert!(!w.needs_lockscreen());       // no lockscreen
+        assert!(!w.needs_lockscreen()); // no lockscreen
         assert!(w.needs_passphrase_for_signing()); // locked → needs passphrase
 
         w.unlock(TEST_PASS).unwrap();

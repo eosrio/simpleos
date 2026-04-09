@@ -115,13 +115,39 @@ where
         healthy_count: 0,
     });
 
+    // Seed with existing config endpoints to ensure they are tested even if bp.json discovery fails.
+    for ep in &pm.rpc_endpoints {
+        all_endpoints.push(DiscoveredEndpoint {
+            url: ep.url.clone(),
+            endpoint_type: EndpointType::Api,
+            producer: ep.owner.clone().unwrap_or_else(|| "Config".to_string()),
+            latency_ms: 0,
+            healthy: false,
+            capabilities: EndpointCapabilities::default(),
+        });
+    }
+    for ep in &pm.hyperion_endpoints {
+        all_endpoints.push(DiscoveredEndpoint {
+            url: ep.url.clone(),
+            endpoint_type: EndpointType::Hyperion,
+            producer: ep.owner.clone().unwrap_or_else(|| "Config".to_string()),
+            latency_ms: 0,
+            healthy: false,
+            capabilities: EndpointCapabilities::default(),
+        });
+    }
+
     let producers_json: serde_json::Value = pm
         .rpc_call(
             "/v1/chain/get_producers",
             &serde_json::json!({ "limit": 50, "lower_bound": "", "json": true }),
             |json| Ok(json),
         )
-        .await?;
+        .await
+        .unwrap_or_else(|e| {
+            log::warn!("Failed to fetch producers for chain {}: {}", chain_id, e);
+            serde_json::json!({})
+        });
 
     let producers: Vec<ProducerEntry> = parse_producers(&producers_json);
     let total_producers = producers.len();
@@ -140,9 +166,8 @@ where
         .build()
         .unwrap_or_default();
 
-    let active_producers: Vec<&ProducerEntry> = producers.iter()
-        .filter(|p| !p.url.is_empty())
-        .collect();
+    let active_producers: Vec<&ProducerEntry> =
+        producers.iter().filter(|p| !p.url.is_empty()).collect();
     let total_active = active_producers.len();
 
     let batch_size = 10;
@@ -176,7 +201,12 @@ where
             let progress = 0.05 + 0.55 * (completed as f32 / total_active as f32);
             on_progress(DiscoveryProgress {
                 phase: "bp_json",
-                message: format!("Scanning producers ({}/{}) — {} endpoints", completed, total_active, all_endpoints.len()),
+                message: format!(
+                    "Scanning producers ({}/{}) — {} endpoints",
+                    completed,
+                    total_active,
+                    all_endpoints.len()
+                ),
                 progress,
                 endpoints_found: all_endpoints.len(),
                 healthy_count: 0,
@@ -186,10 +216,7 @@ where
 
     on_progress(DiscoveryProgress {
         phase: "testing",
-        message: format!(
-            "Discovered {} endpoints, testing...",
-            all_endpoints.len()
-        ),
+        message: format!("Discovered {} endpoints, testing...", all_endpoints.len()),
         progress: 0.6,
         endpoints_found: all_endpoints.len(),
         healthy_count: 0,
@@ -264,10 +291,7 @@ where
 
     on_progress(DiscoveryProgress {
         phase: "done",
-        message: format!(
-            "Discovery complete — {} healthy endpoints",
-            healthy_count
-        ),
+        message: format!("Discovery complete — {} healthy endpoints", healthy_count),
         progress: 1.0,
         endpoints_found: total_endpoints,
         healthy_count,
@@ -292,10 +316,7 @@ fn parse_producers(json: &serde_json::Value) -> Vec<ProducerEntry> {
                 .filter_map(|row| {
                     let owner = row.get("owner")?.as_str()?;
                     let url = row.get("url").and_then(|u| u.as_str()).unwrap_or("");
-                    let is_active = row
-                        .get("is_active")
-                        .and_then(|v| v.as_u64())
-                        .unwrap_or(0);
+                    let is_active = row.get("is_active").and_then(|v| v.as_u64()).unwrap_or(0);
                     if is_active == 1 && !url.is_empty() {
                         Some(ProducerEntry {
                             owner: owner.to_string(),
@@ -362,10 +383,7 @@ async fn fetch_chains_json(
     chains.chains.get(chain_id).cloned()
 }
 
-async fn fetch_and_parse_bp_json(
-    client: &reqwest::Client,
-    url: &str,
-) -> Result<BpJson, Error> {
+async fn fetch_and_parse_bp_json(client: &reqwest::Client, url: &str) -> Result<BpJson, Error> {
     let resp = client
         .get(url)
         .send()
@@ -379,10 +397,10 @@ async fn fetch_and_parse_bp_json(
 
 fn extract_endpoints(bp: &BpJson, producer: &str, out: &mut Vec<DiscoveredEndpoint>) {
     for node in &bp.nodes {
-        let is_hyperion = node.features.iter().any(|f| {
-            f.eq_ignore_ascii_case("hyperion-v2")
-                || f.eq_ignore_ascii_case("history-v2")
-        }) || node_type_contains(&node.node_type, "hyperion");
+        let is_hyperion =
+            node.features.iter().any(|f| {
+                f.eq_ignore_ascii_case("hyperion-v2") || f.eq_ignore_ascii_case("history-v2")
+            }) || node_type_contains(&node.node_type, "hyperion");
 
         // Prefer SSL endpoint
         let api_url = node
@@ -459,7 +477,8 @@ async fn test_api_endpoint(
             match resp.json::<serde_json::Value>().await {
                 Ok(json) => {
                     let cid = json.get("chain_id").and_then(|v| v.as_str()).unwrap_or("");
-                    let ver = json.get("server_version_string")
+                    let ver = json
+                        .get("server_version_string")
                         .and_then(|v| v.as_str())
                         .map(String::from);
                     if cid == chain_id {
@@ -471,11 +490,13 @@ async fn test_api_endpoint(
                 Err(_) => (-1, false, None),
             }
         }
-        Err(_) => return EndpointTestResult {
-            latency_ms: -1,
-            healthy: false,
-            capabilities: EndpointCapabilities::default(),
-        },
+        Err(_) => {
+            return EndpointTestResult {
+                latency_ms: -1,
+                healthy: false,
+                capabilities: EndpointCapabilities::default(),
+            }
+        }
     };
 
     if !healthy {
@@ -532,10 +553,7 @@ async fn test_api_endpoint(
 }
 
 /// Test a Hyperion endpoint by calling /v2/health.
-async fn test_hyperion_endpoint(
-    client: &reqwest::Client,
-    url: &str,
-) -> EndpointTestResult {
+async fn test_hyperion_endpoint(client: &reqwest::Client, url: &str) -> EndpointTestResult {
     let start = Instant::now();
     let base = url.trim_end_matches('/');
     let full_url = format!("{}/v2/health", base);
@@ -616,19 +634,20 @@ pub fn save_cache(
         endpoints: endpoints.to_vec(),
     };
 
-    let json = serde_json::to_string_pretty(&cache)
-        .map_err(|e| Error::Serialization(e.to_string()))?;
+    let json =
+        serde_json::to_string_pretty(&cache).map_err(|e| Error::Serialization(e.to_string()))?;
 
     std::fs::write(cache_path(app_data_dir, chain_id), json)?;
-    log::info!("[discovery] Cached {} endpoints for chain {}", endpoints.len(), &chain_id[..8]);
+    log::info!(
+        "[discovery] Cached {} endpoints for chain {}",
+        endpoints.len(),
+        &chain_id[..8]
+    );
     Ok(())
 }
 
 /// Load cached endpoints. Returns None if no cache or cache is expired.
-pub fn load_cache(
-    app_data_dir: &PathBuf,
-    chain_id: &str,
-) -> Option<EndpointCache> {
+pub fn load_cache(app_data_dir: &PathBuf, chain_id: &str) -> Option<EndpointCache> {
     let path = cache_path(app_data_dir, chain_id);
     let json = std::fs::read_to_string(&path).ok()?;
     let cache: EndpointCache = serde_json::from_str(&json).ok()?;

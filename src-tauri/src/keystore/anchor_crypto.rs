@@ -59,9 +59,8 @@ const INV_SBOX: [u8; 256] = [
 
 /// Round constants (RCON). CryptoJS uses indices 0..10.
 const RCON: [u32; 11] = [
-    0x00000000, 0x01000000, 0x02000000, 0x04000000, 0x08000000,
-    0x10000000, 0x20000000, 0x40000000, 0x80000000, 0x1b000000,
-    0x36000000,
+    0x00000000, 0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000,
+    0x80000000, 0x1b000000, 0x36000000,
 ];
 
 const BLOCK_WORDS: usize = 4; // 128-bit block = 4 x 32-bit words
@@ -129,7 +128,12 @@ fn key_expansion(key_words: &[u32]) -> Vec<u32> {
 
 fn sub_word(w: u32) -> u32 {
     let b = w.to_be_bytes();
-    u32::from_be_bytes([SBOX[b[0] as usize], SBOX[b[1] as usize], SBOX[b[2] as usize], SBOX[b[3] as usize]])
+    u32::from_be_bytes([
+        SBOX[b[0] as usize],
+        SBOX[b[1] as usize],
+        SBOX[b[2] as usize],
+        SBOX[b[3] as usize],
+    ])
 }
 
 // ── Block Decryption (single 128-bit block) ──
@@ -294,23 +298,29 @@ mod sha1_impl {
         for chunk in msg.chunks_exact(64) {
             let mut w = [0u32; 80];
             for i in 0..16 {
-                w[i] = u32::from_be_bytes([chunk[i*4], chunk[i*4+1], chunk[i*4+2], chunk[i*4+3]]);
+                w[i] = u32::from_be_bytes([
+                    chunk[i * 4],
+                    chunk[i * 4 + 1],
+                    chunk[i * 4 + 2],
+                    chunk[i * 4 + 3],
+                ]);
             }
             for i in 16..80 {
-                w[i] = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16]).rotate_left(1);
+                w[i] = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]).rotate_left(1);
             }
 
             let (mut a, mut b, mut c, mut d, mut e) = (h[0], h[1], h[2], h[3], h[4]);
 
             for i in 0..80 {
                 let (f, k) = match i {
-                    0..=19  => ((b & c) | ((!b) & d),          0x5A827999),
-                    20..=39 => (b ^ c ^ d,                      0x6ED9EBA1),
-                    40..=59 => ((b & c) | (b & d) | (c & d),    0x8F1BBCDC),
-                    _       => (b ^ c ^ d,                      0xCA62C1D6),
+                    0..=19 => ((b & c) | ((!b) & d), 0x5A827999),
+                    20..=39 => (b ^ c ^ d, 0x6ED9EBA1),
+                    40..=59 => ((b & c) | (b & d) | (c & d), 0x8F1BBCDC),
+                    _ => (b ^ c ^ d, 0xCA62C1D6),
                 };
 
-                let temp = a.rotate_left(5)
+                let temp = a
+                    .rotate_left(5)
                     .wrapping_add(f)
                     .wrapping_add(e)
                     .wrapping_add(k)
@@ -331,7 +341,7 @@ mod sha1_impl {
 
         let mut result = [0u8; 20];
         for (i, &val) in h.iter().enumerate() {
-            result[i*4..i*4+4].copy_from_slice(&val.to_be_bytes());
+            result[i * 4..i * 4 + 4].copy_from_slice(&val.to_be_bytes());
         }
         result
     }
@@ -365,7 +375,12 @@ mod sha1_impl {
     }
 
     /// PBKDF2-HMAC-SHA1
-    pub fn pbkdf2_hmac_sha1(password: &[u8], salt: &[u8], iterations: u32, dk_len: usize) -> Vec<u8> {
+    pub fn pbkdf2_hmac_sha1(
+        password: &[u8],
+        salt: &[u8],
+        iterations: u32,
+        dk_len: usize,
+    ) -> Vec<u8> {
         let h_len = 20; // SHA-1 output length
         let blocks_needed = (dk_len + h_len - 1) / h_len;
         let mut dk = Vec::with_capacity(dk_len);
@@ -425,7 +440,11 @@ fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
     // Simple base64 decoder (standard alphabet with padding)
     use std::collections::HashMap;
     const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let table: HashMap<u8, u8> = ALPHABET.iter().enumerate().map(|(i, &c)| (c, i as u8)).collect();
+    let table: HashMap<u8, u8> = ALPHABET
+        .iter()
+        .enumerate()
+        .map(|(i, &c)| (c, i as u8))
+        .collect();
 
     let input = input.trim().as_bytes();
     let mut output = Vec::with_capacity(input.len() * 3 / 4);
@@ -436,7 +455,9 @@ fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
         if c == b'=' {
             break;
         }
-        let val = table.get(&c).ok_or_else(|| format!("Invalid base64 char: {}", c as char))?;
+        let val = table
+            .get(&c)
+            .ok_or_else(|| format!("Invalid base64 char: {}", c as char))?;
         buf = (buf << 6) | (*val as u32);
         bits += 6;
         if bits >= 8 {
@@ -493,7 +514,10 @@ pub fn decrypt_anchor(encrypted: &str, password: &str) -> Result<String, crate::
 
 /// Verify an Anchor wallet password by decrypting the walletHash field.
 /// Anchor encrypts the string "VALID" — if decryption yields "VALID", the password is correct.
-pub fn verify_anchor_password(wallet_hash: &str, password: &str) -> Result<bool, crate::error::Error> {
+pub fn verify_anchor_password(
+    wallet_hash: &str,
+    password: &str,
+) -> Result<bool, crate::error::Error> {
     match decrypt_anchor(wallet_hash, password) {
         Ok(plaintext) => Ok(plaintext == "VALID"),
         Err(_) => Ok(false),
@@ -524,8 +548,16 @@ mod tests {
         // 32 hex salt + 32 hex IV + base64
         let input = "00112233445566778899aabbccddeeffffeeddccbbaa99887766554433221100AAAA";
         let (salt, iv, _ct) = parse_anchor_encrypted(input).unwrap();
-        assert_eq!(salt, hex::decode("00112233445566778899aabbccddeeff").unwrap());
-        assert_eq!(iv, hex::decode("ffeeddccbbaa99887766554433221100").unwrap().as_slice());
+        assert_eq!(
+            salt,
+            hex::decode("00112233445566778899aabbccddeeff").unwrap()
+        );
+        assert_eq!(
+            iv,
+            hex::decode("ffeeddccbbaa99887766554433221100")
+                .unwrap()
+                .as_slice()
+        );
     }
 
     #[test]

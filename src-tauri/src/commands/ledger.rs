@@ -29,11 +29,7 @@ pub fn ledger_get_app_config() -> Result<serde_json::Value, Error> {
 /// Get a public key from the Ledger at a BIP44 slot.
 /// If confirm is true, the user must confirm on the device screen.
 #[tauri::command]
-pub fn ledger_get_public_key(
-    account: u32,
-    index: u32,
-    confirm: bool,
-) -> Result<String, Error> {
+pub fn ledger_get_public_key(account: u32, index: u32, confirm: bool) -> Result<String, Error> {
     let path = protocol::eos_bip44_path(account, index);
     protocol::get_public_key(&path, confirm)
 }
@@ -91,22 +87,22 @@ pub async fn ledger_sign_and_push(
         "packed_trx": packed_hex,
     });
 
-    let result: serde_json::Value = pm.rpc_call(
-        "/v1/chain/push_transaction",
-        &push_body,
-        |json| Ok(json),
-    ).await?;
+    let result: serde_json::Value = pm
+        .rpc_call("/v1/chain/push_transaction", &push_body, |json| Ok(json))
+        .await?;
 
     if let Some(tx_id) = result.get("transaction_id").and_then(|v| v.as_str()) {
         Ok(crate::antelope::transaction::TransactionResult {
             transaction_id: tx_id.to_string(),
-            block_num: result.get("processed")
+            block_num: result
+                .get("processed")
                 .and_then(|p| p.get("block_num"))
                 .and_then(|b| b.as_u64()),
             block_time: None,
         })
     } else {
-        let err_msg = result.get("error")
+        let err_msg = result
+            .get("error")
             .and_then(|e| e.get("details"))
             .and_then(|d| d.as_array())
             .and_then(|a| a.first())

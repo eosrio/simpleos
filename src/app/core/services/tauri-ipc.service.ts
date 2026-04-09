@@ -98,6 +98,9 @@ export interface ChainConfig {
   explorers: { name: string; url: string; tx_url?: string; account_url?: string }[];
   features: ChainFeatures;
   testnet?: boolean;
+  coingecko_id?: string;
+  oracle_contract?: string;
+  oracle_scope?: string;
 }
 
 export interface ChainFeatures {
@@ -448,6 +451,10 @@ export class TauriIpcService {
     return invoke<{ fee: number }>('fio_get_fee', { chainId, endPoint, fioAddress });
   }
 
+  async fioGetNames(chainId: string, fioPublicKey: string): Promise<any> {
+    return invoke<any>('fio_get_names', { chainId, fioPublicKey });
+  }
+
   async fioGetPubAddress(chainId: string, fioAddress: string): Promise<{ public_address: string }> {
     return invoke<{ public_address: string }>('fio_get_pub_address', { chainId, fioAddress });
   }
@@ -574,6 +581,24 @@ export class TauriIpcService {
     const store = await this.getStore();
     const val = await store.get<T>(key);
     return val ?? null;
+  }
+
+  // ── Link Sessions (Anchor-Link Protocol) ──
+
+  async createLinkSession(buoyUrl: string): Promise<{ channel_url: string; link_key: string; link_key_hex: string; link_name: string; channel_uuid: string }> {
+    return invoke('create_link_session', { buoyUrl });
+  }
+
+  async unsealMessage(ciphertextHex: string, nonce: number, fromKey: string, sessionPubkeyHex: string): Promise<string> {
+    return invoke<string>('unseal_message', { ciphertextHex, nonce, fromKey, sessionPubkeyHex });
+  }
+
+  async sealMessage(payload: string, nonce: number, toKeyHex: string, sessionPubkeyHex: string): Promise<string> {
+    return invoke<string>('seal_message', { payload, nonce, toKeyHex, sessionPubkeyHex });
+  }
+
+  async deleteLinkSession(sessionPubkeyHex: string): Promise<void> {
+    return invoke<void>('delete_link_session', { sessionPubkeyHex });
   }
 
   async storeDelete(key: string): Promise<void> {

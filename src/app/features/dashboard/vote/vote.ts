@@ -459,7 +459,7 @@ export class VoteComponent {
     this.loadingProducers.set(true);
     try {
       const result = await this.ipc.getProducers(chainId, 200);
-      const rows: ProducerRow[] = (result?.rows ?? [])
+      const rows: ProducerRow[] = (result?.rows ?? result?.producers ?? [])
         .filter((r: any) => r.is_active === 1 || parseFloat(r.total_votes) > 0)
         .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
       this.producers.set(rows);

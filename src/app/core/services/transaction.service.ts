@@ -14,6 +14,8 @@ export interface TxRequest {
   publicKey: string;
   actions: TxAction[];
   title?: string;
+  /** When true, success phase shows "Login Successful" instead of "Transaction Sent" */
+  isLogin?: boolean;
 }
 
 export interface TxResult {
@@ -39,6 +41,7 @@ export class TransactionService {
 
   // Promise callbacks stored for the current request
   private resolve: ((result: TxResult | null) => void) | null = null;
+  private customSignHandler?: () => Promise<TxResult>;
 
   constructor(
     private ipc: TauriIpcService,
@@ -49,7 +52,7 @@ export class TransactionService {
    * Open the confirmation modal and return a promise that resolves
    * when the transaction completes (or null if cancelled).
    */
-  async confirm(request: TxRequest): Promise<TxResult | null> {
+  async confirm(request: TxRequest, customSign?: () => Promise<TxResult>): Promise<TxResult | null> {
     // Check if passphrase is needed for signing
     let needsPass = false;
     if (this.wallet.hasTauri()) {
@@ -64,6 +67,7 @@ export class TransactionService {
     this.result.set(null);
     this.errorMessage.set('');
     this.phase.set('review');
+    this.customSignHandler = customSign;
 
     return new Promise<TxResult | null>(resolve => {
       this.resolve = resolve;
@@ -101,7 +105,10 @@ export class TransactionService {
     try {
       let result: TxResult;
 
-      if (this.needsPassphrase()) {
+      if (this.customSignHandler) {
+        // Evaluate the custom sign handler if one was provided
+        result = await this.customSignHandler();
+      } else if (this.needsPassphrase()) {
         result = await this.ipc.signAndPushWithPassphrase(
           req.chainId, req.publicKey, this.passphrase(), req.actions,
         );
@@ -112,6 +119,7 @@ export class TransactionService {
       this.result.set(result);
       this.phase.set('success');
     } catch (e: any) {
+      console.error('[tx] sign failed:', e);
       this.errorMessage.set(parseError(e));
       this.phase.set('error');
     }

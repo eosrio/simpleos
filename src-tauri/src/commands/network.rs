@@ -207,15 +207,24 @@ pub async fn lookup_key_accounts_impl(
 
     for key in &key_formats {
         // 1. Primary: get_accounts_by_authorizers (Leap 5+ — returns account + permission)
-        if let Ok(json) = pm.rpc_call(
-            "/v1/chain/get_accounts_by_authorizers",
-            &serde_json::json!({ "keys": [key] }),
-            |json| Ok(json),
-        ).await {
+        if let Ok(json) = pm
+            .rpc_call(
+                "/v1/chain/get_accounts_by_authorizers",
+                &serde_json::json!({ "keys": [key] }),
+                |json| Ok(json),
+            )
+            .await
+        {
             if let Some(arr) = json.get("accounts").and_then(|v| v.as_array()) {
                 for entry in arr {
-                    let name = entry.get("account_name").and_then(|v| v.as_str()).unwrap_or("");
-                    let perm = entry.get("permission_name").and_then(|v| v.as_str()).unwrap_or("active");
+                    let name = entry
+                        .get("account_name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let perm = entry
+                        .get("permission_name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("active");
                     if !name.is_empty() {
                         if !all_accounts.contains(&name.to_string()) {
                             all_accounts.push(name.to_string());
@@ -224,7 +233,10 @@ pub async fn lookup_key_accounts_impl(
                             account_name: name.to_string(),
                             permission_name: perm.to_string(),
                         };
-                        if !authorities.iter().any(|a| a.account_name == auth.account_name && a.permission_name == auth.permission_name) {
+                        if !authorities.iter().any(|a| {
+                            a.account_name == auth.account_name
+                                && a.permission_name == auth.permission_name
+                        }) {
                             authorities.push(auth);
                         }
                     }
@@ -253,11 +265,14 @@ pub async fn lookup_key_accounts_impl(
         }
 
         // 3. Legacy fallback: v1 history plugin (only returns account names)
-        if let Ok(json) = pm.rpc_call(
-            "/v1/history/get_key_accounts",
-            &serde_json::json!({ "public_key": key }),
-            |json| Ok(json),
-        ).await {
+        if let Ok(json) = pm
+            .rpc_call(
+                "/v1/history/get_key_accounts",
+                &serde_json::json!({ "public_key": key }),
+                |json| Ok(json),
+            )
+            .await
+        {
             if let Some(names) = parse_key_accounts_response(&json) {
                 for name in names {
                     if !all_accounts.contains(&name) {
@@ -272,7 +287,10 @@ pub async fn lookup_key_accounts_impl(
         }
     }
 
-    Ok(KeyAccountsResult { account_names: all_accounts, authorities })
+    Ok(KeyAccountsResult {
+        account_names: all_accounts,
+        authorities,
+    })
 }
 
 /// Lookup accounts by public key.
@@ -294,10 +312,11 @@ pub async fn lookup_key_accounts(
 
 /// Decode an EOS... public key to raw compressed bytes.
 fn decode_eos_pubkey(key: &str) -> Result<Vec<u8>, Error> {
-    let encoded = key.strip_prefix("EOS")
+    let encoded = key
+        .strip_prefix("EOS")
         .ok_or_else(|| Error::Signing("Not an EOS key".into()))?;
-    let decoded = bs58_decode(encoded)
-        .map_err(|e| Error::Signing(format!("Invalid base58: {}", e)))?;
+    let decoded =
+        bs58_decode(encoded).map_err(|e| Error::Signing(format!("Invalid base58: {}", e)))?;
     if decoded.len() < 37 {
         return Err(Error::Signing("EOS key too short".into()));
     }
@@ -306,10 +325,11 @@ fn decode_eos_pubkey(key: &str) -> Result<Vec<u8>, Error> {
 
 /// Decode a PUB_K1_... public key to raw compressed bytes.
 fn decode_k1_pubkey(key: &str) -> Result<Vec<u8>, Error> {
-    let encoded = key.strip_prefix("PUB_K1_")
+    let encoded = key
+        .strip_prefix("PUB_K1_")
         .ok_or_else(|| Error::Signing("Not a PUB_K1_ key".into()))?;
-    let decoded = bs58_decode(encoded)
-        .map_err(|e| Error::Signing(format!("Invalid base58: {}", e)))?;
+    let decoded =
+        bs58_decode(encoded).map_err(|e| Error::Signing(format!("Invalid base58: {}", e)))?;
     if decoded.len() < 37 {
         return Err(Error::Signing("PUB_K1_ key too short".into()));
     }
@@ -337,7 +357,11 @@ fn bs58_decode(input: &str) -> Result<Vec<u8>, String> {
         }
     }
     for c in input.bytes() {
-        if c == b'1' { digits.push(0); } else { break; }
+        if c == b'1' {
+            digits.push(0);
+        } else {
+            break;
+        }
     }
     digits.reverse();
     Ok(digits.iter().map(|&d| d as u8).collect())
@@ -349,7 +373,10 @@ fn bs58_decode(input: &str) -> Result<Vec<u8>, String> {
 fn parse_key_accounts_response(json: &serde_json::Value) -> Option<Vec<String>> {
     // Format 1: { "account_names": ["name1", "name2"] }
     if let Some(arr) = json.get("account_names").and_then(|v| v.as_array()) {
-        let names: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(String::from)).collect();
+        let names: Vec<String> = arr
+            .iter()
+            .filter_map(|v| v.as_str().map(String::from))
+            .collect();
         if !names.is_empty() {
             return Some(names);
         }
@@ -362,7 +389,9 @@ fn parse_key_accounts_response(json: &serde_json::Value) -> Option<Vec<String>> 
             .filter_map(|v| {
                 // Could be string or object with account_name field
                 v.as_str().map(String::from).or_else(|| {
-                    v.get("account_name").and_then(|n| n.as_str()).map(String::from)
+                    v.get("account_name")
+                        .and_then(|n| n.as_str())
+                        .map(String::from)
                 })
             })
             .collect();
@@ -440,7 +469,28 @@ pub async fn fio_get_fee(
         "/v1/chain/get_fee",
         &serde_json::json!({ "end_point": end_point, "fio_address": fio_address }),
         |json| Ok(json),
-    ).await
+    )
+    .await
+}
+
+/// FIO: Get all domains and addresses owned by a FIO public key.
+#[tauri::command]
+pub async fn fio_get_names(
+    chain_id: String,
+    fio_public_key: String,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    let mut map: ProviderMap<'_> = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    pm.rpc_call(
+        "/v1/chain/get_fio_names",
+        &serde_json::json!({ "fio_public_key": fio_public_key }),
+        |json| Ok(json),
+    )
+    .await
 }
 
 /// FIO: Resolve a FIO Handle to a public key.
@@ -463,7 +513,8 @@ pub async fn fio_get_pub_address(
             "token_code": "FIO",
         }),
         |json| Ok(json),
-    ).await
+    )
+    .await
 }
 
 /// Get the currently active endpoints for a chain.
@@ -493,16 +544,28 @@ pub fn load_cached_endpoints(
     app: tauri::AppHandle,
     chain_id: String,
 ) -> Result<CachedEndpointsResult, Error> {
-    let app_dir = app.path().app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     match discovery::load_cache(&app_dir, &chain_id) {
         Some(cache) => {
             let fresh = discovery::is_cache_fresh(&cache);
-            let healthy: Vec<_> = cache.endpoints.iter().filter(|e| e.healthy).cloned().collect();
+            let healthy: Vec<_> = cache
+                .endpoints
+                .iter()
+                .filter(|e| e.healthy)
+                .cloned()
+                .collect();
             log::info!(
                 "[discovery] Loaded cache for {}: {} endpoints ({} healthy, fresh={})",
-                &chain_id[..8], cache.endpoints.len(), healthy.len(), fresh
+                &chain_id[..8],
+                cache.endpoints.len(),
+                healthy.len(),
+                fresh
             );
             Ok(CachedEndpointsResult {
                 endpoints: cache.endpoints,
@@ -510,13 +573,11 @@ pub fn load_cached_endpoints(
                 fresh,
             })
         }
-        None => {
-            Ok(CachedEndpointsResult {
-                endpoints: vec![],
-                cached_at: 0,
-                fresh: false,
-            })
-        }
+        None => Ok(CachedEndpointsResult {
+            endpoints: vec![],
+            cached_at: 0,
+            fresh: false,
+        }),
     }
 }
 

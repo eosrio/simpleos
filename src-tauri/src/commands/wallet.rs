@@ -12,21 +12,29 @@ use crate::AppWallet;
 #[tauri::command]
 pub fn has_wallet(app: tauri::AppHandle) -> Result<bool, Error> {
     log::info!("[wallet] has_wallet: checking marker file...");
-    let app_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     let marker = app_dir.join("vault.marker");
     let exists = marker.exists();
-    log::info!("[wallet] has_wallet: marker at {:?} exists={}", marker, exists);
+    log::info!(
+        "[wallet] has_wallet: marker at {:?} exists={}",
+        marker,
+        exists
+    );
     Ok(exists)
 }
 
 fn mark_vault_created(app: &tauri::AppHandle) -> Result<(), Error> {
-    let app_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     std::fs::create_dir_all(&app_dir)?;
     std::fs::write(app_dir.join("vault.marker"), b"1")?;
     Ok(())
@@ -175,8 +183,7 @@ pub async fn sign_transaction(
         .get_mut(&chain_id)
         .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
 
-    let (packed_trx, signature) =
-        transaction::sign_only(pm, &actions, &private_key_bytes).await?;
+    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
 
     Ok(SignedTransaction {
         packed_trx,
@@ -222,8 +229,9 @@ pub fn get_security_mode(wallet: State<AppWallet>) -> Result<String, Error> {
 
 #[tauri::command]
 pub fn set_security_mode(mode: String, wallet: State<AppWallet>) -> Result<(), Error> {
-    let parsed: crate::keystore::wallet::SecurityMode = serde_json::from_str(&format!("\"{}\"", mode))
-        .map_err(|_| Error::Serialization(format!("Invalid security mode: {}", mode)))?;
+    let parsed: crate::keystore::wallet::SecurityMode =
+        serde_json::from_str(&format!("\"{}\"", mode))
+            .map_err(|_| Error::Serialization(format!("Invalid security mode: {}", mode)))?;
     wallet.0.set_security_mode(parsed);
     Ok(())
 }
@@ -248,7 +256,10 @@ pub async fn sign_and_push_with_passphrase(
     wallet: State<'_, AppWallet>,
     providers: State<'_, ProviderState>,
 ) -> Result<TransactionResult, Error> {
-    let private_key_bytes = wallet.0.decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
+    let private_key_bytes =
+        wallet
+            .0
+            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
 
     let mut map: tokio::sync::MutexGuard<
         '_,
@@ -279,7 +290,8 @@ pub fn generate_finalizer_key(
 
     let mut session = wallet.0.session_lock()?;
     let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-    let encrypted = crate::keystore::derive::encrypt(&sk_bytes, master_key, b"simpleos-master-key")?;
+    let encrypted =
+        crate::keystore::derive::encrypt(&sk_bytes, master_key, b"simpleos-master-key")?;
     drop(session);
 
     wallet.0.store_raw_key(&bls_chain, &pub_key, &encrypted)?;
@@ -331,7 +343,12 @@ pub fn get_finalizer_pop(
 /// Set a quick-unlock PIN. Encrypts the passphrase with a PIN-derived key.
 // async: derives two keys + encrypts — keep off the main thread.
 #[tauri::command(async)]
-pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>, app: tauri::AppHandle) -> Result<(), Error> {
+pub fn set_pin(
+    passphrase: String,
+    pin: String,
+    wallet: State<AppWallet>,
+    app: tauri::AppHandle,
+) -> Result<(), Error> {
     use crate::keystore::derive;
 
     // Verify passphrase works by trying to unlock
@@ -342,12 +359,14 @@ pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>, app: t
     let encrypted = derive::encrypt(passphrase.as_bytes(), &pin_key, pin_salt)?;
 
     // Store in app data dir
-    let app_dir = app.path().app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
-    std::fs::create_dir_all(&app_dir)
-        .map_err(Error::Io)?;
-    std::fs::write(app_dir.join("pin.dat"), &encrypted)
-        .map_err(Error::Io)?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
+    std::fs::create_dir_all(&app_dir).map_err(Error::Io)?;
+    std::fs::write(app_dir.join("pin.dat"), &encrypted).map_err(Error::Io)?;
     Ok(())
 }
 
@@ -356,11 +375,19 @@ pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>, app: t
 // This is the slowest single command in the app — must run off the main thread
 // or the loader animation stays frozen until the command returns.
 #[tauri::command(async)]
-pub fn unlock_with_pin(pin: String, app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<bool, Error> {
+pub fn unlock_with_pin(
+    pin: String,
+    app: tauri::AppHandle,
+    wallet: State<AppWallet>,
+) -> Result<bool, Error> {
     use crate::keystore::derive;
 
-    let app_dir = app.path().app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     let pin_path = app_dir.join("pin.dat");
     if !pin_path.exists() {
         return Err(Error::KeyNotFound("No PIN configured".into()));
@@ -369,11 +396,11 @@ pub fn unlock_with_pin(pin: String, app: tauri::AppHandle, wallet: State<AppWall
     let encrypted = std::fs::read(&pin_path).map_err(Error::Io)?;
     let pin_salt = b"simpleos-pin-key";
     let pin_key = derive::derive_key(pin.as_bytes(), pin_salt);
-    let passphrase_bytes = derive::decrypt(&encrypted, &pin_key, pin_salt)
-        .map_err(|_| Error::InvalidPassphrase)?;
+    let passphrase_bytes =
+        derive::decrypt(&encrypted, &pin_key, pin_salt).map_err(|_| Error::InvalidPassphrase)?;
 
-    let passphrase = String::from_utf8(passphrase_bytes)
-        .map_err(|e| Error::Serialization(e.to_string()))?;
+    let passphrase =
+        String::from_utf8(passphrase_bytes).map_err(|e| Error::Serialization(e.to_string()))?;
 
     wallet.0.unlock(&passphrase)?;
     Ok(true)
@@ -382,16 +409,24 @@ pub fn unlock_with_pin(pin: String, app: tauri::AppHandle, wallet: State<AppWall
 /// Check if a PIN has been configured.
 #[tauri::command]
 pub fn has_pin(app: tauri::AppHandle) -> Result<bool, Error> {
-    let app_dir = app.path().app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     Ok(app_dir.join("pin.dat").exists())
 }
 
 /// Remove the PIN.
 #[tauri::command]
 pub fn remove_pin(app: tauri::AppHandle) -> Result<(), Error> {
-    let app_dir = app.path().app_data_dir()
-        .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     let pin_path = app_dir.join("pin.dat");
     if pin_path.exists() {
         std::fs::remove_file(&pin_path).map_err(Error::Io)?;
@@ -409,7 +444,11 @@ pub fn export_backup(passphrase: String, wallet: State<AppWallet>) -> Result<Str
 
 // async: Anchor's non-standard 70-round Rijndael is particularly slow — off-thread.
 #[tauri::command(async)]
-pub fn import_backup(json: String, passphrase: String, wallet: State<AppWallet>) -> Result<usize, Error> {
+pub fn import_backup(
+    json: String,
+    passphrase: String,
+    wallet: State<AppWallet>,
+) -> Result<usize, Error> {
     wallet.0.import_backup(&json, &passphrase)
 }
 
@@ -460,7 +499,14 @@ pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     let mut report = Vec::new();
 
     // Report which backend is active
-    report.push(format!("Backend: {}", if crate::probe_os_keyring() { "OS Keyring" } else { "FileKeyStore (OS keyring probe failed)" }));
+    report.push(format!(
+        "Backend: {}",
+        if crate::probe_os_keyring() {
+            "OS Keyring"
+        } else {
+            "FileKeyStore (OS keyring probe failed)"
+        }
+    ));
 
     let test_key = "simpleos-keyring-test";
     let test_value = "keyring-works-ok";
@@ -522,8 +568,14 @@ pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     }
 
     // Test 6: Check existing EOS key index
-    match crate::keystore::os_keyring::list_keys("aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906") {
-        Ok(keys) => report.push(format!("6. EOS chain index: {} keys {:?}", keys.len(), keys)),
+    match crate::keystore::os_keyring::list_keys(
+        "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+    ) {
+        Ok(keys) => report.push(format!(
+            "6. EOS chain index: {} keys {:?}",
+            keys.len(),
+            keys
+        )),
         Err(e) => report.push(format!("6. EOS chain index FAILED: {}", e)),
     }
 

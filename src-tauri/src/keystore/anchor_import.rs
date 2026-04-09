@@ -93,7 +93,7 @@ pub struct AnchorWalletEntry {
     pub chain_name: String,
     pub symbol: String,
     pub pubkey: String,
-    pub mode: String,        // "hot" or "ledger"
+    pub mode: String, // "hot" or "ledger"
     pub is_testnet: bool,
     pub hd_path: Option<String>,
     pub has_private_key: bool, // true if pubkey found in storage.keys
@@ -142,8 +142,13 @@ pub fn parse_backup(json: &str) -> Result<ParsedAnchorBackup, Error> {
         .map(|n| (n.data.chain_id.clone(), (&n.data,)))
         .collect();
 
-    let storage_keys: std::collections::HashSet<&str> =
-        backup.storage.data.keys.iter().map(|k| k.as_str()).collect();
+    let storage_keys: std::collections::HashSet<&str> = backup
+        .storage
+        .data
+        .keys
+        .iter()
+        .map(|k| k.as_str())
+        .collect();
 
     let mut entries = Vec::new();
 
@@ -152,12 +157,17 @@ pub fn parse_backup(json: &str) -> Result<ParsedAnchorBackup, Error> {
 
         let (chain_name, symbol, is_testnet) = match networks.get(&w.chain_id) {
             Some((net,)) => (net.name.clone(), net.symbol.clone(), net.testnet),
-            None => (format!("Unknown ({})", &w.chain_id[..8]), "???".into(), false),
+            None => (
+                format!("Unknown ({})", &w.chain_id[..8]),
+                "???".into(),
+                false,
+            ),
         };
 
-        let hd_path = w.path.clone().or_else(|| {
-            backup.storage.data.paths.get(&w.pubkey).cloned()
-        });
+        let hd_path = w
+            .path
+            .clone()
+            .or_else(|| backup.storage.data.paths.get(&w.pubkey).cloned());
 
         entries.push(AnchorWalletEntry {
             account: w.account.clone(),
@@ -294,7 +304,7 @@ mod tests {
     fn parse_backup_detects_testnets() {
         let result = parse_backup(MINI_BACKUP).unwrap();
         assert!(!result.entries[0].is_testnet); // EOS mainnet
-        assert!(result.entries[3].is_testnet);   // Jungle 4
+        assert!(result.entries[3].is_testnet); // Jungle 4
     }
 
     #[test]

@@ -270,10 +270,7 @@ pub fn estimate_powerup_cost(
 }
 
 /// Calculate the fee for a single resource (CPU or NET) given a fraction.
-fn calculate_resource_fee(
-    res: &PowerUpResourceState,
-    frac: f64,
-) -> Result<f64, Error> {
+fn calculate_resource_fee(res: &PowerUpResourceState, frac: f64) -> Result<f64, Error> {
     if res.weight <= 0 {
         return Ok(0.0);
     }
@@ -286,7 +283,9 @@ fn calculate_resource_fee(
     let new_util = res.utilization + amount;
 
     if new_util > res.weight {
-        return Err(Error::Rpc("Requested amount exceeds available resources".into()));
+        return Err(Error::Rpc(
+            "Requested amount exceeds available resources".into(),
+        ));
     }
 
     let adj_util = res.adjusted_utilization.max(res.utilization);
@@ -363,7 +362,10 @@ fn parse_amount(asset_str: &str) -> i64 {
         return 0;
     }
     let amount_str = parts[0];
-    let _precision = amount_str.find('.').map(|p| amount_str.len() - p - 1).unwrap_or(0);
+    let _precision = amount_str
+        .find('.')
+        .map(|p| amount_str.len() - p - 1)
+        .unwrap_or(0);
     let cleaned = amount_str.replace('.', "");
     cleaned.parse::<i64>().unwrap_or(0)
 }
@@ -409,8 +411,12 @@ where
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             f.write_str("i64 or string")
         }
-        fn visit_i64<E: de::Error>(self, v: i64) -> Result<i64, E> { Ok(v) }
-        fn visit_u64<E: de::Error>(self, v: u64) -> Result<i64, E> { Ok(v as i64) }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<i64, E> {
+            Ok(v)
+        }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<i64, E> {
+            Ok(v as i64)
+        }
         fn visit_str<E: de::Error>(self, v: &str) -> Result<i64, E> {
             v.parse().map_err(de::Error::custom)
         }
@@ -430,9 +436,15 @@ where
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             f.write_str("f64 or string")
         }
-        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f64, E> { Ok(v) }
-        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f64, E> { Ok(v as f64) }
-        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f64, E> { Ok(v as f64) }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f64, E> {
+            Ok(v)
+        }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f64, E> {
+            Ok(v as f64)
+        }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f64, E> {
+            Ok(v as f64)
+        }
         fn visit_str<E: de::Error>(self, v: &str) -> Result<f64, E> {
             v.parse().map_err(de::Error::custom)
         }

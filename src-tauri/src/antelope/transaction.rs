@@ -4,9 +4,7 @@
 //! from chain info, serializes actions, signs with a local key, and pushes to nodeos.
 
 use crate::antelope::provider::ProviderManager;
-use crate::antelope::serialize::{
-    self, hex_encode, serialize_action, RawTransaction,
-};
+use crate::antelope::serialize::{self, hex_encode, serialize_action, RawTransaction};
 use crate::antelope::signing;
 use crate::antelope::types::ChainInfo;
 use crate::error::Error;
@@ -60,16 +58,20 @@ pub async fn sign_and_push(
     private_key_bytes: &[u8],
 ) -> Result<TransactionResult, Error> {
     // 1. Get chain info for TAPOS
-    let chain_info: ChainInfo = pm.rpc_call(
-        "/v1/chain/get_info",
-        &serde_json::json!({}),
-        |json| serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e))),
-    ).await?;
+    log::info!("[tx] sign_and_push: fetching chain info...");
+    let chain_info: ChainInfo = pm
+        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
+            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
+        })
+        .await?;
+    log::info!("[tx] sign_and_push: chain_id={}, head_block_time={}", &chain_info.chain_id[..8], chain_info.head_block_time);
 
     // 2. Serialize actions
     let mut serialized_actions = Vec::new();
     for action in actions {
+        log::info!("[tx] sign_and_push: serializing {}::{}", action.account, action.name);
         let data_hex = resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
+        log::info!("[tx] sign_and_push: serialized data_hex len={}", data_hex.len());
         let auths: Vec<(&str, &str)> = action
             .authorization
             .iter()
@@ -102,11 +104,10 @@ pub async fn sign_and_push(
     let packed_trx = raw_tx.serialize();
 
     // 4. Sign
-    let signature = signing::sign_transaction(
-        &chain_info.chain_id,
-        &packed_trx,
-        private_key_bytes,
-    )?;
+    log::info!("[tx] sign_and_push: signing transaction...");
+    let signature =
+        signing::sign_transaction(&chain_info.chain_id, &packed_trx, private_key_bytes)?;
+    log::info!("[tx] sign_and_push: signed, pushing...");
 
     // 5. Push
     let packed_hex = hex_encode(&packed_trx);
@@ -117,11 +118,9 @@ pub async fn sign_and_push(
         "packed_trx": packed_hex,
     });
 
-    let result: serde_json::Value = pm.rpc_call(
-        "/v1/chain/push_transaction",
-        &push_body,
-        |json| Ok(json),
-    ).await?;
+    let result: serde_json::Value = pm
+        .rpc_call("/v1/chain/push_transaction", &push_body, |json| Ok(json))
+        .await?;
 
     // Parse result
     let transaction_id = result
@@ -151,11 +150,14 @@ pub async fn sign_and_push(
                 .and_then(|d| d.get("message"))
                 .and_then(|m| m.as_str())
                 .unwrap_or("Transaction failed");
+            log::error!("[tx] sign_and_push: FAILED: {}", msg);
             return Err(Error::Rpc(msg.to_string()));
         }
+        log::error!("[tx] sign_and_push: no transaction_id in response: {:?}", result);
         return Err(Error::Rpc("No transaction_id in response".into()));
     }
 
+    log::info!("[tx] sign_and_push: SUCCESS txid={}", transaction_id);
     Ok(TransactionResult {
         transaction_id,
         block_num,
@@ -170,11 +172,11 @@ pub async fn sign_only(
     actions: &[ActionDesc],
     private_key_bytes: &[u8],
 ) -> Result<(String, String), Error> {
-    let chain_info: ChainInfo = pm.rpc_call(
-        "/v1/chain/get_info",
-        &serde_json::json!({}),
-        |json| serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e))),
-    ).await?;
+    let chain_info: ChainInfo = pm
+        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
+            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
+        })
+        .await?;
 
     let mut serialized_actions = Vec::new();
     for action in actions {
@@ -184,7 +186,12 @@ pub async fn sign_only(
             .iter()
             .map(|a| (a.actor.as_str(), a.permission.as_str()))
             .collect();
-        serialized_actions.push(serialize_action(&action.account, &action.name, &auths, &data_hex)?);
+        serialized_actions.push(serialize_action(
+            &action.account,
+            &action.name,
+            &auths,
+            &data_hex,
+        )?);
     }
 
     let ref_block_num = serialize::tapos_ref_block_num(chain_info.last_irreversible_block_num);
@@ -205,11 +212,8 @@ pub async fn sign_only(
     };
 
     let packed_trx = raw_tx.serialize();
-    let signature = signing::sign_transaction(
-        &chain_info.chain_id,
-        &packed_trx,
-        private_key_bytes,
-    )?;
+    let signature =
+        signing::sign_transaction(&chain_info.chain_id, &packed_trx, private_key_bytes)?;
 
     Ok((hex_encode(&packed_trx), signature))
 }
@@ -220,11 +224,11 @@ pub async fn build_transaction(
     pm: &mut ProviderManager,
     actions: &[ActionDesc],
 ) -> Result<(Vec<u8>, String), Error> {
-    let chain_info: ChainInfo = pm.rpc_call(
-        "/v1/chain/get_info",
-        &serde_json::json!({}),
-        |json| serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e))),
-    ).await?;
+    let chain_info: ChainInfo = pm
+        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
+            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
+        })
+        .await?;
 
     let mut serialized_actions = Vec::new();
     for action in actions {
@@ -234,7 +238,12 @@ pub async fn build_transaction(
             .iter()
             .map(|a| (a.actor.as_str(), a.permission.as_str()))
             .collect();
-        serialized_actions.push(serialize_action(&action.account, &action.name, &auths, &data_hex)?);
+        serialized_actions.push(serialize_action(
+            &action.account,
+            &action.name,
+            &auths,
+            &data_hex,
+        )?);
     }
 
     let ref_block_num = serialize::tapos_ref_block_num(chain_info.last_irreversible_block_num);
@@ -277,15 +286,17 @@ async fn resolve_action_data(
             }
 
             // Fallback: abi_json_to_bin via chain API
-            let result: serde_json::Value = pm.rpc_call(
-                "/v1/chain/abi_json_to_bin",
-                &serde_json::json!({
-                    "code": account,
-                    "action": name,
-                    "args": json,
-                }),
-                |json| Ok(json),
-            ).await?;
+            let result: serde_json::Value = pm
+                .rpc_call(
+                    "/v1/chain/abi_json_to_bin",
+                    &serde_json::json!({
+                        "code": account,
+                        "action": name,
+                        "args": json,
+                    }),
+                    |json| Ok(json),
+                )
+                .await?;
 
             result
                 .get("binargs")
@@ -316,8 +327,12 @@ fn try_native_serialize(
             let receiver = json_str(json, "receiver")?;
             let stake_net = json_str(json, "stake_net_quantity")?;
             let stake_cpu = json_str(json, "stake_cpu_quantity")?;
-            let transfer = json.get("transfer").and_then(|v| v.as_bool()).unwrap_or(false);
-            let data = serialize::serialize_delegatebw(from, receiver, stake_net, stake_cpu, transfer)?;
+            let transfer = json
+                .get("transfer")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let data =
+                serialize::serialize_delegatebw(from, receiver, stake_net, stake_cpu, transfer)?;
             Ok(Some(hex_encode(&data)))
         }
         ("eosio", "undelegatebw") => {

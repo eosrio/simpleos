@@ -61,7 +61,7 @@ interface VoterRow {
               <div class="table-row">
                 <span class="rank">{{ i + 1 }}</span>
                 <span class="data account">{{ voter.owner }}</span>
-                <span class="data">{{ formatStaked(voter.staked) }}</span>
+                <span class="data">{{ formatStaked(voter) }}</span>
                 <span class="type-badge" [class.proxy]="voter.is_proxy" [class.direct]="!voter.is_proxy">
                   {{ voter.is_proxy ? 'Proxy' : 'Direct' }}
                 </span>
@@ -153,11 +153,9 @@ export class BpVotesComponent {
 
   private async loadProducerVoteWeight(chainId: string, account: string) {
     try {
-      const result = await this.ipc.getTableRows(chainId, {
-        code: 'eosio', table: 'producers', scope: 'eosio',
-        lower_bound: account, upper_bound: account, limit: 1, json: true,
-      });
-      const row = result?.rows?.[0];
+      const result = await this.ipc.getProducers(chainId, 200);
+      const list: any[] = result?.rows ?? result?.producers ?? [];
+      const row = list.find((r: any) => r.owner === account);
       if (row?.total_votes) {
         this.totalVotes.set(this.formatVoteWeight(row.total_votes));
       }
@@ -201,8 +199,13 @@ export class BpVotesComponent {
         iterations++;
       }
 
-      // Sort by staked amount descending
-      found.sort((a, b) => b.staked - a.staked);
+      // Sort by staked (EOS) or last_vote_weight (FIO) descending
+      found.sort((a, b) => {
+        // If staked is available and non-zero, use it; otherwise fall back to vote weight
+        const aVal = a.staked > 0 ? a.staked : parseFloat(a.last_vote_weight);
+        const bVal = b.staked > 0 ? b.staked : parseFloat(b.last_vote_weight);
+        return bVal - aVal;
+      });
       this.voters.set(found);
       this.proxyCount.set(found.filter(v => v.is_proxy).length);
       this.directCount.set(found.filter(v => !v.is_proxy).length);
@@ -213,20 +216,38 @@ export class BpVotesComponent {
     }
   }
 
-  formatStaked(staked: number): string {
-    const tokens = staked / 10000;
-    if (tokens >= 1e6) return (tokens / 1e6).toFixed(1) + 'M';
-    if (tokens >= 1e3) return (tokens / 1e3).toFixed(1) + 'K';
-    return tokens.toFixed(4);
+  formatStaked(voter: VoterRow): string {
+    // FIO has no `staked` field — use last_vote_weight
+    if (voter.staked > 0) {
+      const precision = this.wallet.activeChain()?.precision ?? 4;
+      const divisor = Math.pow(10, precision);
+      const tokens = voter.staked / divisor;
+      if (tokens >= 1e6) return (tokens / 1e6).toFixed(1) + 'M';
+      if (tokens >= 1e3) return (tokens / 1e3).toFixed(1) + 'K';
+      return tokens.toFixed(precision);
+    }
+    const weight = parseFloat(voter.last_vote_weight);
+    if (weight >= 1e12) return (weight / 1e12).toFixed(1) + 'T';
+    if (weight >= 1e9) return (weight / 1e9).toFixed(1) + 'B';
+    if (weight >= 1e6) return (weight / 1e6).toFixed(1) + 'M';
+    if (weight >= 1e3) return (weight / 1e3).toFixed(1) + 'K';
+    return weight.toFixed(0);
   }
 
   private formatVoteWeight(votes: string): string {
-    const n = parseFloat(votes);
+    let n = parseFloat(votes);
     if (isNaN(n) || n === 0) return '0';
-    if (n >= 1e15) return (n / 1e15).toFixed(1) + 'P';
-    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
-    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-    return n.toFixed(0);
+
+    // FIO stores vote weight in SUFs — convert to tokens
+    const precision = this.wallet.activeChain()?.precision ?? 4;
+    if (precision > 4) {
+      n = n / Math.pow(10, precision);
+    }
+
+    const sym = this.wallet.activeChain()?.symbol ?? '';
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B ' + sym;
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M ' + sym;
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K ' + sym;
+    return n.toFixed(0) + ' ' + sym;
   }
 }

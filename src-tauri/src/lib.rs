@@ -58,6 +58,8 @@ pub fn run() {
     let chain_ids: Vec<String> = all_chains.iter().map(|c| c.id.clone()).collect();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+        .plugin(tauri_plugin_deep_link::init())
         .manage(ProviderState::new())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -88,6 +90,12 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
+            }
+
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
             }
 
             // Pick key store backend: OS keyring if it works, file-based fallback
@@ -175,6 +183,7 @@ pub fn run() {
             commands::network::get_actions_history,
             commands::network::get_tokens,
             commands::network::fio_get_fee,
+            commands::network::fio_get_names,
             commands::network::fio_get_pub_address,
             commands::network::get_active_endpoints,
             commands::network::load_cached_endpoints,
@@ -196,6 +205,11 @@ pub fn run() {
             commands::dapp::dapp_go_forward,
             commands::dapp::dapp_resolve_signing,
             commands::dapp::dapp_reject_signing,
+            // Link sessions (anchor-link protocol)
+            commands::session::create_link_session,
+            commands::session::unseal_message,
+            commands::session::seal_message,
+            commands::session::delete_link_session,
             // Ledger
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_list_devices,

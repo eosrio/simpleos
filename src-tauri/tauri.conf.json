@@ -31,7 +31,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "appimage"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -57,6 +58,17 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "deep-link": {
+      "desktop": {
+        "schemes": ["esr"]
+      }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4NkJGMUVBRjk1MTZFODkKUldTSmJsSDU2dkZyV0pOMzJ4S1Z2NWxiSzdETHNTNWx4NFY1Nmh1WE9nTFF0NnFhRHRkNTYxSVgK",
+      "endpoints": [
+        "https://github.com/eosrio/simpleos/releases/latest/download/latest.json"
+      ]
     }
   }
 }

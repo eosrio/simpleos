@@ -3,9 +3,9 @@
 //! Based on VaultaFoundation/ledger-app source code.
 //! CLA=0xD4, INS: 0x02 (get key), 0x04 (sign), 0x06 (get config).
 
+use super::transport::{exchange, open_ledger, Apdu};
 use crate::antelope::signing;
 use crate::error::Error;
-use super::transport::{Apdu, exchange, open_ledger};
 
 const CLA: u8 = 0xD4;
 const INS_GET_PUBLIC_KEY: u8 = 0x02;
@@ -21,11 +21,11 @@ const P2_NO_CHAINCODE: u8 = 0x00;
 /// BIP44 path for EOS: m/44'/194'/0'/0/{index}
 pub fn eos_bip44_path(account: u32, index: u32) -> Vec<u32> {
     vec![
-        0x8000002C, // 44'
-        0x800000C2, // 194'
+        0x8000002C,           // 44'
+        0x800000C2,           // 194'
         0x80000000 | account, // account'
-        0,          // change (always 0)
-        index,      // address index
+        0,                    // change (always 0)
+        index,                // address index
     ]
 }
 
@@ -44,13 +44,16 @@ fn serialize_path(path: &[u32]) -> Vec<u8> {
 /// Returns (allow_unknown_actions, verbose_mode, major, minor, patch).
 pub fn get_app_configuration() -> Result<(bool, bool, u8, u8, u8), Error> {
     let device = open_ledger()?;
-    let response = exchange(&device, &Apdu {
-        cla: CLA,
-        ins: INS_GET_APP_CONFIGURATION,
-        p1: 0,
-        p2: 0,
-        data: vec![],
-    })?;
+    let response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA,
+            ins: INS_GET_APP_CONFIGURATION,
+            p1: 0,
+            p2: 0,
+            data: vec![],
+        },
+    )?;
 
     if response.len() < 5 {
         return Err(Error::Ledger("Invalid app configuration response".into()));
@@ -72,13 +75,16 @@ pub fn get_app_configuration() -> Result<(bool, bool, u8, u8, u8), Error> {
 pub fn get_public_key(path: &[u32], confirm: bool) -> Result<String, Error> {
     let device = open_ledger()?;
 
-    let response = exchange(&device, &Apdu {
-        cla: CLA,
-        ins: INS_GET_PUBLIC_KEY,
-        p1: if confirm { P1_CONFIRM } else { P1_NON_CONFIRM },
-        p2: P2_NO_CHAINCODE,
-        data: serialize_path(path),
-    })?;
+    let response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA,
+            ins: INS_GET_PUBLIC_KEY,
+            p1: if confirm { P1_CONFIRM } else { P1_NON_CONFIRM },
+            p2: P2_NO_CHAINCODE,
+            data: serialize_path(path),
+        },
+    )?;
 
     // Response format:
     // [pubkey_len: u8] [pubkey: 65 bytes uncompressed] [address_len: u8] [address: N bytes]
@@ -138,25 +144,31 @@ pub fn sign_transaction(path: &[u32], data: &[u8]) -> Result<String, Error> {
     let mut first_data = path_data;
     first_data.extend_from_slice(&data[..first_chunk_len]);
 
-    let mut response = exchange(&device, &Apdu {
-        cla: CLA,
-        ins: INS_SIGN,
-        p1: P1_FIRST,
-        p2: 0x00,
-        data: first_data,
-    })?;
+    let mut response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA,
+            ins: INS_SIGN,
+            p1: P1_FIRST,
+            p2: 0x00,
+            data: first_data,
+        },
+    )?;
 
     // Send remaining chunks
     let mut offset = first_chunk_len;
     while offset < data.len() {
         let chunk_len = std::cmp::min(255, data.len() - offset);
-        response = exchange(&device, &Apdu {
-            cla: CLA,
-            ins: INS_SIGN,
-            p1: P1_MORE,
-            p2: 0x00,
-            data: data[offset..offset + chunk_len].to_vec(),
-        })?;
+        response = exchange(
+            &device,
+            &Apdu {
+                cla: CLA,
+                ins: INS_SIGN,
+                p1: P1_MORE,
+                p2: 0x00,
+                data: data[offset..offset + chunk_len].to_vec(),
+            },
+        )?;
         offset += chunk_len;
     }
 

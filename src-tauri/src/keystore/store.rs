@@ -112,7 +112,9 @@ pub struct FileKeyStore {
 
 impl FileKeyStore {
     pub fn new(app_data_dir: std::path::PathBuf) -> Self {
-        Self { base_dir: app_data_dir.join("keys") }
+        Self {
+            base_dir: app_data_dir.join("keys"),
+        }
     }
 
     fn chain_dir(&self, chain_id: &str) -> std::path::PathBuf {
@@ -141,8 +143,7 @@ impl FileKeyStore {
     fn write_index(&self, chain_id: &str, keys: &[String]) -> Result<(), Error> {
         let dir = self.chain_dir(chain_id);
         std::fs::create_dir_all(&dir)?;
-        let json = serde_json::to_string(keys)
-            .map_err(|e| Error::Serialization(e.to_string()))?;
+        let json = serde_json::to_string(keys).map_err(|e| Error::Serialization(e.to_string()))?;
         std::fs::write(self.index_file(chain_id), json)?;
         Ok(())
     }
@@ -161,7 +162,11 @@ impl KeyStore for FileKeyStore {
         }
         self.write_index(chain_id, &index)?;
 
-        log::info!("[file-keystore] Stored key for {} on chain {}", public_key, &chain_id[..8]);
+        log::info!(
+            "[file-keystore] Stored key for {} on chain {}",
+            public_key,
+            &chain_id[..8]
+        );
         Ok(())
     }
 

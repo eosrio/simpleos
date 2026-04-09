@@ -1,7 +1,8 @@
 use k256::ecdsa::hazmat::SignPrimitive;
 use k256::ecdsa::{Signature, SigningKey};
 use k256::elliptic_curve::generic_array::GenericArray;
-use k256::{NonZeroScalar, Scalar};
+use k256::elliptic_curve::sec1::FromEncodedPoint;
+use k256::{NonZeroScalar, PublicKey, Scalar};
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
@@ -27,6 +28,46 @@ pub fn generate_keypair() -> Result<(String, String), Error> {
     let pub_key = encode_eos_public_key(pub_bytes);
 
     Ok((wif, pub_key))
+}
+
+/// Generate a new secp256k1 keypair, returning raw bytes.
+/// Returns (32-byte private key, 33-byte compressed public key).
+pub fn generate_keypair_raw() -> Result<([u8; 32], Vec<u8>), Error> {
+    let signing_key = SigningKey::random(&mut rand::thread_rng());
+    let mut private_bytes = [0u8; 32];
+    private_bytes.copy_from_slice(&signing_key.to_bytes());
+
+    let verifying_key = signing_key.verifying_key();
+    let compressed = verifying_key.to_encoded_point(true);
+    let pub_bytes = compressed.as_bytes().to_vec();
+
+    Ok((private_bytes, pub_bytes))
+}
+
+/// Compute the ECDH shared secret between our private key and their compressed public key.
+/// Returns the raw 32-byte x-coordinate of the shared point.
+pub fn ecdh_shared_secret(
+    our_private: &[u8],
+    their_public_compressed: &[u8],
+) -> Result<[u8; 32], Error> {
+    if our_private.len() != 32 {
+        return Err(Error::Signing("Private key must be 32 bytes".into()));
+    }
+
+    let secret_scalar = k256::SecretKey::from_bytes(GenericArray::from_slice(our_private))
+        .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
+
+    let their_point = k256::EncodedPoint::from_bytes(their_public_compressed)
+        .map_err(|e| Error::Signing(format!("Invalid public key encoding: {}", e)))?;
+
+    let their_pk = PublicKey::from_encoded_point(&their_point)
+        .into_option()
+        .ok_or_else(|| Error::Signing("Invalid public key point".into()))?;
+
+    let shared = k256::ecdh::diffie_hellman(secret_scalar.to_nonzero_scalar(), their_pk.as_affine());
+    let mut out = [0u8; 32];
+    out.copy_from_slice(shared.raw_secret_bytes());
+    Ok(out)
 }
 
 /// Encode raw private key bytes as a WIF string.
@@ -95,9 +136,7 @@ pub fn sign_transaction(
             .try_sign_prehashed_rfc6979::<Sha256>(&digest, &ad)
             .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
 
-        let recid = recovery_id.ok_or_else(|| {
-            Error::Signing("No recovery id produced".into())
-        })?;
+        let recid = recovery_id.ok_or_else(|| Error::Signing("No recovery id produced".into()))?;
 
         if is_canonical(&signature) {
             return encode_k1_signature(&signature, recid);
@@ -112,12 +151,9 @@ pub fn sign_transaction(
 
 /// Sign a pre-computed 32-byte digest directly (for ESR identity proofs, etc.).
 /// Returns the signature in `SIG_K1_...` format.
-pub fn sign_digest(
-    digest_hex: &str,
-    private_key_bytes: &[u8],
-) -> Result<String, Error> {
-    let digest_bytes = hex_decode(digest_hex)
-        .map_err(|e| Error::Signing(format!("Invalid digest hex: {}", e)))?;
+pub fn sign_digest(digest_hex: &str, private_key_bytes: &[u8]) -> Result<String, Error> {
+    let digest_bytes =
+        hex_decode(digest_hex).map_err(|e| Error::Signing(format!("Invalid digest hex: {}", e)))?;
     if digest_bytes.len() != 32 {
         return Err(Error::Signing("Digest must be 32 bytes".into()));
     }
@@ -138,9 +174,7 @@ pub fn sign_digest(
             .try_sign_prehashed_rfc6979::<Sha256>(&digest, &ad)
             .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
 
-        let recid = recovery_id.ok_or_else(|| {
-            Error::Signing("No recovery id produced".into())
-        })?;
+        let recid = recovery_id.ok_or_else(|| Error::Signing("No recovery id produced".into()))?;
 
         if is_canonical(&signature) {
             return encode_k1_signature(&signature, recid);
@@ -235,6 +269,53 @@ fn encode_k1_public_key(compressed_pub: &[u8]) -> String {
     format!("PUB_K1_{}", bs58_encode(&data))
 }
 
+/// Decode a `PUB_K1_...` public key string to raw compressed bytes (33 bytes).
+pub fn decode_k1_public_key(key: &str) -> Result<Vec<u8>, Error> {
+    let encoded = key
+        .strip_prefix("PUB_K1_")
+        .ok_or_else(|| Error::Signing("Not a PUB_K1_ key".into()))?;
+
+    let decoded = bs58_decode(encoded)
+        .map_err(|e| Error::Signing(format!("Invalid PUB_K1_ base58: {}", e)))?;
+
+    if decoded.len() < 37 {
+        return Err(Error::Signing("PUB_K1_ key too short".into()));
+    }
+
+    let key_bytes = &decoded[..33];
+    let checksum = &decoded[33..37];
+
+    // Verify RIPEMD160 checksum: ripemd160(key_bytes + "K1")[0..4]
+    let mut check_buf = key_bytes.to_vec();
+    check_buf.extend_from_slice(b"K1");
+    let hash = ripemd160(&check_buf);
+
+    if &hash[..4] != checksum {
+        return Err(Error::Signing("PUB_K1_ checksum mismatch".into()));
+    }
+
+    Ok(key_bytes.to_vec())
+}
+
+/// Decode a public key from either `PUB_K1_...` format or hex-encoded compressed bytes.
+pub fn decode_public_key_flexible(key: &str) -> Result<Vec<u8>, Error> {
+    if key.starts_with("PUB_K1_") {
+        decode_k1_public_key(key)
+    } else if key.starts_with("EOS") {
+        // Legacy EOS... format
+        let decoded = bs58_decode(&key[3..])
+            .map_err(|e| Error::Signing(format!("Invalid EOS key base58: {}", e)))?;
+        if decoded.len() < 37 {
+            return Err(Error::Signing("EOS key too short".into()));
+        }
+        Ok(decoded[..33].to_vec())
+    } else {
+        // Assume hex
+        hex_decode(key)
+            .map_err(|e| Error::Signing(format!("Invalid public key hex: {}", e)))
+    }
+}
+
 // ── RIPEMD160 + Encoding helpers ──
 
 pub fn ripemd160(data: &[u8]) -> [u8; 20] {
@@ -246,7 +327,10 @@ pub fn ripemd160(data: &[u8]) -> [u8; 20] {
     out
 }
 
-fn encode_k1_signature(signature: &Signature, recovery_id: k256::ecdsa::RecoveryId) -> Result<String, Error> {
+fn encode_k1_signature(
+    signature: &Signature,
+    recovery_id: k256::ecdsa::RecoveryId,
+) -> Result<String, Error> {
     let r = signature.r().to_bytes();
     let s = signature.s().to_bytes();
 
@@ -283,8 +367,7 @@ fn encode_eos_public_key(compressed_pub: &[u8]) -> String {
 }
 
 fn wif_decode(wif: &str) -> Result<Vec<u8>, Error> {
-    let decoded = bs58_decode(wif)
-        .map_err(|e| Error::Signing(format!("Invalid WIF: {}", e)))?;
+    let decoded = bs58_decode(wif).map_err(|e| Error::Signing(format!("Invalid WIF: {}", e)))?;
 
     if decoded.len() < 37 {
         return Err(Error::Signing("WIF too short".into()));
@@ -341,7 +424,10 @@ pub fn bs58_encode(data: &[u8]) -> String {
         }
     }
     digits.reverse();
-    digits.iter().map(|&d| BASE58_CHARS[d as usize] as char).collect()
+    digits
+        .iter()
+        .map(|&d| BASE58_CHARS[d as usize] as char)
+        .collect()
 }
 
 fn bs58_decode(input: &str) -> Result<Vec<u8>, String> {
@@ -464,22 +550,29 @@ mod tests {
     #[test]
     fn sign_always_produces_canonical_signatures() {
         use k256::ecdsa::Signature as K256Sig;
-        let (priv_bytes, _) = public_key_from_wif(
-            "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-        )
-        .unwrap();
+        let (priv_bytes, _) =
+            public_key_from_wif("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3").unwrap();
         let chain_id = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906";
 
         for i in 0u8..32 {
             let tx = [i; 64];
             let sig_str = sign_transaction(chain_id, &tx, &priv_bytes).unwrap();
-            assert!(sig_str.starts_with("SIG_K1_"), "iter {}: must have prefix", i);
+            assert!(
+                sig_str.starts_with("SIG_K1_"),
+                "iter {}: must have prefix",
+                i
+            );
 
             // Decode the SIG_K1_ string back to raw bytes to verify canonicality
             let encoded = sig_str.strip_prefix("SIG_K1_").unwrap();
             let decoded = bs58_decode(encoded).unwrap();
             // Layout: 1-byte recovery + 32-byte r + 32-byte s + 4-byte checksum
-            assert!(decoded.len() >= 65, "iter {}: decoded len {}", i, decoded.len());
+            assert!(
+                decoded.len() >= 65,
+                "iter {}: decoded len {}",
+                i,
+                decoded.len()
+            );
             let r_byte = decoded[1];
             let s_byte = decoded[33];
             assert_eq!(
@@ -531,20 +624,23 @@ mod tests {
 
         let sig1 = sign_transaction(
             "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
-            &tx, &priv_bytes,
-        ).unwrap();
+            &tx,
+            &priv_bytes,
+        )
+        .unwrap();
         let sig2 = sign_transaction(
             "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4",
-            &tx, &priv_bytes,
-        ).unwrap();
+            &tx,
+            &priv_bytes,
+        )
+        .unwrap();
         assert_ne!(sig1, sig2);
     }
 
     #[test]
     fn sign_invalid_chain_id_hex() {
-        let (priv_bytes, _) = public_key_from_wif(
-            "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-        ).unwrap();
+        let (priv_bytes, _) =
+            public_key_from_wif("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3").unwrap();
         let result = sign_transaction("not-hex", &[0u8; 32], &priv_bytes);
         assert!(result.is_err());
     }
@@ -555,9 +651,8 @@ mod tests {
         let (_, pub_key) = public_key_from_wif(wif).unwrap();
 
         // Re-derive manually
-        let signing_key = SigningKey::from_bytes(
-            (&public_key_from_wif(wif).unwrap().0[..]).into()
-        ).unwrap();
+        let signing_key =
+            SigningKey::from_bytes((&public_key_from_wif(wif).unwrap().0[..]).into()).unwrap();
         let compressed = signing_key.verifying_key().to_encoded_point(true);
         let derived = encode_eos_public_key_from_bytes(compressed.as_bytes());
 

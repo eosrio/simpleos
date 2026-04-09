@@ -11,11 +11,7 @@ fn get_dapp_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
 /// This avoids the z-order and coordinate issues of child webviews on Linux/X11.
 /// The DApp window is a standalone OS window with the Anchor bridge injected.
 #[tauri::command]
-pub async fn open_dapp_browser(
-    app: AppHandle,
-    url: String,
-    title: String,
-) -> Result<(), String> {
+pub async fn open_dapp_browser(app: AppHandle, url: String, title: String) -> Result<(), String> {
     // Close existing dapp window if any
     if let Some(win) = get_dapp_window(&app) {
         let _ = win.close();
@@ -25,49 +21,46 @@ pub async fn open_dapp_browser(
 
     let nav_handle = app.clone();
 
-    let dapp_window = tauri::WebviewWindowBuilder::new(
-        &app,
-        DAPP_LABEL,
-        WebviewUrl::External(parsed.clone()),
-    )
-    .title(format!("{} — SimplEOS", title))
-    .inner_size(1024.0, 768.0)
-    .min_inner_size(480.0, 360.0)
-    .resizable(true)
-    .center()
-    .initialization_script(ANCHOR_BRIDGE_SCRIPT)
-    .initialization_script(WHEEL_SCROLL_FIX_SCRIPT)
-    .on_navigation(move |nav_url| {
-        let url_str = nav_url.to_string();
-        let scheme = nav_url.scheme();
+    let dapp_window =
+        tauri::WebviewWindowBuilder::new(&app, DAPP_LABEL, WebviewUrl::External(parsed.clone()))
+            .title(format!("{} — SimplEOS", title))
+            .inner_size(1024.0, 768.0)
+            .min_inner_size(480.0, 360.0)
+            .resizable(true)
+            .center()
+            .initialization_script(ANCHOR_BRIDGE_SCRIPT)
+            .initialization_script(WHEEL_SCROLL_FIX_SCRIPT)
+            .on_navigation(move |nav_url| {
+                let url_str = nav_url.to_string();
+                let scheme = nav_url.scheme();
 
-        // Intercept ESR (EOSIO Signing Request) URIs — these are how
-        // anchor-link DApps trigger wallet signing via the `esr://` protocol.
-        if scheme == "esr" || scheme == "esr-anchor" || scheme == "anchor" {
-            log::info!("[dapp] Intercepted ESR request: {}", &url_str);
-            let _ = nav_handle.emit_to("main", "dapp-esr-request", &url_str);
-            return false; // Block the navigation — we handle it ourselves
-        }
+                // Intercept ESR (EOSIO Signing Request) URIs — these are how
+                // anchor-link DApps trigger wallet signing via the `esr://` protocol.
+                if scheme == "esr" || scheme == "esr-anchor" || scheme == "anchor" {
+                    log::info!("[dapp] Intercepted ESR request: {}", &url_str);
+                    let _ = nav_handle.emit_to("main", "dapp-esr-request", &url_str);
+                    return false; // Block the navigation — we handle it ourselves
+                }
 
-        let _ = nav_handle.emit_to("main", "dapp-navigation", &url_str);
+                let _ = nav_handle.emit_to("main", "dapp-navigation", &url_str);
 
-        // Allow about:blank (used by some sites for iframes/popups)
-        if scheme == "about" {
-            return true;
-        }
-        if scheme != "https" && scheme != "http" {
-            log::warn!("[dapp] Blocked navigation to non-HTTP scheme: {}", scheme);
-            return false;
-        }
-        let host = nav_url.host_str().unwrap_or("");
-        if scheme == "http" && host != "localhost" && host != "127.0.0.1" {
-            log::warn!("[dapp] Blocked insecure HTTP navigation to: {}", host);
-            return false;
-        }
-        true
-    })
-    .build()
-    .map_err(|e| e.to_string())?;
+                // Allow about:blank (used by some sites for iframes/popups)
+                if scheme == "about" {
+                    return true;
+                }
+                if scheme != "https" && scheme != "http" {
+                    log::warn!("[dapp] Blocked navigation to non-HTTP scheme: {}", scheme);
+                    return false;
+                }
+                let host = nav_url.host_str().unwrap_or("");
+                if scheme == "http" && host != "localhost" && host != "127.0.0.1" {
+                    log::warn!("[dapp] Blocked insecure HTTP navigation to: {}", host);
+                    return false;
+                }
+                true
+            })
+            .build()
+            .map_err(|e| e.to_string())?;
 
     // Emit the initial URL
     let _ = app.emit_to("main", "dapp-navigation", parsed.to_string());
@@ -105,21 +98,24 @@ pub async fn navigate_dapp(app: AppHandle, url: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn reload_dapp(app: AppHandle) -> Result<(), String> {
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
-    win.eval("location.reload()").map_err(|e: tauri::Error| e.to_string())
+    win.eval("location.reload()")
+        .map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Navigate back in the dapp browser history.
 #[tauri::command]
 pub async fn dapp_go_back(app: AppHandle) -> Result<(), String> {
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
-    win.eval("history.back()").map_err(|e: tauri::Error| e.to_string())
+    win.eval("history.back()")
+        .map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Navigate forward in the dapp browser history.
 #[tauri::command]
 pub async fn dapp_go_forward(app: AppHandle) -> Result<(), String> {
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
-    win.eval("history.forward()").map_err(|e: tauri::Error| e.to_string())
+    win.eval("history.forward()")
+        .map_err(|e: tauri::Error| e.to_string())
 }
 
 /// Deliver a signing result back to the dapp webview.

@@ -123,8 +123,7 @@ impl ProviderManager {
     pub fn add_hyperion_endpoint(&mut self, url: &str) {
         let normalized = url.trim_end_matches('/').to_string();
         if !self.hyperion_endpoints.iter().any(|e| e.url == normalized) {
-            self.hyperion_endpoints
-                .push(EndpointState::new(url, None));
+            self.hyperion_endpoints.push(EndpointState::new(url, None));
         }
     }
 

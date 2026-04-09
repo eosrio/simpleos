@@ -150,7 +150,12 @@ pub fn serialize_action(
 // ── System Action Serialization ──
 
 /// Serialize the data for an `eosio.token::transfer` action.
-pub fn serialize_transfer(from: &str, to: &str, quantity: &str, memo: &str) -> Result<Vec<u8>, Error> {
+pub fn serialize_transfer(
+    from: &str,
+    to: &str,
+    quantity: &str,
+    memo: &str,
+) -> Result<Vec<u8>, Error> {
     let mut data = Vec::new();
     data.extend_from_slice(&serialize_name(from)?);
     data.extend_from_slice(&serialize_name(to)?);
@@ -294,7 +299,9 @@ impl RawTransaction {
         }
 
         // Transaction extensions
-        buf.extend_from_slice(&serialize_varuint32(self.transaction_extensions.len() as u32));
+        buf.extend_from_slice(&serialize_varuint32(
+            self.transaction_extensions.len() as u32
+        ));
         for (ext_type, ext_data) in &self.transaction_extensions {
             buf.extend_from_slice(&ext_type.to_le_bytes());
             buf.extend_from_slice(&serialize_varuint32(ext_data.len() as u32));
@@ -438,19 +445,18 @@ mod tests {
     fn tapos_prefix_uses_little_endian() {
         let block_id = "00002818655b1aa3b016b8b4b6de1c4b1f99b97d2db2f661b855ba7b4f1fab5f";
         let prefix = tapos_ref_block_prefix(block_id).unwrap();
-        assert_eq!(prefix, 0xb4b816b0, "must be little-endian u32 of bytes 8..11");
+        assert_eq!(
+            prefix, 0xb4b816b0,
+            "must be little-endian u32 of bytes 8..11"
+        );
     }
 
     #[test]
     fn transaction_serialization() {
         let action_data = serialize_transfer("alice", "bob", "1.0000 EOS", "").unwrap();
         let data_hex = hex_encode(&action_data);
-        let action = serialize_action(
-            "eosio.token",
-            "transfer",
-            &[("alice", "active")],
-            &data_hex,
-        ).unwrap();
+        let action =
+            serialize_action("eosio.token", "transfer", &[("alice", "active")], &data_hex).unwrap();
 
         let tx = RawTransaction {
             expiration: 1700000000,

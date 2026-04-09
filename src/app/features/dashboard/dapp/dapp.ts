@@ -7,8 +7,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
 import { AlertService } from '../../../core/services/alert.service';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
-import { deflateRaw, inflateRaw } from 'pako';
-import { SigningRequest } from '@wharfkit/signing-request';
+import { EsrService } from '../../../core/services/esr.service';
 
 interface DappEntry {
   name: string;
@@ -437,6 +436,7 @@ export class DappComponent implements OnDestroy {
   private unlistenSign: UnlistenFn | null = null;
   private unlistenClose: UnlistenFn | null = null;
   private unlistenEsr: UnlistenFn | null = null;
+  private esr = inject(EsrService);
 
   constructor() {
     this.loadPinnedDapps();
@@ -609,7 +609,7 @@ export class DappComponent implements OnDestroy {
 
     // Listen for ESR (EOSIO Signing Request) URIs intercepted from esr:// navigations
     this.unlistenEsr = await listen<string>('dapp-esr-request', async (event) => {
-      await this.handleEsrRequest(event.payload);
+      await this.esr.handleEsrRequest(event.payload);
     });
 
     // Listen for signing requests from the injected bridge (fallback)
@@ -635,95 +635,6 @@ export class DappComponent implements OnDestroy {
     this.unlistenSign?.();
     this.unlistenSign = null;
     this.ipc.closeDappBrowser();
-  }
-
-  // ── ESR (EOSIO Signing Request) Handler ──
-
-  private async getEsrOptions() {
-    return {
-      zlib: { deflateRaw, inflateRaw },
-      abiProvider: {
-        getAbi: async (account: any) => {
-          const name = String(account);
-          const chainId = this.wallet.selectedAccount()?.chainId;
-          if (!chainId) throw new Error('No active chain');
-          const result = await this.ipc.getAbi(chainId, name);
-          return result;
-        },
-      },
-    };
-  }
-
-  private async handleEsrRequest(esrUri: string) {
-    const account = this.wallet.selectedAccount();
-    if (!account) {
-      this.alert.warning('No active account — cannot process signing request');
-      return;
-    }
-
-    console.log('[dapp] Processing ESR request...');
-
-    try {
-      const opts = await this.getEsrOptions();
-
-      // Normalize the URI — anchor-link may use esr:, esr://, esr-anchor:, etc.
-      let uri = esrUri;
-      if (uri.startsWith('esr-anchor:')) uri = 'esr:' + uri.slice('esr-anchor:'.length);
-      if (uri.startsWith('anchor:')) uri = 'esr:' + uri.slice('anchor:'.length);
-
-      const request = SigningRequest.from(uri, opts);
-      const esrChainId = request.getChainId().hexString;
-      // Use the active account's chain ID for key lookup — it matches the keystore
-      const chainId = account.chainId;
-      const signer = { actor: account.name, permission: 'active' };
-
-      console.log('[dapp] ESR chain:', esrChainId, 'account chain:', chainId, 'identity:', request.isIdentity());
-
-      // Fetch chain info for TaPoS context
-      const info = await this.ipc.getChainInfo(chainId);
-      const ctx = {
-        timestamp: info.head_block_time,
-        block_num: info.last_irreversible_block_num,
-        ref_block_num: info.last_irreversible_block_num & 0xffff,
-        ref_block_prefix: parseInt(info.last_irreversible_block_id.slice(16, 24).match(/../g)!.reverse().join(''), 16),
-        expire_seconds: 120,
-      };
-
-      const abis = await request.fetchAbis(opts.abiProvider);
-      const resolved = request.resolve(abis, signer, ctx);
-
-      const keys = await this.ipc.listPublicKeys(chainId);
-      if (keys.length === 0) {
-        this.alert.error(`No signing key available for chain ${chainId}`);
-        return;
-      }
-
-      // Sign the resolved request digest
-      const digest = resolved.signingDigest.hexString;
-      console.log('[dapp] Signing digest:', digest);
-      const signature = await this.ipc.signDigest(chainId, keys[0], digest);
-      console.log('[dapp] Signature obtained');
-
-      // Build and POST the callback
-      const callback = resolved.getCallback([signature]);
-      if (callback && callback.url) {
-        if (callback.background) {
-          const res = await fetch(callback.url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(callback.payload),
-          });
-          console.log('[dapp] ESR callback POSTed to', callback.url, 'status:', res.status);
-        } else {
-          console.log('[dapp] ESR foreground callback:', callback.url);
-        }
-      } else {
-        console.log('[dapp] ESR request has no callback');
-      }
-    } catch (e: any) {
-      console.error('[dapp] ESR handling failed:', e);
-      this.alert.error(`Signing request failed: ${e?.message ?? e}`);
-    }
   }
 
   // ── Signing Request Handler (injected bridge fallback) ──

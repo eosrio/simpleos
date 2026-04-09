@@ -544,21 +544,23 @@ export class BpKeysComponent {
 
   private async loadProducerInfo(chainId: string, account: string) {
     try {
-      const result = await this.ipc.getTableRows(chainId, {
-        code: 'eosio', table: 'producers', scope: 'eosio',
-        lower_bound: account, upper_bound: account, limit: 1, json: true,
-      });
-      const row = result?.rows?.[0];
+      // Use get_producers API — works on all chains including FIO
+      // (FIO's producers table uses numeric PK so get_table_rows by name fails)
+      const result = await this.ipc.getProducers(chainId, 200);
+      const list: any[] = result?.rows ?? result?.producers ?? [];
+      const row = list.find((r: any) => r.owner === account);
       if (row) {
+        // Normalize: FIO uses producer_public_key, standard chains use producer_key
+        if (!row.producer_key && row.producer_public_key) {
+          row.producer_key = row.producer_public_key;
+        }
         this.producerInfo.set(row);
         this.isRegistered.set(row.is_active === 1 || parseFloat(row.total_votes) > 0);
-        // Save config for re-registration
         this.savedConfig.set({
           url: row.url ?? '',
           location: row.location ?? 0,
-          producer_key: row.producer_key ?? '',
+          producer_key: row.producer_key ?? row.producer_public_key ?? '',
         });
-        // Persist to local storage
         try {
           await this.ipc.storeSet(`bp_config_${account}`, this.savedConfig());
         } catch { /* non-critical */ }

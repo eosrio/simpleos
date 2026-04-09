@@ -8,10 +8,14 @@ fn entry_key(chain_id: &str, public_key: &str) -> String {
 }
 
 /// Store an encrypted private key blob in the OS keychain.
-pub fn store_key(chain_id: &str, public_key: &str, encrypted: &[u8]) -> Result<(), crate::error::Error> {
+pub fn store_key(
+    chain_id: &str,
+    public_key: &str,
+    encrypted: &[u8],
+) -> Result<(), crate::error::Error> {
     let key = entry_key(chain_id, public_key);
-    let entry = Entry::new(SERVICE_NAME, &key)
-        .map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
+    let entry =
+        Entry::new(SERVICE_NAME, &key).map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
 
     // Store as base64 since keyring expects strings on some platforms
     let encoded = base64_encode(encrypted);
@@ -25,8 +29,8 @@ pub fn store_key(chain_id: &str, public_key: &str, encrypted: &[u8]) -> Result<(
 /// Load an encrypted private key blob from the OS keychain.
 pub fn load_key(chain_id: &str, public_key: &str) -> Result<Vec<u8>, crate::error::Error> {
     let key = entry_key(chain_id, public_key);
-    let entry = Entry::new(SERVICE_NAME, &key)
-        .map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
+    let entry =
+        Entry::new(SERVICE_NAME, &key).map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
 
     let encoded = entry
         .get_password()
@@ -39,8 +43,8 @@ pub fn load_key(chain_id: &str, public_key: &str) -> Result<Vec<u8>, crate::erro
 /// Delete a key from the OS keychain.
 pub fn delete_key(chain_id: &str, public_key: &str) -> Result<(), crate::error::Error> {
     let key = entry_key(chain_id, public_key);
-    let entry = Entry::new(SERVICE_NAME, &key)
-        .map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
+    let entry =
+        Entry::new(SERVICE_NAME, &key).map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
 
     entry
         .delete_credential()

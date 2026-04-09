@@ -51,7 +51,11 @@ pub fn import_anchor_entries(
             Ok(map) => {
                 log::info!("[anchor] Decrypted {} private keys", map.len());
                 for (pubkey, _) in &map {
-                    log::info!("[anchor]   key: {}...{}", &pubkey[..12], &pubkey[pubkey.len()-6..]);
+                    log::info!(
+                        "[anchor]   key: {}...{}",
+                        &pubkey[..12],
+                        &pubkey[pubkey.len() - 6..]
+                    );
                 }
                 Some(map)
             }
@@ -85,13 +89,19 @@ pub fn import_anchor_entries(
                     }
                 };
 
-                log::info!("[anchor] Importing key for {}@{} on chain {}...",
-                    sel.account, sel.authority, &sel.chain_id[..8]);
+                log::info!(
+                    "[anchor] Importing key for {}@{} on chain {}...",
+                    sel.account,
+                    sel.authority,
+                    &sel.chain_id[..8]
+                );
 
                 let import_result = if first_full {
                     first_full = false;
                     log::info!("[anchor]   Using import_key (first full, creates vault)");
-                    wallet.0.import_key(wif, &sel.chain_id, &simpleos_passphrase)
+                    wallet
+                        .0
+                        .import_key(wif, &sel.chain_id, &simpleos_passphrase)
                 } else {
                     log::info!("[anchor]   Using import_key_with_session");
                     wallet.0.import_key_with_session(wif, &sel.chain_id)

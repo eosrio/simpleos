@@ -150,10 +150,7 @@ async fn test_full_signing_pipeline_push_transfer_to_chain() {
     let chain_id = require_chain_or_skip!();
 
     // 1. Set up an in-memory wallet and import the dev key
-    let wallet = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.clone()],
-    );
+    let wallet = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.clone()]);
     let import = wallet
         .import_key(common::E2E_DEV_PRIVATE_KEY, &chain_id, "test-pass")
         .expect("import should succeed");
@@ -214,10 +211,7 @@ async fn test_full_signing_pipeline_push_transfer_to_chain() {
 async fn test_passphrase_change_preserves_signing_key() {
     let chain_id = require_chain_or_skip!();
 
-    let wallet = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.clone()],
-    );
+    let wallet = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.clone()]);
 
     let old_pass = "initial-passphrase";
     let new_pass = "rotated-passphrase";
@@ -232,7 +226,10 @@ async fn test_passphrase_change_preserves_signing_key() {
 
     // Old passphrase should now fail
     wallet.lock();
-    assert!(wallet.unlock(old_pass).is_err(), "old passphrase must be rejected");
+    assert!(
+        wallet.unlock(old_pass).is_err(),
+        "old passphrase must be rejected"
+    );
 
     // New passphrase should work AND the key must still be usable
     wallet.unlock(new_pass).expect("new passphrase must work");
@@ -264,10 +261,7 @@ async fn test_backup_export_import_preserves_signing() {
     let chain_id = require_chain_or_skip!();
 
     // Source wallet: import key and export backup
-    let source = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.clone()],
-    );
+    let source = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.clone()]);
     source
         .import_key(common::E2E_DEV_PRIVATE_KEY, &chain_id, "backup-test-pass")
         .unwrap();
@@ -276,10 +270,7 @@ async fn test_backup_export_import_preserves_signing() {
     assert!(backup_json.contains(common::E2E_DEV_PUBLIC_KEY));
 
     // Target wallet: fresh, import backup with same passphrase
-    let target = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.clone()],
-    );
+    let target = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.clone()]);
     let count = target
         .import_backup(&backup_json, "backup-test-pass")
         .unwrap();
@@ -310,19 +301,13 @@ async fn test_backup_export_import_preserves_signing() {
 async fn test_backup_import_rejects_wrong_passphrase() {
     let chain_id = "test-chain-id-for-offline-test";
 
-    let source = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.to_string()],
-    );
+    let source = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.to_string()]);
     source
         .import_key(common::E2E_DEV_PRIVATE_KEY, chain_id, "correct-pass")
         .unwrap();
     let backup_json = source.export_backup("correct-pass").unwrap();
 
-    let target = WalletService::new(
-        Box::new(MemoryKeyStore::new()),
-        vec![chain_id.to_string()],
-    );
+    let target = WalletService::new(Box::new(MemoryKeyStore::new()), vec![chain_id.to_string()]);
     let result = target.import_backup(&backup_json, "wrong-pass");
     assert!(
         result.is_err(),

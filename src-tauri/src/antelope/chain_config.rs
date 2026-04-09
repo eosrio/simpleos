@@ -26,6 +26,15 @@ pub struct ChainConfig {
     /// Whether this is a testnet chain.
     #[serde(default)]
     pub testnet: bool,
+    /// CoinGecko coin ID for price lookups (e.g. "eos", "wax", "telos").
+    #[serde(default)]
+    pub coingecko_id: Option<String>,
+    /// On-chain oracle contract name (e.g. "delphioracle").
+    #[serde(default)]
+    pub oracle_contract: Option<String>,
+    /// On-chain oracle scope for USD pair (e.g. "eosusd").
+    #[serde(default)]
+    pub oracle_scope: Option<String>,
 }
 
 /// A token to query beyond the system token.
@@ -91,15 +100,32 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: "core.vaulta".into(),
-            extra_tokens: vec![
-                TokenConfig { contract: "eosio.token".into(), symbol: "EOS".into(), precision: 4 },
-            ],
+            extra_tokens: vec![TokenConfig {
+                contract: "eosio.token".into(),
+                symbol: "EOS".into(),
+                precision: 4,
+            }],
             endpoints: vec![
-                Endpoint { url: "https://eos.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://api.eossweden.org".into(), owner: Some("EOS Sweden".into()) },
-                Endpoint { url: "https://api.eosrio.io".into(), owner: Some("EOS Rio".into()) },
-                Endpoint { url: "https://eos.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
-                Endpoint { url: "https://eos.eosphere.io".into(), owner: Some("EOSphere".into()) },
+                Endpoint {
+                    url: "https://eos.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://api.eossweden.org".into(),
+                    owner: Some("EOS Sweden".into()),
+                },
+                Endpoint {
+                    url: "https://api.eosrio.io".into(),
+                    owner: Some("EOS Rio".into()),
+                },
+                Endpoint {
+                    url: "https://eos.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
+                },
+                Endpoint {
+                    url: "https://eos.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
+                },
             ],
             hyperion_apis: vec![
                 "https://eos.hyperion.eosrio.io".into(),
@@ -122,14 +148,25 @@ pub fn default_chains() -> Vec<ChainConfig> {
                     name: "EOS Authority".into(),
                     url: "https://eosauthority.com".into(),
                     tx_url: Some("https://eosauthority.com/transaction/{txid}?network=eos".into()),
-                    account_url: Some("https://eosauthority.com/account/{account}?network=eos".into()),
+                    account_url: Some(
+                        "https://eosauthority.com/account/{account}?network=eos".into(),
+                    ),
                 },
             ],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: true,
-                powerup: true, resource: true, dapps: true, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: true,
+                powerup: true,
+                resource: true,
+                dapps: true,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("eos".into()),
+            oracle_contract: Some("delphioracle".into()),
+            oracle_scope: Some("eosusd".into()),
         },
         ChainConfig {
             id: "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4".into(),
@@ -140,10 +177,22 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://wax.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://api.waxsweden.org".into(), owner: Some("WAX Sweden".into()) },
-                Endpoint { url: "https://wax.eosphere.io".into(), owner: Some("EOSphere".into()) },
-                Endpoint { url: "https://wax.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
+                Endpoint {
+                    url: "https://wax.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://api.waxsweden.org".into(),
+                    owner: Some("WAX Sweden".into()),
+                },
+                Endpoint {
+                    url: "https://wax.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
+                },
+                Endpoint {
+                    url: "https://wax.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
+                },
             ],
             hyperion_apis: vec![
                 "https://api.waxsweden.org".into(),
@@ -164,10 +213,19 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 },
             ],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: true, resource: true, dapps: true, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: true,
+                resource: true,
+                dapps: true,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("wax".into()),
+            oracle_contract: Some("delphioracle".into()),
+            oracle_scope: Some("waxpusd".into()),
         },
         ChainConfig {
             id: "4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11".into(),
@@ -178,10 +236,22 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://telos.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://mainnet.telos.net".into(), owner: Some("Telos Foundation".into()) },
-                Endpoint { url: "https://telos.eosphere.io".into(), owner: Some("EOSphere".into()) },
-                Endpoint { url: "https://telos.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
+                Endpoint {
+                    url: "https://telos.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://mainnet.telos.net".into(),
+                    owner: Some("Telos Foundation".into()),
+                },
+                Endpoint {
+                    url: "https://telos.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
+                },
+                Endpoint {
+                    url: "https://telos.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
+                },
             ],
             hyperion_apis: vec![
                 "https://mainnet.telos.net".into(),
@@ -197,12 +267,19 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Explorer {
                     name: "EOS Authority".into(),
                     url: "https://telos.eosauthority.com".into(),
-                    tx_url: Some("https://telos.eosauthority.com/transaction/{txid}?network=telos".into()),
-                    account_url: Some("https://telos.eosauthority.com/account/{account}?network=telos".into()),
+                    tx_url: Some(
+                        "https://telos.eosauthority.com/transaction/{txid}?network=telos".into(),
+                    ),
+                    account_url: Some(
+                        "https://telos.eosauthority.com/account/{account}?network=telos".into(),
+                    ),
                 },
             ],
             features: ChainFeatures::default(),
             testnet: false,
+            coingecko_id: Some("telos".into()),
+            oracle_contract: Some("delphioracle".into()),
+            oracle_scope: Some("tlosusd".into()),
         },
         ChainConfig {
             id: "a9c481dfbc7d9506dc7e87e9a137c931b0a9303f64fd7a1d08b8230133920097".into(),
@@ -213,26 +290,39 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://ultra.eosrio.io".into(), owner: Some("EOS Rio".into()) },
-                Endpoint { url: "https://api.mainnet.ultra.io".into(), owner: Some("Ultra".into()) },
-            ],
-            hyperion_apis: vec![],
-            explorers: vec![
-                Explorer {
-                    name: "Ultra Explorer".into(),
-                    url: "https://explorer.mainnet.ultra.io".into(),
-                    tx_url: Some("https://explorer.mainnet.ultra.io/tx/{txid}".into()),
-                    account_url: Some("https://explorer.mainnet.ultra.io/account/{account}".into()),
+                Endpoint {
+                    url: "https://ultra.eosrio.io".into(),
+                    owner: Some("EOS Rio".into()),
+                },
+                Endpoint {
+                    url: "https://api.mainnet.ultra.io".into(),
+                    owner: Some("Ultra".into()),
                 },
             ],
+            hyperion_apis: vec![],
+            explorers: vec![Explorer {
+                name: "Ultra Explorer".into(),
+                url: "https://explorer.mainnet.ultra.io".into(),
+                tx_url: Some("https://explorer.mainnet.ultra.io/tx/{txid}".into()),
+                account_url: Some("https://explorer.mainnet.ultra.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: false, resource: true, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("ultra".into()),
+            oracle_contract: None,
+            oracle_scope: None,
         },
         ChainConfig {
-            id: "21dcae42c0182200e93f954a074011f9048a7624c6fe81d3c9541a614a009a60".into(),
+            id: "21dcae42c0182200e93f954a074011f9048a7624c6fe81d3c9541a614a88bd1c".into(),
             name: "FIO".into(),
             symbol: "FIO".into(),
             precision: 9,
@@ -240,26 +330,40 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: "fio.token".into(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://fio.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://fio.eosphere.io".into(), owner: Some("EOSphere".into()) },
-                Endpoint { url: "https://fio.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://fio.eosphere.io".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "FIO Explorer".into(),
-                    url: "https://fio.bloks.io".into(),
-                    tx_url: Some("https://fio.bloks.io/transaction/{txid}".into()),
-                    account_url: Some("https://fio.bloks.io/account/{account}".into()),
+                Endpoint {
+                    url: "https://fio.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://fio.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
+                },
+                Endpoint {
+                    url: "https://fio.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
                 },
             ],
+            hyperion_apis: vec!["https://fio.eosphere.io".into()],
+            explorers: vec![Explorer {
+                name: "FIO Explorer".into(),
+                url: "https://fio.bloks.io".into(),
+                tx_url: Some("https://fio.bloks.io/transaction/{txid}".into()),
+                account_url: Some("https://fio.bloks.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: false, rex: false,
-                powerup: false, resource: false, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: false,
+                rex: false,
+                powerup: false,
+                resource: false,
+                dapps: false,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("fio-protocol".into()),
+            oracle_contract: None,
+            oracle_scope: None,
         },
         ChainConfig {
             id: "38b1d7815474d0c60c65a0f23d12e1fc64b8b8d42d0f754b3afe3044e4050eb1".into(),
@@ -270,26 +374,40 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://libre.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://libre-api.edenia.cloud".into(), owner: Some("Edenia".into()) },
-                Endpoint { url: "https://libre.eosphere.io".into(), owner: Some("EOSphere".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://libre.eosphere.io".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "Libre Blocks".into(),
-                    url: "https://www.libreblocks.io".into(),
-                    tx_url: Some("https://www.libreblocks.io/tx/{txid}".into()),
-                    account_url: Some("https://www.libreblocks.io/address/{account}".into()),
+                Endpoint {
+                    url: "https://libre.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://libre-api.edenia.cloud".into(),
+                    owner: Some("Edenia".into()),
+                },
+                Endpoint {
+                    url: "https://libre.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
                 },
             ],
+            hyperion_apis: vec!["https://libre.eosphere.io".into()],
+            explorers: vec![Explorer {
+                name: "Libre Blocks".into(),
+                url: "https://www.libreblocks.io".into(),
+                tx_url: Some("https://www.libreblocks.io/tx/{txid}".into()),
+                account_url: Some("https://www.libreblocks.io/address/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: false, resource: true, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("libre".into()),
+            oracle_contract: None,
+            oracle_scope: None,
         },
         ChainConfig {
             id: "384da888112027f0321850a169f737c33e53b388aad48b5adace4bab97f437e0".into(),
@@ -300,26 +418,40 @@ pub fn default_chains() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://proton.greymass.com".into(), owner: Some("Greymass".into()) },
-                Endpoint { url: "https://xpr.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
-                Endpoint { url: "https://proton.eosphere.io".into(), owner: Some("EOSphere".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://proton.eosphere.io".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "XPR Explorer".into(),
-                    url: "https://explorer.xprnetwork.org".into(),
-                    tx_url: Some("https://explorer.xprnetwork.org/transaction/{txid}".into()),
-                    account_url: Some("https://explorer.xprnetwork.org/account/{account}".into()),
+                Endpoint {
+                    url: "https://proton.greymass.com".into(),
+                    owner: Some("Greymass".into()),
+                },
+                Endpoint {
+                    url: "https://xpr.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
+                },
+                Endpoint {
+                    url: "https://proton.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
                 },
             ],
+            hyperion_apis: vec!["https://proton.eosphere.io".into()],
+            explorers: vec![Explorer {
+                name: "XPR Explorer".into(),
+                url: "https://explorer.xprnetwork.org".into(),
+                tx_url: Some("https://explorer.xprnetwork.org/transaction/{txid}".into()),
+                account_url: Some("https://explorer.xprnetwork.org/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: false, resource: true, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: true,
             },
             testnet: false,
+            coingecko_id: Some("proton".into()),
+            oracle_contract: None,
+            oracle_scope: None,
         },
     ]
 }
@@ -337,26 +469,40 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://jungle4.cryptolions.io".into(), owner: Some("CryptoLions".into()) },
-                Endpoint { url: "https://jungle4.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
-                Endpoint { url: "https://jungle4.eosphere.io".into(), owner: Some("EOSphere".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://jungle4.cryptolions.io".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "Jungle Bloks".into(),
-                    url: "https://jungle.bloks.io".into(),
-                    tx_url: Some("https://jungle.bloks.io/transaction/{txid}".into()),
-                    account_url: Some("https://jungle.bloks.io/account/{account}".into()),
+                Endpoint {
+                    url: "https://jungle4.cryptolions.io".into(),
+                    owner: Some("CryptoLions".into()),
+                },
+                Endpoint {
+                    url: "https://jungle4.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
+                },
+                Endpoint {
+                    url: "https://jungle4.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
                 },
             ],
+            hyperion_apis: vec!["https://jungle4.cryptolions.io".into()],
+            explorers: vec![Explorer {
+                name: "Jungle Bloks".into(),
+                url: "https://jungle.bloks.io".into(),
+                tx_url: Some("https://jungle.bloks.io/transaction/{txid}".into()),
+                account_url: Some("https://jungle.bloks.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: true,
-                powerup: true, resource: true, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: true,
+                powerup: true,
+                resource: true,
+                dapps: false,
+                history: true,
             },
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
         // ── WAX Testnet ──
         ChainConfig {
@@ -368,26 +514,40 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://testnet.waxsweden.org".into(), owner: Some("WAX Sweden".into()) },
-                Endpoint { url: "https://testnet.wax.pink.gg".into(), owner: Some("Pink.gg".into()) },
-                Endpoint { url: "https://wax-testnet.eosphere.io".into(), owner: Some("EOSphere".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://testnet.waxsweden.org".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "WaxBlock Testnet".into(),
-                    url: "https://testnet.waxblock.io".into(),
-                    tx_url: Some("https://testnet.waxblock.io/transaction/{txid}".into()),
-                    account_url: Some("https://testnet.waxblock.io/account/{account}".into()),
+                Endpoint {
+                    url: "https://testnet.waxsweden.org".into(),
+                    owner: Some("WAX Sweden".into()),
+                },
+                Endpoint {
+                    url: "https://testnet.wax.pink.gg".into(),
+                    owner: Some("Pink.gg".into()),
+                },
+                Endpoint {
+                    url: "https://wax-testnet.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
                 },
             ],
+            hyperion_apis: vec!["https://testnet.waxsweden.org".into()],
+            explorers: vec![Explorer {
+                name: "WaxBlock Testnet".into(),
+                url: "https://testnet.waxblock.io".into(),
+                tx_url: Some("https://testnet.waxblock.io/transaction/{txid}".into()),
+                account_url: Some("https://testnet.waxblock.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: true, resource: true, dapps: false, history: true,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: true,
+                resource: true,
+                dapps: false,
+                history: true,
             },
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
         // ── Telos Testnet ──
         ChainConfig {
@@ -399,23 +559,31 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://testnet.telos.caleos.io".into(), owner: Some("Caleos".into()) },
-                Endpoint { url: "https://telos-testnet.eosphere.io".into(), owner: Some("EOSphere".into()) },
-                Endpoint { url: "https://telostest.api.eosnation.io".into(), owner: Some("EOS Nation".into()) },
-            ],
-            hyperion_apis: vec![
-                "https://testnet.telos.caleos.io".into(),
-            ],
-            explorers: vec![
-                Explorer {
-                    name: "Telos Testnet Explorer".into(),
-                    url: "https://explorer-test.telos.net".into(),
-                    tx_url: Some("https://explorer-test.telos.net/transaction/{txid}".into()),
-                    account_url: Some("https://explorer-test.telos.net/account/{account}".into()),
+                Endpoint {
+                    url: "https://testnet.telos.caleos.io".into(),
+                    owner: Some("Caleos".into()),
+                },
+                Endpoint {
+                    url: "https://telos-testnet.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
+                },
+                Endpoint {
+                    url: "https://telostest.api.eosnation.io".into(),
+                    owner: Some("EOS Nation".into()),
                 },
             ],
+            hyperion_apis: vec!["https://testnet.telos.caleos.io".into()],
+            explorers: vec![Explorer {
+                name: "Telos Testnet Explorer".into(),
+                url: "https://explorer-test.telos.net".into(),
+                tx_url: Some("https://explorer-test.telos.net/transaction/{txid}".into()),
+                account_url: Some("https://explorer-test.telos.net/account/{account}".into()),
+            }],
             features: ChainFeatures::default(),
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
         // ── Ultra Testnet ──
         ChainConfig {
@@ -427,23 +595,36 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://testnet.ultra.eosrio.io".into(), owner: Some("EOS Rio".into()) },
-                Endpoint { url: "https://ultra-testnet.eosphere.io".into(), owner: Some("EOSphere".into()) },
-            ],
-            hyperion_apis: vec![],
-            explorers: vec![
-                Explorer {
-                    name: "Ultra Testnet Explorer".into(),
-                    url: "https://explorer.testnet.ultra.io".into(),
-                    tx_url: Some("https://explorer.testnet.ultra.io/tx/{txid}".into()),
-                    account_url: Some("https://explorer.testnet.ultra.io/account/{account}".into()),
+                Endpoint {
+                    url: "https://testnet.ultra.eosrio.io".into(),
+                    owner: Some("EOS Rio".into()),
+                },
+                Endpoint {
+                    url: "https://ultra-testnet.eosphere.io".into(),
+                    owner: Some("EOSphere".into()),
                 },
             ],
+            hyperion_apis: vec![],
+            explorers: vec![Explorer {
+                name: "Ultra Testnet Explorer".into(),
+                url: "https://explorer.testnet.ultra.io".into(),
+                tx_url: Some("https://explorer.testnet.ultra.io/tx/{txid}".into()),
+                account_url: Some("https://explorer.testnet.ultra.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: false, resource: true, dapps: false, history: false,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: false,
             },
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
         // ── FIO Testnet ──
         ChainConfig {
@@ -454,23 +635,31 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             icon: None,
             token_contract: "fio.token".into(),
             extra_tokens: vec![],
-            endpoints: vec![
-                Endpoint { url: "https://testnet.fioprotocol.io".into(), owner: Some("FIO Protocol".into()) },
-            ],
+            endpoints: vec![Endpoint {
+                url: "https://testnet.fioprotocol.io".into(),
+                owner: Some("FIO Protocol".into()),
+            }],
             hyperion_apis: vec![],
-            explorers: vec![
-                Explorer {
-                    name: "FIO Test Bloks".into(),
-                    url: "https://fio-test.bloks.io".into(),
-                    tx_url: Some("https://fio-test.bloks.io/transaction/{txid}".into()),
-                    account_url: Some("https://fio-test.bloks.io/account/{account}".into()),
-                },
-            ],
+            explorers: vec![Explorer {
+                name: "FIO Test Bloks".into(),
+                url: "https://fio-test.bloks.io".into(),
+                tx_url: Some("https://fio-test.bloks.io/transaction/{txid}".into()),
+                account_url: Some("https://fio-test.bloks.io/account/{account}".into()),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: false, rex: false,
-                powerup: false, resource: false, dapps: false, history: false,
+                send: true,
+                vote: true,
+                staking: false,
+                rex: false,
+                powerup: false,
+                resource: false,
+                dapps: false,
+                history: false,
             },
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
         // ── XPR Testnet ──
         ChainConfig {
@@ -482,23 +671,38 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             token_contract: default_token_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint { url: "https://test.proton.eosusa.io".into(), owner: Some("EOS USA".into()) },
-                Endpoint { url: "https://proton-testnet.cryptolions.io".into(), owner: Some("CryptoLions".into()) },
-            ],
-            hyperion_apis: vec![],
-            explorers: vec![
-                Explorer {
-                    name: "XPR Testnet Explorer".into(),
-                    url: "https://testnet.explorer.xprnetwork.org".into(),
-                    tx_url: Some("https://testnet.explorer.xprnetwork.org/transaction/{txid}".into()),
-                    account_url: Some("https://testnet.explorer.xprnetwork.org/account/{account}".into()),
+                Endpoint {
+                    url: "https://test.proton.eosusa.io".into(),
+                    owner: Some("EOS USA".into()),
+                },
+                Endpoint {
+                    url: "https://proton-testnet.cryptolions.io".into(),
+                    owner: Some("CryptoLions".into()),
                 },
             ],
+            hyperion_apis: vec![],
+            explorers: vec![Explorer {
+                name: "XPR Testnet Explorer".into(),
+                url: "https://testnet.explorer.xprnetwork.org".into(),
+                tx_url: Some("https://testnet.explorer.xprnetwork.org/transaction/{txid}".into()),
+                account_url: Some(
+                    "https://testnet.explorer.xprnetwork.org/account/{account}".into(),
+                ),
+            }],
             features: ChainFeatures {
-                send: true, vote: true, staking: true, rex: false,
-                powerup: false, resource: true, dapps: false, history: false,
+                send: true,
+                vote: true,
+                staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: false,
             },
             testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
         },
     ]
 }

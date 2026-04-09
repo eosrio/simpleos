@@ -2,8 +2,13 @@ import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { WalletStateService } from './core/services/wallet-state.service';
 import { ThemeService } from './core/services/theme.service';
+import { EsrService } from './core/services/esr.service';
+import { LinkSessionService } from './core/services/link-session.service';
+import { TokenPriceService } from './core/services/token-price.service';
+import { UpdateService } from './core/services/update.service';
 import { ResizeHandlesComponent } from './shared/resize-handles';
 import { FullscreenLoaderComponent } from './shared/fullscreen-loader';
 import { AlertPanelComponent } from './shared/alert-panel';
@@ -51,6 +56,10 @@ export class AppComponent implements OnInit {
     private wallet: WalletStateService,
     private theme: ThemeService,
     private router: Router,
+    private esr: EsrService,
+    private linkSession: LinkSessionService,
+    private tokenPrice: TokenPriceService,
+    private updates: UpdateService,
   ) {}
 
   async ngOnInit() {
@@ -85,7 +94,39 @@ export class AppComponent implements OnInit {
       await this.router.navigate(['/lockscreen']);
     }).catch(err => console.warn('[app] tray-lock-request listen failed:', err));
 
+    onOpenUrl((urls) => {
+      console.log('[app] Deep link received:', urls);
+      for (const url of urls) {
+        if (url.startsWith('esr:') || url.startsWith('esr-anchor:') || url.startsWith('anchor:')) {
+          // If the app is locked, we can't do anything yet. We pass it and let EsrService handle it.
+          // EsrService checks if there is an active account.
+          this.esr.handleEsrRequest(url);
+        }
+      }
+    }).catch(err => console.warn('[app] onOpenUrl listen failed:', err));
+
+    // Handle initial deep links (if app was started via a deep link)
+    setTimeout(async () => {
+      try {
+        const urls = await getCurrent();
+        if (urls && urls.length > 0) {
+          console.log('[app] Initial deep link(s):', urls);
+          for (const url of urls) {
+            if (url.startsWith('esr:') || url.startsWith('esr-anchor:') || url.startsWith('anchor:')) {
+              this.esr.handleEsrRequest(url);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[app] getCurrent() for deep links failed:', err);
+      }
+    }, 1000); // Slight delay to ensure UI is ready
+
     await this.wallet.initialize();
+    this.tokenPrice.initialize();
+    this.linkSession.restoreSessions().catch(err =>
+      console.warn('[app] Failed to restore link sessions:', err)
+    );
     console.log('[app] ngOnInit: initialization complete, routing...');
 
     const vault = this.wallet.vaultExists();
@@ -118,6 +159,9 @@ export class AppComponent implements OnInit {
         this.wallet.refreshAllAccounts().then(() => this.wallet.saveAccounts());
       }
     }
+
+    // Check for updates in the background (silent = true)
+    this.updates.checkForUpdates(true);
 
     console.log('[app] setting ready=true');
     this.ready.set(true);
