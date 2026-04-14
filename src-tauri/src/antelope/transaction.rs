@@ -379,6 +379,35 @@ fn try_native_serialize(
             let data = serialize::serialize_claimrewards(owner)?;
             Ok(Some(hex_encode(&data)))
         }
+        ("eosio", "regproducer") => {
+            let producer = json_str(json, "producer")?;
+            let producer_key = json_str(json, "producer_key")?;
+            let url = json_str(json, "url").unwrap_or("");
+            let location = json
+                .get("location")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as u16;
+            let data = serialize::serialize_regproducer(producer, producer_key, url, location)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "unregprod") => {
+            let producer = json_str(json, "producer")?;
+            let data = serialize::serialize_unregprod(producer)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "regfinkey") => {
+            let finalizer_name = json_str(json, "finalizer_name")?;
+            let finalizer_key = json_str(json, "finalizer_key")?;
+            let proof_of_possession = json_str(json, "proof_of_possession")?;
+            let data = serialize::serialize_regfinkey(finalizer_name, finalizer_key, proof_of_possession)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "actfinkey") | ("eosio", "delfinkey") => {
+            let finalizer_name = json_str(json, "finalizer_name")?;
+            let finalizer_key = json_str(json, "finalizer_key")?;
+            let data = serialize::serialize_finkey_ref(finalizer_name, finalizer_key)?;
+            Ok(Some(hex_encode(&data)))
+        }
         _ => Ok(None), // Unknown action — will use abi_json_to_bin
     }
 }

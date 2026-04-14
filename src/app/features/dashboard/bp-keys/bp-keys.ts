@@ -1,4 +1,4 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
@@ -71,6 +71,55 @@ import { TransactionService } from '../../../core/services/transaction.service';
           </div>
         </div>
 
+        @if (isRegistered() && producerInfo()) {
+          <div class="key-card">
+            <div class="key-header">
+              <h3>Update Registration</h3>
+              @if (regDirty()) {
+                <span class="key-status pending">Unsaved changes</span>
+              }
+            </div>
+            <p class="key-desc">
+              Push a <code>regproducer</code> action to update your signing key, URL, or location.
+            </p>
+
+            <div class="reg-form">
+              <label class="reg-field">
+                <span class="reg-label">Producer Signing Key</span>
+                <input class="form-input" type="text" spellcheck="false"
+                  [value]="regKey()" (input)="regKey.set($any($event.target).value)"
+                  placeholder="EOS... / PUB_K1_..." />
+              </label>
+              <label class="reg-field">
+                <span class="reg-label">URL (bp.json)</span>
+                <input class="form-input" type="text" spellcheck="false"
+                  [value]="regUrl()" (input)="regUrl.set($any($event.target).value)"
+                  placeholder="https://yourdomain.com" />
+              </label>
+              <label class="reg-field">
+                <span class="reg-label">Location (ISO 3166 numeric)</span>
+                <input class="form-input" type="number" min="0" max="999"
+                  [value]="regLocation()" (input)="regLocation.set(+$any($event.target).value)"
+                  placeholder="0" />
+              </label>
+            </div>
+
+            <div class="reg-actions">
+              <button class="btn-ghost" (click)="resetRegForm()" [disabled]="busy() || !regDirty()">
+                REVERT
+              </button>
+              <button class="btn-primary" (click)="onUpdateRegistration()"
+                [disabled]="busy() || !regDirty() || !regKey() || !regUrl()">
+                {{ busy() ? 'Submitting...' : 'UPDATE REGISTRATION' }}
+              </button>
+            </div>
+
+            @if (regError()) {
+              <p class="finkey-error">{{ regError() }}</p>
+            }
+          </div>
+        }
+
         <!-- Finalizer Keys (Savannah) -->
         <div class="key-card">
           <div class="key-header">
@@ -113,9 +162,41 @@ import { TransactionService } from '../../../core/services/transaction.service';
             <p class="key-desc">BLS finalizer key for Savannah fast finality. Required for Instant Finality participation.</p>
           }
 
-          <button class="btn-primary" (click)="onGenerateFinKey()" [disabled]="busy()">
-            {{ busy() ? 'Generating...' : 'GENERATE FINALIZER KEY' }}
-          </button>
+          <div class="finkey-actions">
+            <button class="btn-primary" (click)="onGenerateFinKey()" [disabled]="busy() || importOpen()">
+              {{ busy() && !importOpen() ? 'Generating...' : 'GENERATE FINALIZER KEY' }}
+            </button>
+            <button class="btn-ghost" (click)="toggleImport()" [disabled]="busy()">
+              {{ importOpen() ? 'CANCEL IMPORT' : 'IMPORT EXISTING KEY' }}
+            </button>
+          </div>
+
+          @if (importOpen()) {
+            <div class="import-form">
+              <label class="reg-field">
+                <span class="reg-label">Finalizer Public Key</span>
+                <input class="form-input" type="text" spellcheck="false"
+                  [value]="importKey()" (input)="importKey.set($any($event.target).value)"
+                  placeholder="PUB_BLS_..." />
+              </label>
+              <label class="reg-field">
+                <span class="reg-label">Proof of Possession</span>
+                <input class="form-input" type="text" spellcheck="false"
+                  [value]="importPop()" (input)="importPop.set($any($event.target).value)"
+                  placeholder="SIG_BLS_..." />
+              </label>
+              <p class="key-desc import-hint">
+                Get these from <code>leap-util gen-bls-key</code> or your nodeos finalizer plugin config.
+                The proof of possession is a BLS signature over the public key.
+              </p>
+              <div class="reg-actions">
+                <button class="btn-primary" (click)="onImportFinKey()"
+                  [disabled]="busy() || !canImport()">
+                  {{ busy() ? 'Submitting...' : 'REGISTER KEY' }}
+                </button>
+              </div>
+            </div>
+          }
 
           @if (finKeyError()) {
             <p class="finkey-error">{{ finKeyError() }}</p>
@@ -412,6 +493,69 @@ import { TransactionService } from '../../../core/services/transaction.service';
       color: var(--negative);
       margin-top: var(--sp-3);
     }
+
+    /* Update registration form */
+    .reg-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-4);
+    }
+    .reg-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+    .reg-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input {
+      width: 100%;
+      padding: var(--sp-3) var(--sp-4);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-hover);
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 13px;
+      transition: border-color 150ms ease;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text-disabled); }
+    .reg-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; }
+    .btn-primary:disabled, .btn-ghost:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Import existing finalizer key */
+    .finkey-actions {
+      display: flex;
+      gap: var(--sp-2);
+      flex-wrap: wrap;
+    }
+    .import-form {
+      margin-top: var(--sp-4);
+      padding: var(--sp-4);
+      background: var(--bg-hover);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+    .import-hint {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .import-hint code {
+      font-family: var(--font-data);
+      font-size: 11px;
+      background: var(--bg-raised);
+      padding: 1px 4px;
+      border-radius: var(--radius-xs);
+    }
   `],
 })
 export class BpKeysComponent {
@@ -424,6 +568,28 @@ export class BpKeysComponent {
   registeredFinKeys = signal<{ id: number; key: string }[]>([]);
   activeFinKey = signal<string | null>(null);
   finKeyError = signal('');
+
+  // Update registration form
+  regKey = signal('');
+  regUrl = signal('');
+  regLocation = signal(0);
+  regError = signal('');
+
+  // Import existing finalizer key
+  importOpen = signal(false);
+  importKey = signal('');
+  importPop = signal('');
+  canImport = computed(() =>
+    this.importKey().trim().startsWith('PUB_BLS')
+    && this.importPop().trim().startsWith('SIG_BLS')
+  );
+  regDirty = computed(() => {
+    const cfg = this.savedConfig();
+    if (!cfg) return false;
+    return this.regKey() !== cfg.producer_key
+      || this.regUrl() !== cfg.url
+      || this.regLocation() !== cfg.location;
+  });
 
   constructor(
     public wallet: WalletStateService,
@@ -454,18 +620,25 @@ export class BpKeysComponent {
       }));
       this.registeredFinKeys.set(keys);
 
-      // Load active key from finalizers table
+      // Load active key from finalizers table.
+      // Field layout varies: some versions store `active_key` (BLS pubkey string),
+      // others store `active_key_id` (uint64 referencing finkeys.id).
       const finResult = await this.ipc.getTableRows(chainId, {
         code: 'eosio', table: 'finalizers', scope: 'eosio',
         lower_bound: account, upper_bound: account,
         limit: 1, json: true,
       });
       const finRow = finResult?.rows?.[0];
-      if (finRow?.active_key) {
-        this.activeFinKey.set(finRow.active_key);
-      } else {
-        this.activeFinKey.set(null);
+      let active: string | null = null;
+      if (finRow) {
+        if (typeof finRow.active_key === 'string' && finRow.active_key.startsWith('PUB_BLS')) {
+          active = finRow.active_key;
+        } else if (finRow.active_key_id != null) {
+          const id = Number(finRow.active_key_id);
+          active = keys.find(k => k.id === id)?.key ?? null;
+        }
       }
+      this.activeFinKey.set(active);
     } catch {
       // Chain may not support Savannah yet
       this.registeredFinKeys.set([]);
@@ -499,6 +672,45 @@ export class BpKeysComponent {
       }
     } catch (e: any) {
       this.finKeyError.set(e?.toString() ?? 'Failed to generate finalizer key');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  toggleImport() {
+    this.importOpen.update(v => !v);
+    if (!this.importOpen()) {
+      this.importKey.set('');
+      this.importPop.set('');
+      this.finKeyError.set('');
+    }
+  }
+
+  async onImportFinKey() {
+    const acct = this.wallet.selectedAccount();
+    if (!acct || !this.canImport()) return;
+
+    this.busy.set(true);
+    this.finKeyError.set('');
+
+    try {
+      const ok = await this.confirmAction('Register Finalizer Key', [{
+        account: 'eosio', name: 'regfinkey', authorization: this.auth(),
+        data: {
+          finalizer_name: this.me(),
+          finalizer_key: this.importKey().trim(),
+          proof_of_possession: this.importPop().trim(),
+        },
+      }]);
+
+      if (ok) {
+        this.importOpen.set(false);
+        this.importKey.set('');
+        this.importPop.set('');
+        await this.loadFinalizerKeys(acct.chainId, acct.name);
+      }
+    } catch (e: any) {
+      this.finKeyError.set(e?.toString() ?? 'Failed to register finalizer key');
     } finally {
       this.busy.set(false);
     }
@@ -556,11 +768,18 @@ export class BpKeysComponent {
         }
         this.producerInfo.set(row);
         this.isRegistered.set(row.is_active === 1 || parseFloat(row.total_votes) > 0);
-        this.savedConfig.set({
+        const cfg = {
           url: row.url ?? '',
           location: row.location ?? 0,
           producer_key: row.producer_key ?? row.producer_public_key ?? '',
-        });
+        };
+        this.savedConfig.set(cfg);
+        // Prefill update-registration form if untouched
+        if (!this.regDirty() || !this.regKey()) {
+          this.regKey.set(cfg.producer_key);
+          this.regUrl.set(cfg.url);
+          this.regLocation.set(cfg.location);
+        }
         try {
           await this.ipc.storeSet(`bp_config_${account}`, this.savedConfig());
         } catch { /* non-critical */ }
@@ -592,6 +811,36 @@ export class BpKeysComponent {
         data: { producer: this.me() },
       }]);
       if (ok) this.isRegistered.set(false);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  resetRegForm() {
+    const cfg = this.savedConfig();
+    if (!cfg) return;
+    this.regKey.set(cfg.producer_key);
+    this.regUrl.set(cfg.url);
+    this.regLocation.set(cfg.location);
+    this.regError.set('');
+  }
+
+  async onUpdateRegistration() {
+    if (!this.regDirty()) return;
+    this.busy.set(true);
+    this.regError.set('');
+    try {
+      await this.confirmAction('Update Producer Registration', [{
+        account: 'eosio', name: 'regproducer', authorization: this.auth(),
+        data: {
+          producer: this.me(),
+          producer_key: this.regKey().trim(),
+          url: this.regUrl().trim(),
+          location: this.regLocation() | 0,
+        },
+      }]);
+    } catch (e: any) {
+      this.regError.set(e?.toString() ?? 'Failed to update registration');
     } finally {
       this.busy.set(false);
     }

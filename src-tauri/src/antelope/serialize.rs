@@ -8,6 +8,7 @@
 //! `abi_json_to_bin` via the chain API. System actions like `transfer`,
 //! `delegatebw`, `voteproducer`, etc. are serialized natively here.
 
+use crate::antelope::signing::decode_public_key_flexible;
 use crate::error::Error;
 
 // ── Primitives ──
@@ -247,6 +248,78 @@ pub fn serialize_sellram(account: &str, bytes: i64) -> Result<Vec<u8>, Error> {
 /// Serialize the data for `eosio::claimrewards`.
 pub fn serialize_claimrewards(owner: &str) -> Result<Vec<u8>, Error> {
     serialize_name(owner)
+}
+
+/// Serialize an Antelope `public_key` (K1 only): `[type_byte=0][33 bytes compressed]`.
+/// Accepts `EOS...`, `PUB_K1_...`, or hex-encoded compressed key.
+pub fn serialize_public_key(key: &str) -> Result<Vec<u8>, Error> {
+    let compressed = decode_public_key_flexible(key.trim())
+        .map_err(|e| Error::Serialization(format!("Invalid public key: {}", e)))?;
+    if compressed.len() != 33 {
+        return Err(Error::Serialization(format!(
+            "Public key must be 33 bytes, got {}",
+            compressed.len()
+        )));
+    }
+    let mut out = Vec::with_capacity(34);
+    out.push(0); // K1
+    out.extend_from_slice(&compressed);
+    Ok(out)
+}
+
+/// Serialize a length-prefixed UTF-8 string.
+pub fn serialize_string(s: &str) -> Vec<u8> {
+    let bytes = s.as_bytes();
+    let mut out = serialize_varuint32(bytes.len() as u32);
+    out.extend_from_slice(bytes);
+    out
+}
+
+/// Serialize the data for `eosio::regproducer`.
+/// `producer(name) || producer_key(public_key) || url(string) || location(uint16)`
+pub fn serialize_regproducer(
+    producer: &str,
+    producer_key: &str,
+    url: &str,
+    location: u16,
+) -> Result<Vec<u8>, Error> {
+    let mut data = Vec::new();
+    data.extend_from_slice(&serialize_name(producer)?);
+    data.extend_from_slice(&serialize_public_key(producer_key)?);
+    data.extend_from_slice(&serialize_string(url));
+    data.extend_from_slice(&location.to_le_bytes());
+    Ok(data)
+}
+
+/// Serialize the data for `eosio::unregprod`.
+pub fn serialize_unregprod(producer: &str) -> Result<Vec<u8>, Error> {
+    serialize_name(producer)
+}
+
+/// Serialize the data for `eosio::regfinkey` (Savannah BLS finalizer key registration).
+/// `finalizer_name(name) || finalizer_key(string) || proof_of_possession(string)`
+pub fn serialize_regfinkey(
+    finalizer_name: &str,
+    finalizer_key: &str,
+    proof_of_possession: &str,
+) -> Result<Vec<u8>, Error> {
+    let mut data = Vec::new();
+    data.extend_from_slice(&serialize_name(finalizer_name)?);
+    data.extend_from_slice(&serialize_string(finalizer_key));
+    data.extend_from_slice(&serialize_string(proof_of_possession));
+    Ok(data)
+}
+
+/// Serialize the data for `eosio::actfinkey` / `eosio::delfinkey`.
+/// Both take `finalizer_name(name) || finalizer_key(string)`.
+pub fn serialize_finkey_ref(
+    finalizer_name: &str,
+    finalizer_key: &str,
+) -> Result<Vec<u8>, Error> {
+    let mut data = Vec::new();
+    data.extend_from_slice(&serialize_name(finalizer_name)?);
+    data.extend_from_slice(&serialize_string(finalizer_key));
+    Ok(data)
 }
 
 // ── Transaction Serialization ──
