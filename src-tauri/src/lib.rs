@@ -181,6 +181,8 @@ pub fn run() {
             commands::network::get_producers,
             commands::network::lookup_key_accounts,
             commands::network::get_actions_history,
+            commands::network::get_msig_inbox,
+            commands::network::get_msig_proposal_details,
             commands::network::get_tokens,
             commands::network::fio_get_fee,
             commands::network::fio_get_names,

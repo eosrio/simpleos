@@ -122,8 +122,19 @@ impl FileKeyStore {
         self.base_dir.join(&chain_id[..chain_id.len().min(16)])
     }
 
+    /// Current filename: short SHA-256 hex of the public key.
+    /// BLS pubkeys are ~140 chars, so hex-encoding the whole key (≈280 chars + ".bin")
+    /// exceeded the 255-byte filesystem limit on ext4/NTFS → ENAMETOOLONG.
     fn key_file(&self, chain_id: &str, public_key: &str) -> std::path::PathBuf {
-        // Encode public key to hex for filesystem-safe filename
+        use sha2::{Digest, Sha256};
+        let digest = Sha256::digest(public_key.as_bytes());
+        let safe_name = hex::encode(digest);
+        self.chain_dir(chain_id).join(format!("{}.bin", safe_name))
+    }
+
+    /// Legacy filename used before the BLS fix: full hex of the pubkey bytes.
+    /// Still read on load/delete so keys stored by older builds keep working.
+    fn legacy_key_file(&self, chain_id: &str, public_key: &str) -> std::path::PathBuf {
         let safe_name = hex::encode(public_key.as_bytes());
         self.chain_dir(chain_id).join(format!("{}.bin", safe_name))
     }
@@ -172,12 +183,16 @@ impl KeyStore for FileKeyStore {
 
     fn load_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
         let path = self.key_file(chain_id, public_key);
-        std::fs::read(&path).map_err(|_| Error::KeyNotFound(format!("{}:{}", chain_id, public_key)))
+        if let Ok(bytes) = std::fs::read(&path) {
+            return Ok(bytes);
+        }
+        std::fs::read(self.legacy_key_file(chain_id, public_key))
+            .map_err(|_| Error::KeyNotFound(format!("{}:{}", chain_id, public_key)))
     }
 
     fn delete_key(&self, chain_id: &str, public_key: &str) -> Result<(), Error> {
-        let path = self.key_file(chain_id, public_key);
-        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(self.key_file(chain_id, public_key));
+        let _ = std::fs::remove_file(self.legacy_key_file(chain_id, public_key));
 
         let mut index = self.read_index(chain_id);
         index.retain(|k| k != public_key);

@@ -494,8 +494,8 @@ export class SendComponent {
   /** Whether the recipient is a known exchange account. */
   isExchange = computed(() => EXCHANGE_ACCOUNTS.has(this.recipient().trim().toLowerCase()));
 
-  /** Whether the active chain is FIO (different transfer model). */
-  isFio = computed(() => this.wallet.activeChain()?.name === 'FIO');
+  /** Whether the active chain is FIO (different transfer model). Covers testnet too. */
+  isFio = computed(() => this.wallet.isFio());
 
   // ── Contacts ──
 

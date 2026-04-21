@@ -162,6 +162,19 @@ export class BpVotesComponent {
     } catch { /* offline */ }
   }
 
+  /**
+   * Antelope vote decay multiplier.
+   * stake2vote(staked) = staked_SUFs * 2^((weeks_since_2000-01-01) / 52).
+   * Returns `undefined` for chains that don't use time-decay (FIO).
+   */
+  private voteDecayMultiplier(): number | undefined {
+    const sym = this.wallet.activeChain()?.symbol;
+    if (sym === 'FIO') return undefined;
+    const epoch = 946684800; // 2000-01-01 UTC
+    const weeks = Math.floor((Date.now() / 1000 - epoch) / 604800);
+    return Math.pow(2, weeks / 52);
+  }
+
   private async loadVoters(chainId: string, account: string) {
     this.loadingVoters.set(true);
     try {
@@ -238,16 +251,16 @@ export class BpVotesComponent {
     let n = parseFloat(votes);
     if (isNaN(n) || n === 0) return '0';
 
-    // FIO stores vote weight in SUFs — convert to tokens
+    // Convert raw `total_votes` (Σ staked_SUFs × decay_weight) to stake-equivalent tokens.
     const precision = this.wallet.activeChain()?.precision ?? 4;
-    if (precision > 4) {
-      n = n / Math.pow(10, precision);
-    }
+    const decay = this.voteDecayMultiplier();
+    n = n / Math.pow(10, precision);
+    if (decay) n = n / decay;
 
     const sym = this.wallet.activeChain()?.symbol ?? '';
-    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B ' + sym;
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M ' + sym;
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K ' + sym;
-    return n.toFixed(0) + ' ' + sym;
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B ' + sym;
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M ' + sym;
+    if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K ' + sym;
+    return n.toFixed(2) + ' ' + sym;
   }
 }

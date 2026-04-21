@@ -436,6 +436,353 @@ pub async fn get_actions_history(
     pm.hyperion_get(&path).await
 }
 
+/// Multisig inbox: proposals that still need `account`'s approval.
+///
+/// Uses Hyperion's `/v2/state/get_proposals` when available — it returns the
+/// decoded inner transaction in one call. Chains without Hyperion (e.g. Ultra)
+/// return `source: "none"` so the UI can show a clear "history API unavailable"
+/// state instead of a misleading empty inbox.
+#[tauri::command]
+pub async fn get_msig_inbox(
+    chain_id: String,
+    account: String,
+    limit: Option<u32>,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    let mut map: ProviderMap<'_> = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    let lim = limit.unwrap_or(50);
+
+    if pm.hyperion_endpoints.is_empty() {
+        // Scope-scan fallback: walk every scope in `eosio.msig::proposal` via
+        // `/v1/chain/get_table_by_scope`. Covers all proposers — BP-initiated
+        // AND community-initiated — unlike a pure BP walk.
+        let scan = scan_msig_inbox_by_scopes(pm, &account, 500).await;
+        return Ok(serde_json::json!({
+            "source": "scan",
+            "proposals": scan,
+        }));
+    }
+    // `requested` filters to proposals that list the account in requested_approvals;
+    // `skip_empty=true` drops fully-approved stragglers. We filter `provided` client-side
+    // because `!<account>` negation support varies by Hyperion version.
+    let path = format!(
+        "/v2/state/get_proposals?requested={}&executed=false&skip_empty=true&limit={}",
+        account, lim
+    );
+    let raw: serde_json::Value = pm.hyperion_get(&path).await?;
+
+    let me = account.as_str();
+    let proposals = raw
+        .get("proposals")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|p| {
+            // Keep only proposals where `me` hasn't already approved.
+            let provided = p.get("provided_approvals").and_then(|v| v.as_array());
+            match provided {
+                Some(arr) => !arr.iter().any(|a| {
+                    a.get("actor").and_then(|x| x.as_str()) == Some(me)
+                }),
+                None => true,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Ok(serde_json::json!({
+        "source": "hyperion",
+        "proposals": proposals,
+    }))
+}
+
+/// Fetch a specific msig proposal, parse its packed_transaction, and decode
+/// each inner action's data via the chain's `abi_bin_to_json` endpoint.
+/// Returns `{ expiration, actions: [{account, name, authorization, data}] }`.
+#[tauri::command]
+pub async fn get_msig_proposal_details(
+    chain_id: String,
+    proposer: String,
+    proposal_name: String,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    use crate::antelope::serialize::{hex_decode, parse_packed_transaction};
+
+    let mut map: ProviderMap<'_> = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    // 1. Read the proposal row from eosio.msig::proposal (scope = proposer, pk = proposal_name).
+    let rows: serde_json::Value = pm
+        .rpc_call(
+            "/v1/chain/get_table_rows",
+            &serde_json::json!({
+                "code": "eosio.msig",
+                "table": "proposal",
+                "scope": proposer,
+                "lower_bound": proposal_name,
+                "upper_bound": proposal_name,
+                "limit": 1,
+                "json": true,
+            }),
+            |json| Ok(json),
+        )
+        .await?;
+
+    let row = rows
+        .get("rows")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| arr.first())
+        .ok_or_else(|| {
+            Error::Serialization(format!(
+                "Proposal {}/{} not found",
+                proposer, proposal_name
+            ))
+        })?
+        .clone();
+
+    let packed_hex = row
+        .get("packed_transaction")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| Error::Serialization("packed_transaction missing".into()))?;
+    let packed_bytes = hex_decode(packed_hex)
+        .map_err(|e| Error::Serialization(format!("Invalid packed_transaction hex: {}", e)))?;
+
+    let parsed = parse_packed_transaction(&packed_bytes)?;
+
+    // 2. For each action, try to decode its data. Failures fall back to hex so the UI
+    //    always shows something.
+    let mut decoded_actions = Vec::with_capacity(parsed.actions.len());
+    for a in parsed.actions {
+        let data_val: serde_json::Value = match pm
+            .rpc_call(
+                "/v1/chain/abi_bin_to_json",
+                &serde_json::json!({
+                    "code": a.account,
+                    "action": a.name,
+                    "binargs": a.data_hex,
+                }),
+                |json| Ok(json),
+            )
+            .await
+        {
+            Ok(v) => v
+                .get("args")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({ "hex": a.data_hex })),
+            Err(_) => serde_json::json!({ "hex": a.data_hex }),
+        };
+
+        let auth: Vec<serde_json::Value> = a
+            .authorization
+            .into_iter()
+            .map(|(actor, permission)| {
+                serde_json::json!({ "actor": actor, "permission": permission })
+            })
+            .collect();
+
+        decoded_actions.push(serde_json::json!({
+            "account": a.account,
+            "name": a.name,
+            "authorization": auth,
+            "data": data_val,
+        }));
+    }
+
+    // 3. Fetch approvals2 row (separate table, same scope/pk) so the UI can
+    //    render a full card for manual-lookup flows without needing Hyperion.
+    let (requested, provided) = fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+
+    Ok(serde_json::json!({
+        "expiration": parsed.expiration,
+        "actions": decoded_actions,
+        "requested_approvals": requested,
+        "provided_approvals": provided,
+    }))
+}
+
+/// Walk every scope in `eosio.msig::proposal` via `/v1/chain/get_table_by_scope`,
+/// keeping only proposals where `account` is a pending required approver.
+///
+/// This covers all proposers — BPs AND community-initiated msigs — without
+/// needing a history API. Paginates with `more` until exhaustion or the
+/// `max_scopes` cap, whichever comes first.
+async fn scan_msig_inbox_by_scopes(
+    pm: &mut crate::antelope::provider::ProviderManager,
+    account: &str,
+    max_scopes: u32,
+) -> Vec<serde_json::Value> {
+    let mut inbox = Vec::new();
+    let mut lower = String::new();
+    let mut scanned: u32 = 0;
+    const PAGE: u32 = 200;
+
+    while scanned < max_scopes {
+        let remaining = (max_scopes - scanned).min(PAGE);
+        let scopes_page: serde_json::Value = match pm
+            .rpc_call(
+                "/v1/chain/get_table_by_scope",
+                &serde_json::json!({
+                    "code": "eosio.msig",
+                    "table": "proposal",
+                    "lower_bound": lower,
+                    "limit": remaining,
+                }),
+                |json| Ok(json),
+            )
+            .await
+        {
+            Ok(v) => v,
+            Err(_) => break,
+        };
+
+        let rows = scopes_page
+            .get("rows")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+
+        if rows.is_empty() {
+            break;
+        }
+
+        for row in rows.iter() {
+            scanned += 1;
+            // Scope entries can linger with count=0 after all proposals are
+            // cleared — skip those to avoid useless table reads.
+            let count = row.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
+            if count == 0 {
+                continue;
+            }
+            let proposer = match row.get("scope").and_then(|v| v.as_str()) {
+                Some(s) if !s.is_empty() => s.to_string(),
+                _ => continue,
+            };
+
+            let props: serde_json::Value = match pm
+                .rpc_call(
+                    "/v1/chain/get_table_rows",
+                    &serde_json::json!({
+                        "code": "eosio.msig",
+                        "table": "proposal",
+                        "scope": proposer,
+                        "limit": count.min(50),
+                        "json": true,
+                    }),
+                    |json| Ok(json),
+                )
+                .await
+            {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+
+            let proposal_rows = props
+                .get("rows")
+                .and_then(|v| v.as_array())
+                .cloned()
+                .unwrap_or_default();
+
+            for pr in proposal_rows {
+                let proposal_name = match pr.get("proposal_name").and_then(|v| v.as_str()) {
+                    Some(s) if !s.is_empty() => s.to_string(),
+                    _ => continue,
+                };
+                let (requested, provided) =
+                    fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+
+                let in_requested = requested
+                    .iter()
+                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account));
+                let already_approved = provided
+                    .iter()
+                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account));
+
+                if in_requested && !already_approved {
+                    inbox.push(serde_json::json!({
+                        "proposer": proposer,
+                        "proposal_name": proposal_name,
+                        "requested_approvals": requested,
+                        "provided_approvals": provided,
+                    }));
+                }
+            }
+        }
+
+        // Paginate. `more` in get_table_by_scope is the next scope name; empty
+        // string means "no more".
+        let more = scopes_page
+            .get("more")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if more.is_empty() {
+            break;
+        }
+        lower = more.to_string();
+    }
+
+    inbox
+}
+
+/// Read `eosio.msig::approvals2` for `{proposer, proposal_name}`.
+/// Returns (requested, provided) approval lists. Empty on any error.
+async fn fetch_msig_approvals(
+    pm: &mut crate::antelope::provider::ProviderManager,
+    proposer: &str,
+    proposal_name: &str,
+) -> (Vec<serde_json::Value>, Vec<serde_json::Value>) {
+    let rows: serde_json::Value = match pm
+        .rpc_call(
+            "/v1/chain/get_table_rows",
+            &serde_json::json!({
+                "code": "eosio.msig",
+                "table": "approvals2",
+                "scope": proposer,
+                "lower_bound": proposal_name,
+                "upper_bound": proposal_name,
+                "limit": 1,
+                "json": true,
+            }),
+            |json| Ok(json),
+        )
+        .await
+    {
+        Ok(v) => v,
+        Err(_) => return (Vec::new(), Vec::new()),
+    };
+
+    let row = rows
+        .get("rows")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| arr.first())
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
+
+    let extract = |key: &str| -> Vec<serde_json::Value> {
+        row.get(key)
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|entry| {
+                // approvals2 rows look like { level: {actor, permission}, time }
+                let level = entry.get("level")?.clone();
+                let actor = level.get("actor")?.as_str()?.to_string();
+                let permission = level.get("permission")?.as_str()?.to_string();
+                let time = entry.get("time").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                Some(serde_json::json!({ "actor": actor, "permission": permission, "time": time }))
+            })
+            .collect()
+    };
+
+    (extract("requested_approvals"), extract("provided_approvals"))
+}
+
 /// Get token list from Hyperion with failover.
 #[tauri::command]
 pub async fn get_tokens(

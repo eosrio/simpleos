@@ -24,6 +24,7 @@ export const routes: Routes = [
       { path: 'settings', loadComponent: () => import('./features/dashboard/settings/settings').then(m => m.SettingsComponent) },
       { path: 'about', loadComponent: () => import('./features/dashboard/about/about').then(m => m.AboutComponent) },
       { path: 'fio-handles', loadComponent: () => import('./features/dashboard/fio-handles/fio-handles').then(m => m.FioHandlesComponent) },
+      { path: 'msig-inbox', loadComponent: () => import('./features/dashboard/msig-inbox/msig-inbox').then(m => m.MsigInboxComponent) },
       // BP-specific routes (conditionally shown in nav when account is a producer)
       { path: 'bp-keys', loadComponent: () => import('./features/dashboard/bp-keys/bp-keys').then(m => m.BpKeysComponent) },
       { path: 'bp-rewards', loadComponent: () => import('./features/dashboard/bp-rewards/bp-rewards').then(m => m.BpRewardsComponent) },

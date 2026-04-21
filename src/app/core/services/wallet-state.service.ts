@@ -66,6 +66,13 @@ export class WalletStateService {
     return this.chains()[this.activeChainIndex()] ?? null;
   });
 
+  /**
+   * Whether the active chain is FIO protocol (mainnet OR testnet).
+   * Uses `symbol` rather than `name` because testnets use distinct names
+   * like "FIO Testnet" but share the same protocol-level symbol.
+   */
+  readonly isFio = computed(() => this.activeChain()?.symbol === 'FIO');
+
   readonly activeEndpoint = computed(() => {
     const chain = this.activeChain();
     return chain?.endpoints[0]?.url ?? '';

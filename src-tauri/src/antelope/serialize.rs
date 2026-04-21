@@ -34,6 +34,42 @@ pub fn name_to_u64(name: &str) -> Result<u64, Error> {
     Ok(value)
 }
 
+/// Decode a u64 Antelope name back to its string form.
+/// Inverse of `name_to_u64`. Trailing `.` characters are trimmed.
+pub fn u64_to_name(n: u64) -> String {
+    const CHARSET: &[u8; 32] = b".12345abcdefghijklmnopqrstuvwxyz";
+    let mut bytes = [0u8; 13];
+    for i in 0..12 {
+        let shift = 64 - 5 * (i + 1);
+        bytes[i] = CHARSET[((n >> shift) & 0x1F) as usize];
+    }
+    // 13th char uses the lowest 4 bits.
+    bytes[12] = CHARSET[(n & 0x0F) as usize];
+    let end = bytes.iter().rposition(|&c| c != b'.').map(|p| p + 1).unwrap_or(0);
+    std::str::from_utf8(&bytes[..end]).unwrap_or("").to_string()
+}
+
+/// Parse a variable-length unsigned integer (VarUint32) at `pos`, advancing the cursor.
+pub fn read_varuint32(bytes: &[u8], pos: &mut usize) -> Result<u32, Error> {
+    let mut value: u32 = 0;
+    let mut shift = 0;
+    loop {
+        if *pos >= bytes.len() {
+            return Err(Error::Serialization("varuint32 truncated".into()));
+        }
+        let b = bytes[*pos];
+        *pos += 1;
+        value |= ((b & 0x7F) as u32) << shift;
+        if b & 0x80 == 0 {
+            return Ok(value);
+        }
+        shift += 7;
+        if shift > 28 {
+            return Err(Error::Serialization("varuint32 overflow".into()));
+        }
+    }
+}
+
 fn char_to_value(c: u8) -> Result<u8, Error> {
     match c {
         b'.' => Ok(0),
@@ -385,6 +421,109 @@ impl RawTransaction {
     }
 }
 
+// ── Packed transaction parser (for msig proposal inspection) ──
+
+/// A single action extracted from a packed transaction.
+pub struct ParsedAction {
+    pub account: String,
+    pub name: String,
+    pub authorization: Vec<(String, String)>,
+    pub data_hex: String,
+}
+
+/// Parsed header fields + action list from a packed_transaction blob.
+pub struct ParsedTransaction {
+    /// Unix timestamp (seconds since epoch).
+    pub expiration: u32,
+    pub actions: Vec<ParsedAction>,
+}
+
+fn read_u8(bytes: &[u8], pos: &mut usize) -> Result<u8, Error> {
+    if *pos >= bytes.len() {
+        return Err(Error::Serialization("u8 truncated".into()));
+    }
+    let v = bytes[*pos];
+    *pos += 1;
+    Ok(v)
+}
+
+fn read_u16_le(bytes: &[u8], pos: &mut usize) -> Result<u16, Error> {
+    if *pos + 2 > bytes.len() {
+        return Err(Error::Serialization("u16 truncated".into()));
+    }
+    let v = u16::from_le_bytes([bytes[*pos], bytes[*pos + 1]]);
+    *pos += 2;
+    Ok(v)
+}
+
+fn read_u32_le(bytes: &[u8], pos: &mut usize) -> Result<u32, Error> {
+    if *pos + 4 > bytes.len() {
+        return Err(Error::Serialization("u32 truncated".into()));
+    }
+    let v = u32::from_le_bytes([bytes[*pos], bytes[*pos + 1], bytes[*pos + 2], bytes[*pos + 3]]);
+    *pos += 4;
+    Ok(v)
+}
+
+fn read_u64_le(bytes: &[u8], pos: &mut usize) -> Result<u64, Error> {
+    if *pos + 8 > bytes.len() {
+        return Err(Error::Serialization("u64 truncated".into()));
+    }
+    let mut arr = [0u8; 8];
+    arr.copy_from_slice(&bytes[*pos..*pos + 8]);
+    *pos += 8;
+    Ok(u64::from_le_bytes(arr))
+}
+
+fn read_action(bytes: &[u8], pos: &mut usize) -> Result<ParsedAction, Error> {
+    let account = u64_to_name(read_u64_le(bytes, pos)?);
+    let name = u64_to_name(read_u64_le(bytes, pos)?);
+    let auth_count = read_varuint32(bytes, pos)? as usize;
+    let mut authorization = Vec::with_capacity(auth_count);
+    for _ in 0..auth_count {
+        let actor = u64_to_name(read_u64_le(bytes, pos)?);
+        let permission = u64_to_name(read_u64_le(bytes, pos)?);
+        authorization.push((actor, permission));
+    }
+    let data_len = read_varuint32(bytes, pos)? as usize;
+    if *pos + data_len > bytes.len() {
+        return Err(Error::Serialization("action data truncated".into()));
+    }
+    let data_hex = hex_encode(&bytes[*pos..*pos + data_len]);
+    *pos += data_len;
+    Ok(ParsedAction {
+        account,
+        name,
+        authorization,
+        data_hex,
+    })
+}
+
+/// Parse a packed transaction (as stored in `eosio.msig::proposal::packed_transaction`).
+/// Extracts expiration + actions; skips extensions and unused fields.
+pub fn parse_packed_transaction(bytes: &[u8]) -> Result<ParsedTransaction, Error> {
+    let mut pos = 0;
+    let expiration = read_u32_le(bytes, &mut pos)?;
+    let _ref_block_num = read_u16_le(bytes, &mut pos)?;
+    let _ref_block_prefix = read_u32_le(bytes, &mut pos)?;
+    let _max_net = read_varuint32(bytes, &mut pos)?;
+    let _max_cpu = read_u8(bytes, &mut pos)?;
+    let _delay = read_varuint32(bytes, &mut pos)?;
+    let cfa_count = read_varuint32(bytes, &mut pos)? as usize;
+    for _ in 0..cfa_count {
+        let _ = read_action(bytes, &mut pos)?;
+    }
+    let act_count = read_varuint32(bytes, &mut pos)? as usize;
+    let mut actions = Vec::with_capacity(act_count);
+    for _ in 0..act_count {
+        actions.push(read_action(bytes, &mut pos)?);
+    }
+    Ok(ParsedTransaction {
+        expiration,
+        actions,
+    })
+}
+
 // ── TAPOS helpers ──
 
 /// Extract TAPOS ref_block_num from a block number.
@@ -547,6 +686,53 @@ mod tests {
         // Should start with expiration (4 bytes LE)
         let exp = u32::from_le_bytes(packed[0..4].try_into().unwrap());
         assert_eq!(exp, 1700000000);
+    }
+
+    #[test]
+    fn u64_to_name_roundtrip() {
+        for n in ["eosio", "eosio.token", "alice", "bob", "eosriobrazil", "a", ""] {
+            let encoded = name_to_u64(n).unwrap();
+            assert_eq!(u64_to_name(encoded), n, "roundtrip failed for {:?}", n);
+        }
+    }
+
+    #[test]
+    fn read_varuint32_matches_writer() {
+        for v in [0u32, 1, 127, 128, 300, 16384, 1_000_000] {
+            let bytes = serialize_varuint32(v);
+            let mut pos = 0;
+            let back = read_varuint32(&bytes, &mut pos).unwrap();
+            assert_eq!(back, v);
+            assert_eq!(pos, bytes.len());
+        }
+    }
+
+    #[test]
+    fn parse_packed_transaction_roundtrip() {
+        // Build a known transaction, pack it, re-parse, verify fields match.
+        let transfer_data = serialize_transfer("alice", "bob", "1.0000 EOS", "hi").unwrap();
+        let data_hex = hex_encode(&transfer_data);
+        let packed_action =
+            serialize_action("eosio.token", "transfer", &[("alice", "active")], &data_hex).unwrap();
+        let tx = RawTransaction {
+            expiration: 1_700_000_000,
+            ref_block_num: 100,
+            ref_block_prefix: 200,
+            max_net_usage_words: 0,
+            max_cpu_usage_ms: 0,
+            delay_sec: 0,
+            context_free_actions: vec![],
+            actions: vec![packed_action],
+            transaction_extensions: vec![],
+        };
+        let packed = tx.serialize();
+        let parsed = parse_packed_transaction(&packed).unwrap();
+        assert_eq!(parsed.expiration, 1_700_000_000);
+        assert_eq!(parsed.actions.len(), 1);
+        assert_eq!(parsed.actions[0].account, "eosio.token");
+        assert_eq!(parsed.actions[0].name, "transfer");
+        assert_eq!(parsed.actions[0].authorization, vec![("alice".into(), "active".into())]);
+        assert_eq!(parsed.actions[0].data_hex, data_hex);
     }
 
     #[test]

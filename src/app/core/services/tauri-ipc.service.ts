@@ -337,6 +337,22 @@ export class TauriIpcService {
     return invoke<KeyAccountsResult>('lookup_key_accounts', { chainId, publicKey });
   }
 
+  async getMsigInbox(chainId: string, account: string, limit = 50): Promise<{
+    source: 'hyperion' | 'scan' | 'none';
+    proposals: any[];
+  }> {
+    return invoke('get_msig_inbox', { chainId, account, limit });
+  }
+
+  async getMsigProposalDetails(chainId: string, proposer: string, proposalName: string): Promise<{
+    expiration: number;
+    actions: { account: string; name: string; authorization: { actor: string; permission: string }[]; data: any }[];
+    requested_approvals: { actor: string; permission: string; time?: string }[];
+    provided_approvals: { actor: string; permission: string; time?: string }[];
+  }> {
+    return invoke('get_msig_proposal_details', { chainId, proposer, proposalName });
+  }
+
   async getActionsHistory(chainId: string, account: string, limit: number, skip: number, filters?: { actName?: string; after?: string; before?: string }): Promise<any> {
     return invoke<any>('get_actions_history', {
       chainId, account, limit, skip,
@@ -433,8 +449,13 @@ export class TauriIpcService {
 
   // ── Finalizer Keys (BLS) ──
 
-  async generateFinalizerKey(chainId: string): Promise<{ finalizer_key: string; proof_of_possession: string }> {
-    return invoke<{ finalizer_key: string; proof_of_possession: string }>('generate_finalizer_key', { chainId });
+  async generateFinalizerKey(chainId: string): Promise<{
+    finalizer_key: string;
+    proof_of_possession: string;
+    finalizer_private_key: string;
+    config_ini_line: string;
+  }> {
+    return invoke('generate_finalizer_key', { chainId });
   }
 
   async listFinalizerKeys(chainId: string): Promise<string[]> {

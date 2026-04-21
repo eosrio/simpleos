@@ -282,7 +282,7 @@ pub fn generate_finalizer_key(
     chain_id: String,
     wallet: State<AppWallet>,
 ) -> Result<serde_json::Value, Error> {
-    let (sk_bytes, pub_key, pop) = crate::antelope::bls::generate_finalizer_key()?;
+    let (sk_bytes, pub_key, pop, priv_key) = crate::antelope::bls::generate_finalizer_key()?;
 
     // Store the BLS private key in the keystore keyed by the BLS public key
     // Use a special chain prefix to distinguish from secp256k1 keys
@@ -296,9 +296,15 @@ pub fn generate_finalizer_key(
 
     wallet.0.store_raw_key(&bls_chain, &pub_key, &encrypted)?;
 
+    // Pre-formatted config.ini line. Spring/leap use the unified `signature-provider`
+    // option for both secp256k1 signing keys and BLS finalizer keys.
+    let config_line = format!("signature-provider = {}=KEY:{}", pub_key, priv_key);
+
     Ok(serde_json::json!({
         "finalizer_key": pub_key,
         "proof_of_possession": pop,
+        "finalizer_private_key": priv_key,
+        "config_ini_line": config_line,
     }))
 }
 

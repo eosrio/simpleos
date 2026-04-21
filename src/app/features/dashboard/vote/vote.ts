@@ -516,7 +516,7 @@ export class VoteComponent {
     const prods = [...this.selectedProducers()].sort();
     if (prods.length === 0) return;
 
-    const isFio = this.wallet.activeChain()?.name === 'FIO';
+    const isFio = this.wallet.isFio();
     const data: any = { voter: this.me(), proxy: '', producers: prods };
 
     // FIO requires fio_address and max_fee
@@ -534,7 +534,7 @@ export class VoteComponent {
     const proxy = this.proxyAccount().trim();
     if (!proxy) return;
 
-    const isFio = this.wallet.activeChain()?.name === 'FIO';
+    const isFio = this.wallet.isFio();
 
     if (isFio) {
       // FIO uses a separate voteproxy action

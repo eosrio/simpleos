@@ -136,6 +136,28 @@ import { TransactionService } from '../../../core/services/transaction.service';
             </div>
           }
 
+          @if (pendingConfigLine(); as line) {
+            <div class="config-reveal">
+              <div class="config-reveal-header">
+                <h4>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  Save this finalizer key — you will not see it again
+                </h4>
+                <button class="btn-ghost btn-close" (click)="dismissConfig()" aria-label="Dismiss">×</button>
+              </div>
+              <p class="key-desc">Paste this line into your <code>nodeos</code> <code>config.ini</code> (finalizer plugin). The private key is decrypted only once, right now — after you close this panel, it stays encrypted in your wallet.</p>
+              <code class="config-line">{{ line }}</code>
+              <div class="key-actions">
+                <button class="btn-primary" (click)="copyConfigLine()">
+                  {{ configCopied() ? 'COPIED ✓' : 'COPY CONFIG.INI LINE' }}
+                </button>
+                <button class="btn-ghost" (click)="copyPrivKey()">
+                  {{ privKeyCopied() ? 'COPIED ✓' : 'COPY PRIVATE KEY ONLY' }}
+                </button>
+              </div>
+            </div>
+          }
+
           @if (registeredFinKeys().length > 0) {
             <div class="finkey-list">
               @for (key of registeredFinKeys(); track key.id) {
@@ -556,6 +578,57 @@ import { TransactionService } from '../../../core/services/transaction.service';
       padding: 1px 4px;
       border-radius: var(--radius-xs);
     }
+
+    /* One-time config.ini reveal after generating a finalizer key */
+    .config-reveal {
+      margin-top: var(--sp-4);
+      padding: var(--sp-4);
+      background: rgba(245, 166, 35, 0.06);
+      border: 1px solid rgba(245, 166, 35, 0.35);
+      border-radius: var(--radius-sm);
+    }
+    .config-reveal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-2);
+    }
+    .config-reveal-header h4 {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--caution);
+      margin: 0;
+    }
+    .config-reveal .key-desc code {
+      font-family: var(--font-data);
+      font-size: 11px;
+      background: var(--bg-raised);
+      padding: 1px 4px;
+      border-radius: var(--radius-xs);
+    }
+    .config-line {
+      display: block;
+      font-family: var(--font-data);
+      font-size: 12px;
+      color: var(--text-bright);
+      background: var(--bg-base);
+      padding: var(--sp-3);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--sp-3);
+      word-break: break-all;
+      user-select: all;
+    }
+    .btn-close {
+      padding: 0 var(--sp-2);
+      line-height: 1;
+      font-size: 20px;
+      border-color: transparent;
+    }
+    .btn-close:hover { background: var(--bg-hover); }
   `],
 })
 export class BpKeysComponent {
@@ -579,6 +652,13 @@ export class BpKeysComponent {
   importOpen = signal(false);
   importKey = signal('');
   importPop = signal('');
+
+  // One-time config.ini reveal after generating a new finalizer key.
+  // Held only in memory; cleared on dismiss or on navigation away.
+  pendingConfigLine = signal<string | null>(null);
+  pendingPrivKey = signal<string | null>(null);
+  configCopied = signal(false);
+  privKeyCopied = signal(false);
   canImport = computed(() =>
     this.importKey().trim().startsWith('PUB_BLS')
     && this.importPop().trim().startsWith('SIG_BLS')
@@ -655,7 +735,20 @@ export class BpKeysComponent {
 
     try {
       // Generate BLS key pair and PoP
-      const { finalizer_key, proof_of_possession } = await this.ipc.generateFinalizerKey(acct.chainId);
+      const {
+        finalizer_key,
+        proof_of_possession,
+        finalizer_private_key,
+        config_ini_line,
+      } = await this.ipc.generateFinalizerKey(acct.chainId);
+
+      // Reveal the one-time config.ini line before asking to sign.
+      // Intentional: if the user cancels the tx, they still have the backup
+      // paired with the key stored locally.
+      this.pendingPrivKey.set(finalizer_private_key);
+      this.pendingConfigLine.set(config_ini_line);
+      this.configCopied.set(false);
+      this.privKeyCopied.set(false);
 
       // Push regfinkey action
       const ok = await this.confirmAction('Register Finalizer Key', [{
@@ -767,7 +860,13 @@ export class BpKeysComponent {
           row.producer_key = row.producer_public_key;
         }
         this.producerInfo.set(row);
-        this.isRegistered.set(row.is_active === 1 || parseFloat(row.total_votes) > 0);
+        // Registered unless the row explicitly flags itself inactive.
+        // Ultra and other permissioned chains may omit is_active or use a
+        // truthy non-1 value; the old `total_votes > 0` fallback misclassified
+        // unregprod'd BPs on EOS/WAX (their votes persist after unregistration).
+        const ia = row.is_active;
+        const isInactive = ia === 0 || ia === false || ia === '0';
+        this.isRegistered.set(!isInactive);
         const cfg = {
           url: row.url ?? '',
           location: row.location ?? 0,
@@ -869,5 +968,28 @@ export class BpKeysComponent {
 
   copyKey(key?: string) {
     if (key) navigator.clipboard.writeText(key);
+  }
+
+  async copyConfigLine() {
+    const line = this.pendingConfigLine();
+    if (!line) return;
+    await navigator.clipboard.writeText(line);
+    this.configCopied.set(true);
+    setTimeout(() => this.configCopied.set(false), 2000);
+  }
+
+  async copyPrivKey() {
+    const pk = this.pendingPrivKey();
+    if (!pk) return;
+    await navigator.clipboard.writeText(pk);
+    this.privKeyCopied.set(true);
+    setTimeout(() => this.privKeyCopied.set(false), 2000);
+  }
+
+  dismissConfig() {
+    this.pendingConfigLine.set(null);
+    this.pendingPrivKey.set(null);
+    this.configCopied.set(false);
+    this.privKeyCopied.set(false);
   }
 }
