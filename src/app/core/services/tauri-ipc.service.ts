@@ -353,6 +353,22 @@ export class TauriIpcService {
     return invoke('get_msig_proposal_details', { chainId, proposer, proposalName });
   }
 
+  /** Check current on-chain status of a known set of proposals. Fast — just reads approvals2. */
+  async refreshMsigStatus(chainId: string, account: string, keys: { proposer: string; proposal_name: string }[]): Promise<{
+    active: any[];
+    dead: { proposer: string; proposal_name: string }[];
+  }> {
+    return invoke('refresh_msig_status', { chainId, account, keys });
+  }
+
+  /** Full scope-walk of eosio.msig::proposal. Emits `msig-scan-progress` and `msig-scan-proposal` events during the walk. */
+  async scanMsigScopesStream(chainId: string, account: string, maxScopes?: number): Promise<{
+    proposals: any[];
+    scanned: number;
+  }> {
+    return invoke('scan_msig_scopes_stream', { chainId, account, maxScopes });
+  }
+
   async getActionsHistory(chainId: string, account: string, limit: number, skip: number, filters?: { actName?: string; after?: string; before?: string }): Promise<any> {
     return invoke<any>('get_actions_history', {
       chainId, account, limit, skip,

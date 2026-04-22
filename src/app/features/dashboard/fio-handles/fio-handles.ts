@@ -264,6 +264,7 @@ export class FioHandlesComponent {
     this.loading.set(true);
     try {
       const acct = this.wallet.selectedAccount();
+      if (!acct) return;
       // FIO's get_fio_names requires the FIO-prefixed public key.
       // The local keystore stores EOS/PUB_K1_ format, so extract the key
       // from the on-chain account permissions instead.
@@ -305,6 +306,7 @@ export class FioHandlesComponent {
     this.errorMessage.set('');
     try {
       const acct = this.wallet.selectedAccount();
+      if (!acct) return;
       const fee = await this.fioApi.getFee(acct.chainId, endpoint, '');
       this.feeEstimates.set(fee);
     } catch (e: any) {

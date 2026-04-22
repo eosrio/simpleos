@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, effect, ElementRef, signal, viewChild } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -15,38 +15,62 @@ import { WindowControlsComponent } from '../../shared/window-controls';
     <div class="dashboard">
       <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls -->
       <div class="titlebar">
-        <div class="titlebar-brand" data-tauri-drag-region>
-          <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="titlebar-logo" data-tauri-drag-region />
-          <span class="titlebar-name" data-tauri-drag-region>Simpl<span class="accent">EOS</span></span>
-        </div>
+        <button class="titlebar-brand" type="button" title="Wallet overview" aria-label="Open wallet overview" (click)="openOverview()">
+          <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="titlebar-logo" />
+          <span class="titlebar-name">Simpl<span class="accent">EOS</span></span>
+        </button>
         @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
-          <div class="account-tabs">
-            @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
-              <button class="account-tab"
-                      [class.active]="i === wallet.selectedIndex()"
-                      [class.watch-only]="account.mode === 'watch'"
-                      [class.drag-over]="dragOverIndex === i"
-                      draggable="true"
-                      (dragstart)="onDragStart($event, i)"
-                      (dragover)="onDragOver($event, i)"
-                      (dragleave)="onDragLeave()"
-                      (drop)="onDrop($event, i)"
-                      (dragend)="onDragEnd()"
-                      (click)="selectAccount(i)">
-                <span class="tab-name">
-                  {{ account.name }}
-                  @if (account.mode === 'watch') {
-                    <span class="watch-badge" title="Watch-only — no keys imported">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </span>
-                  }
-                </span>
-                <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
+          <div class="account-tabs-shell"
+               [class.scrollable-left]="canScrollLeft()"
+               [class.scrollable-right]="canScrollRight()">
+            @if (canScrollLeft()) {
+              <button class="tabs-nav tabs-nav-left"
+                      type="button"
+                      aria-label="Scroll account tabs left"
+                      title="Scroll account tabs left"
+                      (click)="scrollTabs('left')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
             }
-            <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
+
+            <div class="account-tabs" #accountTabs (scroll)="updateTabScrollState()" (wheel)="onTabsWheel($event)">
+              @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
+                <button class="account-tab"
+                        [class.active]="i === wallet.selectedIndex()"
+                        [class.watch-only]="account.mode === 'watch'"
+                        [class.drag-over]="dragOverIndex === i"
+                        draggable="true"
+                        (dragstart)="onDragStart($event, i)"
+                        (dragover)="onDragOver($event, i)"
+                        (dragleave)="onDragLeave()"
+                        (drop)="onDrop($event, i)"
+                        (dragend)="onDragEnd()"
+                        (click)="selectAccount(i)">
+                  <span class="tab-name">
+                    {{ account.name }}
+                    @if (account.mode === 'watch') {
+                      <span class="watch-badge" title="Watch-only — no keys imported">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </span>
+                    }
+                  </span>
+                  <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
+                </button>
+              }
+              <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+
+            @if (canScrollRight()) {
+              <button class="tabs-nav tabs-nav-right"
+                      type="button"
+                      aria-label="Scroll account tabs right"
+                      title="Scroll account tabs right"
+                      (click)="scrollTabs('right')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            }
           </div>
         }
         <div class="titlebar-drag-fill" data-tauri-drag-region></div>
@@ -57,7 +81,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
         @if (!ui.fullscreen()) {
         <nav class="sidebar">
           <!-- Active account info -->
-          <div class="account-card" [class.watch-card]="wallet.isWatchOnly()">
+          <div class="account-card" [class.watch-card]="wallet.isWatchOnly()" [class.overview-card]="!wallet.hasSelectedAccount()">
             @if (wallet.selectedAccount(); as account) {
               <div class="account-card-header">
                 <span class="account-name">{{ account.name }}</span>
@@ -67,12 +91,23 @@ import { WindowControlsComponent } from '../../shared/window-controls';
               </div>
               <span class="account-chain">{{ account.chainName }}</span>
             } @else {
-              <span class="account-name">No account</span>
-              <span class="account-chain">—</span>
+              <span class="account-name">Portfolio overview</span>
+              <span class="account-chain">{{ wallet.accounts().length }} loaded account{{ wallet.accounts().length === 1 ? '' : 's' }}</span>
             }
           </div>
 
           <ul class="nav-list">
+            <li>
+              <a routerLink="home"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{ exact: true }"
+                 (click)="goHome()">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+                Home
+              </a>
+            </li>
+
+            @if (wallet.hasSelectedAccount()) {
             <li>
               <a routerLink="wallet" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -155,6 +190,11 @@ import { WindowControlsComponent } from '../../shared/window-controls';
                 </a>
               </li>
             }
+            } @else {
+              <li class="nav-hint">
+                Select an account from Home to open history, transfers, voting, and chain resources.
+              </li>
+            }
 
             <li class="nav-divider"></li>
             <li>
@@ -230,7 +270,8 @@ import { WindowControlsComponent } from '../../shared/window-controls';
     .titlebar {
       display: flex;
       align-items: stretch;
-      background: var(--bg-deep);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--chain-tint) 80%, var(--bg-deep)), var(--bg-deep));
       border-bottom: 1px solid var(--border-subtle);
       min-height: 40px;
       /* Entire strip acts as a drag handle where children don't opt out. */
@@ -247,25 +288,33 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       gap: var(--sp-2);
       padding: 0 var(--sp-4) 0 var(--sp-4);
       flex-shrink: 0;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-app-region: no-drag;
+      transition: background 150ms ease, color 150ms ease;
     }
     :host-context(html.os-mac) .titlebar-brand {
       /* Reserve space for native traffic lights positioned at x=14. */
       padding-left: 84px;
     }
+    .titlebar-brand:hover {
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
     .titlebar-logo {
       width: 20px;
       height: 20px;
       filter: drop-shadow(0 0 6px rgba(0, 148, 210, 0.25));
-      pointer-events: none;
     }
     .titlebar-name {
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.4px;
       color: var(--text-bright);
-      pointer-events: none;
     }
     .titlebar-name .accent { color: var(--accent); }
 
@@ -279,46 +328,142 @@ import { WindowControlsComponent } from '../../shared/window-controls';
     }
 
     /* ── Account tabs (inside the titlebar) ── */
+    .account-tabs-shell {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: min(920px, calc(100vw - 320px));
+      overflow: hidden;
+      -webkit-app-region: no-drag;
+    }
+
+    .account-tabs-shell::before,
+    .account-tabs-shell::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    .account-tabs-shell::before {
+      left: 0;
+      background: linear-gradient(90deg, var(--bg-deep), transparent);
+    }
+
+    .account-tabs-shell::after {
+      right: 0;
+      background: linear-gradient(270deg, var(--bg-deep), transparent);
+    }
+
+    .account-tabs-shell.scrollable-left::before,
+    .account-tabs-shell.scrollable-right::after {
+      opacity: 1;
+    }
+
     .account-tabs {
       display: flex;
       align-items: stretch;
-      flex: 0 1 auto;
-      min-width: 0;
+      height: 100%;
       overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 calc(var(--sp-4) + 28px) 0 calc(var(--sp-2) + 28px);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      scroll-snap-type: x proximity;
       /* Buttons inside are interactive — opt out of drag. */
       -webkit-app-region: no-drag;
+    }
+
+    .account-tabs::-webkit-scrollbar {
+      display: none;
+      height: 0;
+    }
+
+    .tabs-nav {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--bg-base) 92%, var(--accent) 8%);
+      color: var(--text-body);
+      cursor: pointer;
+      transform: translateY(-50%);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 150ms ease;
+      -webkit-app-region: no-drag;
+    }
+
+    .tabs-nav:hover {
+      color: var(--text-bright);
+      border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
+      background: color-mix(in srgb, var(--bg-base) 86%, var(--accent) 14%);
+    }
+
+    .tabs-nav:active {
+      transform: translateY(-50%) scale(0.96);
+    }
+
+    .tabs-nav-left {
+      left: 2px;
+    }
+
+    .tabs-nav-right {
+      right: 2px;
     }
 
     .account-tab {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      padding: var(--sp-2) var(--sp-5);
+      justify-content: center;
+      gap: 2px;
+      padding: var(--sp-2) var(--sp-4);
+      margin: 4px 0 0;
       border: none;
       border-bottom: 2px solid transparent;
       background: transparent;
       color: var(--text-muted);
       cursor: pointer;
       white-space: nowrap;
-      transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
-      min-width: 140px;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 150ms ease;
+      min-width: 124px;
+      max-width: 176px;
+      scroll-snap-align: start;
+      border-radius: 10px 10px 0 0;
     }
 
     .account-tab:hover {
-      background: var(--bg-hover);
+      background: color-mix(in srgb, var(--accent) 8%, var(--bg-hover));
       color: var(--text-body);
     }
 
     .account-tab.active {
       border-bottom-color: var(--accent);
       color: var(--text-bright);
-      background: var(--bg-base);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 75%),
+        var(--bg-base);
+      transform: translateY(-1px);
     }
 
     .tab-name {
       font-family: var(--font-data);
       font-size: 13px;
       font-weight: 500;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tab-balance {
@@ -326,6 +471,9 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       font-size: 11px;
       color: var(--text-muted);
       margin-top: 1px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .account-tab[draggable="true"] {
@@ -345,7 +493,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 40px;
+      min-width: 44px;
       padding: var(--sp-2);
       color: var(--text-disabled);
     }
@@ -363,7 +511,9 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       width: 240px;
       min-width: 240px;
       background: var(--bg-deep);
-      background-image: linear-gradient(to bottom, var(--chain-tint), transparent 60%);
+      background-image:
+        linear-gradient(to bottom, color-mix(in srgb, var(--chain-tint) 180%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 32%);
       border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
@@ -380,6 +530,15 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       background: var(--bg-raised);
       border-radius: var(--radius-md);
       margin-bottom: var(--sp-5);
+    }
+
+    .overview-card {
+      border: 1px solid rgba(0, 148, 210, 0.18);
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 16%, transparent), transparent 48%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+        var(--bg-raised);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
     }
 
     .account-name {
@@ -402,6 +561,17 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       list-style: none;
       flex: 1;
       padding: 0;
+    }
+
+    .nav-hint {
+      margin: var(--sp-2) var(--sp-5) 0;
+      padding: var(--sp-3);
+      border: 1px dashed color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.45;
+      background: color-mix(in srgb, var(--accent) 4%, transparent);
     }
 
     .nav-list li a {
@@ -588,7 +758,10 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       flex: 1;
       padding: var(--sp-8);
       overflow-y: auto;
-      background: var(--bg-base);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%),
+        var(--bg-base);
     }
     .content.fullscreen {
       padding: 0;
@@ -599,6 +772,9 @@ import { WindowControlsComponent } from '../../shared/window-controls';
   `],
 })
 export class DashboardComponent {
+  readonly accountTabs = viewChild<ElementRef<HTMLDivElement>>('accountTabs');
+  readonly canScrollLeft = signal(false);
+  readonly canScrollRight = signal(false);
   dragSourceIndex: number | null = null;
   dragOverIndex: number | null = null;
 
@@ -608,7 +784,81 @@ export class DashboardComponent {
     public ui: UiStateService,
     private router: Router,
     private ipc: TauriIpcService,
-  ) {}
+  ) {
+    effect((onCleanup) => {
+      const tabsRef = this.accountTabs();
+      const accountCount = this.wallet.accounts().length;
+      const fullscreen = this.ui.fullscreen();
+
+      if (!tabsRef || accountCount === 0 || fullscreen) {
+        this.canScrollLeft.set(false);
+        this.canScrollRight.set(false);
+        return;
+      }
+
+      const element = tabsRef.nativeElement;
+      const resizeObserver = new ResizeObserver(() => this.updateTabScrollState());
+      resizeObserver.observe(element);
+
+      const frameId = requestAnimationFrame(() => this.updateTabScrollState());
+
+      onCleanup(() => {
+        resizeObserver.disconnect();
+        cancelAnimationFrame(frameId);
+      });
+    });
+
+    effect((onCleanup) => {
+      const tabsRef = this.accountTabs();
+      const selectedIndex = this.wallet.selectedIndex();
+
+      if (!tabsRef || selectedIndex === null) {
+        return;
+      }
+
+      const element = tabsRef.nativeElement;
+      const frameId = requestAnimationFrame(() => {
+        const activeTab = element.querySelector<HTMLButtonElement>('.account-tab.active');
+        activeTab?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        this.updateTabScrollState();
+      });
+
+      onCleanup(() => cancelAnimationFrame(frameId));
+    });
+  }
+
+  updateTabScrollState() {
+    const element = this.accountTabs()?.nativeElement;
+    if (!element) {
+      this.canScrollLeft.set(false);
+      this.canScrollRight.set(false);
+      return;
+    }
+
+    const maxScrollLeft = Math.max(0, element.scrollWidth - element.clientWidth);
+    this.canScrollLeft.set(element.scrollLeft > 4);
+    this.canScrollRight.set(element.scrollLeft < maxScrollLeft - 4);
+  }
+
+  scrollTabs(direction: 'left' | 'right') {
+    const element = this.accountTabs()?.nativeElement;
+    if (!element) return;
+
+    const delta = Math.max(180, Math.round(element.clientWidth * 0.55));
+    element.scrollBy({
+      left: direction === 'right' ? delta : -delta,
+      behavior: 'smooth',
+    });
+  }
+
+  onTabsWheel(event: WheelEvent) {
+    const element = this.accountTabs()?.nativeElement;
+    if (!element || element.scrollWidth <= element.clientWidth) return;
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+    event.preventDefault();
+    element.scrollBy({ left: event.deltaY });
+  }
 
   onDragStart(event: DragEvent, index: number) {
     this.dragSourceIndex = index;
@@ -648,7 +898,19 @@ export class DashboardComponent {
     const account = this.wallet.accounts()[index];
     if (account) {
       this.theme.setChainByName(account.chainName);
+      if (this.router.url === '/dashboard' || this.router.url.startsWith('/dashboard/home')) {
+        this.router.navigate(['/dashboard/wallet']);
+      }
     }
+  }
+
+  openOverview() {
+    this.wallet.clearSelectedAccount();
+    this.router.navigate(['/dashboard/home']);
+  }
+
+  goHome() {
+    this.openOverview();
   }
 
   addAccount() {

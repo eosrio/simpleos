@@ -457,13 +457,12 @@ pub async fn get_msig_inbox(
     let lim = limit.unwrap_or(50);
 
     if pm.hyperion_endpoints.is_empty() {
-        // Scope-scan fallback: walk every scope in `eosio.msig::proposal` via
-        // `/v1/chain/get_table_by_scope`. Covers all proposers — BP-initiated
-        // AND community-initiated — unlike a pure BP walk.
-        let scan = scan_msig_inbox_by_scopes(pm, &account, 500).await;
+        // No Hyperion: the frontend will orchestrate via cache + a manual
+        // `scan_msig_scopes` call. Returning an empty list here keeps the
+        // initial page load instant instead of stalling on a long scan.
         return Ok(serde_json::json!({
-            "source": "scan",
-            "proposals": scan,
+            "source": "none",
+            "proposals": [],
         }));
     }
     // `requested` filters to proposals that list the account in requested_approvals;
@@ -606,24 +605,116 @@ pub async fn get_msig_proposal_details(
     }))
 }
 
-/// Walk every scope in `eosio.msig::proposal` via `/v1/chain/get_table_by_scope`,
-/// keeping only proposals where `account` is a pending required approver.
+/// Refresh approval status for a list of known proposals. Used on page load
+/// for chains without Hyperion — fast (only touches `approvals2` rows the
+/// frontend already knows about) and keeps the UI responsive.
 ///
-/// This covers all proposers — BPs AND community-initiated msigs — without
-/// needing a history API. Paginates with `more` until exhaustion or the
-/// `max_scopes` cap, whichever comes first.
-async fn scan_msig_inbox_by_scopes(
-    pm: &mut crate::antelope::provider::ProviderManager,
-    account: &str,
-    max_scopes: u32,
-) -> Vec<serde_json::Value> {
-    let mut inbox = Vec::new();
+/// Returns:
+/// - `active`: proposals still awaiting `account`'s approval (full payload)
+/// - `dead`:   keys whose on-chain state no longer matches (executed, cancelled,
+///              or already approved by `account`) — the frontend uses this to
+///              prune its cache.
+#[tauri::command]
+pub async fn refresh_msig_status(
+    chain_id: String,
+    account: String,
+    keys: Vec<serde_json::Value>,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    let mut map: ProviderMap<'_> = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    let mut active = Vec::new();
+    let mut dead = Vec::new();
+
+    for entry in keys {
+        let proposer = match entry.get("proposer").and_then(|v| v.as_str()) {
+            Some(s) if !s.is_empty() => s.to_string(),
+            _ => continue,
+        };
+        let proposal_name = match entry.get("proposal_name").and_then(|v| v.as_str()) {
+            Some(s) if !s.is_empty() => s.to_string(),
+            _ => continue,
+        };
+
+        let (requested, provided) = fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+
+        // Both empty → row missing (executed/cancelled/never existed). Mark dead.
+        if requested.is_empty() && provided.is_empty() {
+            dead.push(serde_json::json!({
+                "proposer": proposer,
+                "proposal_name": proposal_name,
+            }));
+            continue;
+        }
+
+        let in_requested = requested
+            .iter()
+            .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account.as_str()));
+        let already_approved = provided
+            .iter()
+            .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account.as_str()));
+
+        if in_requested && !already_approved {
+            active.push(serde_json::json!({
+                "proposer": proposer,
+                "proposal_name": proposal_name,
+                "requested_approvals": requested,
+                "provided_approvals": provided,
+            }));
+        } else {
+            // No longer relevant to `account` (already approved or not a signer).
+            dead.push(serde_json::json!({
+                "proposer": proposer,
+                "proposal_name": proposal_name,
+            }));
+        }
+    }
+
+    Ok(serde_json::json!({
+        "active": active,
+        "dead": dead,
+    }))
+}
+
+/// Full scope-walk of `eosio.msig::proposal`, streaming progress to the
+/// frontend via Tauri events so the UI can show a spinner + counter.
+///
+/// Emits:
+/// - `msig-scan-progress` `{scanned: u32, found: u32, done: bool}`
+/// - `msig-scan-proposal` (per match — full proposal payload)
+///
+/// Returns the final list so the caller can replace its state and update cache.
+#[tauri::command]
+pub async fn scan_msig_scopes_stream(
+    chain_id: String,
+    account: String,
+    max_scopes: Option<u32>,
+    app: tauri::AppHandle,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    use tauri::Emitter;
+    let mut map: ProviderMap<'_> = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    let cap = max_scopes.unwrap_or(500);
     let mut lower = String::new();
     let mut scanned: u32 = 0;
+    let mut found: u32 = 0;
+    let mut results: Vec<serde_json::Value> = Vec::new();
     const PAGE: u32 = 200;
 
-    while scanned < max_scopes {
-        let remaining = (max_scopes - scanned).min(PAGE);
+    let _ = app.emit(
+        "msig-scan-progress",
+        serde_json::json!({ "scanned": 0, "found": 0, "done": false }),
+    );
+
+    'outer: while scanned < cap {
+        let remaining = (cap - scanned).min(PAGE);
         let scopes_page: serde_json::Value = match pm
             .rpc_call(
                 "/v1/chain/get_table_by_scope",
@@ -653,8 +744,11 @@ async fn scan_msig_inbox_by_scopes(
 
         for row in rows.iter() {
             scanned += 1;
-            // Scope entries can linger with count=0 after all proposals are
-            // cleared — skip those to avoid useless table reads.
+            let _ = app.emit(
+                "msig-scan-progress",
+                serde_json::json!({ "scanned": scanned, "found": found, "done": false }),
+            );
+
             let count = row.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
             if count == 0 {
                 continue;
@@ -698,24 +792,29 @@ async fn scan_msig_inbox_by_scopes(
 
                 let in_requested = requested
                     .iter()
-                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account));
+                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account.as_str()));
                 let already_approved = provided
                     .iter()
-                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account));
+                    .any(|a| a.get("actor").and_then(|v| v.as_str()) == Some(account.as_str()));
 
                 if in_requested && !already_approved {
-                    inbox.push(serde_json::json!({
+                    let payload = serde_json::json!({
                         "proposer": proposer,
                         "proposal_name": proposal_name,
                         "requested_approvals": requested,
                         "provided_approvals": provided,
-                    }));
+                    });
+                    found += 1;
+                    let _ = app.emit("msig-scan-proposal", payload.clone());
+                    results.push(payload);
                 }
+            }
+
+            if scanned >= cap {
+                break 'outer;
             }
         }
 
-        // Paginate. `more` in get_table_by_scope is the next scope name; empty
-        // string means "no more".
         let more = scopes_page
             .get("more")
             .and_then(|v| v.as_str())
@@ -726,7 +825,15 @@ async fn scan_msig_inbox_by_scopes(
         lower = more.to_string();
     }
 
-    inbox
+    let _ = app.emit(
+        "msig-scan-progress",
+        serde_json::json!({ "scanned": scanned, "found": found, "done": true }),
+    );
+
+    Ok(serde_json::json!({
+        "proposals": results,
+        "scanned": scanned,
+    }))
 }
 
 /// Read `eosio.msig::approvals2` for `{proposer, proposal_name}`.

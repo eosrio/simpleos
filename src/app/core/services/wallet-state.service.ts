@@ -37,7 +37,7 @@ export class WalletStateService {
   /** Current security mode: SessionUnlock | SignPerUse | ManualToggle */
   readonly securityMode = signal<'SessionUnlock' | 'SignPerUse' | 'ManualToggle'>('SessionUnlock');
   readonly accounts = signal<WalletAccount[]>([]);
-  readonly selectedIndex = signal(0);
+  readonly selectedIndex = signal<number | null>(null);
   readonly chains = signal<ChainConfig[]>([]);
   readonly activeChainIndex = signal(0);
   readonly loading = signal(false);
@@ -47,7 +47,13 @@ export class WalletStateService {
   /** Whether Tauri backend is available (false when running in browser only) */
   readonly hasTauri = signal(false);
 
-  readonly selectedAccount = computed(() => this.accounts()[this.selectedIndex()]);
+  readonly selectedAccount = computed(() => {
+    const index = this.selectedIndex();
+    if (index === null) return null;
+    return this.accounts()[index] ?? null;
+  });
+
+  readonly hasSelectedAccount = computed(() => this.selectedAccount() !== null);
 
   /** Whether the currently selected account is a registered block producer */
   readonly isProducer = computed(() => this.selectedAccount()?.isProducer ?? false);
@@ -206,7 +212,9 @@ export class WalletStateService {
   }
 
   /** Refresh a single account's data from the chain. */
-  async refreshAccount(index: number) {
+  async refreshAccount(index: number | null) {
+    if (index === null) return;
+
     const account = this.accounts()[index];
     if (!account || !this.hasTauri()) return;
 
@@ -310,6 +318,7 @@ export class WalletStateService {
     }
     this.locked.set(true);
     this.accounts.set([]);
+    this.selectedIndex.set(null);
   }
 
   async selectChain(index: number) {
@@ -327,7 +336,9 @@ export class WalletStateService {
       const saved = await this.ipc.storeGet<WalletAccount[]>('accounts');
       console.log('[wallet] restoreAccounts: got', saved ? `${saved.length} accounts` : 'null');
       if (saved && saved.length > 0) {
+        const previousSelection = this.selectedAccount();
         this.accounts.set(saved);
+        this.restoreSelection(previousSelection, saved);
         return true;
       }
     } catch (e) {
@@ -355,6 +366,7 @@ export class WalletStateService {
 
     this.loading.set(true);
     try {
+      const previousSelection = this.selectedAccount();
       const allAccounts: WalletAccount[] = [];
 
       for (const chain of this.chains()) {
@@ -392,7 +404,9 @@ export class WalletStateService {
       }
 
       const watchAccounts = this.accounts().filter(a => a.mode === 'watch');
-      this.accounts.set([...allAccounts, ...watchAccounts]);
+      const nextAccounts = [...allAccounts, ...watchAccounts];
+      this.accounts.set(nextAccounts);
+      this.restoreSelection(previousSelection, nextAccounts);
 
       // Persist to local store
       await this.saveAccounts();
@@ -434,7 +448,15 @@ export class WalletStateService {
   }
 
   selectAccount(index: number) {
+    if (index < 0 || index >= this.accounts().length) {
+      this.selectedIndex.set(null);
+      return;
+    }
     this.selectedIndex.set(index);
+  }
+
+  clearSelectedAccount() {
+    this.selectedIndex.set(null);
   }
 
   /** Move an account tab from one position to another, preserving the selected account. */
@@ -442,24 +464,56 @@ export class WalletStateService {
     const list = [...this.accounts()];
     if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return;
 
-    const selectedAccount = list[this.selectedIndex()];
+    const selectedAccount = this.selectedAccount();
     const [moved] = list.splice(fromIndex, 1);
     list.splice(toIndex, 0, moved);
     this.accounts.set(list);
 
     // Keep the same account selected after reorder
-    const newSelectedIndex = list.indexOf(selectedAccount);
-    if (newSelectedIndex >= 0) this.selectedIndex.set(newSelectedIndex);
+    if (!selectedAccount) {
+      this.selectedIndex.set(null);
+    } else {
+      const newSelectedIndex = list.findIndex(account =>
+        account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+      );
+      this.selectedIndex.set(newSelectedIndex >= 0 ? newSelectedIndex : null);
+    }
 
     this.saveAccounts();
   }
 
   /** Remove an account from the list. */
   removeAccount(index: number) {
+    const selectedAccount = this.selectedAccount();
+    const currentIndex = this.selectedIndex();
     this.accounts.update(list => list.filter((_, i) => i !== index));
-    if (this.selectedIndex() >= this.accounts().length) {
-      this.selectedIndex.set(Math.max(0, this.accounts().length - 1));
+
+    if (currentIndex === null || !selectedAccount) {
+      this.selectedIndex.set(null);
+      return;
     }
+
+    if (currentIndex === index) {
+      this.selectedIndex.set(null);
+      return;
+    }
+
+    const nextIndex = this.accounts().findIndex(account =>
+      account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+    );
+    this.selectedIndex.set(nextIndex >= 0 ? nextIndex : null);
+  }
+
+  private restoreSelection(selectedAccount: WalletAccount | null, accounts: WalletAccount[]) {
+    if (!selectedAccount) {
+      this.selectedIndex.set(null);
+      return;
+    }
+
+    const nextIndex = accounts.findIndex(account =>
+      account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+    );
+    this.selectedIndex.set(nextIndex >= 0 ? nextIndex : null);
   }
 }
 

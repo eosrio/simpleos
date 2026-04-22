@@ -1,4 +1,5 @@
 import { Component, computed, effect, signal } from '@angular/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
@@ -57,16 +58,37 @@ interface ProposalDetails {
   template: `
     <div class="msig-view">
       <h2>Multisig Inbox</h2>
-      <p class="subtitle">
-        Proposals that still need a signature from
-        <strong>{{ me() }}</strong>
-        on <strong>{{ wallet.activeChain().name }}</strong>.
-        @if (source() === 'scan') {
-          <span class="source-hint" title="No Hyperion available — walked every scope in the eosio.msig::proposal table">
-            · scope scan
-          </span>
-        }
-      </p>
+      <div class="head-row">
+        <p class="subtitle">
+          Proposals that still need a signature from
+          <strong>{{ me() }}</strong>
+          on <strong>{{ wallet.activeChain().name }}</strong>.
+          @if (source() === 'cached') {
+            <span class="source-hint" title="Loaded from cache — status refreshed">· from cache</span>
+          } @else if (source() === 'scan') {
+            <span class="source-hint" title="Just walked every scope in eosio.msig::proposal">· fresh scan</span>
+          }
+        </p>
+        <div class="toolbar">
+          @if (source() !== 'hyperion') {
+            <button class="btn-ghost" (click)="rescanScopes()"
+              [disabled]="scanning() || loading() || busy()"
+              title="Walk every scope in eosio.msig::proposal — finds any proposal awaiting your signature">
+              {{ scanning() ? 'SCANNING…' : 'SCAN SCOPES' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (scanning()) {
+        <div class="scan-progress">
+          <div class="scan-progress-bar"><div class="scan-progress-stripes"></div></div>
+          <div class="scan-progress-text">
+            Scanned <strong>{{ scanProgress().scanned }}</strong> scopes ·
+            found <strong>{{ scanProgress().found }}</strong> awaiting you
+          </div>
+        </div>
+      }
 
       <!-- Manual lookup — always available, primary fallback when no Hyperion -->
       <details class="manual-panel" [open]="source() === 'none'">
@@ -94,21 +116,32 @@ interface ProposalDetails {
 
       @if (loading()) {
         <div class="state-card loading">Loading proposals…</div>
-      } @else if (source() === 'none' && manualProposals().length === 0) {
+      } @else if (source() === 'none' && manualProposals().length === 0 && !scanning()) {
         <div class="state-card warn">
-          <h3>History API unavailable</h3>
+          <h3>No cached proposals for {{ wallet.activeChain().name }}</h3>
           <p>
-            {{ wallet.activeChain().name }} doesn't have a Hyperion endpoint configured, so
-            we can't list proposals across the network. Use the lookup form above to inspect
-            and approve a known proposal by its proposer + name.
+            This chain doesn't have a Hyperion endpoint, so we can't list proposals
+            automatically. Scan every proposer scope on-chain to find proposals
+            awaiting your signature — results are cached so subsequent visits are fast.
+          </p>
+          <div class="empty-actions">
+            <button class="btn-primary" (click)="rescanScopes()" [disabled]="scanning()">
+              SCAN SCOPES NOW
+            </button>
+          </div>
+          <p class="key-desc" style="margin-top: var(--sp-4)">
+            Or use the lookup form above if you already know a proposer + proposal name.
           </p>
         </div>
-      } @else if (proposals().length === 0 && manualProposals().length === 0) {
+      } @else if (proposals().length === 0 && manualProposals().length === 0 && !scanning()) {
         <div class="state-card">
           <h3>Inbox empty</h3>
           <p>
             @if (source() === 'scan') {
               Walked every proposer scope — nothing awaiting your signature.
+            } @else if (source() === 'cached') {
+              No cached proposals need your signature right now. Run a fresh scan
+              to discover new ones.
             } @else {
               No proposals awaiting your approval.
             }
@@ -217,9 +250,55 @@ interface ProposalDetails {
   styles: [`
     .msig-view { max-width: 900px; }
     h2 { font-size: 24px; margin-bottom: var(--sp-2); }
-    .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-5); }
+    .head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-4);
+      flex-wrap: wrap;
+    }
+    .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
     .subtitle strong { color: var(--text-bright); }
     .source-hint { font-size: 11px; color: var(--text-disabled); margin-left: var(--sp-1); }
+    .toolbar { display: flex; gap: var(--sp-2); }
+    .empty-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+    .scan-progress {
+      margin-bottom: var(--sp-4);
+      padding: var(--sp-3);
+      background: var(--bg-raised);
+      border-radius: var(--radius-sm);
+    }
+    .scan-progress-bar {
+      height: 4px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: var(--sp-2);
+    }
+    .scan-progress-stripes {
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--accent) 25%,
+        var(--accent) 75%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      animation: scan-slide 1.4s linear infinite;
+    }
+    @keyframes scan-slide {
+      0%   { background-position: -100% 0; }
+      100% { background-position:  100% 0; }
+    }
+    .scan-progress-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-data);
+    }
+    .scan-progress-text strong { color: var(--text-bright); }
 
     .state-card {
       background: var(--bg-raised);
@@ -452,7 +531,12 @@ interface ProposalDetails {
 export class MsigInboxComponent {
   loading = signal(false);
   busy = signal(false);
-  source = signal<'hyperion' | 'scan' | 'none' | null>(null);
+  source = signal<'hyperion' | 'scan' | 'cached' | 'none' | null>(null);
+  /** True while a full scope-scan is in flight. */
+  scanning = signal(false);
+  scanProgress = signal<{ scanned: number; found: number; done: boolean }>({
+    scanned: 0, found: 0, done: false,
+  });
   proposals = signal<MsigProposal[]>([]);
   error = signal('');
 
@@ -513,7 +597,13 @@ export class MsigInboxComponent {
     this.manualName.set('');
     this.manualError.set('');
     this.manualLoading.set(false);
+    this.scanProgress.set({ scanned: 0, found: 0, done: false });
+    // If a scan was running, its listeners are chain-wide and harmless to
+    // leave attached; its finally-block will still unsubscribe. We only reset
+    // the visible progress bar here.
   }
+
+  private cacheKey(chainId: string) { return `msig_cache_${chainId}`; }
 
   private async load(chainId: string, account: string) {
     const token = ++this.activeLoadToken;
@@ -521,16 +611,84 @@ export class MsigInboxComponent {
     this.error.set('');
     try {
       const result = await this.ipc.getMsigInbox(chainId, account, 50);
-      // Drop the response if the user has switched accounts since the call fired.
       if (token !== this.activeLoadToken) return;
-      this.source.set(result.source);
-      this.proposals.set(result.proposals as MsigProposal[]);
+
+      if (result.source === 'hyperion') {
+        this.source.set('hyperion');
+        this.proposals.set(result.proposals as MsigProposal[]);
+        return;
+      }
+
+      // No Hyperion: use the per-chain cache of previously-discovered proposals
+      // and just refresh their on-chain status. A full rescan is a user action.
+      const cached = await this.ipc.storeGet<{ proposer: string; proposal_name: string }[]>(
+        this.cacheKey(chainId),
+      );
+      if (token !== this.activeLoadToken) return;
+
+      if (!cached || cached.length === 0) {
+        this.source.set('none');
+        this.proposals.set([]);
+        return;
+      }
+
+      const status = await this.ipc.refreshMsigStatus(chainId, account, cached);
+      if (token !== this.activeLoadToken) return;
+      this.source.set('cached');
+      this.proposals.set(status.active as MsigProposal[]);
+
+      // Prune dead entries from the cache so the next refresh is even quicker.
+      if (status.dead.length > 0) {
+        const deadSet = new Set(status.dead.map(d => `${d.proposer}:${d.proposal_name}`));
+        const pruned = cached.filter(k => !deadSet.has(`${k.proposer}:${k.proposal_name}`));
+        await this.ipc.storeSet(this.cacheKey(chainId), pruned);
+      }
     } catch (e: any) {
       if (token !== this.activeLoadToken) return;
       this.error.set(e?.toString() ?? 'Failed to load inbox');
       this.proposals.set([]);
     } finally {
       if (token === this.activeLoadToken) this.loading.set(false);
+    }
+  }
+
+  /** Full scope-walk with live progress. Streams proposals into the list as
+   *  they're found and saves the final list to per-chain cache. */
+  async rescanScopes() {
+    const acct = this.wallet.selectedAccount();
+    if (!acct || this.scanning()) return;
+
+    this.scanning.set(true);
+    this.scanProgress.set({ scanned: 0, found: 0, done: false });
+    this.error.set('');
+    // Clear the current list — fresh matches will stream in via the event listener.
+    this.proposals.set([]);
+
+    const unlisteners: UnlistenFn[] = [];
+    try {
+      unlisteners.push(await listen<{ scanned: number; found: number; done: boolean }>(
+        'msig-scan-progress',
+        e => this.scanProgress.set(e.payload),
+      ));
+      unlisteners.push(await listen<MsigProposal>(
+        'msig-scan-proposal',
+        e => this.proposals.update(list => [...list, e.payload]),
+      ));
+
+      const result = await this.ipc.scanMsigScopesStream(acct.chainId, acct.name);
+      this.source.set('scan');
+
+      // Persist discovered proposals so next page load is instant.
+      const keys = (result.proposals as MsigProposal[]).map(p => ({
+        proposer: p.proposer,
+        proposal_name: p.proposal_name,
+      }));
+      await this.ipc.storeSet(this.cacheKey(acct.chainId), keys);
+    } catch (e: any) {
+      this.error.set(e?.toString() ?? 'Scan failed');
+    } finally {
+      unlisteners.forEach(u => u());
+      this.scanning.set(false);
     }
   }
 

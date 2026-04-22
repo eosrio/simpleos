@@ -25,7 +25,7 @@ interface ProducerRow {
       <div class="summary-row">
         <div class="summary-card">
           <span class="summary-label">TOTAL</span>
-          <span class="summary-value">{{ wallet.selectedAccount().info.core_liquid_balance ?? '0.0000' }}</span>
+          <span class="summary-value">{{ wallet.selectedAccount()!.info.core_liquid_balance ?? '0.0000' }}</span>
         </div>
         <div class="summary-card">
           <span class="summary-label">STAKED</span>
@@ -46,7 +46,7 @@ interface ProducerRow {
           </div>
 
           @if (features.isFreeChain()) {
-            <p class="section-desc">Staking is optional — it provides voting weight and transaction priority on {{ wallet.selectedAccount().chainName }}.</p>
+            <p class="section-desc">Staking is optional — it provides voting weight and transaction priority on {{ wallet.selectedAccount()!.chainName }}.</p>
           } @else {
             <p class="section-desc">Staked tokens are used for voting and resource allocation. You can unstake at any time.</p>
           }

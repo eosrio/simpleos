@@ -43,7 +43,7 @@ interface VoterRow {
 
       <div class="section-card">
         <h3>Top Voters</h3>
-        <p class="section-desc">Largest vote weight contributors to {{ wallet.selectedAccount().name }}</p>
+        <p class="section-desc">Largest vote weight contributors to {{ wallet.selectedAccount()!.name }}</p>
 
         @if (loadingVoters()) {
           <p class="section-desc">Loading voter data...</p>

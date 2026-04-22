@@ -23,7 +23,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Producer Registered
               </h3>
-              <p>Your node is actively producing blocks at rank <strong>#{{ wallet.selectedAccount().producerRank }}</strong></p>
+              <p>Your node is actively producing blocks at rank <strong>#{{ wallet.selectedAccount()!.producerRank }}</strong></p>
             </div>
             <button class="btn-emergency" (click)="onUnregprod()" [disabled]="busy()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
@@ -228,7 +228,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
 
       <div class="section-card">
         <h3>Permission Structure</h3>
-        <p class="section-desc">Active permissions on {{ wallet.selectedAccount().name }}</p>
+        <p class="section-desc">Active permissions on {{ wallet.selectedAccount()!.name }}</p>
         <div class="perm-tree">
           <div class="perm-node root">
             <span class="perm-name">owner</span>

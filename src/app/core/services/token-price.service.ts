@@ -41,7 +41,8 @@ export class TokenPriceService {
   /** Convert a token amount string (e.g. "1234.5678 EOS") to USD. */
   toUsd(amountStr: string): number | null {
     if (!amountStr) return null;
-    const match = amountStr.match(/^([0-9.]+)\s*([A-Za-z]+)$/);
+    const normalized = amountStr.replace(/,/g, '').trim();
+    const match = normalized.match(/^([0-9]+(?:\.[0-9]+)?)\s*([A-Za-z0-9]+)$/);
     if (!match) return null;
     const amount = parseFloat(match[1]);
     const symbol = match[2].toUpperCase();

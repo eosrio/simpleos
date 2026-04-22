@@ -72,7 +72,7 @@ type ValueNode =
             </div>
           </div>
 
-          @if (wallet.selectedAccount().extraBalances?.length) {
+          @if (wallet.selectedAccount()!.extraBalances?.length) {
             <div class="extra-balances">
               @for (bal of wallet.selectedAccount()!.extraBalances!; track bal.symbol) {
                 <div class="extra-balance-row">

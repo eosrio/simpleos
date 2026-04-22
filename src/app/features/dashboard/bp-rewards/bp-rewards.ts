@@ -59,7 +59,7 @@ interface ClaimAction {
         </div>
         <div class="stat-card">
           <span class="stat-label">RANK</span>
-          <span class="stat-value">#{{ wallet.selectedAccount().producerRank ?? '—' }}</span>
+          <span class="stat-value">#{{ wallet.selectedAccount()!.producerRank ?? '—' }}</span>
         </div>
       </div>
 
