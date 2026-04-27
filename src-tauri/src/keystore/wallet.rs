@@ -34,6 +34,20 @@ const VAULT_VERIFY_CHAIN: &str = "__vault__";
 const VAULT_VERIFY_KEY: &str = "__verify__";
 /// The known plaintext we encrypt to verify the passphrase on unlock.
 const VAULT_VERIFY_PLAINTEXT: &[u8] = b"simpleos-vault-ok";
+const LIBRE_MAINNET_CHAIN_ID: &str =
+    "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465";
+const LEGACY_LIBRE_MAINNET_CHAIN_ID: &str =
+    "38b1d7815474d0c60c65a0f23d12e1fc64b8b8d42d0f754b3afe3044e4050eb1";
+const LEGACY_LIBRE_CHAIN_IDS: &[&str] = &[LEGACY_LIBRE_MAINNET_CHAIN_ID];
+const NO_LEGACY_CHAIN_IDS: &[&str] = &[];
+
+fn legacy_chain_ids(chain_id: &str) -> &'static [&'static str] {
+    if chain_id == LIBRE_MAINNET_CHAIN_ID {
+        LEGACY_LIBRE_CHAIN_IDS
+    } else {
+        NO_LEGACY_CHAIN_IDS
+    }
+}
 
 /// The core wallet service. Owns a session and a key store.
 pub struct WalletService {
@@ -216,7 +230,15 @@ impl WalletService {
 
     /// List all public keys stored for a chain.
     pub fn list_keys(&self, chain_id: &str) -> Result<Vec<String>, Error> {
-        self.store.list_keys(chain_id)
+        let mut keys = self.store.list_keys(chain_id)?;
+        for legacy_chain_id in legacy_chain_ids(chain_id) {
+            for key in self.store.list_keys(legacy_chain_id)? {
+                if !keys.contains(&key) {
+                    keys.push(key);
+                }
+            }
+        }
+        Ok(keys)
     }
 
     /// Decrypt and return the raw private key bytes for a given public key.
@@ -225,7 +247,7 @@ impl WalletService {
         let mut session = self.session.lock().unwrap();
         let master_key = session.master_key().ok_or(Error::WalletLocked)?;
 
-        let encrypted = self.store.load_key(chain_id, public_key)?;
+        let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
         let private_key_bytes = derive::decrypt(&encrypted, master_key, MASTER_SALT)
             .map_err(|_| Error::InvalidPassphrase)?;
 
@@ -251,7 +273,7 @@ impl WalletService {
             Err(_) => return Err(Error::WalletLocked),
         }
 
-        let encrypted = self.store.load_key(chain_id, public_key)?;
+        let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
         let private_key_bytes = derive::decrypt(&encrypted, &master_key, MASTER_SALT)
             .map_err(|_| Error::InvalidPassphrase)?;
 
@@ -262,7 +284,28 @@ impl WalletService {
 
     /// Remove a key from the store.
     pub fn remove_key(&self, chain_id: &str, public_key: &str) -> Result<(), Error> {
-        self.store.delete_key(chain_id, public_key)
+        let result = self.store.delete_key(chain_id, public_key);
+        let mut deleted = result.is_ok();
+        for legacy_chain_id in legacy_chain_ids(chain_id) {
+            if self.store.delete_key(legacy_chain_id, public_key).is_ok() {
+                deleted = true;
+            }
+        }
+        if deleted { Ok(()) } else { result }
+    }
+
+    fn load_key_with_aliases(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
+        match self.store.load_key(chain_id, public_key) {
+            Ok(encrypted) => Ok(encrypted),
+            Err(primary_error) => {
+                for legacy_chain_id in legacy_chain_ids(chain_id) {
+                    if let Ok(encrypted) = self.store.load_key(legacy_chain_id, public_key) {
+                        return Ok(encrypted);
+                    }
+                }
+                Err(primary_error)
+            }
+        }
     }
 
     // ── Raw key storage (for BLS keys) ──
@@ -315,10 +358,10 @@ impl WalletService {
         let mut re_encrypted_count = 0usize;
 
         for chain_id in &self.known_chains {
-            let public_keys = self.store.list_keys(chain_id)?;
+            let public_keys = self.list_keys(chain_id)?;
             for pub_key in &public_keys {
                 // Decrypt with old
-                let encrypted = self.store.load_key(chain_id, pub_key)?;
+                let encrypted = self.load_key_with_aliases(chain_id, pub_key)?;
                 let private_key_bytes = derive::decrypt(&encrypted, &old_master, MASTER_SALT)
                     .map_err(|_| Error::InvalidPassphrase)?;
 
@@ -406,9 +449,9 @@ impl WalletService {
         let mut entries: Vec<serde_json::Value> = Vec::new();
 
         for chain_id in &self.known_chains {
-            let keys = self.store.list_keys(chain_id).unwrap_or_default();
+            let keys = self.list_keys(chain_id).unwrap_or_default();
             for pub_key in &keys {
-                let encrypted = self.store.load_key(chain_id, pub_key)?;
+                let encrypted = self.load_key_with_aliases(chain_id, pub_key)?;
                 entries.push(serde_json::json!({
                     "chain_id": chain_id,
                     "public_key": pub_key,

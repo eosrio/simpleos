@@ -366,7 +366,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             oracle_scope: None,
         },
         ChainConfig {
-            id: "38b1d7815474d0c60c65a0f23d12e1fc64b8b8d42d0f754b3afe3044e4050eb1".into(),
+            id: "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465".into(),
             name: "Libre".into(),
             symbol: "LIBRE".into(),
             precision: 4,

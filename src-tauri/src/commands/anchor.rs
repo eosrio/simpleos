@@ -8,13 +8,13 @@ use crate::AppWallet;
 
 /// Parse an Anchor backup JSON string and return wallet entries for the selection UI.
 /// No password needed — only reads wallet/network metadata.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn parse_anchor_backup(json: String) -> Result<ParsedAnchorBackup, Error> {
     anchor_import::parse_backup(&json)
 }
 
 /// Verify the Anchor wallet password against the backup's walletHash.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn verify_anchor_password(json: String, password: String) -> Result<bool, Error> {
     anchor_import::verify_password(&json, &password)
 }
@@ -26,7 +26,7 @@ pub fn verify_anchor_password(json: String, password: String) -> Result<bool, Er
 ///
 /// For "watch" imports: only records the account/chain/pubkey mapping
 /// (no key material stored).
-#[tauri::command]
+#[tauri::command(async)]
 pub fn import_anchor_entries(
     app: tauri::AppHandle,
     json: String,

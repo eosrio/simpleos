@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TauriIpcService, ChainConfig, DiscoveryProgress, AccountAuthority, AnchorWalletEntry, ImportSelection } from '../../core/services/tauri-ipc.service';
-import { WalletStateService } from '../../core/services/wallet-state.service';
+import { WalletAccount, WalletStateService } from '../../core/services/wallet-state.service';
 import { NetworkService } from '../../core/services/network.service';
 import { ChainIconComponent } from '../../shared/chain-icon';
 import { WindowControlsComponent } from '../../shared/window-controls';
@@ -1162,22 +1162,16 @@ export class LandingComponent implements OnInit, OnDestroy {
       this.importStatus.set('Loading accounts...');
 
       const accounts = this.discoveredAccounts();
+      const importedAccounts: WalletAccount[] = [];
       for (const name of accounts) {
         this.importStatus.set(`Loading ${name}...`);
-        try {
-          const info = await this.ipc.getAccount(chain.id, name);
-          const extraBalances = await this.wallet.fetchExtraTokenBalances(chain, name);
-          this.wallet.accounts.update(list => [
-            ...list,
-            { name, chainId: chain.id, chainName: chain.name, mode: 'full' as const, info, extraBalances },
-          ]);
-        } catch (e) {
-          console.warn(`[import] Failed to load account ${name}:`, e);
-        }
+        const account = await this.wallet.addImportedAccount(name, chain.id, 'full');
+        if (account) importedAccounts.push(account);
       }
 
       this.importStatus.set('Done!');
       await this.wallet.saveAccounts();
+      this.selectFirstImportedAccount(importedAccounts);
       this.router.navigate(['/dashboard']);
     } catch (e: any) {
       this.error.set(e?.toString() ?? 'Import failed');
@@ -1277,27 +1271,16 @@ export class LandingComponent implements OnInit, OnDestroy {
       this.wallet.locked.set(false);
 
       const accounts = this.discoveredAccounts();
+      const importedAccounts: WalletAccount[] = [];
       for (const name of accounts) {
         this.importStatus.set(`Loading ${name}...`);
-        try {
-          const info = await this.ipc.getAccount(chain.id, name);
-          this.wallet.accounts.update(list => [
-            ...list,
-            {
-              name,
-              chainId: chain.id,
-              chainName: chain.name,
-              mode: 'full' as const,
-              info,
-            },
-          ]);
-        } catch (e) {
-          console.warn(`[import] Failed to load account ${name}:`, e);
-        }
+        const account = await this.wallet.addImportedAccount(name, chain.id, 'full');
+        if (account) importedAccounts.push(account);
       }
 
       this.importStatus.set('Done!');
       await this.wallet.saveAccounts();
+      this.selectFirstImportedAccount(importedAccounts);
       this.router.navigate(['/dashboard']);
     } catch (e: any) {
       this.error.set(e?.toString() ?? 'Import failed');
@@ -1309,6 +1292,31 @@ export class LandingComponent implements OnInit, OnDestroy {
   goToDashboard() {
     this.wallet.locked.set(false);
     this.router.navigate(['/dashboard']);
+  }
+
+  private selectFirstImportedAccount(importedAccounts: WalletAccount[]) {
+    const first = importedAccounts[0];
+    if (!first) return;
+
+    const index = this.wallet.accounts().findIndex(account =>
+      account.name === first.name && account.chainId === first.chainId
+    );
+    if (index >= 0) this.wallet.selectAccount(index);
+  }
+
+  private waitForNextPaint() {
+    return new Promise<void>(resolve => {
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => resolve());
+        return;
+      }
+      setTimeout(resolve, 0);
+    });
+  }
+
+  private isAnchorPasswordError(message: string) {
+    return message.includes('Encryption error: Decryption failed') ||
+      message.includes('Encryption error: Invalid UTF-8');
   }
 
   // ── Ledger Import ──
@@ -1366,15 +1374,7 @@ export class LandingComponent implements OnInit, OnDestroy {
           // Check if already imported
           if (this.wallet.accounts().some(a => a.name === accountName && a.chainId === chain.id)) continue;
 
-          const info = await this.ipc.getAccount(chain.id, accountName);
-          this.wallet.accounts.update(list => [...list, {
-            name: accountName,
-            chainId: chain.id,
-            chainName: chain.name,
-            mode: 'full' as const,
-            info,
-            ledgerIndex: key.index,
-          }]);
+          await this.wallet.addImportedAccount(accountName, chain.id, 'full', { ledgerIndex: key.index });
         }
       }
 
@@ -1453,22 +1453,13 @@ export class LandingComponent implements OnInit, OnDestroy {
   async onAnchorImport() {
     this.error.set('');
     this.importing.set(true);
-    this.importStatus.set('Verifying password...');
+    this.importStatus.set(this.anchorNeedsPassword() ? 'Decrypting Anchor backup...' : 'Preparing import...');
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await this.waitForNextPaint();
 
     try {
-      // Verify Anchor password first if needed
-      if (this.anchorNeedsPassword()) {
-        const valid = await this.ipc.verifyAnchorPassword(this.anchorJson(), this.anchorPassword());
-        if (!valid) {
-          this.error.set('Incorrect Anchor password');
-          this.importing.set(false);
-          return;
-        }
-      }
-
       this.importStatus.set('Importing keys...');
+      await this.waitForNextPaint();
 
       // Build selections array
       const sels = this.anchorSelections();
@@ -1502,34 +1493,24 @@ export class LandingComponent implements OnInit, OnDestroy {
       }
 
       // Load account info for each imported entry
+      const importedAccounts: WalletAccount[] = [];
       for (const sel of selections) {
-        this.importStatus.set(`Loading ${sel.account}...`);
-        try {
-          // Initialize chain provider if not yet done
-          const chain = this.wallet.chains().find(c => c.id === sel.chain_id);
-          if (chain) {
-            await this.wallet.checkEndpoints(sel.chain_id);
-            const info = await this.ipc.getAccount(sel.chain_id, sel.account);
-            this.wallet.accounts.update(list => {
-              // Avoid duplicates
-              if (list.some(a => a.name === sel.account && a.chainId === sel.chain_id)) return list;
-              // Only set 'full' if keys were actually imported (no errors for this entry)
-              const keyImported = sel.import_mode === 'full' && result.imported_full > 0;
-              return [...list, {
-                name: sel.account,
-                chainId: sel.chain_id,
-                chainName: chain.name,
-                mode: keyImported ? 'full' as const : 'watch' as const,
-                info,
-              }];
-            });
-          }
-        } catch (e) {
-          console.warn(`[anchor-import] Failed to load ${sel.account}:`, e);
-        }
+        this.importStatus.set(`Adding ${sel.account}...`);
+        const keyImported = sel.import_mode === 'full' && result.imported_full > 0;
+        const account = await this.wallet.addImportedAccount(
+          sel.account,
+          sel.chain_id,
+          keyImported ? 'full' : 'watch',
+          { hydrate: false },
+        );
+        if (account) importedAccounts.push(account);
       }
 
       await this.wallet.saveAccounts();
+      this.selectFirstImportedAccount(importedAccounts);
+      void this.wallet.refreshAllAccounts()
+        .then(() => this.wallet.saveAccounts())
+        .catch(e => console.warn('[anchor-import] Background account refresh failed:', e));
 
       const summary = [];
       if (result.imported_full > 0) summary.push(`${result.imported_full} full`);
@@ -1545,7 +1526,10 @@ export class LandingComponent implements OnInit, OnDestroy {
         setTimeout(() => this.router.navigate(['/dashboard']), 1000);
       }
     } catch (e: any) {
-      this.error.set(e?.toString() ?? 'Import failed');
+      const message = e?.toString() ?? 'Import failed';
+      this.error.set(this.anchorNeedsPassword() && this.isAnchorPasswordError(message)
+        ? 'Incorrect Anchor password'
+        : message);
     } finally {
       this.importing.set(false);
     }

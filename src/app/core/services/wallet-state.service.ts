@@ -28,6 +28,11 @@ export interface WalletAccount {
   ledgerIndex?: number;
 }
 
+const LIBRE_MAINNET_CHAIN_ID = '38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465';
+const LEGACY_CHAIN_IDS: Record<string, string> = {
+  '38b1d7815474d0c60c65a0f23d12e1fc64b8b8d42d0f754b3afe3044e4050eb1': LIBRE_MAINNET_CHAIN_ID,
+};
+
 @Injectable({ providedIn: 'root' })
 export class WalletStateService {
 
@@ -337,8 +342,12 @@ export class WalletStateService {
       console.log('[wallet] restoreAccounts: got', saved ? `${saved.length} accounts` : 'null');
       if (saved && saved.length > 0) {
         const previousSelection = this.selectedAccount();
-        this.accounts.set(saved);
-        this.restoreSelection(previousSelection, saved);
+        const normalized = saved.map(account => this.normalizeStoredAccount(account));
+        this.accounts.set(normalized);
+        this.restoreSelection(previousSelection, normalized);
+        if (normalized.some((account, index) => account.chainId !== saved[index]?.chainId || account.chainName !== saved[index]?.chainName)) {
+          await this.saveAccounts();
+        }
         return true;
       }
     } catch (e) {
@@ -358,6 +367,71 @@ export class WalletStateService {
     } catch (e) {
       console.warn('[wallet] saveAccounts failed:', e);
     }
+  }
+
+  /** Add an imported account to the visible wallet list, even if live metadata is temporarily unavailable. */
+  async addImportedAccount(
+    accountName: string,
+    chainId: string,
+    mode: AccountMode,
+    options: { ledgerIndex?: number; hydrate?: boolean } = {},
+  ): Promise<WalletAccount | null> {
+    const normalizedChainId = this.normalizeChainId(chainId);
+    const chain = this.chains().find(c => c.id === normalizedChainId);
+    const name = accountName.trim();
+    if (!chain || !name) return null;
+
+    const placeholder: WalletAccount = {
+      name,
+      chainId: normalizedChainId,
+      chainName: chain.name,
+      mode,
+      info: this.placeholderAccountInfo(name),
+      ledgerIndex: options.ledgerIndex,
+    };
+
+    this.upsertAccount(placeholder, false);
+
+    if (options.hydrate === false) {
+      return this.accounts().find(a => a.name === name && a.chainId === normalizedChainId) ?? placeholder;
+    }
+
+    let info: AccountInfo = this.placeholderAccountInfo(name);
+    let extraBalances: TokenBalance[] = [];
+    let hasFreshInfo = false;
+
+    try {
+      await this.checkEndpoints(normalizedChainId);
+      info = await this.ipc.getAccount(normalizedChainId, name);
+      hasFreshInfo = true;
+
+      if (chain.token_contract !== 'eosio.token') {
+        try {
+          const bal = await this.ipc.getBalances(chain.id, name, chain.token_contract, chain.symbol);
+          if (bal.length > 0) info.core_liquid_balance = bal[0];
+        } catch (e) {
+          console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
+        }
+      }
+
+      extraBalances = await this.fetchExtraTokenBalances(chain, name);
+    } catch (e) {
+      console.warn(`[wallet] Account metadata unavailable for ${name} on ${chain.name}; caching import anyway:`, e);
+    }
+
+    const account: WalletAccount = {
+      name: info.account_name || name,
+      chainId: normalizedChainId,
+      chainName: chain.name,
+      mode,
+      info,
+      extraBalances,
+      ledgerIndex: options.ledgerIndex,
+    };
+
+    this.upsertAccount(account, hasFreshInfo);
+
+    return this.accounts().find(a => a.name === account.name && a.chainId === account.chainId) ?? account;
   }
 
   /** Full account discovery from chain. Used after import or manual refresh. */
@@ -413,6 +487,50 @@ export class WalletStateService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private placeholderAccountInfo(accountName: string): AccountInfo {
+    return {
+      account_name: accountName,
+      permissions: [],
+    };
+  }
+
+  private normalizeStoredAccount(account: WalletAccount): WalletAccount {
+    const chainId = this.normalizeChainId(account.chainId);
+    const chain = this.chains().find(c => c.id === chainId);
+    if (chainId === account.chainId && (!chain || chain.name === account.chainName)) return account;
+    return {
+      ...account,
+      chainId,
+      chainName: chain?.name ?? account.chainName,
+    };
+  }
+
+  private normalizeChainId(chainId: string): string {
+    return LEGACY_CHAIN_IDS[chainId] ?? chainId;
+  }
+
+  private upsertAccount(account: WalletAccount, hasFreshInfo: boolean) {
+    this.accounts.update(list => {
+      const index = list.findIndex(a => a.name === account.name && a.chainId === account.chainId);
+      if (index < 0) return [...list, account];
+
+      const existing = list[index];
+      const next = [...list];
+      next[index] = {
+        ...existing,
+        ...account,
+        mode: existing.mode === 'full' || account.mode === 'full' ? 'full' : 'watch',
+        info: hasFreshInfo ? account.info : existing.info,
+        extraBalances: hasFreshInfo ? account.extraBalances : existing.extraBalances,
+        isProducer: account.isProducer ?? existing.isProducer,
+        producerRank: account.producerRank ?? existing.producerRank,
+        producerUrl: account.producerUrl ?? existing.producerUrl,
+        ledgerIndex: account.ledgerIndex ?? existing.ledgerIndex,
+      };
+      return next;
+    });
   }
 
   async setSecurityMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
@@ -525,7 +643,7 @@ const MOCK_CHAINS: ChainConfig[] = [
   { id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11', name: 'Telos', symbol: 'TLOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Telos Explorer', url: 'https://explorer.telos.net', tx_url: 'https://explorer.telos.net/transaction/{txid}', account_url: 'https://explorer.telos.net/account/{account}' }], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: true, history: true } },
   { id: 'ultra-chain-id', name: 'Ultra', symbol: 'UOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Ultra Explorer', url: 'https://explorer.mainnet.ultra.io', tx_url: 'https://explorer.mainnet.ultra.io/tx/{txid}', account_url: 'https://explorer.mainnet.ultra.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
   { id: 'fio-chain-id', name: 'FIO', symbol: 'FIO', precision: 9, token_contract: 'fio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'FIO Explorer', url: 'https://fio.bloks.io', tx_url: 'https://fio.bloks.io/transaction/{txid}', account_url: 'https://fio.bloks.io/account/{account}' }], features: { send: true, vote: true, staking: false, rex: false, powerup: false, resource: false, dapps: false, history: true } },
-  { id: 'libre-chain-id', name: 'Libre', symbol: 'LIBRE', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Libre Blocks', url: 'https://www.libreblocks.io', tx_url: 'https://www.libreblocks.io/tx/{txid}', account_url: 'https://www.libreblocks.io/address/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
+  { id: LIBRE_MAINNET_CHAIN_ID, name: 'Libre', symbol: 'LIBRE', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Libre Blocks', url: 'https://www.libreblocks.io', tx_url: 'https://www.libreblocks.io/tx/{txid}', account_url: 'https://www.libreblocks.io/address/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
   { id: 'xpr-chain-id', name: 'XPR', symbol: 'XPR', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'XPR Explorer', url: 'https://explorer.xprnetwork.org', tx_url: 'https://explorer.xprnetwork.org/transaction/{txid}', account_url: 'https://explorer.xprnetwork.org/account/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
   // Testnets
   { id: 'jungle4-testnet-id', name: 'Jungle Testnet', symbol: 'EOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Jungle Bloks', url: 'https://jungle4.bloks.io', tx_url: 'https://jungle4.bloks.io/transaction/{txid}', account_url: 'https://jungle4.bloks.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: false, history: true }, testnet: true },
