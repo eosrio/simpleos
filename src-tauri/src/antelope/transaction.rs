@@ -119,7 +119,7 @@ pub async fn sign_and_push(
     });
 
     let result: serde_json::Value = pm
-        .rpc_call("/v1/chain/push_transaction", &push_body, |json| Ok(json))
+        .rpc_call("/v1/chain/send_transaction", &push_body, |json| Ok(json))
         .await?;
 
     // Parse result
@@ -314,7 +314,11 @@ fn try_native_serialize(
     json: &serde_json::Value,
 ) -> Result<Option<String>, Error> {
     match (account, name) {
-        ("eosio.token", "transfer") | ("tethertether", "transfer") => {
+        // All standard Antelope token contracts use the same transfer struct:
+        // (name from, name to, asset quantity, string memo). Native-serialize for
+        // any "transfer" action with the standard fields — this also avoids needing
+        // /v1/chain/abi_json_to_bin, which is disabled on many modern endpoints.
+        (_, "transfer") if json.get("from").is_some() && json.get("to").is_some() && json.get("quantity").is_some() => {
             let from = json_str(json, "from")?;
             let to = json_str(json, "to")?;
             let quantity = json_str(json, "quantity")?;

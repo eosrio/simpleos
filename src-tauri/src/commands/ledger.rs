@@ -88,7 +88,7 @@ pub async fn ledger_sign_and_push(
     });
 
     let result: serde_json::Value = pm
-        .rpc_call("/v1/chain/push_transaction", &push_body, |json| Ok(json))
+        .rpc_call("/v1/chain/send_transaction", &push_body, |json| Ok(json))
         .await?;
 
     if let Some(tx_id) = result.get("transaction_id").and_then(|v| v.as_str()) {
