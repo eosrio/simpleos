@@ -271,8 +271,11 @@ export class FioHandlesComponent {
       const activePermission = acct.info?.permissions?.find(
         (p: any) => p.perm_name === 'active'
       );
-      const fioKey = activePermission?.required_auth?.keys?.[0]?.key;
-      if (fioKey) {
+      const rawKey = activePermission?.required_auth?.keys?.[0]?.key;
+      if (rawKey) {
+        // On-chain permission keys are stored EOS/PUB_K1_ format; get_fio_names
+        // needs the FIO-prefixed form.
+        const fioKey = await this.ipc.toFioPublicKey(rawKey);
         const result = await this.fioApi.getFioNames(acct.chainId, fioKey);
         this.names.set(result);
       }
@@ -332,6 +335,10 @@ export class FioHandlesComponent {
     const keys = await this.ipc.listPublicKeys(acct.chainId);
     if (!keys || keys.length === 0) return;
     const pubkey = keys[0];
+    // pubkey is keystore (EOS/PUB_K1_) format — fine for signing, but FIO
+    // action fields require the FIO-prefixed form or the chain rejects with
+    // "Invalid FIO Public Key".
+    const fioPubkey = await this.ipc.toFioPublicKey(pubkey);
 
     try {
       if (mode === 'regaddress') {
@@ -346,7 +353,7 @@ export class FioHandlesComponent {
             authorization: this.auth(),
             data: {
               fio_address: fullAddress,
-              owner_fio_public_key: pubkey,
+              owner_fio_public_key: fioPubkey,
               max_fee: this.feeEstimates(),
               actor: acct.name,
               tpid: TPID
@@ -364,7 +371,7 @@ export class FioHandlesComponent {
             authorization: this.auth(),
             data: {
               fio_domain: this.inputDomain(),
-              owner_fio_public_key: pubkey,
+              owner_fio_public_key: fioPubkey,
               max_fee: this.feeEstimates(),
               actor: acct.name,
               tpid: TPID

@@ -141,6 +141,7 @@ pub fn run() {
             commands::wallet::import_private_key,
             commands::wallet::import_key_with_session,
             commands::wallet::derive_public_key,
+            commands::wallet::to_fio_public_key,
             commands::wallet::generate_key_pair,
             commands::wallet::list_public_keys,
             commands::wallet::export_private_key,

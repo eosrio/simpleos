@@ -4,6 +4,7 @@ import * as echarts from 'echarts';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { TokenPriceService } from '../../../core/services/token-price.service';
+import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-api.service';
 
 interface ClaimAction {
   timestamp: string;
@@ -77,6 +78,9 @@ interface ClaimAction {
           <h3>Claim History</h3>
           <button class="btn-primary" (click)="onClaimRewards()" [disabled]="busy()">CLAIM REWARDS</button>
         </div>
+        @if (claimError()) {
+          <p class="loading-text" style="color: var(--danger, #ff6b6b)">{{ claimError() }}</p>
+        }
 
         @if (loadingHistory()) {
           <p class="loading-text">Loading claim history...</p>
@@ -198,6 +202,7 @@ interface ClaimAction {
 })
 export class BpRewardsComponent implements OnDestroy {
   busy = signal(false);
+  claimError = signal('');
   loadingHistory = signal(false);
   claimHistory = signal<ClaimAction[]>([]);
   unclaimedPay = signal('—');
@@ -219,6 +224,7 @@ export class BpRewardsComponent implements OnDestroy {
     private ipc: TauriIpcService,
     private tx: TransactionService,
     private priceService: TokenPriceService,
+    private fioApi: FioApiService,
   ) {
     effect(() => {
       const acct = this.wallet.selectedAccount();
@@ -531,10 +537,16 @@ export class BpRewardsComponent implements OnDestroy {
     return match ? match[1].length : 0;
   }
 
+  /** Currently-registered FIO handle owned by this account, or '' if none. */
+  private async fioAddr(): Promise<string> {
+    return this.fioApi.resolveOwnedHandle(this.wallet.selectedAccount());
+  }
+
   async onClaimRewards() {
     const account = this.wallet.selectedAccount();
     if (!account) return;
     this.busy.set(true);
+    this.claimError.set('');
     try {
       const keys = await this.ipc.listPublicKeys(account.chainId);
       if (keys.length === 0) return;
@@ -543,15 +555,25 @@ export class BpRewardsComponent implements OnDestroy {
       const chain = this.wallet.activeChain();
       const isFio = chain?.token_contract === 'fio.token';
 
-      const actions = isFio ? [{
-        account: 'fio.treasury', name: 'bpclaim',
-        authorization: [{ actor: account.name, permission: 'active' }],
-        data: { fio_address: '', actor: account.name },
-      }] : [{
-        account: 'eosio', name: 'claimrewards',
-        authorization: [{ actor: account.name, permission: 'active' }],
-        data: { owner: account.name },
-      }];
+      let actions: any[];
+      if (isFio) {
+        const handle = await this.fioAddr();
+        if (!handle) {
+          this.claimError.set(fioNoHandleMessage('claim BP rewards'));
+          return;
+        }
+        actions = [{
+          account: 'fio.treasury', name: 'bpclaim',
+          authorization: [{ actor: account.name, permission: 'active' }],
+          data: { fio_address: handle, actor: account.name },
+        }];
+      } else {
+        actions = [{
+          account: 'eosio', name: 'claimrewards',
+          authorization: [{ actor: account.name, permission: 'active' }],
+          data: { owner: account.name },
+        }];
+      }
 
       const result = await this.tx.confirm({
         chainId: account.chainId, publicKey: keys[0], actions,
@@ -562,6 +584,8 @@ export class BpRewardsComponent implements OnDestroy {
         await this.loadRewardsData(account.chainId, account.name);
         await this.loadClaimHistory(account.chainId, account.name);
       }
+    } catch (e: any) {
+      this.claimError.set(e?.toString() ?? 'Failed to claim rewards');
     } finally {
       this.busy.set(false);
     }

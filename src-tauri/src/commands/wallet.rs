@@ -109,6 +109,18 @@ pub fn derive_public_key(wif: String) -> Result<String, Error> {
     Ok(public_key)
 }
 
+/// Convert any public key (`EOS...`, `PUB_K1_...`, or hex) to FIO legacy
+/// format (`FIO...`). FIO chain APIs and actions reject EOS/PUB_K1_ keys with
+/// "Invalid FIO Public Key" — every FIO op that takes a pubkey must convert.
+#[tauri::command]
+pub fn to_fio_public_key(key: String) -> Result<String, Error> {
+    if key.starts_with("FIO") {
+        return Ok(key);
+    }
+    let compressed = signing::decode_public_key_flexible(&key)?;
+    Ok(signing::encode_fio_public_key_from_bytes(&compressed))
+}
+
 #[tauri::command]
 pub fn generate_key_pair() -> Result<crate::antelope::types::KeyPairResult, Error> {
     let (wif, public_key) = signing::generate_keypair()?;

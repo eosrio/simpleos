@@ -384,6 +384,13 @@ fn try_native_serialize(
             Ok(Some(hex_encode(&data)))
         }
         ("eosio", "regproducer") => {
+            // FIO's regproducer ABI is unrelated to Antelope's
+            // (fio_address, fio_pub_key, url, location, actor, max_fee).
+            // Detect the FIO shape and defer to abi_json_to_bin so the
+            // chain's real ABI is used instead of mis-serializing.
+            if json.get("fio_address").is_some() {
+                return Ok(None);
+            }
             let producer = json_str(json, "producer")?;
             let producer_key = json_str(json, "producer_key")?;
             let url = json_str(json, "url").unwrap_or("");
@@ -395,6 +402,11 @@ fn try_native_serialize(
             Ok(Some(hex_encode(&data)))
         }
         ("eosio", "unregprod") => {
+            // FIO's unregprod ABI is (fio_address, max_fee, actor), not a
+            // bare producer name. Defer to abi_json_to_bin for the FIO shape.
+            if json.get("fio_address").is_some() {
+                return Ok(None);
+            }
             let producer = json_str(json, "producer")?;
             let data = serialize::serialize_unregprod(producer)?;
             Ok(Some(hex_encode(&data)))

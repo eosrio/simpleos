@@ -227,6 +227,11 @@ export class TauriIpcService {
     return invoke<string>('derive_public_key', { wif });
   }
 
+  /** Convert an EOS/PUB_K1_ public key to FIO legacy format (`FIO...`). */
+  async toFioPublicKey(key: string): Promise<string> {
+    return invoke<string>('to_fio_public_key', { key });
+  }
+
   async importKeyWithSession(wif: string, chainId: string): Promise<ImportResult> {
     return invoke<ImportResult>('import_key_with_session', { wif, chainId });
   }

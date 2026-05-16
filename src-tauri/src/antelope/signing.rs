@@ -366,6 +366,16 @@ fn encode_eos_public_key(compressed_pub: &[u8]) -> String {
     format!("EOS{}", bs58_encode(&data))
 }
 
+/// Encode compressed public key bytes as a FIO public key string.
+/// FIO uses the legacy Graphene format identical to `EOS...` (checksum is
+/// `ripemd160(pubkey)[..4]` with no key-type salt) but with a `FIO` prefix.
+pub fn encode_fio_public_key_from_bytes(compressed_pub: &[u8]) -> String {
+    let checksum = ripemd160(compressed_pub);
+    let mut data = compressed_pub.to_vec();
+    data.extend_from_slice(&checksum[..4]);
+    format!("FIO{}", bs58_encode(&data))
+}
+
 fn wif_decode(wif: &str) -> Result<Vec<u8>, Error> {
     let decoded = bs58_decode(wif).map_err(|e| Error::Signing(format!("Invalid WIF: {}", e)))?;
 

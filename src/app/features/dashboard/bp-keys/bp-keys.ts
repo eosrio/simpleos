@@ -2,6 +2,7 @@ import { Component, computed, effect, signal } from '@angular/core';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
+import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-api.service';
 
 @Component({
   selector: 'app-bp-keys',
@@ -52,6 +53,9 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <span class="config-item"><strong>Key:</strong> {{ savedConfig()!.producer_key.slice(0, 12) }}...{{ savedConfig()!.producer_key.slice(-6) }}</span>
             </div>
           }
+        }
+        @if (emergencyError()) {
+          <p class="finkey-error">{{ emergencyError() }}</p>
         }
       </div>
 
@@ -636,6 +640,10 @@ export class BpKeysComponent {
   busy = signal(false);
   producerInfo = signal<any>(null);
   savedConfig = signal<{ url: string; location: number; producer_key: string } | null>(null);
+  /** FIO handle the producer registered under — required for FIO reg/unreg actions. */
+  fioHandle = signal('');
+  /** Actionable error shown in the emergency panel (e.g. no registered FIO handle). */
+  emergencyError = signal('');
 
   // Finalizer keys
   registeredFinKeys = signal<{ id: number; key: string }[]>([]);
@@ -675,6 +683,7 @@ export class BpKeysComponent {
     public wallet: WalletStateService,
     private ipc: TauriIpcService,
     private tx: TransactionService,
+    private fioApi: FioApiService,
   ) {
     effect(() => {
       const acct = this.wallet.selectedAccount();
@@ -860,6 +869,8 @@ export class BpKeysComponent {
           row.producer_key = row.producer_public_key;
         }
         this.producerInfo.set(row);
+        // FIO producer rows carry the handle the BP registered under.
+        if (row.fio_address) this.fioHandle.set(row.fio_address);
         // Registered unless the row explicitly flags itself inactive.
         // Ultra and other permissioned chains may omit is_active or use a
         // truthy non-1 value; the old `total_votes > 0` fallback misclassified
@@ -889,6 +900,36 @@ export class BpKeysComponent {
   private me(): string { return this.wallet.selectedAccount()?.name ?? ''; }
   private auth() { return [{ actor: this.me(), permission: 'active' }]; }
 
+  /**
+   * The FIO handle this producer is registered under. Prefer the value from
+   * the producers row; fall back to resolving the account's owned handles.
+   */
+  /**
+   * Currently-registered FIO handle owned by this account, or '' if none.
+   * Delegates to the shared resolver, preferring the handle the producer
+   * registered under only if it is still live (it may have been burned).
+   */
+  private async fioAddr(): Promise<string> {
+    const handle = await this.fioApi.resolveOwnedHandle(
+      this.wallet.selectedAccount(),
+      this.fioHandle(),
+    );
+    if (handle) this.fioHandle.set(handle);
+    return handle;
+  }
+
+  /** FIO fee (SUFs) for an endpoint, with a 20% margin to clear boundary checks. */
+  private async fioFee(endpoint: string): Promise<number> {
+    const acct = this.wallet.selectedAccount();
+    if (!acct) return 0;
+    try {
+      const res = await this.ipc.fioGetFee(acct.chainId, endpoint, this.fioHandle());
+      return Math.floor((res?.fee ?? 0) * 1.2);
+    } catch {
+      return 0;
+    }
+  }
+
   private async confirmAction(title: string, actions: any[]) {
     const account = this.wallet.selectedAccount();
     if (!account) return false;
@@ -904,12 +945,33 @@ export class BpKeysComponent {
 
   async onUnregprod() {
     this.busy.set(true);
+    this.emergencyError.set('');
     try {
-      const ok = await this.confirmAction('Unregister Producer', [{
-        account: 'eosio', name: 'unregprod', authorization: this.auth(),
-        data: { producer: this.me() },
-      }]);
+      let actions: any[];
+      if (this.wallet.isFio()) {
+        const handle = await this.fioAddr();
+        if (!handle) {
+          this.emergencyError.set(fioNoHandleMessage('unregister this producer'));
+          return;
+        }
+        actions = [{
+          account: 'eosio', name: 'unregprod', authorization: this.auth(),
+          data: {
+            fio_address: handle,
+            max_fee: await this.fioFee('unregister_producer'),
+            actor: this.me(),
+          },
+        }];
+      } else {
+        actions = [{
+          account: 'eosio', name: 'unregprod', authorization: this.auth(),
+          data: { producer: this.me() },
+        }];
+      }
+      const ok = await this.confirmAction('Unregister Producer', actions);
       if (ok) this.isRegistered.set(false);
+    } catch (e: any) {
+      this.emergencyError.set(e?.toString() ?? 'Failed to unregister producer');
     } finally {
       this.busy.set(false);
     }
@@ -950,17 +1012,41 @@ export class BpKeysComponent {
     if (!config) return;
 
     this.busy.set(true);
+    this.emergencyError.set('');
     try {
-      const ok = await this.confirmAction('Re-register Producer', [{
-        account: 'eosio', name: 'regproducer', authorization: this.auth(),
-        data: {
-          producer: this.me(),
-          producer_key: config.producer_key,
-          url: config.url,
-          location: config.location,
-        },
-      }]);
+      let actions: any[];
+      if (this.wallet.isFio()) {
+        const handle = await this.fioAddr();
+        if (!handle) {
+          this.emergencyError.set(fioNoHandleMessage('re-register this producer'));
+          return;
+        }
+        actions = [{
+          account: 'eosio', name: 'regproducer', authorization: this.auth(),
+          data: {
+            fio_address: handle,
+            fio_pub_key: config.producer_key,
+            url: config.url,
+            location: config.location,
+            actor: this.me(),
+            max_fee: await this.fioFee('register_producer'),
+          },
+        }];
+      } else {
+        actions = [{
+          account: 'eosio', name: 'regproducer', authorization: this.auth(),
+          data: {
+            producer: this.me(),
+            producer_key: config.producer_key,
+            url: config.url,
+            location: config.location,
+          },
+        }];
+      }
+      const ok = await this.confirmAction('Re-register Producer', actions);
       if (ok) this.isRegistered.set(true);
+    } catch (e: any) {
+      this.emergencyError.set(e?.toString() ?? 'Failed to re-register producer');
     } finally {
       this.busy.set(false);
     }

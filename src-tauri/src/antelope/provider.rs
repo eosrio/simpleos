@@ -493,9 +493,28 @@ async fn rpc_post(
             .and_then(|d| d.get("message"))
             .and_then(|m| m.as_str());
 
-        let msg = match detail {
-            Some(d) => format!("HTTP {}: {}: {}", status.as_u16(), what, d),
-            None => format!("HTTP {}: {}", status.as_u16(), what),
+        // FIO's request validator returns the real cause in a top-level
+        // `fields` array: [{ "name", "value", "error" }]. nodeos's generic
+        // `message` ("...check the nested errors...") is useless without it.
+        let fio_fields = json
+            .get("fields")
+            .and_then(|f| f.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|f| {
+                        let name = f.get("name").and_then(|v| v.as_str()).unwrap_or("?");
+                        let err = f.get("error").and_then(|v| v.as_str())?;
+                        Some(format!("{}: {}", name, err))
+                    })
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            })
+            .filter(|s| !s.is_empty());
+
+        let msg = match (detail, fio_fields) {
+            (_, Some(f)) => format!("HTTP {}: {}: {}", status.as_u16(), what, f),
+            (Some(d), None) => format!("HTTP {}: {}: {}", status.as_u16(), what, d),
+            (None, None) => format!("HTTP {}: {}", status.as_u16(), what),
         };
 
         // Use RpcResponse to signal "endpoint is fine, request was rejected" —
