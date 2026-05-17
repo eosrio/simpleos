@@ -46,13 +46,20 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
               RE-REGISTER NOW
             </button>
           </div>
-          @if (savedConfig()) {
-            <div class="saved-config">
-              <span class="config-item"><strong>URL:</strong> {{ savedConfig()!.url }}</span>
-              <span class="config-item"><strong>Location:</strong> {{ savedConfig()!.location }}</span>
-              <span class="config-item"><strong>Key:</strong> {{ savedConfig()!.producer_key.slice(0, 12) }}...{{ savedConfig()!.producer_key.slice(-6) }}</span>
-            </div>
-          }
+          <div class="rereg-form">
+            <label for="reregKey">Block Signing Key</label>
+            <input id="reregKey" type="text" class="rereg-input"
+                   [value]="reregKey()"
+                   (input)="reregKey.set($any($event.target).value.trim())"
+                   placeholder="FIO… / EOS… / PUB_K1_… public key"
+                   spellcheck="false" autocomplete="off" />
+            @if (savedConfig()) {
+              <div class="saved-config">
+                <span class="config-item"><strong>URL:</strong> {{ savedConfig()!.url }}</span>
+                <span class="config-item"><strong>Location:</strong> {{ savedConfig()!.location }}</span>
+              </div>
+            }
+          </div>
         }
         @if (emergencyError()) {
           <p class="finkey-error">{{ emergencyError() }}</p>
@@ -358,6 +365,31 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
     .config-item strong {
       color: var(--text-body);
     }
+    .rereg-form {
+      margin-top: var(--sp-3);
+      padding-top: var(--sp-3);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .rereg-form label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: var(--sp-2);
+    }
+    .rereg-input {
+      width: 100%;
+      padding: var(--sp-3) var(--sp-4);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-hover);
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 13px;
+      transition: border-color 150ms ease;
+    }
+    .rereg-input:focus { outline: none; border-color: var(--accent); }
+    .rereg-input::placeholder { color: var(--text-disabled); }
+    .rereg-form .saved-config { margin-top: var(--sp-3); }
 
     .keys-grid {
       display: flex;
@@ -644,6 +676,17 @@ export class BpKeysComponent {
   fioHandle = signal('');
   /** Actionable error shown in the emergency panel (e.g. no registered FIO handle). */
   emergencyError = signal('');
+  /** Editable block-signing key for re-registration (defaults to last good key). */
+  reregKey = signal('');
+
+  /**
+   * A producer's `producer_public_key` is zeroed to the all-ones sentinel
+   * (`FIO/EOS1111…`, `PUB_K1_111…`) when unregistered. That is not a usable
+   * signing key — never prefill or re-register with it.
+   */
+  private isPlaceholderKey(k?: string): boolean {
+    return !k || /1{24,}/.test(k);
+  }
 
   // Finalizer keys
   registeredFinKeys = signal<{ id: number; key: string }[]>([]);
@@ -878,21 +921,38 @@ export class BpKeysComponent {
         const ia = row.is_active;
         const isInactive = ia === 0 || ia === false || ia === '0';
         this.isRegistered.set(!isInactive);
+        const onChainKey = row.producer_key ?? row.producer_public_key ?? '';
+        // When unregistered the on-chain key is the null sentinel — fall back
+        // to the real key persisted before unregistration so re-registration
+        // doesn't push a dead key.
+        let goodKey = onChainKey;
+        if (this.isPlaceholderKey(onChainKey)) {
+          try {
+            const prev = await this.ipc.storeGet<{ producer_key?: string }>(`bp_config_${account}`);
+            goodKey = prev?.producer_key && !this.isPlaceholderKey(prev.producer_key)
+              ? prev.producer_key : '';
+          } catch { goodKey = ''; }
+        }
         const cfg = {
           url: row.url ?? '',
           location: row.location ?? 0,
-          producer_key: row.producer_key ?? row.producer_public_key ?? '',
+          producer_key: goodKey,
         };
         this.savedConfig.set(cfg);
-        // Prefill update-registration form if untouched
+        // Prefill update-registration + re-register forms if untouched
         if (!this.regDirty() || !this.regKey()) {
-          this.regKey.set(cfg.producer_key);
+          this.regKey.set(goodKey);
           this.regUrl.set(cfg.url);
           this.regLocation.set(cfg.location);
         }
-        try {
-          await this.ipc.storeSet(`bp_config_${account}`, this.savedConfig());
-        } catch { /* non-critical */ }
+        if (!this.reregKey()) this.reregKey.set(goodKey);
+        // Only persist when we have a real key — never overwrite a saved good
+        // key with the null sentinel from an unregistered row.
+        if (goodKey) {
+          try {
+            await this.ipc.storeSet(`bp_config_${account}`, cfg);
+          } catch { /* non-critical */ }
+        }
       }
     } catch { /* offline or not a producer */ }
   }
@@ -1011,6 +1071,17 @@ export class BpKeysComponent {
     const config = this.savedConfig();
     if (!config) return;
 
+    // Use the (editable) signing key from the panel, never the on-chain null
+    // sentinel that unregprod leaves behind.
+    const signingKey = this.reregKey().trim();
+    if (this.isPlaceholderKey(signingKey)) {
+      this.emergencyError.set(
+        'Enter a valid block signing key before re-registering. ' +
+        'The unregistered producer has no on-chain key, so it must be set manually.',
+      );
+      return;
+    }
+
     this.busy.set(true);
     this.emergencyError.set('');
     try {
@@ -1025,7 +1096,7 @@ export class BpKeysComponent {
           account: 'eosio', name: 'regproducer', authorization: this.auth(),
           data: {
             fio_address: handle,
-            fio_pub_key: config.producer_key,
+            fio_pub_key: signingKey,
             url: config.url,
             location: config.location,
             actor: this.me(),
@@ -1037,7 +1108,7 @@ export class BpKeysComponent {
           account: 'eosio', name: 'regproducer', authorization: this.auth(),
           data: {
             producer: this.me(),
-            producer_key: config.producer_key,
+            producer_key: signingKey,
             url: config.url,
             location: config.location,
           },

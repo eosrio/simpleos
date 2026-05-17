@@ -241,8 +241,14 @@ export class WalletStateService {
 
       const extraBalances = chain ? await this.fetchExtraTokenBalances(chain, account.name) : [];
 
-      // Detect producer status
-      let isProducer = false;
+      // Detect producer status. Sticky: once an account is known to be a
+      // producer we never downgrade it on a later miss/failure. An
+      // unregistered producer is still a producer (its `producers` row
+      // persists, is_active:0), and a transient FIO/RPC hiccup must not hide
+      // the Producer section — that would trap the user with no way to reach
+      // the RE-REGISTER button (the whole point of emergency-unreg saving
+      // config). Rank, by contrast, only reflects *active* production.
+      let isProducer = account.isProducer ?? false;
       let producerRank: number | undefined;
       let producerUrl = account.producerUrl;
       try {
@@ -258,6 +264,8 @@ export class WalletStateService {
           const rank = sorted.findIndex((r: any) => r.owner === account.name);
           if (rank >= 0) producerRank = rank + 1;
         }
+        // bp not found → leave isProducer at its sticky (cached) value;
+        // rank stays undefined since the account is not actively producing.
         console.log(`[wallet] producer check: ${account.name}@${account.chainName} isProducer=${isProducer} rank=${producerRank ?? '—'}`);
       } catch (e) {
         // Keep existing value on failure so cached state survives
