@@ -347,6 +347,46 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
                 }
               </div>
             }
+
+            <!-- Biometric Unlock -->
+            <div class="setting-item">
+              <div>
+                <span class="setting-label">Biometric Unlock</span>
+                <span class="setting-desc">
+                  {{
+                    biometricAvailable()
+                      ? (hasBiometricConfigured() ? 'Windows Hello is set for this wallet' : 'Use Windows Hello for quick unlock')
+                      : biometricReason()
+                  }}
+                </span>
+              </div>
+              @if (hasBiometricConfigured()) {
+                <button class="btn-danger btn-small" (click)="onRemoveBiometric()">REMOVE</button>
+              } @else {
+                <button class="btn-ghost btn-small" (click)="showBiometricSetup.set(true)" [disabled]="!biometricAvailable()">ENABLE</button>
+              }
+            </div>
+
+            @if (showBiometricSetup()) {
+              <div class="backup-dialog">
+                <input class="form-input" type="password" placeholder="Current passphrase"
+                       [value]="biometricPassphrase()"
+                       (input)="biometricPassphrase.set($any($event.target).value)" />
+                <div class="backup-actions">
+                  <button class="btn-cancel btn-small" (click)="closeBiometricSetup()">Cancel</button>
+                  <button class="btn-primary btn-small" (click)="onSetBiometric()"
+                          [disabled]="!biometricPassphrase() || biometricBusy()">
+                    {{ biometricBusy() ? 'Waiting...' : 'Enable' }}
+                  </button>
+                </div>
+                @if (biometricError()) {
+                  <p class="backup-msg error">{{ biometricError() }}</p>
+                }
+                @if (biometricSuccess()) {
+                  <p class="backup-msg success">{{ biometricSuccess() }}</p>
+                }
+              </div>
+            }
           </div>
 
           <!-- Backup -->
@@ -943,6 +983,7 @@ export class SettingsComponent {
     private router: Router,
   ) {
     this.loadPinStatus();
+    this.loadBiometricStatus();
     this.loadAutoLockSetting();
     this.loadCloseToTraySetting();
   }
@@ -1057,7 +1098,9 @@ export class SettingsComponent {
     this.changingPassphrase.set(true);
     try {
       await this.ipc.changePassphrase(this.oldPassphrase(), this.newPassphrase());
-      this.passphraseSuccess.set('Passphrase changed successfully');
+      this.hasPinConfigured.set(false);
+      this.hasBiometricConfigured.set(false);
+      this.passphraseSuccess.set('Passphrase changed successfully. Quick unlock has been disabled.');
       setTimeout(() => this.closeChangePassphrase(), 2000);
     } catch (e: any) {
       const msg = e?.toString() ?? 'Failed to change passphrase';
@@ -1187,6 +1230,62 @@ export class SettingsComponent {
     try {
       await this.ipc.removePin();
       this.hasPinConfigured.set(false);
+    } catch { /* ignore */ }
+  }
+
+  // ── Biometric Unlock ──
+
+  biometricAvailable = signal(false);
+  hasBiometricConfigured = signal(false);
+  biometricReason = signal('Biometric unlock is unavailable');
+  showBiometricSetup = signal(false);
+  biometricPassphrase = signal('');
+  biometricBusy = signal(false);
+  biometricError = signal('');
+  biometricSuccess = signal('');
+
+  private async loadBiometricStatus() {
+    try {
+      const status = await this.ipc.biometricStatus();
+      this.biometricAvailable.set(status.available);
+      this.hasBiometricConfigured.set(status.configured);
+      this.biometricReason.set(status.reason);
+    } catch (e: any) {
+      this.biometricAvailable.set(false);
+      this.hasBiometricConfigured.set(false);
+      this.biometricReason.set(e?.toString() ?? 'Biometric unlock is unavailable');
+    }
+  }
+
+  closeBiometricSetup() {
+    this.showBiometricSetup.set(false);
+    this.biometricPassphrase.set('');
+    this.biometricBusy.set(false);
+    this.biometricError.set('');
+    this.biometricSuccess.set('');
+  }
+
+  async onSetBiometric() {
+    this.biometricBusy.set(true);
+    this.biometricError.set('');
+    this.biometricSuccess.set('');
+    try {
+      await this.ipc.setBiometricUnlock(this.biometricPassphrase());
+      this.hasBiometricConfigured.set(true);
+      this.biometricSuccess.set('Biometric unlock enabled');
+      setTimeout(() => this.closeBiometricSetup(), 1500);
+    } catch (e: any) {
+      const msg = e?.toString() ?? 'Failed to enable biometric unlock';
+      this.biometricError.set(msg.includes('InvalidPassphrase') ? 'Incorrect passphrase' : msg);
+    } finally {
+      this.biometricBusy.set(false);
+    }
+  }
+
+  async onRemoveBiometric() {
+    try {
+      await this.ipc.removeBiometricUnlock();
+      this.hasBiometricConfigured.set(false);
     } catch { /* ignore */ }
   }
 

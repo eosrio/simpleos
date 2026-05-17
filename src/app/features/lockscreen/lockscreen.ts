@@ -30,28 +30,37 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
         <h1 class="brand">Simpl<span class="brand-accent">EOS</span></h1>
 
-        @if (pinAvailable() && !showPassphrase()) {
-          <p class="subtitle">Enter your PIN to unlock</p>
-          <form class="unlock-form" (ngSubmit)="onPinUnlock()">
-            <div class="input-group">
-              <input
-                type="password"
-                inputmode="numeric"
-                maxlength="6"
-                [value]="pin()"
-                (input)="pin.set($any($event.target).value)"
-                placeholder="PIN"
-                autofocus
-                autocomplete="off"
-              />
-            </div>
-            @if (error()) {
-              <p class="error-msg">{{ error() }}</p>
-            }
-            <button type="submit" class="btn-primary" [disabled]="!pin()">
-              Unlock
+        @if ((pinAvailable() || biometricConfigured()) && !showPassphrase()) {
+          <p class="subtitle">{{ biometricConfigured() ? 'Use Windows Hello to unlock' : 'Enter your PIN to unlock' }}</p>
+          @if (biometricConfigured()) {
+            <button type="button" class="btn-primary unlock-action" (click)="onBiometricUnlock()">
+              Unlock with Windows Hello
             </button>
-          </form>
+          }
+          @if (pinAvailable()) {
+            <form class="unlock-form" (ngSubmit)="onPinUnlock()">
+              <div class="input-group">
+                <input
+                  type="password"
+                  inputmode="numeric"
+                  maxlength="6"
+                  [value]="pin()"
+                  (input)="pin.set($any($event.target).value)"
+                  placeholder="PIN"
+                  autofocus
+                  autocomplete="off"
+                />
+              </div>
+              @if (error()) {
+                <p class="error-msg">{{ error() }}</p>
+              }
+              <button type="submit" class="btn-primary" [disabled]="!pin()">
+                Unlock
+              </button>
+            </form>
+          } @else if (error()) {
+            <p class="error-msg">{{ error() }}</p>
+          }
           <a class="import-link" (click)="showPassphrase.set(true)">Use passphrase instead</a>
         } @else {
           <p class="subtitle">Enter your passphrase to unlock</p>
@@ -73,8 +82,8 @@ import { WindowControlsComponent } from '../../shared/window-controls';
               Unlock
             </button>
           </form>
-          @if (pinAvailable()) {
-            <a class="import-link" (click)="showPassphrase.set(false)">Use PIN instead</a>
+          @if (pinAvailable() || biometricConfigured()) {
+            <a class="import-link" (click)="showPassphrase.set(false)">Use quick unlock instead</a>
           }
         }
 
@@ -245,6 +254,10 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       background: var(--accent-hover);
     }
 
+    .unlock-action {
+      width: 320px;
+    }
+
     .btn-primary:disabled {
       opacity: 0.4;
       cursor: not-allowed;
@@ -350,6 +363,7 @@ export class LockscreenComponent {
   logoHover = signal(false);
   showResetConfirm = signal(false);
   pinAvailable = signal(false);
+  biometricConfigured = signal(false);
   showPassphrase = signal(false);
 
   constructor(
@@ -359,6 +373,7 @@ export class LockscreenComponent {
     private loader: LoaderService,
   ) {
     this.checkPin();
+    this.checkBiometric();
   }
 
   private async checkPin() {
@@ -366,6 +381,15 @@ export class LockscreenComponent {
       this.pinAvailable.set(await this.ipc.hasPin());
     } catch {
       this.pinAvailable.set(false);
+    }
+  }
+
+  private async checkBiometric() {
+    try {
+      const status = await this.ipc.biometricStatus();
+      this.biometricConfigured.set(status.available && status.configured);
+    } catch {
+      this.biometricConfigured.set(false);
     }
   }
 
@@ -416,6 +440,35 @@ export class LockscreenComponent {
       }
     } catch {
       this.error.set('Invalid PIN');
+    } finally {
+      this.loader.hide();
+    }
+  }
+
+  async onBiometricUnlock() {
+    this.error.set('');
+    this.loader.show('Unlocking wallet', 'Waiting for Windows Hello');
+    await this.loader.yieldToPaint();
+    try {
+      const success = await this.ipc.unlockWithBiometric();
+      if (success) {
+        this.loader.update('Decrypting vault', 'Verifying stored keys');
+        this.wallet.locked.set(false);
+        this.loader.update('Restoring accounts', 'Loading cached data');
+        const restored = await this.wallet.restoreAccounts();
+        if (!restored) {
+          this.loader.update('Fetching accounts', 'Connecting to blockchain');
+          await this.wallet.loadAccounts();
+        } else {
+          this.loader.update('Syncing balances', 'Refreshing chain data');
+          this.wallet.refreshAllAccounts();
+        }
+        this.router.navigate(['/dashboard']);
+      } else {
+        this.error.set('Windows Hello unlock failed');
+      }
+    } catch (e: any) {
+      this.error.set(e?.toString()?.includes('canceled') ? 'Windows Hello was canceled' : 'Windows Hello unlock failed');
     } finally {
       this.loader.hide();
     }

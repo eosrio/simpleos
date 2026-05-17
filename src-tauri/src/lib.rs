@@ -1,4 +1,5 @@
 pub mod antelope;
+pub mod biometric;
 pub mod commands;
 pub mod error;
 pub mod keystore;
@@ -164,6 +165,11 @@ pub fn run() {
             commands::wallet::unlock_with_pin,
             commands::wallet::has_pin,
             commands::wallet::remove_pin,
+            commands::wallet::biometric_status,
+            commands::wallet::set_biometric_unlock,
+            commands::wallet::unlock_with_biometric,
+            commands::wallet::has_biometric_unlock,
+            commands::wallet::remove_biometric_unlock,
             commands::wallet::reset_wallet,
             commands::wallet::test_keyring,
             // Tray / window

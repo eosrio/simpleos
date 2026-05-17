@@ -186,6 +186,12 @@ export interface AnchorImportResult {
   errors: string[];
 }
 
+export interface BiometricStatus {
+  available: boolean;
+  configured: boolean;
+  reason: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
 
@@ -517,6 +523,28 @@ export class TauriIpcService {
 
   async removePin(): Promise<void> {
     return invoke<void>('remove_pin');
+  }
+
+  // ── Biometric Unlock ──
+
+  async biometricStatus(): Promise<BiometricStatus> {
+    return invoke<BiometricStatus>('biometric_status');
+  }
+
+  async setBiometricUnlock(passphrase: string): Promise<void> {
+    return invoke<void>('set_biometric_unlock', { passphrase });
+  }
+
+  async unlockWithBiometric(): Promise<boolean> {
+    return invoke<boolean>('unlock_with_biometric');
+  }
+
+  async hasBiometricUnlock(): Promise<boolean> {
+    return invoke<boolean>('has_biometric_unlock');
+  }
+
+  async removeBiometricUnlock(): Promise<void> {
+    return invoke<void>('remove_biometric_unlock');
   }
 
   // ── Backup ──

@@ -224,10 +224,15 @@ pub fn change_passphrase(
     old_passphrase: String,
     new_passphrase: String,
     wallet: State<AppWallet>,
+    app: tauri::AppHandle,
 ) -> Result<(), Error> {
     wallet
         .0
         .change_passphrase(&old_passphrase, &new_passphrase)?;
+    let _ = crate::biometric::remove_unlock_secret(&app);
+    if let Ok(app_dir) = app.path().app_data_dir() {
+        let _ = std::fs::remove_file(app_dir.join("pin.dat"));
+    }
     Ok(())
 }
 
@@ -452,6 +457,48 @@ pub fn remove_pin(app: tauri::AppHandle) -> Result<(), Error> {
     Ok(())
 }
 
+// ── Biometric Unlock ──
+
+#[tauri::command]
+pub fn biometric_status(app: tauri::AppHandle) -> Result<crate::biometric::BiometricStatus, Error> {
+    crate::biometric::status(&app)
+}
+
+#[tauri::command(async)]
+pub fn set_biometric_unlock(
+    passphrase: String,
+    wallet: State<AppWallet>,
+    app: tauri::AppHandle,
+) -> Result<(), Error> {
+    wallet.0.unlock(&passphrase)?;
+    crate::biometric::set_unlock_secret(
+        &app,
+        &passphrase,
+        "Use Windows Hello to enable biometric unlock for SimplEOS",
+    )
+}
+
+#[tauri::command(async)]
+pub fn unlock_with_biometric(
+    app: tauri::AppHandle,
+    wallet: State<AppWallet>,
+) -> Result<bool, Error> {
+    let passphrase =
+        crate::biometric::unlock_secret(&app, "Use Windows Hello to unlock your SimplEOS wallet")?;
+    wallet.0.unlock(&passphrase)?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn has_biometric_unlock(app: tauri::AppHandle) -> Result<bool, Error> {
+    crate::biometric::has_unlock_secret(&app)
+}
+
+#[tauri::command]
+pub fn remove_biometric_unlock(app: tauri::AppHandle) -> Result<(), Error> {
+    crate::biometric::remove_unlock_secret(&app)
+}
+
 // ── Backup ──
 
 // async: encrypts every key in the vault — off-thread.
@@ -490,6 +537,7 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
         let _ = std::fs::remove_dir_all(app_dir.join("keys"));
         // Delete the tauri-plugin-store file
         let _ = std::fs::remove_file(app_dir.join("wallet-state.json"));
+        let _ = std::fs::remove_file(app_dir.join("biometric.dat"));
     }
 
     // Clear all keys from the key store for known chains
@@ -566,7 +614,6 @@ pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
 
     // Test 5: Full store→list round-trip through active WalletService keystore
     {
-        use crate::keystore::store::KeyStore;
         let test_chain = "test-diagnostic-chain";
         let test_pub = "EOS6MRyTestDiagnosticKey";
         let test_data = b"test-encrypted-blob";
