@@ -64,7 +64,7 @@ export class ThemeService {
   /** Set chain theme from a chain name */
   setChainByName(name: string) {
     const normalized = name.toLowerCase().trim();
-    const theme = CHAIN_NAME_MAP[normalized];
+    const theme = CHAIN_NAME_MAP[normalized] ?? CHAIN_NAME_MAP[normalized.replace(/\s+testnet$/, '')];
     if (theme) {
       this.chainTheme.set(theme);
     }

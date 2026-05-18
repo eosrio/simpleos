@@ -149,6 +149,11 @@ export interface ActiveEndpoints {
   hyperion_endpoints: EndpointState[];
 }
 
+export interface SignedTransactionResult {
+  packed_trx: string;
+  signature: string;
+}
+
 // ── Anchor Import Types ──
 
 export interface AnchorWalletEntry {
@@ -415,6 +420,14 @@ export class TauriIpcService {
     return invoke<{ transaction_id: string }>('sign_and_push', { chainId, publicKey, actions });
   }
 
+  async signTransaction(chainId: string, publicKey: string, actions: any[]): Promise<SignedTransactionResult> {
+    return invoke<SignedTransactionResult>('sign_transaction', { chainId, publicKey, actions });
+  }
+
+  async signTransactionWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<SignedTransactionResult> {
+    return invoke<SignedTransactionResult>('sign_transaction_with_passphrase', { chainId, publicKey, passphrase, actions });
+  }
+
   async signAndPushWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<{ transaction_id: string }> {
     return invoke<{ transaction_id: string }>('sign_and_push_with_passphrase', { chainId, publicKey, passphrase, actions });
   }
@@ -453,6 +466,10 @@ export class TauriIpcService {
 
   async ledgerSignAndPush(chainId: string, accountIndex: number, actions: any[]): Promise<{ transaction_id: string }> {
     return invoke('ledger_sign_and_push', { chainId, accountIndex, actions });
+  }
+
+  async ledgerSignTransaction(chainId: string, accountIndex: number, actions: any[]): Promise<SignedTransactionResult> {
+    return invoke<SignedTransactionResult>('ledger_sign_transaction', { chainId, accountIndex, actions });
   }
 
   /** Start background polling for Ledger device connect/disconnect events. */

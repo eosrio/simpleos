@@ -14,6 +14,8 @@ export interface TxRequest {
   publicKey: string;
   actions: TxAction[];
   title?: string;
+  mode?: TxExecutionMode;
+  ledgerIndex?: number;
   /** When true, success phase shows "Login Successful" instead of "Transaction Sent" */
   isLogin?: boolean;
 }
@@ -23,6 +25,14 @@ export interface TxResult {
   block_num?: number;
   block_time?: string;
 }
+
+export interface TxSignOnlyResult {
+  packed_trx: string;
+  signature: string;
+}
+
+export type TxExecutionMode = 'push' | 'signOnly' | 'export';
+export type TxCompletion = TxResult | TxSignOnlyResult;
 
 type ModalPhase = 'hidden' | 'review' | 'signing' | 'success' | 'error';
 
@@ -34,14 +44,16 @@ export class TransactionService {
   readonly request = signal<TxRequest | null>(null);
   readonly passphrase = signal('');
   readonly needsPassphrase = signal(false);
-  readonly result = signal<TxResult | null>(null);
+  readonly result = signal<TxCompletion | null>(null);
   readonly errorMessage = signal('');
+  readonly debugDetails = signal('');
 
   readonly visible = computed(() => this.phase() !== 'hidden');
+  readonly mode = computed<TxExecutionMode>(() => this.request()?.mode ?? 'push');
 
   // Promise callbacks stored for the current request
-  private resolve: ((result: TxResult | null) => void) | null = null;
-  private customSignHandler?: () => Promise<TxResult>;
+  private resolve: ((result: TxCompletion | null) => void) | null = null;
+  private customSignHandler?: () => Promise<TxCompletion>;
 
   constructor(
     private ipc: TauriIpcService,
@@ -52,7 +64,9 @@ export class TransactionService {
    * Open the confirmation modal and return a promise that resolves
    * when the transaction completes (or null if cancelled).
    */
-  async confirm(request: TxRequest, customSign?: () => Promise<TxResult>): Promise<TxResult | null> {
+  async confirm(request: TxRequest & { mode: 'signOnly' }, customSign?: () => Promise<TxCompletion>): Promise<TxCompletion | null>;
+  async confirm(request: TxRequest, customSign?: () => Promise<TxCompletion>): Promise<TxResult | null>;
+  async confirm(request: TxRequest, customSign?: () => Promise<TxCompletion>): Promise<TxCompletion | null> {
     // Check if passphrase is needed for signing
     let needsPass = false;
     if (this.wallet.hasTauri()) {
@@ -66,10 +80,11 @@ export class TransactionService {
     this.passphrase.set('');
     this.result.set(null);
     this.errorMessage.set('');
+    this.debugDetails.set('');
     this.phase.set('review');
     this.customSignHandler = customSign;
 
-    return new Promise<TxResult | null>(resolve => {
+    return new Promise<TxCompletion | null>(resolve => {
       this.resolve = resolve;
     });
   }
@@ -103,11 +118,21 @@ export class TransactionService {
     this.errorMessage.set('');
 
     try {
-      let result: TxResult;
+      let result: TxCompletion;
 
       if (this.customSignHandler) {
         // Evaluate the custom sign handler if one was provided
         result = await this.customSignHandler();
+      } else if (req.mode === 'signOnly' && req.ledgerIndex !== undefined) {
+        result = await this.ipc.ledgerSignTransaction(req.chainId, req.ledgerIndex, req.actions);
+      } else if (req.mode === 'signOnly' && this.needsPassphrase()) {
+        result = await this.ipc.signTransactionWithPassphrase(
+          req.chainId, req.publicKey, this.passphrase(), req.actions,
+        );
+      } else if (req.mode === 'signOnly') {
+        result = await this.ipc.signTransaction(req.chainId, req.publicKey, req.actions);
+      } else if (req.ledgerIndex !== undefined) {
+        result = await this.ipc.ledgerSignAndPush(req.chainId, req.ledgerIndex, req.actions);
       } else if (this.needsPassphrase()) {
         result = await this.ipc.signAndPushWithPassphrase(
           req.chainId, req.publicKey, this.passphrase(), req.actions,
@@ -121,6 +146,16 @@ export class TransactionService {
     } catch (e: any) {
       console.error('[tx] sign failed:', e);
       this.errorMessage.set(parseError(e));
+      this.debugDetails.set(JSON.stringify({
+        title: req.title ?? 'Confirm Transaction',
+        mode: req.mode ?? 'push',
+        chainId: req.chainId,
+        publicKey: req.publicKey,
+        ledgerIndex: req.ledgerIndex,
+        actionCount: req.actions.length,
+        actions: req.actions,
+        error: typeof e === 'string' ? e : e?.message ?? String(e),
+      }, null, 2));
       this.phase.set('error');
     }
   }
@@ -180,7 +215,7 @@ function friendlyMessage(msg: string): string {
 
   // Clean up Rust error wrapping
   const rustMatch = cleaned.match(/^Rpc\("(.*)"\)$/s);
-  if (rustMatch) return rustMatch[1].slice(0, 200);
+  if (rustMatch) return rustMatch[1].slice(0, 1200);
 
-  return cleaned.slice(0, 300);
+  return cleaned.slice(0, 1200);
 }

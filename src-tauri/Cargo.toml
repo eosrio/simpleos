@@ -13,11 +13,14 @@ name = "simpleos_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
-default = ["ledger"]
+default = ["ledger", "local-abieos"]
 # Ledger hardware wallet support. Requires libudev-dev on Linux.
 # Disable with `cargo test --no-default-features` to run backend tests
 # on systems without libudev headers.
 ledger = ["dep:hidapi"]
+# Local ABI JSON serialization via eosrio/rs-abieos. The dependency is target-
+# gated below because rs-abieos supports Unix-like C++ toolchains and Windows GNU.
+local-abieos = ["dep:rs_abieos"]
 
 [build-dependencies]
 tauri-build = { version = "2.5.6", features = [] }
@@ -57,9 +60,6 @@ rand = "0.8"
 blst = "0.3"
 base64 = "0.22"
 
-# ABI serialization
-# rs_abieos = "*"  # TODO: uncomment when ready to integrate
-
 # OS keychain
 keyring = "3"
 
@@ -90,6 +90,9 @@ tauri-plugin-single-instance = "2"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-process = "2.3.1"
 tauri-plugin-updater = "2.10.1"
+
+[target.'cfg(any(target_os = "linux", target_os = "macos", all(target_os = "windows", target_env = "gnu")))'.dependencies]
+rs_abieos = { version = "0.4.0", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-future = "0.2.1"

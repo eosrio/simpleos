@@ -87,9 +87,7 @@ pub async fn ledger_sign_and_push(
         "packed_trx": packed_hex,
     });
 
-    let result: serde_json::Value = pm
-        .rpc_call("/v1/chain/send_transaction", &push_body, |json| Ok(json))
-        .await?;
+    let result = transaction::push_packed_transaction(pm, &push_body).await?;
 
     if let Some(tx_id) = result.get("transaction_id").and_then(|v| v.as_str()) {
         Ok(crate::antelope::transaction::TransactionResult {
@@ -111,6 +109,39 @@ pub async fn ledger_sign_and_push(
             .unwrap_or("Push transaction failed");
         Err(Error::Rpc(err_msg.to_string()))
     }
+}
+
+/// Sign a transaction using the Ledger without broadcasting it.
+/// Returns packed transaction hex plus the Ledger-produced signature.
+#[tauri::command]
+pub async fn ledger_sign_transaction(
+    chain_id: String,
+    account_index: u32,
+    actions: Vec<crate::antelope::transaction::ActionDesc>,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    let path = protocol::eos_bip44_path(0, account_index);
+
+    let mut map = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    let (packed_trx, actual_chain_id) = transaction::build_transaction(pm, &actions).await?;
+    let chain_id_bytes = hex::decode(&actual_chain_id)
+        .map_err(|e| Error::Serialization(format!("Invalid chain_id hex: {}", e)))?;
+
+    let mut signing_data = Vec::with_capacity(chain_id_bytes.len() + packed_trx.len() + 32);
+    signing_data.extend_from_slice(&chain_id_bytes);
+    signing_data.extend_from_slice(&packed_trx);
+    signing_data.extend_from_slice(&[0u8; 32]);
+
+    let signature = protocol::sign_transaction(&path, &signing_data)?;
+
+    Ok(serde_json::json!({
+        "packed_trx": hex::encode(&packed_trx),
+        "signature": signature,
+    }))
 }
 
 /// Start a background task that polls for Ledger device connect/disconnect events.

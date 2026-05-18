@@ -3,6 +3,7 @@
 //! Provides a high-level API that takes JSON action descriptions, fetches TAPOS
 //! from chain info, serializes actions, signs with a local key, and pushes to nodeos.
 
+use crate::antelope::abi_serializer;
 use crate::antelope::provider::ProviderManager;
 use crate::antelope::serialize::{self, hex_encode, serialize_action, RawTransaction};
 use crate::antelope::signing;
@@ -15,7 +16,7 @@ pub struct ActionDesc {
     pub account: String,
     pub name: String,
     pub authorization: Vec<AuthDesc>,
-    /// Either pre-serialized hex data OR JSON data to be serialized via abi_json_to_bin.
+    /// Either pre-serialized hex data OR JSON data to be serialized via ABI.
     pub data: ActionData,
 }
 
@@ -30,7 +31,7 @@ pub struct AuthDesc {
 pub enum ActionData {
     /// Already serialized as hex string.
     Hex(String),
-    /// JSON data — needs abi_json_to_bin or native serialization.
+    /// JSON data — needs native, local ABI, or RPC ABI serialization.
     Json(serde_json::Value),
 }
 
@@ -48,7 +49,7 @@ pub struct TransactionResult {
 ///
 /// This is the main entry point for transaction submission:
 /// 1. Fetches chain info for TAPOS
-/// 2. Serializes each action (native for known types, abi_json_to_bin for custom)
+/// 2. Serializes each action (native for known types, local ABI, or RPC fallback)
 /// 3. Builds the packed transaction
 /// 4. Signs with the provided private key
 /// 5. Pushes via push_transaction
@@ -64,14 +65,25 @@ pub async fn sign_and_push(
             serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
         })
         .await?;
-    log::info!("[tx] sign_and_push: chain_id={}, head_block_time={}", &chain_info.chain_id[..8], chain_info.head_block_time);
+    log::info!(
+        "[tx] sign_and_push: chain_id={}, head_block_time={}",
+        &chain_info.chain_id[..8],
+        chain_info.head_block_time
+    );
 
     // 2. Serialize actions
     let mut serialized_actions = Vec::new();
     for action in actions {
-        log::info!("[tx] sign_and_push: serializing {}::{}", action.account, action.name);
+        log::info!(
+            "[tx] sign_and_push: serializing {}::{}",
+            action.account,
+            action.name
+        );
         let data_hex = resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
-        log::info!("[tx] sign_and_push: serialized data_hex len={}", data_hex.len());
+        log::info!(
+            "[tx] sign_and_push: serialized data_hex len={}",
+            data_hex.len()
+        );
         let auths: Vec<(&str, &str)> = action
             .authorization
             .iter()
@@ -118,9 +130,7 @@ pub async fn sign_and_push(
         "packed_trx": packed_hex,
     });
 
-    let result: serde_json::Value = pm
-        .rpc_call("/v1/chain/send_transaction", &push_body, |json| Ok(json))
-        .await?;
+    let result = push_packed_transaction(pm, &push_body).await?;
 
     // Parse result
     let transaction_id = result
@@ -153,7 +163,10 @@ pub async fn sign_and_push(
             log::error!("[tx] sign_and_push: FAILED: {}", msg);
             return Err(Error::Rpc(msg.to_string()));
         }
-        log::error!("[tx] sign_and_push: no transaction_id in response: {:?}", result);
+        log::error!(
+            "[tx] sign_and_push: no transaction_id in response: {:?}",
+            result
+        );
         return Err(Error::Rpc("No transaction_id in response".into()));
     }
 
@@ -163,6 +176,25 @@ pub async fn sign_and_push(
         block_num,
         block_time,
     })
+}
+
+/// Push a packed transaction using compatible Antelope broadcast endpoints.
+/// Some endpoints expose only `push_transaction`; older/custom stacks may expose
+/// `send_transaction`. Unknown-endpoint responses include endpoint/path details.
+pub async fn push_packed_transaction(
+    pm: &mut ProviderManager,
+    push_body: &serde_json::Value,
+) -> Result<serde_json::Value, Error> {
+    log::info!(
+        "[tx] push_packed_transaction: active_rpc={:?}, paths=push_transaction/send_transaction",
+        pm.active_rpc_url()
+    );
+    pm.rpc_call_compatible_paths(
+        &["/v1/chain/push_transaction", "/v1/chain/send_transaction"],
+        push_body,
+        |json| Ok(json),
+    )
+    .await
 }
 
 /// Build and sign a transaction without pushing it.
@@ -269,8 +301,8 @@ pub async fn build_transaction(
 // ── Helpers ──
 
 /// Resolve action data to hex.
-/// For known system actions, serialize natively.
-/// For unknown contracts, use abi_json_to_bin via the chain API.
+/// For known system actions, serialize natively. For unknown contracts, prefer
+/// local ABI serialization when available, then fall back to abi_json_to_bin.
 async fn resolve_action_data(
     pm: &mut ProviderManager,
     account: &str,
@@ -285,10 +317,27 @@ async fn resolve_action_data(
                 return Ok(native_hex);
             }
 
-            // Fallback: abi_json_to_bin via chain API
+            let local_error =
+                match abi_serializer::try_serialize_action_json(pm, account, name, json).await {
+                    Ok(Some(local_hex)) => return Ok(local_hex),
+                    Ok(None) => None,
+                    Err(err) => {
+                        log::warn!(
+                            "[tx] local abieos failed for {}::{}; trying RPC fallback: {}",
+                            account,
+                            name,
+                            err
+                        );
+                        Some(err.to_string())
+                    }
+                };
+
+            // Fallback: abi_json_to_bin via chain API. Many public endpoints
+            // disable this route, so fail over on "unknown endpoint" instead
+            // of stopping at the first otherwise-healthy RPC.
             let result: serde_json::Value = pm
-                .rpc_call(
-                    "/v1/chain/abi_json_to_bin",
+                .rpc_call_compatible_paths(
+                    &["/v1/chain/abi_json_to_bin"],
                     &serde_json::json!({
                         "code": account,
                         "action": name,
@@ -296,7 +345,20 @@ async fn resolve_action_data(
                     }),
                     |json| Ok(json),
                 )
-                .await?;
+                .await
+                .map_err(|e| match e {
+                    Error::RpcResponse(msg) => {
+                        let local_context = local_error
+                            .as_deref()
+                            .map(|err| format!(" Local abieos failed first: {}.", err))
+                            .unwrap_or_default();
+                        Error::RpcResponse(format!(
+                            "Could not serialize {}::{} with abi_json_to_bin.{} {}",
+                            account, name, local_context, msg
+                        ))
+                    }
+                    other => other,
+                })?;
 
             result
                 .get("binargs")
@@ -318,7 +380,11 @@ fn try_native_serialize(
         // (name from, name to, asset quantity, string memo). Native-serialize for
         // any "transfer" action with the standard fields — this also avoids needing
         // /v1/chain/abi_json_to_bin, which is disabled on many modern endpoints.
-        (_, "transfer") if json.get("from").is_some() && json.get("to").is_some() && json.get("quantity").is_some() => {
+        (_, "transfer")
+            if json.get("from").is_some()
+                && json.get("to").is_some()
+                && json.get("quantity").is_some() =>
+        {
             let from = json_str(json, "from")?;
             let to = json_str(json, "to")?;
             let quantity = json_str(json, "quantity")?;
@@ -394,10 +460,7 @@ fn try_native_serialize(
             let producer = json_str(json, "producer")?;
             let producer_key = json_str(json, "producer_key")?;
             let url = json_str(json, "url").unwrap_or("");
-            let location = json
-                .get("location")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as u16;
+            let location = json.get("location").and_then(|v| v.as_u64()).unwrap_or(0) as u16;
             let data = serialize::serialize_regproducer(producer, producer_key, url, location)?;
             Ok(Some(hex_encode(&data)))
         }
@@ -415,7 +478,8 @@ fn try_native_serialize(
             let finalizer_name = json_str(json, "finalizer_name")?;
             let finalizer_key = json_str(json, "finalizer_key")?;
             let proof_of_possession = json_str(json, "proof_of_possession")?;
-            let data = serialize::serialize_regfinkey(finalizer_name, finalizer_key, proof_of_possession)?;
+            let data =
+                serialize::serialize_regfinkey(finalizer_name, finalizer_key, proof_of_possession)?;
             Ok(Some(hex_encode(&data)))
         }
         ("eosio", "actfinkey") | ("eosio", "delfinkey") => {

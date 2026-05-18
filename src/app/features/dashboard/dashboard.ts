@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, signal, viewChild } from '@angular/core';
+import { Component, HostListener, computed, effect, ElementRef, signal, viewChild } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -6,6 +6,12 @@ import { UiStateService } from '../../core/services/ui-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
 import { WindowControlsComponent } from '../../shared/window-controls';
+
+interface AccountTabFilter {
+  chainId: string;
+  chainName: string;
+  count: number;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -20,6 +26,63 @@ import { WindowControlsComponent } from '../../shared/window-controls';
           <span class="titlebar-name">Simpl<span class="accent">EOS</span></span>
         </button>
         @if (wallet.accounts().length > 0 && !ui.fullscreen()) {
+          @if (accountChainFilters().length > 1) {
+            <div class="chain-filter" #chainFilterRoot>
+              <button class="chain-filter-trigger"
+                      type="button"
+                      title="Filter account tabs by chain"
+                      aria-label="Filter account tabs by chain"
+                      [attr.aria-expanded]="chainFilterOpen()"
+                      aria-haspopup="menu"
+                      (click)="toggleChainFilter()">
+                <span class="chain-filter-icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/></svg>
+                </span>
+                <span class="chain-filter-label">{{ selectedChainFilterLabel() }}</span>
+                <span class="chain-filter-count">{{ visibleAccountTabs().length }}</span>
+                <span class="chain-filter-arrow" [class.open]="chainFilterOpen()" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+              </button>
+
+              @if (chainFilterOpen()) {
+                <div class="chain-filter-menu" role="menu" aria-label="Account tab chain filter">
+                  <button type="button"
+                          class="chain-filter-option"
+                          [class.active]="selectedChainFilter() === 'all'"
+                          role="menuitemradio"
+                          [attr.aria-checked]="selectedChainFilter() === 'all'"
+                          (click)="applyChainFilter('all')">
+                    <span class="option-mark" aria-hidden="true"></span>
+                    <span class="option-main">
+                      <span class="option-name">All chains</span>
+                      <span class="option-meta">{{ accountChainFilters().length }} networks</span>
+                    </span>
+                    <span class="option-count">{{ wallet.accounts().length }}</span>
+                  </button>
+
+                  <div class="chain-filter-divider" aria-hidden="true"></div>
+
+                  @for (chain of accountChainFilters(); track chain.chainId) {
+                    <button type="button"
+                            class="chain-filter-option"
+                            [class.active]="selectedChainFilter() === chain.chainId"
+                            role="menuitemradio"
+                            [attr.aria-checked]="selectedChainFilter() === chain.chainId"
+                            (click)="applyChainFilter(chain.chainId)">
+                      <span class="option-mark" aria-hidden="true"></span>
+                      <span class="option-main">
+                        <span class="option-name">{{ chain.chainName }}</span>
+                        <span class="option-meta">{{ chain.count }} account{{ chain.count === 1 ? '' : 's' }}</span>
+                      </span>
+                      <span class="option-count">{{ chain.count }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+
           <div class="account-tabs-shell"
                [class.scrollable-left]="canScrollLeft()"
                [class.scrollable-right]="canScrollRight()">
@@ -34,27 +97,27 @@ import { WindowControlsComponent } from '../../shared/window-controls';
             }
 
             <div class="account-tabs" #accountTabs (scroll)="updateTabScrollState()" (wheel)="onTabsWheel($event)">
-              @for (account of wallet.accounts(); track account.chainId + account.name; let i = $index) {
+              @for (tab of visibleAccountTabs(); track tab.account.chainId + tab.account.name) {
                 <button class="account-tab"
-                        [class.active]="i === wallet.selectedIndex()"
-                        [class.watch-only]="account.mode === 'watch'"
-                        [class.drag-over]="dragOverIndex === i"
+                        [class.active]="tab.index === wallet.selectedIndex()"
+                        [class.watch-only]="tab.account.mode === 'watch'"
+                        [class.drag-over]="dragOverIndex === tab.index"
                         draggable="true"
-                        (dragstart)="onDragStart($event, i)"
-                        (dragover)="onDragOver($event, i)"
+                        (dragstart)="onDragStart($event, tab.index)"
+                        (dragover)="onDragOver($event, tab.index)"
                         (dragleave)="onDragLeave()"
-                        (drop)="onDrop($event, i)"
+                        (drop)="onDrop($event, tab.index)"
                         (dragend)="onDragEnd()"
-                        (click)="selectAccount(i)">
+                        (click)="selectAccount(tab.index)">
                   <span class="tab-name">
-                    {{ account.name }}
-                    @if (account.mode === 'watch') {
+                    {{ tab.account.name }}
+                    @if (tab.account.mode === 'watch') {
                       <span class="watch-badge" title="Watch-only — no keys imported">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </span>
                     }
                   </span>
-                  <span class="tab-balance">{{ account.info.core_liquid_balance ?? account.extraBalances?.[0]?.amount ?? '—' }}</span>
+                  <span class="tab-balance">{{ tab.account.info.core_liquid_balance ?? tab.account.extraBalances?.[0]?.amount ?? '—' }}</span>
                 </button>
               }
               <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
@@ -148,6 +211,12 @@ import { WindowControlsComponent } from '../../shared/window-controls';
               <a routerLink="dapp" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 DApps
+              </a>
+            </li>
+            <li>
+              <a routerLink="contracts" routerLinkActive="active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18 22 12 16 6"/><path d="M8 6 2 12 8 18"/><path d="m14 4-4 16"/></svg>
+                Contracts
               </a>
             </li>
             <li>
@@ -317,6 +386,183 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       color: var(--text-bright);
     }
     .titlebar-name .accent { color: var(--accent); }
+
+    .chain-filter {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      align-self: stretch;
+      flex: 0 0 auto;
+      padding: 5px var(--sp-3) 0 var(--sp-2);
+      margin-left: var(--sp-2);
+      -webkit-app-region: no-drag;
+      z-index: 20;
+    }
+
+    .chain-filter::before {
+      content: '';
+      width: 1px;
+      height: 22px;
+      margin-right: var(--sp-3);
+      background: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+    }
+
+    .chain-filter-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 30px;
+      min-width: 150px;
+      max-width: 190px;
+      padding: 0 9px;
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
+      border-radius: var(--radius-sm);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+        color-mix(in srgb, var(--bg-base) 88%, var(--accent) 12%);
+      color: var(--text-body);
+      cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+    }
+
+    .chain-filter-trigger:hover,
+    .chain-filter-trigger[aria-expanded="true"] {
+      border-color: color-mix(in srgb, var(--accent) 42%, var(--border-subtle));
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
+        color-mix(in srgb, var(--bg-base) 80%, var(--accent) 20%);
+      color: var(--text-bright);
+    }
+
+    .chain-filter-trigger:active {
+      transform: translateY(1px);
+    }
+
+    .chain-filter-icon,
+    .chain-filter-arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: currentColor;
+      opacity: 0.82;
+      flex-shrink: 0;
+    }
+
+    .chain-filter-arrow {
+      margin-left: auto;
+      transition: transform 150ms ease;
+    }
+
+    .chain-filter-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .chain-filter-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--font-data);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .chain-filter-count,
+    .option-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      color: var(--accent);
+      font-family: var(--font-data);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .chain-filter-menu {
+      position: absolute;
+      top: calc(100% + 7px);
+      left: calc(var(--sp-2) + var(--sp-3) + 1px);
+      width: 218px;
+      max-height: min(340px, calc(100vh - 92px));
+      overflow-y: auto;
+      padding: 6px;
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
+      border-radius: var(--radius-md);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--chain-tint) 95%, transparent), transparent 54%),
+        var(--bg-deep);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
+    }
+
+    .chain-filter-option {
+      display: grid;
+      grid-template-columns: 14px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      min-height: 38px;
+      padding: 7px 8px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      text-align: left;
+      cursor: pointer;
+      transition: background 150ms ease, color 150ms ease;
+    }
+
+    .chain-filter-option:hover,
+    .chain-filter-option.active {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--text-bright);
+    }
+
+    .chain-filter-option.active .option-mark {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    .option-mark {
+      width: 7px;
+      height: 7px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--text-muted) 34%, transparent);
+    }
+
+    .option-main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .option-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--font-data);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .option-meta {
+      color: var(--text-disabled);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .chain-filter-divider {
+      height: 1px;
+      margin: 5px 4px;
+      background: var(--border-subtle);
+    }
 
     .titlebar-drag-fill {
       /* Chrome-style minimum drag region after the tabs / + button.
@@ -773,8 +1019,46 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 })
 export class DashboardComponent {
   readonly accountTabs = viewChild<ElementRef<HTMLDivElement>>('accountTabs');
+  readonly chainFilterRoot = viewChild<ElementRef<HTMLElement>>('chainFilterRoot');
   readonly canScrollLeft = signal(false);
   readonly canScrollRight = signal(false);
+  readonly chainFilterOpen = signal(false);
+  readonly selectedChainFilter = signal('all');
+  readonly accountChainFilters = computed<AccountTabFilter[]>(() => {
+    const chainOrder = new Map(this.wallet.chains().map((chain, index) => [chain.id, index]));
+    const filters = new Map<string, AccountTabFilter>();
+
+    for (const account of this.wallet.accounts()) {
+      const current = filters.get(account.chainId);
+      if (current) {
+        current.count += 1;
+      } else {
+        filters.set(account.chainId, {
+          chainId: account.chainId,
+          chainName: account.chainName,
+          count: 1,
+        });
+      }
+    }
+
+    return [...filters.values()].sort((left, right) => {
+      const leftOrder = chainOrder.get(left.chainId) ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = chainOrder.get(right.chainId) ?? Number.MAX_SAFE_INTEGER;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+      return left.chainName.localeCompare(right.chainName);
+    });
+  });
+  readonly visibleAccountTabs = computed(() => {
+    const filter = this.selectedChainFilter();
+    return this.wallet.accounts()
+      .map((account, index) => ({ account, index }))
+      .filter(tab => filter === 'all' || tab.account.chainId === filter);
+  });
+  readonly selectedChainFilterLabel = computed(() => {
+    const filter = this.selectedChainFilter();
+    if (filter === 'all') return 'All';
+    return this.accountChainFilters().find(chain => chain.chainId === filter)?.chainName ?? 'All';
+  });
   dragSourceIndex: number | null = null;
   dragOverIndex: number | null = null;
 
@@ -787,7 +1071,7 @@ export class DashboardComponent {
   ) {
     effect((onCleanup) => {
       const tabsRef = this.accountTabs();
-      const accountCount = this.wallet.accounts().length;
+      const accountCount = this.visibleAccountTabs().length;
       const fullscreen = this.ui.fullscreen();
 
       if (!tabsRef || accountCount === 0 || fullscreen) {
@@ -825,6 +1109,36 @@ export class DashboardComponent {
 
       onCleanup(() => cancelAnimationFrame(frameId));
     });
+
+    effect(() => {
+      const filters = this.accountChainFilters();
+      const selected = this.selectedChainFilter();
+      if (filters.length <= 1) {
+        this.chainFilterOpen.set(false);
+      }
+      if (selected !== 'all' && !filters.some(chain => chain.chainId === selected)) {
+        this.selectedChainFilter.set('all');
+      }
+    });
+
+    effect(() => {
+      const account = this.wallet.selectedAccount();
+      if (account) {
+        this.theme.setChainByName(account.chainName);
+      }
+    });
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeChainFilterFromOutside(event: MouseEvent) {
+    const root = this.chainFilterRoot()?.nativeElement;
+    if (!root || root.contains(event.target as Node)) return;
+    this.chainFilterOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeChainFilterFromEscape() {
+    this.chainFilterOpen.set(false);
   }
 
   updateTabScrollState() {
@@ -838,6 +1152,30 @@ export class DashboardComponent {
     const maxScrollLeft = Math.max(0, element.scrollWidth - element.clientWidth);
     this.canScrollLeft.set(element.scrollLeft > 4);
     this.canScrollRight.set(element.scrollLeft < maxScrollLeft - 4);
+  }
+
+  toggleChainFilter() {
+    this.chainFilterOpen.update(open => !open);
+  }
+
+  applyChainFilter(nextFilter: string) {
+    const filterExists = nextFilter === 'all' || this.accountChainFilters().some(chain => chain.chainId === nextFilter);
+    const filter = filterExists ? nextFilter : 'all';
+    this.selectedChainFilter.set(filter);
+    this.chainFilterOpen.set(false);
+
+    if (filter !== 'all') {
+      const firstAccountOnChain = this.wallet.accounts().findIndex(account => account.chainId === filter);
+      if (firstAccountOnChain >= 0) {
+        this.selectAccount(firstAccountOnChain);
+      }
+    }
+
+    const element = this.accountTabs()?.nativeElement;
+    if (element) {
+      element.scrollTo({ left: 0, behavior: 'smooth' });
+      requestAnimationFrame(() => this.updateTabScrollState());
+    }
   }
 
   scrollTabs(direction: 'left' | 'right') {

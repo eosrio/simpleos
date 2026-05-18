@@ -203,6 +203,38 @@ pub async fn sign_transaction(
     })
 }
 
+/// Sign a transaction with an explicit passphrase without broadcasting it.
+/// Mirrors `sign_and_push_with_passphrase` for SignPerUse / locked ManualToggle mode.
+#[tauri::command]
+pub async fn sign_transaction_with_passphrase(
+    chain_id: String,
+    public_key: String,
+    passphrase: String,
+    actions: Vec<ActionDesc>,
+    wallet: State<'_, AppWallet>,
+    providers: State<'_, ProviderState>,
+) -> Result<SignedTransaction, Error> {
+    let private_key_bytes =
+        wallet
+            .0
+            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
+
+    let mut map: tokio::sync::MutexGuard<
+        '_,
+        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
+    > = providers.0.lock().await;
+    let pm = map
+        .get_mut(&chain_id)
+        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+
+    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
+
+    Ok(SignedTransaction {
+        packed_trx,
+        signature,
+    })
+}
+
 /// Sign a raw 32-byte digest (hex-encoded) with the private key matching
 /// the given public key on the specified chain. Used for ESR identity proofs.
 #[tauri::command]

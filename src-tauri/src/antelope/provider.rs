@@ -311,6 +311,96 @@ impl ProviderManager {
         Err(Error::Rpc("All RPC endpoints failed".into()))
     }
 
+    /// Execute a POST call against several possible RPC paths and fail over on
+    /// endpoint-level "unknown endpoint" responses. This is intentionally more
+    /// permissive than `rpc_call` for compatibility endpoints such as transaction
+    /// broadcast routes, where nodeos variants may expose different path names.
+    pub async fn rpc_call_compatible_paths<T, F>(
+        &mut self,
+        paths: &[&str],
+        body: &serde_json::Value,
+        parse: F,
+    ) -> Result<T, Error>
+    where
+        F: Fn(serde_json::Value) -> Result<T, Error> + Copy,
+    {
+        let mut endpoint_order = Vec::new();
+        if self.active_rpc_index < self.rpc_endpoints.len() {
+            endpoint_order.push(self.active_rpc_index);
+        }
+
+        let mut others: Vec<(usize, i64)> = self
+            .rpc_endpoints
+            .iter()
+            .enumerate()
+            .filter(|(idx, ep)| *idx != self.active_rpc_index && !ep.is_circuit_broken())
+            .map(|(idx, ep)| {
+                let latency = if ep.latency_ms > 0 {
+                    ep.latency_ms
+                } else {
+                    i64::MAX / 2
+                };
+                (idx, latency)
+            })
+            .collect();
+        others.sort_by_key(|(_, latency)| *latency);
+        endpoint_order.extend(others.into_iter().map(|(idx, _)| idx));
+
+        let mut diagnostics = Vec::new();
+
+        for idx in endpoint_order {
+            if self
+                .rpc_endpoints
+                .get(idx)
+                .map(|ep| ep.is_circuit_broken())
+                .unwrap_or(true)
+            {
+                continue;
+            }
+
+            for path in paths {
+                let endpoint = self.rpc_endpoints[idx].url.clone();
+                let url = format!("{}{}", endpoint, path);
+                log::info!("[rpc] compatible call: POST {}", url);
+
+                match rpc_post(&self.client, &url, body).await {
+                    Ok(json) => {
+                        self.active_rpc_index = idx;
+                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
+                            ep.failures = 0;
+                        }
+                        return parse(json);
+                    }
+                    Err(Error::RpcResponse(msg)) if is_unknown_endpoint_response(&msg) => {
+                        diagnostics.push(msg);
+                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
+                            ep.failures = 0;
+                        }
+                        continue;
+                    }
+                    Err(Error::RpcResponse(msg)) => {
+                        self.active_rpc_index = idx;
+                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
+                            ep.failures = 0;
+                        }
+                        return Err(Error::RpcResponse(msg));
+                    }
+                    Err(e) => {
+                        diagnostics.push(format!("{}{} -> {}", endpoint, path, e));
+                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
+                            ep.record_failure();
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(Error::RpcResponse(format!(
+            "No compatible RPC endpoint succeeded. Tried: {}",
+            diagnostics.join(" | ")
+        )))
+    }
+
     /// Execute a Hyperion GET call with failover.
     pub async fn hyperion_get<T: serde::de::DeserializeOwned>(
         &mut self,
@@ -453,6 +543,12 @@ async fn check_hyperion_health(client: &reqwest::Client, url: &str) -> (i64, boo
     }
 }
 
+fn is_unknown_endpoint_response(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    lower.contains("unknown endpoint")
+        || (lower.contains("http 404") && lower.contains("unspecified"))
+}
+
 /// POST to an RPC endpoint and return raw JSON value.
 /// Treats any non-2xx HTTP status as an error, extracting the nodeos error
 /// details from the response body if possible.
@@ -512,9 +608,9 @@ async fn rpc_post(
             .filter(|s| !s.is_empty());
 
         let msg = match (detail, fio_fields) {
-            (_, Some(f)) => format!("HTTP {}: {}: {}", status.as_u16(), what, f),
-            (Some(d), None) => format!("HTTP {}: {}: {}", status.as_u16(), what, d),
-            (None, None) => format!("HTTP {}: {}", status.as_u16(), what),
+            (_, Some(f)) => format!("{} -> HTTP {}: {}: {}", url, status.as_u16(), what, f),
+            (Some(d), None) => format!("{} -> HTTP {}: {}: {}", url, status.as_u16(), what, d),
+            (None, None) => format!("{} -> HTTP {}: {}", url, status.as_u16(), what),
         };
 
         // Use RpcResponse to signal "endpoint is fine, request was rejected" —

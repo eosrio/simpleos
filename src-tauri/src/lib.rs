@@ -149,6 +149,7 @@ pub fn run() {
             commands::wallet::remove_key,
             commands::wallet::sign_and_push,
             commands::wallet::sign_transaction,
+            commands::wallet::sign_transaction_with_passphrase,
             commands::wallet::sign_digest,
             commands::wallet::change_passphrase,
             commands::wallet::get_security_mode,
@@ -232,6 +233,8 @@ pub fn run() {
             commands::ledger::ledger_discover_keys,
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_sign_and_push,
+            #[cfg(feature = "ledger")]
+            commands::ledger::ledger_sign_transaction,
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_watch_devices,
         ])

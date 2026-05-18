@@ -1,3 +1,4 @@
+pub mod abi_serializer;
 pub mod bls;
 pub mod chain_config;
 pub mod discovery;

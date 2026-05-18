@@ -75,7 +75,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
               <button class="btn-cancel" (click)="tx.cancel()">Cancel</button>
               <button class="btn-confirm" (click)="tx.sign()"
                       [disabled]="tx.needsPassphrase() && !tx.passphrase()">
-                Confirm &amp; Sign
+                {{ tx.mode() === 'signOnly' ? 'Sign Transaction' : 'Confirm & Sign' }}
               </button>
             </div>
           }
@@ -84,7 +84,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
           @if (tx.phase() === 'signing') {
             <div class="modal-body status-phase">
               <div class="spinner"></div>
-              <p class="status-text">{{ tx.request()?.isLogin ? 'Signing identity proof...' : 'Signing and broadcasting...' }}</p>
+              <p class="status-text">{{ tx.request()?.isLogin ? 'Signing identity proof...' : tx.mode() === 'signOnly' ? 'Signing transaction...' : 'Signing and broadcasting...' }}</p>
             </div>
           }
 
@@ -98,11 +98,31 @@ import { WalletStateService } from '../core/services/wallet-state.service';
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </div>
-              <h3 class="status-title">{{ tx.request()?.isLogin ? 'Login Successful' : 'Transaction Sent' }}</h3>
-              @if (!tx.request()?.isLogin) {
+              <h3 class="status-title">{{ tx.request()?.isLogin ? 'Login Successful' : tx.mode() === 'signOnly' ? 'Transaction Signed' : 'Transaction Sent' }}</h3>
+              @if (!tx.request()?.isLogin && isSignOnlyResult()) {
+                <div class="tx-output">
+                  <div class="tx-id-row">
+                    <span class="tx-id-label">Packed TX</span>
+                    <span class="tx-id data">{{ signOnlyResult()?.packed_trx }}</span>
+                  </div>
+                  <div class="tx-id-row">
+                    <span class="tx-id-label">Signature</span>
+                    <span class="tx-id data">{{ signOnlyResult()?.signature }}</span>
+                  </div>
+                  <button type="button" class="explorer-link" (click)="copySignedResult()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    Copy signed JSON
+                  </button>
+                </div>
+              } @else if (!tx.request()?.isLogin) {
                 <div class="tx-id-row">
                   <span class="tx-id-label">TX ID</span>
-                  <span class="tx-id data">{{ tx.result()?.transaction_id }}</span>
+                  <span class="tx-id data">{{ txResult()?.transaction_id }}</span>
                 </div>
                 @if (explorerLinks(); as links) {
                   @if (links.length > 0) {
@@ -146,6 +166,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
             </div>
             <div class="modal-actions">
               <button class="btn-cancel" (click)="tx.dismiss()">Close</button>
+              <button class="btn-cancel" (click)="copyDebugDetails()">Copy Debug</button>
               <button class="btn-confirm" (click)="retry()">Retry</button>
             </div>
           }
@@ -415,6 +436,14 @@ import { WalletStateService } from '../core/services/wallet-state.service';
       border-radius: var(--radius-md);
     }
 
+    .tx-output {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+      align-items: stretch;
+    }
+
     .tx-id-label {
       font-size: 11px;
       color: var(--text-muted);
@@ -485,7 +514,7 @@ export class ConfirmModalComponent {
 
   /** Build explorer links from the active chain's explorer config + current tx result. */
   explorerLinks = computed(() => {
-    const txId = this.tx.result()?.transaction_id;
+    const txId = this.txResult()?.transaction_id;
     if (!txId) return [];
     const chain = this.wallet.activeChain();
     if (!chain?.explorers) return [];
@@ -502,12 +531,44 @@ export class ConfirmModalComponent {
     public wallet: WalletStateService,
   ) {}
 
+  txResult() {
+    const result = this.tx.result();
+    return result && 'transaction_id' in result ? result : null;
+  }
+
+  signOnlyResult() {
+    const result = this.tx.result();
+    return result && 'packed_trx' in result ? result : null;
+  }
+
+  isSignOnlyResult(): boolean {
+    return this.signOnlyResult() !== null;
+  }
+
   /** Open an explorer URL in the system's default browser via Tauri shell plugin. */
   async openExplorer(url: string): Promise<void> {
     try {
       await openUrl(url);
     } catch (e) {
       console.error('Failed to open explorer URL', url, e);
+    }
+  }
+
+  async copySignedResult(): Promise<void> {
+    const result = this.signOnlyResult();
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+    } catch {
+      // Clipboard may be unavailable in restricted WebViews.
+    }
+  }
+
+  async copyDebugDetails(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.tx.debugDetails());
+    } catch {
+      // Clipboard may be unavailable in restricted WebViews.
     }
   }
 
@@ -532,6 +593,7 @@ export class ConfirmModalComponent {
     const isFioAction = action.account?.startsWith('fio.');
     return Object.entries(action.data).map(([key, value]) => {
       let display = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      if (display.length > 180) display = display.slice(0, 177) + '...';
       // Format FIO max_fee from SUFs to human-readable FIO tokens
       if (isFioAction && key === 'max_fee' && typeof value === 'number') {
         const fioAmount = (value / 1e9).toFixed(2);
