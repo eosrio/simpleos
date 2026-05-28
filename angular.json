@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "bun"
+    "packageManager": "bun",
+    "analytics": "3eaeaa26-a97b-489d-92af-6f6c361795b3"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -30,9 +31,7 @@
                 "output": "assets"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ]
+            "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {
@@ -49,6 +48,27 @@
                 }
               ],
               "outputHashing": "all"
+            },
+            "appstore": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "24kB",
+                  "maximumError": "48kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.appstore.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,

@@ -2,9 +2,10 @@ import { Injectable, signal, computed } from '@angular/core';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { AlertService } from './alert.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UpdateService {
   private update = signal<Update | null>(null);
@@ -18,6 +19,7 @@ export class UpdateService {
   constructor(private alert: AlertService) {}
 
   async checkForUpdates(silent = false) {
+    if (environment.appStore) return;
     if (this.isChecking()) return;
     this.isChecking.set(true);
 
@@ -39,6 +41,7 @@ export class UpdateService {
   }
 
   async installUpdate() {
+    if (environment.appStore) return;
     const update = this.update();
     if (!update || this.isDownloading()) return;
 

@@ -21,18 +21,18 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "decorations": false,
+        "decorations": true,
         "titleBarStyle": "Overlay",
         "trafficLightPosition": { "x": 14, "y": 14 }
       }
     ],
     "security": {}
-
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage"],
+    "targets": ["deb", "appimage", "app", "dmg"],
     "createUpdaterArtifacts": true,
+    "copyright": "(c) 2026 EOS Rio Infraestrutura de Redes Ltda. All rights reserved.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -52,7 +52,23 @@
       }
     },
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "13.3",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "dmg": {
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        }
+      }
     }
   },
   "plugins": {
@@ -66,9 +82,7 @@
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4NkJGMUVBRjk1MTZFODkKUldTSmJsSDU2dkZyV0pOMzJ4S1Z2NWxiSzdETHNTNWx4NFY1Nmh1WE9nTFF0NnFhRHRkNTYxSVgK",
-      "endpoints": [
-        "https://github.com/eosrio/simpleos/releases/latest/download/latest.json"
-      ]
+      "endpoints": ["https://github.com/eosrio/simpleos/releases/latest/download/latest.json"]
     }
   }
 }

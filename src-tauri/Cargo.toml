@@ -14,6 +14,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["ledger", "local-abieos"]
+# Mac App Store builds use Apple's update mechanism, so the runtime self-updater
+# and relaunch plugin are omitted when this feature is enabled.
+app-store = []
 # Ledger hardware wallet support. Requires libudev-dev on Linux.
 # Disable with `cargo test --no-default-features` to run backend tests
 # on systems without libudev headers.
@@ -23,11 +26,11 @@ ledger = ["dep:hidapi"]
 local-abieos = ["dep:rs_abieos"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.6", features = [] }
+tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
 # Framework
-tauri = { version = "2.10.3", features = ["devtools", "unstable", "tray-icon", "image-png"] }
+tauri = { version = "2.11.2", features = ["devtools", "unstable", "tray-icon", "image-png"] }
 tauri-plugin-log = "2"
 tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
