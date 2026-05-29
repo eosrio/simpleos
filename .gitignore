@@ -1,16 +1,22 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
+# Compiled output
 /dist
 /tmp
 /out-tsc
-/out
+/bazel-out
 
-# dependencies
+# Node
 /node_modules
+npm-debug.log
+yarn-error.log
+.env
+.env.*
+!.env.example
+!.env.*.example
 
 # IDEs and editors
-/.idea
+.idea/
 .project
 .classpath
 .c9/
@@ -18,42 +24,25 @@
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
+# Visual Studio Code
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
 
-# misc
-/.sass-cache
+# Miscellaneous
+/.angular/cache
+.sass-cache/
 /connect.lock
 /coverage
 /libpeerconnection.log
-npm-debug.log
-yarn-error.log
 testem.log
 /typings
+__screenshots__/
 
-# System Files
+# System files
 .DS_Store
 Thumbs.db
-/.sync
-/archive
-
-# npm config
-.npmrc
-
-*.bkp
-*.exe
-*.AppImage
-*.deb
-*.dmg
-
-.idea
-node_modules
-dist
-ng-dist
-autoclaim.json
-89CE3D98-5C8A-4D0C-BE65-90992326460C.pfx
-src/environments/_secret.ts

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 338.8 320" xml:space="preserve">
+  <defs>
+    <!-- Glass gradient for top facet (brightest — catches light) -->
+    <linearGradient id="facetTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a0d4f7;stop-opacity:0.85"/>
+      <stop offset="40%" style="stop-color:#5bb8f0;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#2a8fd4;stop-opacity:0.45"/>
+    </linearGradient>
+
+    <!-- Glass gradient for main body (mid tone, refraction feel) -->
+    <linearGradient id="facetBody" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#68c4f5;stop-opacity:0.5"/>
+      <stop offset="30%" style="stop-color:#3a9fe0;stop-opacity:0.35"/>
+      <stop offset="70%" style="stop-color:#1a7cc0;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#0e5a94;stop-opacity:0.4"/>
+    </linearGradient>
+
+    <!-- Glass gradient for left face (shadow side, deeper) -->
+    <linearGradient id="facetLeft" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4db0e8;stop-opacity:0.4"/>
+      <stop offset="50%" style="stop-color:#1a7cc0;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#0a4f7a;stop-opacity:0.55"/>
+    </linearGradient>
+
+    <!-- Glass gradient for right face (light edge, brighter) -->
+    <linearGradient id="facetRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7dd3fc;stop-opacity:0.45"/>
+      <stop offset="50%" style="stop-color:#38bdf8;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#0e7ec7;stop-opacity:0.5"/>
+    </linearGradient>
+
+    <!-- Specular highlight (top-left light catch) -->
+    <radialGradient id="specular" cx="40%" cy="25%" r="50%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.35"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- Outer glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.0
+                0 0 0 0 0.58
+                0 0 0 0 0.82
+                0 0 0 0.25 0" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Inner edge highlight for glass refraction -->
+    <filter id="innerLight" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="innerBlur"/>
+      <feOffset dx="1" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#a0d4f7" flood-opacity="0.3"/>
+      <feComposite in2="offsetBlur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle edge stroke gradient -->
+    <linearGradient id="edgeStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7dd3fc;stop-opacity:0.6"/>
+      <stop offset="50%" style="stop-color:#0094d2;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#7dd3fc;stop-opacity:0.5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Gem shape group with glow filter -->
+  <g filter="url(#glow)" transform="translate(0, 0)">
+    <!-- Top facet (triangle pointing up — the Y-split crown) -->
+    <polygon points="169.4,19.36 262.28,76.22 170.49,76.22 168.31,76.22 76.52,76.22"
+             fill="url(#facetTop)"
+             stroke="url(#edgeStroke)" stroke-width="0.8" stroke-linejoin="round"/>
+
+    <!-- Main body facet (large inverted triangle) -->
+    <polygon points="168.31,79.05 170.49,79.05 264.87,79.05 169.4,247.6 73.92,79.05"
+             fill="url(#facetBody)"
+             stroke="url(#edgeStroke)" stroke-width="0.6" stroke-linejoin="round"/>
+
+    <!-- Left lower facet -->
+    <polygon points="105.81,227.04 74.9,86.53 167.89,250.69 167.89,311.08"
+             fill="url(#facetLeft)"
+             stroke="url(#edgeStroke)" stroke-width="0.6" stroke-linejoin="round"/>
+
+    <!-- Right lower facet -->
+    <polygon points="232.99,227.04 170.91,311.08 170.91,250.69 263.9,86.53"
+             fill="url(#facetRight)"
+             stroke="url(#edgeStroke)" stroke-width="0.6" stroke-linejoin="round"/>
+
+    <!-- Specular highlight overlay -->
+    <polygon points="169.4,19.36 262.28,76.22 170.49,76.22 168.31,76.22 76.52,76.22"
+             fill="url(#specular)" opacity="0.7"/>
+
+    <!-- Inner edge lines for facet definition (glass-like refraction lines) -->
+    <line x1="169.4" y1="19.36" x2="169.4" y2="247.6"
+          stroke="#a0d4f7" stroke-width="0.5" opacity="0.25"/>
+    <line x1="168.31" y1="76.22" x2="73.92" y2="79.05"
+          stroke="#a0d4f7" stroke-width="0.3" opacity="0.15"/>
+    <line x1="170.49" y1="76.22" x2="264.87" y2="79.05"
+          stroke="#a0d4f7" stroke-width="0.3" opacity="0.15"/>
+  </g>
+</svg>

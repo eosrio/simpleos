@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [v2-tauri-rewrite, master]
+  pull_request:
+    branches: [v2-tauri-rewrite, master]
+
+# Cancel in-progress runs when a new commit is pushed to the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ── Angular frontend build ────────────────────────────────────────────
+  frontend:
+    name: Angular Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e4f16972049d10e0521c7a8270570b656b # v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Angular bundle
+        run: bun run build
+
+  # ── Rust library unit tests (93 tests, no chain required) ─────────────
+  rust-unit-tests:
+    name: Rust Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            libudev-dev \
+            patchelf \
+            build-essential
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        with:
+          workspaces: src-tauri
+          shared-key: rust-unit
+
+      - name: Run library tests
+        working-directory: src-tauri
+        run: cargo test --lib --verbose
+
+  # ── End-to-end tests: Docker chain + TS suite + Rust integration ──────
+  e2e-tests:
+    name: E2E Tests (Docker + Rust integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e4f16972049d10e0521c7a8270570b656b # v2
+        with:
+          bun-version: latest
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            libudev-dev \
+            patchelf \
+            build-essential
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        with:
+          workspaces: src-tauri
+          shared-key: rust-e2e
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start local chain + run TypeScript e2e tests
+        run: bun run e2e:run
+
+      - name: Run Rust integration tests (e2e_wallet + e2e_signing)
+        run: bun run e2e:rust
+
+      - name: Capture nodeos logs on failure
+        if: failure()
+        run: |
+          docker logs simpleos-test-nodeos > nodeos.log 2>&1 || true
+          echo "=== Last 200 lines of nodeos.log ==="
+          tail -200 nodeos.log || true
+
+      - name: Upload nodeos logs on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nodeos-logs-${{ github.run_id }}
+          path: nodeos.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Tear down chain
+        if: always()
+        run: bun run e2e:clean || true

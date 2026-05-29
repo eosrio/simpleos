@@ -1,0 +1,108 @@
+[package]
+name = "simpleos"
+version = "2.0.0-alpha.0"
+description = "SimplEOS - Antelope Desktop Wallet"
+authors = ["Igor Lins e Silva", "EOS Rio"]
+license = "MIT"
+repository = "https://github.com/eosrio/simpleos"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "simpleos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = ["ledger", "local-abieos"]
+# Mac App Store builds use Apple's update mechanism, so the runtime self-updater
+# and relaunch plugin are omitted when this feature is enabled.
+app-store = []
+# Ledger hardware wallet support. Requires libudev-dev on Linux.
+# Disable with `cargo test --no-default-features` to run backend tests
+# on systems without libudev headers.
+ledger = ["dep:hidapi"]
+# Local ABI JSON serialization via eosrio/rs-abieos. The dependency is target-
+# gated below because rs-abieos supports Unix-like C++ toolchains and Windows GNU.
+local-abieos = ["dep:rs_abieos"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+# Framework
+tauri = { version = "2.11.2", features = ["devtools", "unstable", "tray-icon", "image-png"] }
+tauri-plugin-log = "2"
+tauri-plugin-store = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-window-state = "2"
+
+# URL parsing (for dapp webview navigation)
+url = "2"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client (async, shares Tauri's tokio runtime)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["sync", "time"] }
+
+# Crypto (RustCrypto suite - audited, pure Rust)
+k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa", "ecdh"] }
+sha2 = "0.10"
+hex = "0.4"
+ripemd = "0.1"
+aes-gcm = "0.10"
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+pbkdf2 = { version = "0.12", features = ["simple"] }
+hmac = "0.12"
+zeroize = { version = "1", features = ["derive"] }
+rand = "0.8"
+# BLS12-381 for Savannah finalizer keys
+blst = "0.3"
+base64 = "0.22"
+
+# OS keychain
+keyring = "3"
+
+# USB HID for Ledger (optional — gated behind "ledger" feature)
+hidapi = { version = "2", optional = true }
+
+# Error handling
+thiserror = "2"
+
+# Logging
+log = "0.4"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+
+[dev-dependencies]
+# Async test runtime for integration tests that hit the local e2e chain
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"] }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-process = "2.3.1"
+tauri-plugin-updater = "2.10.1"
+
+[target.'cfg(any(target_os = "linux", target_os = "macos", all(target_os = "windows", target_env = "gnu")))'.dependencies]
+rs_abieos = { version = "0.4.0", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-future = "0.2.1"
+windows = { version = "0.61.3", features = [
+  "Foundation",
+  "Security_Credentials_UI",
+  "Win32_Foundation",
+  "Win32_Security_Cryptography",
+  "Win32_System_WinRT",
+] }
