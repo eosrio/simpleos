@@ -21,17 +21,14 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "decorations": true,
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true,
-        "trafficLightPosition": { "x": 14, "y": 20 }
+        "decorations": false
       }
     ],
     "security": {}
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage", "app", "dmg"],
+    "targets": ["deb", "appimage"],
     "createUpdaterArtifacts": true,
     "copyright": "(c) 2026 EOS Rio Infraestrutura de Redes Ltda. All rights reserved.",
     "icon": [
