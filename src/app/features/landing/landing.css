@@ -15,17 +15,42 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 36px;
+  height: 48px;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   z-index: 10;
   -webkit-app-region: drag;
   pointer-events: auto;
 }
+.landing-titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 100%;
+  padding: 0 var(--sp-4) 0 var(--sp-3);
+  flex-shrink: 0;
+  color: var(--text-muted);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+}
+.landing-titlebar-logo {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 0 5px rgba(0, 148, 210, 0.22));
+}
+.landing-titlebar-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-muted);
+}
+.landing-titlebar-accent { color: var(--accent); }
 .landing-titlebar-fill {
   flex: 1 1 auto;
+  min-width: 0;
 }
-html.os-mac .landing-titlebar {
+:host-context(html.os-mac) .landing-titlebar {
   /* Keep traffic lights visible; drag region covers the rest. */
   padding-left: 84px;
 }
@@ -58,10 +83,10 @@ html.os-mac .landing-titlebar {
 .wizard-container {
   position: relative;
   z-index: 1;
-  width: 580px;
+  width: 540px;
   max-width: calc(100vw - 48px);
-  /* Top padding accounts for the 36px fixed titlebar overlay. */
-  padding: calc(36px + var(--sp-6)) 0 var(--sp-10);
+  /* Top padding accounts for the fixed titlebar overlay. */
+  padding: calc(48px + var(--sp-4)) 0 var(--sp-7);
 }
 
 /* ═══ TOP BAR ═══ */
@@ -69,7 +94,7 @@ html.os-mac .landing-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-8);
+  margin-bottom: var(--sp-6);
 }
 .topbar-logo {
   display: flex;
@@ -115,7 +140,7 @@ html.os-mac .landing-titlebar {
 .step-rail {
   display: flex;
   align-items: center;
-  margin-bottom: var(--sp-10);
+  margin-bottom: var(--sp-8);
   padding: 0 var(--sp-6);
 }
 .step-indicator {
@@ -194,7 +219,7 @@ html.os-mac .landing-titlebar {
 
 /* ═══ PANEL HEADER ═══ */
 .panel-header {
-  margin-bottom: var(--sp-8);
+  margin-bottom: var(--sp-5);
 }
 .panel-header h2 {
   font-size: 24px;
@@ -212,16 +237,17 @@ html.os-mac .landing-titlebar {
 .chain-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-4);
-  margin-bottom: var(--sp-6);
+  gap: 10px;
+  margin-bottom: var(--sp-3);
 }
 .chain-tile {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-6) var(--sp-3) var(--sp-5);
+  gap: var(--sp-1);
+  min-height: 112px;
+  padding: var(--sp-4) 10px 14px;
   background: var(--bg-raised);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -257,8 +283,8 @@ html.os-mac .landing-titlebar {
 .chain-tile.selected .tile-glow { opacity: 0.12; }
 
 .tile-icon-wrap {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
@@ -286,23 +312,23 @@ html.os-mac .landing-titlebar {
   object-fit: contain;
 }
 .tile-name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-bright);
   letter-spacing: 0.2px;
 }
 .tile-symbol {
   font-family: var(--font-data);
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
   letter-spacing: 0.5px;
 }
 .tile-check {
   position: absolute;
-  top: var(--sp-2);
-  right: var(--sp-2);
-  width: 22px;
-  height: 22px;
+  top: 7px;
+  right: 7px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -995,24 +1021,65 @@ label {
 .ledger-accounts.muted { color: var(--text-disabled); }
 .ledger-icon { background: var(--accent-muted); color: var(--accent); }
 
-/* ═══ TESTNET SEPARATOR ═══ */
-.testnet-separator {
+/* ═══ TESTNET DRAWER ═══ */
+.testnet-drawer {
+  margin: 0 0 var(--sp-4);
+}
+.testnet-toggle {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
+  padding: var(--sp-1) 0;
+  border: none;
+  background: transparent;
+  color: var(--text-disabled);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.testnet-toggle:hover {
+  color: var(--text-muted);
 }
 .separator-line {
   flex: 1;
   height: 1px;
   background: var(--border-subtle);
+  transition: background 0.15s;
+}
+.testnet-toggle:hover .separator-line {
+  background: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
 }
 .separator-label {
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-disabled);
+  color: currentColor;
   text-transform: uppercase;
   letter-spacing: 1.5px;
+}
+.testnet-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+.testnet-chevron {
+  opacity: 0.65;
+  transition: transform 0.2s ease, opacity 0.15s;
+}
+.testnet-toggle:hover .testnet-chevron { opacity: 1; }
+.testnet-toggle.open .testnet-chevron { transform: rotate(180deg); }
+.testnet-grid {
+  margin-top: var(--sp-3);
+  animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .testnet-tile {
   opacity: 0.75;

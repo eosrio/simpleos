@@ -53,6 +53,10 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
 
       <!-- Custom titlebar (transparent, overlays the wizard) -->
       <div class="landing-titlebar" data-tauri-drag-region>
+        <div class="landing-titlebar-brand" data-tauri-drag-region>
+          <img src="assets/simpleos-logo.svg" alt="" class="landing-titlebar-logo" data-tauri-drag-region />
+          <span class="landing-titlebar-name" data-tauri-drag-region>Simpl<span class="landing-titlebar-accent">EOS</span></span>
+        </div>
         <div class="landing-titlebar-fill" data-tauri-drag-region></div>
         <app-window-controls />
       </div>
@@ -116,7 +120,7 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                             (click)="onChainSelect(chain.index)">
                       <div class="tile-glow"></div>
                       <div class="tile-icon-wrap">
-                        <chain-icon [chainName]="chain.name" [size]="32"></chain-icon>
+                        <chain-icon [chainName]="chain.name" [size]="28"></chain-icon>
                       </div>
                       <span class="tile-name">{{ chain.name }}</span>
                       <span class="tile-symbol">{{ chain.symbol }}</span>
@@ -136,7 +140,7 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                           (click)="onCustomChain()">
                     <div class="tile-glow"></div>
                     <div class="tile-icon-wrap custom-icon-wrap">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                       </svg>
                     </div>
@@ -146,31 +150,39 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                 </div>
 
                 @if (testnetChains().length > 0) {
-                  <div class="testnet-separator">
-                    <span class="separator-line"></span>
-                    <span class="separator-label">Testnets</span>
-                    <span class="separator-line"></span>
-                  </div>
-                  <div class="chain-grid">
-                    @for (chain of testnetChains(); track chain.index; let i = $index) {
-                      <button class="chain-tile testnet-tile"
-                              [class.selected]="selectedChainIndex() === chain.index"
-                              [style.--tile-color]="chain.color"
-                              [style.animation-delay]="(i * 50) + 'ms'"
-                              (click)="onChainSelect(chain.index)">
-                        <div class="tile-glow"></div>
-                        <div class="tile-icon-wrap">
-                          <chain-icon [chainName]="chain.name" [size]="32"></chain-icon>
-                        </div>
-                        <span class="tile-name">{{ chain.name }}</span>
-                        <span class="tile-symbol">{{ chain.symbol }}</span>
-                        <span class="testnet-badge">TEST</span>
-                        @if (selectedChainIndex() === chain.index) {
-                          <span class="tile-check">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          </span>
+                  <div class="testnet-drawer">
+                    <button class="testnet-toggle"
+                            [class.open]="testnetsExpanded()"
+                            (click)="toggleTestnets()">
+                      <span class="separator-line"></span>
+                      <span class="separator-label">Testnets</span>
+                      <span class="testnet-count">{{ testnetChains().length }}</span>
+                      <svg class="testnet-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      <span class="separator-line"></span>
+                    </button>
+                    @if (testnetsExpanded()) {
+                      <div class="chain-grid testnet-grid">
+                        @for (chain of testnetChains(); track chain.index; let i = $index) {
+                          <button class="chain-tile testnet-tile"
+                                  [class.selected]="selectedChainIndex() === chain.index"
+                                  [style.--tile-color]="chain.color"
+                                  [style.animation-delay]="(i * 50) + 'ms'"
+                                  (click)="onChainSelect(chain.index)">
+                            <div class="tile-glow"></div>
+                            <div class="tile-icon-wrap">
+                              <chain-icon [chainName]="chain.name" [size]="28"></chain-icon>
+                            </div>
+                            <span class="tile-name">{{ chain.name }}</span>
+                            <span class="tile-symbol">{{ chain.symbol }}</span>
+                            <span class="testnet-badge">TEST</span>
+                            @if (selectedChainIndex() === chain.index) {
+                              <span class="tile-check">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              </span>
+                            }
+                          </button>
                         }
-                      </button>
+                      </div>
                     }
                   </div>
                 }
@@ -774,6 +786,7 @@ export class LandingComponent implements OnInit, OnDestroy {
   selectedAction = signal<ActionType>('watch');
   connectionStatus = signal<ConnectionStatus>('idle');
   selectedChainIndex = signal(0);
+  showTestnets = signal(false);
   isCustomChain = signal(false);
   loading = signal(false);
 
@@ -887,6 +900,10 @@ export class LandingComponent implements OnInit, OnDestroy {
     this.isCustomChain() ? null : this.wallet.chains()[this.selectedChainIndex()]
   );
 
+  testnetsExpanded = computed(() =>
+    this.showTestnets() || !!this.selectedChain()?.testnet
+  );
+
   chainOptions = computed<ChainOption[]>(() =>
     this.wallet.chains().map((chain, index) => {
       const color = CHAIN_COLORS[chain.name] ?? '#6b6f85';
@@ -942,9 +959,17 @@ export class LandingComponent implements OnInit, OnDestroy {
     this.unlistenDiscovery?.();
   }
 
+  toggleTestnets() {
+    if (this.selectedChain()?.testnet && this.testnetsExpanded()) return;
+    this.showTestnets.set(!this.showTestnets());
+  }
+
   async onChainSelect(index: number) {
     this.isCustomChain.set(false);
     this.selectedChainIndex.set(index);
+    if (this.wallet.chains()[index]?.testnet) {
+      this.showTestnets.set(true);
+    }
     this.connectionStatus.set('idle');
     this.discoveryMessage.set('');
     this.discoveryPercent.set(0);

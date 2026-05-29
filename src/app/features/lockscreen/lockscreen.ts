@@ -13,6 +13,10 @@ import { WindowControlsComponent } from '../../shared/window-controls';
   template: `
     <div class="lockscreen">
       <div class="lock-titlebar" data-tauri-drag-region>
+        <div class="lock-titlebar-brand" data-tauri-drag-region>
+          <img src="assets/simpleos-logo.svg" alt="" class="lock-titlebar-logo" data-tauri-drag-region />
+          <span class="lock-titlebar-name" data-tauri-drag-region>Simpl<span class="lock-titlebar-accent">EOS</span></span>
+        </div>
         <div class="lock-titlebar-fill" data-tauri-drag-region></div>
         <app-window-controls />
       </div>
@@ -124,14 +128,39 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       top: 0;
       left: 0;
       right: 0;
-      height: 36px;
+      height: 48px;
       display: flex;
-      align-items: stretch;
+      align-items: center;
       z-index: 10;
       -webkit-app-region: drag;
     }
+    .lock-titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      height: 100%;
+      padding: 0 var(--sp-4) 0 var(--sp-3);
+      flex-shrink: 0;
+      color: var(--text-muted);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-app-region: drag;
+    }
+    .lock-titlebar-logo {
+      width: 18px;
+      height: 18px;
+      filter: drop-shadow(0 0 5px rgba(0, 148, 210, 0.22));
+    }
+    .lock-titlebar-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--text-muted);
+    }
+    .lock-titlebar-accent { color: var(--accent); }
     .lock-titlebar-fill {
       flex: 1 1 auto;
+      min-width: 0;
     }
     :host-context(html.os-mac) .lock-titlebar {
       padding-left: 84px;

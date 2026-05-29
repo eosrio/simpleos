@@ -342,7 +342,7 @@ interface AccountTabFilter {
       background:
         linear-gradient(180deg, color-mix(in srgb, var(--chain-tint) 80%, var(--bg-deep)), var(--bg-deep));
       border-bottom: 1px solid var(--border-subtle);
-      min-height: 40px;
+      min-height: 48px;
       /* Entire strip acts as a drag handle where children don't opt out. */
       -webkit-app-region: drag;
     }

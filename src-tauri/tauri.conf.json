@@ -14,8 +14,8 @@
       {
         "title": "SimplEOS",
         "label": "main",
-        "width": 1280,
-        "height": 840,
+        "width": 1160,
+        "height": 760,
         "minWidth": 960,
         "minHeight": 640,
         "resizable": true,
@@ -23,7 +23,8 @@
         "center": true,
         "decorations": true,
         "titleBarStyle": "Overlay",
-        "trafficLightPosition": { "x": 14, "y": 14 }
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 14, "y": 20 }
       }
     ],
     "security": {}
