@@ -3,6 +3,11 @@ import { Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
 import { TokenPriceService } from '../../../core/services/token-price.service';
 import { WalletAccount, WalletStateService } from '../../../core/services/wallet-state.service';
+import {
+  isTestnetPortfolioChain,
+  portfolioTokenUsdValue,
+  type PortfolioPriceChain,
+} from './portfolio-value';
 
 interface HomeStats {
   totalAccounts: number;
@@ -22,6 +27,7 @@ interface HomeAccountCard {
   mode: 'full' | 'watch';
   liquid: string;
   liquidUsd: string;
+  liquidUsdValue: number | null;
   staked: string;
   ramPct: number;
   ramText: string;
@@ -692,43 +698,52 @@ export class HomeComponent {
 
   readonly stats = computed<HomeStats>(() => {
     const accounts = this.wallet.accounts();
-    const totalLiquidUsd = accounts.reduce((sum, account) => sum + (this.priceValue(account.info.core_liquid_balance) ?? 0), 0);
-    const pricedAccounts = accounts.filter(account => this.priceValue(account.info.core_liquid_balance) !== null).length;
+    const chainsById = new Map(this.wallet.chains().map((chain) => [chain.id, chain]));
+    const pricedValues = accounts.map((account) =>
+      this.priceValue(account.info.core_liquid_balance, chainsById.get(account.chainId)),
+    );
+    const totalLiquidUsd = pricedValues.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+    const pricedAccounts = pricedValues.filter((value) => value !== null).length;
 
     return {
       totalAccounts: accounts.length,
-      totalChains: new Set(accounts.map(account => account.chainId)).size,
-      fullAccounts: accounts.filter(account => account.mode === 'full').length,
-      watchAccounts: accounts.filter(account => account.mode === 'watch').length,
-      producerAccounts: accounts.filter(account => account.isProducer).length,
-      hotAccounts: accounts.filter(account => this.ramPct(account) >= 80).length,
+      totalChains: new Set(accounts.map((account) => account.chainId)).size,
+      fullAccounts: accounts.filter((account) => account.mode === 'full').length,
+      watchAccounts: accounts.filter((account) => account.mode === 'watch').length,
+      producerAccounts: accounts.filter((account) => account.isProducer).length,
+      hotAccounts: accounts.filter((account) => this.ramPct(account) >= 80).length,
       totalLiquidUsd: this.formatUsd(totalLiquidUsd, pricedAccounts),
       pricedAccounts,
     };
   });
 
   readonly chainSections = computed<HomeChainSection[]>(() => {
-    const chainsById = new Map(this.wallet.chains().map(chain => [chain.id, chain]));
-    const grouped = new Map<string, {
-      chainId: string;
-      chainName: string;
-      precision: number;
-      symbol: string;
-      liquidTotal: number;
-      totalLiquidUsd: number;
-      pricedAccounts: number;
-      fullCount: number;
-      watchCount: number;
-      accounts: HomeAccountCard[];
-    }>();
+    const chainsById = new Map(this.wallet.chains().map((chain) => [chain.id, chain]));
+    const grouped = new Map<
+      string,
+      {
+        chainId: string;
+        chainName: string;
+        isTestnet: boolean;
+        precision: number;
+        symbol: string;
+        liquidTotal: number;
+        totalLiquidUsd: number;
+        pricedAccounts: number;
+        fullCount: number;
+        watchCount: number;
+        accounts: HomeAccountCard[];
+      }
+    >();
 
     this.wallet.accounts().forEach((account, index) => {
       const chain = chainsById.get(account.chainId);
       const parsedBalance = this.parseAmount(account.info.core_liquid_balance);
-      const pricedValue = this.priceValue(account.info.core_liquid_balance);
+      const pricedValue = this.priceValue(account.info.core_liquid_balance, chain);
       const group = grouped.get(account.chainId) ?? {
         chainId: account.chainId,
         chainName: account.chainName,
+        isTestnet: isTestnetPortfolioChain(chain),
         precision: chain?.precision ?? 4,
         symbol: parsedBalance?.symbol ?? chain?.symbol ?? '',
         liquidTotal: 0,
@@ -750,8 +765,14 @@ export class HomeComponent {
         key: `${account.chainId}:${account.name}`,
         name: account.name,
         mode: account.mode,
-        liquid: account.info.core_liquid_balance ?? this.formatToken(0, group.precision, group.symbol),
-        liquidUsd: pricedValue === null ? 'No cached price' : this.priceService.formatUsd(pricedValue),
+        liquid:
+          account.info.core_liquid_balance ?? this.formatToken(0, group.precision, group.symbol),
+        liquidUsd: group.isTestnet
+          ? 'Not counted'
+          : pricedValue === null
+            ? 'No cached price'
+            : this.priceService.formatUsd(pricedValue),
+        liquidUsdValue: pricedValue,
         staked: this.formatToken(this.stakedTotal(account), group.precision, group.symbol),
         ramPct: this.ramPct(account),
         ramText: `${this.formatBytes(account.info.ram_usage ?? 0)} / ${this.formatBytes(account.info.ram_quota ?? 0)}`,
@@ -761,17 +782,19 @@ export class HomeComponent {
     });
 
     return [...grouped.values()]
-      .map(group => ({
+      .map((group) => ({
         chainId: group.chainId,
         chainName: group.chainName,
         accountCount: group.accounts.length,
         fullCount: group.fullCount,
         watchCount: group.watchCount,
         totalLiquid: this.formatToken(group.liquidTotal, group.precision, group.symbol),
-        totalLiquidUsd: this.formatUsd(group.totalLiquidUsd, group.pricedAccounts),
+        totalLiquidUsd: group.isTestnet
+          ? 'Not counted'
+          : this.formatUsd(group.totalLiquidUsd, group.pricedAccounts),
         accounts: group.accounts.sort((left, right) => {
-          const leftValue = this.priceValue(left.liquid);
-          const rightValue = this.priceValue(right.liquid);
+          const leftValue = left.liquidUsdValue;
+          const rightValue = right.liquidUsdValue;
           if ((rightValue ?? 0) !== (leftValue ?? 0)) {
             return (rightValue ?? 0) - (leftValue ?? 0);
           }
@@ -826,8 +849,11 @@ export class HomeComponent {
     return Math.min(100, Math.round((usage / quota) * 100));
   }
 
-  private priceValue(balance?: string | null): number | null {
-    return balance ? this.priceService.toUsd(balance) : null;
+  private priceValue(
+    balance: string | null | undefined,
+    chain: PortfolioPriceChain,
+  ): number | null {
+    return portfolioTokenUsdValue(balance, chain, (amount) => this.priceService.toUsd(amount));
   }
 
   private formatUsd(value: number, pricedAccounts: number): string {

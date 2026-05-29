@@ -10,6 +10,7 @@ use crate::keystore::derive;
 use crate::keystore::memory::Session;
 use crate::keystore::store::KeyStore;
 use std::sync::Mutex;
+use zeroize::Zeroizing;
 
 use serde::{Deserialize, Serialize};
 
@@ -76,6 +77,41 @@ impl WalletService {
         }
     }
 
+    fn derive_storage_key(master_key: &[u8]) -> [u8; 32] {
+        derive::derive_key(master_key, MASTER_SALT)
+    }
+
+    fn ensure_vault_with_storage_key(&self, storage_key: &[u8; 32]) -> Result<(), Error> {
+        match self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY) {
+            Ok(encrypted_token) => {
+                derive::decrypt_with_key(&encrypted_token, storage_key)
+                    .map_err(|_| Error::InvalidPassphrase)?;
+            }
+            Err(_) => {
+                let encrypted = derive::encrypt_with_key(VAULT_VERIFY_PLAINTEXT, storage_key)?;
+                self.store
+                    .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn import_key_with_storage_key(
+        &self,
+        wif: &str,
+        chain_id: &str,
+        storage_key: &[u8; 32],
+    ) -> Result<ImportResult, Error> {
+        let (private_key_bytes, public_key) = signing::public_key_from_wif(wif)?;
+        let encrypted = derive::encrypt_with_key(&private_key_bytes, storage_key)?;
+        self.store.store_key(chain_id, &public_key, &encrypted)?;
+
+        Ok(ImportResult {
+            public_key,
+            private_key_bytes,
+        })
+    }
+
     // ── Session ──
 
     pub fn is_locked(&self) -> bool {
@@ -86,43 +122,31 @@ impl WalletService {
     /// Unlock the wallet with a passphrase.
     /// Verifies the passphrase by decrypting the vault verification token.
     pub fn unlock(&self, passphrase: &str) -> Result<(), Error> {
-        let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
 
         // Verify passphrase using the vault verification token
-        match self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY) {
-            Ok(encrypted_token) => {
-                derive::decrypt(&encrypted_token, &master_key, MASTER_SALT)
-                    .map_err(|_| Error::InvalidPassphrase)?;
-            }
+        let verify_result = match self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY) {
+            Ok(encrypted_token) => derive::decrypt_with_key(&encrypted_token, &*storage_key)
+                .map(|_| ())
+                .map_err(|_| Error::InvalidPassphrase),
             Err(_) => {
                 // No vault token yet — this shouldn't happen if has_wallet is true,
                 // but accept the passphrase and create the token now (migration case)
-                let encrypted = derive::encrypt(VAULT_VERIFY_PLAINTEXT, &master_key, MASTER_SALT)?;
+                let encrypted = derive::encrypt_with_key(VAULT_VERIFY_PLAINTEXT, &*storage_key)?;
                 let _ = self
                     .store
                     .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted);
+                Ok(())
             }
+        };
+
+        if let Err(e) = verify_result {
+            return Err(e);
         }
 
         let mut session = self.session.lock().unwrap();
         session.unlock(master_key.to_vec());
-        Ok(())
-    }
-
-    /// Create the vault: set the master passphrase.
-    /// This stores a verification token that will be used to validate the passphrase on unlock.
-    /// Called during first key import.
-    fn ensure_vault(&self, master_key: &[u8]) -> Result<(), Error> {
-        // Only create if it doesn't exist yet
-        if self
-            .store
-            .load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY)
-            .is_err()
-        {
-            let encrypted = derive::encrypt(VAULT_VERIFY_PLAINTEXT, master_key, MASTER_SALT)?;
-            self.store
-                .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &encrypted)?;
-        }
         Ok(())
     }
 
@@ -180,29 +204,41 @@ impl WalletService {
         chain_id: &str,
         passphrase: &str,
     ) -> Result<ImportResult, Error> {
-        // Decode WIF → private key bytes + public key
-        let (private_key_bytes, public_key) = signing::public_key_from_wif(wif)?;
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
 
-        // Derive master key from passphrase
-        let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
+        self.ensure_vault_with_storage_key(&*storage_key)?;
+        let result = self.import_key_with_storage_key(wif, chain_id, &*storage_key)?;
 
-        // Create vault verification token on first import
-        self.ensure_vault(&master_key)?;
-
-        // Encrypt private key with master key (fixed salt for all keys)
-        let encrypted = derive::encrypt(&private_key_bytes, &master_key, MASTER_SALT)?;
-
-        // Store in key store
-        self.store.store_key(chain_id, &public_key, &encrypted)?;
-
-        // Unlock session with master key
         let mut session = self.session.lock().unwrap();
         session.unlock(master_key.to_vec());
 
-        Ok(ImportResult {
-            public_key,
-            private_key_bytes,
-        })
+        Ok(result)
+    }
+
+    /// Import several keys with one passphrase derivation.
+    ///
+    /// This keeps the on-disk encryption format identical to `import_key`, but
+    /// avoids re-running PBKDF2 for every key in bulk import flows.
+    pub fn import_keys(
+        &self,
+        keys: &[(&str, &str)],
+        passphrase: &str,
+    ) -> Result<Vec<Result<ImportResult, Error>>, Error> {
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
+
+        self.ensure_vault_with_storage_key(&*storage_key)?;
+
+        let results = keys
+            .iter()
+            .map(|(wif, chain_id)| self.import_key_with_storage_key(wif, chain_id, &*storage_key))
+            .collect();
+
+        let mut session = self.session.lock().unwrap();
+        session.unlock(master_key.to_vec());
+
+        Ok(results)
     }
 
     /// Import a key using the current session (wallet must be unlocked).
@@ -212,18 +248,13 @@ impl WalletService {
         wif: &str,
         chain_id: &str,
     ) -> Result<ImportResult, Error> {
-        let (private_key_bytes, public_key) = signing::public_key_from_wif(wif)?;
+        let storage_key = {
+            let mut session = self.session.lock().unwrap();
+            let master_key = session.master_key().ok_or(Error::WalletLocked)?;
+            Zeroizing::new(Self::derive_storage_key(master_key))
+        };
 
-        let mut session = self.session.lock().unwrap();
-        let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-
-        let encrypted = derive::encrypt(&private_key_bytes, master_key, MASTER_SALT)?;
-        self.store.store_key(chain_id, &public_key, &encrypted)?;
-
-        Ok(ImportResult {
-            public_key,
-            private_key_bytes,
-        })
+        self.import_key_with_storage_key(wif, chain_id, &*storage_key)
     }
 
     // ── Key Access ──
@@ -244,11 +275,14 @@ impl WalletService {
     /// Decrypt and return the raw private key bytes for a given public key.
     /// Requires the wallet to be unlocked.
     pub fn decrypt_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
-        let mut session = self.session.lock().unwrap();
-        let master_key = session.master_key().ok_or(Error::WalletLocked)?;
+        let storage_key = {
+            let mut session = self.session.lock().unwrap();
+            let master_key = session.master_key().ok_or(Error::WalletLocked)?;
+            Zeroizing::new(Self::derive_storage_key(master_key))
+        };
 
         let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
-        let private_key_bytes = derive::decrypt(&encrypted, master_key, MASTER_SALT)
+        let private_key_bytes = derive::decrypt_with_key(&encrypted, &*storage_key)
             .map_err(|_| Error::InvalidPassphrase)?;
 
         Ok(private_key_bytes)
@@ -262,23 +296,22 @@ impl WalletService {
         public_key: &str,
         passphrase: &str,
     ) -> Result<Vec<u8>, Error> {
-        let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
 
         // Verify passphrase first
         match self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY) {
             Ok(encrypted_token) => {
-                derive::decrypt(&encrypted_token, &master_key, MASTER_SALT)
+                derive::decrypt_with_key(&encrypted_token, &*storage_key)
                     .map_err(|_| Error::InvalidPassphrase)?;
             }
             Err(_) => return Err(Error::WalletLocked),
         }
 
         let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
-        let private_key_bytes = derive::decrypt(&encrypted, &master_key, MASTER_SALT)
+        let private_key_bytes = derive::decrypt_with_key(&encrypted, &*storage_key)
             .map_err(|_| Error::InvalidPassphrase)?;
 
-        // master_key goes out of scope and is on the stack — zeroize would be ideal here
-        // but derive_key returns a fixed array that drops normally
         Ok(private_key_bytes)
     }
 
@@ -291,7 +324,11 @@ impl WalletService {
                 deleted = true;
             }
         }
-        if deleted { Ok(()) } else { result }
+        if deleted {
+            Ok(())
+        } else {
+            result
+        }
     }
 
     fn load_key_with_aliases(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
@@ -352,8 +389,10 @@ impl WalletService {
             }
         }
 
-        let old_master = derive::derive_key(old_passphrase.as_bytes(), MASTER_SALT);
-        let new_master = derive::derive_key(new_passphrase.as_bytes(), MASTER_SALT);
+        let old_master = Zeroizing::new(derive::derive_key(old_passphrase.as_bytes(), MASTER_SALT));
+        let new_master = Zeroizing::new(derive::derive_key(new_passphrase.as_bytes(), MASTER_SALT));
+        let old_storage_key = Zeroizing::new(Self::derive_storage_key(&*old_master));
+        let new_storage_key = Zeroizing::new(Self::derive_storage_key(&*new_master));
 
         let mut re_encrypted_count = 0usize;
 
@@ -362,11 +401,11 @@ impl WalletService {
             for pub_key in &public_keys {
                 // Decrypt with old
                 let encrypted = self.load_key_with_aliases(chain_id, pub_key)?;
-                let private_key_bytes = derive::decrypt(&encrypted, &old_master, MASTER_SALT)
+                let private_key_bytes = derive::decrypt_with_key(&encrypted, &*old_storage_key)
                     .map_err(|_| Error::InvalidPassphrase)?;
 
                 // Re-encrypt with new master key
-                let re_encrypted = derive::encrypt(&private_key_bytes, &new_master, MASTER_SALT)?;
+                let re_encrypted = derive::encrypt_with_key(&private_key_bytes, &*new_storage_key)?;
 
                 // Overwrite
                 self.store.store_key(chain_id, pub_key, &re_encrypted)?;
@@ -375,7 +414,7 @@ impl WalletService {
         }
 
         // Update vault verification token with new master key
-        let new_token = derive::encrypt(VAULT_VERIFY_PLAINTEXT, &new_master, MASTER_SALT)?;
+        let new_token = derive::encrypt_with_key(VAULT_VERIFY_PLAINTEXT, &*new_storage_key)?;
         self.store
             .store_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY, &new_token)?;
 
@@ -437,10 +476,11 @@ impl WalletService {
     /// Returns a JSON string suitable for writing to a file.
     pub fn export_backup(&self, passphrase: &str) -> Result<String, Error> {
         // Verify passphrase
-        let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
         match self.store.load_key(VAULT_VERIFY_CHAIN, VAULT_VERIFY_KEY) {
             Ok(token) => {
-                derive::decrypt(&token, &master_key, MASTER_SALT)
+                derive::decrypt_with_key(&token, &*storage_key)
                     .map_err(|_| Error::InvalidPassphrase)?;
             }
             Err(_) => return Err(Error::WalletLocked),
@@ -489,17 +529,18 @@ impl WalletService {
         }
 
         // Verify passphrase against the backup's vault token
-        let master_key = derive::derive_key(passphrase.as_bytes(), MASTER_SALT);
+        let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
         let vault_token_hex = backup["vault_token"]
             .as_str()
             .ok_or_else(|| Error::Serialization("Missing vault_token".into()))?;
         let vault_token = hex::decode(vault_token_hex)
             .map_err(|e| Error::Serialization(format!("Invalid hex: {}", e)))?;
-        derive::decrypt(&vault_token, &master_key, MASTER_SALT)
+        derive::decrypt_with_key(&vault_token, &*storage_key)
             .map_err(|_| Error::InvalidPassphrase)?;
 
         // Ensure local vault exists
-        self.ensure_vault(&master_key)?;
+        self.ensure_vault_with_storage_key(&*storage_key)?;
 
         // Import each key
         let keys = backup["keys"]
@@ -520,7 +561,7 @@ impl WalletService {
                 .map_err(|e| Error::Serialization(format!("Invalid hex: {}", e)))?;
 
             // Verify the key is valid by decrypting it
-            derive::decrypt(&encrypted, &master_key, MASTER_SALT)
+            derive::decrypt_with_key(&encrypted, &*storage_key)
                 .map_err(|_| Error::Encryption("Corrupted key entry in backup".into()))?;
 
             // Store it (overwrites if exists)
@@ -744,6 +785,24 @@ mod tests {
         // Both pass integrity check
         assert!(w.verify_key_integrity(TEST_CHAIN, TEST_PUB).unwrap());
         assert!(w.verify_key_integrity(TEST_CHAIN, &pub2).unwrap());
+    }
+
+    #[test]
+    fn batch_import_keys_stores_multiple_keys() {
+        let w = make_wallet();
+        let (wif2, pub2) = signing::generate_keypair().unwrap();
+
+        let imports = w
+            .import_keys(&[(TEST_WIF, TEST_CHAIN), (&wif2, TEST_CHAIN)], TEST_PASS)
+            .unwrap();
+        let imported: Vec<_> = imports.into_iter().map(Result::unwrap).collect();
+
+        assert_eq!(imported[0].public_key, TEST_PUB);
+        assert_eq!(imported[1].public_key, pub2);
+        assert!(!w.is_locked());
+
+        let keys = w.list_keys(TEST_CHAIN).unwrap();
+        assert_eq!(keys.len(), 2);
     }
 
     #[test]

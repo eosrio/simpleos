@@ -71,14 +71,12 @@ pub fn import_anchor_entries(
     // Ensure SimplEOS vault exists and session is unlocked
     let has_full = selections.iter().any(|s| s.import_mode == "full");
     if has_full {
-        // Import the first key with passphrase to create/unlock vault
-        // Subsequent keys use session
-        let mut first_full = true;
+        let mut full_imports: Vec<(&ImportSelection, &str)> = Vec::new();
 
         for sel in &selections {
             if sel.import_mode == "full" {
                 let wif = match key_map.as_ref().and_then(|m| m.get(&sel.pubkey)) {
-                    Some(wif) => wif,
+                    Some(wif) => wif.as_str(),
                     None => {
                         result.errors.push(format!(
                             "No private key found for {} on {}",
@@ -90,30 +88,49 @@ pub fn import_anchor_entries(
                 };
 
                 log::info!(
-                    "[anchor] Importing key for {}@{} on chain {}...",
+                    "[anchor] Queued key for {}@{} on chain {}...",
                     sel.account,
                     sel.authority,
                     &sel.chain_id[..8]
                 );
+                full_imports.push((sel, wif));
+            } else {
+                // Watch-only — no key import needed, frontend handles account creation
+                result.imported_watch += 1;
+            }
+        }
 
-                let import_result = if first_full {
-                    first_full = false;
-                    log::info!("[anchor]   Using import_key (first full, creates vault)");
-                    wallet
-                        .0
-                        .import_key(wif, &sel.chain_id, &simpleos_passphrase)
-                } else {
-                    log::info!("[anchor]   Using import_key_with_session");
-                    wallet.0.import_key_with_session(wif, &sel.chain_id)
-                };
+        if !full_imports.is_empty() {
+            log::info!(
+                "[anchor] Batch importing {} full keys with shared wallet key derivation...",
+                full_imports.len()
+            );
+            let import_items: Vec<(&str, &str)> = full_imports
+                .iter()
+                .map(|(sel, wif)| (*wif, sel.chain_id.as_str()))
+                .collect();
+            let import_results = wallet.0.import_keys(&import_items, &simpleos_passphrase)?;
 
+            for ((sel, _), import_result) in full_imports.iter().zip(import_results.into_iter()) {
                 match import_result {
                     Ok(r) => {
-                        log::info!("[anchor]   OK: stored as {}", r.public_key);
+                        log::info!(
+                            "[anchor]   OK: {}@{} on {} stored as {}",
+                            sel.account,
+                            sel.authority,
+                            &sel.chain_id[..8],
+                            r.public_key
+                        );
                         result.imported_full += 1;
                     }
                     Err(e) => {
-                        log::error!("[anchor]   FAILED: {}", e);
+                        log::error!(
+                            "[anchor]   FAILED: {}@{} on {}: {}",
+                            sel.account,
+                            sel.authority,
+                            &sel.chain_id[..8],
+                            e
+                        );
                         result.errors.push(format!(
                             "Failed to import {} ({}@{}): {}",
                             sel.pubkey, sel.account, sel.chain_id, e
@@ -121,9 +138,6 @@ pub fn import_anchor_entries(
                         result.skipped += 1;
                     }
                 }
-            } else {
-                // Watch-only — no key import needed, frontend handles account creation
-                result.imported_watch += 1;
             }
         }
     } else {

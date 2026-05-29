@@ -25,9 +25,20 @@ pub fn encrypt(
     salt: &[u8],
 ) -> Result<Vec<u8>, crate::error::Error> {
     let mut key = derive_key(passphrase, salt);
-    let cipher = Aes256Gcm::new_from_slice(&key)
-        .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
+    let result = encrypt_with_key(plaintext, &key);
     key.zeroize();
+    result
+}
+
+/// Encrypt plaintext with an already-derived AES-256 key.
+///
+/// Returns: nonce (12 bytes) || ciphertext+tag
+pub fn encrypt_with_key(
+    plaintext: &[u8],
+    key: &[u8; AES_KEY_LEN],
+) -> Result<Vec<u8>, crate::error::Error> {
+    let cipher = Aes256Gcm::new_from_slice(key)
+        .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
     let nonce_bytes: [u8; NONCE_LEN] = rand::random();
     let nonce = Nonce::from_slice(&nonce_bytes);
@@ -49,14 +60,23 @@ pub fn decrypt(
     passphrase: &[u8],
     salt: &[u8],
 ) -> Result<Vec<u8>, crate::error::Error> {
+    let mut key = derive_key(passphrase, salt);
+    let result = decrypt_with_key(data, &key);
+    key.zeroize();
+    result
+}
+
+/// Decrypt data with an already-derived AES-256 key.
+pub fn decrypt_with_key(
+    data: &[u8],
+    key: &[u8; AES_KEY_LEN],
+) -> Result<Vec<u8>, crate::error::Error> {
     if data.len() < NONCE_LEN {
         return Err(crate::error::Error::Encryption("Data too short".into()));
     }
 
-    let mut key = derive_key(passphrase, salt);
-    let cipher = Aes256Gcm::new_from_slice(&key)
+    let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
-    key.zeroize();
 
     let nonce = Nonce::from_slice(&data[..NONCE_LEN]);
     let plaintext = cipher
