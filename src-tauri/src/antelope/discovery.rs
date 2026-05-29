@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crate::antelope::provider::ProviderManager;
+use crate::antelope::provider::{read_body_capped, ProviderManager, MAX_INFO_BODY_BYTES};
 use crate::error::Error;
 
 /// Max age of cached endpoints before re-discovery is recommended (24 hours).
@@ -163,6 +163,8 @@ where
     // Phase 2: Crawl bp.json for all producers concurrently (batches of 10)
     let bp_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(4))
+        // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .unwrap_or_default();
 
@@ -379,7 +381,9 @@ async fn fetch_chains_json(
 ) -> Option<String> {
     let url = format!("{}/chains.json", base_url);
     let resp = client.get(&url).send().await.ok()?;
-    let chains: ChainsJson = resp.json().await.ok()?;
+    // SEC-017: cap the chains.json body before parsing.
+    let bytes = read_body_capped(resp, MAX_INFO_BODY_BYTES).await.ok()?;
+    let chains: ChainsJson = serde_json::from_slice(&bytes).ok()?;
     chains.chains.get(chain_id).cloned()
 }
 
@@ -390,8 +394,9 @@ async fn fetch_and_parse_bp_json(client: &reqwest::Client, url: &str) -> Result<
         .await
         .map_err(|e| Error::Rpc(format!("bp.json fetch: {}", e)))?;
 
-    resp.json::<BpJson>()
-        .await
+    // SEC-017: cap the bp.json body before parsing.
+    let bytes = read_body_capped(resp, MAX_INFO_BODY_BYTES).await?;
+    serde_json::from_slice::<BpJson>(&bytes)
         .map_err(|e| Error::Rpc(format!("bp.json parse: {}", e)))
 }
 
@@ -474,7 +479,18 @@ async fn test_api_endpoint(
     let (latency, healthy, server_version) = match info_result {
         Ok(resp) => {
             let latency = start.elapsed().as_millis() as i64;
-            match resp.json::<serde_json::Value>().await {
+            // SEC-017: cap the get_info body before parsing.
+            let parsed = match read_body_capped(resp, MAX_INFO_BODY_BYTES).await {
+                Ok(bytes) => serde_json::from_slice::<serde_json::Value>(&bytes),
+                Err(_) => {
+                    return EndpointTestResult {
+                        latency_ms: -1,
+                        healthy: false,
+                        capabilities: EndpointCapabilities::default(),
+                    }
+                }
+            };
+            match parsed {
                 Ok(json) => {
                     let cid = json.get("chain_id").and_then(|v| v.as_str()).unwrap_or("");
                     let ver = json
@@ -641,7 +657,7 @@ pub fn save_cache(
     log::info!(
         "[discovery] Cached {} endpoints for chain {}",
         endpoints.len(),
-        &chain_id[..8]
+        crate::util::short_prefix(chain_id, 8) // SEC-013
     );
     Ok(())
 }

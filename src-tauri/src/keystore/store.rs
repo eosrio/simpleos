@@ -5,7 +5,32 @@
 
 use crate::error::Error;
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::Mutex;
+
+/// SEC-030: best-effort restriction of an on-disk secret file to owner read/write only.
+/// On Unix this sets mode 0o600. On Windows the inherited ACL is left in place —
+/// see the SEC-030 report note (no minimal, certain owner-only ACL primitive here).
+#[allow(unused_variables)]
+fn restrict_file_permissions(path: &Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+    }
+    // SEC-030 TODO(windows ACL): restrict to the current user via an explicit DACL.
+}
+
+/// SEC-030: best-effort restriction of a secrets directory to owner access only (0o700 on Unix).
+#[allow(unused_variables)]
+fn restrict_dir_permissions(path: &Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700));
+    }
+    // SEC-030 TODO(windows ACL): restrict to the current user via an explicit DACL.
+}
 
 /// Trait for key storage backends.
 /// Implementations must store encrypted private key blobs keyed by (chain_id, public_key)
@@ -15,6 +40,9 @@ pub trait KeyStore: Send + Sync {
     fn load_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error>;
     fn delete_key(&self, chain_id: &str, public_key: &str) -> Result<(), Error>;
     fn list_keys(&self, chain_id: &str) -> Result<Vec<String>, Error>;
+    /// SEC-028: delete the per-chain key index entry so a wallet reset leaves
+    /// nothing behind in the backing store (e.g. the OS credential store).
+    fn clear_index(&self, chain_id: &str) -> Result<(), Error>;
 }
 
 /// In-memory key store for testing. No OS dependencies.
@@ -73,6 +101,11 @@ impl KeyStore for MemoryKeyStore {
         let indices = self.indices.lock().unwrap();
         Ok(indices.get(chain_id).cloned().unwrap_or_default())
     }
+
+    fn clear_index(&self, chain_id: &str) -> Result<(), Error> {
+        self.indices.lock().unwrap().remove(chain_id);
+        Ok(())
+    }
 }
 
 /// OS keyring-backed key store (wraps existing os_keyring module).
@@ -97,6 +130,10 @@ impl KeyStore for OsKeyStore {
 
     fn list_keys(&self, chain_id: &str) -> Result<Vec<String>, Error> {
         super::os_keyring::list_keys(chain_id)
+    }
+
+    fn clear_index(&self, chain_id: &str) -> Result<(), Error> {
+        super::os_keyring::delete_index(chain_id)
     }
 }
 
@@ -154,8 +191,13 @@ impl FileKeyStore {
     fn write_index(&self, chain_id: &str, keys: &[String]) -> Result<(), Error> {
         let dir = self.chain_dir(chain_id);
         std::fs::create_dir_all(&dir)?;
+        // SEC-030: owner-only directory for the on-disk key store.
+        restrict_dir_permissions(&dir);
         let json = serde_json::to_string(keys).map_err(|e| Error::Serialization(e.to_string()))?;
-        std::fs::write(self.index_file(chain_id), json)?;
+        let index_path = self.index_file(chain_id);
+        std::fs::write(&index_path, json)?;
+        // SEC-030: owner-only key index file.
+        restrict_file_permissions(&index_path);
         Ok(())
     }
 }
@@ -164,7 +206,12 @@ impl KeyStore for FileKeyStore {
     fn store_key(&self, chain_id: &str, public_key: &str, encrypted: &[u8]) -> Result<(), Error> {
         let dir = self.chain_dir(chain_id);
         std::fs::create_dir_all(&dir)?;
-        std::fs::write(self.key_file(chain_id, public_key), encrypted)?;
+        // SEC-030: owner-only directory for the on-disk key store.
+        restrict_dir_permissions(&dir);
+        let key_path = self.key_file(chain_id, public_key);
+        std::fs::write(&key_path, encrypted)?;
+        // SEC-030: owner-only encrypted key blob.
+        restrict_file_permissions(&key_path);
 
         // Update index
         let mut index = self.read_index(chain_id);
@@ -176,7 +223,7 @@ impl KeyStore for FileKeyStore {
         log::info!(
             "[file-keystore] Stored key for {} on chain {}",
             public_key,
-            &chain_id[..8]
+            crate::util::short_prefix(chain_id, 8) // SEC-013: renderer-supplied chain_id
         );
         Ok(())
     }
@@ -202,6 +249,12 @@ impl KeyStore for FileKeyStore {
 
     fn list_keys(&self, chain_id: &str) -> Result<Vec<String>, Error> {
         Ok(self.read_index(chain_id))
+    }
+
+    fn clear_index(&self, chain_id: &str) -> Result<(), Error> {
+        // SEC-028: best-effort removal of the on-disk index for this chain.
+        let _ = std::fs::remove_file(self.index_file(chain_id));
+        Ok(())
     }
 }
 

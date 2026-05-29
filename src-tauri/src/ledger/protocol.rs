@@ -173,17 +173,26 @@ pub fn sign_transaction(path: &[u32], data: &[u8]) -> Result<String, Error> {
     }
 
     // Response: [v: 1 byte] [r: 32 bytes] [s: 32 bytes] = 65 bytes
-    if response.len() < 65 {
-        return Err(Error::Ledger("Signature response too short".into()));
+    // SEC-019: require exactly 65 bytes (not just >= 65) so r/s are unambiguous.
+    if response.len() != 65 {
+        return Err(Error::Ledger("Unexpected signature response length".into()));
     }
 
     let v = response[0];
     let r = &response[1..33];
     let s = &response[33..65];
 
+    // SEC-019: validate the device-supplied recovery byte before subtracting.
+    // Ledger returns v = 31 or 32 (= recid 0/1 + 27 + 4). A hostile/buggy device
+    // sending v < 31 would underflow `v - 27 - 4` (wraps in release, no overflow-checks).
+    let recid = v
+        .checked_sub(31)
+        .filter(|r| *r <= 3)
+        .ok_or_else(|| Error::Ledger("Unexpected recovery byte".into()))?;
+
     // Encode as SIG_K1_
     let mut sig_data = Vec::with_capacity(65);
-    sig_data.push(v - 27 - 4); // recovery id (Ledger returns 31 or 32, we need 0 or 1)
+    sig_data.push(recid); // recovery id (Ledger returns 31 or 32, we need 0 or 1)
     sig_data.extend_from_slice(r);
     sig_data.extend_from_slice(s);
 

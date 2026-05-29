@@ -16,6 +16,10 @@ const CIRCUIT_BREAKER_THRESHOLD: u32 = 3;
 const CIRCUIT_BREAKER_COOLDOWN: Duration = Duration::from_secs(60);
 /// Maximum latency to consider an endpoint healthy (ms).
 const MAX_HEALTHY_LATENCY_MS: u64 = 1200;
+/// SEC-017: hard ceiling for chain JSON RPC response bodies (8 MiB).
+pub const MAX_RPC_BODY_BYTES: usize = 8 * 1024 * 1024;
+/// SEC-017: hard ceiling for get_info / bp.json / chains.json bodies (1 MiB).
+pub const MAX_INFO_BODY_BYTES: usize = 1024 * 1024;
 
 // ── Endpoint State ──
 
@@ -97,6 +101,8 @@ impl ProviderManager {
     pub fn new(chain_id: &str) -> Self {
         let client = reqwest::Client::builder()
             .timeout(REQUEST_TIMEOUT)
+            // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .unwrap_or_default();
 
@@ -499,7 +505,12 @@ async fn check_endpoint_health(
     match result {
         Ok(response) => {
             let latency_ms = start.elapsed().as_millis() as i64;
-            match response.json::<ChainInfo>().await {
+            // SEC-017: cap the get_info body before parsing.
+            let parsed = match read_body_capped(response, MAX_INFO_BODY_BYTES).await {
+                Ok(bytes) => serde_json::from_slice::<ChainInfo>(&bytes),
+                Err(_) => return (-1, false),
+            };
+            match parsed {
                 Ok(info) => {
                     if info.chain_id == expected_chain_id {
                         (latency_ms, true)
@@ -549,6 +560,48 @@ fn is_unknown_endpoint_response(message: &str) -> bool {
         || (lower.contains("http 404") && lower.contains("unspecified"))
 }
 
+/// SEC-017: read a response body into memory with a hard byte ceiling.
+/// Rejects up-front when a `Content-Length` already exceeds `max_bytes`, and
+/// streams chunks so a chunked/length-lying response is aborted the moment the
+/// accumulated bytes pass the cap. The existing per-client/per-request timeout
+/// still bounds total time. Returns the raw bytes on success.
+pub(crate) async fn read_body_capped(
+    response: reqwest::Response,
+    max_bytes: usize,
+) -> Result<Vec<u8>, Error> {
+    if let Some(len) = response.content_length() {
+        if len > max_bytes as u64 {
+            return Err(Error::Rpc(format!(
+                "Response body too large: {} bytes (max {})",
+                len, max_bytes
+            )));
+        }
+    }
+
+    let mut buf: Vec<u8> = Vec::new();
+    let mut response = response;
+    loop {
+        match response
+            .chunk()
+            .await
+            .map_err(|e| Error::Rpc(format!("Body read error: {}", e)))?
+        {
+            Some(chunk) => {
+                if buf.len() + chunk.len() > max_bytes {
+                    return Err(Error::Rpc(format!(
+                        "Response body exceeded {} byte cap",
+                        max_bytes
+                    )));
+                }
+                buf.extend_from_slice(&chunk);
+            }
+            None => break,
+        }
+    }
+
+    Ok(buf)
+}
+
 /// POST to an RPC endpoint and return raw JSON value.
 /// Treats any non-2xx HTTP status as an error, extracting the nodeos error
 /// details from the response body if possible.
@@ -565,9 +618,9 @@ async fn rpc_post(
         .map_err(|e| Error::Rpc(format!("{}: {}", url, e)))?;
 
     let status = response.status();
-    let json = response
-        .json::<serde_json::Value>()
-        .await
+    // SEC-017: cap the buffered response body before parsing.
+    let bytes = read_body_capped(response, MAX_RPC_BODY_BYTES).await?;
+    let json = serde_json::from_slice::<serde_json::Value>(&bytes)
         .map_err(|e| Error::Rpc(format!("Parse error: {}", e)))?;
 
     if !status.is_success() {
@@ -632,10 +685,9 @@ async fn http_get<T: serde::de::DeserializeOwned>(
         .await
         .map_err(|e| Error::Rpc(format!("{}: {}", url, e)))?;
 
-    response
-        .json::<T>()
-        .await
-        .map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
+    // SEC-017: cap the buffered response body before parsing.
+    let bytes = read_body_capped(response, MAX_RPC_BODY_BYTES).await?;
+    serde_json::from_slice::<T>(&bytes).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
 }
 
 #[cfg(test)]

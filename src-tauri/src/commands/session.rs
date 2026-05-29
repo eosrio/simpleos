@@ -5,6 +5,7 @@
 
 use serde::Serialize;
 use tauri::State;
+use zeroize::Zeroizing;
 
 use crate::antelope::{sealed_message, signing};
 use crate::error::Error;
@@ -74,7 +75,7 @@ pub fn create_link_session(
 
     log::info!(
         "[session] Created link session: key={}, channel={}",
-        &link_key_hex[..16],
+        crate::util::short_prefix(&link_key_hex, 16), // SEC-013
         channel_uuid
     );
 
@@ -108,8 +109,11 @@ pub fn unseal_message(
     let encrypted = wallet.0.load_raw_key(LINK_SESSION_CHAIN, &session_pubkey_hex)?;
     let mut session = wallet.0.session_lock()?;
     let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-    let private_key = derive::decrypt(&encrypted, master_key, SESSION_SALT)
-        .map_err(|_| Error::Encryption("Failed to decrypt session key".into()))?;
+    // SEC-026: wipe the decrypted session private key on drop.
+    let private_key = Zeroizing::new(
+        derive::decrypt(&encrypted, master_key, SESSION_SALT)
+            .map_err(|_| Error::Encryption("Failed to decrypt session key".into()))?,
+    );
     drop(session);
 
     let plaintext = sealed_message::unseal(&ciphertext, nonce, &private_key, &from_key_bytes)?;
@@ -134,8 +138,11 @@ pub fn seal_message(
     let encrypted = wallet.0.load_raw_key(LINK_SESSION_CHAIN, &session_pubkey_hex)?;
     let mut session = wallet.0.session_lock()?;
     let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-    let private_key = derive::decrypt(&encrypted, master_key, SESSION_SALT)
-        .map_err(|_| Error::Encryption("Failed to decrypt session key".into()))?;
+    // SEC-026: wipe the decrypted session private key on drop.
+    let private_key = Zeroizing::new(
+        derive::decrypt(&encrypted, master_key, SESSION_SALT)
+            .map_err(|_| Error::Encryption("Failed to decrypt session key".into()))?,
+    );
     drop(session);
 
     let ciphertext = sealed_message::seal(payload.as_bytes(), nonce, &private_key, &to_key)?;

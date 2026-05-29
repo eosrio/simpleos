@@ -67,7 +67,12 @@ mod platform {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(Error::Io)?;
         }
-        std::fs::write(path, protected).map_err(Error::Io)?;
+        std::fs::write(&path, protected).map_err(Error::Io)?;
+        // SEC-030 TODO(windows ACL): biometric.dat is Windows-only (this module is
+        // `#[cfg(windows)]`), so there is no Unix mode to set here. The payload is
+        // DPAPI-protected (per-user, cross-user decryption blocked), but the file's
+        // inherited NTFS ACL is not tightened to owner-only — no minimal, certain
+        // owner-only ACL primitive is applied. Reported as not-done.
         Ok(())
     }
 

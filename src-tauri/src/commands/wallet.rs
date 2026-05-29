@@ -421,7 +421,15 @@ pub fn set_pin(
         ))
     })?;
     std::fs::create_dir_all(&app_dir).map_err(Error::Io)?;
-    std::fs::write(app_dir.join("pin.dat"), &encrypted).map_err(Error::Io)?;
+    let pin_path = app_dir.join("pin.dat");
+    std::fs::write(&pin_path, &encrypted).map_err(Error::Io)?;
+    // SEC-030: restrict pin.dat to owner read/write only.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&pin_path, std::fs::Permissions::from_mode(0o600));
+    }
+    // SEC-030 TODO(windows ACL): restrict pin.dat to the current user via an explicit DACL.
     Ok(())
 }
 
@@ -572,17 +580,19 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
         let _ = std::fs::remove_file(app_dir.join("biometric.dat"));
     }
 
-    // Clear all keys from the key store for known chains
-    let chains = crate::antelope::chain_config::default_chains();
-    for chain in &chains {
-        if let Ok(keys) = wallet.0.list_keys(&chain.id) {
-            for key in &keys {
-                let _ = wallet.0.remove_key(&chain.id, key);
-            }
-        }
+    // SEC-028: clear keys for every known chain (mainnets AND testnets), plus the
+    // BLS finalizer namespace per chain, and drop the per-chain index entries so the
+    // OS credential store is fully wiped — not just the FileKeyStore directory.
+    for chain_id in wallet.0.known_chains() {
+        wallet.0.clear_chain(chain_id);
+        // BLS finalizer keys are stored under the `bls_<chain_id>` namespace.
+        wallet.0.clear_chain(&format!("bls_{}", chain_id));
     }
-    // Also clear the vault verification token
+    // Also clear the link-session namespace.
+    wallet.0.clear_chain("__link__");
+    // Also clear the vault verification token and its index.
     let _ = wallet.0.remove_key("__vault__", "__verify__");
+    wallet.0.clear_chain("__vault__");
 
     log::warn!("[wallet] RESET: complete");
     Ok(())

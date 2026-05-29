@@ -475,10 +475,46 @@ fn read_u64_le(bytes: &[u8], pos: &mut usize) -> Result<u64, Error> {
     Ok(u64::from_le_bytes(arr))
 }
 
+/// SEC-043: maximum element count we will accept for any varuint32-prefixed list
+/// in a packed transaction. `act_count`/`auth_count`/`cfa_count` are varuint32
+/// (up to ~4.29B) fed straight into `Vec::with_capacity`; an attacker-crafted
+/// proposal could request a multi-GB allocation → `handle_alloc_error`/abort.
+/// Real transactions have a handful of actions/authorizations; 1024 is generous.
+const MAX_PACKED_TX_LIST: usize = 1024;
+
+/// SEC-043: maximum total packed_transaction size we will parse (bytes).
+/// Bounds the whole untrusted input independent of declared counts.
+const MAX_PACKED_TX_BYTES: usize = 1024 * 1024; // 1 MiB
+
+/// SEC-043: reject an implausible element count before any allocation. Also
+/// rejects counts that cannot possibly fit in the remaining buffer (each list
+/// element consumes at least `min_element_size` bytes), so we never pre-size a
+/// collection from an untrusted count that the buffer cannot back.
+fn checked_list_count(
+    count: usize,
+    remaining: usize,
+    min_element_size: usize,
+) -> Result<usize, Error> {
+    if count > MAX_PACKED_TX_LIST {
+        return Err(Error::Serialization(format!(
+            "implausible element count {} (max {})",
+            count, MAX_PACKED_TX_LIST
+        )));
+    }
+    if min_element_size > 0 && count.saturating_mul(min_element_size) > remaining {
+        return Err(Error::Serialization(
+            "declared element count exceeds remaining buffer".into(),
+        ));
+    }
+    Ok(count)
+}
+
 fn read_action(bytes: &[u8], pos: &mut usize) -> Result<ParsedAction, Error> {
     let account = u64_to_name(read_u64_le(bytes, pos)?);
     let name = u64_to_name(read_u64_le(bytes, pos)?);
     let auth_count = read_varuint32(bytes, pos)? as usize;
+    // SEC-043: each authorization is two u64 names = 16 bytes minimum.
+    let auth_count = checked_list_count(auth_count, bytes.len().saturating_sub(*pos), 16)?;
     let mut authorization = Vec::with_capacity(auth_count);
     for _ in 0..auth_count {
         let actor = u64_to_name(read_u64_le(bytes, pos)?);
@@ -502,6 +538,14 @@ fn read_action(bytes: &[u8], pos: &mut usize) -> Result<ParsedAction, Error> {
 /// Parse a packed transaction (as stored in `eosio.msig::proposal::packed_transaction`).
 /// Extracts expiration + actions; skips extensions and unused fields.
 pub fn parse_packed_transaction(bytes: &[u8]) -> Result<ParsedTransaction, Error> {
+    // SEC-043: bound the total accepted packed_transaction size before parsing.
+    if bytes.len() > MAX_PACKED_TX_BYTES {
+        return Err(Error::Serialization(format!(
+            "packed_transaction too large: {} bytes (max {})",
+            bytes.len(),
+            MAX_PACKED_TX_BYTES
+        )));
+    }
     let mut pos = 0;
     let expiration = read_u32_le(bytes, &mut pos)?;
     let _ref_block_num = read_u16_le(bytes, &mut pos)?;
@@ -510,10 +554,14 @@ pub fn parse_packed_transaction(bytes: &[u8]) -> Result<ParsedTransaction, Error
     let _max_cpu = read_u8(bytes, &mut pos)?;
     let _delay = read_varuint32(bytes, &mut pos)?;
     let cfa_count = read_varuint32(bytes, &mut pos)? as usize;
+    // SEC-043: an action is at least 17 bytes (2 u64 names + 1 varuint auth count).
+    let cfa_count = checked_list_count(cfa_count, bytes.len().saturating_sub(pos), 17)?;
     for _ in 0..cfa_count {
         let _ = read_action(bytes, &mut pos)?;
     }
     let act_count = read_varuint32(bytes, &mut pos)? as usize;
+    // SEC-043: reject implausible counts and avoid pre-sizing from untrusted input.
+    let act_count = checked_list_count(act_count, bytes.len().saturating_sub(pos), 17)?;
     let mut actions = Vec::with_capacity(act_count);
     for _ in 0..act_count {
         actions.push(read_action(bytes, &mut pos)?);

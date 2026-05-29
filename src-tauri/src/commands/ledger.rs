@@ -161,13 +161,15 @@ pub fn ledger_watch_devices(app: AppHandle) {
 
             // Detect newly connected devices
             for device in current.difference(&known) {
-                let _ = app.emit("ledger-connected", device.clone());
+                // SEC-050: scope Ledger presence events to the main window only
+                let _ = app.emit_to("main", "ledger-connected", device.clone());
                 log::info!("[ledger] Device connected: {}", device);
             }
 
             // Detect disconnected devices
             for device in known.difference(&current) {
-                let _ = app.emit("ledger-disconnected", device.clone());
+                // SEC-050: scope Ledger presence events to the main window only
+                let _ = app.emit_to("main", "ledger-disconnected", device.clone());
                 log::info!("[ledger] Device disconnected: {}", device);
             }
 

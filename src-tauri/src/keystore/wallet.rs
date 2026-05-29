@@ -64,7 +64,8 @@ pub struct WalletService {
 #[derive(Debug, Clone)]
 pub struct ImportResult {
     pub public_key: String,
-    pub private_key_bytes: Vec<u8>,
+    // SEC-026: hold the leaf private key in a Zeroizing buffer so it is wiped on drop.
+    pub private_key_bytes: Zeroizing<Vec<u8>>,
 }
 
 impl WalletService {
@@ -103,6 +104,8 @@ impl WalletService {
         storage_key: &[u8; 32],
     ) -> Result<ImportResult, Error> {
         let (private_key_bytes, public_key) = signing::public_key_from_wif(wif)?;
+        // SEC-026: wipe the leaf private key on drop.
+        let private_key_bytes = Zeroizing::new(private_key_bytes);
         let encrypted = derive::encrypt_with_key(&private_key_bytes, storage_key)?;
         self.store.store_key(chain_id, &public_key, &encrypted)?;
 
@@ -153,6 +156,14 @@ impl WalletService {
     pub fn lock(&self) {
         let mut session = self.session.lock().unwrap();
         session.lock();
+    }
+
+    /// SEC-027: true when the master key is still resident but the session has
+    /// been idle past the timeout. The proactive background auto-lock task uses
+    /// this to decide whether to call `lock()` regardless of IPC activity.
+    pub fn is_idle_expired(&self) -> bool {
+        let session = self.session.lock().unwrap();
+        session.is_idle_expired()
     }
 
     // ── Security Mode ──
@@ -274,7 +285,8 @@ impl WalletService {
 
     /// Decrypt and return the raw private key bytes for a given public key.
     /// Requires the wallet to be unlocked.
-    pub fn decrypt_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
+    // SEC-026: return a Zeroizing buffer so the leaf private key is wiped on drop.
+    pub fn decrypt_key(&self, chain_id: &str, public_key: &str) -> Result<Zeroizing<Vec<u8>>, Error> {
         let storage_key = {
             let mut session = self.session.lock().unwrap();
             let master_key = session.master_key().ok_or(Error::WalletLocked)?;
@@ -282,20 +294,23 @@ impl WalletService {
         };
 
         let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
-        let private_key_bytes = derive::decrypt_with_key(&encrypted, &*storage_key)
-            .map_err(|_| Error::InvalidPassphrase)?;
+        let private_key_bytes = Zeroizing::new(
+            derive::decrypt_with_key(&encrypted, &*storage_key)
+                .map_err(|_| Error::InvalidPassphrase)?,
+        );
 
         Ok(private_key_bytes)
     }
 
     /// Decrypt a key using an explicit passphrase (for SignPerUse mode).
     /// Does NOT unlock the session — the master key is derived, used, and dropped.
+    // SEC-026: return a Zeroizing buffer so the leaf private key is wiped on drop.
     pub fn decrypt_key_with_passphrase(
         &self,
         chain_id: &str,
         public_key: &str,
         passphrase: &str,
-    ) -> Result<Vec<u8>, Error> {
+    ) -> Result<Zeroizing<Vec<u8>>, Error> {
         let master_key = Zeroizing::new(derive::derive_key(passphrase.as_bytes(), MASTER_SALT));
         let storage_key = Zeroizing::new(Self::derive_storage_key(&*master_key));
 
@@ -309,8 +324,10 @@ impl WalletService {
         }
 
         let encrypted = self.load_key_with_aliases(chain_id, public_key)?;
-        let private_key_bytes = derive::decrypt_with_key(&encrypted, &*storage_key)
-            .map_err(|_| Error::InvalidPassphrase)?;
+        let private_key_bytes = Zeroizing::new(
+            derive::decrypt_with_key(&encrypted, &*storage_key)
+                .map_err(|_| Error::InvalidPassphrase)?,
+        );
 
         Ok(private_key_bytes)
     }
@@ -372,6 +389,24 @@ impl WalletService {
         self.store.delete_key(chain_id, key_name)
     }
 
+    /// Chain IDs the wallet knows about (mainnets + testnets it was initialized with).
+    /// SEC-028: used by reset to wipe every chain, not just the hardcoded mainnet list.
+    pub fn known_chains(&self) -> &[String] {
+        &self.known_chains
+    }
+
+    /// SEC-028: fully wipe a single chain namespace: delete every stored key and
+    /// then drop the per-chain index entry from the backing store. Best-effort —
+    /// continues past individual deletion failures so a reset always makes progress.
+    pub fn clear_chain(&self, chain_id: &str) {
+        if let Ok(keys) = self.store.list_keys(chain_id) {
+            for key in &keys {
+                let _ = self.store.delete_key(chain_id, key);
+            }
+        }
+        let _ = self.store.clear_index(chain_id);
+    }
+
     // ── Passphrase Change ──
 
     /// Re-encrypt all stored keys with a new passphrase.
@@ -401,14 +436,35 @@ impl WalletService {
             for pub_key in &public_keys {
                 // Decrypt with old
                 let encrypted = self.load_key_with_aliases(chain_id, pub_key)?;
-                let private_key_bytes = derive::decrypt_with_key(&encrypted, &*old_storage_key)
-                    .map_err(|_| Error::InvalidPassphrase)?;
+                // SEC-026: wipe the leaf private key on drop.
+                let private_key_bytes = Zeroizing::new(
+                    derive::decrypt_with_key(&encrypted, &*old_storage_key)
+                        .map_err(|_| Error::InvalidPassphrase)?,
+                );
 
                 // Re-encrypt with new master key
                 let re_encrypted = derive::encrypt_with_key(&private_key_bytes, &*new_storage_key)?;
 
                 // Overwrite
                 self.store.store_key(chain_id, pub_key, &re_encrypted)?;
+                re_encrypted_count += 1;
+            }
+
+            // SEC-029: BLS finalizer keys live under `bls_<chain_id>` (not in
+            // known_chains) and were previously skipped — re-encrypt them too so a
+            // passphrase change does not permanently orphan consensus-bearing keys.
+            // They are stored under the same effective storage key as secp256k1 keys.
+            let bls_chain = format!("bls_{}", chain_id);
+            let bls_keys = self.store.list_keys(&bls_chain).unwrap_or_default();
+            for bls_key in &bls_keys {
+                let encrypted = self.store.load_key(&bls_chain, bls_key)?;
+                // SEC-026: wipe the decrypted BLS private key on drop.
+                let sk_bytes = Zeroizing::new(
+                    derive::decrypt_with_key(&encrypted, &*old_storage_key)
+                        .map_err(|_| Error::InvalidPassphrase)?,
+                );
+                let re_encrypted = derive::encrypt_with_key(&sk_bytes, &*new_storage_key)?;
+                self.store.store_key(&bls_chain, bls_key, &re_encrypted)?;
                 re_encrypted_count += 1;
             }
         }
@@ -495,6 +551,20 @@ impl WalletService {
                 entries.push(serde_json::json!({
                     "chain_id": chain_id,
                     "public_key": pub_key,
+                    "encrypted_key": hex::encode(&encrypted),
+                }));
+            }
+
+            // SEC-029: also back up BLS finalizer keys (stored under `bls_<chain_id>`),
+            // which were previously omitted from backups. The encrypted blob format is
+            // identical, so import round-trips them into the same namespace.
+            let bls_chain = format!("bls_{}", chain_id);
+            let bls_keys = self.store.list_keys(&bls_chain).unwrap_or_default();
+            for bls_key in &bls_keys {
+                let encrypted = self.store.load_key(&bls_chain, bls_key)?;
+                entries.push(serde_json::json!({
+                    "chain_id": bls_chain,
+                    "public_key": bls_key,
                     "encrypted_key": hex::encode(&encrypted),
                 }));
             }
@@ -946,7 +1016,8 @@ mod tests {
 
         // Verify the key can be decrypted
         let decrypted = w.decrypt_key(TEST_CHAIN, &result.public_key).unwrap();
-        assert_eq!(decrypted, priv_bytes);
+        // SEC-026: decrypt_key now returns Zeroizing<Vec<u8>>; compare inner bytes.
+        assert_eq!(decrypted.as_slice(), priv_bytes.as_slice());
 
         // Verify integrity check passes
         assert!(w

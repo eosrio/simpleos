@@ -30,7 +30,9 @@ tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
 # Framework
-tauri = { version = "2.11.2", features = ["devtools", "unstable", "tray-icon", "image-png"] }
+# SEC-008: do NOT enable the "devtools" feature — it ships the WebView inspector
+# in release builds. Debug builds auto-enable devtools without the feature flag.
+tauri = { version = "2.11.2", features = ["unstable", "tray-icon", "image-png"] }
 tauri-plugin-log = "2"
 tauri-plugin-store = "2"
 tauri-plugin-shell = "2"

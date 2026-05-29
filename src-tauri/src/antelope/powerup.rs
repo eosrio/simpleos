@@ -275,18 +275,34 @@ fn calculate_resource_fee(res: &PowerUpResourceState, frac: f64) -> Result<f64, 
         return Ok(0.0);
     }
 
+    // SEC-036: `frac` and the remote `powup.state` (weight/utilization) are untrusted.
+    // Reject out-of-range remote state with a typed error and use i128 intermediates so
+    // the float→int cast and the addition cannot overflow (which would wrap negative in
+    // release builds — no overflow-checks — and bypass the `new_util > weight` guard).
+    if !frac.is_finite() || !(0.0..=1.0).contains(&frac) {
+        return Err(Error::Rpc("Invalid resource fraction".into()));
+    }
+    if res.utilization < 0 || res.adjusted_utilization < 0 {
+        return Err(Error::Rpc("Invalid PowerUp utilization in chain state".into()));
+    }
+
     let min_price = parse_amount_f64(&res.min_price);
     let max_price = parse_amount_f64(&res.max_price);
     let exponent = res.exponent;
 
-    let amount = (frac * res.weight as f64) as i64;
-    let new_util = res.utilization + amount;
-
-    if new_util > res.weight {
+    // frac ∈ [0,1] and weight > 0, so `frac * weight` is within [0, weight] and fits i64;
+    // clamp defensively, then re-check the i64 range via i128 before narrowing.
+    let amount_i128 = (frac * res.weight as f64).round() as i128;
+    let amount_i128 = amount_i128.clamp(0, res.weight as i128);
+    let new_util_i128 = (res.utilization as i128).saturating_add(amount_i128);
+    if new_util_i128 > res.weight as i128 {
         return Err(Error::Rpc(
             "Requested amount exceeds available resources".into(),
         ));
     }
+    let amount: i64 = amount_i128
+        .try_into()
+        .map_err(|_| Error::Rpc("PowerUp amount out of range".into()))?;
 
     let adj_util = res.adjusted_utilization.max(res.utilization);
 
@@ -310,8 +326,11 @@ fn calculate_resource_fee(res: &PowerUpResourceState, frac: f64) -> Result<f64, 
     // Phase 2: from adjusted_utilization to new level (integral pricing)
     let integral_amount = amount - flat_amount;
     let integral_fee = if integral_amount > 0 && res.weight > 0 {
-        let u1 = adj_util.max(res.utilization) as f64 / res.weight as f64;
-        let u2 = (adj_util.max(res.utilization) + integral_amount) as f64 / res.weight as f64;
+        // SEC-036: adj_util is derived from untrusted adjusted_utilization (unbounded
+        // non-negative i64); use saturating_add so the level cannot overflow i64.
+        let base_util = adj_util.max(res.utilization);
+        let u1 = base_util as f64 / res.weight as f64;
+        let u2 = base_util.saturating_add(integral_amount) as f64 / res.weight as f64;
 
         let price_range = max_price - min_price;
         let integral = if exponent == 1.0 {

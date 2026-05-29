@@ -91,6 +91,20 @@ pub fn add_to_index(chain_id: &str, public_key: &str) -> Result<(), crate::error
     Ok(())
 }
 
+/// Delete the entire key index entry for a chain from the OS credential store.
+/// SEC-028: used by wallet reset so no per-chain index entries are left behind.
+pub fn delete_index(chain_id: &str) -> Result<(), crate::error::Error> {
+    let index_key = format!("index:{}", chain_id);
+    let entry = Entry::new(SERVICE_NAME, &index_key)
+        .map_err(|e| crate::error::Error::Keyring(e.to_string()))?;
+    // Missing entry is fine — nothing to clear.
+    match entry.delete_credential() {
+        Ok(()) => Ok(()),
+        Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(crate::error::Error::Keyring(e.to_string())),
+    }
+}
+
 /// Remove a public key from the chain's key index.
 pub fn remove_from_index(chain_id: &str, public_key: &str) -> Result<(), crate::error::Error> {
     let mut keys = list_keys(chain_id)?;

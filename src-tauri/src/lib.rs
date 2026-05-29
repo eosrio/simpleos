@@ -6,6 +6,7 @@ pub mod keystore;
 #[cfg(feature = "ledger")]
 pub mod ledger;
 pub mod tray;
+pub mod util;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -112,6 +113,23 @@ pub fn run() {
             };
 
             let wallet = AppWallet(Arc::new(WalletService::new(store, chain_ids)));
+
+            // SEC-027: proactively zeroize the master key on idle. Auto-lock was
+            // previously lazy-only (evaluated on access), so the master key could
+            // linger in RAM indefinitely while the app sat idle in the tray. This
+            // lightweight background task polls every ~30s and calls lock() once the
+            // session has been idle past SESSION_TIMEOUT, regardless of IPC activity.
+            let auto_lock_wallet = wallet.0.clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    if auto_lock_wallet.is_idle_expired() {
+                        auto_lock_wallet.lock();
+                        log::info!("[wallet] auto-locked session after idle timeout");
+                    }
+                }
+            });
+
             app.manage(wallet);
 
             // Load close-to-tray preference from the shared store that the

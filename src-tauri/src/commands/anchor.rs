@@ -49,14 +49,12 @@ pub fn import_anchor_entries(
         log::info!("[anchor] Decrypting Anchor storage...");
         match anchor_import::decrypt_keys(&json, &anchor_password) {
             Ok(map) => {
+                // SEC-041: log only the count. The previous per-key loop emitted
+                // (truncated) public keys; combined with the per-selection logs below
+                // that would expose the full pubkey↔account/chain/authority linkage.
+                // Never log WIF/private material here. The logger is debug-only, but
+                // we keep this redacted regardless.
                 log::info!("[anchor] Decrypted {} private keys", map.len());
-                for (pubkey, _) in &map {
-                    log::info!(
-                        "[anchor]   key: {}...{}",
-                        &pubkey[..12],
-                        &pubkey[pubkey.len() - 6..]
-                    );
-                }
                 Some(map)
             }
             Err(e) => {
@@ -91,7 +89,7 @@ pub fn import_anchor_entries(
                     "[anchor] Queued key for {}@{} on chain {}...",
                     sel.account,
                     sel.authority,
-                    &sel.chain_id[..8]
+                    crate::util::short_prefix(&sel.chain_id, 8) // SEC-011/013
                 );
                 full_imports.push((sel, wif));
             } else {
@@ -114,12 +112,14 @@ pub fn import_anchor_entries(
             for ((sel, _), import_result) in full_imports.iter().zip(import_results.into_iter()) {
                 match import_result {
                     Ok(r) => {
+                        // SEC-041: redact the stored public key so the full
+                        // pubkey↔account/chain/authority linkage is not written to logs.
                         log::info!(
-                            "[anchor]   OK: {}@{} on {} stored as {}",
+                            "[anchor]   OK: {}@{} on {} stored as {}...",
                             sel.account,
                             sel.authority,
-                            &sel.chain_id[..8],
-                            r.public_key
+                            crate::util::short_prefix(&sel.chain_id, 8), // SEC-011/013
+                            crate::util::short_prefix(&r.public_key, 12)
                         );
                         result.imported_full += 1;
                     }
@@ -128,7 +128,7 @@ pub fn import_anchor_entries(
                             "[anchor]   FAILED: {}@{} on {}: {}",
                             sel.account,
                             sel.authority,
-                            &sel.chain_id[..8],
+                            crate::util::short_prefix(&sel.chain_id, 8), // SEC-011/013
                             e
                         );
                         result.errors.push(format!(

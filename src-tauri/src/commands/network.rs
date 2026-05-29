@@ -708,7 +708,9 @@ pub async fn scan_msig_scopes_stream(
     let mut results: Vec<serde_json::Value> = Vec::new();
     const PAGE: u32 = 200;
 
-    let _ = app.emit(
+    // SEC-050: scope sensitive msig events to the main window only
+    let _ = app.emit_to(
+        "main",
         "msig-scan-progress",
         serde_json::json!({ "scanned": 0, "found": 0, "done": false }),
     );
@@ -744,7 +746,9 @@ pub async fn scan_msig_scopes_stream(
 
         for row in rows.iter() {
             scanned += 1;
-            let _ = app.emit(
+            // SEC-050: scope sensitive msig events to the main window only
+            let _ = app.emit_to(
+                "main",
                 "msig-scan-progress",
                 serde_json::json!({ "scanned": scanned, "found": found, "done": false }),
             );
@@ -805,7 +809,8 @@ pub async fn scan_msig_scopes_stream(
                         "provided_approvals": provided,
                     });
                     found += 1;
-                    let _ = app.emit("msig-scan-proposal", payload.clone());
+                    // SEC-050: scope sensitive msig events to the main window only
+                    let _ = app.emit_to("main", "msig-scan-proposal", payload.clone());
                     results.push(payload);
                 }
             }
@@ -825,7 +830,9 @@ pub async fn scan_msig_scopes_stream(
         lower = more.to_string();
     }
 
-    let _ = app.emit(
+    // SEC-050: scope sensitive msig events to the main window only
+    let _ = app.emit_to(
+        "main",
         "msig-scan-progress",
         serde_json::json!({ "scanned": scanned, "found": found, "done": true }),
     );
@@ -1016,7 +1023,7 @@ pub fn load_cached_endpoints(
                 .collect();
             log::info!(
                 "[discovery] Loaded cache for {}: {} endpoints ({} healthy, fresh={})",
-                &chain_id[..8],
+                crate::util::short_prefix(&chain_id, 8), // SEC-013
                 cache.endpoints.len(),
                 healthy.len(),
                 fresh
@@ -1051,11 +1058,14 @@ pub async fn discover_endpoints(
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
+        // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .unwrap_or_default();
 
     let result = discovery::discover_endpoints(pm, &chain_id, &client, |progress| {
-        let _ = app.emit("discovery-progress", &progress);
+        // SEC-050: scope discovery progress events to the main window only
+        let _ = app.emit_to("main", "discovery-progress", &progress);
     })
     .await?;
 
