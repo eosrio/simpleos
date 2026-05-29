@@ -5,7 +5,7 @@
   "identifier": "io.eosrio.simpleos",
   "build": {
     "frontendDist": "../dist/simpleos/browser",
-    "devUrl": "http://localhost:4200",
+    "devUrl": "http://localhost:42024",
     "beforeDevCommand": "bun run start",
     "beforeBuildCommand": "bun run build"
   },

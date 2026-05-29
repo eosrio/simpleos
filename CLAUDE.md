@@ -16,7 +16,7 @@ Workspace versions are `2.0.0-alpha.0`. The active development branch is `v2-tau
 
 ```bash
 bun install                 # install JS deps
-bun run tauri:dev           # PRIMARY dev loop: builds Angular (ng serve :4200) + opens the Tauri window
+bun run tauri:dev           # PRIMARY dev loop: builds Angular (ng serve :42024) + opens the Tauri window
 bun run tauri:build         # production desktop bundle (runs `bun run build` first via beforeBuildCommand)
 bun run start               # Angular dev server only (browser, no Rust backend — uses mock data, see below)
 bun run build               # Angular production build into dist/simpleos/browser
@@ -44,7 +44,7 @@ There is **no JS lint script**. Prettier is the formatter (`bunx prettier --writ
 ### macOS App Store / Windows notes
 
 - App Store builds use a separate path: `bun run tauri:build:mac:appstore` + the `appstore` Angular configuration (swaps `src/environments/environment.ts` → `environment.appstore.ts`) + the Cargo `app-store` feature (disables the self-updater/process plugin in favor of Apple's update mechanism). See `scripts/macos-*.sh`.
-- The npm scripts assume a **Unix-like shell**: `start`/`build` go through `scripts/with-supported-node.sh` (ensures Node 24 is on PATH; macOS Homebrew-oriented) and `tauri:dev` uses `env -u` to strip GTK vars. On Windows, run the underlying tools directly (`bunx ng serve`, `bunx tauri dev`) or use Git Bash.
+- The package/launch scripts are fully **cross-platform**: `start`/`build`/`watch`/`test` and `tauri:dev` use cross-platform Javascript helpers (`scripts/with-supported-node.js` and `scripts/tauri-dev.js`) to set environment paths (such as macOS Homebrew Node 24), strip GTK variables under Linux, and spawn commands, allowing them to run directly on Windows, macOS, and Linux.
 
 ## Architecture
 
