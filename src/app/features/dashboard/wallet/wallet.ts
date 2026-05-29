@@ -1303,13 +1303,14 @@ export class WalletComponent {
       // Array of objects: if shape is uniform (shared scalar-only keys), render as table
       const allObjects = value.every(v => v && typeof v === 'object' && !Array.isArray(v));
       if (allObjects) {
-        const firstKeys = Object.keys(value[0]);
+        const firstKeys = Object.keys(value[0] || {});
         const sameShape = value.every(
           v => Object.keys(v).length === firstKeys.length
             && firstKeys.every(k => k in v),
         );
         const scalarOnly = sameShape && firstKeys.every(k =>
-          value.every(v => v[k] === null || typeof v[k] !== 'object'),
+          k !== '__proto__' && k !== 'constructor' && k !== 'prototype' &&
+          value.every(v => v[k] === null || typeof v[k] !== 'object')
         );
         if (sameShape && scalarOnly && firstKeys.length > 0) {
           return {
@@ -1317,7 +1318,7 @@ export class WalletComponent {
             key,
             headers: firstKeys,
             rows: value.map(v =>
-              firstKeys.map(k => (v[k] === null ? '' : String(v[k]))),
+              firstKeys.map(k => (k !== '__proto__' && k !== 'constructor' && k !== 'prototype' && v[k] !== null) ? String(v[k] ?? '') : ''),
             ),
           };
         }

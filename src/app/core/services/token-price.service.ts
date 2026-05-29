@@ -191,7 +191,9 @@ export class TokenPriceService {
     try {
       const obj: Record<string, TokenPrice> = {};
       for (const [k, v] of map) {
-        obj[k] = v;
+        if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+          obj[k] = v;
+        }
       }
       await this.ipc.storeSet(CACHE_KEY, obj);
     } catch { /* best effort */ }

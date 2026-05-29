@@ -281,7 +281,9 @@ export function createModelForStruct(abi: AbiDefinition, structName: string): Re
 
   const model = struct.base ? createModelForStruct(abi, struct.base) : {};
   for (const field of struct.fields ?? []) {
-    model[field.name] = initialValueForType(abi, field.type);
+    if (field.name !== '__proto__' && field.name !== 'constructor' && field.name !== 'prototype') {
+      model[field.name] = initialValueForType(abi, field.type);
+    }
   }
   return model;
 }

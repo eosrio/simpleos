@@ -1132,7 +1132,13 @@ export class ContractsComponent {
 
   fieldFor(path: string[]): any {
     let current: any = this.actionForm();
-    for (const key of path) current = current?.[key];
+    for (const key of path) {
+      if (current && key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+        current = current[key];
+      } else {
+        current = undefined;
+      }
+    }
     return current;
   }
 
@@ -1245,7 +1251,13 @@ export class ContractsComponent {
 
   private valueAtPath(path: string[]): any {
     let current: any = this.actionModel();
-    for (const key of path) current = current?.[key];
+    for (const key of path) {
+      if (current && key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+        current = current[key];
+      } else {
+        current = undefined;
+      }
+    }
     return current;
   }
 
@@ -1253,10 +1265,17 @@ export class ContractsComponent {
     const next = structuredClone(this.actionModel());
     let cursor: any = next;
     for (let i = 0; i < path.length - 1; i++) {
-      cursor[path[i]] ??= {};
-      cursor = cursor[path[i]];
+      const key = path[i];
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        return;
+      }
+      cursor[key] ??= {};
+      cursor = cursor[key];
     }
-    cursor[path[path.length - 1]] = value;
+    const finalKey = path[path.length - 1];
+    if (finalKey !== '__proto__' && finalKey !== 'constructor' && finalKey !== 'prototype') {
+      cursor[finalKey] = value;
+    }
     this.setActionModel(next);
   }
 
