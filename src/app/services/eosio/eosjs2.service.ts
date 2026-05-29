@@ -393,17 +393,12 @@ export class Eosjs2Service {
     async loadPublicKey(pubkey: PublicKey): Promise<any> {
         return new Promise(async (resolve, reject2) => {
             let isValid = false;
-            let legacyKey = '';
-            try {
-                legacyKey = pubkey.toLegacyString();
-                isValid = legacyKey !== "";
-            } catch (e) {
-                console.error('Error while validating public key with toLegacyString:', e);
-                isValid = false;
-            }
-            if (isValid) {
+        try {
+            isValid = pubkey.toLegacyString() !== "";
+        } catch(e) {}
+        if (isValid) {
                 const tempAccData = [];
-                const account_names = await this.getKeyAccountsMulti(legacyKey);
+                const account_names = await this.getKeyAccountsMulti(pubkey.toString());
                 console.log(account_names);
                 if (account_names.length > 0) {
                     const promiseQueue = [];
@@ -430,7 +425,7 @@ export class Eosjs2Service {
                         .then((results: any[]) => {
                             resolve({
                                 foundAccounts: results,
-                                publicKey: legacyKey,
+                                publicKey: pubkey.toString(),
                             });
                         })
                         .catch(() => {

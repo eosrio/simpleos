@@ -38,8 +38,8 @@ import {faKey} from '@fortawesome/free-solid-svg-icons/faKey';
 import {faExclamationTriangle} from '@fortawesome/free-solid-svg-icons/faExclamationTriangle';
 import {faGlobe} from '@fortawesome/free-solid-svg-icons/faGlobe';
 
-// FAL - Light (sourced from free-solid, registered with 'fal' prefix)
-import {faArrowDown} from '@fortawesome/free-solid-svg-icons/faArrowDown';
+// FAL - Light Pro
+import {faArrowDown as faArrowAltToBottom} from '@fortawesome/free-solid-svg-icons/faArrowDown';
 import {faChevronCircleUp} from '@fortawesome/free-solid-svg-icons/faChevronCircleUp';
 import {faChevronCircleDown} from '@fortawesome/free-solid-svg-icons/faChevronCircleDown';
 import {faCog} from '@fortawesome/free-solid-svg-icons/faCog';
@@ -55,47 +55,45 @@ import {faFacebook} from '@fortawesome/free-brands-svg-icons/faFacebook';
 import {faReddit} from '@fortawesome/free-brands-svg-icons/faReddit';
 import {faKeybase} from '@fortawesome/free-brands-svg-icons/faKeybase';
 import {faWeixin} from '@fortawesome/free-brands-svg-icons/faWeixin';
-// FAR - Regular Free (icons available in free-regular-svg-icons)
-import {faClone} from '@fortawesome/free-regular-svg-icons/faClone';
-import {faEye} from '@fortawesome/free-regular-svg-icons/faEye';
-import {faEyeSlash} from '@fortawesome/free-regular-svg-icons/faEyeSlash';
-import {faQuestionCircle} from '@fortawesome/free-regular-svg-icons/faQuestionCircle';
-import {faHourglass} from '@fortawesome/free-regular-svg-icons/faHourglass';
-import {faPaperPlane} from '@fortawesome/free-regular-svg-icons/faPaperPlane';
-import {faTimesCircle} from '@fortawesome/free-regular-svg-icons/faTimesCircle';
-import {faEdit} from '@fortawesome/free-regular-svg-icons/faEdit';
-import {faUser} from '@fortawesome/free-regular-svg-icons/faUser';
-
-// FAR - Regular (sourced from free-solid, registered with 'far' prefix)
+// FAR - Regular Pro
 import {faSignOutAlt} from '@fortawesome/free-solid-svg-icons/faSignOutAlt';
 import {faExclamationCircle} from '@fortawesome/free-solid-svg-icons/faExclamationCircle';
 import {faUndo} from '@fortawesome/free-solid-svg-icons/faUndo';
+import {faQuestionCircle} from '@fortawesome/free-solid-svg-icons/faQuestionCircle';
 import {faSpinner} from '@fortawesome/free-solid-svg-icons/faSpinner';
 import {faExchangeAlt} from '@fortawesome/free-solid-svg-icons/faExchangeAlt';
 import {faDonate} from '@fortawesome/free-solid-svg-icons/faDonate';
 import {faUndoAlt} from '@fortawesome/free-solid-svg-icons/faUndoAlt';
 import {faHandHoldingUsd} from '@fortawesome/free-solid-svg-icons/faHandHoldingUsd';
+import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
 import {faReceipt} from '@fortawesome/free-solid-svg-icons/faReceipt';
+import {faEdit} from '@fortawesome/free-solid-svg-icons/faEdit';
 import {faLock} from '@fortawesome/free-solid-svg-icons/faLock';
 import {faLockOpen} from '@fortawesome/free-solid-svg-icons/faLockOpen';
 import {faParachuteBox} from '@fortawesome/free-solid-svg-icons/faParachuteBox';
 import {faCheck} from '@fortawesome/free-solid-svg-icons/faCheck';
+import {faHourglass} from '@fortawesome/free-solid-svg-icons/faHourglass';
+import {faEye} from '@fortawesome/free-solid-svg-icons/faEye';
+import {faEyeSlash} from '@fortawesome/free-solid-svg-icons/faEyeSlash';
+import {faClone} from '@fortawesome/free-solid-svg-icons/faClone';
 import {faHistory} from '@fortawesome/free-solid-svg-icons/faHistory';
+import {faPaperPlane} from '@fortawesome/free-solid-svg-icons/faPaperPlane';
 import {faMemory} from '@fortawesome/free-solid-svg-icons/faMemory';
 import {faPuzzlePiece} from '@fortawesome/free-solid-svg-icons/faPuzzlePiece';
-import {faBoxOpen} from '@fortawesome/free-solid-svg-icons/faBoxOpen';
+import {faBoxOpen as faBoxBallot} from '@fortawesome/free-solid-svg-icons/faBoxOpen';
 import {faUserMinus} from '@fortawesome/free-solid-svg-icons/faUserMinus';
 import {faAngleRight} from '@fortawesome/free-solid-svg-icons/faAngleRight';
 import {faTimes} from '@fortawesome/free-solid-svg-icons/faTimes';
 import {faLongArrowAltDown} from '@fortawesome/free-solid-svg-icons/faLongArrowAltDown';
 import {faSearch} from '@fortawesome/free-solid-svg-icons/faSearch';
 import {faSync} from '@fortawesome/free-solid-svg-icons/faSync';
-import {faPencilAlt} from '@fortawesome/free-solid-svg-icons/faPencilAlt';
+import {faPencilAlt as faPencil} from '@fortawesome/free-solid-svg-icons/faPencilAlt';
 import {faPlus} from '@fortawesome/free-solid-svg-icons/faPlus';
 import {faMinus} from '@fortawesome/free-solid-svg-icons/faMinus';
+import {faTimesCircle} from '@fortawesome/free-solid-svg-icons/faTimesCircle';
 import {faUserPlus} from '@fortawesome/free-solid-svg-icons/faUserPlus';
 import {faUserEdit} from '@fortawesome/free-solid-svg-icons/faUserEdit';
-import {faExternalLinkAlt} from '@fortawesome/free-solid-svg-icons/faExternalLinkAlt';
+import {faExternalLinkAlt as faExternalLink} from '@fortawesome/free-solid-svg-icons/faExternalLinkAlt';
 
 /* COMPONENTS */
 import {AppComponent} from './app.component';
@@ -159,7 +157,7 @@ import {LottieModule} from "ngx-lottie";
 import player from 'lottie-web';
 import { ImportModalComponent } from './import-modal/import-modal.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
-import {faTrashAlt} from '@fortawesome/free-regular-svg-icons/faTrashAlt';
+import {faTrashAlt} from '@fortawesome/free-solid-svg-icons/faTrashAlt';
 import { KeygenModalComponent } from './keygen-modal/keygen-modal.component';
 import {A11yModule} from "@angular/cdk/a11y";
 import { CustomChainModalComponent } from './custom-chain-modal/custom-chain-modal.component';
@@ -252,18 +250,22 @@ export function playerFactory() {
 export class AppModule {
     constructor(library: FaIconLibrary) {
 
-        // fas solid - registered with 'fas' prefix automatically
-        library.addIcons(
+        const icons = [];
+
+        // fas solid
+        icons.push(...[
             faHeart,
             faTh,
             faCaretDown,
+            faSkullCrossbones,
             faKey,
             faExclamationTriangle,
+            faTimesCircle,
             faGlobe
-        );
+        ]);
 
-        // fab brands - registered with 'fab' prefix automatically
-        library.addIcons(
+        // fab brands
+        icons.push(...[
             faTelegramPlane,
             faTwitter,
             faGithub,
@@ -272,67 +274,68 @@ export class AppModule {
             faReddit,
             faKeybase,
             faWeixin
-        );
+        ]);
 
-        // far regular - icons from free-regular-svg-icons registered with 'far' prefix automatically
-        library.addIcons(
-            faClone,
-            faEye,
-            faEyeSlash,
-            faQuestionCircle,
-            faHourglass,
-            faPaperPlane,
-            faTimesCircle,
-            faEdit,
-            faUser,
-            faTrashAlt
-        );
-
-        // far regular - solid icons registered with 'far' prefix for template compatibility
-        const farFromSolid: any[] = [
+        // far regular
+        icons.push(...[
             faSignOutAlt,
             faExclamationCircle,
             faUndo,
+            faQuestionCircle,
             faSpinner,
             faExchangeAlt,
             faDonate,
             faUndoAlt,
             faHandHoldingUsd,
+            faUser,
             faReceipt,
+            faEdit,
             faLock,
             faLockOpen,
             faParachuteBox,
             faCheck,
+            faHourglass,
+            faEye,
+            faEyeSlash,
+            faClone,
             faHistory,
+            faPaperPlane,
             faMemory,
             faPuzzlePiece,
+
             faUserMinus,
             faAngleRight,
             faTimes,
             faLongArrowAltDown,
             faSearch,
+        faArrowAltToBottom, faBoxBallot,
+        faPencil, faExternalLink,
             faSync,
-            faPencilAlt,
+
             faMinus,
             faPlus,
+            faTimesCircle,
             faUserPlus,
             faUserEdit,
-            faExternalLinkAlt,
-            faBoxOpen,
-            faSkullCrossbones,
-        ].map(icon => ({...icon, prefix: 'far' as any}));
-        library.addIcons(...farFromSolid);
+            faPaperPlane,
 
-        // fal light - solid icons registered with 'fal' prefix for template compatibility
-        const falFromSolid: any[] = [
-            faArrowDown,
+            faTrashAlt
+        ]);
+
+        // fal light
+        icons.push(...[
+            faPaperPlane,
+
             faChevronCircleUp,
             faChevronCircleDown,
             faCog,
             faSearchMinus,
             faSearchPlus
-        ].map(icon => ({...icon, prefix: 'fal' as any}));
-        library.addIcons(...falFromSolid);
+        ]);
+
+        icons.forEach((iconDef) => {
+            library.addIcons(iconDef)
+        });
     }
 
     // FaIconLibrary.addIconPacks(far, fas, fab, fal);

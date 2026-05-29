@@ -367,7 +367,7 @@ class SimpleosWallet {
             paintWhenInitiallyHidden: true,
             titleBarStyle: 'hiddenInset',
             webPreferences: {
-                nodeIntegration: true, contextIsolation: true,
+                nodeIntegration: true, contextIsolation: false,
                 webSecurity: !this.serve,
                 devTools: this.devtools,
             },
