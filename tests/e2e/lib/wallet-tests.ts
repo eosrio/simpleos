@@ -197,9 +197,15 @@ export class WalletTestSuite {
         // returns the TAPOS data that SimplEOS uses to build them.
         // Note: cleos writes its "executed transaction" message to stderr, not stdout.
         await this.runTest('push transfer transaction alice -> bob', async () => {
-            const { execSync } = await import('node:child_process');
-            const cmd = `docker exec simpleos-test-nodeos cleos -u http://127.0.0.1:8888 push action eosio.token transfer '["alice", "bob", "0.0001 ${this.deployment.tokenSymbol}", "e2e push test"]' -p alice@active 2>&1`;
-            const output = execSync(cmd).toString();
+            const { execFileSync } = await import('node:child_process');
+            const cmd = `cleos -u http://127.0.0.1:8888 push action eosio.token transfer '["alice", "bob", "0.0001 ${this.deployment.tokenSymbol}", "e2e push test"]' -p alice@active 2>&1`;
+            const output = execFileSync('docker', [
+                'exec',
+                'simpleos-test-nodeos',
+                'bash',
+                '-c',
+                cmd
+            ], { stdio: 'pipe' }).toString();
             this.assert(
                 output.includes('executed transaction') || output.includes('transaction_id'),
                 `transaction must be executed. output: ${output.slice(0, 200)}`,
@@ -222,9 +228,15 @@ export class WalletTestSuite {
         // Note: `newaccount --stake-net --stake-cpu` writes to scope=eosio (payer), not the
         // receiver. Only explicit `delegatebw` from alice writes to scope=alice.
         await this.runTest('delegatebw self-stake by alice', async () => {
-            const { execSync } = await import('node:child_process');
-            const cmd = `docker exec simpleos-test-nodeos cleos -u http://127.0.0.1:8888 system delegatebw alice alice "10.0000 ${this.deployment.tokenSymbol}" "10.0000 ${this.deployment.tokenSymbol}" -p alice@active`;
-            execSync(cmd, { stdio: 'pipe' });
+            const { execFileSync } = await import('node:child_process');
+            const cmd = `cleos -u http://127.0.0.1:8888 system delegatebw alice alice "10.0000 ${this.deployment.tokenSymbol}" "10.0000 ${this.deployment.tokenSymbol}" -p alice@active`;
+            execFileSync('docker', [
+                'exec',
+                'simpleos-test-nodeos',
+                'bash',
+                '-c',
+                cmd
+            ], { stdio: 'pipe' });
         });
 
         await this.runTest('delband table returns alice self-delegation', async () => {

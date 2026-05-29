@@ -6,7 +6,7 @@
  * Adapted from hyperion-history-api/tests/e2e/lib/contract-deployer.ts
  */
 
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import type { ChainEndpoints } from './chain-manager.js';
 
 // Default development key (matches genesis.json initial_key)
@@ -74,6 +74,36 @@ export class ContractDeployer {
         }
     }
 
+    private pushAction(contract: string, action: string, data: any, permission = 'eosio@active'): string {
+        try {
+            const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+            const result = execFileSync('docker', [
+                'exec',
+                CONTAINER,
+                'cleos',
+                '-u',
+                'http://127.0.0.1:8888',
+                'push',
+                'action',
+                contract,
+                action,
+                dataStr,
+                '-p',
+                permission
+            ], {
+                stdio: this.config.verbose ? 'inherit' : 'pipe',
+                timeout: 30000,
+            });
+            return result?.toString().trim() ?? '';
+        } catch (err: any) {
+            const output = err.stderr?.toString() ?? err.stdout?.toString() ?? err.message;
+            if (this.config.verbose) {
+                console.error(`   pushAction error: ${output}`);
+            }
+            throw new Error(`pushAction failed: ${output}`);
+        }
+    }
+
     private isExpectedError(msg: string): boolean {
         const safePatterns = [
             'already exists', 'already activated', 'already unlocked',
@@ -132,9 +162,17 @@ export class ContractDeployer {
 
         // Activate PREACTIVATE_FEATURE via producer API
         try {
-            execSync(`docker exec ${CONTAINER} curl -sf -X POST http://127.0.0.1:8888/v1/producer/schedule_protocol_feature_activations -d '{"protocol_features_to_activate": ["0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd"]}'`, {
-                stdio: this.config.verbose ? 'inherit' : 'pipe',
+            const url = `${this.endpoints.httpUrl}/v1/producer/schedule_protocol_feature_activations`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    protocol_features_to_activate: ['0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd']
+                })
             });
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+            }
         } catch (err: any) {
             if (!this.isExpectedError(err.message)) {
                 console.warn(`   PREACTIVATE_FEATURE activation warning: ${err.message}`);
@@ -150,11 +188,11 @@ export class ContractDeployer {
         // Activate all supported protocol features in dependency order
         console.log('  Activating protocol features...');
         try {
-            const featuresJson = execSync(
-                `docker exec ${CONTAINER} curl -sf http://127.0.0.1:8888/v1/producer/get_supported_protocol_features`,
-                { stdio: 'pipe' }
-            ).toString();
-            const features = JSON.parse(featuresJson) as Array<{
+            const res = await fetch(`${this.endpoints.httpUrl}/v1/producer/get_supported_protocol_features`);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+            }
+            const features = await res.json() as Array<{
                 feature_digest: string;
                 specification: Array<{ name: string; value: string }>;
                 dependencies: string[];
@@ -175,7 +213,7 @@ export class ContractDeployer {
                 if (!feature) return;
                 for (const dep of feature.deps) activateInOrder(dep);
                 try {
-                    this.cleos(`push action eosio activate '["${digest}"]' -p eosio@active`);
+                    this.pushAction('eosio', 'activate', [digest], 'eosio@active');
                     activated.add(digest);
                 } catch (err: any) {
                     if (this.isExpectedError(err.message)) {
@@ -186,8 +224,8 @@ export class ContractDeployer {
 
             for (const [digest] of featureMap) activateInOrder(digest);
             console.log(`    ${activated.size} features activated`);
-        } catch {
-            console.error('   Could not fetch/activate supported features');
+        } catch (e: any) {
+            console.error('   Could not fetch/activate supported features:', e.message);
         }
 
         await this.waitBlocks(3);
@@ -200,12 +238,12 @@ export class ContractDeployer {
         const maxSupply = `${this.config.tokenMaxSupply} ${sym}`;
         const initialIssue = `${this.config.tokenInitialIssue} ${sym}`;
         try {
-            this.cleos(`push action eosio.token create '["eosio", "${maxSupply}"]' -p eosio.token@active`);
+            this.pushAction('eosio.token', 'create', ['eosio', maxSupply], 'eosio.token@active');
         } catch (err: any) {
             if (!err.message.toLowerCase().includes('already exists')) throw err;
         }
         try {
-            this.cleos(`push action eosio.token issue '["eosio", "${initialIssue}", "initial issue"]' -p eosio@active`);
+            this.pushAction('eosio.token', 'issue', ['eosio', initialIssue, 'initial issue'], 'eosio@active');
         } catch (err: any) {
             // Second issue may not matter — continue
             if (!this.isExpectedError(err.message)) {
@@ -213,7 +251,7 @@ export class ContractDeployer {
             }
         }
         try {
-            this.cleos(`push action eosio init '[0, "4,${sym}"]' -p eosio@active`);
+            this.pushAction('eosio', 'init', [0, `4,${sym}`], 'eosio@active');
         } catch (err: any) {
             // init is a one-time action; subsequent calls fail with "system contract already initialized"
             if (!err.message.toLowerCase().includes('already') && !err.message.toLowerCase().includes('assertion failure')) {
@@ -238,7 +276,7 @@ export class ContractDeployer {
             }
 
             try {
-                this.cleos(`push action eosio.token transfer '["eosio", "${acct}", "${transferAmount}", "test setup"]' -p eosio@active`);
+                this.pushAction('eosio.token', 'transfer', ['eosio', acct, transferAmount, 'test setup'], 'eosio@active');
             } catch (err: any) {
                 if (!this.isExpectedError(err.message)) {
                     console.warn(`   Token transfer to ${acct} failed: ${err.message.slice(0, 100)}`);

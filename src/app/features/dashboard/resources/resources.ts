@@ -201,42 +201,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
             </div>
           }
 
-          <!-- ═══ REX Panel ═══ -->
-          @if (features.hasRex()) {
-            <div class="panel">
-              <div class="panel-header">
-                <h3>REX</h3>
-                <span class="panel-badge">4-5 day maturity</span>
-              </div>
-              <p class="panel-desc">Resource Exchange — earn network fees by staking into REX. Also provides CPU/NET resources.</p>
 
-              <div class="rex-stats">
-                <div class="stat">
-                  <span class="stat-label">REX Balance</span>
-                  <span class="stat-value">{{ rexBalance() }}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Value</span>
-                  <span class="stat-value">{{ rexValue() }}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Maturity</span>
-                  <span class="stat-value" [class.matured]="rexMatured()">{{ rexMaturityLabel() }}</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Amount to deposit</label>
-                <input class="form-input" type="text" placeholder="0.0000"
-                       [value]="rexAmount()" (input)="rexAmount.set($any($event.target).value)" />
-              </div>
-
-              <div class="btn-row">
-                <button class="btn-primary" (click)="onBuyRex()">BUY REX</button>
-                <button class="btn-ghost" (click)="onSellRex()">SELL REX</button>
-              </div>
-            </div>
-          }
 
           <!-- ═══ RAM Panel (Bancor) ═══ -->
           @if (features.capabilities().ramBancor) {
@@ -475,7 +440,6 @@ export class ResourcesComponent {
           this.features.detect().then(() => {
             this.loadPowerUpData();
             this.loadRamPrice();
-            this.loadRexBalance();
             this.loadDelegations();
           });
         } else {
@@ -601,7 +565,6 @@ export class ResourcesComponent {
 
   stakeCpu = signal('');
   stakeNet = signal('');
-  rexAmount = signal('');
   ramBuyKb = signal('');
   ramSellKb = signal('');
   ramPrice = signal('—');
@@ -613,11 +576,7 @@ export class ResourcesComponent {
   ramTransferTo = signal('');
   ramTransferBytes = signal('');
 
-  // REX balance data
-  rexBalance = signal('—');
-  rexValue = signal('—');
-  rexMaturityLabel = signal('—');
-  rexMatured = signal(false);
+
 
   // Delegation list
   delegations = signal<{ to: string; cpu_weight: string; net_weight: string }[]>([]);
@@ -677,25 +636,7 @@ export class ResourcesComponent {
     }]);
   }
 
-  // ── REX ──
 
-  async onBuyRex() {
-    const amt = this.rexAmount();
-    if (!amt) return;
-    await this.confirmAction('Buy REX', [
-      { account: 'eosio', name: 'deposit', authorization: this.auth(), data: { owner: this.me(), amount: this.qty(amt) } },
-      { account: 'eosio', name: 'buyrex', authorization: this.auth(), data: { from: this.me(), amount: this.qty(amt) } },
-    ]);
-  }
-
-  async onSellRex() {
-    const amt = this.rexAmount();
-    if (!amt) return;
-    await this.confirmAction('Sell REX', [
-      { account: 'eosio', name: 'sellrex', authorization: this.auth(), data: { from: this.me(), rex: this.qty(amt) } },
-      { account: 'eosio', name: 'withdraw', authorization: this.auth(), data: { owner: this.me(), amount: this.qty(amt) } },
-    ]);
-  }
 
   // ── RAM ──
 
@@ -761,51 +702,7 @@ export class ResourcesComponent {
     }
   }
 
-  // ── REX Balance Loading ──
 
-  private async loadRexBalance() {
-    const account = this.wallet.selectedAccount();
-    if (!account) return;
-    try {
-      const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio', table: 'rexbal', scope: 'eosio',
-        lower_bound: account.name, upper_bound: account.name,
-        limit: 1, json: true,
-      });
-      if (result.rows.length > 0) {
-        const row = result.rows[0];
-        this.rexBalance.set(row.rex_balance ?? '0.0000 REX');
-        // REX value = vote_stake (amount of SYS tokens backing the REX)
-        this.rexValue.set(row.vote_stake ?? '—');
-        // Maturity: rex_maturities is an array of {first: timestamp, second: amount}
-        const maturities = row.rex_maturities ?? [];
-        if (maturities.length === 0) {
-          this.rexMaturityLabel.set('fully matured');
-          this.rexMatured.set(true);
-        } else {
-          const nextMaturity = new Date(maturities[0].first + 'Z');
-          const now = new Date();
-          if (nextMaturity <= now) {
-            this.rexMaturityLabel.set('matured');
-            this.rexMatured.set(true);
-          } else {
-            const hoursLeft = Math.ceil((nextMaturity.getTime() - now.getTime()) / 3600000);
-            this.rexMaturityLabel.set(hoursLeft > 24 ? `${Math.ceil(hoursLeft / 24)}d left` : `${hoursLeft}h left`);
-            this.rexMatured.set(false);
-          }
-        }
-      } else {
-        this.rexBalance.set('0.0000 REX');
-        this.rexValue.set('—');
-        this.rexMaturityLabel.set('—');
-        this.rexMatured.set(false);
-      }
-    } catch {
-      this.rexBalance.set('—');
-      this.rexValue.set('—');
-      this.rexMaturityLabel.set('—');
-    }
-  }
 
   // ── Delegation List Loading ──
 
