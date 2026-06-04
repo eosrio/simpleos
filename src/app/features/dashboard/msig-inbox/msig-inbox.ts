@@ -817,6 +817,17 @@ export class MsigInboxComponent {
       data['executer'] = this.me();
     }
 
+    // SEC-003: bind an approval to the exact proposal bytes via proposal_hash, so
+    // a malicious/MITM'd endpoint cannot obtain an approval valid for different
+    // bytes than the user reviewed. Best-effort: if the lookup fails, approve
+    // without the binding rather than block the user.
+    if (name === 'approve') {
+      try {
+        const details: any = await this.ipc.getMsigProposalDetails(acct.chainId, proposer, proposalName);
+        if (details?.proposal_hash) data['proposal_hash'] = details.proposal_hash;
+      } catch { /* approve without binding */ }
+    }
+
     // FIO's msig contract requires `max_fee` on every action (fee-metered chain).
     // Query the actual fee and cap at 2x, with a generous floor in case the fee
     // lookup returns 0/unset.

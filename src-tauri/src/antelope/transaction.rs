@@ -45,137 +45,72 @@ pub struct TransactionResult {
     pub block_time: Option<String>,
 }
 
-/// Build, sign, and push a transaction.
-///
-/// This is the main entry point for transaction submission:
-/// 1. Fetches chain info for TAPOS
-/// 2. Serializes each action (native for known types, local ABI, or RPC fallback)
-/// 3. Builds the packed transaction
-/// 4. Signs with the provided private key
-/// 5. Pushes via push_transaction
+/// A built transaction plus the per-action provenance needed to prove WYSIWYS.
+/// Produced by [`build_tx`] and consumed by the trusted-confirmation flow (R3),
+/// which round-trip-decodes each action's `data_hex` to confirm the displayed
+/// data matches the exact bytes that will be signed.
+#[derive(Debug, Clone)]
+pub struct BuiltTransaction {
+    /// The exact packed bytes that will be signed.
+    pub packed_trx: Vec<u8>,
+    pub chain_id: String,
+    pub expiration: u32,
+    pub delay_sec: u32,
+    pub has_context_free_actions: bool,
+    pub actions: Vec<BuiltAction>,
+}
+
+/// One action as built: retains both the signed `data_hex` and the JSON the
+/// caller submitted (when applicable) so the summary builder can locally
+/// round-trip and verify them.
+#[derive(Debug, Clone)]
+pub struct BuiltAction {
+    pub account: String,
+    pub name: String,
+    pub authorization: Vec<AuthDesc>,
+    pub data_hex: String,
+    pub original_json: Option<serde_json::Value>,
+    pub provenance: DataProvenance,
+}
+
+/// How an action's signed `data_hex` was produced — determines whether the
+/// displayed data can be locally trusted to match the signed bytes (WYSIWYS).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataProvenance {
+    /// Serialized locally by a built-in system-contract serializer.
+    Native,
+    /// Serialized locally via abieos using a fetched ABI.
+    LocalAbi,
+    /// Encoded by a remote node's `abi_json_to_bin` — UNTRUSTED.
+    Rpc,
+    /// Caller supplied pre-serialized hex (no JSON to compare against).
+    PreSerialized,
+}
+
+impl DataProvenance {
+    /// True when the signed bytes are a locally-produced encoding of the
+    /// reviewed JSON, so what is displayed equals what is signed.
+    pub fn is_locally_verified(self) -> bool {
+        matches!(self, DataProvenance::Native | DataProvenance::LocalAbi)
+    }
+}
+
+/// Build, sign, and push a transaction. Used by the e2e integration tests and any
+/// non-renderer call site. The renderer path goes through the trusted
+/// confirmation window (commands::sign_confirm), never this directly.
 pub async fn sign_and_push(
     pm: &mut ProviderManager,
     actions: &[ActionDesc],
     private_key_bytes: &[u8],
 ) -> Result<TransactionResult, Error> {
-    // 1. Get chain info for TAPOS
-    log::info!("[tx] sign_and_push: fetching chain info...");
-    let chain_info: ChainInfo = pm
-        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
-            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
-        })
-        .await?;
-    log::info!(
-        "[tx] sign_and_push: chain_id={}, head_block_time={}",
-        &chain_info.chain_id[..8],
-        chain_info.head_block_time
-    );
-
-    // 2. Serialize actions
-    let mut serialized_actions = Vec::new();
-    for action in actions {
-        log::info!(
-            "[tx] sign_and_push: serializing {}::{}",
-            action.account,
-            action.name
-        );
-        let data_hex = resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
-        log::info!(
-            "[tx] sign_and_push: serialized data_hex len={}",
-            data_hex.len()
-        );
-        let auths: Vec<(&str, &str)> = action
-            .authorization
-            .iter()
-            .map(|a| (a.actor.as_str(), a.permission.as_str()))
-            .collect();
-        let serialized = serialize_action(&action.account, &action.name, &auths, &data_hex)?;
-        serialized_actions.push(serialized);
-    }
-
-    // 3. Build transaction with TAPOS
-    let ref_block_num = serialize::tapos_ref_block_num(chain_info.last_irreversible_block_num);
-    let ref_block_prefix =
-        serialize::tapos_ref_block_prefix(&chain_info.last_irreversible_block_id)?;
-
-    // Expiration: parse head_block_time and add 120 seconds
-    let expiration = parse_block_time(&chain_info.head_block_time)? + 120;
-
-    let raw_tx = RawTransaction {
-        expiration,
-        ref_block_num,
-        ref_block_prefix,
-        max_net_usage_words: 0,
-        max_cpu_usage_ms: 0,
-        delay_sec: 0,
-        context_free_actions: vec![],
-        actions: serialized_actions,
-        transaction_extensions: vec![],
-    };
-
-    let packed_trx = raw_tx.serialize();
-
-    // 4. Sign
-    log::info!("[tx] sign_and_push: signing transaction...");
+    let built = build_tx(pm, actions).await?;
     let signature =
-        signing::sign_transaction(&chain_info.chain_id, &packed_trx, private_key_bytes)?;
-    log::info!("[tx] sign_and_push: signed, pushing...");
-
-    // 5. Push
-    let packed_hex = hex_encode(&packed_trx);
-    let push_body = serde_json::json!({
-        "signatures": [signature],
-        "compression": "none",
-        "packed_context_free_data": "",
-        "packed_trx": packed_hex,
-    });
-
-    let result = push_packed_transaction(pm, &push_body).await?;
-
-    // Parse result
-    let transaction_id = result
-        .get("transaction_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
-    let block_num = result
-        .get("processed")
-        .and_then(|p| p.get("block_num"))
-        .and_then(|v| v.as_u64());
-
-    let block_time = result
-        .get("processed")
-        .and_then(|p| p.get("block_time"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-
-    if transaction_id.is_empty() {
-        // Check for error in response
-        if let Some(err) = result.get("error") {
-            let msg = err
-                .get("details")
-                .and_then(|d| d.as_array())
-                .and_then(|arr| arr.first())
-                .and_then(|d| d.get("message"))
-                .and_then(|m| m.as_str())
-                .unwrap_or("Transaction failed");
-            log::error!("[tx] sign_and_push: FAILED: {}", msg);
-            return Err(Error::Rpc(msg.to_string()));
-        }
-        log::error!(
-            "[tx] sign_and_push: no transaction_id in response: {:?}",
-            result
-        );
-        return Err(Error::Rpc("No transaction_id in response".into()));
+        signing::sign_transaction(&built.chain_id, &built.packed_trx, private_key_bytes)?;
+    let result = push_signed(pm, &built.packed_trx, &signature).await;
+    if let Ok(ref r) = result {
+        log::info!("[tx] sign_and_push: SUCCESS txid={}", r.transaction_id);
     }
-
-    log::info!("[tx] sign_and_push: SUCCESS txid={}", transaction_id);
-    Ok(TransactionResult {
-        transaction_id,
-        block_num,
-        block_time,
-    })
+    result
 }
 
 /// Push a packed transaction using compatible Antelope broadcast endpoints.
@@ -197,57 +132,63 @@ pub async fn push_packed_transaction(
     .await
 }
 
-/// Build and sign a transaction without pushing it.
-/// Returns the packed transaction hex and signature.
-pub async fn sign_only(
+/// Push an already-signed packed transaction and parse the broadcast result.
+/// Shared by `sign_and_push` and the trusted-confirmation `approve_sign` flow
+/// (R2+R3), which signs the exact bytes it displayed and then broadcasts here.
+pub async fn push_signed(
     pm: &mut ProviderManager,
-    actions: &[ActionDesc],
-    private_key_bytes: &[u8],
-) -> Result<(String, String), Error> {
-    let chain_info: ChainInfo = pm
-        .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
-            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
-        })
-        .await?;
+    packed_trx: &[u8],
+    signature: &str,
+) -> Result<TransactionResult, Error> {
+    let push_body = serde_json::json!({
+        "signatures": [signature],
+        "compression": "none",
+        "packed_context_free_data": "",
+        "packed_trx": hex_encode(packed_trx),
+    });
+    let result = push_packed_transaction(pm, &push_body).await?;
+    parse_push_result(result)
+}
 
-    let mut serialized_actions = Vec::new();
-    for action in actions {
-        let data_hex = resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
-        let auths: Vec<(&str, &str)> = action
-            .authorization
-            .iter()
-            .map(|a| (a.actor.as_str(), a.permission.as_str()))
-            .collect();
-        serialized_actions.push(serialize_action(
-            &action.account,
-            &action.name,
-            &auths,
-            &data_hex,
-        )?);
+/// Parse a nodeos push/send_transaction response into a [`TransactionResult`],
+/// surfacing the assertion message on failure.
+fn parse_push_result(result: serde_json::Value) -> Result<TransactionResult, Error> {
+    let transaction_id = result
+        .get("transaction_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let block_num = result
+        .get("processed")
+        .and_then(|p| p.get("block_num"))
+        .and_then(|v| v.as_u64());
+
+    let block_time = result
+        .get("processed")
+        .and_then(|p| p.get("block_time"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    if transaction_id.is_empty() {
+        if let Some(err) = result.get("error") {
+            let msg = err
+                .get("details")
+                .and_then(|d| d.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|d| d.get("message"))
+                .and_then(|m| m.as_str())
+                .unwrap_or("Transaction failed");
+            return Err(Error::Rpc(msg.to_string()));
+        }
+        return Err(Error::Rpc("No transaction_id in response".into()));
     }
 
-    let ref_block_num = serialize::tapos_ref_block_num(chain_info.last_irreversible_block_num);
-    let ref_block_prefix =
-        serialize::tapos_ref_block_prefix(&chain_info.last_irreversible_block_id)?;
-    let expiration = parse_block_time(&chain_info.head_block_time)? + 120;
-
-    let raw_tx = RawTransaction {
-        expiration,
-        ref_block_num,
-        ref_block_prefix,
-        max_net_usage_words: 0,
-        max_cpu_usage_ms: 0,
-        delay_sec: 0,
-        context_free_actions: vec![],
-        actions: serialized_actions,
-        transaction_extensions: vec![],
-    };
-
-    let packed_trx = raw_tx.serialize();
-    let signature =
-        signing::sign_transaction(&chain_info.chain_id, &packed_trx, private_key_bytes)?;
-
-    Ok((hex_encode(&packed_trx), signature))
+    Ok(TransactionResult {
+        transaction_id,
+        block_num,
+        block_time,
+    })
 }
 
 /// Build and serialize a transaction without signing.
@@ -256,6 +197,22 @@ pub async fn build_transaction(
     pm: &mut ProviderManager,
     actions: &[ActionDesc],
 ) -> Result<(Vec<u8>, String), Error> {
+    let built = build_tx(pm, actions).await?;
+    Ok((built.packed_trx, built.chain_id))
+}
+
+/// Build the canonical packed transaction from action descriptions.
+///
+/// Fetches TAPOS, resolves each action's data to hex (native / local ABI / RPC
+/// fallback), serializes, and packs. Returns the exact bytes that will be signed
+/// plus, for each action, the resolved `data_hex` and the originally-submitted
+/// JSON — which the trusted-confirmation summary (R3) round-trip-decodes to
+/// prove what-you-see-is-what-you-sign. Single build path shared by
+/// `sign_and_push`, `sign_only`, and `build_transaction`.
+pub async fn build_tx(
+    pm: &mut ProviderManager,
+    actions: &[ActionDesc],
+) -> Result<BuiltTransaction, Error> {
     let chain_info: ChainInfo = pm
         .rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
             serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse chain info: {}", e)))
@@ -263,8 +220,10 @@ pub async fn build_transaction(
         .await?;
 
     let mut serialized_actions = Vec::new();
+    let mut built_actions = Vec::new();
     for action in actions {
-        let data_hex = resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
+        let (data_hex, provenance) =
+            resolve_action_data(pm, &action.account, &action.name, &action.data).await?;
         let auths: Vec<(&str, &str)> = action
             .authorization
             .iter()
@@ -276,12 +235,25 @@ pub async fn build_transaction(
             &auths,
             &data_hex,
         )?);
+        let original_json = match &action.data {
+            ActionData::Json(json) => Some(json.clone()),
+            ActionData::Hex(_) => None,
+        };
+        built_actions.push(BuiltAction {
+            account: action.account.clone(),
+            name: action.name.clone(),
+            authorization: action.authorization.clone(),
+            data_hex,
+            original_json,
+            provenance,
+        });
     }
 
     let ref_block_num = serialize::tapos_ref_block_num(chain_info.last_irreversible_block_num);
     let ref_block_prefix =
         serialize::tapos_ref_block_prefix(&chain_info.last_irreversible_block_id)?;
     let expiration = parse_block_time(&chain_info.head_block_time)? + 120;
+    let delay_sec = 0u32;
 
     let raw_tx = RawTransaction {
         expiration,
@@ -289,37 +261,46 @@ pub async fn build_transaction(
         ref_block_prefix,
         max_net_usage_words: 0,
         max_cpu_usage_ms: 0,
-        delay_sec: 0,
+        delay_sec,
         context_free_actions: vec![],
         actions: serialized_actions,
         transaction_extensions: vec![],
     };
 
-    Ok((raw_tx.serialize(), chain_info.chain_id))
+    Ok(BuiltTransaction {
+        packed_trx: raw_tx.serialize(),
+        chain_id: chain_info.chain_id,
+        expiration,
+        delay_sec,
+        has_context_free_actions: false,
+        actions: built_actions,
+    })
 }
 
 // ── Helpers ──
 
-/// Resolve action data to hex.
+/// Resolve action data to hex, tracking how it was produced (for WYSIWYS).
 /// For known system actions, serialize natively. For unknown contracts, prefer
 /// local ABI serialization when available, then fall back to abi_json_to_bin.
+/// The [`DataProvenance`] tells the summary builder whether the resulting bytes
+/// can be locally trusted to match the reviewed JSON.
 async fn resolve_action_data(
     pm: &mut ProviderManager,
     account: &str,
     name: &str,
     data: &ActionData,
-) -> Result<String, Error> {
+) -> Result<(String, DataProvenance), Error> {
     match data {
-        ActionData::Hex(hex) => Ok(hex.clone()),
+        ActionData::Hex(hex) => Ok((hex.clone(), DataProvenance::PreSerialized)),
         ActionData::Json(json) => {
             // Try native serialization for known system actions
             if let Some(native_hex) = try_native_serialize(account, name, json)? {
-                return Ok(native_hex);
+                return Ok((native_hex, DataProvenance::Native));
             }
 
             let local_error =
                 match abi_serializer::try_serialize_action_json(pm, account, name, json).await {
-                    Ok(Some(local_hex)) => return Ok(local_hex),
+                    Ok(Some(local_hex)) => return Ok((local_hex, DataProvenance::LocalAbi)),
                     Ok(None) => None,
                     Err(err) => {
                         log::warn!(
@@ -334,7 +315,9 @@ async fn resolve_action_data(
 
             // Fallback: abi_json_to_bin via chain API. Many public endpoints
             // disable this route, so fail over on "unknown endpoint" instead
-            // of stopping at the first otherwise-healthy RPC.
+            // of stopping at the first otherwise-healthy RPC. NOTE: the node is
+            // untrusted, so this path is marked DataProvenance::Rpc and the
+            // confirmation window flags it as unverified.
             let result: serde_json::Value = pm
                 .rpc_call_compatible_paths(
                     &["/v1/chain/abi_json_to_bin"],
@@ -360,11 +343,14 @@ async fn resolve_action_data(
                     other => other,
                 })?;
 
-            result
+            let binargs = result
                 .get("binargs")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
-                .ok_or_else(|| Error::Serialization("abi_json_to_bin returned no binargs".into()))
+                .ok_or_else(|| {
+                    Error::Serialization("abi_json_to_bin returned no binargs".into())
+                })?;
+            Ok((binargs, DataProvenance::Rpc))
         }
     }
 }

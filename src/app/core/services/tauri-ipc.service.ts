@@ -197,6 +197,36 @@ export interface BiometricStatus {
   reason: string;
 }
 
+/** One action as it will be signed, decoded locally for the trusted window (R3). */
+export interface ActionSummary {
+  account: string;
+  name: string;
+  authorization: { actor: string; permission: string }[];
+  /** Locally-decoded action data (the bytes that will be signed). */
+  data: any;
+  /** True if the displayed data was verified locally against the signed bytes. */
+  verified: boolean;
+  high_risk: boolean;
+  warning?: string;
+}
+
+/** The backend-built signing summary rendered by the trusted confirm window. */
+export interface SignSummary {
+  request_id: string;
+  chain_id: string;
+  title: string;
+  signer_public_key: string;
+  mode: 'push' | 'sign_only' | 'identity' | 'export';
+  actions: ActionSummary[];
+  expiration?: number;
+  delay_sec: number;
+  has_context_free_actions: boolean;
+  origin?: string;
+  callback_url?: string;
+  identity_scope?: string;
+  any_unverified: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
 
@@ -253,10 +283,6 @@ export class TauriIpcService {
 
   async listPublicKeys(chainId: string): Promise<string[]> {
     return invoke<string[]>('list_public_keys', { chainId });
-  }
-
-  async exportPrivateKey(chainId: string, publicKey: string): Promise<string> {
-    return invoke<string>('export_private_key', { chainId, publicKey });
   }
 
   async testKeyring(): Promise<string[]> {
@@ -414,26 +440,87 @@ export class TauriIpcService {
     });
   }
 
-  // ── Transactions ──
+  // ── Trusted-confirmation signing (R2+R3) ──
 
-  async signAndPush(chainId: string, publicKey: string, actions: any[]): Promise<{ transaction_id: string }> {
-    return invoke<{ transaction_id: string }>('sign_and_push', { chainId, publicKey, actions });
+  /**
+   * Begin a transaction signing flow. The backend builds the canonical bytes,
+   * opens the trusted confirmation window, and resolves with the broadcast
+   * result (or `{ packed_trx, signature }` when `broadcast` is false). Rejects
+   * if the user declines or closes the window.
+   */
+  async beginSign(
+    chainId: string,
+    publicKey: string,
+    actions: any[],
+    broadcast: boolean,
+    opts?: { title?: string; origin?: string; callbackUrl?: string },
+  ): Promise<any> {
+    return invoke<any>('begin_sign', {
+      chainId,
+      publicKey,
+      actions,
+      broadcast,
+      title: opts?.title ?? null,
+      origin: opts?.origin ?? null,
+      callbackUrl: opts?.callbackUrl ?? null,
+    });
   }
 
-  async signTransaction(chainId: string, publicKey: string, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('sign_transaction', { chainId, publicKey, actions });
+  /** Begin a private-key export; resolves with `{ wif }` after confirmation. */
+  async beginExportKey(chainId: string, publicKey: string): Promise<{ wif: string }> {
+    return invoke<{ wif: string }>('begin_export_key', { chainId, publicKey });
   }
 
-  async signTransactionWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('sign_transaction_with_passphrase', { chainId, publicKey, passphrase, actions });
+  /**
+   * Begin an ESR (signing request) confirmation. The actions are shown for
+   * context; the signed value is the wharfkit-resolved `digestHex`. Resolves with
+   * `{ signature }` after the user approves in the trusted window; the caller then
+   * performs the ESR callback (its host was disclosed during confirmation).
+   */
+  async beginEsrSign(
+    chainId: string,
+    publicKey: string,
+    actions: any[],
+    digestHex: string,
+    isIdentity: boolean,
+    opts?: { origin?: string; callbackUrl?: string; identityScope?: string },
+  ): Promise<{ signature: string; transaction_id: string }> {
+    return invoke<{ signature: string; transaction_id: string }>('begin_esr_sign', {
+      chainId,
+      publicKey,
+      actions,
+      digestHex,
+      isIdentity,
+      origin: opts?.origin ?? null,
+      callbackUrl: opts?.callbackUrl ?? null,
+      identityScope: opts?.identityScope ?? null,
+    });
   }
 
-  async signAndPushWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<{ transaction_id: string }> {
-    return invoke<{ transaction_id: string }>('sign_and_push_with_passphrase', { chainId, publicKey, passphrase, actions });
+  /** (Trusted confirm window) Fetch the active request's summary. */
+  async getPendingSignRequest(): Promise<SignSummary> {
+    return invoke<SignSummary>('get_pending_sign_request');
   }
 
-  async signDigest(chainId: string, publicKey: string, digestHex: string): Promise<string> {
-    return invoke<string>('sign_digest', { chainId, publicKey, digestHex });
+  /** (Trusted confirm window) Approve the active request. */
+  async approveSign(requestId: string, passphrase?: string): Promise<void> {
+    return invoke<void>('approve_sign', { requestId, passphrase: passphrase ?? null });
+  }
+
+  /** (Trusted confirm window) Reject the active request. */
+  async rejectSign(requestId: string): Promise<void> {
+    return invoke<void>('reject_sign', { requestId });
+  }
+
+  /** Confirmation strength: 'standard' (passphrase per security mode) or 'strict'
+   *  (passphrase on every signature). Both always use the trusted window. */
+  async getConfirmationPolicy(): Promise<'standard' | 'strict'> {
+    return invoke<'standard' | 'strict'>('get_confirmation_policy');
+  }
+
+  /** Change the confirmation policy (passphrase-gated, backend-owned). */
+  async setConfirmationPolicy(policy: 'standard' | 'strict', passphrase: string): Promise<void> {
+    return invoke<void>('set_confirmation_policy', { policy, passphrase });
   }
 
   // ── PowerUp ──
@@ -668,24 +755,6 @@ export class TauriIpcService {
     const store = await this.getStore();
     const val = await store.get<T>(key);
     return val ?? null;
-  }
-
-  // ── Link Sessions (Anchor-Link Protocol) ──
-
-  async createLinkSession(buoyUrl: string): Promise<{ channel_url: string; link_key: string; link_key_hex: string; link_name: string; channel_uuid: string }> {
-    return invoke('create_link_session', { buoyUrl });
-  }
-
-  async unsealMessage(ciphertextHex: string, nonce: number, fromKey: string, sessionPubkeyHex: string): Promise<string> {
-    return invoke<string>('unseal_message', { ciphertextHex, nonce, fromKey, sessionPubkeyHex });
-  }
-
-  async sealMessage(payload: string, nonce: number, toKeyHex: string, sessionPubkeyHex: string): Promise<string> {
-    return invoke<string>('seal_message', { payload, nonce, toKeyHex, sessionPubkeyHex });
-  }
-
-  async deleteLinkSession(sessionPubkeyHex: string): Promise<void> {
-    return invoke<void>('delete_link_session', { sessionPubkeyHex });
   }
 
   async storeDelete(key: string): Promise<void> {

@@ -244,6 +244,30 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
               </button>
             </div>
 
+            <!-- Confirmation strength (R2+R3) -->
+            <div class="setting-item">
+              <div>
+                <span class="setting-label">Require passphrase for every signature</span>
+                <span class="setting-desc">Strict: the confirmation window asks for your passphrase on every signature</span>
+              </div>
+              <button class="btn-ghost btn-small" (click)="togglePolicyPrompt()">
+                {{ confirmationPolicy() === 'strict' ? 'ON' : 'OFF' }}
+              </button>
+            </div>
+            @if (showPolicyPrompt()) {
+              <div class="setting-item">
+                <input type="password" class="wif-input" placeholder="Passphrase to confirm change"
+                  [value]="policyPassphrase()" (input)="policyPassphrase.set($any($event.target).value)"
+                  (keyup.enter)="applyPolicy()" />
+                <button class="btn-primary btn-small" (click)="applyPolicy()" [disabled]="!policyPassphrase()">
+                  {{ confirmationPolicy() === 'strict' ? 'TURN OFF' : 'TURN ON' }}
+                </button>
+              </div>
+              @if (policyError()) {
+                <span class="setting-desc" style="color: var(--danger)">{{ policyError() }}</span>
+              }
+            }
+
             <!-- Change Passphrase -->
             <div class="setting-item">
               <span class="setting-label">Change Passphrase</span>
@@ -972,6 +996,12 @@ export class SettingsComponent {
   showViewKeyDialog = signal(false);
   selectedExportKey = signal('');
   exportedWif = signal('');
+
+  // Confirmation strength (R2+R3, T9)
+  confirmationPolicy = signal<'standard' | 'strict'>('standard');
+  showPolicyPrompt = signal(false);
+  policyPassphrase = signal('');
+  policyError = signal('');
   keyError = signal('');
   generatedKey = signal<{ wif: string; public_key: string } | null>(null);
   private hideTimer: any;
@@ -986,10 +1016,39 @@ export class SettingsComponent {
     this.loadBiometricStatus();
     this.loadAutoLockSetting();
     this.loadCloseToTraySetting();
+    this.loadConfirmationPolicy();
   }
 
   async setMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
     await this.wallet.setSecurityMode(mode);
+  }
+
+  private async loadConfirmationPolicy() {
+    try {
+      this.confirmationPolicy.set(await this.ipc.getConfirmationPolicy());
+    } catch { /* defaults to 'standard' */ }
+  }
+
+  togglePolicyPrompt() {
+    this.policyError.set('');
+    this.policyPassphrase.set('');
+    this.showPolicyPrompt.set(!this.showPolicyPrompt());
+  }
+
+  async applyPolicy() {
+    if (!this.policyPassphrase()) return;
+    const next = this.confirmationPolicy() === 'strict' ? 'standard' : 'strict';
+    this.policyError.set('');
+    try {
+      await this.ipc.setConfirmationPolicy(next, this.policyPassphrase());
+      this.confirmationPolicy.set(next);
+      this.showPolicyPrompt.set(false);
+      this.policyPassphrase.set('');
+    } catch (e: any) {
+      this.policyError.set(
+        /InvalidPassphrase/i.test(e?.toString() ?? '') ? 'Incorrect passphrase' : 'Failed to update',
+      );
+    }
   }
 
   async lockWallet() {
@@ -1026,12 +1085,16 @@ export class SettingsComponent {
     if (!account || !pubKey) return;
     this.keyError.set('');
     try {
-      const wif = await this.ipc.exportPrivateKey(account.chainId, pubKey);
+      // Route through the trusted confirmation window — requires a passphrase
+      // factor even when the session is unlocked (SEC-006).
+      const { wif } = await this.ipc.beginExportKey(account.chainId, pubKey);
       this.exportedWif.set(wif);
       clearTimeout(this.hideTimer);
       this.hideTimer = setTimeout(() => this.closeKeyDialog(), 30000);
     } catch (e: any) {
-      this.keyError.set(e?.toString() ?? 'Failed to export key');
+      const msg = e?.toString() ?? '';
+      if (/rejected|cancelled|canceled|closed/i.test(msg)) return; // user declined
+      this.keyError.set(msg || 'Failed to export key');
     }
   }
 

@@ -552,6 +552,14 @@ pub async fn get_msig_proposal_details(
     let packed_bytes = hex_decode(packed_hex)
         .map_err(|e| Error::Serialization(format!("Invalid packed_transaction hex: {}", e)))?;
 
+    // SEC-003: sha256 of the on-chain packed_transaction. Passed as the
+    // eosio.msig::approve `proposal_hash` so the chain rejects any approval that
+    // doesn't match the exact bytes of the reviewed proposal.
+    let proposal_hash = {
+        use sha2::{Digest, Sha256};
+        hex::encode(Sha256::digest(&packed_bytes))
+    };
+
     let parsed = parse_packed_transaction(&packed_bytes)?;
 
     // 2. For each action, try to decode its data. Failures fall back to hex so the UI
@@ -602,6 +610,7 @@ pub async fn get_msig_proposal_details(
         "actions": decoded_actions,
         "requested_approvals": requested,
         "provided_approvals": provided,
+        "proposal_hash": proposal_hash,
     }))
 }
 

@@ -1,8 +1,6 @@
 use tauri::{Manager, State};
 
-use crate::antelope::provider::ProviderState;
 use crate::antelope::signing;
-use crate::antelope::transaction::{self, ActionDesc, TransactionResult};
 use crate::error::Error;
 use crate::AppWallet;
 
@@ -141,113 +139,13 @@ pub fn remove_key(
     wallet.0.remove_key(&chain_id, &public_key)
 }
 
-// ── Key Export ──
-
-/// Export a private key as WIF. Requires the wallet to be unlocked.
-#[tauri::command]
-pub fn export_private_key(
-    chain_id: String,
-    public_key: String,
-    wallet: State<AppWallet>,
-) -> Result<String, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-    Ok(signing::wif_encode(&private_key_bytes))
-}
-
-// ── Transaction Signing ──
-
-#[tauri::command]
-pub async fn sign_and_push(
-    chain_id: String,
-    public_key: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<TransactionResult, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    transaction::sign_and_push(pm, &actions, &private_key_bytes).await
-}
-
-#[tauri::command]
-pub async fn sign_transaction(
-    chain_id: String,
-    public_key: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<SignedTransaction, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
-
-    Ok(SignedTransaction {
-        packed_trx,
-        signature,
-    })
-}
-
-/// Sign a transaction with an explicit passphrase without broadcasting it.
-/// Mirrors `sign_and_push_with_passphrase` for SignPerUse / locked ManualToggle mode.
-#[tauri::command]
-pub async fn sign_transaction_with_passphrase(
-    chain_id: String,
-    public_key: String,
-    passphrase: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<SignedTransaction, Error> {
-    let private_key_bytes =
-        wallet
-            .0
-            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
-
-    Ok(SignedTransaction {
-        packed_trx,
-        signature,
-    })
-}
-
-/// Sign a raw 32-byte digest (hex-encoded) with the private key matching
-/// the given public key on the specified chain. Used for ESR identity proofs.
-#[tauri::command]
-pub async fn sign_digest(
-    chain_id: String,
-    public_key: String,
-    digest_hex: String,
-    wallet: State<'_, AppWallet>,
-) -> Result<String, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-    let signature = crate::antelope::signing::sign_digest(&digest_hex, &private_key_bytes)?;
-    Ok(signature)
-}
+// ── Key access ──
+//
+// Key export and signing are intentionally NOT exposed as renderer commands.
+// They flow through the trusted confirmation window (commands::sign_confirm:
+// begin_sign / begin_esr_sign / begin_export_key), so a compromised renderer
+// cannot sign or export silently, and sign_digest is no longer a blind-signing
+// oracle. (SEC-004 / SEC-006, R2+R3)
 
 // ── Passphrase ──
 
@@ -293,32 +191,6 @@ pub fn needs_passphrase_for_signing(wallet: State<AppWallet>) -> Result<bool, Er
 #[tauri::command]
 pub fn needs_lockscreen(wallet: State<AppWallet>) -> Result<bool, Error> {
     Ok(wallet.0.needs_lockscreen())
-}
-
-/// Sign and push with an explicit passphrase (for SignPerUse / locked ManualToggle mode).
-#[tauri::command]
-pub async fn sign_and_push_with_passphrase(
-    chain_id: String,
-    public_key: String,
-    passphrase: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<TransactionResult, Error> {
-    let private_key_bytes =
-        wallet
-            .0
-            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    transaction::sign_and_push(pm, &actions, &private_key_bytes).await
 }
 
 // ── Finalizer Keys (BLS) ──
@@ -693,12 +565,4 @@ pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     }
 
     Ok(report)
-}
-
-// ── Types ──
-
-#[derive(serde::Serialize)]
-pub struct SignedTransaction {
-    pub packed_trx: String,
-    pub signature: String,
 }

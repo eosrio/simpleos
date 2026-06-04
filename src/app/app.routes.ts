@@ -4,6 +4,13 @@ import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
+    // Trusted transaction-confirmation window (R2+R3). Rendered only in the
+    // backend-owned `sign-confirm` window; the bootstrap in app.ts routes here
+    // by window label and skips the normal vault/lock startup flow.
+    path: 'confirm',
+    loadComponent: () => import('./features/confirm/confirm').then(m => m.ConfirmWindowComponent),
+  },
+  {
     path: 'lockscreen',
     loadComponent: () => import('./features/lockscreen/lockscreen').then(m => m.LockscreenComponent),
   },

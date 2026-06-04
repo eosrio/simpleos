@@ -53,7 +53,6 @@ export class TransactionService {
 
   // Promise callbacks stored for the current request
   private resolve: ((result: TxCompletion | null) => void) | null = null;
-  private customSignHandler?: () => Promise<TxCompletion>;
 
   constructor(
     private ipc: TauriIpcService,
@@ -64,9 +63,18 @@ export class TransactionService {
    * Open the confirmation modal and return a promise that resolves
    * when the transaction completes (or null if cancelled).
    */
-  async confirm(request: TxRequest & { mode: 'signOnly' }, customSign?: () => Promise<TxCompletion>): Promise<TxCompletion | null>;
-  async confirm(request: TxRequest, customSign?: () => Promise<TxCompletion>): Promise<TxResult | null>;
-  async confirm(request: TxRequest, customSign?: () => Promise<TxCompletion>): Promise<TxCompletion | null> {
+  async confirm(request: TxRequest & { mode: 'signOnly' }): Promise<TxCompletion | null>;
+  async confirm(request: TxRequest): Promise<TxResult | null>;
+  async confirm(request: TxRequest): Promise<TxCompletion | null> {
+    // R2+R3: plain key signing goes through the backend-owned trusted
+    // confirmation window — the renderer can neither forge nor suppress it, and
+    // the bytes shown there are the bytes that get signed. Only Ledger (the
+    // device is the trust anchor) still uses the legacy in-renderer modal.
+    if (this.wallet.hasTauri() && request.ledgerIndex === undefined) {
+      return this.confirmViaTrustedWindow(request);
+    }
+
+    // ── Legacy in-renderer modal path (Ledger / custom-sign) ──
     // Check if passphrase is needed for signing
     let needsPass = false;
     if (this.wallet.hasTauri()) {
@@ -82,7 +90,6 @@ export class TransactionService {
     this.errorMessage.set('');
     this.debugDetails.set('');
     this.phase.set('review');
-    this.customSignHandler = customSign;
 
     return new Promise<TxCompletion | null>(resolve => {
       this.resolve = resolve;
@@ -120,25 +127,15 @@ export class TransactionService {
     try {
       let result: TxCompletion;
 
-      if (this.customSignHandler) {
-        // Evaluate the custom sign handler if one was provided
-        result = await this.customSignHandler();
-      } else if (req.mode === 'signOnly' && req.ledgerIndex !== undefined) {
-        result = await this.ipc.ledgerSignTransaction(req.chainId, req.ledgerIndex, req.actions);
-      } else if (req.mode === 'signOnly' && this.needsPassphrase()) {
-        result = await this.ipc.signTransactionWithPassphrase(
-          req.chainId, req.publicKey, this.passphrase(), req.actions,
-        );
-      } else if (req.mode === 'signOnly') {
-        result = await this.ipc.signTransaction(req.chainId, req.publicKey, req.actions);
-      } else if (req.ledgerIndex !== undefined) {
-        result = await this.ipc.ledgerSignAndPush(req.chainId, req.ledgerIndex, req.actions);
-      } else if (this.needsPassphrase()) {
-        result = await this.ipc.signAndPushWithPassphrase(
-          req.chainId, req.publicKey, this.passphrase(), req.actions,
-        );
+      // This legacy modal path now only handles Ledger signing (the device is the
+      // trust anchor). All key-based signing goes through the trusted confirmation
+      // window via confirmViaTrustedWindow().
+      if (req.ledgerIndex !== undefined) {
+        result = req.mode === 'signOnly'
+          ? await this.ipc.ledgerSignTransaction(req.chainId, req.ledgerIndex, req.actions)
+          : await this.ipc.ledgerSignAndPush(req.chainId, req.ledgerIndex, req.actions);
       } else {
-        result = await this.ipc.signAndPush(req.chainId, req.publicKey, req.actions);
+        throw new Error('Signing must go through the trusted confirmation window');
       }
 
       this.result.set(result);
@@ -158,6 +155,33 @@ export class TransactionService {
       }, null, 2));
       this.phase.set('error');
     }
+  }
+
+  /**
+   * R2+R3: route signing through the backend trusted-confirmation window. The
+   * backend builds the canonical bytes, opens the `sign-confirm` window with the
+   * decoded summary, and resolves with the result (or rejects on cancel).
+   */
+  private async confirmViaTrustedWindow(request: TxRequest): Promise<TxCompletion | null> {
+    const broadcast = (request.mode ?? 'push') !== 'signOnly';
+    try {
+      const result = await this.ipc.beginSign(
+        request.chainId,
+        request.publicKey,
+        request.actions,
+        broadcast,
+        { title: request.title },
+      );
+      return result as TxCompletion;
+    } catch (e: any) {
+      if (this.isRejection(e)) return null; // user cancelled / closed the window
+      throw e;
+    }
+  }
+
+  private isRejection(e: any): boolean {
+    const msg = typeof e === 'string' ? e : (e?.message ?? '');
+    return /rejected|cancelled|canceled|window was closed/i.test(msg);
   }
 }
 

@@ -63,6 +63,8 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_deep_link::init())
         .manage(ProviderState::new())
+        // R2+R3: registry of in-flight signing requests awaiting trusted-window confirmation.
+        .manage(commands::sign_confirm::SignRegistry::new())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
@@ -163,18 +165,18 @@ pub fn run() {
             commands::wallet::to_fio_public_key,
             commands::wallet::generate_key_pair,
             commands::wallet::list_public_keys,
-            commands::wallet::export_private_key,
             commands::wallet::remove_key,
-            commands::wallet::sign_and_push,
-            commands::wallet::sign_transaction,
-            commands::wallet::sign_transaction_with_passphrase,
-            commands::wallet::sign_digest,
+            // SEC-004/006: export_private_key, sign_and_push, sign_transaction,
+            // sign_transaction_with_passphrase and sign_digest are intentionally
+            // NOT exposed. All signing and key export now flows through the
+            // trusted confirmation window (begin_sign / begin_esr_sign /
+            // begin_export_key) so a compromised renderer cannot sign or export
+            // silently, and sign_digest is no longer a blind-signing oracle.
             commands::wallet::change_passphrase,
             commands::wallet::get_security_mode,
             commands::wallet::set_security_mode,
             commands::wallet::needs_passphrase_for_signing,
             commands::wallet::needs_lockscreen,
-            commands::wallet::sign_and_push_with_passphrase,
             commands::wallet::generate_finalizer_key,
             commands::wallet::list_finalizer_keys,
             commands::wallet::get_finalizer_pop,
@@ -236,10 +238,18 @@ pub fn run() {
             commands::dapp::dapp_resolve_signing,
             commands::dapp::dapp_reject_signing,
             // Link sessions (anchor-link protocol)
-            commands::session::create_link_session,
-            commands::session::unseal_message,
-            commands::session::seal_message,
-            commands::session::delete_link_session,
+            // R4: anchor-link sealed-session commands (create/unseal/seal/delete
+            // link session) are removed for v1. The unauthenticated buoy channel
+            // is dropped (SEC-014/032/058); ESR works via deep links + dapp esr:.
+            // R2+R3: trusted-confirmation signing flow.
+            commands::sign_confirm::begin_sign,
+            commands::sign_confirm::begin_esr_sign,
+            commands::sign_confirm::begin_export_key,
+            commands::sign_confirm::get_pending_sign_request,
+            commands::sign_confirm::approve_sign,
+            commands::sign_confirm::reject_sign,
+            commands::sign_confirm::get_confirmation_policy,
+            commands::sign_confirm::set_confirmation_policy,
             // Ledger
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_list_devices,

@@ -38,6 +38,9 @@ pub enum Error {
     #[error("Ledger error: {0}")]
     Ledger(String),
 
+    #[error("Signing request was rejected")]
+    SignRejected,
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
