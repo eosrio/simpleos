@@ -237,7 +237,7 @@
     "text-encoding-shim": "^1.0.5",
     "ts-node": "^8.10.1",
     "typescript": "3.8.3",
-    "wait-on": "^5.0.0",
+    "wait-on": "^9.0.10",
     "webpack": "^4.43.0",
     "webpack-dev-server": "^3.11.0",
     "zone.js": "^0.10.3"
