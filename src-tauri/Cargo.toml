@@ -21,8 +21,9 @@ app-store = []
 # Disable with `cargo test --no-default-features` to run backend tests
 # on systems without libudev headers.
 ledger = ["dep:hidapi"]
-# Local ABI JSON serialization via eosrio/rs-abieos. The dependency is target-
-# gated below because rs-abieos supports Unix-like C++ toolchains and Windows GNU.
+# Local ABI JSON serialization via eosrio/rs-abieos using its pure-Rust backend
+# on all targets (no C++ toolchain, libclang, or bindgen required), matching the
+# pure-Rust posture of the crypto stack.
 local-abieos = ["dep:rs_abieos"]
 
 [build-dependencies]
@@ -71,6 +72,9 @@ keyring = "3"
 # USB HID for Ledger (optional — gated behind "ledger" feature)
 hidapi = { version = "2", optional = true }
 
+# Antelope ABI serialization (pure-Rust backend; optional — gated behind "local-abieos")
+rs_abieos = { version = "0.6.0", optional = true, default-features = false, features = ["rust-backend"] }
+
 # Error handling
 thiserror = "2"
 
@@ -95,9 +99,6 @@ tauri-plugin-single-instance = "2"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-process = "2.3.1"
 tauri-plugin-updater = "2.10.1"
-
-[target.'cfg(any(target_os = "linux", target_os = "macos", all(target_os = "windows", target_env = "gnu")))'.dependencies]
-rs_abieos = { version = "0.4.0", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-future = "0.2.1"

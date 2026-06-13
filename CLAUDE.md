@@ -99,7 +99,7 @@ Built-in chains live in `src-tauri/src/antelope/chain_config.rs` (`default_chain
 
 ### Cargo features & platform gating (`src-tauri/Cargo.toml`)
 - `ledger` (default) — Ledger HID support via `hidapi`; needs `libudev-dev` on Linux. Disable with `--no-default-features` to build the core on minimal systems.
-- `local-abieos` (default) — local ABI JSON serialization via `rs_abieos`, which is **target-gated to Linux/macOS/Windows-GNU only**. On Windows MSVC (and other targets) ABI encoding falls back to the RPC `abi_json_to_bin` endpoint.
+- `local-abieos` (default) — local ABI JSON serialization via `rs_abieos` using its **pure-Rust backend on all targets** (no C++ toolchain, libclang, or bindgen needed). Only with the feature disabled does ABI encoding fall back to the RPC `abi_json_to_bin` endpoint, which is deprecated and disabled on most public nodes.
 - `app-store` — strips the self-updater and process plugin for Mac App Store builds.
 
 ### Custom window chrome

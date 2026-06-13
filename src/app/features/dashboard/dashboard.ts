@@ -317,8 +317,39 @@ interface AccountTabFilter {
             <div class="watch-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>Watch-only account — import keys to enable transactions</span>
-              <button class="banner-action">IMPORT KEY</button>
+              <button class="banner-action" (click)="openImportKey()">IMPORT KEY</button>
             </div>
+            @if (showImportKey()) {
+              <div class="import-key-panel">
+                <label class="import-key-label" for="import-key-wif">
+                  Private key for <strong>{{ wallet.selectedAccount()?.name }}</strong>
+                  on {{ wallet.selectedAccount()?.chainName }}
+                </label>
+                <input id="import-key-wif" class="import-key-input" type="password"
+                       autocomplete="off" spellcheck="false" placeholder="5… / PVT_K1_…"
+                       [value]="importKeyWif()"
+                       (input)="importKeyWif.set($any($event.target).value)"
+                       (keydown.enter)="confirmImportKey()" />
+                @if (importKeyNeedsPassphrase()) {
+                  <input class="import-key-input" type="password" autocomplete="off"
+                         placeholder="Wallet passphrase"
+                         [value]="importKeyPassphrase()"
+                         (input)="importKeyPassphrase.set($any($event.target).value)"
+                         (keydown.enter)="confirmImportKey()" />
+                }
+                @if (importKeyError()) {
+                  <p class="import-key-msg error">{{ importKeyError() }}</p>
+                }
+                <div class="import-key-actions">
+                  <button class="import-key-btn ghost" (click)="cancelImportKey()"
+                          [disabled]="importKeyBusy()">Cancel</button>
+                  <button class="import-key-btn primary" (click)="confirmImportKey()"
+                          [disabled]="importKeyBusy() || !importKeyWif().trim() || (importKeyNeedsPassphrase() && !importKeyPassphrase())">
+                    {{ importKeyBusy() ? 'Importing…' : 'Import key' }}
+                  </button>
+                </div>
+              </div>
+            }
           }
           <router-outlet />
         </main>
@@ -999,6 +1030,63 @@ interface AccountTabFilter {
     }
     .banner-action:hover { background: rgba(245, 166, 35, 0.1); }
 
+    /* ── Inline import-key panel (watch-only → full upgrade) ── */
+    .import-key-panel {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+      padding: var(--sp-4);
+      margin-bottom: var(--sp-6);
+      background: rgba(245, 166, 35, 0.06);
+      border: 1px solid rgba(245, 166, 35, 0.15);
+      border-radius: var(--radius-md);
+    }
+    .import-key-label {
+      font-size: 12px;
+      color: var(--text-body);
+    }
+    .import-key-label strong { color: var(--text-bright); font-weight: 600; }
+    .import-key-input {
+      width: 100%;
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 13px;
+    }
+    .import-key-input:focus { outline: none; border-color: var(--caution); }
+    .import-key-msg { margin: 0; font-size: 12px; }
+    .import-key-msg.error { color: var(--negative); }
+    .import-key-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--sp-2);
+    }
+    .import-key-btn {
+      padding: var(--sp-2) var(--sp-4);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 150ms ease, background 150ms ease;
+    }
+    .import-key-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .import-key-btn.ghost {
+      background: transparent;
+      border-color: var(--border-subtle);
+      color: var(--text-body);
+    }
+    .import-key-btn.ghost:hover:not(:disabled) { background: var(--bg-hover); }
+    .import-key-btn.primary {
+      background: var(--caution);
+      color: #1a1205;
+    }
+    .import-key-btn.primary:hover:not(:disabled) { opacity: 0.9; }
+
     /* ── Content ── */
     .content {
       flex: 1;
@@ -1253,6 +1341,96 @@ export class DashboardComponent {
 
   addAccount() {
     this.router.navigate(['/landing']);
+  }
+
+  // ── Import key for a watch-only account (upgrade to a signing account) ──
+
+  readonly showImportKey = signal(false);
+  readonly importKeyWif = signal('');
+  readonly importKeyPassphrase = signal('');
+  readonly importKeyNeedsPassphrase = signal(false);
+  readonly importKeyBusy = signal(false);
+  readonly importKeyError = signal('');
+
+  openImportKey() {
+    this.importKeyWif.set('');
+    this.importKeyPassphrase.set('');
+    this.importKeyNeedsPassphrase.set(false);
+    this.importKeyError.set('');
+    this.showImportKey.set(true);
+  }
+
+  cancelImportKey() {
+    this.showImportKey.set(false);
+    this.importKeyWif.set('');
+    this.importKeyPassphrase.set('');
+    this.importKeyError.set('');
+  }
+
+  async confirmImportKey() {
+    const account = this.wallet.selectedAccount();
+    const wif = this.importKeyWif().trim();
+    if (!account || !wif || this.importKeyBusy()) return;
+    if (this.importKeyNeedsPassphrase() && !this.importKeyPassphrase()) return;
+
+    this.importKeyBusy.set(true);
+    this.importKeyError.set('');
+
+    try {
+      // 1. Validate the WIF and derive its public key.
+      let pubKey: string;
+      try {
+        pubKey = await this.ipc.derivePublicKey(wif);
+      } catch {
+        this.importKeyError.set('Invalid private key format');
+        return;
+      }
+
+      // 2. Verify the key actually controls this account before storing it.
+      //    Tolerate lookup failures (offline / node lacks the index) — only
+      //    block when the node positively reports a different set of accounts.
+      try {
+        const names = (await this.ipc.lookupKeyAccounts(account.chainId, pubKey)).account_names ?? [];
+        if (names.length > 0 && !names.includes(account.name)) {
+          this.importKeyError.set(`This key controls ${names.slice(0, 3).join(', ')}, not ${account.name}.`);
+          return;
+        }
+      } catch {
+        // Couldn't verify — proceed, trusting the user's intent.
+      }
+
+      // 3. Store the key. Use the active session when available; fall back to a
+      //    passphrase prompt for SignPerUse (no master key held in memory).
+      try {
+        if (this.importKeyNeedsPassphrase()) {
+          await this.ipc.importPrivateKey(wif, account.chainId, this.importKeyPassphrase());
+        } else {
+          await this.ipc.importKeyWithSession(wif, account.chainId);
+        }
+      } catch (e: any) {
+        const msg = e?.toString() ?? '';
+        if (!this.importKeyNeedsPassphrase() && msg.toLowerCase().includes('locked')) {
+          this.importKeyNeedsPassphrase.set(true);
+          this.importKeyError.set('Enter your wallet passphrase to import this key.');
+          return;
+        }
+        if (msg.toLowerCase().includes('passphrase')) {
+          this.importKeyError.set('Invalid passphrase');
+          return;
+        }
+        throw e;
+      }
+
+      // 4. Upgrade the watch-only account in place to a signing account and persist.
+      await this.wallet.addImportedAccount(account.name, account.chainId, 'full');
+      await this.wallet.saveAccounts();
+
+      this.cancelImportKey();
+    } catch (e: any) {
+      this.importKeyError.set(e?.toString() ?? 'Import failed');
+    } finally {
+      this.importKeyBusy.set(false);
+    }
   }
 
   async lockWallet() {

@@ -91,7 +91,7 @@ interface ProducerRow {
               <input type="range" class="ratio-slider"
                      min="10" max="90" step="5"
                      [value]="cpuRatio()"
-                     (input)="cpuRatio.set(+$any($event.target).value)" />
+                     (input)="onRatioChange($any($event.target).value)" />
               <div class="ratio-display">
                 <span>CPU: {{ cpuRatio() }}%</span>
                 <span>NET: {{ 100 - cpuRatio() }}%</span>
@@ -108,45 +108,7 @@ interface ProducerRow {
         </div>
       }
 
-      <!-- FIO staking (rewards only, no vote weight) -->
-      @if (features.capabilities().fioStaking) {
-        <div class="section-card">
-          <div class="section-header">
-            <h3>FIO Staking</h3>
-            <span class="panel-badge">7-day unstake</span>
-          </div>
-          <p class="section-desc">Stake FIO tokens to earn staking rewards. Voting uses FIO Addresses, not staked weight.</p>
-
-          <div class="form-group">
-            <label>Amount</label>
-            <input class="form-input" type="text" placeholder="0.000000000" />
-          </div>
-          <div class="btn-row">
-            <button class="btn-primary">STAKE FIO</button>
-            <button class="btn-ghost">UNSTAKE FIO</button>
-          </div>
-        </div>
-      }
-
-      <!-- XPR governance staking -->
-      @if (features.capabilities().xprStaking) {
-        <div class="section-card">
-          <div class="section-header">
-            <h3>XPR Governance Staking</h3>
-            <span class="panel-badge">14-day unstake</span>
-          </div>
-          <p class="section-desc">Stake XPR for governance voting weight and staking rewards.</p>
-
-          <div class="form-group">
-            <label>Amount (XPR)</label>
-            <input class="form-input" type="text" placeholder="0.0000" />
-          </div>
-          <div class="btn-row">
-            <button class="btn-primary">STAKE XPR</button>
-            <button class="btn-ghost">UNSTAKE XPR</button>
-          </div>
-        </div>
-      }
+      <!-- FIO/XPR staking lives in the Resources tab (fully wired there). -->
 
       <!-- BP voting section -->
       <div class="section-card">
@@ -451,6 +413,10 @@ export class VoteComponent {
         }
         this.loadProducers(account.chainId);
         this.loadCurrentVotes(account);
+        // Reset the stake form so amounts reflect this account's balance, not a previous one.
+        this.stakePercent.set(0);
+        this.cpuAmount.set('');
+        this.netAmount.set('');
       }
     });
   }
@@ -459,10 +425,24 @@ export class VoteComponent {
     this.loadingProducers.set(true);
     try {
       const result = await this.ipc.getProducers(chainId, 200);
-      const rows: ProducerRow[] = (result?.rows ?? result?.producers ?? [])
-        .filter((r: any) => r.is_active === 1 || parseFloat(r.total_votes) > 0)
-        .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
+      const all: any[] = result?.rows ?? result?.producers ?? [];
+      const isActive = (r: any) => r.is_active === 1 || r.is_active === true;
+      // Only registered producers are votable — the chain rejects the whole tx
+      // with "producer ... is not currently registered" otherwise. Unregistered
+      // rows persist (is_active 0) with sticky total_votes, so filter on is_active.
+      const rows: ProducerRow[] = all
+        .filter(isActive)
+        .sort((a, b) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
       this.producers.set(rows);
+
+      // Prune any currently-selected producer the node reports as inactive
+      // (e.g. an existing on-chain vote whose producer has since unregistered).
+      // Owners absent from this capped fetch are left in place so a valid vote
+      // for a producer ranked beyond the window isn't silently dropped.
+      const inactive = new Set(all.filter(r => !isActive(r)).map(r => r.owner));
+      if (inactive.size > 0) {
+        this.selectedProducers.update(list => list.filter(p => !inactive.has(p)));
+      }
     } catch {
       this.producers.set([]);
     } finally {
@@ -505,7 +485,7 @@ export class VoteComponent {
 
   async onSetStake() {
     const cpu = this.cpuAmount(), net = this.netAmount();
-    if (!cpu && !net) return;
+    if (parseFloat(cpu || '0') <= 0 && parseFloat(net || '0') <= 0) return;
     await this.confirmAction('Stake Resources', [{
       account: 'eosio', name: 'delegatebw', authorization: this.auth(),
       data: { from: this.me(), receiver: this.me(), stake_net_quantity: this.qty(net), stake_cpu_quantity: this.qty(cpu), transfer: false },
@@ -646,6 +626,28 @@ export class VoteComponent {
 
   onSliderChange(value: string) {
     this.stakePercent.set(+value);
+    this.recomputeStakeSplit();
+  }
+
+  onRatioChange(value: string) {
+    this.cpuRatio.set(+value);
+    this.recomputeStakeSplit();
+  }
+
+  /** Liquid balance of the selected account as a number (asset string → float). */
+  private liquidBalance(): number {
+    const raw = this.wallet.selectedAccount()?.info?.core_liquid_balance ?? '';
+    const n = parseFloat(raw.replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  /** Derive CPU/NET amounts from the stake-percentage slider and the CPU/NET ratio. */
+  private recomputeStakeSplit() {
+    const total = this.liquidBalance() * (this.stakePercent() / 100);
+    const cpu = total * (this.cpuRatio() / 100);
+    const prec = this.prec();
+    this.cpuAmount.set(cpu.toFixed(prec));
+    this.netAmount.set((total - cpu).toFixed(prec));
   }
 
   toggleProducer(owner: string) {
