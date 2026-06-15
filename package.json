@@ -34,7 +34,7 @@
   "dependencies": {
     "@angular/common": "22.0.0-rc.2",
     "@angular/compiler": "22.0.0-rc.2",
-    "@angular/core": "22.0.0-rc.2",
+    "@angular/core": "22.0.1",
     "@angular/forms": "22.0.0-rc.2",
     "@angular/platform-browser": "22.0.0-rc.2",
     "@angular/router": "22.0.0-rc.2",
