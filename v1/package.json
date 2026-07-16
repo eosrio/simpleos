@@ -239,7 +239,7 @@
     "typescript": "3.8.3",
     "wait-on": "^5.0.0",
     "webpack": "^4.43.0",
-    "webpack-dev-server": "^3.11.0",
+    "webpack-dev-server": "^3.11.3",
     "zone.js": "^0.10.3"
   }
 }
