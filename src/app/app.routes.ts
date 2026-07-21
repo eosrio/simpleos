@@ -28,6 +28,7 @@ export const routes: Routes = [
       { path: 'send', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/send/send').then(m => m.SendComponent) },
       { path: 'vote', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/vote/vote').then(m => m.VoteComponent) },
       { path: 'resources', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/resources/resources').then(m => m.ResourcesComponent) },
+      { path: 'create-account', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/create-account/create-account').then(m => m.CreateAccountComponent) },
       { path: 'rex', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/rex/rex').then(m => m.RexComponent) },
       { path: 'contracts', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/contracts/contracts').then(m => m.ContractsComponent) },
       { path: 'dapp', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/dapp/dapp').then(m => m.DappComponent) },

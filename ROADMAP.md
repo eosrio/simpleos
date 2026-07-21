@@ -243,8 +243,8 @@
 - [ ] Threshold display and tracking `todo`
 
 ### Account Creation
-- [ ] New account wizard (name validation, key generation) `todo`
-- [ ] Pay for account creation (delegatebw + buyrambytes + newaccount) `todo`
+- [x] New account wizard (name validation, key generation) `done`
+- [x] Pay for account creation (delegatebw + buyrambytes + newaccount) `done`
 - [ ] Account creation on WAX (cloud wallet integration?) `todo`
 
 ### Advanced Features
