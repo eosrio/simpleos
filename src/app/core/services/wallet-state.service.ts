@@ -35,7 +35,6 @@ const LEGACY_CHAIN_IDS: Record<string, string> = {
 
 @Injectable({ providedIn: 'root' })
 export class WalletStateService {
-
   readonly locked = signal(true);
   /** Whether a secure vault has been created (keys imported, passphrase set). */
   readonly vaultExists = signal(false);
@@ -72,7 +71,7 @@ export class WalletStateService {
   readonly activeChain = computed(() => {
     const account = this.selectedAccount();
     if (account) {
-      return this.chains().find(c => c.id === account.chainId) ?? this.chains()[0] ?? null;
+      return this.chains().find((c) => c.id === account.chainId) ?? this.chains()[0] ?? null;
     }
     return this.chains()[this.activeChainIndex()] ?? null;
   });
@@ -88,6 +87,58 @@ export class WalletStateService {
     const chain = this.activeChain();
     return chain?.endpoints[0]?.url ?? '';
   });
+
+  /**
+   * Core economic actions wrapped by Vaulta's `core.vaulta` contract (from its
+   * ABI). After the EOS→Vaulta rebrand these assert if called on `eosio` and
+   * must go to `core.vaulta`. Producer/consensus actions (regproducer,
+   * regfinkey, actfinkey, …) are intentionally absent and stay on `eosio`.
+   * Routing any of these to `core.vaulta` is always safe — that contract
+   * implements them and forwards to the system contract.
+   */
+  private static readonly SYSTEM_WRAPPED_ACTIONS = new Set<string>([
+    'claimrewards',
+    'voteproducer',
+    'voteupdate',
+    'buyram',
+    'buyramself',
+    'buyrambytes',
+    'buyramburn',
+    'sellram',
+    'ramtransfer',
+    'ramburn',
+    'giftram',
+    'ungiftram',
+    'delegatebw',
+    'undelegatebw',
+    'refund',
+    'deposit',
+    'withdraw',
+    'buyrex',
+    'sellrex',
+    'mvtosavings',
+    'mvfrsavings',
+    'unstaketorex',
+    'donatetorex',
+    'powerup',
+    'bidname',
+    'bidrefund',
+  ]);
+
+  /**
+   * Resolve the contract account for a core system action on the active chain.
+   * Returns the chain's `system_contract` (e.g. `core.vaulta` on Vaulta) for the
+   * wrapped economic actions above, and `eosio` otherwise. Use this instead of a
+   * hard-coded `'eosio'` when building eosio-system actions so they route
+   * correctly after the Vaulta rebrand.
+   */
+  systemAccount(actionName: string): string {
+    const sys = this.activeChain()?.system_contract;
+    if (sys && sys !== 'eosio' && WalletStateService.SYSTEM_WRAPPED_ACTIONS.has(actionName)) {
+      return sys;
+    }
+    return 'eosio';
+  }
 
   constructor(private ipc: TauriIpcService) {}
 
@@ -107,9 +158,9 @@ export class WalletStateService {
 
       console.log('[wallet] initialize: registering providers...');
       await Promise.all(
-        chains.map(chain =>
-          this.ipc.initChainProviders(chain.id, chain.endpoints, chain.hyperion_apis)
-        )
+        chains.map((chain) =>
+          this.ipc.initChainProviders(chain.id, chain.endpoints, chain.hyperion_apis),
+        ),
       );
       console.log('[wallet] initialize: providers registered');
 
@@ -164,7 +215,7 @@ export class WalletStateService {
 
   /** Add a watch-only account by name. Fetches account data from the chain. */
   async addWatchAccount(accountName: string, chainId: string): Promise<WalletAccount | null> {
-    const chain = this.chains().find(c => c.id === chainId);
+    const chain = this.chains().find((c) => c.id === chainId);
     if (!chain) return null;
 
     this.loading.set(true);
@@ -199,13 +250,18 @@ export class WalletStateService {
           const rank = sorted.findIndex((r: any) => r.owner === accountName);
           if (rank >= 0) account.producerRank = rank + 1;
         }
-        console.log(`[wallet] addWatch producer check: ${accountName}@${chain.name} isProducer=${!!account.isProducer} rank=${account.producerRank ?? '—'}`);
+        console.log(
+          `[wallet] addWatch producer check: ${accountName}@${chain.name} isProducer=${!!account.isProducer} rank=${account.producerRank ?? '—'}`,
+        );
       } catch (e) {
-        console.warn(`[wallet] addWatch producer check failed for ${accountName}@${chain.name}:`, e);
+        console.warn(
+          `[wallet] addWatch producer check failed for ${accountName}@${chain.name}:`,
+          e,
+        );
       }
 
       // Add to accounts list and persist
-      this.accounts.update(list => [...list, account]);
+      this.accounts.update((list) => [...list, account]);
       await this.saveAccounts();
       return account;
     } catch (e: any) {
@@ -225,12 +281,17 @@ export class WalletStateService {
 
     try {
       const info = await this.ipc.getAccount(account.chainId, account.name);
-      const chain = this.chains().find(c => c.id === account.chainId);
+      const chain = this.chains().find((c) => c.id === account.chainId);
 
       // Fetch primary token balance from the chain's token contract
       if (chain && chain.token_contract !== 'eosio.token') {
         try {
-          const bal = await this.ipc.getBalances(chain.id, account.name, chain.token_contract, chain.symbol);
+          const bal = await this.ipc.getBalances(
+            chain.id,
+            account.name,
+            chain.token_contract,
+            chain.symbol,
+          );
           if (bal.length > 0) {
             info.core_liquid_balance = bal[0];
           }
@@ -266,7 +327,9 @@ export class WalletStateService {
         }
         // bp not found → leave isProducer at its sticky (cached) value;
         // rank stays undefined since the account is not actively producing.
-        console.log(`[wallet] producer check: ${account.name}@${account.chainName} isProducer=${isProducer} rank=${producerRank ?? '—'}`);
+        console.log(
+          `[wallet] producer check: ${account.name}@${account.chainName} isProducer=${isProducer} rank=${producerRank ?? '—'}`,
+        );
       } catch (e) {
         // Keep existing value on failure so cached state survives
         isProducer = account.isProducer ?? false;
@@ -274,8 +337,10 @@ export class WalletStateService {
         console.warn(`[wallet] producer check failed for ${account.name}@${account.chainName}:`, e);
       }
 
-      this.accounts.update(list =>
-        list.map((a, i) => i === index ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a)
+      this.accounts.update((list) =>
+        list.map((a, i) =>
+          i === index ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a,
+        ),
       );
     } catch (e: any) {
       console.warn(`[wallet] refreshAccount FAILED for ${account.name}:`, e);
@@ -350,10 +415,16 @@ export class WalletStateService {
       console.log('[wallet] restoreAccounts: got', saved ? `${saved.length} accounts` : 'null');
       if (saved && saved.length > 0) {
         const previousSelection = this.selectedAccount();
-        const normalized = saved.map(account => this.normalizeStoredAccount(account));
+        const normalized = saved.map((account) => this.normalizeStoredAccount(account));
         this.accounts.set(normalized);
         this.restoreSelection(previousSelection, normalized);
-        if (normalized.some((account, index) => account.chainId !== saved[index]?.chainId || account.chainName !== saved[index]?.chainName)) {
+        if (
+          normalized.some(
+            (account, index) =>
+              account.chainId !== saved[index]?.chainId ||
+              account.chainName !== saved[index]?.chainName,
+          )
+        ) {
           await this.saveAccounts();
         }
         return true;
@@ -385,7 +456,7 @@ export class WalletStateService {
     options: { ledgerIndex?: number; hydrate?: boolean } = {},
   ): Promise<WalletAccount | null> {
     const normalizedChainId = this.normalizeChainId(chainId);
-    const chain = this.chains().find(c => c.id === normalizedChainId);
+    const chain = this.chains().find((c) => c.id === normalizedChainId);
     const name = accountName.trim();
     if (!chain || !name) return null;
 
@@ -401,7 +472,10 @@ export class WalletStateService {
     this.upsertAccount(placeholder, false);
 
     if (options.hydrate === false) {
-      return this.accounts().find(a => a.name === name && a.chainId === normalizedChainId) ?? placeholder;
+      return (
+        this.accounts().find((a) => a.name === name && a.chainId === normalizedChainId) ??
+        placeholder
+      );
     }
 
     let info: AccountInfo = this.placeholderAccountInfo(name);
@@ -415,7 +489,12 @@ export class WalletStateService {
 
       if (chain.token_contract !== 'eosio.token') {
         try {
-          const bal = await this.ipc.getBalances(chain.id, name, chain.token_contract, chain.symbol);
+          const bal = await this.ipc.getBalances(
+            chain.id,
+            name,
+            chain.token_contract,
+            chain.symbol,
+          );
           if (bal.length > 0) info.core_liquid_balance = bal[0];
         } catch (e) {
           console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
@@ -424,7 +503,10 @@ export class WalletStateService {
 
       extraBalances = await this.fetchExtraTokenBalances(chain, name);
     } catch (e) {
-      console.warn(`[wallet] Account metadata unavailable for ${name} on ${chain.name}; caching import anyway:`, e);
+      console.warn(
+        `[wallet] Account metadata unavailable for ${name} on ${chain.name}; caching import anyway:`,
+        e,
+      );
     }
 
     const account: WalletAccount = {
@@ -439,7 +521,10 @@ export class WalletStateService {
 
     this.upsertAccount(account, hasFreshInfo);
 
-    return this.accounts().find(a => a.name === account.name && a.chainId === account.chainId) ?? account;
+    return (
+      this.accounts().find((a) => a.name === account.name && a.chainId === account.chainId) ??
+      account
+    );
   }
 
   /** Full account discovery from chain. Used after import or manual refresh. */
@@ -459,13 +544,18 @@ export class WalletStateService {
           try {
             const result = await this.ipc.lookupKeyAccounts(chain.id, pubKey);
             for (const name of result.account_names) {
-              if (allAccounts.some(a => a.name === name && a.chainId === chain.id)) continue;
+              if (allAccounts.some((a) => a.name === name && a.chainId === chain.id)) continue;
               try {
                 const info = await this.ipc.getAccount(chain.id, name);
                 // Override core_liquid_balance with the chain's primary token if needed
                 if (chain.token_contract !== 'eosio.token') {
                   try {
-                    const bal = await this.ipc.getBalances(chain.id, name, chain.token_contract, chain.symbol);
+                    const bal = await this.ipc.getBalances(
+                      chain.id,
+                      name,
+                      chain.token_contract,
+                      chain.symbol,
+                    );
                     if (bal.length > 0) info.core_liquid_balance = bal[0];
                   } catch (e) {
                     console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
@@ -473,7 +563,12 @@ export class WalletStateService {
                 }
                 const extraBalances = await this.fetchExtraTokenBalances(chain, name);
                 allAccounts.push({
-                  name, chainId: chain.id, chainName: chain.name, mode: 'full', info, extraBalances,
+                  name,
+                  chainId: chain.id,
+                  chainName: chain.name,
+                  mode: 'full',
+                  info,
+                  extraBalances,
                 });
               } catch (e) {
                 console.warn(`[wallet] Failed to load ${name} on ${chain.name}:`, e);
@@ -485,7 +580,7 @@ export class WalletStateService {
         }
       }
 
-      const watchAccounts = this.accounts().filter(a => a.mode === 'watch');
+      const watchAccounts = this.accounts().filter((a) => a.mode === 'watch');
       const nextAccounts = [...allAccounts, ...watchAccounts];
       this.accounts.set(nextAccounts);
       this.restoreSelection(previousSelection, nextAccounts);
@@ -506,7 +601,7 @@ export class WalletStateService {
 
   private normalizeStoredAccount(account: WalletAccount): WalletAccount {
     const chainId = this.normalizeChainId(account.chainId);
-    const chain = this.chains().find(c => c.id === chainId);
+    const chain = this.chains().find((c) => c.id === chainId);
     if (chainId === account.chainId && (!chain || chain.name === account.chainName)) return account;
     return {
       ...account,
@@ -520,8 +615,8 @@ export class WalletStateService {
   }
 
   private upsertAccount(account: WalletAccount, hasFreshInfo: boolean) {
-    this.accounts.update(list => {
-      const index = list.findIndex(a => a.name === account.name && a.chainId === account.chainId);
+    this.accounts.update((list) => {
+      const index = list.findIndex((a) => a.name === account.name && a.chainId === account.chainId);
       if (index < 0) return [...list, account];
 
       const existing = list[index];
@@ -554,14 +649,24 @@ export class WalletStateService {
   }
 
   /** Fetch extra token balances for a chain's configured extra_tokens. */
-  async fetchExtraTokenBalances(chain: import('./tauri-ipc.service').ChainConfig, accountName: string): Promise<TokenBalance[]> {
+  async fetchExtraTokenBalances(
+    chain: import('./tauri-ipc.service').ChainConfig,
+    accountName: string,
+  ): Promise<TokenBalance[]> {
     const balances: TokenBalance[] = [];
     const tokens = chain.extra_tokens ?? [];
-    console.log(`[wallet] fetchExtraTokenBalances: ${chain.name} has ${tokens.length} extra tokens for ${accountName}`);
+    console.log(
+      `[wallet] fetchExtraTokenBalances: ${chain.name} has ${tokens.length} extra tokens for ${accountName}`,
+    );
     for (const token of tokens) {
       try {
         console.log(`[wallet] fetching ${token.symbol} from ${token.contract}...`);
-        const result = await this.ipc.getBalances(chain.id, accountName, token.contract, token.symbol);
+        const result = await this.ipc.getBalances(
+          chain.id,
+          accountName,
+          token.contract,
+          token.symbol,
+        );
         console.log(`[wallet] ${token.symbol} result:`, result);
         if (result.length > 0) {
           balances.push({ contract: token.contract, symbol: token.symbol, amount: result[0] });
@@ -599,8 +704,9 @@ export class WalletStateService {
     if (!selectedAccount) {
       this.selectedIndex.set(null);
     } else {
-      const newSelectedIndex = list.findIndex(account =>
-        account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+      const newSelectedIndex = list.findIndex(
+        (account) =>
+          account.chainId === selectedAccount.chainId && account.name === selectedAccount.name,
       );
       this.selectedIndex.set(newSelectedIndex >= 0 ? newSelectedIndex : null);
     }
@@ -612,7 +718,7 @@ export class WalletStateService {
   removeAccount(index: number) {
     const selectedAccount = this.selectedAccount();
     const currentIndex = this.selectedIndex();
-    this.accounts.update(list => list.filter((_, i) => i !== index));
+    this.accounts.update((list) => list.filter((_, i) => i !== index));
 
     if (currentIndex === null || !selectedAccount) {
       this.selectedIndex.set(null);
@@ -624,8 +730,9 @@ export class WalletStateService {
       return;
     }
 
-    const nextIndex = this.accounts().findIndex(account =>
-      account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+    const nextIndex = this.accounts().findIndex(
+      (account) =>
+        account.chainId === selectedAccount.chainId && account.name === selectedAccount.name,
     );
     this.selectedIndex.set(nextIndex >= 0 ? nextIndex : null);
   }
@@ -636,8 +743,9 @@ export class WalletStateService {
       return;
     }
 
-    const nextIndex = accounts.findIndex(account =>
-      account.chainId === selectedAccount.chainId && account.name === selectedAccount.name
+    const nextIndex = accounts.findIndex(
+      (account) =>
+        account.chainId === selectedAccount.chainId && account.name === selectedAccount.name,
     );
     this.selectedIndex.set(nextIndex >= 0 ? nextIndex : null);
   }
@@ -646,17 +754,295 @@ export class WalletStateService {
 // ── Mock accounts for design testing (when Tauri backend is not available) ──
 
 const MOCK_CHAINS: ChainConfig[] = [
-  { id: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906', name: 'Vaulta', symbol: 'A', precision: 4, token_contract: 'core.vaulta', extra_tokens: [{ contract: 'eosio.token', symbol: 'EOS', precision: 4 }], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Vaultascan', url: 'https://eosscan.io', tx_url: 'https://eosscan.io/transaction/{txid}', account_url: 'https://eosscan.io/account/{account}' }, { name: 'EOS Authority', url: 'https://eosauthority.com', tx_url: 'https://eosauthority.com/transaction/{txid}?network=eos', account_url: 'https://eosauthority.com/account/{account}?network=eos' }, { name: 'Bloks.io', url: 'https://bloks.io', tx_url: 'https://bloks.io/transaction/{txid}', account_url: 'https://bloks.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: true, history: true } },
-  { id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', name: 'WAX', symbol: 'WAX', precision: 8, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'WaxBlock', url: 'https://waxblock.io', tx_url: 'https://waxblock.io/transaction/{txid}', account_url: 'https://waxblock.io/account/{account}' }, { name: 'Bloks.io', url: 'https://wax.bloks.io', tx_url: 'https://wax.bloks.io/transaction/{txid}', account_url: 'https://wax.bloks.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: true, resource: true, dapps: true, history: true } },
-  { id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11', name: 'Telos', symbol: 'TLOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Telos Explorer', url: 'https://explorer.telos.net', tx_url: 'https://explorer.telos.net/transaction/{txid}', account_url: 'https://explorer.telos.net/account/{account}' }], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: true, history: true } },
-  { id: 'ultra-chain-id', name: 'Ultra', symbol: 'UOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Ultra Explorer', url: 'https://explorer.mainnet.ultra.io', tx_url: 'https://explorer.mainnet.ultra.io/tx/{txid}', account_url: 'https://explorer.mainnet.ultra.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
-  { id: 'fio-chain-id', name: 'FIO', symbol: 'FIO', precision: 9, token_contract: 'fio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'FIO Explorer', url: 'https://fio.bloks.io', tx_url: 'https://fio.bloks.io/transaction/{txid}', account_url: 'https://fio.bloks.io/account/{account}' }], features: { send: true, vote: true, staking: false, rex: false, powerup: false, resource: false, dapps: false, history: true } },
-  { id: LIBRE_MAINNET_CHAIN_ID, name: 'Libre', symbol: 'LIBRE', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Libre Blocks', url: 'https://www.libreblocks.io', tx_url: 'https://www.libreblocks.io/tx/{txid}', account_url: 'https://www.libreblocks.io/address/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
-  { id: 'xpr-chain-id', name: 'XPR', symbol: 'XPR', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'XPR Explorer', url: 'https://explorer.xprnetwork.org', tx_url: 'https://explorer.xprnetwork.org/transaction/{txid}', account_url: 'https://explorer.xprnetwork.org/account/{account}' }], features: { send: true, vote: true, staking: true, rex: false, powerup: false, resource: true, dapps: false, history: true } },
+  {
+    id: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+    name: 'Vaulta',
+    symbol: 'A',
+    precision: 4,
+    token_contract: 'core.vaulta',
+    system_contract: 'core.vaulta',
+    extra_tokens: [{ contract: 'eosio.token', symbol: 'EOS', precision: 4 }],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'Vaultascan',
+        url: 'https://eosscan.io',
+        tx_url: 'https://eosscan.io/transaction/{txid}',
+        account_url: 'https://eosscan.io/account/{account}',
+      },
+      {
+        name: 'EOS Authority',
+        url: 'https://eosauthority.com',
+        tx_url: 'https://eosauthority.com/transaction/{txid}?network=eos',
+        account_url: 'https://eosauthority.com/account/{account}?network=eos',
+      },
+      {
+        name: 'Bloks.io',
+        url: 'https://bloks.io',
+        tx_url: 'https://bloks.io/transaction/{txid}',
+        account_url: 'https://bloks.io/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: true,
+      powerup: true,
+      resource: true,
+      dapps: true,
+      history: true,
+    },
+  },
+  {
+    id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4',
+    name: 'WAX',
+    symbol: 'WAX',
+    precision: 8,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'WaxBlock',
+        url: 'https://waxblock.io',
+        tx_url: 'https://waxblock.io/transaction/{txid}',
+        account_url: 'https://waxblock.io/account/{account}',
+      },
+      {
+        name: 'Bloks.io',
+        url: 'https://wax.bloks.io',
+        tx_url: 'https://wax.bloks.io/transaction/{txid}',
+        account_url: 'https://wax.bloks.io/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: false,
+      powerup: true,
+      resource: true,
+      dapps: true,
+      history: true,
+    },
+  },
+  {
+    id: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
+    name: 'Telos',
+    symbol: 'TLOS',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'Telos Explorer',
+        url: 'https://explorer.telos.net',
+        tx_url: 'https://explorer.telos.net/transaction/{txid}',
+        account_url: 'https://explorer.telos.net/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: true,
+      powerup: true,
+      resource: true,
+      dapps: true,
+      history: true,
+    },
+  },
+  {
+    id: 'ultra-chain-id',
+    name: 'Ultra',
+    symbol: 'UOS',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'Ultra Explorer',
+        url: 'https://explorer.mainnet.ultra.io',
+        tx_url: 'https://explorer.mainnet.ultra.io/tx/{txid}',
+        account_url: 'https://explorer.mainnet.ultra.io/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: false,
+      powerup: false,
+      resource: true,
+      dapps: false,
+      history: true,
+    },
+  },
+  {
+    id: 'fio-chain-id',
+    name: 'FIO',
+    symbol: 'FIO',
+    precision: 9,
+    token_contract: 'fio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'FIO Explorer',
+        url: 'https://fio.bloks.io',
+        tx_url: 'https://fio.bloks.io/transaction/{txid}',
+        account_url: 'https://fio.bloks.io/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: false,
+      rex: false,
+      powerup: false,
+      resource: false,
+      dapps: false,
+      history: true,
+    },
+  },
+  {
+    id: LIBRE_MAINNET_CHAIN_ID,
+    name: 'Libre',
+    symbol: 'LIBRE',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'Libre Blocks',
+        url: 'https://www.libreblocks.io',
+        tx_url: 'https://www.libreblocks.io/tx/{txid}',
+        account_url: 'https://www.libreblocks.io/address/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: false,
+      powerup: false,
+      resource: true,
+      dapps: false,
+      history: true,
+    },
+  },
+  {
+    id: 'xpr-chain-id',
+    name: 'XPR',
+    symbol: 'XPR',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'XPR Explorer',
+        url: 'https://explorer.xprnetwork.org',
+        tx_url: 'https://explorer.xprnetwork.org/transaction/{txid}',
+        account_url: 'https://explorer.xprnetwork.org/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: false,
+      powerup: false,
+      resource: true,
+      dapps: false,
+      history: true,
+    },
+  },
   // Testnets
-  { id: 'jungle4-testnet-id', name: 'Jungle Testnet', symbol: 'EOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [{ name: 'Jungle Bloks', url: 'https://jungle4.bloks.io', tx_url: 'https://jungle4.bloks.io/transaction/{txid}', account_url: 'https://jungle4.bloks.io/account/{account}' }], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: false, history: true }, testnet: true },
-  { id: 'wax-testnet-id', name: 'WAX Testnet', symbol: 'WAX', precision: 8, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: false, powerup: true, resource: true, dapps: false, history: false }, testnet: true },
-  { id: 'telos-testnet-id', name: 'Telos Testnet', symbol: 'TLOS', precision: 4, token_contract: 'eosio.token', extra_tokens: [], endpoints: [], hyperion_apis: [], explorers: [], features: { send: true, vote: true, staking: true, rex: true, powerup: true, resource: true, dapps: false, history: false }, testnet: true },
+  {
+    id: 'jungle4-testnet-id',
+    name: 'Jungle Testnet',
+    symbol: 'EOS',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [
+      {
+        name: 'Jungle Bloks',
+        url: 'https://jungle4.bloks.io',
+        tx_url: 'https://jungle4.bloks.io/transaction/{txid}',
+        account_url: 'https://jungle4.bloks.io/account/{account}',
+      },
+    ],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: true,
+      powerup: true,
+      resource: true,
+      dapps: false,
+      history: true,
+    },
+    testnet: true,
+  },
+  {
+    id: 'wax-testnet-id',
+    name: 'WAX Testnet',
+    symbol: 'WAX',
+    precision: 8,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: false,
+      powerup: true,
+      resource: true,
+      dapps: false,
+      history: false,
+    },
+    testnet: true,
+  },
+  {
+    id: 'telos-testnet-id',
+    name: 'Telos Testnet',
+    symbol: 'TLOS',
+    precision: 4,
+    token_contract: 'eosio.token',
+    extra_tokens: [],
+    endpoints: [],
+    hyperion_apis: [],
+    explorers: [],
+    features: {
+      send: true,
+      vote: true,
+      staking: true,
+      rex: true,
+      powerup: true,
+      resource: true,
+      dapps: false,
+      history: false,
+    },
+    testnet: true,
+  },
 ];
 
 const MOCK_ACCOUNTS: WalletAccount[] = [
@@ -668,8 +1054,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'igorls.gm',
       core_liquid_balance: '12,847.3291 A',
-      ram_quota: 177000, ram_usage: 127400,
-      net_weight: 21000000, cpu_weight: 21000000,
+      ram_quota: 177000,
+      ram_usage: 127400,
+      net_weight: 21000000,
+      cpu_weight: 21000000,
       permissions: [],
     },
   },
@@ -681,8 +1069,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'igor.wax',
       core_liquid_balance: '3,250.00000000 WAX',
-      ram_quota: 65000, ram_usage: 42300,
-      net_weight: 5000000, cpu_weight: 15000000,
+      ram_quota: 65000,
+      ram_usage: 42300,
+      net_weight: 5000000,
+      cpu_weight: 15000000,
       permissions: [],
     },
   },
@@ -694,8 +1084,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'igorls.tlos',
       core_liquid_balance: '890.4200 TLOS',
-      ram_quota: 32000, ram_usage: 8900,
-      net_weight: 2000000, cpu_weight: 8000000,
+      ram_quota: 32000,
+      ram_usage: 8900,
+      net_weight: 2000000,
+      cpu_weight: 8000000,
       permissions: [],
     },
   },
@@ -707,8 +1099,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'igorls.ultra',
       core_liquid_balance: '156.0000 UOS',
-      ram_quota: 48000, ram_usage: 12000,
-      net_weight: 1000000, cpu_weight: 3000000,
+      ram_quota: 48000,
+      ram_usage: 12000,
+      net_weight: 1000000,
+      cpu_weight: 3000000,
       permissions: [],
     },
   },
@@ -720,8 +1114,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'igor@fio',
       core_liquid_balance: '2,100.000000000 FIO',
-      ram_quota: 100000, ram_usage: 34000,
-      net_weight: 0, cpu_weight: 0,
+      ram_quota: 100000,
+      ram_usage: 34000,
+      net_weight: 0,
+      cpu_weight: 0,
       permissions: [],
     },
   },
@@ -736,8 +1132,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'eosriobrazil',
       core_liquid_balance: '45,891.2030 A',
-      ram_quota: 524000, ram_usage: 389000,
-      net_weight: 150000000, cpu_weight: 350000000,
+      ram_quota: 524000,
+      ram_usage: 389000,
+      net_weight: 150000000,
+      cpu_weight: 350000000,
       permissions: [],
       voter_info: { is_proxy: 0, producers: [], staked: 500000000 },
     },
@@ -750,8 +1148,10 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     info: {
       account_name: 'b1',
       core_liquid_balance: '0.0000 A',
-      ram_quota: 14822140, ram_usage: 6878028,
-      net_weight: 0, cpu_weight: 0,
+      ram_quota: 14822140,
+      ram_usage: 6878028,
+      net_weight: 0,
+      cpu_weight: 0,
       permissions: [],
     },
   },
@@ -761,6 +1161,6 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
   ]);
 }

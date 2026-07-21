@@ -19,11 +19,22 @@ import { TransactionService } from '../../../core/services/transaction.service';
           <div class="skeleton skeleton-panel"></div>
         </div>
       } @else {
-
         <!-- Free chain banner -->
         @if (features.isFreeChain()) {
           <div class="free-banner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
             <div>
               <strong>Free transactions on {{ wallet.selectedAccount()!.chainName }}</strong>
               <p>This chain provides resources at no cost. Resource management is optional.</p>
@@ -34,9 +45,33 @@ import { TransactionService } from '../../../core/services/transaction.service';
         <!-- Resource meters -->
         @if (wallet.selectedAccount(); as acct) {
           <div class="meters-row">
-            <div class="meter-card" [class.warning]="cpuPct() > 70" [class.critical]="cpuPct() > 85">
+            <div
+              class="meter-card"
+              [class.warning]="cpuPct() > 70"
+              [class.critical]="cpuPct() > 85"
+            >
               <div class="meter-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
+                  <rect x="9" y="9" width="6" height="6" />
+                  <line x1="9" y1="1" x2="9" y2="4" />
+                  <line x1="15" y1="1" x2="15" y2="4" />
+                  <line x1="9" y1="20" x2="9" y2="23" />
+                  <line x1="15" y1="20" x2="15" y2="23" />
+                  <line x1="20" y1="9" x2="23" y2="9" />
+                  <line x1="20" y1="14" x2="23" y2="14" />
+                  <line x1="1" y1="9" x2="4" y2="9" />
+                  <line x1="1" y1="14" x2="4" y2="14" />
+                </svg>
               </div>
               <div class="meter-info">
                 <span class="meter-label">CPU</span>
@@ -44,14 +79,44 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <span class="meter-sub">Available</span>
               </div>
               <div class="meter-right">
-                <span class="meter-pct" [class.warning]="cpuPct() > 70" [class.critical]="cpuPct() > 85">{{ cpuPct() }}%</span>
-                <div class="meter-bar"><div class="meter-fill" [class.warning]="cpuPct() > 70" [class.critical]="cpuPct() > 85" [style.width.%]="cpuPct()"></div></div>
+                <span
+                  class="meter-pct"
+                  [class.warning]="cpuPct() > 70"
+                  [class.critical]="cpuPct() > 85"
+                  >{{ cpuPct() }}%</span
+                >
+                <div class="meter-bar">
+                  <div
+                    class="meter-fill"
+                    [class.warning]="cpuPct() > 70"
+                    [class.critical]="cpuPct() > 85"
+                    [style.width.%]="cpuPct()"
+                  ></div>
+                </div>
               </div>
             </div>
 
-            <div class="meter-card" [class.warning]="netPct() > 70" [class.critical]="netPct() > 85">
+            <div
+              class="meter-card"
+              [class.warning]="netPct() > 70"
+              [class.critical]="netPct() > 85"
+            >
               <div class="meter-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                  <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                  <line x1="12" y1="20" x2="12.01" y2="20" />
+                </svg>
               </div>
               <div class="meter-info">
                 <span class="meter-label">NET</span>
@@ -59,30 +124,74 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <span class="meter-sub">Available</span>
               </div>
               <div class="meter-right">
-                <span class="meter-pct" [class.warning]="netPct() > 70" [class.critical]="netPct() > 85">{{ netPct() }}%</span>
-                <div class="meter-bar"><div class="meter-fill" [class.warning]="netPct() > 70" [class.critical]="netPct() > 85" [style.width.%]="netPct()"></div></div>
+                <span
+                  class="meter-pct"
+                  [class.warning]="netPct() > 70"
+                  [class.critical]="netPct() > 85"
+                  >{{ netPct() }}%</span
+                >
+                <div class="meter-bar">
+                  <div
+                    class="meter-fill"
+                    [class.warning]="netPct() > 70"
+                    [class.critical]="netPct() > 85"
+                    [style.width.%]="netPct()"
+                  ></div>
+                </div>
               </div>
             </div>
 
-            <div class="meter-card" [class.warning]="ramPct() > 70" [class.critical]="ramPct() > 85">
+            <div
+              class="meter-card"
+              [class.warning]="ramPct() > 70"
+              [class.critical]="ramPct() > 85"
+            >
               <div class="meter-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <line x1="6" y1="10" x2="6" y2="14" />
+                  <line x1="10" y1="10" x2="10" y2="14" />
+                  <line x1="14" y1="10" x2="14" y2="14" />
+                  <line x1="18" y1="10" x2="18" y2="14" />
+                </svg>
               </div>
               <div class="meter-info">
                 <span class="meter-label">RAM</span>
-                <span class="meter-avail">{{ formatBytes(Math.max(0, (acct.info.ram_quota ?? 0) - (acct.info.ram_usage ?? 0))) }}</span>
+                <span class="meter-avail">{{
+                  formatBytes(Math.max(0, (acct.info.ram_quota ?? 0) - (acct.info.ram_usage ?? 0)))
+                }}</span>
                 <span class="meter-sub">Available</span>
               </div>
               <div class="meter-right">
-                <span class="meter-pct" [class.warning]="ramPct() > 70" [class.critical]="ramPct() > 85">{{ ramPct() }}% used</span>
-                <div class="meter-bar"><div class="meter-fill" [class.warning]="ramPct() > 70" [class.critical]="ramPct() > 85" [style.width.%]="ramPct()"></div></div>
+                <span
+                  class="meter-pct"
+                  [class.warning]="ramPct() > 70"
+                  [class.critical]="ramPct() > 85"
+                  >{{ ramPct() }}% used</span
+                >
+                <div class="meter-bar">
+                  <div
+                    class="meter-fill"
+                    [class.warning]="ramPct() > 70"
+                    [class.critical]="ramPct() > 85"
+                    [style.width.%]="ramPct()"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
         }
 
         <div class="panels-grid">
-
           <!-- ═══ PowerUp Panel ═══ -->
           @if (features.hasPowerUp()) {
             <div class="panel">
@@ -110,9 +219,14 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <div class="form-group">
                 <label>CPU (% of network)</label>
                 <div class="input-row">
-                  <input class="form-input" type="number" step="0.001" min="0"
-                         [ngModel]="cpuPercent()"
-                         (ngModelChange)="cpuPercent.set($event); estimateCost()" />
+                  <input
+                    class="form-input"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    [ngModel]="cpuPercent()"
+                    (ngModelChange)="cpuPercent.set($event); estimateCost()"
+                  />
                   <span class="input-suffix">%</span>
                 </div>
               </div>
@@ -120,9 +234,14 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <div class="form-group">
                 <label>NET (% of network)</label>
                 <div class="input-row">
-                  <input class="form-input" type="number" step="0.001" min="0"
-                         [ngModel]="netPercent()"
-                         (ngModelChange)="netPercent.set($event); estimateCost()" />
+                  <input
+                    class="form-input"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    [ngModel]="netPercent()"
+                    (ngModelChange)="netPercent.set($event); estimateCost()"
+                  />
                   <span class="input-suffix">%</span>
                 </div>
               </div>
@@ -144,8 +263,11 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <div class="msg success-msg">{{ powerupSuccess() }}</div>
               }
 
-              <button class="btn-primary" [disabled]="!canPowerUp() || executing()"
-                      (click)="executePowerUp()">
+              <button
+                class="btn-primary"
+                [disabled]="!canPowerUp() || executing()"
+                (click)="executePowerUp()"
+              >
                 {{ executing() ? 'POWERING UP...' : 'POWER UP' }}
               </button>
 
@@ -168,7 +290,11 @@ import { TransactionService } from '../../../core/services/transaction.service';
           }
 
           <!-- ═══ Staking Panel ═══ -->
-          @if (features.hasStaking() && !features.capabilities().fioStaking && !features.capabilities().xprStaking) {
+          @if (
+            features.hasStaking() &&
+            !features.capabilities().fioStaking &&
+            !features.capabilities().xprStaking
+          ) {
             <div class="panel">
               <div class="panel-header">
                 <h3>Stake {{ wallet.activeChain().symbol }}</h3>
@@ -176,21 +302,36 @@ import { TransactionService } from '../../../core/services/transaction.service';
               </div>
 
               @if (features.isFreeChain()) {
-                <p class="panel-desc">Staking is optional on this chain — it provides transaction priority and voting weight.</p>
+                <p class="panel-desc">
+                  Staking is optional on this chain — it provides transaction priority and voting
+                  weight.
+                </p>
               } @else {
-                <p class="panel-desc">Stake tokens to allocate CPU and NET resources for transactions.</p>
+                <p class="panel-desc">
+                  Stake tokens to allocate CPU and NET resources for transactions.
+                </p>
               }
 
               <div class="stake-split">
                 <div class="form-group">
                   <label>CPU</label>
-                  <input class="form-input" type="text" placeholder="0.0000"
-                         [value]="stakeCpu()" (input)="stakeCpu.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0.0000"
+                    [value]="stakeCpu()"
+                    (input)="stakeCpu.set($any($event.target).value)"
+                  />
                 </div>
                 <div class="form-group">
                   <label>NET</label>
-                  <input class="form-input" type="text" placeholder="0.0000"
-                         [value]="stakeNet()" (input)="stakeNet.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0.0000"
+                    [value]="stakeNet()"
+                    (input)="stakeNet.set($any($event.target).value)"
+                  />
                 </div>
               </div>
 
@@ -200,8 +341,6 @@ import { TransactionService } from '../../../core/services/transaction.service';
               </div>
             </div>
           }
-
-
 
           <!-- ═══ RAM Panel (Bancor) ═══ -->
           @if (features.capabilities().ramBancor) {
@@ -213,14 +352,21 @@ import { TransactionService } from '../../../core/services/transaction.service';
 
               <div class="ram-price">
                 <span>Current price</span>
-                <span class="price-value">{{ ramPrice() }} {{ wallet.activeChain().symbol }}/KB</span>
+                <span class="price-value"
+                  >{{ ramPrice() }} {{ wallet.activeChain().symbol }}/KB</span
+                >
               </div>
 
               <div class="form-group">
                 <label>Buy RAM</label>
                 <div class="input-row">
-                  <input class="form-input" type="text" placeholder="0"
-                         [value]="ramBuyKb()" (input)="ramBuyKb.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0"
+                    [value]="ramBuyKb()"
+                    (input)="ramBuyKb.set($any($event.target).value)"
+                  />
                   <span class="input-suffix">KB</span>
                 </div>
               </div>
@@ -229,8 +375,13 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <div class="form-group" style="margin-top: var(--sp-5)">
                 <label>Sell RAM</label>
                 <div class="input-row">
-                  <input class="form-input" type="text" placeholder="0"
-                         [value]="ramSellKb()" (input)="ramSellKb.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0"
+                    [value]="ramSellKb()"
+                    (input)="ramSellKb.set($any($event.target).value)"
+                  />
                   <span class="input-suffix">KB</span>
                 </div>
               </div>
@@ -241,12 +392,22 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <div class="ram-transfer-section">
                   <label>Transfer RAM</label>
                   <div class="form-group">
-                    <input class="form-input" type="text" placeholder="Receiver account"
-                           [value]="ramTransferTo()" (input)="ramTransferTo.set($any($event.target).value)" />
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Receiver account"
+                      [value]="ramTransferTo()"
+                      (input)="ramTransferTo.set($any($event.target).value)"
+                    />
                   </div>
                   <div class="input-row" style="margin-bottom: var(--sp-3)">
-                    <input class="form-input" type="text" placeholder="0"
-                           [value]="ramTransferBytes()" (input)="ramTransferBytes.set($any($event.target).value)" />
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="0"
+                      [value]="ramTransferBytes()"
+                      (input)="ramTransferBytes.set($any($event.target).value)"
+                    />
                     <span class="input-suffix">KB</span>
                   </div>
                   <button class="btn-ghost btn-full" (click)="onRamTransfer()">TRANSFER RAM</button>
@@ -267,8 +428,13 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <div class="form-group">
                 <label>Buy RAM</label>
                 <div class="input-row">
-                  <input class="form-input" type="text" placeholder="0"
-                         [value]="ramBuyKb()" (input)="ramBuyKb.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0"
+                    [value]="ramBuyKb()"
+                    (input)="ramBuyKb.set($any($event.target).value)"
+                  />
                   <span class="input-suffix">KB</span>
                 </div>
               </div>
@@ -277,8 +443,13 @@ import { TransactionService } from '../../../core/services/transaction.service';
               <div class="form-group" style="margin-top: var(--sp-5)">
                 <label>Refund RAM</label>
                 <div class="input-row">
-                  <input class="form-input" type="text" placeholder="0"
-                         [value]="ramSellKb()" (input)="ramSellKb.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0"
+                    [value]="ramSellKb()"
+                    (input)="ramSellKb.set($any($event.target).value)"
+                  />
                   <span class="input-suffix">KB</span>
                 </div>
               </div>
@@ -293,12 +464,19 @@ import { TransactionService } from '../../../core/services/transaction.service';
                 <h3>FIO Staking</h3>
                 <span class="panel-badge">7-day unstake</span>
               </div>
-              <p class="panel-desc">Stake FIO to earn rewards. Resources are provided automatically.</p>
+              <p class="panel-desc">
+                Stake FIO to earn rewards. Resources are provided automatically.
+              </p>
 
               <div class="form-group">
                 <label>Amount to stake</label>
-                <input class="form-input" type="text" placeholder="0.000000000"
-                       [value]="fioAmount()" (input)="fioAmount.set($any($event.target).value)" />
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="0.000000000"
+                  [value]="fioAmount()"
+                  (input)="fioAmount.set($any($event.target).value)"
+                />
               </div>
 
               <div class="btn-row">
@@ -319,8 +497,13 @@ import { TransactionService } from '../../../core/services/transaction.service';
 
               <div class="form-group">
                 <label>Stake XPR</label>
-                <input class="form-input" type="text" placeholder="0.0000"
-                       [value]="xprAmount()" (input)="xprAmount.set($any($event.target).value)" />
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="0.0000"
+                  [value]="xprAmount()"
+                  (input)="xprAmount.set($any($event.target).value)"
+                />
               </div>
 
               <div class="btn-row">
@@ -340,20 +523,35 @@ import { TransactionService } from '../../../core/services/transaction.service';
 
               <div class="form-group">
                 <label>Receiver</label>
-                <input class="form-input" type="text" placeholder="Account name"
-                       [value]="delReceiver()" (input)="delReceiver.set($any($event.target).value)" />
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="Account name"
+                  [value]="delReceiver()"
+                  (input)="delReceiver.set($any($event.target).value)"
+                />
               </div>
 
               <div class="stake-split">
                 <div class="form-group">
                   <label>CPU</label>
-                  <input class="form-input" type="text" placeholder="0.0000"
-                         [value]="delCpu()" (input)="delCpu.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0.0000"
+                    [value]="delCpu()"
+                    (input)="delCpu.set($any($event.target).value)"
+                  />
                 </div>
                 <div class="form-group">
                   <label>NET</label>
-                  <input class="form-input" type="text" placeholder="0.0000"
-                         [value]="delNet()" (input)="delNet.set($any($event.target).value)" />
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="0.0000"
+                    [value]="delNet()"
+                    (input)="delNet.set($any($event.target).value)"
+                  />
                 </div>
               </div>
 
@@ -379,7 +577,6 @@ import { TransactionService } from '../../../core/services/transaction.service';
               }
             </div>
           }
-
         </div>
       }
     </div>
@@ -419,11 +616,13 @@ export class ResourcesComponent {
   powerupDays = computed(() => this.powerupState()?.powerup_days ?? 1);
 
   canPowerUp = computed(() => {
-    return (this.cpuPercent() > 0 || this.netPercent() > 0) &&
-           this.estimatedFee() !== '—' &&
-           !this.estimating() &&
-           !this.executing() &&
-           this.wallet.selectedAccount()?.mode === 'full';
+    return (
+      (this.cpuPercent() > 0 || this.netPercent() > 0) &&
+      this.estimatedFee() !== '—' &&
+      !this.estimating() &&
+      !this.executing() &&
+      this.wallet.selectedAccount()?.mode === 'full'
+    );
   });
 
   constructor(
@@ -528,19 +727,21 @@ export class ResourcesComponent {
         return;
       }
 
-      const actions = [{
-        account: 'eosio',
-        name: 'powerup',
-        authorization: [{ actor: account.name, permission: 'active' }],
-        data: {
-          payer: account.name,
-          receiver: account.name,
-          days: state.powerup_days,
-          net_frac: netFrac,
-          cpu_frac: cpuFrac,
-          max_payment: maxPayment,
+      const actions = [
+        {
+          account: this.wallet.systemAccount('powerup'),
+          name: 'powerup',
+          authorization: [{ actor: account.name, permission: 'active' }],
+          data: {
+            payer: account.name,
+            receiver: account.name,
+            days: state.powerup_days,
+            net_frac: netFrac,
+            cpu_frac: cpuFrac,
+            max_payment: maxPayment,
+          },
         },
-      }];
+      ];
 
       const result = await this.tx.confirm({
         chainId: account.chainId,
@@ -576,8 +777,6 @@ export class ResourcesComponent {
   ramTransferTo = signal('');
   ramTransferBytes = signal('');
 
-
-
   // Delegation list
   delegations = signal<{ to: string; cpu_weight: string; net_weight: string }[]>([]);
 
@@ -588,7 +787,12 @@ export class ResourcesComponent {
     if (!account) return;
     const keys = await this.ipc.listPublicKeys(account.chainId);
     if (keys.length === 0) return;
-    const result = await this.tx.confirm({ chainId: account.chainId, publicKey: keys[0], actions, title });
+    const result = await this.tx.confirm({
+      chainId: account.chainId,
+      publicKey: keys[0],
+      actions,
+      title,
+    });
     if (result) {
       await this.wallet.refreshAccount(this.wallet.selectedIndex());
     }
@@ -619,62 +823,97 @@ export class ResourcesComponent {
   // ── Staking ──
 
   async onStake() {
-    const cpu = this.stakeCpu(), net = this.stakeNet();
+    const cpu = this.stakeCpu(),
+      net = this.stakeNet();
     if (!cpu && !net) return;
-    await this.confirmAction('Stake Resources', [{
-      account: 'eosio', name: 'delegatebw', authorization: this.auth(),
-      data: { from: this.me(), receiver: this.me(), stake_net_quantity: this.qty(net), stake_cpu_quantity: this.qty(cpu), transfer: false },
-    }]);
+    await this.confirmAction('Stake Resources', [
+      {
+        account: this.wallet.systemAccount('delegatebw'),
+        name: 'delegatebw',
+        authorization: this.auth(),
+        data: {
+          from: this.me(),
+          receiver: this.me(),
+          stake_net_quantity: this.qty(net),
+          stake_cpu_quantity: this.qty(cpu),
+          transfer: false,
+        },
+      },
+    ]);
   }
 
   async onUnstake() {
-    const cpu = this.stakeCpu(), net = this.stakeNet();
+    const cpu = this.stakeCpu(),
+      net = this.stakeNet();
     if (!cpu && !net) return;
-    await this.confirmAction('Unstake Resources', [{
-      account: 'eosio', name: 'undelegatebw', authorization: this.auth(),
-      data: { from: this.me(), receiver: this.me(), unstake_net_quantity: this.qty(net), unstake_cpu_quantity: this.qty(cpu) },
-    }]);
+    await this.confirmAction('Unstake Resources', [
+      {
+        account: this.wallet.systemAccount('undelegatebw'),
+        name: 'undelegatebw',
+        authorization: this.auth(),
+        data: {
+          from: this.me(),
+          receiver: this.me(),
+          unstake_net_quantity: this.qty(net),
+          unstake_cpu_quantity: this.qty(cpu),
+        },
+      },
+    ]);
   }
-
-
 
   // ── RAM ──
 
   async onBuyRam() {
     const kb = parseFloat(this.ramBuyKb() || '0');
     if (kb <= 0) return;
-    await this.confirmAction('Buy RAM', [{
-      account: 'eosio', name: 'buyrambytes', authorization: this.auth(),
-      data: { payer: this.me(), receiver: this.me(), bytes: Math.round(kb * 1024) },
-    }]);
+    await this.confirmAction('Buy RAM', [
+      {
+        account: this.wallet.systemAccount('buyrambytes'),
+        name: 'buyrambytes',
+        authorization: this.auth(),
+        data: { payer: this.me(), receiver: this.me(), bytes: Math.round(kb * 1024) },
+      },
+    ]);
   }
 
   async onSellRam() {
     const kb = parseFloat(this.ramSellKb() || '0');
     if (kb <= 0) return;
-    await this.confirmAction('Sell RAM', [{
-      account: 'eosio', name: 'sellram', authorization: this.auth(),
-      data: { account: this.me(), bytes: Math.round(kb * 1024) },
-    }]);
+    await this.confirmAction('Sell RAM', [
+      {
+        account: this.wallet.systemAccount('sellram'),
+        name: 'sellram',
+        authorization: this.auth(),
+        data: { account: this.me(), bytes: Math.round(kb * 1024) },
+      },
+    ]);
   }
 
   async onRamTransfer() {
     const kb = parseFloat(this.ramTransferBytes() || '0');
     const to = this.ramTransferTo().trim();
     if (kb <= 0 || !to) return;
-    await this.confirmAction('Transfer RAM', [{
-      account: 'eosio', name: 'ramtransfer', authorization: this.auth(),
-      data: { from: this.me(), to, bytes: Math.round(kb * 1024), memo: '' },
-    }]);
+    await this.confirmAction('Transfer RAM', [
+      {
+        account: this.wallet.systemAccount('ramtransfer'),
+        name: 'ramtransfer',
+        authorization: this.auth(),
+        data: { from: this.me(), to, bytes: Math.round(kb * 1024), memo: '' },
+      },
+    ]);
   }
 
   async onRefundRam() {
     const kb = parseFloat(this.ramSellKb() || '0');
     if (kb <= 0) return;
-    await this.confirmAction('Refund RAM', [{
-      account: 'eosio', name: 'refundram', authorization: this.auth(),
-      data: { owner: this.me(), bytes: Math.round(kb * 1024) },
-    }]);
+    await this.confirmAction('Refund RAM', [
+      {
+        account: 'eosio',
+        name: 'refundram',
+        authorization: this.auth(),
+        data: { owner: this.me(), bytes: Math.round(kb * 1024) },
+      },
+    ]);
   }
 
   // ── RAM Price Loading ──
@@ -684,7 +923,11 @@ export class ResourcesComponent {
     if (!account) return;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio', table: 'rammarket', scope: 'eosio', limit: 1, json: true,
+        code: 'eosio',
+        table: 'rammarket',
+        scope: 'eosio',
+        limit: 1,
+        json: true,
       });
       if (result.rows.length > 0) {
         const row = result.rows[0];
@@ -702,8 +945,6 @@ export class ResourcesComponent {
     }
   }
 
-
-
   // ── Delegation List Loading ──
 
   private async loadDelegations() {
@@ -711,8 +952,11 @@ export class ResourcesComponent {
     if (!account) return;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio', table: 'delband', scope: account.name,
-        limit: 100, json: true,
+        code: 'eosio',
+        table: 'delband',
+        scope: account.name,
+        limit: 100,
+        json: true,
       });
       const delegations = result.rows
         .filter((r: any) => r.to !== account.name) // exclude self-delegation
@@ -733,20 +977,40 @@ export class ResourcesComponent {
     const amt = this.fioAmount();
     if (!amt) return;
     const maxFee = await this.fioFee('stake_fio_tokens');
-    await this.confirmAction('Stake FIO', [{
-      account: 'fio.staking', name: 'stakefio', authorization: this.auth(),
-      data: { fio_address: '', amount: Math.round(parseFloat(amt) * 1e9), max_fee: maxFee, actor: this.me(), tpid: '' },
-    }]);
+    await this.confirmAction('Stake FIO', [
+      {
+        account: 'fio.staking',
+        name: 'stakefio',
+        authorization: this.auth(),
+        data: {
+          fio_address: '',
+          amount: Math.round(parseFloat(amt) * 1e9),
+          max_fee: maxFee,
+          actor: this.me(),
+          tpid: '',
+        },
+      },
+    ]);
   }
 
   async onUnstakeFio() {
     const amt = this.fioAmount();
     if (!amt) return;
     const maxFee = await this.fioFee('unstake_fio_tokens');
-    await this.confirmAction('Unstake FIO', [{
-      account: 'fio.staking', name: 'unstakefio', authorization: this.auth(),
-      data: { fio_address: '', amount: Math.round(parseFloat(amt) * 1e9), max_fee: maxFee, actor: this.me(), tpid: '' },
-    }]);
+    await this.confirmAction('Unstake FIO', [
+      {
+        account: 'fio.staking',
+        name: 'unstakefio',
+        authorization: this.auth(),
+        data: {
+          fio_address: '',
+          amount: Math.round(parseFloat(amt) * 1e9),
+          max_fee: maxFee,
+          actor: this.me(),
+          tpid: '',
+        },
+      },
+    ]);
   }
 
   /** Fetch FIO fee for a given endpoint, with fallback. */
@@ -766,39 +1030,70 @@ export class ResourcesComponent {
   async onStakeXpr() {
     const amt = this.xprAmount();
     if (!amt) return;
-    await this.confirmAction('Stake XPR', [{
-      account: 'eosio', name: 'stakexpr', authorization: this.auth(),
-      data: { owner: this.me(), quantity: this.qty(amt) },
-    }]);
+    await this.confirmAction('Stake XPR', [
+      {
+        account: 'eosio',
+        name: 'stakexpr',
+        authorization: this.auth(),
+        data: { owner: this.me(), quantity: this.qty(amt) },
+      },
+    ]);
   }
 
   async onUnstakeXpr() {
     const amt = this.xprAmount();
     if (!amt) return;
-    await this.confirmAction('Unstake XPR', [{
-      account: 'eosio', name: 'unstakexpr', authorization: this.auth(),
-      data: { owner: this.me(), quantity: this.qty(amt) },
-    }]);
+    await this.confirmAction('Unstake XPR', [
+      {
+        account: 'eosio',
+        name: 'unstakexpr',
+        authorization: this.auth(),
+        data: { owner: this.me(), quantity: this.qty(amt) },
+      },
+    ]);
   }
 
   // ── Delegation ──
 
   async onDelegate() {
-    const cpu = this.delCpu(), net = this.delNet(), recv = this.delReceiver();
+    const cpu = this.delCpu(),
+      net = this.delNet(),
+      recv = this.delReceiver();
     if (!recv || (!cpu && !net)) return;
-    await this.confirmAction('Delegate Resources', [{
-      account: 'eosio', name: 'delegatebw', authorization: this.auth(),
-      data: { from: this.me(), receiver: recv, stake_net_quantity: this.qty(net), stake_cpu_quantity: this.qty(cpu), transfer: false },
-    }]);
+    await this.confirmAction('Delegate Resources', [
+      {
+        account: this.wallet.systemAccount('delegatebw'),
+        name: 'delegatebw',
+        authorization: this.auth(),
+        data: {
+          from: this.me(),
+          receiver: recv,
+          stake_net_quantity: this.qty(net),
+          stake_cpu_quantity: this.qty(cpu),
+          transfer: false,
+        },
+      },
+    ]);
   }
 
   async onUndelegate() {
-    const cpu = this.delCpu(), net = this.delNet(), recv = this.delReceiver();
+    const cpu = this.delCpu(),
+      net = this.delNet(),
+      recv = this.delReceiver();
     if (!recv || (!cpu && !net)) return;
-    await this.confirmAction('Undelegate Resources', [{
-      account: 'eosio', name: 'undelegatebw', authorization: this.auth(),
-      data: { from: this.me(), receiver: recv, unstake_net_quantity: this.qty(net), unstake_cpu_quantity: this.qty(cpu) },
-    }]);
+    await this.confirmAction('Undelegate Resources', [
+      {
+        account: this.wallet.systemAccount('undelegatebw'),
+        name: 'undelegatebw',
+        authorization: this.auth(),
+        data: {
+          from: this.me(),
+          receiver: recv,
+          unstake_net_quantity: this.qty(net),
+          unstake_cpu_quantity: this.qty(cpu),
+        },
+      },
+    ]);
   }
 
   // Expose Math to template
@@ -828,7 +1123,9 @@ export class ResourcesComponent {
 
   // ── Formatters ──
 
-  formatCpuAvailable(limit?: import('../../../core/services/tauri-ipc.service').ResourceLimit | null): string {
+  formatCpuAvailable(
+    limit?: import('../../../core/services/tauri-ipc.service').ResourceLimit | null,
+  ): string {
     if (!limit?.available) return '—';
     const us = limit.available;
     if (us >= 1000000) return (us / 1000000).toFixed(1) + ' s';
@@ -836,7 +1133,9 @@ export class ResourcesComponent {
     return us + ' us';
   }
 
-  formatNetAvailable(limit?: import('../../../core/services/tauri-ipc.service').ResourceLimit | null): string {
+  formatNetAvailable(
+    limit?: import('../../../core/services/tauri-ipc.service').ResourceLimit | null,
+  ): string {
     if (!limit?.available) return '—';
     return this.formatBytes(limit.available);
   }

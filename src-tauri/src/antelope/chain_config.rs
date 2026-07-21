@@ -12,6 +12,13 @@ pub struct ChainConfig {
     /// Primary system token contract (default: "eosio.token").
     #[serde(default = "default_token_contract")]
     pub token_contract: String,
+    /// System-contract account that wraps the core economic actions
+    /// (claimrewards, voteproducer, buyram, delegatebw, rex, powerup, …).
+    /// "eosio" everywhere except Vaulta, where EOS rebranded and those actions
+    /// must now be called from "core.vaulta" (calling them on eosio asserts).
+    /// Consensus/producer actions (regproducer, regfinkey, …) stay on eosio.
+    #[serde(default = "default_system_contract")]
+    pub system_contract: String,
     /// Additional token contracts to query for balance display.
     /// Each entry: { contract, symbol, precision }.
     #[serde(default)]
@@ -47,6 +54,10 @@ pub struct TokenConfig {
 
 fn default_token_contract() -> String {
     "eosio.token".to_string()
+}
+
+fn default_system_contract() -> String {
+    "eosio".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,6 +111,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: "core.vaulta".into(),
+            system_contract: "core.vaulta".into(),
             extra_tokens: vec![TokenConfig {
                 contract: "eosio.token".into(),
                 symbol: "EOS".into(),
@@ -175,6 +187,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 8,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -234,12 +247,9 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint {
-                    url: "https://telos.greymass.com".into(),
-                    owner: Some("Greymass".into()),
-                },
                 Endpoint {
                     url: "https://mainnet.telos.net".into(),
                     owner: Some("Telos Foundation".into()),
@@ -247,10 +257,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://telos.eosphere.io".into(),
                     owner: Some("EOSphere".into()),
-                },
-                Endpoint {
-                    url: "https://telos.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
                 },
             ],
             hyperion_apis: vec![
@@ -288,6 +294,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -328,6 +335,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 9,
             icon: None,
             token_contract: "fio.token".into(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -372,6 +380,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -416,6 +425,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -467,6 +477,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -512,6 +523,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 8,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -557,6 +569,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -593,6 +606,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -634,6 +648,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 9,
             icon: None,
             token_contract: "fio.token".into(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![Endpoint {
                 url: "https://testnet.fioprotocol.io".into(),
@@ -669,6 +684,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {

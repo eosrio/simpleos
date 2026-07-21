@@ -10,7 +10,20 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
   template: `
     <div class="bp-keys-view">
       <div class="bp-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+          />
+        </svg>
         <span>Block Producer</span>
       </div>
       <h2>Key Management</h2>
@@ -21,42 +34,108 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
           <div class="emergency-content">
             <div class="emergency-info">
               <h3>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 Producer Registered
               </h3>
-              <p>Your node is actively producing blocks at rank <strong>#{{ wallet.selectedAccount()!.producerRank }}</strong></p>
+              <p>
+                Your node is actively producing blocks at rank
+                <strong>#{{ wallet.selectedAccount()!.producerRank }}</strong>
+              </p>
             </div>
             <button class="btn-emergency" (click)="onUnregprod()" [disabled]="busy()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
               EMERGENCY UNREG
             </button>
           </div>
-          <p class="emergency-hint">Unregisters your producer immediately. Your signing key and registration info will be saved for quick re-registration.</p>
+          <p class="emergency-hint">
+            Unregisters your producer immediately. Your signing key and registration info will be
+            saved for quick re-registration.
+          </p>
         } @else {
           <div class="emergency-content">
             <div class="emergency-info">
               <h3>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 Producer Unregistered
               </h3>
-              <p>Your node is <strong>offline</strong>. Saved registration info is ready for quick re-registration.</p>
+              <p>
+                Your node is <strong>offline</strong>. Saved registration info is ready for quick
+                re-registration.
+              </p>
             </div>
             <button class="btn-rereg" (click)="onReregister()" [disabled]="busy()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
               RE-REGISTER NOW
             </button>
           </div>
           <div class="rereg-form">
             <label for="reregKey">Block Signing Key</label>
-            <input id="reregKey" type="text" class="rereg-input"
-                   [value]="reregKey()"
-                   (input)="reregKey.set($any($event.target).value.trim())"
-                   placeholder="FIO… / EOS… / PUB_K1_… public key"
-                   spellcheck="false" autocomplete="off" />
+            <input
+              id="reregKey"
+              type="text"
+              class="rereg-input"
+              [value]="reregKey()"
+              (input)="reregKey.set($any($event.target).value.trim())"
+              placeholder="FIO… / EOS… / PUB_K1_… public key"
+              spellcheck="false"
+              autocomplete="off"
+            />
             @if (savedConfig()) {
               <div class="saved-config">
                 <span class="config-item"><strong>URL:</strong> {{ savedConfig()!.url }}</span>
-                <span class="config-item"><strong>Location:</strong> {{ savedConfig()!.location }}</span>
+                <span class="config-item"
+                  ><strong>Location:</strong> {{ savedConfig()!.location }}</span
+                >
               </div>
             }
           </div>
@@ -97,21 +176,37 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
             <div class="reg-form">
               <label class="reg-field">
                 <span class="reg-label">Producer Signing Key</span>
-                <input class="form-input" type="text" spellcheck="false"
-                  [value]="regKey()" (input)="regKey.set($any($event.target).value)"
-                  placeholder="EOS... / PUB_K1_..." />
+                <input
+                  class="form-input"
+                  type="text"
+                  spellcheck="false"
+                  [value]="regKey()"
+                  (input)="regKey.set($any($event.target).value)"
+                  placeholder="EOS... / PUB_K1_..."
+                />
               </label>
               <label class="reg-field">
                 <span class="reg-label">URL (bp.json)</span>
-                <input class="form-input" type="text" spellcheck="false"
-                  [value]="regUrl()" (input)="regUrl.set($any($event.target).value)"
-                  placeholder="https://yourdomain.com" />
+                <input
+                  class="form-input"
+                  type="text"
+                  spellcheck="false"
+                  [value]="regUrl()"
+                  (input)="regUrl.set($any($event.target).value)"
+                  placeholder="https://yourdomain.com"
+                />
               </label>
               <label class="reg-field">
                 <span class="reg-label">Location (ISO 3166 numeric)</span>
-                <input class="form-input" type="number" min="0" max="999"
-                  [value]="regLocation()" (input)="regLocation.set(+$any($event.target).value)"
-                  placeholder="0" />
+                <input
+                  class="form-input"
+                  type="number"
+                  min="0"
+                  max="999"
+                  [value]="regLocation()"
+                  (input)="regLocation.set(+$any($event.target).value)"
+                  placeholder="0"
+                />
               </label>
             </div>
 
@@ -119,8 +214,11 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
               <button class="btn-ghost" (click)="resetRegForm()" [disabled]="busy() || !regDirty()">
                 REVERT
               </button>
-              <button class="btn-primary" (click)="onUpdateRegistration()"
-                [disabled]="busy() || !regDirty() || !regKey() || !regUrl()">
+              <button
+                class="btn-primary"
+                (click)="onUpdateRegistration()"
+                [disabled]="busy() || !regDirty() || !regKey() || !regUrl()"
+              >
                 {{ busy() ? 'Submitting...' : 'UPDATE REGISTRATION' }}
               </button>
             </div>
@@ -135,10 +233,37 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         <div class="key-card">
           <div class="key-header">
             <h3>Finalizer Keys (Savannah)</h3>
-            <span class="key-status" [class.active]="activeFinKey()" [class.pending]="!activeFinKey()">
+            <span
+              class="key-status"
+              [class.active]="activeFinKey()"
+              [class.pending]="!activeFinKey()"
+            >
               {{ activeFinKey() ? 'Active' : 'No Active Key' }}
             </span>
           </div>
+
+          @if (finalizersSupported() === false) {
+            <div class="fin-unsupported">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4" />
+                <path d="M12 16h.01" />
+              </svg>
+              <span
+                >This chain has not activated Savanna finality yet — its system contract has no
+                <code>regfinkey</code> action, so finalizer keys can’t be registered here.</span
+              >
+            </div>
+          }
 
           @if (activeFinKey()) {
             <div class="finkey-active">
@@ -151,12 +276,33 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
             <div class="config-reveal">
               <div class="config-reveal-header">
                 <h4>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 9v4" />
+                    <path d="M12 17h.01" />
+                    <path
+                      d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                    />
+                  </svg>
                   Save this finalizer key — you will not see it again
                 </h4>
-                <button class="btn-ghost btn-close" (click)="dismissConfig()" aria-label="Dismiss">×</button>
+                <button class="btn-ghost btn-close" (click)="dismissConfig()" aria-label="Dismiss">
+                  ×
+                </button>
               </div>
-              <p class="key-desc">Paste this line into your <code>nodeos</code> <code>config.ini</code> (finalizer plugin). The private key is decrypted only once, right now — after you close this panel, it stays encrypted in your wallet.</p>
+              <p class="key-desc">
+                Paste this line into your <code>nodeos</code> <code>config.ini</code> (finalizer
+                plugin). The private key is decrypted only once, right now — after you close this
+                panel, it stays encrypted in your wallet.
+              </p>
               <code class="config-line">{{ line }}</code>
               <div class="key-actions">
                 <button class="btn-primary" (click)="copyConfigLine()">
@@ -174,7 +320,9 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
               @for (key of registeredFinKeys(); track key.id) {
                 <div class="finkey-row" [class.active-row]="key.key === activeFinKey()">
                   <div class="finkey-info">
-                    <code class="finkey-text">{{ key.key.slice(0, 20) }}...{{ key.key.slice(-8) }}</code>
+                    <code class="finkey-text"
+                      >{{ key.key.slice(0, 20) }}...{{ key.key.slice(-8) }}</code
+                    >
                     @if (key.key === activeFinKey()) {
                       <span class="finkey-badge active">Active</span>
                     } @else {
@@ -183,8 +331,20 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
                   </div>
                   <div class="key-actions">
                     @if (key.key !== activeFinKey()) {
-                      <button class="btn-ghost" (click)="onActivateFinKey(key.key)" [disabled]="busy()">ACTIVATE</button>
-                      <button class="btn-ghost btn-danger-text" (click)="onDeleteFinKey(key.key)" [disabled]="busy()">DELETE</button>
+                      <button
+                        class="btn-ghost"
+                        (click)="onActivateFinKey(key.key)"
+                        [disabled]="busy()"
+                      >
+                        ACTIVATE
+                      </button>
+                      <button
+                        class="btn-ghost btn-danger-text"
+                        (click)="onDeleteFinKey(key.key)"
+                        [disabled]="busy()"
+                      >
+                        DELETE
+                      </button>
                     }
                     <button class="btn-ghost" (click)="copyKey(key.key)">COPY</button>
                   </div>
@@ -192,14 +352,25 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
               }
             </div>
           } @else {
-            <p class="key-desc">BLS finalizer key for Savannah fast finality. Required for Instant Finality participation.</p>
+            <p class="key-desc">
+              BLS finalizer key for Savannah fast finality. Required for Instant Finality
+              participation.
+            </p>
           }
 
           <div class="finkey-actions">
-            <button class="btn-primary" (click)="onGenerateFinKey()" [disabled]="busy() || importOpen()">
+            <button
+              class="btn-primary"
+              (click)="onGenerateFinKey()"
+              [disabled]="busy() || importOpen() || finalizersSupported() === false"
+            >
               {{ busy() && !importOpen() ? 'Generating...' : 'GENERATE FINALIZER KEY' }}
             </button>
-            <button class="btn-ghost" (click)="toggleImport()" [disabled]="busy()">
+            <button
+              class="btn-ghost"
+              (click)="toggleImport()"
+              [disabled]="busy() || finalizersSupported() === false"
+            >
               {{ importOpen() ? 'CANCEL IMPORT' : 'IMPORT EXISTING KEY' }}
             </button>
           </div>
@@ -208,23 +379,36 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
             <div class="import-form">
               <label class="reg-field">
                 <span class="reg-label">Finalizer Public Key</span>
-                <input class="form-input" type="text" spellcheck="false"
-                  [value]="importKey()" (input)="importKey.set($any($event.target).value)"
-                  placeholder="PUB_BLS_..." />
+                <input
+                  class="form-input"
+                  type="text"
+                  spellcheck="false"
+                  [value]="importKey()"
+                  (input)="importKey.set($any($event.target).value)"
+                  placeholder="PUB_BLS_..."
+                />
               </label>
               <label class="reg-field">
                 <span class="reg-label">Proof of Possession</span>
-                <input class="form-input" type="text" spellcheck="false"
-                  [value]="importPop()" (input)="importPop.set($any($event.target).value)"
-                  placeholder="SIG_BLS_..." />
+                <input
+                  class="form-input"
+                  type="text"
+                  spellcheck="false"
+                  [value]="importPop()"
+                  (input)="importPop.set($any($event.target).value)"
+                  placeholder="SIG_BLS_..."
+                />
               </label>
               <p class="key-desc import-hint">
-                Get these from <code>leap-util gen-bls-key</code> or your nodeos finalizer plugin config.
-                The proof of possession is a BLS signature over the public key.
+                Get these from <code>leap-util gen-bls-key</code> or your nodeos finalizer plugin
+                config. The proof of possession is a BLS signature over the public key.
               </p>
               <div class="reg-actions">
-                <button class="btn-primary" (click)="onImportFinKey()"
-                  [disabled]="busy() || !canImport()">
+                <button
+                  class="btn-primary"
+                  (click)="onImportFinKey()"
+                  [disabled]="busy() || !canImport() || finalizersSupported() === false"
+                >
                   {{ busy() ? 'Submitting...' : 'REGISTER KEY' }}
                 </button>
               </div>
@@ -240,432 +424,595 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
       <div class="section-card">
         <h3>Permission Structure</h3>
         <p class="section-desc">Active permissions on {{ wallet.selectedAccount()!.name }}</p>
-        <div class="perm-tree">
-          <div class="perm-node root">
-            <span class="perm-name">owner</span>
-            <span class="perm-threshold">threshold: 1</span>
+        @if (permTree().length > 0) {
+          <div class="perm-tree">
+            @for (perm of permTree(); track perm.name) {
+              <div class="perm-node" [style.margin-left.px]="perm.depth * 20">
+                <div class="perm-node-head">
+                  <span class="perm-name">{{ perm.name }}</span>
+                  <span class="perm-threshold">threshold: {{ perm.threshold }}</span>
+                </div>
+                @for (k of perm.keys; track k.key) {
+                  <div class="perm-auth-row">
+                    <code class="perm-key">{{ k.key }}</code>
+                    <span class="perm-weight">+{{ k.weight }}</span>
+                    <button class="btn-ghost perm-copy" (click)="copyKey(k.key)">COPY</button>
+                  </div>
+                }
+                @for (a of perm.accounts; track a.actor + '@' + a.permission) {
+                  <div class="perm-auth-row">
+                    <span class="perm-acct">{{ a.actor }}&#64;{{ a.permission }}</span>
+                    <span class="perm-weight">+{{ a.weight }}</span>
+                  </div>
+                }
+                @for (w of perm.waits; track w.wait_sec) {
+                  <div class="perm-auth-row">
+                    <span class="perm-wait">wait {{ w.wait_sec }}s</span>
+                    <span class="perm-weight">+{{ w.weight }}</span>
+                  </div>
+                }
+              </div>
+            }
           </div>
-          <div class="perm-node child">
-            <span class="perm-name">active</span>
-            <span class="perm-threshold">threshold: 1</span>
-          </div>
-          <div class="perm-node grandchild">
-            <span class="perm-name">claim</span>
-            <span class="perm-threshold">threshold: 1</span>
-          </div>
-        </div>
+        } @else {
+          <p class="section-desc">No permission data available for this account.</p>
+        }
       </div>
     </div>
   `,
-  styles: [`
-    .bp-keys-view { max-width: 800px; }
+  styles: [
+    `
+      .bp-keys-view {
+        max-width: 800px;
+      }
 
-    .bp-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--accent-muted);
-      color: var(--accent);
-      border-radius: var(--radius-full);
-      font-size: 12px;
-      font-weight: 500;
-      margin-bottom: var(--sp-3);
-    }
+      .bp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-1) var(--sp-3);
+        background: var(--accent-muted);
+        color: var(--accent);
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: var(--sp-3);
+      }
 
-    h2 { font-size: 24px; margin-bottom: var(--sp-6); }
+      h2 {
+        font-size: 24px;
+        margin-bottom: var(--sp-6);
+      }
 
-    /* Emergency panel */
-    .emergency-panel {
-      background: var(--bg-raised);
-      border: 1px solid rgba(45, 212, 168, 0.2);
-      border-radius: var(--radius-md);
-      padding: var(--sp-5);
-      margin-bottom: var(--sp-6);
-    }
-    .emergency-panel.unreg-state {
-      border-color: rgba(240, 68, 56, 0.3);
-      background: rgba(240, 68, 56, 0.04);
-    }
-    .emergency-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--sp-4);
-    }
-    .emergency-info h3 {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      font-size: 15px;
-      margin-bottom: var(--sp-1);
-    }
-    .emergency-info p {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    .emergency-info p strong { color: var(--text-bright); }
-    .emergency-hint {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: var(--sp-3);
-      padding-top: var(--sp-3);
-      border-top: 1px solid var(--border-subtle);
-    }
+      /* Emergency panel */
+      .emergency-panel {
+        background: var(--bg-raised);
+        border: 1px solid rgba(45, 212, 168, 0.2);
+        border-radius: var(--radius-md);
+        padding: var(--sp-5);
+        margin-bottom: var(--sp-6);
+      }
+      .emergency-panel.unreg-state {
+        border-color: rgba(240, 68, 56, 0.3);
+        background: rgba(240, 68, 56, 0.04);
+      }
+      .emergency-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-4);
+      }
+      .emergency-info h3 {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        font-size: 15px;
+        margin-bottom: var(--sp-1);
+      }
+      .emergency-info p {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+      .emergency-info p strong {
+        color: var(--text-bright);
+      }
+      .emergency-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: var(--sp-3);
+        padding-top: var(--sp-3);
+        border-top: 1px solid var(--border-subtle);
+      }
 
-    .btn-emergency {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: var(--sp-3) var(--sp-5);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--negative);
-      color: #fff;
-      font-family: var(--font-body);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: opacity 150ms ease;
-    }
-    .btn-emergency:hover { opacity: 0.85; }
+      .btn-emergency {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-5);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--negative);
+        color: #fff;
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity 150ms ease;
+      }
+      .btn-emergency:hover {
+        opacity: 0.85;
+      }
 
-    .btn-rereg {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: var(--sp-3) var(--sp-5);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--positive);
-      color: #111218;
-      font-family: var(--font-body);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: opacity 150ms ease;
-    }
-    .btn-rereg:hover { opacity: 0.85; }
+      .btn-rereg {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-5);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--positive);
+        color: #111218;
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity 150ms ease;
+      }
+      .btn-rereg:hover {
+        opacity: 0.85;
+      }
 
-    .saved-config {
-      display: flex;
-      gap: var(--sp-5);
-      margin-top: var(--sp-3);
-      padding-top: var(--sp-3);
-      border-top: 1px solid var(--border-subtle);
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-    .config-item strong {
-      color: var(--text-body);
-    }
-    .rereg-form {
-      margin-top: var(--sp-3);
-      padding-top: var(--sp-3);
-      border-top: 1px solid var(--border-subtle);
-    }
-    .rereg-form label {
-      display: block;
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: var(--sp-2);
-    }
-    .rereg-input {
-      width: 100%;
-      padding: var(--sp-3) var(--sp-4);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      background: var(--bg-hover);
-      color: var(--text-bright);
-      font-family: var(--font-data);
-      font-size: 13px;
-      transition: border-color 150ms ease;
-    }
-    .rereg-input:focus { outline: none; border-color: var(--accent); }
-    .rereg-input::placeholder { color: var(--text-disabled); }
-    .rereg-form .saved-config { margin-top: var(--sp-3); }
+      .saved-config {
+        display: flex;
+        gap: var(--sp-5);
+        margin-top: var(--sp-3);
+        padding-top: var(--sp-3);
+        border-top: 1px solid var(--border-subtle);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .config-item strong {
+        color: var(--text-body);
+      }
+      .rereg-form {
+        margin-top: var(--sp-3);
+        padding-top: var(--sp-3);
+        border-top: 1px solid var(--border-subtle);
+      }
+      .rereg-form label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: var(--sp-2);
+      }
+      .rereg-input {
+        width: 100%;
+        padding: var(--sp-3) var(--sp-4);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--bg-hover);
+        color: var(--text-bright);
+        font-family: var(--font-data);
+        font-size: 13px;
+        transition: border-color 150ms ease;
+      }
+      .rereg-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .rereg-input::placeholder {
+        color: var(--text-disabled);
+      }
+      .rereg-form .saved-config {
+        margin-top: var(--sp-3);
+      }
 
-    .keys-grid {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-4);
-      margin-bottom: var(--sp-6);
-    }
+      .keys-grid {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-4);
+        margin-bottom: var(--sp-6);
+      }
 
-    .key-card {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-5);
-    }
+      .key-card {
+        background: var(--bg-raised);
+        border-radius: var(--radius-md);
+        padding: var(--sp-5);
+      }
 
-    .key-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--sp-3);
-    }
-    .key-header h3 { font-size: 14px; }
+      .key-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--sp-3);
+      }
+      .key-header h3 {
+        font-size: 14px;
+      }
 
-    .key-status {
-      font-family: var(--font-data);
-      font-size: 11px;
-      font-weight: 500;
-      padding: var(--sp-1) var(--sp-2);
-      border-radius: var(--radius-full);
-    }
-    .key-status.active { background: rgba(45, 212, 168, 0.12); color: var(--positive); }
-    .key-status.standby { background: var(--accent-muted); color: var(--accent); }
-    .key-status.pending { background: rgba(245, 166, 35, 0.12); color: var(--caution); }
+      .key-status {
+        font-family: var(--font-data);
+        font-size: 11px;
+        font-weight: 500;
+        padding: var(--sp-1) var(--sp-2);
+        border-radius: var(--radius-full);
+      }
+      .key-status.active {
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
+      }
+      .key-status.standby {
+        background: var(--accent-muted);
+        color: var(--accent);
+      }
+      .key-status.pending {
+        background: rgba(245, 166, 35, 0.12);
+        color: var(--caution);
+      }
 
-    .key-value {
-      display: block;
-      font-family: var(--font-data);
-      font-size: 13px;
-      color: var(--text-body);
-      background: var(--bg-hover);
-      padding: var(--sp-3);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--sp-3);
-      word-break: break-all;
-    }
+      .key-value {
+        display: block;
+        font-family: var(--font-data);
+        font-size: 13px;
+        color: var(--text-body);
+        background: var(--bg-hover);
+        padding: var(--sp-3);
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--sp-3);
+        word-break: break-all;
+      }
 
-    .key-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: var(--sp-4);
-    }
+      .key-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: var(--sp-4);
+      }
 
-    .key-actions {
-      display: flex;
-      gap: var(--sp-2);
-    }
+      .key-actions {
+        display: flex;
+        gap: var(--sp-2);
+      }
 
-    .section-card {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-5);
-    }
-    .section-card h3 { font-size: 14px; margin-bottom: var(--sp-2); }
-    .section-desc { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-4); }
+      .section-card {
+        background: var(--bg-raised);
+        border-radius: var(--radius-md);
+        padding: var(--sp-5);
+      }
+      .section-card h3 {
+        font-size: 14px;
+        margin-bottom: var(--sp-2);
+      }
+      .section-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: var(--sp-4);
+      }
 
-    .perm-tree { padding-left: var(--sp-2); }
-    .perm-node {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-      padding: var(--sp-2) var(--sp-3);
-      border-left: 2px solid var(--border-subtle);
-      margin-left: 0;
-    }
-    .perm-node.child { margin-left: var(--sp-5); }
-    .perm-node.grandchild { margin-left: var(--sp-10); }
-    .perm-name {
-      font-family: var(--font-data);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-bright);
-    }
-    .perm-threshold {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
+      .perm-tree {
+        padding-left: var(--sp-2);
+      }
+      .perm-node {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+        padding: var(--sp-2) var(--sp-3);
+        border-left: 2px solid var(--border-subtle);
+        margin-left: 0;
+      }
+      .perm-node-head {
+        display: flex;
+        align-items: baseline;
+        gap: var(--sp-3);
+      }
+      .perm-name {
+        font-family: var(--font-data);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-bright);
+      }
+      .perm-threshold {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .perm-auth-row {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding-left: var(--sp-3);
+        min-width: 0;
+      }
+      .perm-key,
+      .perm-acct,
+      .perm-wait {
+        font-family: var(--font-data);
+        font-size: 12px;
+        color: var(--text-default);
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      .perm-acct {
+        color: var(--accent);
+      }
+      .perm-wait {
+        color: var(--text-muted);
+      }
+      .perm-weight {
+        font-size: 11px;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .perm-copy {
+        padding: 2px var(--sp-2);
+        flex-shrink: 0;
+      }
 
-    .btn-primary {
-      padding: var(--sp-3) var(--sp-5);
-      border: none; border-radius: var(--radius-sm);
-      background: var(--accent); color: #fff;
-      font-family: var(--font-body); font-size: 13px;
-      font-weight: 500; letter-spacing: 1px;
-      text-transform: uppercase; cursor: pointer;
-      transition: background 150ms ease;
-    }
-    .btn-primary:hover { background: var(--accent-hover); }
+      .btn-primary {
+        padding: var(--sp-3) var(--sp-5);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--accent);
+        color: #fff;
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
 
-    .btn-ghost {
-      padding: var(--sp-2) var(--sp-3);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--accent);
-      font-family: var(--font-body);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 150ms ease;
-    }
-    .btn-ghost:hover { background: var(--accent-muted); }
-    .btn-danger-text { border-color: var(--negative); color: var(--negative); }
-    .btn-danger-text:hover { background: rgba(240, 68, 56, 0.1); }
+      .btn-ghost {
+        padding: var(--sp-2) var(--sp-3);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--accent);
+        font-family: var(--font-body);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+      .btn-ghost:hover {
+        background: var(--accent-muted);
+      }
+      .btn-danger-text {
+        border-color: var(--negative);
+        color: var(--negative);
+      }
+      .btn-danger-text:hover {
+        background: rgba(240, 68, 56, 0.1);
+      }
 
-    /* Finalizer keys */
-    .finkey-active {
-      margin-bottom: var(--sp-4);
-    }
-    .finkey-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: var(--sp-1);
-    }
-    .finkey-list {
-      margin-bottom: var(--sp-4);
-    }
-    .finkey-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--sp-3);
-      border-bottom: 1px solid var(--border-subtle);
-      gap: var(--sp-3);
-    }
-    .finkey-row:last-child { border-bottom: none; }
-    .finkey-row.active-row { background: rgba(45, 212, 168, 0.04); }
-    .finkey-info { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
-    .finkey-text {
-      font-family: var(--font-data);
-      font-size: 12px;
-      color: var(--text-body);
-    }
-    .finkey-badge {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 1px 6px;
-      border-radius: var(--radius-full);
-      white-space: nowrap;
-    }
-    .finkey-badge.active { background: rgba(45, 212, 168, 0.12); color: var(--positive); }
-    .finkey-badge.standby { background: var(--accent-muted); color: var(--accent); }
-    .finkey-error {
-      font-size: 12px;
-      color: var(--negative);
-      margin-top: var(--sp-3);
-    }
+      /* Finalizer keys */
+      .fin-unsupported {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sp-2);
+        padding: var(--sp-3);
+        margin-bottom: var(--sp-4);
+        border: 1px solid rgba(240, 68, 56, 0.25);
+        background: rgba(240, 68, 56, 0.05);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        color: var(--text-default);
+        line-height: 1.5;
+      }
+      .fin-unsupported svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: var(--negative);
+      }
+      .fin-unsupported code {
+        font-family: var(--font-data);
+        font-size: 11px;
+        padding: 1px 4px;
+        background: var(--bg-deep);
+        border-radius: 3px;
+      }
+      .finkey-active {
+        margin-bottom: var(--sp-4);
+      }
+      .finkey-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: var(--sp-1);
+      }
+      .finkey-list {
+        margin-bottom: var(--sp-4);
+      }
+      .finkey-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--sp-3);
+        border-bottom: 1px solid var(--border-subtle);
+        gap: var(--sp-3);
+      }
+      .finkey-row:last-child {
+        border-bottom: none;
+      }
+      .finkey-row.active-row {
+        background: rgba(45, 212, 168, 0.04);
+      }
+      .finkey-info {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        min-width: 0;
+      }
+      .finkey-text {
+        font-family: var(--font-data);
+        font-size: 12px;
+        color: var(--text-body);
+      }
+      .finkey-badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        white-space: nowrap;
+      }
+      .finkey-badge.active {
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
+      }
+      .finkey-badge.standby {
+        background: var(--accent-muted);
+        color: var(--accent);
+      }
+      .finkey-error {
+        font-size: 12px;
+        color: var(--negative);
+        margin-top: var(--sp-3);
+      }
 
-    /* Update registration form */
-    .reg-form {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-4);
-    }
-    .reg-field { display: flex; flex-direction: column; gap: var(--sp-1); }
-    .reg-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .form-input {
-      width: 100%;
-      padding: var(--sp-3) var(--sp-4);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      background: var(--bg-hover);
-      color: var(--text-bright);
-      font-family: var(--font-data);
-      font-size: 13px;
-      transition: border-color 150ms ease;
-    }
-    .form-input:focus { outline: none; border-color: var(--accent); }
-    .form-input::placeholder { color: var(--text-disabled); }
-    .reg-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; }
-    .btn-primary:disabled, .btn-ghost:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+      /* Update registration form */
+      .reg-form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-4);
+      }
+      .reg-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-1);
+      }
+      .reg-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .form-input {
+        width: 100%;
+        padding: var(--sp-3) var(--sp-4);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--bg-hover);
+        color: var(--text-bright);
+        font-family: var(--font-data);
+        font-size: 13px;
+        transition: border-color 150ms ease;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .form-input::placeholder {
+        color: var(--text-disabled);
+      }
+      .reg-actions {
+        display: flex;
+        gap: var(--sp-2);
+        justify-content: flex-end;
+      }
+      .btn-primary:disabled,
+      .btn-ghost:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-    /* Import existing finalizer key */
-    .finkey-actions {
-      display: flex;
-      gap: var(--sp-2);
-      flex-wrap: wrap;
-    }
-    .import-form {
-      margin-top: var(--sp-4);
-      padding: var(--sp-4);
-      background: var(--bg-hover);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-3);
-    }
-    .import-hint {
-      margin: 0;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-    .import-hint code {
-      font-family: var(--font-data);
-      font-size: 11px;
-      background: var(--bg-raised);
-      padding: 1px 4px;
-      border-radius: var(--radius-xs);
-    }
+      /* Import existing finalizer key */
+      .finkey-actions {
+        display: flex;
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+      }
+      .import-form {
+        margin-top: var(--sp-4);
+        padding: var(--sp-4);
+        background: var(--bg-hover);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
+      }
+      .import-hint {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .import-hint code {
+        font-family: var(--font-data);
+        font-size: 11px;
+        background: var(--bg-raised);
+        padding: 1px 4px;
+        border-radius: var(--radius-xs);
+      }
 
-    /* One-time config.ini reveal after generating a finalizer key */
-    .config-reveal {
-      margin-top: var(--sp-4);
-      padding: var(--sp-4);
-      background: rgba(245, 166, 35, 0.06);
-      border: 1px solid rgba(245, 166, 35, 0.35);
-      border-radius: var(--radius-sm);
-    }
-    .config-reveal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-2);
-    }
-    .config-reveal-header h4 {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--caution);
-      margin: 0;
-    }
-    .config-reveal .key-desc code {
-      font-family: var(--font-data);
-      font-size: 11px;
-      background: var(--bg-raised);
-      padding: 1px 4px;
-      border-radius: var(--radius-xs);
-    }
-    .config-line {
-      display: block;
-      font-family: var(--font-data);
-      font-size: 12px;
-      color: var(--text-bright);
-      background: var(--bg-base);
-      padding: var(--sp-3);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--sp-3);
-      word-break: break-all;
-      user-select: all;
-    }
-    .btn-close {
-      padding: 0 var(--sp-2);
-      line-height: 1;
-      font-size: 20px;
-      border-color: transparent;
-    }
-    .btn-close:hover { background: var(--bg-hover); }
-  `],
+      /* One-time config.ini reveal after generating a finalizer key */
+      .config-reveal {
+        margin-top: var(--sp-4);
+        padding: var(--sp-4);
+        background: rgba(245, 166, 35, 0.06);
+        border: 1px solid rgba(245, 166, 35, 0.35);
+        border-radius: var(--radius-sm);
+      }
+      .config-reveal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-2);
+      }
+      .config-reveal-header h4 {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--caution);
+        margin: 0;
+      }
+      .config-reveal .key-desc code {
+        font-family: var(--font-data);
+        font-size: 11px;
+        background: var(--bg-raised);
+        padding: 1px 4px;
+        border-radius: var(--radius-xs);
+      }
+      .config-line {
+        display: block;
+        font-family: var(--font-data);
+        font-size: 12px;
+        color: var(--text-bright);
+        background: var(--bg-base);
+        padding: var(--sp-3);
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--sp-3);
+        word-break: break-all;
+        user-select: all;
+      }
+      .btn-close {
+        padding: 0 var(--sp-2);
+        line-height: 1;
+        font-size: 20px;
+        border-color: transparent;
+      }
+      .btn-close:hover {
+        background: var(--bg-hover);
+      }
+    `,
+  ],
 })
 export class BpKeysComponent {
   isRegistered = signal(true);
@@ -692,6 +1039,11 @@ export class BpKeysComponent {
   registeredFinKeys = signal<{ id: number; key: string }[]>([]);
   activeFinKey = signal<string | null>(null);
   finKeyError = signal('');
+  // Whether the active chain's system contract exposes finalizer-key actions
+  // (i.e. it has activated Savanna). null = not yet checked. When false we gate
+  // the finalizer UI so the user gets a clear message instead of a push failure.
+  finalizersSupported = signal<boolean | null>(null);
+  private finSupportChain: string | null = null;
 
   // Update registration form
   regKey = signal('');
@@ -710,16 +1062,72 @@ export class BpKeysComponent {
   pendingPrivKey = signal<string | null>(null);
   configCopied = signal(false);
   privKeyCopied = signal(false);
-  canImport = computed(() =>
-    this.importKey().trim().startsWith('PUB_BLS')
-    && this.importPop().trim().startsWith('SIG_BLS')
+  canImport = computed(
+    () =>
+      this.importKey().trim().startsWith('PUB_BLS') &&
+      this.importPop().trim().startsWith('SIG_BLS'),
   );
   regDirty = computed(() => {
     const cfg = this.savedConfig();
     if (!cfg) return false;
-    return this.regKey() !== cfg.producer_key
-      || this.regUrl() !== cfg.url
-      || this.regLocation() !== cfg.location;
+    return (
+      this.regKey() !== cfg.producer_key ||
+      this.regUrl() !== cfg.url ||
+      this.regLocation() !== cfg.location
+    );
+  });
+
+  /**
+   * The selected account's real permission tree, derived from `get_account`
+   * (`info.permissions`). Nests permissions by their `parent` link and parses
+   * each `required_auth` into keys / account-auths / waits so the UI can show
+   * the actual public keys — not a hard-coded owner/active placeholder.
+   */
+  permTree = computed(() => {
+    const perms = this.wallet.selectedAccount()?.info?.permissions ?? [];
+    const names = new Set(perms.map((p) => p.perm_name));
+    const childrenOf = (parent: string) =>
+      perms
+        .filter((p) => p.parent === parent)
+        .sort((a, b) => a.perm_name.localeCompare(b.perm_name));
+
+    const rows: {
+      depth: number;
+      name: string;
+      threshold: number;
+      keys: { key: string; weight: number }[];
+      accounts: { actor: string; permission: string; weight: number }[];
+      waits: { wait_sec: number; weight: number }[];
+    }[] = [];
+
+    const visit = (perm: (typeof perms)[number], depth: number) => {
+      const auth = perm.required_auth ?? {};
+      rows.push({
+        depth,
+        name: perm.perm_name,
+        threshold: Number(auth.threshold ?? 1),
+        keys: (auth.keys ?? []).map((k: any) => ({ key: k.key, weight: Number(k.weight ?? 1) })),
+        accounts: (auth.accounts ?? []).map((a: any) => ({
+          actor: a.permission?.actor ?? '',
+          permission: a.permission?.permission ?? '',
+          weight: Number(a.weight ?? 1),
+        })),
+        waits: (auth.waits ?? []).map((w: any) => ({
+          wait_sec: Number(w.wait_sec ?? 0),
+          weight: Number(w.weight ?? 1),
+        })),
+      });
+      for (const child of childrenOf(perm.perm_name)) visit(child, depth + 1);
+    };
+
+    // Roots = permissions whose parent isn't itself a permission on this account
+    // (normally just `owner`, whose parent is "").
+    for (const root of perms
+      .filter((p) => !p.parent || !names.has(p.parent))
+      .sort((a, b) => a.perm_name.localeCompare(b.perm_name))) {
+      visit(root, 0);
+    }
+    return rows;
   });
 
   constructor(
@@ -730,21 +1138,48 @@ export class BpKeysComponent {
   ) {
     effect(() => {
       const acct = this.wallet.selectedAccount();
-      if (acct?.isProducer) {
+      if (!acct) return;
+      // Savanna support is a chain-level property, independent of producer status.
+      this.checkFinalizerSupport(acct.chainId);
+      if (acct.isProducer) {
         this.loadProducerInfo(acct.chainId, acct.name);
         this.loadFinalizerKeys(acct.chainId, acct.name);
       }
     });
   }
 
+  /**
+   * Check whether the chain's `eosio` system contract exposes the finalizer-key
+   * actions (`regfinkey`), i.e. it has activated Savanna. Cached per chain so we
+   * don't refetch the ABI on every account refresh. On error we leave support
+   * as unknown (null) rather than blocking, since it may be a transient hiccup.
+   */
+  private async checkFinalizerSupport(chainId: string) {
+    if (this.finSupportChain === chainId) return;
+    this.finSupportChain = chainId;
+    try {
+      const abi = await this.ipc.getAbi(chainId, 'eosio');
+      const actions = abi?.abi?.actions ?? [];
+      this.finalizersSupported.set(actions.some((a: any) => a.name === 'regfinkey'));
+    } catch {
+      this.finalizersSupported.set(null);
+      this.finSupportChain = null; // allow a retry on the next account change
+    }
+  }
+
   private async loadFinalizerKeys(chainId: string, account: string) {
     try {
       // Load registered keys from finkeys table (by finalizer name)
       const result = await this.ipc.getTableRows(chainId, {
-        code: 'eosio', table: 'finkeys', scope: 'eosio',
-        index_position: 'secondary', key_type: 'i64',
-        lower_bound: account, upper_bound: account,
-        limit: 20, json: true,
+        code: 'eosio',
+        table: 'finkeys',
+        scope: 'eosio',
+        index_position: 'secondary',
+        key_type: 'i64',
+        lower_bound: account,
+        upper_bound: account,
+        limit: 20,
+        json: true,
       });
       const keys = (result?.rows ?? []).map((r: any) => ({
         id: r.id,
@@ -756,9 +1191,13 @@ export class BpKeysComponent {
       // Field layout varies: some versions store `active_key` (BLS pubkey string),
       // others store `active_key_id` (uint64 referencing finkeys.id).
       const finResult = await this.ipc.getTableRows(chainId, {
-        code: 'eosio', table: 'finalizers', scope: 'eosio',
-        lower_bound: account, upper_bound: account,
-        limit: 1, json: true,
+        code: 'eosio',
+        table: 'finalizers',
+        scope: 'eosio',
+        lower_bound: account,
+        upper_bound: account,
+        limit: 1,
+        json: true,
       });
       const finRow = finResult?.rows?.[0];
       let active: string | null = null;
@@ -767,7 +1206,7 @@ export class BpKeysComponent {
           active = finRow.active_key;
         } else if (finRow.active_key_id != null) {
           const id = Number(finRow.active_key_id);
-          active = keys.find(k => k.id === id)?.key ?? null;
+          active = keys.find((k) => k.id === id)?.key ?? null;
         }
       }
       this.activeFinKey.set(active);
@@ -787,12 +1226,8 @@ export class BpKeysComponent {
 
     try {
       // Generate BLS key pair and PoP
-      const {
-        finalizer_key,
-        proof_of_possession,
-        finalizer_private_key,
-        config_ini_line,
-      } = await this.ipc.generateFinalizerKey(acct.chainId);
+      const { finalizer_key, proof_of_possession, finalizer_private_key, config_ini_line } =
+        await this.ipc.generateFinalizerKey(acct.chainId);
 
       // Reveal the one-time config.ini line before asking to sign.
       // Intentional: if the user cancels the tx, they still have the backup
@@ -803,14 +1238,18 @@ export class BpKeysComponent {
       this.privKeyCopied.set(false);
 
       // Push regfinkey action
-      const ok = await this.confirmAction('Register Finalizer Key', [{
-        account: 'eosio', name: 'regfinkey', authorization: this.auth(),
-        data: {
-          finalizer_name: this.me(),
-          finalizer_key,
-          proof_of_possession,
+      const ok = await this.confirmAction('Register Finalizer Key', [
+        {
+          account: 'eosio',
+          name: 'regfinkey',
+          authorization: this.auth(),
+          data: {
+            finalizer_name: this.me(),
+            finalizer_key,
+            proof_of_possession,
+          },
         },
-      }]);
+      ]);
 
       if (ok) {
         await this.loadFinalizerKeys(acct.chainId, acct.name);
@@ -823,7 +1262,7 @@ export class BpKeysComponent {
   }
 
   toggleImport() {
-    this.importOpen.update(v => !v);
+    this.importOpen.update((v) => !v);
     if (!this.importOpen()) {
       this.importKey.set('');
       this.importPop.set('');
@@ -839,14 +1278,18 @@ export class BpKeysComponent {
     this.finKeyError.set('');
 
     try {
-      const ok = await this.confirmAction('Register Finalizer Key', [{
-        account: 'eosio', name: 'regfinkey', authorization: this.auth(),
-        data: {
-          finalizer_name: this.me(),
-          finalizer_key: this.importKey().trim(),
-          proof_of_possession: this.importPop().trim(),
+      const ok = await this.confirmAction('Register Finalizer Key', [
+        {
+          account: 'eosio',
+          name: 'regfinkey',
+          authorization: this.auth(),
+          data: {
+            finalizer_name: this.me(),
+            finalizer_key: this.importKey().trim(),
+            proof_of_possession: this.importPop().trim(),
+          },
         },
-      }]);
+      ]);
 
       if (ok) {
         this.importOpen.set(false);
@@ -865,10 +1308,14 @@ export class BpKeysComponent {
     this.busy.set(true);
     this.finKeyError.set('');
     try {
-      const ok = await this.confirmAction('Activate Finalizer Key', [{
-        account: 'eosio', name: 'actfinkey', authorization: this.auth(),
-        data: { finalizer_name: this.me(), finalizer_key: key },
-      }]);
+      const ok = await this.confirmAction('Activate Finalizer Key', [
+        {
+          account: 'eosio',
+          name: 'actfinkey',
+          authorization: this.auth(),
+          data: { finalizer_name: this.me(), finalizer_key: key },
+        },
+      ]);
       if (ok) {
         const acct = this.wallet.selectedAccount();
         if (acct) await this.loadFinalizerKeys(acct.chainId, acct.name);
@@ -884,10 +1331,14 @@ export class BpKeysComponent {
     this.busy.set(true);
     this.finKeyError.set('');
     try {
-      const ok = await this.confirmAction('Delete Finalizer Key', [{
-        account: 'eosio', name: 'delfinkey', authorization: this.auth(),
-        data: { finalizer_name: this.me(), finalizer_key: key },
-      }]);
+      const ok = await this.confirmAction('Delete Finalizer Key', [
+        {
+          account: 'eosio',
+          name: 'delfinkey',
+          authorization: this.auth(),
+          data: { finalizer_name: this.me(), finalizer_key: key },
+        },
+      ]);
       if (ok) {
         const acct = this.wallet.selectedAccount();
         if (acct) await this.loadFinalizerKeys(acct.chainId, acct.name);
@@ -929,9 +1380,13 @@ export class BpKeysComponent {
         if (this.isPlaceholderKey(onChainKey)) {
           try {
             const prev = await this.ipc.storeGet<{ producer_key?: string }>(`bp_config_${account}`);
-            goodKey = prev?.producer_key && !this.isPlaceholderKey(prev.producer_key)
-              ? prev.producer_key : '';
-          } catch { goodKey = ''; }
+            goodKey =
+              prev?.producer_key && !this.isPlaceholderKey(prev.producer_key)
+                ? prev.producer_key
+                : '';
+          } catch {
+            goodKey = '';
+          }
         }
         const cfg = {
           url: row.url ?? '',
@@ -951,14 +1406,22 @@ export class BpKeysComponent {
         if (goodKey) {
           try {
             await this.ipc.storeSet(`bp_config_${account}`, cfg);
-          } catch { /* non-critical */ }
+          } catch {
+            /* non-critical */
+          }
         }
       }
-    } catch { /* offline or not a producer */ }
+    } catch {
+      /* offline or not a producer */
+    }
   }
 
-  private me(): string { return this.wallet.selectedAccount()?.name ?? ''; }
-  private auth() { return [{ actor: this.me(), permission: 'active' }]; }
+  private me(): string {
+    return this.wallet.selectedAccount()?.name ?? '';
+  }
+  private auth() {
+    return [{ actor: this.me(), permission: 'active' }];
+  }
 
   /**
    * The FIO handle this producer is registered under. Prefer the value from
@@ -995,7 +1458,12 @@ export class BpKeysComponent {
     if (!account) return false;
     const keys = await this.ipc.listPublicKeys(account.chainId);
     if (keys.length === 0) return false;
-    const result = await this.tx.confirm({ chainId: account.chainId, publicKey: keys[0], actions, title });
+    const result = await this.tx.confirm({
+      chainId: account.chainId,
+      publicKey: keys[0],
+      actions,
+      title,
+    });
     if (result) {
       await this.wallet.refreshAccount(this.wallet.selectedIndex());
       await this.loadProducerInfo(account.chainId, account.name);
@@ -1014,19 +1482,27 @@ export class BpKeysComponent {
           this.emergencyError.set(fioNoHandleMessage('unregister this producer'));
           return;
         }
-        actions = [{
-          account: 'eosio', name: 'unregprod', authorization: this.auth(),
-          data: {
-            fio_address: handle,
-            max_fee: await this.fioFee('unregister_producer'),
-            actor: this.me(),
+        actions = [
+          {
+            account: 'eosio',
+            name: 'unregprod',
+            authorization: this.auth(),
+            data: {
+              fio_address: handle,
+              max_fee: await this.fioFee('unregister_producer'),
+              actor: this.me(),
+            },
           },
-        }];
+        ];
       } else {
-        actions = [{
-          account: 'eosio', name: 'unregprod', authorization: this.auth(),
-          data: { producer: this.me() },
-        }];
+        actions = [
+          {
+            account: 'eosio',
+            name: 'unregprod',
+            authorization: this.auth(),
+            data: { producer: this.me() },
+          },
+        ];
       }
       const ok = await this.confirmAction('Unregister Producer', actions);
       if (ok) this.isRegistered.set(false);
@@ -1051,15 +1527,19 @@ export class BpKeysComponent {
     this.busy.set(true);
     this.regError.set('');
     try {
-      await this.confirmAction('Update Producer Registration', [{
-        account: 'eosio', name: 'regproducer', authorization: this.auth(),
-        data: {
-          producer: this.me(),
-          producer_key: this.regKey().trim(),
-          url: this.regUrl().trim(),
-          location: this.regLocation() | 0,
+      await this.confirmAction('Update Producer Registration', [
+        {
+          account: 'eosio',
+          name: 'regproducer',
+          authorization: this.auth(),
+          data: {
+            producer: this.me(),
+            producer_key: this.regKey().trim(),
+            url: this.regUrl().trim(),
+            location: this.regLocation() | 0,
+          },
         },
-      }]);
+      ]);
     } catch (e: any) {
       this.regError.set(e?.toString() ?? 'Failed to update registration');
     } finally {
@@ -1077,7 +1557,7 @@ export class BpKeysComponent {
     if (this.isPlaceholderKey(signingKey)) {
       this.emergencyError.set(
         'Enter a valid block signing key before re-registering. ' +
-        'The unregistered producer has no on-chain key, so it must be set manually.',
+          'The unregistered producer has no on-chain key, so it must be set manually.',
       );
       return;
     }
@@ -1092,27 +1572,35 @@ export class BpKeysComponent {
           this.emergencyError.set(fioNoHandleMessage('re-register this producer'));
           return;
         }
-        actions = [{
-          account: 'eosio', name: 'regproducer', authorization: this.auth(),
-          data: {
-            fio_address: handle,
-            fio_pub_key: signingKey,
-            url: config.url,
-            location: config.location,
-            actor: this.me(),
-            max_fee: await this.fioFee('register_producer'),
+        actions = [
+          {
+            account: 'eosio',
+            name: 'regproducer',
+            authorization: this.auth(),
+            data: {
+              fio_address: handle,
+              fio_pub_key: signingKey,
+              url: config.url,
+              location: config.location,
+              actor: this.me(),
+              max_fee: await this.fioFee('register_producer'),
+            },
           },
-        }];
+        ];
       } else {
-        actions = [{
-          account: 'eosio', name: 'regproducer', authorization: this.auth(),
-          data: {
-            producer: this.me(),
-            producer_key: signingKey,
-            url: config.url,
-            location: config.location,
+        actions = [
+          {
+            account: 'eosio',
+            name: 'regproducer',
+            authorization: this.auth(),
+            data: {
+              producer: this.me(),
+              producer_key: signingKey,
+              url: config.url,
+              location: config.location,
+            },
           },
-        }];
+        ];
       }
       const ok = await this.confirmAction('Re-register Producer', actions);
       if (ok) this.isRegistered.set(true);

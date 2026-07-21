@@ -19,7 +19,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{
+    AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
+};
 use tokio::sync::oneshot;
 
 use crate::antelope::provider::ProviderState;
@@ -107,7 +109,10 @@ pub struct SignSummary {
 #[derive(Clone)]
 pub enum SignPayload {
     /// A fully-built transaction: the exact packed bytes to sign.
-    Transaction { packed_trx: Vec<u8>, broadcast: bool },
+    Transaction {
+        packed_trx: Vec<u8>,
+        broadcast: bool,
+    },
     /// An ESR identity proof: a precomputed 32-byte digest (hex) + callback.
     Identity {
         digest_hex: String,
@@ -178,7 +183,11 @@ impl SignRegistry {
 
     /// Clone the summary for rendering in the trusted window.
     pub fn summary(&self, id: &str) -> Option<SignSummary> {
-        self.inner.lock().unwrap().get(id).map(|p| p.summary.clone())
+        self.inner
+            .lock()
+            .unwrap()
+            .get(id)
+            .map(|p| p.summary.clone())
     }
 
     /// Clone the inputs needed to execute an approval, WITHOUT removing the
@@ -235,18 +244,21 @@ fn open_sign_confirm_window(app: &AppHandle, request_id: &str) -> Result<(), Err
         let _ = win.close();
     }
 
-    let win =
-        WebviewWindowBuilder::new(app, SIGN_CONFIRM_LABEL, WebviewUrl::App("index.html".into()))
-            .title("Confirm — SimplEOS")
-            .inner_size(460.0, 680.0)
-            .min_inner_size(380.0, 480.0)
-            .resizable(false)
-            .decorations(false)
-            .center()
-            .focused(true)
-            .always_on_top(true)
-            .build()
-            .map_err(|e| Error::Signing(format!("Failed to open confirmation window: {e}")))?;
+    let win = WebviewWindowBuilder::new(
+        app,
+        SIGN_CONFIRM_LABEL,
+        WebviewUrl::App("index.html".into()),
+    )
+    .title("Confirm — SimplEOS")
+    .inner_size(460.0, 680.0)
+    .min_inner_size(380.0, 480.0)
+    .resizable(false)
+    .decorations(false)
+    .center()
+    .focused(true)
+    .always_on_top(true)
+    .build()
+    .map_err(|e| Error::Signing(format!("Failed to open confirmation window: {e}")))?;
 
     // Close = reject: if the window is destroyed before a decision, resolve the
     // request as rejected so `begin_sign` does not hang. Idempotent — if the
@@ -270,18 +282,26 @@ fn open_sign_confirm_window(app: &AppHandle, request_id: &str) -> Result<(), Err
 
 /// Return a warning string for elevated-risk actions, or `None` for ordinary ones.
 fn high_risk_warning(account: &str, name: &str, data: &serde_json::Value) -> Option<String> {
+    // On Vaulta these actions arrive on `core.vaulta` (see try_native_serialize);
+    // treat them as their eosio equivalents so the risk hints still apply.
+    let account = if account == "core.vaulta" {
+        "eosio"
+    } else {
+        account
+    };
     match (account, name) {
         ("eosio", "updateauth") => Some("Changes account permissions/keys (updateauth).".into()),
         ("eosio", "deleteauth") => Some("Removes an account permission (deleteauth).".into()),
-        ("eosio", "linkauth") => {
-            Some("Links a permission to a contract action (linkauth).".into())
-        }
+        ("eosio", "linkauth") => Some("Links a permission to a contract action (linkauth).".into()),
         ("eosio", "unlinkauth") => Some("Unlinks a permission (unlinkauth).".into()),
         ("eosio", "setcode") => Some("Deploys or changes contract code (setcode).".into()),
         ("eosio", "setabi") => Some("Changes a contract ABI (setabi).".into()),
         ("eosio", "voteproducer") => Some("Casts or changes producer votes (voteproducer).".into()),
         ("eosio", "delegatebw")
-            if data.get("transfer").and_then(|v| v.as_bool()).unwrap_or(false) =>
+            if data
+                .get("transfer")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false) =>
         {
             Some(
                 "Delegates resources AND transfers token ownership (delegatebw transfer=true)."
@@ -443,7 +463,10 @@ async fn post_esr_callback(
         )));
     }
     if let Some(obj) = payload.as_object_mut() {
-        obj.insert("sig".into(), serde_json::Value::String(signature.to_string()));
+        obj.insert(
+            "sig".into(),
+            serde_json::Value::String(signature.to_string()),
+        );
     }
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -675,9 +698,10 @@ pub async fn approve_sign(
 
     // Strict policy forces a passphrase on every signature (SEC hardening, T9).
     let strict = load_policy(&app) == ConfirmationPolicy::Strict;
-    let outcome =
-        execute_approved(&chain_id, &signer, payload, passphrase, strict, &wallet, &providers)
-            .await?;
+    let outcome = execute_approved(
+        &chain_id, &signer, payload, passphrase, strict, &wallet, &providers,
+    )
+    .await?;
 
     if let Some(pending) = registry.take(&request_id) {
         let _ = pending.responder.send(Ok(outcome));
@@ -749,7 +773,9 @@ pub async fn begin_esr_sign(
     forbid_confirm_window(&webview)?;
     // Basic hardening: the digest must be 32 bytes of hex (SEC-033 / hostile ESR).
     if digest_hex.len() != 64 || !digest_hex.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(Error::Signing("ESR signing digest must be 32-byte hex".into()));
+        return Err(Error::Signing(
+            "ESR signing digest must be 32-byte hex".into(),
+        ));
     }
 
     let request_id = registry.next_id();
@@ -869,7 +895,10 @@ impl ConfirmationPolicy {
 /// tauri-store, so a compromised renderer cannot weaken confirmation strength.
 fn policy_path(app: &AppHandle) -> Result<std::path::PathBuf, Error> {
     let dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
     })?;
     Ok(dir.join("confirm_policy"))
 }
@@ -964,7 +993,9 @@ mod tests {
 
     #[test]
     fn summary_flags_high_risk_and_unverified() {
-        use crate::antelope::transaction::{AuthDesc, BuiltAction, BuiltTransaction, DataProvenance};
+        use crate::antelope::transaction::{
+            AuthDesc, BuiltAction, BuiltTransaction, DataProvenance,
+        };
         let built = BuiltTransaction {
             packed_trx: vec![1, 2, 3],
             chain_id: "aca376f2".into(),

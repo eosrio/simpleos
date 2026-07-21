@@ -16,6 +16,15 @@ const CIRCUIT_BREAKER_THRESHOLD: u32 = 3;
 const CIRCUIT_BREAKER_COOLDOWN: Duration = Duration::from_secs(60);
 /// Maximum latency to consider an endpoint healthy (ms).
 const MAX_HEALTHY_LATENCY_MS: u64 = 1200;
+/// Maximum head-block lag (seconds) before an endpoint is considered stale.
+/// A synced Antelope node is always within a couple seconds of real time; this
+/// generous ceiling still rejects a node that has forked off / stalled (e.g. a
+/// pre-Savanna node stuck days behind) while tolerating brief production hiccups
+/// and modest client-clock skew. Staleness only DEprioritizes a node in
+/// selection — it never trips the circuit breaker — so if every endpoint looks
+/// stale (e.g. the local clock is wildly off) the wallet still degrades to using
+/// the active endpoint rather than locking up.
+const MAX_HEAD_LAG_SECS: i64 = 120;
 /// SEC-017: hard ceiling for chain JSON RPC response bodies (8 MiB).
 pub const MAX_RPC_BODY_BYTES: usize = 8 * 1024 * 1024;
 /// SEC-017: hard ceiling for get_info / bp.json / chains.json bodies (1 MiB).
@@ -30,6 +39,11 @@ pub struct EndpointState {
     pub owner: Option<String>,
     /// Last measured latency in ms, -1 = failed, 0 = not checked.
     pub latency_ms: i64,
+    /// Whether the endpoint's head block was lagging real time at last check.
+    /// A stale endpoint responds fine but is behind consensus (forked/halted),
+    /// so it is excluded from selection but never circuit-broken.
+    #[serde(default)]
+    pub stale: bool,
     /// Consecutive failure count.
     #[serde(skip)]
     pub failures: u32,
@@ -47,6 +61,7 @@ impl EndpointState {
             url: url.trim_end_matches('/').to_string(),
             owner: owner.map(|s| s.to_string()),
             latency_ms: 0,
+            stale: false,
             failures: 0,
             last_check: None,
             circuit_broken_at: None,
@@ -56,6 +71,7 @@ impl EndpointState {
     pub fn is_healthy(&self) -> bool {
         self.latency_ms > 0
             && self.latency_ms <= MAX_HEALTHY_LATENCY_MS as i64
+            && !self.stale
             && !self.is_circuit_broken()
     }
 
@@ -67,8 +83,9 @@ impl EndpointState {
         }
     }
 
-    fn record_success(&mut self, latency_ms: i64) {
+    fn record_success(&mut self, latency_ms: i64, stale: bool) {
         self.latency_ms = latency_ms;
+        self.stale = stale;
         self.failures = 0;
         self.circuit_broken_at = None;
         self.last_check = Some(Instant::now());
@@ -158,17 +175,24 @@ impl ProviderManager {
             let chain_id = chain_id.clone();
             let client = client.clone();
             handles.push(tokio::spawn(async move {
-                let result = check_endpoint_health(&client, &url, &chain_id).await;
-                (idx, result.0, result.1)
+                let (latency_ms, valid, stale) =
+                    check_endpoint_health(&client, &url, &chain_id).await;
+                (idx, latency_ms, valid, stale)
             }));
         }
 
         // Collect results
         for handle in handles {
-            if let Ok((idx, latency_ms, valid)) = handle.await {
+            if let Ok((idx, latency_ms, valid, stale)) = handle.await {
                 if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
                     if valid {
-                        ep.record_success(latency_ms);
+                        ep.record_success(latency_ms, stale);
+                        if stale {
+                            log::warn!(
+                                "RPC endpoint {} is stale (head block lagging real time) — deprioritizing",
+                                ep.url
+                            );
+                        }
                     } else {
                         ep.record_failure();
                     }
@@ -198,7 +222,8 @@ impl ProviderManager {
             if let Ok((idx, latency_ms, valid)) = handle.await {
                 if let Some(ep) = self.hyperion_endpoints.get_mut(idx) {
                     if valid {
-                        ep.record_success(latency_ms);
+                        // Hyperion sync state is already covered by /v2/health.
+                        ep.record_success(latency_ms, false);
                     } else {
                         ep.record_failure();
                     }
@@ -486,12 +511,15 @@ impl ProviderState {
 // ── Async HTTP helpers ──
 
 /// Check an RPC endpoint's health by calling get_info and verifying chain_id.
-/// Returns (latency_ms, is_valid).
+/// Returns (latency_ms, is_valid, is_stale). A stale endpoint (head block
+/// lagging real time beyond `MAX_HEAD_LAG_SECS`) is still `valid` — it responds
+/// correctly on the right chain — but flagged so selection deprioritizes it
+/// without ever circuit-breaking it.
 async fn check_endpoint_health(
     client: &reqwest::Client,
     url: &str,
     expected_chain_id: &str,
-) -> (i64, bool) {
+) -> (i64, bool, bool) {
     let start = Instant::now();
     let full_url = format!("{}/v1/chain/get_info", url.trim_end_matches('/'));
 
@@ -508,12 +536,13 @@ async fn check_endpoint_health(
             // SEC-017: cap the get_info body before parsing.
             let parsed = match read_body_capped(response, MAX_INFO_BODY_BYTES).await {
                 Ok(bytes) => serde_json::from_slice::<ChainInfo>(&bytes),
-                Err(_) => return (-1, false),
+                Err(_) => return (-1, false, false),
             };
             match parsed {
                 Ok(info) => {
                     if info.chain_id == expected_chain_id {
-                        (latency_ms, true)
+                        let stale = is_head_stale(&info.head_block_time);
+                        (latency_ms, true, stale)
                     } else {
                         log::warn!(
                             "{} serves chain {} (expected {})",
@@ -521,14 +550,30 @@ async fn check_endpoint_health(
                             info.chain_id,
                             expected_chain_id
                         );
-                        (-1, false)
+                        (-1, false, false)
                     }
                 }
-                Err(_) => (-1, false),
+                Err(_) => (-1, false, false),
             }
         }
-        Err(_) => (-1, false),
+        Err(_) => (-1, false, false),
     }
+}
+
+/// Whether an endpoint's `head_block_time` lags the local clock beyond the
+/// staleness ceiling. A node ahead of the local clock (negative lag, e.g. minor
+/// clock skew) is never treated as stale. Unparseable times are treated as
+/// non-stale so a format quirk can't wrongly sideline a working endpoint.
+fn is_head_stale(head_block_time: &str) -> bool {
+    let head_secs = match crate::antelope::transaction::parse_block_time(head_block_time) {
+        Ok(secs) => secs as i64,
+        Err(_) => return false,
+    };
+    let now_secs = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(d) => d.as_secs() as i64,
+        Err(_) => return false,
+    };
+    now_secs - head_secs > MAX_HEAD_LAG_SECS
 }
 
 /// Check a Hyperion endpoint's health by calling /v2/health.
@@ -705,7 +750,7 @@ mod tests {
         ep.record_failure();
         assert!(ep.is_circuit_broken());
 
-        ep.record_success(50);
+        ep.record_success(50, false);
         assert!(!ep.is_circuit_broken());
         assert_eq!(ep.failures, 0);
         assert_eq!(ep.latency_ms, 50);
@@ -716,11 +761,38 @@ mod tests {
         let mut ep = EndpointState::new("https://example.com", Some("Test"));
         assert!(!ep.is_healthy());
 
-        ep.record_success(150);
+        ep.record_success(150, false);
         assert!(ep.is_healthy());
 
-        ep.record_success(1500);
+        ep.record_success(1500, false);
         assert!(!ep.is_healthy());
+    }
+
+    #[test]
+    fn stale_endpoint_is_unhealthy_but_not_circuit_broken() {
+        let mut ep = EndpointState::new("https://stale.example.com", None);
+        // Fast latency but flagged stale (head lagging real time).
+        ep.record_success(50, true);
+        assert!(!ep.is_healthy(), "stale endpoint must not be selectable");
+        assert!(
+            !ep.is_circuit_broken(),
+            "staleness must never trip the circuit breaker"
+        );
+        assert_eq!(ep.failures, 0, "staleness must not count as a failure");
+
+        // Once it catches up, it becomes healthy again.
+        ep.record_success(50, false);
+        assert!(ep.is_healthy());
+    }
+
+    #[test]
+    fn head_staleness_thresholds() {
+        // A far-past head time is stale; a future one (clock skew) is not.
+        // Stay within the u32-seconds range parse_block_time supports (<~2106).
+        assert!(is_head_stale("2000-01-01T00:00:00.000"));
+        assert!(!is_head_stale("2100-01-01T00:00:00.000"));
+        // Garbage is treated as non-stale (never sideline on a parse quirk).
+        assert!(!is_head_stale("not-a-time"));
     }
 
     #[test]

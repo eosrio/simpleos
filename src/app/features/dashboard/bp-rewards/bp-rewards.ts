@@ -19,7 +19,20 @@ interface ClaimAction {
   template: `
     <div class="bp-rewards-view">
       <div class="bp-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+          />
+        </svg>
         <span>Block Producer</span>
       </div>
       <h2>Rewards Analytics</h2>
@@ -76,7 +89,9 @@ interface ClaimAction {
       <div class="section-card">
         <div class="section-header">
           <h3>Claim History</h3>
-          <button class="btn-primary" (click)="onClaimRewards()" [disabled]="busy()">CLAIM REWARDS</button>
+          <button class="btn-primary" (click)="onClaimRewards()" [disabled]="busy()">
+            CLAIM REWARDS
+          </button>
         </div>
         @if (claimError()) {
           <p class="loading-text" style="color: var(--danger, #ff6b6b)">{{ claimError() }}</p>
@@ -99,7 +114,9 @@ interface ClaimAction {
                 <span>{{ formatDate(claim.timestamp) }}</span>
                 <span class="data positive">{{ formatClaimAmount(claim) }}</span>
                 <span class="data usd-value">{{ formatClaimUsd(claim) }}</span>
-                <span class="tx-link">{{ claim.trx_id.slice(0, 8) }}...{{ claim.trx_id.slice(-4) }}</span>
+                <span class="tx-link"
+                  >{{ claim.trx_id.slice(0, 8) }}...{{ claim.trx_id.slice(-4) }}</span
+                >
               </div>
             }
           </div>
@@ -107,98 +124,151 @@ interface ClaimAction {
       </div>
     </div>
   `,
-  styles: [`
-    .bp-rewards-view { max-width: 800px; }
+  styles: [
+    `
+      .bp-rewards-view {
+        max-width: 800px;
+      }
 
-    .bp-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--accent-muted);
-      color: var(--accent);
-      border-radius: var(--radius-full);
-      font-size: 12px;
-      font-weight: 500;
-      margin-bottom: var(--sp-3);
-    }
+      .bp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-1) var(--sp-3);
+        background: var(--accent-muted);
+        color: var(--accent);
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: var(--sp-3);
+      }
 
-    h2 { font-size: 24px; margin-bottom: var(--sp-6); }
+      h2 {
+        font-size: 24px;
+        margin-bottom: var(--sp-6);
+      }
 
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--sp-4);
-      margin-bottom: var(--sp-6);
-    }
-    .stat-card {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-4);
-    }
-    .stat-label {
-      display: block; font-size: 11px; font-weight: 500;
-      letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: var(--sp-1);
-    }
-    .stat-value {
-      font-family: var(--font-data); font-size: 18px; font-weight: 600; color: var(--text-bright);
-    }
-    .stat-value.positive { color: var(--positive); }
-    .stat-usd {
-      display: block; font-size: 12px; font-family: var(--font-data);
-      color: var(--text-muted); margin-top: 2px;
-    }
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--sp-4);
+        margin-bottom: var(--sp-6);
+      }
+      .stat-card {
+        background: var(--bg-raised);
+        border-radius: var(--radius-md);
+        padding: var(--sp-4);
+      }
+      .stat-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        margin-bottom: var(--sp-1);
+      }
+      .stat-value {
+        font-family: var(--font-data);
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-bright);
+      }
+      .stat-value.positive {
+        color: var(--positive);
+      }
+      .stat-usd {
+        display: block;
+        font-size: 12px;
+        font-family: var(--font-data);
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
 
-    .chart-container {
-      width: 100%;
-      height: 220px;
-    }
+      .chart-container {
+        width: 100%;
+        height: 220px;
+      }
 
-    .section-card {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-5);
-    }
-    .section-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: var(--sp-5);
-    }
-    .section-header h3 { font-size: 15px; }
+      .section-card {
+        background: var(--bg-raised);
+        border-radius: var(--radius-md);
+        padding: var(--sp-5);
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--sp-5);
+      }
+      .section-header h3 {
+        font-size: 15px;
+      }
 
-    .history-table { font-size: 13px; }
-    .table-header, .table-row {
-      display: grid;
-      grid-template-columns: 1.2fr 1.2fr 0.9fr 1fr;
-      padding: var(--sp-3) var(--sp-2);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-    .table-header {
-      font-size: 11px; font-weight: 500; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .table-row { color: var(--text-body); }
-    .table-row:last-child { border-bottom: none; }
-    .table-row:hover { background: var(--bg-hover); }
-    .data { font-family: var(--font-data); }
-    .positive { color: var(--positive); }
-    .usd-value { color: var(--text-muted); font-size: 12px; }
-    .tx-link {
-      font-family: var(--font-data); color: var(--accent); cursor: pointer;
-      font-size: 12px;
-    }
-    .tx-link:hover { text-decoration: underline; }
+      .history-table {
+        font-size: 13px;
+      }
+      .table-header,
+      .table-row {
+        display: grid;
+        grid-template-columns: 1.2fr 1.2fr 0.9fr 1fr;
+        padding: var(--sp-3) var(--sp-2);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .table-header {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .table-row {
+        color: var(--text-body);
+      }
+      .table-row:last-child {
+        border-bottom: none;
+      }
+      .table-row:hover {
+        background: var(--bg-hover);
+      }
+      .data {
+        font-family: var(--font-data);
+      }
+      .positive {
+        color: var(--positive);
+      }
+      .usd-value {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      .tx-link {
+        font-family: var(--font-data);
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .tx-link:hover {
+        text-decoration: underline;
+      }
 
-    .btn-primary {
-      padding: var(--sp-2) var(--sp-4);
-      border: none; border-radius: var(--radius-sm);
-      background: var(--accent); color: #fff;
-      font-family: var(--font-body); font-size: 12px;
-      font-weight: 500; letter-spacing: 1px;
-      text-transform: uppercase; cursor: pointer;
-      transition: background 150ms ease;
-    }
-    .btn-primary:hover { background: var(--accent-hover); }
-  `],
+      .btn-primary {
+        padding: var(--sp-2) var(--sp-4);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--accent);
+        color: #fff;
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+    `,
+  ],
 })
 export class BpRewardsComponent implements OnDestroy {
   busy = signal(false);
@@ -276,7 +346,7 @@ export class BpRewardsComponent implements OnDestroy {
   }
 
   private getSymbol(history: ClaimAction[]): string {
-    const first = history.find(h => h.amount);
+    const first = history.find((h) => h.amount);
     if (!first) return '';
     const match = first.amount.match(/\s*([A-Za-z]+)$/);
     return match ? match[1] : '';
@@ -284,12 +354,12 @@ export class BpRewardsComponent implements OnDestroy {
 
   private computeStats(history: ClaimAction[]) {
     const symbol = this.getSymbol(history);
-    const hasAmounts = history.some(h => h.amount);
+    const hasAmounts = history.some((h) => h.amount);
 
     if (!hasAmounts) {
       // Count-based stats (no token amounts available)
       const now = new Date();
-      const thisMonth = history.filter(h => {
+      const thisMonth = history.filter((h) => {
         const d = new Date(h.timestamp);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       });
@@ -297,8 +367,10 @@ export class BpRewardsComponent implements OnDestroy {
       this.monthlyTotalUsd.set('');
 
       const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      this.lastMonthLabel.set(prevMonth.toLocaleDateString('en-US', { month: 'short' }).toUpperCase());
-      const lastMonth = history.filter(h => {
+      this.lastMonthLabel.set(
+        prevMonth.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+      );
+      const lastMonth = history.filter((h) => {
         const d = new Date(h.timestamp);
         return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
       });
@@ -306,7 +378,7 @@ export class BpRewardsComponent implements OnDestroy {
       this.lastMonthTotalUsd.set('');
 
       const thirtyDaysAgo = Date.now() - 30 * 86400_000;
-      const recent = history.filter(h => new Date(h.timestamp).getTime() >= thirtyDaysAgo);
+      const recent = history.filter((h) => new Date(h.timestamp).getTime() >= thirtyDaysAgo);
       const avg = recent.length > 0 ? (recent.length / 30).toFixed(1) : '0';
       this.dailyAvg.set(`${avg} claims/d`);
       this.dailyAvgUsd.set('');
@@ -322,13 +394,17 @@ export class BpRewardsComponent implements OnDestroy {
         monthSum += this.parseAmount(h.amount);
       }
     }
-    this.monthlyTotal.set(monthSum > 0 ? `${this.formatNumber(monthSum)} ${symbol}` : `0 ${symbol}`);
+    this.monthlyTotal.set(
+      monthSum > 0 ? `${this.formatNumber(monthSum)} ${symbol}` : `0 ${symbol}`,
+    );
     const monthUsd = this.priceService.toUsd(`${monthSum} ${symbol}`);
     this.monthlyTotalUsd.set(monthUsd !== null ? this.priceService.formatUsd(monthUsd) : '');
 
     // Last full month
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    this.lastMonthLabel.set(prevMonth.toLocaleDateString('en-US', { month: 'short' }).toUpperCase());
+    this.lastMonthLabel.set(
+      prevMonth.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+    );
     let lastMonthSum = 0;
     for (const h of history) {
       const d = new Date(h.timestamp);
@@ -336,9 +412,13 @@ export class BpRewardsComponent implements OnDestroy {
         lastMonthSum += this.parseAmount(h.amount);
       }
     }
-    this.lastMonthTotal.set(lastMonthSum > 0 ? `${this.formatNumber(lastMonthSum)} ${symbol}` : `0 ${symbol}`);
+    this.lastMonthTotal.set(
+      lastMonthSum > 0 ? `${this.formatNumber(lastMonthSum)} ${symbol}` : `0 ${symbol}`,
+    );
     const lastMonthUsd = this.priceService.toUsd(`${lastMonthSum} ${symbol}`);
-    this.lastMonthTotalUsd.set(lastMonthUsd !== null ? this.priceService.formatUsd(lastMonthUsd) : '');
+    this.lastMonthTotalUsd.set(
+      lastMonthUsd !== null ? this.priceService.formatUsd(lastMonthUsd) : '',
+    );
 
     const thirtyDaysAgo = Date.now() - 30 * 86400_000;
     let sum30 = 0;
@@ -360,16 +440,23 @@ export class BpRewardsComponent implements OnDestroy {
   }
 
   private updateChart(history: ClaimAction[]) {
-    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6ee7b7';
-    const mutedColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-subtle').trim() || 'rgba(255,255,255,0.1)';
+    const accentColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6ee7b7';
+    const mutedColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
+    const borderColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--border-subtle').trim() ||
+      'rgba(255,255,255,0.1)';
 
     const symbol = this.getSymbol(history);
-    const hasAmounts = history.some(h => h.amount);
+    const hasAmounts = history.some((h) => h.amount);
 
     const aggregated = new Map<string, number>();
     for (const h of [...history].reverse()) {
-      const dStr = new Date(h.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const dStr = new Date(h.timestamp).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
       const val = hasAmounts ? this.parseAmount(h.amount) : 1;
       aggregated.set(dStr, (aggregated.get(dStr) || 0) + val);
     }
@@ -394,7 +481,12 @@ export class BpRewardsComponent implements OnDestroy {
       xAxis: {
         type: 'category',
         data: dates,
-        axisLabel: { color: mutedColor, fontSize: 10, fontFamily: 'var(--font-body)', interval: Math.max(0, Math.floor(dates.length / 10) - 1) },
+        axisLabel: {
+          color: mutedColor,
+          fontSize: 10,
+          fontFamily: 'var(--font-body)',
+          interval: Math.max(0, Math.floor(dates.length / 10) - 1),
+        },
         axisLine: { lineStyle: { color: borderColor } },
         axisTick: { show: false },
       },
@@ -402,25 +494,29 @@ export class BpRewardsComponent implements OnDestroy {
         type: 'value',
         splitLine: { lineStyle: { color: borderColor, type: 'dashed' } },
         axisLabel: {
-          color: mutedColor, fontSize: 10, fontFamily: 'var(--font-data)',
-          formatter: (v: number) => hasAmounts ? this.formatNumber(v) : String(v),
+          color: mutedColor,
+          fontSize: 10,
+          fontFamily: 'var(--font-data)',
+          formatter: (v: number) => (hasAmounts ? this.formatNumber(v) : String(v)),
         },
       },
-      series: [{
-        data: values,
-        type: 'bar',
-        barMaxWidth: 18,
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: accentColor },
-            { offset: 1, color: accentColor + '44' },
-          ]),
-          borderRadius: [3, 3, 0, 0],
+      series: [
+        {
+          data: values,
+          type: 'bar',
+          barMaxWidth: 18,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: accentColor },
+              { offset: 1, color: accentColor + '44' },
+            ]),
+            borderRadius: [3, 3, 0, 0],
+          },
+          emphasis: {
+            itemStyle: { color: accentColor },
+          },
         },
-        emphasis: {
-          itemStyle: { color: accentColor },
-        },
-      }],
+      ],
     };
     this.chartInstance!.setOption(option, true);
   }
@@ -441,7 +537,9 @@ export class BpRewardsComponent implements OnDestroy {
           this.lastClaimTime.set('Never');
         }
       }
-    } catch { /* offline */ }
+    } catch {
+      /* offline */
+    }
   }
 
   private async loadClaimHistory(chainId: string, account: string) {
@@ -453,10 +551,13 @@ export class BpRewardsComponent implements OnDestroy {
 
       if (isFio) {
         // FIO: the reward amount is in transfer actions from fio.treasury
-        const result = await this.ipc.getActionsHistory(chainId, account, 100, 0, { actName: 'transfer', after: after90d });
+        const result = await this.ipc.getActionsHistory(chainId, account, 100, 0, {
+          actName: 'transfer',
+          after: after90d,
+        });
         const raw: any[] = result?.actions ?? [];
-        const treasury = raw.filter((a: any) =>
-          a.act?.data?.from === 'fio.treasury' && a.act?.data?.to === account
+        const treasury = raw.filter(
+          (a: any) => a.act?.data?.from === 'fio.treasury' && a.act?.data?.to === account,
         );
         const claims = treasury.map((a: any) => ({
           timestamp: a['@timestamp'] ?? '',
@@ -468,7 +569,10 @@ export class BpRewardsComponent implements OnDestroy {
         this.computeStats(claims);
       } else {
         // EOS/Vaulta: fetch transfer actions where eosio.bpay or eosio.vpay sent to this account
-        const result = await this.ipc.getActionsHistory(chainId, account, 100, 0, { actName: 'transfer', after: after90d });
+        const result = await this.ipc.getActionsHistory(chainId, account, 100, 0, {
+          actName: 'transfer',
+          after: after90d,
+        });
         const raw: any[] = result?.actions ?? [];
         const bpPayouts = raw.filter((a: any) => {
           const from = a.act?.data?.from;
@@ -500,7 +604,10 @@ export class BpRewardsComponent implements OnDestroy {
           this.computeStats(claims);
         } else {
           // Fallback: no transfer payouts found, show claimrewards as count-only
-          const fallback = await this.ipc.getActionsHistory(chainId, account, 100, 0, { actName: 'claimrewards', after: after90d });
+          const fallback = await this.ipc.getActionsHistory(chainId, account, 100, 0, {
+            actName: 'claimrewards',
+            after: after90d,
+          });
           const fallbackRaw: any[] = fallback?.actions ?? [];
           const claims = fallbackRaw.map((a: any) => ({
             timestamp: a['@timestamp'] ?? '',
@@ -562,21 +669,29 @@ export class BpRewardsComponent implements OnDestroy {
           this.claimError.set(fioNoHandleMessage('claim BP rewards'));
           return;
         }
-        actions = [{
-          account: 'fio.treasury', name: 'bpclaim',
-          authorization: [{ actor: account.name, permission: 'active' }],
-          data: { fio_address: handle, actor: account.name },
-        }];
+        actions = [
+          {
+            account: 'fio.treasury',
+            name: 'bpclaim',
+            authorization: [{ actor: account.name, permission: 'active' }],
+            data: { fio_address: handle, actor: account.name },
+          },
+        ];
       } else {
-        actions = [{
-          account: 'eosio', name: 'claimrewards',
-          authorization: [{ actor: account.name, permission: 'active' }],
-          data: { owner: account.name },
-        }];
+        actions = [
+          {
+            account: this.wallet.systemAccount('claimrewards'),
+            name: 'claimrewards',
+            authorization: [{ actor: account.name, permission: 'active' }],
+            data: { owner: account.name },
+          },
+        ];
       }
 
       const result = await this.tx.confirm({
-        chainId: account.chainId, publicKey: keys[0], actions,
+        chainId: account.chainId,
+        publicKey: keys[0],
+        actions,
         title: 'Claim Rewards',
       });
       if (result) {
@@ -593,7 +708,11 @@ export class BpRewardsComponent implements OnDestroy {
 
   formatDate(iso: string): string {
     if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 
   formatClaimAmount(claim: ClaimAction): string {

@@ -361,6 +361,17 @@ fn try_native_serialize(
     name: &str,
     json: &serde_json::Value,
 ) -> Result<Option<String>, Error> {
+    // Vaulta's `core.vaulta` wraps the eosio system actions (claimrewards,
+    // voteproducer, buyram*, delegatebw, rex, powerup, …) with identical
+    // action-data layouts, so encode their data with the same trusted built-in
+    // serializers as eosio. This keeps them on the Native/WYSIWYS path instead
+    // of falling back to a node-fetched ABI. Only the action's target account
+    // differs, and that is carried in the transaction envelope, not the data.
+    let account = if account == "core.vaulta" {
+        "eosio"
+    } else {
+        account
+    };
     match (account, name) {
         // All standard Antelope token contracts use the same transfer struct:
         // (name from, name to, asset quantity, string memo). Native-serialize for
@@ -486,7 +497,7 @@ fn json_str<'a>(json: &'a serde_json::Value, field: &str) -> Result<&'a str, Err
 }
 
 /// Parse an Antelope block time string ("2024-01-01T00:00:00.000") to Unix timestamp.
-fn parse_block_time(time_str: &str) -> Result<u32, Error> {
+pub(crate) fn parse_block_time(time_str: &str) -> Result<u32, Error> {
     // Format: "YYYY-MM-DDThh:mm:ss" or "YYYY-MM-DDThh:mm:ss.sss"
     let clean = time_str.split('.').next().unwrap_or(time_str);
     let parts: Vec<&str> = clean.split('T').collect();
@@ -585,5 +596,34 @@ mod tests {
         let json = serde_json::json!({"key": "value"});
         let result = try_native_serialize("customcontract", "customaction", &json).unwrap();
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn vaulta_core_actions_serialize_like_eosio() {
+        // After the EOS→Vaulta rebrand these arrive on `core.vaulta`; they must
+        // produce byte-identical data to the eosio equivalents (same layouts).
+        let cases = [
+            serde_json::json!({ "owner": "alice" }), // claimrewards
+        ];
+        let names = ["claimrewards"];
+        for (json, name) in cases.iter().zip(names) {
+            let via_eosio = try_native_serialize("eosio", name, json).unwrap();
+            let via_vaulta = try_native_serialize("core.vaulta", name, json).unwrap();
+            assert!(
+                via_vaulta.is_some(),
+                "{name} should serialize natively on core.vaulta"
+            );
+            assert_eq!(
+                via_eosio, via_vaulta,
+                "{name} data must match eosio encoding"
+            );
+        }
+
+        // A richer action: voteproducer.
+        let vp = serde_json::json!({ "voter": "alice", "proxy": "", "producers": ["bp1", "bp2"] });
+        assert_eq!(
+            try_native_serialize("eosio", "voteproducer", &vp).unwrap(),
+            try_native_serialize("core.vaulta", "voteproducer", &vp).unwrap(),
+        );
     }
 }

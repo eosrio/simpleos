@@ -92,6 +92,13 @@ export interface ChainConfig {
   precision: number;
   icon?: string;
   token_contract: string;
+  /**
+   * System-contract account for core economic actions (claimrewards,
+   * voteproducer, buyram, delegatebw, rex, powerup, …). "eosio" on every chain
+   * except Vaulta, where those actions must be called from "core.vaulta".
+   * Defaults to "eosio" when absent.
+   */
+  system_contract?: string;
   extra_tokens: TokenConfig[];
   endpoints: { url: string; owner?: string }[];
   hyperion_apis: string[];
@@ -229,7 +236,6 @@ export interface SignSummary {
 
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
-
   // ── Wallet ──
 
   async hasWallet(): Promise<boolean> {
@@ -359,7 +365,12 @@ export class TauriIpcService {
     return invoke<AccountInfo>('get_account', { chainId, accountName });
   }
 
-  async getBalances(chainId: string, account: string, code: string, symbol: string): Promise<string[]> {
+  async getBalances(
+    chainId: string,
+    account: string,
+    code: string,
+    symbol: string,
+  ): Promise<string[]> {
     return invoke<string[]>('get_balances', { chainId, account, code, symbol });
   }
 
@@ -379,16 +390,29 @@ export class TauriIpcService {
     return invoke<KeyAccountsResult>('lookup_key_accounts', { chainId, publicKey });
   }
 
-  async getMsigInbox(chainId: string, account: string, limit = 50): Promise<{
+  async getMsigInbox(
+    chainId: string,
+    account: string,
+    limit = 50,
+  ): Promise<{
     source: 'hyperion' | 'scan' | 'none';
     proposals: any[];
   }> {
     return invoke('get_msig_inbox', { chainId, account, limit });
   }
 
-  async getMsigProposalDetails(chainId: string, proposer: string, proposalName: string): Promise<{
+  async getMsigProposalDetails(
+    chainId: string,
+    proposer: string,
+    proposalName: string,
+  ): Promise<{
     expiration: number;
-    actions: { account: string; name: string; authorization: { actor: string; permission: string }[]; data: any }[];
+    actions: {
+      account: string;
+      name: string;
+      authorization: { actor: string; permission: string }[];
+      data: any;
+    }[];
     requested_approvals: { actor: string; permission: string; time?: string }[];
     provided_approvals: { actor: string; permission: string; time?: string }[];
   }> {
@@ -396,7 +420,11 @@ export class TauriIpcService {
   }
 
   /** Check current on-chain status of a known set of proposals. Fast — just reads approvals2. */
-  async refreshMsigStatus(chainId: string, account: string, keys: { proposer: string; proposal_name: string }[]): Promise<{
+  async refreshMsigStatus(
+    chainId: string,
+    account: string,
+    keys: { proposer: string; proposal_name: string }[],
+  ): Promise<{
     active: any[];
     dead: { proposer: string; proposal_name: string }[];
   }> {
@@ -404,16 +432,29 @@ export class TauriIpcService {
   }
 
   /** Full scope-walk of eosio.msig::proposal. Emits `msig-scan-progress` and `msig-scan-proposal` events during the walk. */
-  async scanMsigScopesStream(chainId: string, account: string, maxScopes?: number): Promise<{
+  async scanMsigScopesStream(
+    chainId: string,
+    account: string,
+    maxScopes?: number,
+  ): Promise<{
     proposals: any[];
     scanned: number;
   }> {
     return invoke('scan_msig_scopes_stream', { chainId, account, maxScopes });
   }
 
-  async getActionsHistory(chainId: string, account: string, limit: number, skip: number, filters?: { actName?: string; after?: string; before?: string }): Promise<any> {
+  async getActionsHistory(
+    chainId: string,
+    account: string,
+    limit: number,
+    skip: number,
+    filters?: { actName?: string; after?: string; before?: string },
+  ): Promise<any> {
     return invoke<any>('get_actions_history', {
-      chainId, account, limit, skip,
+      chainId,
+      account,
+      limit,
+      skip,
       actName: filters?.actName ?? null,
       after: filters?.after ?? null,
       before: filters?.before ?? null,
@@ -539,7 +580,13 @@ export class TauriIpcService {
     return invoke<string[]>('ledger_list_devices');
   }
 
-  async ledgerGetAppConfig(): Promise<{ major: number; minor: number; patch: number; allow_unknown: boolean; verbose: boolean }> {
+  async ledgerGetAppConfig(): Promise<{
+    major: number;
+    minor: number;
+    patch: number;
+    allow_unknown: boolean;
+    verbose: boolean;
+  }> {
     return invoke('ledger_get_app_config');
   }
 
@@ -547,16 +594,30 @@ export class TauriIpcService {
     return invoke<string>('ledger_get_public_key', { account, index, confirm });
   }
 
-  async ledgerDiscoverKeys(maxIndex: number): Promise<{ path: string; public_key: string; index: number }[]> {
+  async ledgerDiscoverKeys(
+    maxIndex: number,
+  ): Promise<{ path: string; public_key: string; index: number }[]> {
     return invoke('ledger_discover_keys', { maxIndex });
   }
 
-  async ledgerSignAndPush(chainId: string, accountIndex: number, actions: any[]): Promise<{ transaction_id: string }> {
+  async ledgerSignAndPush(
+    chainId: string,
+    accountIndex: number,
+    actions: any[],
+  ): Promise<{ transaction_id: string }> {
     return invoke('ledger_sign_and_push', { chainId, accountIndex, actions });
   }
 
-  async ledgerSignTransaction(chainId: string, accountIndex: number, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('ledger_sign_transaction', { chainId, accountIndex, actions });
+  async ledgerSignTransaction(
+    chainId: string,
+    accountIndex: number,
+    actions: any[],
+  ): Promise<SignedTransactionResult> {
+    return invoke<SignedTransactionResult>('ledger_sign_transaction', {
+      chainId,
+      accountIndex,
+      actions,
+    });
   }
 
   /** Start background polling for Ledger device connect/disconnect events. */
@@ -593,8 +654,14 @@ export class TauriIpcService {
     return invoke<string[]>('list_finalizer_keys', { chainId });
   }
 
-  async getFinalizerPop(chainId: string, finalizerKey: string): Promise<{ finalizer_key: string; proof_of_possession: string }> {
-    return invoke<{ finalizer_key: string; proof_of_possession: string }>('get_finalizer_pop', { chainId, finalizerKey });
+  async getFinalizerPop(
+    chainId: string,
+    finalizerKey: string,
+  ): Promise<{ finalizer_key: string; proof_of_possession: string }> {
+    return invoke<{ finalizer_key: string; proof_of_possession: string }>('get_finalizer_pop', {
+      chainId,
+      finalizerKey,
+    });
   }
 
   // ── FIO ──
@@ -725,12 +792,21 @@ export class TauriIpcService {
     return invoke<void>('dapp_reject_signing', { requestId, reason });
   }
 
-  async onDappSigningRequest(callback: (request: { id: string; actions: any[]; chainId: string | null; origin: string }) => void): Promise<UnlistenFn> {
+  async onDappSigningRequest(
+    callback: (request: {
+      id: string;
+      actions: any[];
+      chainId: string | null;
+      origin: string;
+    }) => void,
+  ): Promise<UnlistenFn> {
     return listen<string>('dapp-signing-request', (event) => {
       try {
         const parsed = JSON.parse(event.payload);
         callback(parsed);
-      } catch { /* ignore malformed */ }
+      } catch {
+        /* ignore malformed */
+      }
     });
   }
 
