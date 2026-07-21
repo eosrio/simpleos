@@ -40,7 +40,7 @@ pub fn encrypt_with_key(
     let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
-    let nonce_bytes: [u8; NONCE_LEN] = rand::random();
+    let nonce_bytes: [u8; NONCE_LEN] = crate::rng::secure_array();
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher

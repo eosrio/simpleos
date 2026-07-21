@@ -5,6 +5,7 @@ pub mod error;
 pub mod keystore;
 #[cfg(feature = "ledger")]
 pub mod ledger;
+pub mod rng;
 pub mod tray;
 pub mod util;
 
@@ -55,6 +56,10 @@ fn probe_os_keyring() -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Fail closed before anything can generate a key: verify the OS CSPRNG is
+    // producing distinct, non-trivial output on this platform.
+    rng::self_test();
+
     let mut all_chains = antelope::chain_config::default_chains();
     all_chains.extend(antelope::chain_config::default_testnets());
     let chain_ids: Vec<String> = all_chains.iter().map(|c| c.id.clone()).collect();

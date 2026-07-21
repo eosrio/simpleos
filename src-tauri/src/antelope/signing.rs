@@ -17,8 +17,10 @@ const CANONICAL_GRIND_MAX_ATTEMPTS: u32 = 100;
 /// Generate a new secp256k1 keypair.
 /// Returns (WIF private key string, "EOS..." public key string).
 pub fn generate_keypair() -> Result<(String, String), Error> {
-    let signing_key = SigningKey::random(&mut rand::thread_rng());
-    let private_bytes = signing_key.to_bytes();
+    // Entropy comes straight from the OS CSPRNG via the audited crate::rng
+    // helper; k256 rejection-samples a valid non-zero scalar internally.
+    let signing_key = SigningKey::random(&mut crate::rng::secure_rng());
+    let mut private_bytes = signing_key.to_bytes();
 
     let verifying_key = signing_key.verifying_key();
     let compressed = verifying_key.to_encoded_point(true);
@@ -27,15 +29,21 @@ pub fn generate_keypair() -> Result<(String, String), Error> {
     let wif = wif_encode(&private_bytes);
     let pub_key = encode_eos_public_key(pub_bytes);
 
+    // Wipe the transient copy of the secret scalar. The returned WIF still
+    // carries it (that is the caller's to handle), and `signing_key` zeroizes
+    // on drop, but this stack buffer would otherwise linger.
+    private_bytes.as_mut_slice().zeroize();
     Ok((wif, pub_key))
 }
 
 /// Generate a new secp256k1 keypair, returning raw bytes.
 /// Returns (32-byte private key, 33-byte compressed public key).
 pub fn generate_keypair_raw() -> Result<([u8; 32], Vec<u8>), Error> {
-    let signing_key = SigningKey::random(&mut rand::thread_rng());
+    let signing_key = SigningKey::random(&mut crate::rng::secure_rng());
+    let mut sk_bytes = signing_key.to_bytes();
     let mut private_bytes = [0u8; 32];
-    private_bytes.copy_from_slice(&signing_key.to_bytes());
+    private_bytes.copy_from_slice(&sk_bytes);
+    sk_bytes.as_mut_slice().zeroize();
 
     let verifying_key = signing_key.verifying_key();
     let compressed = verifying_key.to_encoded_point(true);
