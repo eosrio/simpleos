@@ -1,6 +1,6 @@
 [package]
 name = "simpleos"
-version = "2.0.0-alpha.0"
+version = "2.0.0-alpha.1"
 description = "SimplEOS - Antelope Desktop Wallet"
 authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
@@ -88,7 +88,11 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"] }
 
 [profile.release]
-strip = true
+# The macOS 27 toolchain currently produces malformed proc-macro Mach-O files
+# when Cargo strips them (dyld reports a mis-aligned LINKEDIT string pool).
+# Tauri signs the final app binary; keep dependency proc macros unstripped so
+# the release can compile reliably on the release Mac.
+strip = false
 lto = true
 codegen-units = 1
 panic = "abort"

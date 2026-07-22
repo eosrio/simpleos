@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
       <div class="about-header">
         <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="about-logo" />
         <h2>Simpl<span class="accent">EOS</span></h2>
-        <span class="about-version">v2.0.0-alpha.0</span>
+        <span class="about-version">v2.0.0-alpha.1</span>
       </div>
 
       <div class="about-content">

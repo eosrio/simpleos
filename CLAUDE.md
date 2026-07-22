@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SimplEOS v2 is a desktop wallet for Antelope-based blockchains (Vaulta/EOS, WAX, Telos, Ultra, FIO, Libre, XPR). It is a **Tauri 2 + Angular 22** rewrite of the original Electron app — all cryptography, key storage, and chain I/O live in a **Rust backend** (`src-tauri/`); the Angular SPA (`src/`) is a pure renderer that talks to Rust over Tauri IPC and never touches private keys.
 
-Workspace versions are `2.0.0-alpha.0`. The active development branch is `v2-tauri-rewrite`; PRs target `master`.
+Workspace versions are `2.0.0-alpha.1`. The active development branch is `v2-tauri-rewrite`; PRs target `master`.
 
 ## Toolchain & Commands
 

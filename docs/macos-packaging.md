@@ -4,21 +4,29 @@ SimplEOS packages as a Tauri desktop app for macOS 13.3 and newer. The release b
 
 ## One-time setup
 
-1. Install the Apple `Developer ID Application` certificate in Keychain Access.
-2. Install the supported Node runtime if needed:
+1. Confirm the EOS Rio `Developer ID Application` identity is available. The
+   certificate files are already on Desktop and the matching private key is
+   installed in the login Keychain:
+
+   ```bash
+   security find-identity -v -p codesigning | grep 'Developer ID Application'
+   ```
+
+2. Confirm the existing Agent Portal notary profile works. This reads the
+   credential from Keychain and does not expose its password:
+
+   ```bash
+   xcrun notarytool history --keychain-profile agent-portal-notary
+   ```
+
+3. Install the supported Node runtime if needed:
 
    ```bash
    brew install node@24
    ```
 
-3. Confirm the command line can see the signing certificate:
-
-   ```bash
-   bun run mac:signing-identities
-   ```
-
-4. Export release credentials in your shell. Use `.env.macos.example` as the local template and keep the filled file uncommitted.
-5. Make sure the updater private key matches the public key in `src-tauri/tauri.conf.json`.
+4. Make sure the updater private key matches the public key in
+   `src-tauri/tauri.conf.json`.
 
 ## Build
 
@@ -42,29 +50,21 @@ bun run tauri:build:mac:no-updater
 
 Artifacts are written under `src-tauri/target/*/release/bundle/`.
 
+Every build through this script submits and staples the app and DMG, then verifies
+the app signature, Gatekeeper assessment, DMG staple, and DMG Gatekeeper assessment.
+
 ## Required environment
 
 Code signing:
 
 ```bash
-export APPLE_SIGNING_IDENTITY="Developer ID Application: Company Name (TEAMID)"
-export APPLE_TEAM_ID="TEAMID"
+export APPLE_SIGNING_IDENTITY="Developer ID Application: EOS Rio Infraestrutura de Redes Ltda (FS7QM58848)"
 ```
 
-Notarization with App Store Connect API key:
+Notarization uses the existing password-free Keychain profile:
 
 ```bash
-export APPLE_API_ISSUER="issuer-uuid"
-export APPLE_API_KEY="key-id"
-export APPLE_API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_key-id.p8"
-```
-
-Or notarization with Apple ID:
-
-```bash
-export APPLE_ID="you@example.com"
-export APPLE_PASSWORD="@keychain:AC_PASSWORD"
-export APPLE_TEAM_ID="TEAMID"
+export APPLE_NOTARY_KEYCHAIN_PROFILE="agent-portal-notary"
 ```
 
 Updater signing:
@@ -80,8 +80,11 @@ After the build:
 
 ```bash
 codesign --verify --deep --strict --verbose=2 "src-tauri/target/release/bundle/macos/SimplEOS.app"
-spctl -a -vvv -t install "src-tauri/target/release/bundle/dmg/SimplEOS_2.0.0-alpha.0_aarch64.dmg"
-xcrun stapler validate "src-tauri/target/release/bundle/dmg/SimplEOS_2.0.0-alpha.0_aarch64.dmg"
+spctl --assess --type execute --verbose=4 "src-tauri/target/release/bundle/macos/SimplEOS.app"
+xcrun stapler validate "src-tauri/target/release/bundle/dmg/SimplEOS_2.0.0-alpha.1_aarch64.dmg"
+spctl --assess --type open --context context:primary-signature --verbose=4 "src-tauri/target/release/bundle/dmg/SimplEOS_2.0.0-alpha.1_aarch64.dmg"
 ```
 
-Tauri uses `APPLE_SIGNING_IDENTITY` for the macOS signing identity and notarizes when Apple API key or Apple ID credentials are present.
+Tauri signs the app and DMG with `APPLE_SIGNING_IDENTITY`. The release script
+submits the app archive and final DMG using `--keychain-profile`, staples both
+tickets, and verifies them with `codesign`, Gatekeeper, and `stapler`.
