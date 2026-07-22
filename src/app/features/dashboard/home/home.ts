@@ -9,13 +9,21 @@ import {
   type PortfolioPriceChain,
 } from './portfolio-value';
 
+/** Matches resources page: warning > 70, critical > 85. */
+const RESOURCE_WARNING_PCT = 70;
+const RESOURCE_CRITICAL_PCT = 85;
+
+type ResourceLevel = 'ok' | 'warning' | 'critical';
+
 interface HomeStats {
   totalAccounts: number;
   totalChains: number;
   fullAccounts: number;
   watchAccounts: number;
   producerAccounts: number;
-  hotAccounts: number;
+  /** Accounts with any of CPU/NET/RAM above the warning threshold. */
+  attentionAccounts: number;
+  criticalAccounts: number;
   totalLiquidUsd: string;
   pricedAccounts: number;
 }
@@ -24,13 +32,18 @@ interface HomeAccountCard {
   index: number;
   key: string;
   name: string;
+  chainName: string;
   mode: 'full' | 'watch';
   liquid: string;
   liquidUsd: string;
   liquidUsdValue: number | null;
   staked: string;
+  cpuPct: number;
+  netPct: number;
   ramPct: number;
   ramText: string;
+  resourceLevel: ResourceLevel;
+  attentionFlags: string[];
   producerText: string | null;
 }
 
@@ -43,6 +56,18 @@ interface HomeChainSection {
   totalLiquid: string;
   totalLiquidUsd: string;
   accounts: HomeAccountCard[];
+}
+
+interface AttentionAccount {
+  index: number;
+  key: string;
+  name: string;
+  chainName: string;
+  cpuPct: number;
+  netPct: number;
+  ramPct: number;
+  resourceLevel: ResourceLevel;
+  attentionFlags: string[];
 }
 
 @Component({
@@ -67,8 +92,8 @@ interface HomeChainSection {
                 <span class="hero-state">No active account</span>
               </div>
               <p class="hero-description">
-                Fast snapshot across every imported account using cached balances, stake, RAM usage,
-                and token pricing. Select an account below when you want the detailed wallet tools.
+                Fast snapshot across every imported account using cached balances, stake, resource
+                usage, and token pricing. Spot CPU, NET, or RAM pressure before it blocks a transfer.
               </p>
               <div class="hero-meta">
                 <span class="hero-meta-item">{{ stats().totalAccounts }} account{{ plural(stats().totalAccounts) }}</span>
@@ -119,12 +144,98 @@ interface HomeChainSection {
               <span class="stat-meta">{{ stats().pricedAccounts }} priced account{{ plural(stats().pricedAccounts) }}</span>
             </article>
 
-            <article class="stat-card">
-              <span class="stat-label">RAM hot spots</span>
-              <span class="stat-value">{{ stats().hotAccounts }}</span>
-              <span class="stat-meta">Accounts at or above 80% RAM usage</span>
+            <article class="stat-card"
+                     [class.stat-card-warning]="stats().attentionAccounts > 0"
+                     [class.stat-card-critical]="stats().criticalAccounts > 0">
+              <span class="stat-label">Needs attention</span>
+              <span class="stat-value">{{ stats().attentionAccounts }}</span>
+              <span class="stat-meta">
+                @if (stats().attentionAccounts === 0) {
+                  All accounts within safe CPU / NET / RAM limits
+                } @else if (stats().criticalAccounts > 0) {
+                  {{ stats().criticalAccounts }} critical · rest above {{ RESOURCE_WARNING_PCT }}%
+                } @else {
+                  CPU, NET, or RAM above {{ RESOURCE_WARNING_PCT }}%
+                }
+              </span>
             </article>
           </div>
+        </section>
+
+        <!-- Resource health: quick scan for accounts under pressure -->
+        <section class="resource-health"
+                 [class.resource-health-ok]="attentionList().length === 0"
+                 [class.resource-health-alert]="attentionList().length > 0">
+          <header class="resource-health-header">
+            <div>
+              <span class="resource-health-kicker">Resource health</span>
+              <h2>
+                @if (attentionList().length === 0) {
+                  All accounts look healthy
+                } @else {
+                  {{ attentionList().length }} account{{ plural(attentionList().length) }} need{{ attentionList().length === 1 ? 's' : '' }} attention
+                }
+              </h2>
+              <p>
+                @if (attentionList().length === 0) {
+                  CPU, NET, and RAM are below {{ RESOURCE_WARNING_PCT }}% on every imported account.
+                } @else {
+                  Usage above {{ RESOURCE_WARNING_PCT }}% (warning) or {{ RESOURCE_CRITICAL_PCT }}% (critical).
+                  Open resources to power up, stake, or buy RAM.
+                }
+              </p>
+            </div>
+          </header>
+
+          @if (attentionList().length > 0) {
+            <div class="attention-list">
+              @for (item of attentionList(); track item.key) {
+                <button type="button" class="attention-row"
+                        [class.attention-critical]="item.resourceLevel === 'critical'"
+                        (click)="openAccountResources(item.index)">
+                  <div class="attention-identity">
+                    <span class="attention-name">{{ item.name }}</span>
+                    <span class="attention-chain">{{ item.chainName }}</span>
+                  </div>
+                  <div class="attention-meters">
+                    <div class="mini-meter" [class.warning]="item.cpuPct > RESOURCE_WARNING_PCT" [class.critical]="item.cpuPct > RESOURCE_CRITICAL_PCT">
+                      <div class="mini-meter-head">
+                        <span>CPU</span>
+                        <span>{{ item.cpuPct }}%</span>
+                      </div>
+                      <div class="mini-meter-track">
+                        <div class="mini-meter-fill" [style.width.%]="item.cpuPct"></div>
+                      </div>
+                    </div>
+                    <div class="mini-meter" [class.warning]="item.netPct > RESOURCE_WARNING_PCT" [class.critical]="item.netPct > RESOURCE_CRITICAL_PCT">
+                      <div class="mini-meter-head">
+                        <span>NET</span>
+                        <span>{{ item.netPct }}%</span>
+                      </div>
+                      <div class="mini-meter-track">
+                        <div class="mini-meter-fill" [style.width.%]="item.netPct"></div>
+                      </div>
+                    </div>
+                    <div class="mini-meter" [class.warning]="item.ramPct > RESOURCE_WARNING_PCT" [class.critical]="item.ramPct > RESOURCE_CRITICAL_PCT">
+                      <div class="mini-meter-head">
+                        <span>RAM</span>
+                        <span>{{ item.ramPct }}%</span>
+                      </div>
+                      <div class="mini-meter-track">
+                        <div class="mini-meter-fill" [style.width.%]="item.ramPct"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="attention-flags">
+                    @for (flag of item.attentionFlags; track flag) {
+                      <span class="attention-flag" [class.flag-critical]="item.resourceLevel === 'critical'">{{ flag }}</span>
+                    }
+                    <span class="attention-action">Manage</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
         </section>
 
         <section class="chains-section">
@@ -145,7 +256,10 @@ interface HomeChainSection {
 
               <div class="account-grid">
                 @for (account of chain.accounts; track account.key) {
-                  <button type="button" class="account-card" (click)="openAccount(account.index)">
+                  <button type="button" class="account-card"
+                          [class.account-card-warning]="account.resourceLevel === 'warning'"
+                          [class.account-card-critical]="account.resourceLevel === 'critical'"
+                          (click)="openAccount(account.index)">
                     <div class="account-card-top">
                       <div>
                         <div class="account-name">{{ account.name }}</div>
@@ -155,6 +269,13 @@ interface HomeChainSection {
                           </span>
                           @if (account.producerText; as producerText) {
                             <span class="badge badge-producer">{{ producerText }}</span>
+                          }
+                          @if (account.resourceLevel !== 'ok') {
+                            <span class="badge"
+                                  [class.badge-warning]="account.resourceLevel === 'warning'"
+                                  [class.badge-critical]="account.resourceLevel === 'critical'">
+                              {{ account.resourceLevel === 'critical' ? 'critical resources' : 'low resources' }}
+                            </span>
                           }
                         </div>
                       </div>
@@ -177,8 +298,40 @@ interface HomeChainSection {
 
                       <div class="metric-block">
                         <span class="metric-label">RAM</span>
-                        <span class="metric-value" [class.metric-warning]="account.ramPct >= 80">{{ account.ramPct }}%</span>
+                        <span class="metric-value"
+                              [class.metric-warning]="account.ramPct > RESOURCE_WARNING_PCT"
+                              [class.metric-critical]="account.ramPct > RESOURCE_CRITICAL_PCT">{{ account.ramPct }}%</span>
                         <span class="metric-meta">{{ account.ramText }}</span>
+                      </div>
+                    </div>
+
+                    <div class="resource-meters">
+                      <div class="mini-meter" [class.warning]="account.cpuPct > RESOURCE_WARNING_PCT" [class.critical]="account.cpuPct > RESOURCE_CRITICAL_PCT">
+                        <div class="mini-meter-head">
+                          <span>CPU</span>
+                          <span>{{ account.cpuPct }}%</span>
+                        </div>
+                        <div class="mini-meter-track">
+                          <div class="mini-meter-fill" [style.width.%]="account.cpuPct"></div>
+                        </div>
+                      </div>
+                      <div class="mini-meter" [class.warning]="account.netPct > RESOURCE_WARNING_PCT" [class.critical]="account.netPct > RESOURCE_CRITICAL_PCT">
+                        <div class="mini-meter-head">
+                          <span>NET</span>
+                          <span>{{ account.netPct }}%</span>
+                        </div>
+                        <div class="mini-meter-track">
+                          <div class="mini-meter-fill" [style.width.%]="account.netPct"></div>
+                        </div>
+                      </div>
+                      <div class="mini-meter" [class.warning]="account.ramPct > RESOURCE_WARNING_PCT" [class.critical]="account.ramPct > RESOURCE_CRITICAL_PCT">
+                        <div class="mini-meter-head">
+                          <span>RAM</span>
+                          <span>{{ account.ramPct }}%</span>
+                        </div>
+                        <div class="mini-meter-track">
+                          <div class="mini-meter-fill" [style.width.%]="account.ramPct"></div>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -399,6 +552,22 @@ interface HomeChainSection {
       border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
     }
 
+    .stat-card-warning {
+      border-color: color-mix(in srgb, var(--caution) 35%, var(--border-subtle));
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--caution) 18%, transparent), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--caution) 10%, transparent), transparent),
+        rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-card-critical {
+      border-color: color-mix(in srgb, var(--negative) 40%, var(--border-subtle));
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--negative) 18%, transparent), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--negative) 10%, transparent), transparent),
+        rgba(0, 0, 0, 0.08);
+    }
+
     .stat-label {
       color: var(--text-muted);
       font-size: 11px;
@@ -421,6 +590,201 @@ interface HomeChainSection {
       font-size: 12px;
       line-height: 1.4;
     }
+
+    /* Resource health panel */
+    .resource-health {
+      padding: var(--sp-4) var(--sp-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid color-mix(in srgb, var(--positive) 22%, var(--border-subtle));
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--positive) 12%, transparent), transparent 48%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+        var(--bg-deep);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .resource-health-alert {
+      border-color: color-mix(in srgb, var(--caution) 35%, var(--border-subtle));
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--caution) 14%, transparent), transparent 48%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+        var(--bg-deep);
+    }
+
+    .resource-health-header h2 {
+      margin: 0;
+      color: var(--text-bright);
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .resource-health-header p {
+      margin: 6px 0 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 70ch;
+    }
+
+    .resource-health-kicker {
+      display: inline-flex;
+      width: fit-content;
+      margin-bottom: var(--sp-2);
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--positive) 14%, transparent);
+      color: var(--positive);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .resource-health-alert .resource-health-kicker {
+      background: color-mix(in srgb, var(--caution) 16%, transparent);
+      color: var(--caution);
+    }
+
+    .attention-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+      margin-top: var(--sp-4);
+    }
+
+    .attention-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.6fr) auto;
+      gap: var(--sp-3);
+      align-items: center;
+      width: 100%;
+      padding: var(--sp-3) var(--sp-4);
+      border: 1px solid color-mix(in srgb, var(--caution) 22%, var(--border-subtle));
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--caution) 5%, var(--bg-base));
+      text-align: left;
+      cursor: pointer;
+      transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .attention-row:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--caution) 40%, var(--border-subtle));
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .attention-critical {
+      border-color: color-mix(in srgb, var(--negative) 30%, var(--border-subtle));
+      background: color-mix(in srgb, var(--negative) 6%, var(--bg-base));
+    }
+
+    .attention-critical:hover {
+      border-color: color-mix(in srgb, var(--negative) 45%, var(--border-subtle));
+    }
+
+    .attention-identity {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .attention-name {
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .attention-chain {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .attention-meters {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-2);
+      min-width: 0;
+    }
+
+    .attention-flags {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .attention-flag {
+      display: inline-flex;
+      padding: 3px 7px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--caution) 16%, transparent);
+      color: var(--caution);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .flag-critical {
+      background: color-mix(in srgb, var(--negative) 16%, transparent);
+      color: var(--negative);
+    }
+
+    .attention-action {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .mini-meter {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .mini-meter-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .mini-meter-head span:last-child {
+      font-family: var(--font-data);
+      color: var(--text-body);
+    }
+
+    .mini-meter.warning .mini-meter-head span:last-child { color: var(--caution); }
+    .mini-meter.critical .mini-meter-head span:last-child { color: var(--negative); }
+
+    .mini-meter-track {
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--text-disabled) 28%, transparent);
+      overflow: hidden;
+    }
+
+    .mini-meter-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--positive);
+      transition: width 200ms ease;
+    }
+
+    .mini-meter.warning .mini-meter-fill { background: var(--caution); }
+    .mini-meter.critical .mini-meter-fill { background: var(--negative); }
 
     .chains-section {
       display: grid;
@@ -528,6 +892,14 @@ interface HomeChainSection {
       box-shadow: 0 16px 30px rgba(0, 0, 0, 0.16);
     }
 
+    .account-card-warning {
+      border-color: color-mix(in srgb, var(--caution) 28%, var(--border-subtle));
+    }
+
+    .account-card-critical {
+      border-color: color-mix(in srgb, var(--negative) 32%, var(--border-subtle));
+    }
+
     .account-card-top {
       display: flex;
       align-items: flex-start;
@@ -570,6 +942,16 @@ interface HomeChainSection {
     .badge-producer {
       background: rgba(56, 189, 248, 0.12);
       color: #7dd3fc;
+    }
+
+    .badge-warning {
+      background: color-mix(in srgb, var(--caution) 16%, transparent);
+      color: var(--caution);
+    }
+
+    .badge-critical {
+      background: color-mix(in srgb, var(--negative) 16%, transparent);
+      color: var(--negative);
     }
 
     .open-label {
@@ -616,10 +998,22 @@ interface HomeChainSection {
       color: var(--caution);
     }
 
+    .metric-critical {
+      color: var(--negative);
+    }
+
     .metric-meta {
       color: var(--text-muted);
       font-size: 11px;
       line-height: 1.4;
+    }
+
+    .resource-meters {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-2);
+      padding-top: var(--sp-1);
+      border-top: 1px solid color-mix(in srgb, var(--accent) 8%, var(--border-subtle));
     }
 
     .empty-action {
@@ -656,10 +1050,22 @@ interface HomeChainSection {
       }
     }
 
+    @media (max-width: 900px) {
+      .attention-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .attention-flags {
+        justify-content: flex-start;
+      }
+    }
+
     @media (max-width: 720px) {
       .hero,
       .empty-state,
-      .chain-card {
+      .chain-card,
+      .resource-health {
         padding: var(--sp-5);
       }
 
@@ -668,7 +1074,9 @@ interface HomeChainSection {
       }
 
       .hero-stats,
-      .metric-grid {
+      .metric-grid,
+      .resource-meters,
+      .attention-meters {
         grid-template-columns: 1fr;
       }
 
@@ -694,6 +1102,10 @@ export class HomeComponent {
   private readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
 
+  /** Exposed for template threshold classes / copy. */
+  readonly RESOURCE_WARNING_PCT = RESOURCE_WARNING_PCT;
+  readonly RESOURCE_CRITICAL_PCT = RESOURCE_CRITICAL_PCT;
+
   readonly primaryChain = computed(() => this.chainSections()[0] ?? null);
 
   readonly stats = computed<HomeStats>(() => {
@@ -705,16 +1117,58 @@ export class HomeComponent {
     const totalLiquidUsd = pricedValues.reduce<number>((sum, value) => sum + (value ?? 0), 0);
     const pricedAccounts = pricedValues.filter((value) => value !== null).length;
 
+    let attentionAccounts = 0;
+    let criticalAccounts = 0;
+    for (const account of accounts) {
+      const level = this.resourceLevel(account);
+      if (level === 'warning' || level === 'critical') attentionAccounts += 1;
+      if (level === 'critical') criticalAccounts += 1;
+    }
+
     return {
       totalAccounts: accounts.length,
       totalChains: new Set(accounts.map((account) => account.chainId)).size,
       fullAccounts: accounts.filter((account) => account.mode === 'full').length,
       watchAccounts: accounts.filter((account) => account.mode === 'watch').length,
       producerAccounts: accounts.filter((account) => account.isProducer).length,
-      hotAccounts: accounts.filter((account) => this.ramPct(account) >= 80).length,
+      attentionAccounts,
+      criticalAccounts,
       totalLiquidUsd: this.formatUsd(totalLiquidUsd, pricedAccounts),
       pricedAccounts,
     };
+  });
+
+  /** Accounts whose CPU, NET, or RAM is above the warning threshold (worst first). */
+  readonly attentionList = computed<AttentionAccount[]>(() => {
+    const list: AttentionAccount[] = [];
+    this.wallet.accounts().forEach((account, index) => {
+      const level = this.resourceLevel(account);
+      if (level === 'ok') return;
+      const cpuPct = this.cpuPct(account);
+      const netPct = this.netPct(account);
+      const ramPct = this.ramPct(account);
+      list.push({
+        index,
+        key: `${account.chainId}:${account.name}`,
+        name: account.name,
+        chainName: account.chainName,
+        cpuPct,
+        netPct,
+        ramPct,
+        resourceLevel: level,
+        attentionFlags: this.attentionFlags(cpuPct, netPct, ramPct),
+      });
+    });
+
+    return list.sort((a, b) => {
+      const rank = (level: ResourceLevel) => (level === 'critical' ? 2 : 1);
+      if (rank(b.resourceLevel) !== rank(a.resourceLevel)) {
+        return rank(b.resourceLevel) - rank(a.resourceLevel);
+      }
+      const maxA = Math.max(a.cpuPct, a.netPct, a.ramPct);
+      const maxB = Math.max(b.cpuPct, b.netPct, b.ramPct);
+      return maxB - maxA;
+    });
   });
 
   readonly chainSections = computed<HomeChainSection[]>(() => {
@@ -754,6 +1208,11 @@ export class HomeComponent {
         accounts: [],
       };
 
+      const cpuPct = this.cpuPct(account);
+      const netPct = this.netPct(account);
+      const ramPct = this.ramPct(account);
+      const resourceLevel = this.resourceLevelFromPcts(cpuPct, netPct, ramPct);
+
       group.symbol ||= parsedBalance?.symbol ?? chain?.symbol ?? '';
       group.liquidTotal += parsedBalance?.value ?? 0;
       group.totalLiquidUsd += pricedValue ?? 0;
@@ -764,6 +1223,7 @@ export class HomeComponent {
         index,
         key: `${account.chainId}:${account.name}`,
         name: account.name,
+        chainName: account.chainName,
         mode: account.mode,
         liquid:
           account.info.core_liquid_balance ?? this.formatToken(0, group.precision, group.symbol),
@@ -774,8 +1234,12 @@ export class HomeComponent {
             : this.priceService.formatUsd(pricedValue),
         liquidUsdValue: pricedValue,
         staked: this.formatToken(this.stakedTotal(account), group.precision, group.symbol),
-        ramPct: this.ramPct(account),
+        cpuPct,
+        netPct,
+        ramPct,
         ramText: `${this.formatBytes(account.info.ram_usage ?? 0)} / ${this.formatBytes(account.info.ram_quota ?? 0)}`,
+        resourceLevel,
+        attentionFlags: this.attentionFlags(cpuPct, netPct, ramPct),
         producerText: this.producerLabel(account),
       });
       grouped.set(account.chainId, group);
@@ -826,6 +1290,16 @@ export class HomeComponent {
     this.router.navigate(['/dashboard/wallet']);
   }
 
+  /** Open the account and jump straight to resource management. */
+  openAccountResources(index: number) {
+    const account = this.wallet.accounts()[index];
+    if (!account) return;
+
+    this.wallet.selectAccount(index);
+    this.theme.setChainByName(account.chainName);
+    this.router.navigate(['/dashboard/resources']);
+  }
+
   addAccount() {
     this.router.navigate(['/landing']);
   }
@@ -842,11 +1316,47 @@ export class HomeComponent {
     return ((account.info.cpu_weight ?? 0) + (account.info.net_weight ?? 0)) / 10000;
   }
 
+  private limitPct(limit?: { used?: number; max?: number } | null): number {
+    if (!limit?.max || limit.max <= 0) return 0;
+    return Math.min(100, Math.round(((limit.used ?? 0) / limit.max) * 100));
+  }
+
+  private cpuPct(account: WalletAccount): number {
+    return this.limitPct(account.info.cpu_limit);
+  }
+
+  private netPct(account: WalletAccount): number {
+    return this.limitPct(account.info.net_limit);
+  }
+
   private ramPct(account: WalletAccount): number {
     const quota = account.info.ram_quota ?? 0;
     const usage = account.info.ram_usage ?? 0;
     if (quota <= 0) return 0;
     return Math.min(100, Math.round((usage / quota) * 100));
+  }
+
+  private resourceLevelFromPcts(cpuPct: number, netPct: number, ramPct: number): ResourceLevel {
+    const max = Math.max(cpuPct, netPct, ramPct);
+    if (max > RESOURCE_CRITICAL_PCT) return 'critical';
+    if (max > RESOURCE_WARNING_PCT) return 'warning';
+    return 'ok';
+  }
+
+  private resourceLevel(account: WalletAccount): ResourceLevel {
+    return this.resourceLevelFromPcts(
+      this.cpuPct(account),
+      this.netPct(account),
+      this.ramPct(account),
+    );
+  }
+
+  private attentionFlags(cpuPct: number, netPct: number, ramPct: number): string[] {
+    const flags: string[] = [];
+    if (cpuPct > RESOURCE_WARNING_PCT) flags.push(`CPU ${cpuPct}%`);
+    if (netPct > RESOURCE_WARNING_PCT) flags.push(`NET ${netPct}%`);
+    if (ramPct > RESOURCE_WARNING_PCT) flags.push(`RAM ${ramPct}%`);
+    return flags;
   }
 
   private priceValue(

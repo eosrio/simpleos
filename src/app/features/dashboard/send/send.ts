@@ -1,6 +1,6 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { WalletStateService, TokenBalance } from '../../../core/services/wallet-state.service';
+import { WalletStateService, TokenBalance, WalletAccount } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
 
@@ -66,6 +66,25 @@ export interface Contact {
           }
           @if (isExchange()) {
             <span class="field-hint warning">Exchange detected — memo is required</span>
+          }
+          <!-- Quick-pick other imported accounts on this chain -->
+          @if (myAccounts().length > 0) {
+            <div class="my-accounts-inline">
+              <span class="my-accounts-hint">My accounts</span>
+              <div class="my-accounts-list">
+                @for (acct of myAccounts(); track acct.chainId + ':' + acct.name) {
+                  <button type="button" class="my-account-chip"
+                          [class.selected]="recipient().trim().toLowerCase() === acct.name"
+                          (click)="useMyAccount(acct)"
+                          [title]="'Send to ' + acct.name">
+                    <span class="my-account-name">{{ acct.name }}</span>
+                    @if (acct.mode === 'watch') {
+                      <span class="my-account-badge">watch</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
           }
         </div>
 
@@ -311,6 +330,71 @@ export interface Contact {
       padding: var(--sp-4);
       align-self: flex-start;
     }
+
+    /* My Accounts quick-pick (under recipient) */
+    .my-accounts-inline {
+      margin-top: var(--sp-3);
+    }
+    .my-accounts-hint {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: var(--sp-2);
+    }
+    .my-accounts-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+    }
+    .my-account-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-1);
+      max-width: 100%;
+      padding: var(--sp-1) var(--sp-3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      background: var(--bg-raised);
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+    .my-account-chip:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .my-account-chip.selected {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .my-account-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .my-account-badge {
+      flex-shrink: 0;
+      font-family: var(--font-body);
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--text-disabled);
+      padding: 1px 4px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-deep);
+    }
+    .my-account-chip.selected .my-account-badge,
+    .my-account-chip:hover .my-account-badge {
+      color: var(--accent);
+      background: transparent;
+    }
+
     .contacts-header {
       display: flex;
       justify-content: space-between;
@@ -496,6 +580,20 @@ export class SendComponent {
 
   /** Whether the active chain is FIO (different transfer model). Covers testnet too. */
   isFio = computed(() => this.wallet.isFio());
+
+  /**
+   * Other imported wallet accounts on the same chain as the sender.
+   * Used for one-click recipient selection. Hidden for FIO (pub key / handle model).
+   */
+  myAccounts = computed((): WalletAccount[] => {
+    if (this.isFio()) return [];
+    const selected = this.wallet.selectedAccount();
+    if (!selected) return [];
+    return this.wallet.accounts()
+      .filter(a => a.chainId === selected.chainId && a.name !== selected.name)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   // ── Contacts ──
 
@@ -730,10 +828,14 @@ export class SendComponent {
     if (result) {
       this.sendSuccess.set(result.transaction_id.slice(0, 16) + '...');
 
-      // Offer to save as contact if not already saved
-      const recipientName = this.recipient().trim();
-      if (!this.contacts().some(c => c.account === recipientName)) {
-        this.suggestSaveContact(recipientName);
+      // Offer to save as contact if not already saved and not one of our own accounts
+      const recipientName = this.recipient().trim().toLowerCase();
+      const chainId = account.chainId;
+      const isOwnAccount = this.wallet.accounts().some(
+        a => a.chainId === chainId && a.name.toLowerCase() === recipientName
+      );
+      if (!isOwnAccount && !this.contacts().some(c => c.account.toLowerCase() === recipientName)) {
+        this.suggestSaveContact(this.recipient().trim());
       }
 
       this.recipient.set('');
@@ -822,6 +924,15 @@ export class SendComponent {
     this.recipient.set(contact.account);
     if (contact.memo) this.memo.set(contact.memo);
     this.recipientValid.set(null);
+    this.validateRecipient();
+  }
+
+  /** Click an imported wallet account to fill the recipient field */
+  useMyAccount(account: WalletAccount) {
+    this.recipient.set(account.name);
+    this.recipientValid.set(null);
+    this.sendSuccess.set('');
+    this.sendError.set('');
     this.validateRecipient();
   }
 }
