@@ -212,7 +212,7 @@
     "@webcomponents/webcomponentsjs": "^2.4.3"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "0.901.6",
+    "@angular-devkit/build-angular": "22.1.2",
     "@angular/cli": "9.1.6",
     "@angular/compiler": "9.1.7",
     "@angular/compiler-cli": "9.1.7",
