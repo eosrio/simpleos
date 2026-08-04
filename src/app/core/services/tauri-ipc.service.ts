@@ -108,6 +108,22 @@ export interface ChainConfig {
   coingecko_id?: string;
   oracle_contract?: string;
   oracle_scope?: string;
+  /** Known exchange deposit accounts on this chain (see chain_config.rs). */
+  exchanges?: Exchange[];
+}
+
+/**
+ * An exchange deposit account. The memo is the only thing routing a transfer
+ * to the right customer, so it is mandatory and — where the exchange has a
+ * stable tag format — shape-checked before signing.
+ */
+export interface Exchange {
+  account: string;
+  label?: string;
+  /** Exact memo length, when the deposit tag is fixed-width. */
+  memo_size?: number;
+  /** Regex (JS syntax) the memo must match. */
+  memo_pattern?: string;
 }
 
 export interface ChainFeatures {

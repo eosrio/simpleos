@@ -1,15 +1,16 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService, TokenBalance, WalletAccount } from '../../../core/services/wallet-state.service';
-import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
+import { Exchange, TauriIpcService } from '../../../core/services/tauri-ipc.service';
+import { describeMemoRule, exchangeName, validateExchangeMemo } from './exchange-memo';
 import { TransactionService } from '../../../core/services/transaction.service';
-
-/** Known exchange accounts that require a memo. */
-const EXCHANGE_ACCOUNTS = new Set([
-  'binancecleos', 'bitaborteoss', 'bitfinexdep1', 'kaborteosact',
-  'kaborteosrex', 'kraaborteoss', 'gateiowallet', 'huabortefees',
-  'okbtothemoon', 'mexcaborteos', 'byaborteosll',
-]);
+import {
+  Contact,
+  ContactsService,
+  detectContactKind,
+  normalizeContactAddress,
+  validateContactAddress,
+} from '../../../core/services/contacts.service';
 
 interface TokenOption {
   label: string;
@@ -17,13 +18,6 @@ interface TokenOption {
   contract: string;
   precision: number;
   balance: string;
-}
-
-export interface Contact {
-  name: string;
-  account: string;
-  chainId?: string;
-  memo?: string;
 }
 
 @Component({
@@ -65,7 +59,9 @@ export interface Contact {
             <span class="field-hint valid">Account exists</span>
           }
           @if (isExchange()) {
-            <span class="field-hint warning">Exchange detected — memo is required</span>
+            <span class="field-hint warning">
+              {{ exchangeLabel() }} deposit account — memo is required{{ memoRequirement() ? ' (' + memoRequirement() + ')' : '' }}
+            </span>
           }
           <!-- Quick-pick other imported accounts on this chain -->
           @if (myAccounts().length > 0) {
@@ -111,11 +107,14 @@ export interface Contact {
             }
           </label>
           <input class="form-input" type="text"
-                 [class.input-invalid]="isExchange() && !memo()"
-                 placeholder="Memo"
+                 [class.input-invalid]="!!memoError()"
+                 [placeholder]="isExchange() ? 'Deposit memo from ' + exchangeLabel() : 'Memo'"
                  [value]="memo()"
                  (input)="memo.set($any($event.target).value)"
                  maxlength="256" />
+          @if (memoError()) {
+            <span class="field-hint error">{{ memoError() }}</span>
+          }
           <span class="char-count">{{ memo().length }} / 256</span>
         </div>
         }
@@ -132,11 +131,16 @@ export interface Contact {
         <button class="btn-primary" [disabled]="!canSend()" (click)="onSend()">SEND</button>
       </div>
 
-      <!-- Contacts panel -->
+      <!-- Contacts panel — scoped to the active chain -->
       <div class="contacts-panel">
         <div class="contacts-header">
-          <h3>Contacts</h3>
-          <button class="btn-add" (click)="showAddContact.set(true)" title="Add contact">+</button>
+          <div class="contacts-title">
+            <h3>Contacts</h3>
+            @if (chainLabel()) {
+              <span class="contacts-chain" [title]="'Contacts are saved per chain'">{{ chainLabel() }}</span>
+            }
+          </div>
+          <button class="btn-add" (click)="onAddContact()" title="Add contact">+</button>
         </div>
 
         <div class="contacts-search">
@@ -150,12 +154,19 @@ export interface Contact {
             <input class="form-input" type="text" placeholder="Label (e.g. Alice)"
                    [value]="contactName()"
                    (input)="contactName.set($any($event.target).value)" />
-            <input class="form-input" type="text" placeholder="Account name"
+            <input class="form-input" type="text"
+                   [placeholder]="isFio() ? 'FIO Handle or public key' : 'Account name'"
                    [value]="contactAccount()"
-                   (input)="contactAccount.set($any($event.target).value)" />
-            <input class="form-input" type="text" placeholder="Default memo (optional)"
-                   [value]="contactMemo()"
-                   (input)="contactMemo.set($any($event.target).value)" />
+                   (input)="onContactAccountInput($any($event.target).value)" />
+            <!-- FIO transfers (trnsfiopubky) carry no memo field -->
+            @if (!isFio()) {
+              <input class="form-input" type="text" placeholder="Default memo (optional)"
+                     [value]="contactMemo()"
+                     (input)="contactMemo.set($any($event.target).value)" />
+            }
+            @if (contactError()) {
+              <span class="field-hint error">{{ contactError() }}</span>
+            }
             <div class="contact-form-actions">
               <button class="btn-cancel" (click)="cancelContactForm()">Cancel</button>
               <button class="btn-save" (click)="onSaveContact()"
@@ -168,11 +179,11 @@ export interface Contact {
 
         @if (filteredContacts().length > 0) {
           <div class="contacts-list">
-            @for (contact of filteredContacts(); track contact.account + (contact.chainId ?? '')) {
+            @for (contact of filteredContacts(); track contact.kind + ':' + contact.account) {
               <div class="contact-row" (click)="useContact(contact)">
                 <div class="contact-info">
                   <span class="contact-name">{{ contact.name }}</span>
-                  <span class="contact-account">{{ contact.account }}</span>
+                  <span class="contact-account" [title]="contact.account">{{ contact.account }}</span>
                 </div>
                 <div class="contact-actions" (click)="$event.stopPropagation()">
                   <button class="btn-icon" title="Edit" (click)="onEditContact(contact)">
@@ -185,9 +196,13 @@ export interface Contact {
               </div>
             }
           </div>
-        } @else if (!showAddContact()) {
+        } @else if (!showAddContact() && !editingContact()) {
           <div class="contacts-empty">
-            <p>No contacts yet. Click + to add one, or they'll be suggested after you send.</p>
+            @if (contactSearch()) {
+              <p>No contacts match "{{ contactSearch() }}" on {{ chainLabel() }}.</p>
+            } @else {
+              <p>No contacts on {{ chainLabel() || 'this chain' }} yet. Click + to add one, or they'll be suggested after you send.</p>
+            }
           </div>
         }
       </div>
@@ -405,6 +420,22 @@ export interface Contact {
       font-size: 14px;
       font-weight: 600;
     }
+    .contacts-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .contacts-chain {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .btn-add {
       width: 28px;
       height: 28px;
@@ -506,6 +537,10 @@ export interface Contact {
       font-family: var(--font-data);
       font-size: 11px;
       color: var(--text-muted);
+      /* FIO public keys are 53 chars — keep them inside the panel */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .contact-actions {
       display: flex;
@@ -575,8 +610,46 @@ export class SendComponent {
   /** The currently selected token option. */
   activeToken = computed(() => this.tokenOptions()[this.selectedTokenIdx()] ?? this.tokenOptions()[0]);
 
+  /**
+   * The exchange deposit account the recipient matches, if any. Deposit
+   * accounts are per chain, so this only ever consults the active chain's list.
+   */
+  activeExchange = computed((): Exchange | null => {
+    // FIO transfers carry no memo, so a memo rule could never be satisfied
+    // there — never block a FIO send on one.
+    if (this.wallet.isFio()) return null;
+    const recipient = this.recipient().trim().toLowerCase();
+    if (!recipient) return null;
+    const list = this.wallet.activeChain()?.exchanges ?? [];
+    return list.find(e => e.account.toLowerCase() === recipient) ?? null;
+  });
+
   /** Whether the recipient is a known exchange account. */
-  isExchange = computed(() => EXCHANGE_ACCOUNTS.has(this.recipient().trim().toLowerCase()));
+  isExchange = computed(() => this.activeExchange() !== null);
+
+  /** Exchange name for warnings, falling back to the account. */
+  exchangeLabel = computed(() => {
+    const exchange = this.activeExchange();
+    return exchange ? exchangeName(exchange) : '';
+  });
+
+  /** Human description of the memo an exchange expects ("9 digits"). */
+  memoRequirement = computed(() => {
+    const exchange = this.activeExchange();
+    if (!exchange) return '';
+    return describeMemoRule(exchange);
+  });
+
+  /**
+   * Why the current memo is unacceptable for this exchange, or '' when it is
+   * fine. A deposit with a malformed tag is normally unrecoverable, so this
+   * blocks the send rather than just warning.
+   */
+  memoError = computed(() => {
+    const exchange = this.activeExchange();
+    if (!exchange) return '';
+    return validateExchangeMemo(this.memo(), exchange);
+  });
 
   /** Whether the active chain is FIO (different transfer model). Covers testnet too. */
   isFio = computed(() => this.wallet.isFio());
@@ -595,15 +668,23 @@ export class SendComponent {
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  // ── Contacts ──
+  // ── Contacts (per chain) ──
 
-  contacts = signal<Contact[]>([]);
+  private contactsSvc = inject(ContactsService);
+
+  /** Chain the contact book is scoped to. */
+  chainId = computed(() => this.wallet.selectedAccount()?.chainId ?? this.wallet.activeChain()?.id ?? '');
+  chainLabel = computed(() => this.wallet.activeChain()?.name ?? '');
+
+  contacts = computed(() => this.contactsSvc.list(this.chainId()));
+
   contactSearch = signal('');
   showAddContact = signal(false);
   editingContact = signal<Contact | null>(null);
   contactName = signal('');
   contactAccount = signal('');
   contactMemo = signal('');
+  contactError = signal('');
 
   filteredContacts = computed(() => {
     const q = this.contactSearch().toLowerCase().trim();
@@ -626,12 +707,23 @@ export class SendComponent {
       this.wallet.selectedAccount();
       this.selectedTokenIdx.set(0);
     });
-    this.loadContacts();
+
+    // Load (and switch) the contact book whenever the active chain changes.
+    let lastChainId = '';
+    effect(() => {
+      const chainId = this.chainId();
+      if (chainId === lastChainId) return;
+      lastChainId = chainId;
+      // Addresses are not portable across chains — never carry a draft over.
+      this.cancelContactForm();
+      this.contactSearch.set('');
+      if (chainId) this.contactsSvc.load(chainId);
+    });
   }
 
   canSend(): boolean {
     if (!this.recipient() || !this.amount()) return false;
-    if (this.isExchange() && !this.memo()) return false;
+    if (this.memoError()) return false;
     return true;
   }
 
@@ -653,11 +745,17 @@ export class SendComponent {
 
     // FIO: recipient is a FIO Handle (user@domain) or FIO public key
     if (this.isFio()) {
-      if (name.startsWith('FIO')) {
-        // Raw FIO public key — accept as-is
+      const malformed = validateContactAddress(name, true);
+      if (malformed) {
+        this.recipientValid.set(false);
+        this.recipientHint.set(malformed);
+        return;
+      }
+      if (detectContactKind(name, true) === 'fio_pubkey') {
+        // Well-formed FIO public key — trnsfiopubky accepts unregistered keys
         this.recipientValid.set(true);
         this.recipientHint.set('');
-      } else if (name.includes('@')) {
+      } else {
         // FIO Handle — resolve to public key
         try {
           const result = await this.ipc.fioGetPubAddress(acct.chainId, name);
@@ -672,18 +770,16 @@ export class SendComponent {
           this.recipientValid.set(false);
           this.recipientHint.set('Could not resolve FIO Handle');
         }
-      } else {
-        this.recipientValid.set(false);
-        this.recipientHint.set('Enter a FIO Handle (user@domain) or FIO public key');
       }
       return;
     }
 
     // Standard Antelope: account name validation
     const lower = name.toLowerCase();
-    if (!/^[a-z1-5.]{1,13}$/.test(lower)) {
+    const invalid = validateContactAddress(lower, false);
+    if (invalid) {
       this.recipientValid.set(false);
-      this.recipientHint.set('Invalid account name');
+      this.recipientHint.set(invalid);
       return;
     }
 
@@ -758,7 +854,7 @@ export class SendComponent {
         }
       }
 
-      if (!payeePubKey.startsWith('FIO')) {
+      if (validateContactAddress(payeePubKey, true) || !payeePubKey.startsWith('FIO')) {
         this.sendError.set('Invalid FIO public key');
         return;
       }
@@ -797,9 +893,11 @@ export class SendComponent {
         return;
       }
 
-      // Exchange memo check
-      if (this.isExchange() && !this.memo().trim()) {
-        this.sendError.set('This is an exchange account — a memo is required');
+      // Exchange deposit memo — required, and shape-checked when the exchange
+      // publishes a stable tag format.
+      const memoError = this.memoError();
+      if (memoError) {
+        this.sendError.set(memoError);
         return;
       }
 
@@ -828,14 +926,17 @@ export class SendComponent {
     if (result) {
       this.sendSuccess.set(result.transaction_id.slice(0, 16) + '...');
 
-      // Offer to save as contact if not already saved and not one of our own accounts
-      const recipientName = this.recipient().trim().toLowerCase();
+      // Offer to save as a contact on THIS chain, if not already saved and not
+      // one of our own accounts. On FIO the recipient is a handle/public key,
+      // so it is never one of our account names.
       const chainId = account.chainId;
-      const isOwnAccount = this.wallet.accounts().some(
-        a => a.chainId === chainId && a.name.toLowerCase() === recipientName
-      );
-      if (!isOwnAccount && !this.contacts().some(c => c.account.toLowerCase() === recipientName)) {
-        this.suggestSaveContact(this.recipient().trim());
+      const kind = detectContactKind(recipientRaw, this.isFio());
+      const normalized = normalizeContactAddress(recipientRaw, kind);
+      const isOwnAccount =
+        kind === 'account' &&
+        this.wallet.accounts().some(a => a.chainId === chainId && a.name.toLowerCase() === normalized);
+      if (!isOwnAccount && !this.contactsSvc.has(chainId, recipientRaw, kind)) {
+        this.suggestSaveContact(normalized);
       }
 
       this.recipient.set('');
@@ -848,27 +949,25 @@ export class SendComponent {
 
   // ── Contact Management ──
 
-  private async loadContacts() {
-    try {
-      const saved = await this.ipc.storeGet<Contact[]>('contacts');
-      if (saved && saved.length > 0) {
-        this.contacts.set(saved);
-      }
-    } catch { /* ignore */ }
-  }
-
-  private async saveContacts() {
-    await this.ipc.storeSet('contacts', this.contacts());
-  }
-
   /** Pre-fill add form with a recently used recipient */
   private suggestSaveContact(account: string) {
     // Auto-show add form with the account pre-filled
     this.contactAccount.set(account);
     this.contactName.set('');
     this.contactMemo.set('');
+    this.contactError.set('');
     this.showAddContact.set(true);
     this.editingContact.set(null);
+  }
+
+  onAddContact() {
+    this.cancelContactForm();
+    this.showAddContact.set(true);
+  }
+
+  onContactAccountInput(value: string) {
+    this.contactAccount.set(value);
+    this.contactError.set('');
   }
 
   cancelContactForm() {
@@ -877,30 +976,38 @@ export class SendComponent {
     this.contactName.set('');
     this.contactAccount.set('');
     this.contactMemo.set('');
+    this.contactError.set('');
   }
 
   async onSaveContact() {
     const name = this.contactName().trim();
-    const account = this.contactAccount().trim();
-    if (!name || !account) return;
+    const raw = this.contactAccount().trim();
+    if (!name || !raw) return;
 
-    const chainId = this.wallet.selectedAccount()?.chainId;
-    const newContact: Contact = { name, account, chainId, memo: this.contactMemo().trim() || undefined };
-
-    if (this.editingContact()) {
-      // Update existing
-      const old = this.editingContact()!;
-      this.contacts.update(list =>
-        list.map(c => (c.account === old.account && c.chainId === old.chainId) ? newContact : c)
-      );
-    } else {
-      // Add new (avoid duplicates)
-      if (!this.contacts().some(c => c.account === account && c.chainId === chainId)) {
-        this.contacts.update(list => [...list, newContact]);
-      }
+    const chainId = this.chainId();
+    if (!chainId) {
+      this.contactError.set('No active chain');
+      return;
     }
 
-    await this.saveContacts();
+    const isFio = this.isFio();
+    const invalid = validateContactAddress(raw, isFio);
+    if (invalid) {
+      this.contactError.set(invalid);
+      return;
+    }
+
+    const kind = detectContactKind(raw, isFio);
+    const saved = await this.contactsSvc.upsert(
+      chainId,
+      { name, account: raw, kind, memo: this.contactMemo() },
+      this.editingContact(),
+    );
+
+    if (!saved) {
+      this.contactError.set('A contact with that address already exists on this chain');
+      return;
+    }
     this.cancelContactForm();
   }
 
@@ -910,19 +1017,18 @@ export class SendComponent {
     this.contactName.set(contact.name);
     this.contactAccount.set(contact.account);
     this.contactMemo.set(contact.memo ?? '');
+    this.contactError.set('');
   }
 
   async onDeleteContact(contact: Contact) {
-    this.contacts.update(list =>
-      list.filter(c => !(c.account === contact.account && c.chainId === contact.chainId))
-    );
-    await this.saveContacts();
+    await this.contactsSvc.remove(this.chainId(), contact);
   }
 
   /** Click a contact to fill the recipient field */
   useContact(contact: Contact) {
     this.recipient.set(contact.account);
-    if (contact.memo) this.memo.set(contact.memo);
+    // FIO transfers have no memo field, so a stored memo never applies there.
+    if (contact.memo && !this.isFio()) this.memo.set(contact.memo);
     this.recipientValid.set(null);
     this.validateRecipient();
   }
