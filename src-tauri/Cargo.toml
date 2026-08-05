@@ -1,6 +1,9 @@
 [package]
 name = "simpleos"
-version = "2.0.0-alpha.2"
+# Crate version only — NOT the app version. The shipped version comes from
+# package.json via `tauri.conf.json > version`, which is the single source of
+# truth (bundle metadata, updater, and the `getVersion()` the UI displays).
+version = "0.0.0"
 description = "SimplEOS - Antelope Desktop Wallet"
 authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"

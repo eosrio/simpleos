@@ -129,12 +129,14 @@ fi
 
 if has_bundle dmg; then
   dmg_dir="$bundle_dir/dmg"
+  # package.json is the single source of truth for the app version;
+  # src-tauri/tauri.conf.json points at it ("version": "../package.json").
   app_version="$(
-    sed -n 's/^[[:space:]]*"version": "\([^"]*\)",/\1/p' src-tauri/tauri.conf.json \
+    sed -n 's/^[[:space:]]*"version": "\([^"]*\)",/\1/p' package.json \
       | head -n 1
   )"
   if [[ -z "$app_version" ]]; then
-    echo "Unable to read the app version from src-tauri/tauri.conf.json."
+    echo "Unable to read the app version from package.json."
     exit 1
   fi
   shopt -s nullglob

@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SimplEOS v2 is a desktop wallet for Antelope-based blockchains (Vaulta/EOS, WAX, Telos, Ultra, FIO, Libre, XPR). It is a **Tauri 2 + Angular 22** rewrite of the original Electron app — all cryptography, key storage, and chain I/O live in a **Rust backend** (`src-tauri/`); the Angular SPA (`src/`) is a pure renderer that talks to Rust over Tauri IPC and never touches private keys.
 
-Workspace versions are `2.0.0-alpha.1`. The active development branch is `v2-tauri-rewrite`; PRs target `master`.
+**The app version is declared once, in `package.json`** — bump it there and nowhere else. `src-tauri/tauri.conf.json` reads it (`"version": "../package.json"`), so bundle metadata and the updater follow automatically; `src-tauri/Cargo.toml` is pinned to `0.0.0` because the crate version is not the app version. The UI never hard-codes a version string — it injects `AppVersionService` (`core/services/app-version.service.ts`), which resolves the running bundle's version via Tauri's `getVersion()` and shows `dev` in the browser-only dev server. The one exception is `src-tauri/tauri.appstore.conf.json`, which must pin a plain `x.y.z` (App Store `CFBundleShortVersionString` rejects prerelease tags); `scripts/macos-appstore-package.sh` fails the build if that number drifts from `package.json`.
+
+The active development branch is `v2-tauri-rewrite`; PRs target `master`.
 
 ## Toolchain & Commands
 

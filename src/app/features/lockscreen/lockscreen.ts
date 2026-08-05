@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { LoaderService } from '../../core/services/loader.service';
+import { AppVersionService } from '../../core/services/app-version.service';
 import { WindowControlsComponent } from '../../shared/window-controls';
 
 @Component({
@@ -107,7 +108,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
           <a class="reset-link" (click)="showResetConfirm.set(true)">Reset wallet</a>
         }
 
-        <span class="version">v2.0.0-alpha</span>
+        <span class="version">{{ appVersion.display() }}</span>
       </div>
     </div>
   `,
@@ -396,6 +397,7 @@ export class LockscreenComponent {
   showPassphrase = signal(false);
 
   constructor(
+    public appVersion: AppVersionService,
     private wallet: WalletStateService,
     private router: Router,
     private ipc: TauriIpcService,
