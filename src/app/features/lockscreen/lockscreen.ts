@@ -158,7 +158,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       letter-spacing: 0.2px;
       color: var(--text-muted);
     }
-    .lock-titlebar-accent { color: var(--accent); }
+    .lock-titlebar-accent { color: var(--accent-text); }
     .lock-titlebar-fill {
       flex: 1 1 auto;
       min-width: 0;
@@ -221,7 +221,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
     }
 
     .brand-accent {
-      color: var(--accent);
+      color: var(--accent-text);
     }
 
     .subtitle {
@@ -295,7 +295,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .import-link {
       font-size: 13px;
-      color: var(--accent);
+      color: var(--accent-text);
       cursor: pointer;
       transition: color 150ms ease;
       text-decoration: none;
@@ -307,7 +307,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .reset-link {
       font-size: 12px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       cursor: pointer;
       transition: color 150ms ease;
       text-decoration: none;
@@ -353,7 +353,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .version {
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       margin-top: var(--sp-6);
     }
 

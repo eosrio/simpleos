@@ -353,7 +353,7 @@ interface AttentionAccount {
       padding: 6px 10px;
       border-radius: var(--radius-full);
       background: rgba(0, 148, 210, 0.12);
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -450,7 +450,7 @@ interface AttentionAccount {
     }
 
     .metric-figure-empty {
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
 
     .metric-note {
@@ -803,7 +803,7 @@ interface AttentionAccount {
       padding: 4px 8px;
       border-radius: var(--radius-full);
       background: rgba(0, 148, 210, 0.12);
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -834,12 +834,12 @@ interface AttentionAccount {
        point, not to say so in words that repeat on every card. */
     .open-chevron {
       flex-shrink: 0;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       transition: color 150ms ease, transform 150ms ease;
     }
 
     .account-card:hover .open-chevron {
-      color: var(--accent);
+      color: var(--accent-text);
       transform: translateX(2px);
     }
 
@@ -857,7 +857,7 @@ interface AttentionAccount {
     }
 
     .metric-label {
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -894,7 +894,7 @@ interface AttentionAccount {
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font: inherit;
       font-weight: 600;
       cursor: pointer;

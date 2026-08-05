@@ -275,11 +275,11 @@ import { WalletStateService } from '../core/services/wallet-state.service';
     }
 
     .action-contract {
-      color: var(--accent);
+      color: var(--accent-text);
     }
 
     .action-arrow {
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
 
     .action-name {
@@ -480,7 +480,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       background: var(--bg-base);
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 12px;
       font-weight: 500;
       font-family: var(--font-body);

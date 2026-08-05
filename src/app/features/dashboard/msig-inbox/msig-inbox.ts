@@ -260,7 +260,7 @@ interface ProposalDetails {
     }
     .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
     .subtitle strong { color: var(--text-bright); }
-    .source-hint { font-size: 11px; color: var(--text-disabled); margin-left: var(--sp-1); }
+    .source-hint { font-size: 11px; color: var(--text-muted); margin-left: var(--sp-1); }
     .toolbar { display: flex; gap: var(--sp-2); }
     .empty-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
 
@@ -361,7 +361,7 @@ interface ProposalDetails {
       font-weight: 600;
       color: var(--text-bright);
     }
-    .prop-sep { color: var(--text-disabled); }
+    .prop-sep { color: var(--text-muted); }
     .prop-proposer { font-size: 13px; color: var(--text-muted); }
     .prop-status { display: flex; gap: var(--sp-3); align-items: center; font-size: 12px; }
     .approval-count {
@@ -369,7 +369,7 @@ interface ProposalDetails {
       padding: 2px 8px;
       border-radius: var(--radius-full);
       background: var(--accent-muted);
-      color: var(--accent);
+      color: var(--accent-text);
     }
     .expiry, .proposed-at { color: var(--text-muted); }
     .expiry.urgent { color: var(--caution); font-weight: 500; }
@@ -415,7 +415,7 @@ interface ProposalDetails {
       justify-content: space-between;
       align-items: center;
       font-size: 11px;
-      color: var(--accent);
+      color: var(--accent-text);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       padding-bottom: var(--sp-2);
@@ -443,7 +443,7 @@ interface ProposalDetails {
       display: inline-block;
       font-family: var(--font-data);
       font-size: 13px;
-      color: var(--accent);
+      color: var(--accent-text);
       margin-bottom: var(--sp-1);
     }
     .action-auth { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-2); }
@@ -485,8 +485,8 @@ interface ProposalDetails {
       color: var(--positive);
     }
     .approver.pending { background: var(--bg-hover); color: var(--text-muted); }
-    .approver.me { outline: 1px solid var(--accent); color: var(--accent); }
-    .muted { color: var(--text-disabled); font-size: 11px; }
+    .approver.me { outline: 1px solid var(--accent); color: var(--accent-text); }
+    .muted { color: var(--text-muted); font-size: 11px; }
 
     .prop-actions-bar {
       display: flex;
@@ -512,7 +512,7 @@ interface ProposalDetails {
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-body);
       font-size: 11px;
       font-weight: 500;

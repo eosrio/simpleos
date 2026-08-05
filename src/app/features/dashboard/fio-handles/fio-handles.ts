@@ -160,7 +160,7 @@ type ActiveModal = 'none' | 'regaddress' | 'regdomain';
     
     .panel-badge {
       font-family: var(--font-data); font-size: 10px; font-weight: 500;
-      color: var(--accent); background: var(--accent-muted);
+      color: var(--accent-text); background: var(--accent-muted);
       padding: 2px var(--sp-2); border-radius: var(--radius-full);
     }
 
@@ -206,7 +206,7 @@ type ActiveModal = 'none' | 'regaddress' | 'regdomain';
     .btn-primary { padding: var(--sp-2) var(--sp-5); border: none; border-radius: var(--radius-sm); background: var(--accent); color: #fff; font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: background 150ms ease; }
     .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-ghost { padding: var(--sp-1) var(--sp-3); border: 1px solid var(--accent); border-radius: var(--radius-sm); background: transparent; color: var(--accent); font-family: var(--font-body); font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: background 150ms ease; }
+    .btn-ghost { padding: var(--sp-1) var(--sp-3); border: 1px solid var(--accent); border-radius: var(--radius-sm); background: transparent; color: var(--accent-text); font-family: var(--font-body); font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: background 150ms ease; }
     .btn-ghost:hover { background: var(--accent-muted); }
     .btn-cancel, .btn-confirm { flex: 1; padding: var(--sp-3); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 150ms ease; }
     .btn-cancel { background: var(--bg-base); color: var(--text-muted); border: 1px solid var(--border-subtle); }

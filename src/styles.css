@@ -51,10 +51,14 @@
   --border-subtle:  #2a2b3d;
   --border-focus:   var(--accent);
 
-  --text-bright:    #f0f1f5;
-  --text-body:      #b4b7c9;
-  --text-muted:     #6b6f85;
-  --text-disabled:  #484b5e;
+  /* Ratios below are the WORST case across all five --bg-* surfaces above.
+     --text-muted carries real content at 10-13px, so it must clear WCAG AA (4.5)
+     even on --bg-active; keep it there if you retune. --text-disabled is only for
+     placeholders and inert controls (AA-exempt), but stays legible at 3:1. */
+  --text-bright:    #f0f1f5;  /* 10.5:1 */
+  --text-body:      #b4b7c9;  /*  5.9:1 */
+  --text-muted:     #9ba0b8;  /*  4.6:1 */
+  --text-disabled:  #7d8199;  /*  3.1:1 */
 
   --shadow-card:    0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-modal:   0 8px 32px rgba(0, 0, 0, 0.5);
@@ -76,10 +80,11 @@
   --border-subtle:  #d8dbe4;
   --border-focus:   var(--accent);
 
-  --text-bright:    #111218;
-  --text-body:      #4a4d5e;
-  --text-muted:     #8b8fa3;
-  --text-disabled:  #b4b7c9;
+  /* Worst case across the five light surfaces — same floors as dark. */
+  --text-bright:    #111218;  /* 14.8:1 */
+  --text-body:      #4a4d5e;  /*  6.6:1 */
+  --text-muted:     #5f637a;  /*  4.7:1 */
+  --text-disabled:  #7e8296;  /*  3.0:1 */
 
   --shadow-card:    0 1px 4px rgba(0, 0, 0, 0.06);
   --shadow-modal:   0 8px 32px rgba(0, 0, 0, 0.12);
@@ -91,16 +96,24 @@
 /* ═══════════════════════════════════════════
    CHAIN ACCENTS
    Each chain overrides:
-     --accent         Primary interactive color
+     --accent         Primary interactive color (fills, borders, indicators)
      --accent-hover   Hover state
+     --accent-text    Accent used AS TEXT — see note below
      --accent-muted   Subtle background tint (buttons, active nav)
      --chain-tint     Ultra-subtle background wash (optional, for sidebar/header)
+
+   --accent vs --accent-text: the saturated brand colors read fine as a fill or a
+   1px border, but several of them fail badly as small text (Telos is 2.6:1 on a
+   dark card, WAX is 2.0:1 on a light one). --accent-text is the same hue lifted
+   (dark) or deepened (light) until it clears WCAG AA on every surface in the
+   palette. Use --accent for `background`/`border-color`, --accent-text for `color`.
    ═══════════════════════════════════════════ */
 
 /* Vaulta (EOS) — SimplEOS brand blue (default) */
 [data-chain="vaulta"], :root {
   --accent:        #0094d2;
   --accent-hover:  #00a8ef;
+  --accent-text:   #33b5f0;
   --accent-muted:  rgba(0, 148, 210, 0.12);
   --chain-tint:    rgba(0, 148, 210, 0.03);
 }
@@ -109,6 +122,7 @@
 [data-chain="wax"] {
   --accent:        #f5a623;
   --accent-hover:  #fbbf24;
+  --accent-text:   #f5a623;
   --accent-muted:  rgba(245, 166, 35, 0.12);
   --chain-tint:    rgba(245, 166, 35, 0.03);
 }
@@ -117,6 +131,7 @@
 [data-chain="telos"] {
   --accent:        #7c3aed;
   --accent-hover:  #8b5cf6;
+  --accent-text:   #ad93fb;
   --accent-muted:  rgba(124, 58, 237, 0.12);
   --chain-tint:    rgba(124, 58, 237, 0.03);
 }
@@ -125,6 +140,7 @@
 [data-chain="ultra"] {
   --accent:        #8b5cf6;
   --accent-hover:  #a78bfa;
+  --accent-text:   #b9a4fc;
   --accent-muted:  rgba(139, 92, 246, 0.12);
   --chain-tint:    rgba(139, 92, 246, 0.03);
 }
@@ -133,6 +149,7 @@
 [data-chain="fio"] {
   --accent:        #3b82f6;
   --accent-hover:  #60a5fa;
+  --accent-text:   #68a8fb;
   --accent-muted:  rgba(59, 130, 246, 0.12);
   --chain-tint:    rgba(59, 130, 246, 0.03);
 }
@@ -141,6 +158,7 @@
 [data-chain="libre"] {
   --accent:        #22c55e;
   --accent-hover:  #4ade80;
+  --accent-text:   #22c55e;
   --accent-muted:  rgba(34, 197, 94, 0.12);
   --chain-tint:    rgba(34, 197, 94, 0.03);
 }
@@ -149,20 +167,28 @@
 [data-chain="xpr"] {
   --accent:        #d946ef;
   --accent-hover:  #e879f9;
+  --accent-text:   #eb8ff8;
   --accent-muted:  rgba(217, 70, 239, 0.12);
   --chain-tint:    rgba(217, 70, 239, 0.03);
 }
 
 /* ═══════════════════════════════════════════
    LIGHT THEME + CHAIN overrides
-   Slightly stronger tints on light backgrounds
+   Slightly stronger tints on light backgrounds, and a deepened --accent-text:
+   the bright chain hues are unreadable as text on white (WAX 2.0:1, Libre 2.3:1).
+
+   These blocks must stay AFTER the chain accents above — the bare
+   [data-theme="light"] default below ties on specificity with :root and wins
+   only on source order (it covers chains with no explicit block, incl. vaulta).
    ═══════════════════════════════════════════ */
-[data-theme="light"][data-chain="wax"]   { --accent-muted: rgba(245, 166, 35, 0.08); --chain-tint: rgba(245, 166, 35, 0.04); }
-[data-theme="light"][data-chain="telos"] { --accent-muted: rgba(124, 58, 237, 0.08); --chain-tint: rgba(124, 58, 237, 0.04); }
-[data-theme="light"][data-chain="ultra"] { --accent-muted: rgba(139, 92, 246, 0.08); --chain-tint: rgba(139, 92, 246, 0.04); }
-[data-theme="light"][data-chain="fio"]   { --accent-muted: rgba(59, 130, 246, 0.08);  --chain-tint: rgba(59, 130, 246, 0.04); }
-[data-theme="light"][data-chain="libre"] { --accent-muted: rgba(34, 197, 94, 0.08);   --chain-tint: rgba(34, 197, 94, 0.04); }
-[data-theme="light"][data-chain="xpr"]   { --accent-muted: rgba(217, 70, 239, 0.08);  --chain-tint: rgba(217, 70, 239, 0.04); }
+[data-theme="light"]                     { --accent-text: #006a95; }
+[data-theme="light"][data-chain="vaulta"]{ --accent-text: #006a95; }
+[data-theme="light"][data-chain="wax"]   { --accent-text: #8a5a00; --accent-muted: rgba(245, 166, 35, 0.08); --chain-tint: rgba(245, 166, 35, 0.04); }
+[data-theme="light"][data-chain="telos"] { --accent-text: #6d28d9; --accent-muted: rgba(124, 58, 237, 0.08); --chain-tint: rgba(124, 58, 237, 0.04); }
+[data-theme="light"][data-chain="ultra"] { --accent-text: #6d28d9; --accent-muted: rgba(139, 92, 246, 0.08); --chain-tint: rgba(139, 92, 246, 0.04); }
+[data-theme="light"][data-chain="fio"]   { --accent-text: #1d4ed8; --accent-muted: rgba(59, 130, 246, 0.08);  --chain-tint: rgba(59, 130, 246, 0.04); }
+[data-theme="light"][data-chain="libre"] { --accent-text: #12703a; --accent-muted: rgba(34, 197, 94, 0.08);   --chain-tint: rgba(34, 197, 94, 0.04); }
+[data-theme="light"][data-chain="xpr"]   { --accent-text: #a21caf; --accent-muted: rgba(217, 70, 239, 0.08);  --chain-tint: rgba(217, 70, 239, 0.04); }
 
 /* ═══════════════════════════════════════════
    GLOBAL RESETS & UTILITIES

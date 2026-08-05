@@ -61,7 +61,7 @@ import { AppVersionService } from '../../../core/services/app-version.service';
       font-weight: 700;
       letter-spacing: 0.5px;
     }
-    .accent { color: var(--accent); }
+    .accent { color: var(--accent-text); }
 
     .about-version {
       font-family: var(--font-data);

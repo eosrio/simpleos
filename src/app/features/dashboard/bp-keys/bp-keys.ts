@@ -472,7 +472,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         gap: var(--sp-2);
         padding: var(--sp-1) var(--sp-3);
         background: var(--accent-muted);
-        color: var(--accent);
+        color: var(--accent-text);
         border-radius: var(--radius-full);
         font-size: 12px;
         font-weight: 500;
@@ -649,7 +649,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
       }
       .key-status.standby {
         background: var(--accent-muted);
-        color: var(--accent);
+        color: var(--accent-text);
       }
       .key-status.pending {
         background: rgba(245, 166, 35, 0.12);
@@ -737,7 +737,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         min-width: 0;
       }
       .perm-acct {
-        color: var(--accent);
+        color: var(--accent-text);
       }
       .perm-wait {
         color: var(--text-muted);
@@ -775,7 +775,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         border: 1px solid var(--accent);
         border-radius: var(--radius-sm);
         background: transparent;
-        color: var(--accent);
+        color: var(--accent-text);
         font-family: var(--font-body);
         font-size: 11px;
         font-weight: 500;
@@ -874,7 +874,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
       }
       .finkey-badge.standby {
         background: var(--accent-muted);
-        color: var(--accent);
+        color: var(--accent-text);
       }
       .finkey-error {
         font-size: 12px;

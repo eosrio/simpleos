@@ -61,14 +61,14 @@ import { AlertService } from '../core/services/alert.service';
     .alert-item.success { border-color: var(--positive); }
     .alert-item.success .alert-icon { color: var(--positive); }
     .alert-item.info { border-color: var(--accent); }
-    .alert-item.info .alert-icon { color: var(--accent); }
+    .alert-item.info .alert-icon { color: var(--accent-text); }
     .alert-icon { flex-shrink: 0; margin-top: 1px; }
     .alert-text { flex: 1; word-break: break-word; }
     .alert-close {
       flex-shrink: 0;
       background: none;
       border: none;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       cursor: pointer;
       padding: 2px;
       margin: -2px -4px -2px 0;

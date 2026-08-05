@@ -235,7 +235,7 @@ interface TokenOption {
     .optional {
       text-transform: none;
       letter-spacing: 0;
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
 
     .form-input {
@@ -263,7 +263,7 @@ interface TokenOption {
       display: block;
       text-align: right;
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       margin-top: var(--sp-1);
     }
 
@@ -328,7 +328,7 @@ interface TokenOption {
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-data);
       font-size: 12px;
       font-weight: 500;
@@ -380,12 +380,12 @@ interface TokenOption {
     .my-account-chip:hover {
       background: var(--bg-hover);
       border-color: var(--accent);
-      color: var(--accent);
+      color: var(--accent-text);
     }
     .my-account-chip.selected {
       background: var(--accent-muted);
       border-color: var(--accent);
-      color: var(--accent);
+      color: var(--accent-text);
     }
     .my-account-name {
       overflow: hidden;
@@ -399,14 +399,14 @@ interface TokenOption {
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       padding: 1px 4px;
       border-radius: var(--radius-sm);
       background: var(--bg-deep);
     }
     .my-account-chip.selected .my-account-badge,
     .my-account-chip:hover .my-account-badge {
-      color: var(--accent);
+      color: var(--accent-text);
       background: transparent;
     }
 
@@ -431,7 +431,7 @@ interface TokenOption {
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      color: var(--accent);
+      color: var(--accent-text);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -445,7 +445,7 @@ interface TokenOption {
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 18px;
       font-weight: 600;
       cursor: pointer;
@@ -462,7 +462,7 @@ interface TokenOption {
 
     .contacts-empty p {
       font-size: 12px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       text-align: center;
       padding: var(--sp-4) 0;
     }

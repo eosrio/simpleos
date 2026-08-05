@@ -136,7 +136,7 @@ interface ClaimAction {
         gap: var(--sp-2);
         padding: var(--sp-1) var(--sp-3);
         background: var(--accent-muted);
-        color: var(--accent);
+        color: var(--accent-text);
         border-radius: var(--radius-full);
         font-size: 12px;
         font-weight: 500;
@@ -242,7 +242,7 @@ interface ClaimAction {
       }
       .tx-link {
         font-family: var(--font-data);
-        color: var(--accent);
+        color: var(--accent-text);
         cursor: pointer;
         font-size: 12px;
       }

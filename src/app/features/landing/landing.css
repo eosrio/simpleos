@@ -43,7 +43,7 @@
   letter-spacing: 0.2px;
   color: var(--text-muted);
 }
-.landing-titlebar-accent { color: var(--accent); }
+.landing-titlebar-accent { color: var(--accent-text); }
 .landing-titlebar-fill {
   flex: 1 1 auto;
   min-width: 0;
@@ -115,7 +115,7 @@
   color: var(--text-bright);
   letter-spacing: 0.5px;
 }
-.topbar-accent { color: var(--accent); }
+.topbar-accent { color: var(--accent-text); }
 
 .skip-btn {
   display: flex;
@@ -132,7 +132,7 @@
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
-.skip-btn:hover { color: var(--accent); border-color: var(--accent); }
+.skip-btn:hover { color: var(--accent-text); border-color: var(--accent); }
 
 /* ═══ STEP RAIL ═══ */
 .step-rail {
@@ -156,7 +156,7 @@
   justify-content: center;
   border: 2px solid var(--border-subtle);
   background: var(--bg-raised);
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -176,7 +176,7 @@
 .step-label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   transition: color 0.3s;
   white-space: nowrap;
 }
@@ -229,7 +229,7 @@
   font-size: 14px;
   color: var(--text-muted);
 }
-.panel-header p strong { color: var(--accent); }
+.panel-header p strong { color: var(--accent-text); }
 
 /* ═══ CHAIN GRID ═══ */
 .chain-grid {
@@ -404,7 +404,7 @@
   align-items: center;
   gap: var(--sp-1);
   font-size: 12px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 .stat-sep { color: var(--border-subtle); }
 .stat-healthy { color: var(--positive); font-weight: 500; }
@@ -433,7 +433,7 @@
   flex-shrink: 0;
 }
 .refresh-btn:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent);
 }
 
@@ -461,7 +461,7 @@
   gap: var(--sp-2);
   padding: 4px 0;
   font-size: 11px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-family: var(--font-mono, 'Space Grotesk', monospace);
 }
 .endpoint-row.healthy { color: var(--text-muted); }
@@ -486,7 +486,7 @@
 }
 .ep-producer {
   flex-shrink: 0;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -500,7 +500,7 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   background: var(--bg-base);
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 .ep-latency {
   flex-shrink: 0;
@@ -511,14 +511,14 @@
   font-weight: 500;
 }
 .ep-latency.failed {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .retry-link {
   margin-left: auto;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -593,7 +593,7 @@
   margin-bottom: var(--sp-4);
   transition: color 0.15s, border-color 0.15s;
 }
-.back-pill:hover { color: var(--accent); border-color: var(--accent); }
+.back-pill:hover { color: var(--accent-text); border-color: var(--accent); }
 
 /* ═══ ACTION CARDS ═══ */
 .action-cards {
@@ -652,10 +652,10 @@
 }
 .action-arrow {
   flex-shrink: 0;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   transition: color 0.15s, transform 0.15s;
 }
-.action-card:hover .action-arrow { color: var(--accent); transform: translateX(2px); }
+.action-card:hover .action-arrow { color: var(--accent-text); transform: translateX(2px); }
 
 /* ═══ FORM CARD ═══ */
 .form-card {
@@ -709,12 +709,12 @@ label {
   cursor: pointer;
   transition: color 0.15s;
 }
-.toggle-vis:hover { color: var(--accent); }
+.toggle-vis:hover { color: var(--accent-text); }
 .char-hint {
   display: block;
   text-align: right;
   font-size: 11px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   margin-top: var(--sp-1);
 }
 .field-error {
@@ -816,7 +816,7 @@ label {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.btn-text:hover { color: var(--accent); }
+.btn-text:hover { color: var(--accent-text); }
 
 .backup-dropzone {
   display: flex;
@@ -830,7 +830,7 @@ label {
   color: var(--text-muted);
 }
 .backup-dropzone p { font-size: 14px; color: var(--text-body); }
-.hint { font-size: 11px; color: var(--text-disabled); max-width: 300px; }
+.hint { font-size: 11px; color: var(--text-muted); max-width: 300px; }
 
 /* ═══ ANCHOR IMPORT ═══ */
 .anchor-icon { background: rgba(0, 148, 210, 0.08); }
@@ -876,7 +876,7 @@ label {
   border-radius: var(--radius-sm);
   transition: background 0.15s, color 0.15s;
 }
-.btn-text-sm:hover { background: var(--bg-card); color: var(--accent); }
+.btn-text-sm:hover { background: var(--bg-card); color: var(--accent-text); }
 
 .anchor-table {
   max-height: 320px;
@@ -910,7 +910,7 @@ label {
 .anchor-chain {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -926,7 +926,7 @@ label {
 }
 .anchor-key {
   font-size: 11px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-family: var(--font-mono, monospace);
 }
 
@@ -963,7 +963,7 @@ label {
 .field-hint {
   display: block;
   font-size: 11px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   margin-top: var(--sp-1);
 }
 
@@ -978,7 +978,7 @@ label {
   padding: var(--sp-6) 0;
 }
 .ledger-icon-large {
-  color: var(--accent);
+  color: var(--accent-text);
   opacity: 0.7;
 }
 .ledger-connect p {
@@ -1014,10 +1014,10 @@ label {
 .ledger-accounts {
   font-family: var(--font-data);
   font-size: 12px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
-.ledger-accounts.muted { color: var(--text-disabled); }
-.ledger-icon { background: var(--accent-muted); color: var(--accent); }
+.ledger-accounts.muted { color: var(--text-muted); }
+.ledger-icon { background: var(--accent-muted); color: var(--accent-text); }
 
 /* ═══ TESTNET DRAWER ═══ */
 .testnet-drawer {
@@ -1031,7 +1031,7 @@ label {
   padding: var(--sp-1) 0;
   border: none;
   background: transparent;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-family: var(--font-body);
   cursor: pointer;
 }

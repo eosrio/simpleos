@@ -297,14 +297,14 @@ const CURATED_DAPPS: DappEntry[] = [
       cursor: pointer; transition: all 150ms ease;
     }
     .filter-chip:hover { border-color: var(--text-muted); color: var(--text-body); }
-    .filter-chip.active { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active { background: var(--accent-muted); border-color: var(--accent); color: var(--accent-text); }
 
     /* Compat banner */
     .compat-banner {
       display: flex; align-items: center; gap: var(--sp-3);
       padding: var(--sp-3) var(--sp-4);
       background: var(--accent-muted); border-radius: var(--radius-md);
-      font-size: 12px; color: var(--accent); margin-bottom: var(--sp-6);
+      font-size: 12px; color: var(--accent-text); margin-bottom: var(--sp-6);
     }
     .compat-banner strong { color: var(--text-bright); }
 
@@ -332,11 +332,11 @@ const CURATED_DAPPS: DappEntry[] = [
     .btn-pin, .btn-unpin {
       display: flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border: none; border-radius: var(--radius-sm);
-      background: transparent; color: var(--text-disabled); cursor: pointer;
+      background: transparent; color: var(--text-muted); cursor: pointer;
       opacity: 0; transition: opacity 150ms ease, color 150ms ease;
     }
     .dapp-card:hover .btn-pin, .dapp-card:hover .btn-unpin { opacity: 1; }
-    .btn-pin:hover { color: var(--accent); }
+    .btn-pin:hover { color: var(--accent-text); }
     .btn-unpin:hover { color: var(--negative); }
 
     /* Add custom dApp */
@@ -344,7 +344,7 @@ const CURATED_DAPPS: DappEntry[] = [
       display: block; width: 100%; margin-top: var(--sp-4);
       padding: var(--sp-3); border: 1px dashed var(--border-subtle);
       border-radius: var(--radius-md); background: transparent;
-      color: var(--accent); font-size: 13px; cursor: pointer;
+      color: var(--accent-text); font-size: 13px; cursor: pointer;
       transition: background 150ms ease;
     }
     .btn-add-dapp:hover { background: var(--accent-muted); }
@@ -396,7 +396,7 @@ const CURATED_DAPPS: DappEntry[] = [
       padding: var(--sp-1) var(--sp-3); background: var(--bg-raised);
       border-radius: var(--radius-sm); margin: 0;
     }
-    .status-hint { font-size: 13px; color: var(--text-disabled); margin: var(--sp-2) 0 var(--sp-4); line-height: 1.5; }
+    .status-hint { font-size: 13px; color: var(--text-muted); margin: var(--sp-2) 0 var(--sp-4); line-height: 1.5; }
     .status-actions { display: flex; gap: var(--sp-3); }
     .btn-status {
       display: flex; align-items: center; gap: var(--sp-2);

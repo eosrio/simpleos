@@ -446,7 +446,7 @@ interface AccountTabFilter {
       letter-spacing: 0.4px;
       color: var(--text-bright);
     }
-    .titlebar-name .accent { color: var(--accent); }
+    .titlebar-name .accent { color: var(--accent-text); }
 
     .chain-filter {
       position: relative;
@@ -537,7 +537,7 @@ interface AccountTabFilter {
       padding: 0 6px;
       border-radius: var(--radius-full);
       background: color-mix(in srgb, var(--accent) 16%, transparent);
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-data);
       font-size: 10px;
       font-weight: 700;
@@ -613,7 +613,7 @@ interface AccountTabFilter {
     }
 
     .option-meta {
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-size: 10px;
       font-weight: 600;
     }
@@ -813,9 +813,9 @@ interface AccountTabFilter {
       justify-content: center;
       min-width: 44px;
       padding: var(--sp-2);
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
-    .add-tab:hover { color: var(--accent); }
+    .add-tab:hover { color: var(--accent-text); }
 
     /* ── Main area (sidebar + content) ── */
     .main-area {
@@ -839,7 +839,7 @@ interface AccountTabFilter {
       transition: background-image 300ms ease;
     }
 
-    .accent { color: var(--accent); }
+    .accent { color: var(--accent-text); }
 
     /* Account card */
     .account-card {
@@ -914,7 +914,7 @@ interface AccountTabFilter {
     .nav-list li a:hover .shortcut { opacity: 1; }
 
     .nav-list li a.active {
-      color: var(--accent);
+      color: var(--accent-text);
       border-left-color: var(--accent);
       background: var(--accent-muted);
     }
@@ -924,7 +924,7 @@ interface AccountTabFilter {
     .shortcut {
       margin-left: auto;
       font-size: 10px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
       opacity: 0;
       transition: opacity 150ms ease;
@@ -941,7 +941,7 @@ interface AccountTabFilter {
       font-weight: 600;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--accent-text);
       padding: var(--sp-1) var(--sp-5);
       list-style: none;
     }
@@ -976,8 +976,9 @@ interface AccountTabFilter {
     .mode-badge {
       display: flex;
       align-items: center;
-      color: var(--accent);
-      opacity: 0.6;
+      /* Recessed via the token, not opacity — 0.6 alpha undid the contrast the
+         accent-text ramp is there to guarantee. */
+      color: var(--text-muted);
     }
     .theme-toggle {
       display: flex;
@@ -993,13 +994,13 @@ interface AccountTabFilter {
       transition: color 150ms ease, border-color 150ms ease;
     }
     .theme-toggle:hover {
-      color: var(--accent);
+      color: var(--accent-text);
       border-color: var(--accent);
     }
 
     .version {
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
     }
 
@@ -1011,7 +1012,7 @@ interface AccountTabFilter {
       border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
       border-radius: var(--radius-full);
       background: color-mix(in srgb, var(--accent) 12%, transparent);
-      color: var(--accent);
+      color: var(--accent-text);
       cursor: pointer;
       transition: background 150ms ease, border-color 150ms ease;
     }

@@ -767,7 +767,7 @@ import { AppVersionService } from '../../../core/services/app-version.service';
       flex-shrink: 0;
       color: var(--text-muted);
     }
-    .mode-option.active svg { color: var(--accent); }
+    .mode-option.active svg { color: var(--accent-text); }
     .mode-name {
       font-size: 13px;
       font-weight: 500;
@@ -787,7 +787,7 @@ import { AppVersionService } from '../../../core/services/app-version.service';
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-body);
       font-size: 12px;
       font-weight: 500;
@@ -821,7 +821,7 @@ import { AppVersionService } from '../../../core/services/app-version.service';
       display: block;
       border: none;
       background: none;
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 12px;
       cursor: pointer;
       padding: var(--sp-2) 0;
@@ -891,7 +891,7 @@ import { AppVersionService } from '../../../core/services/app-version.service';
       border-radius: var(--radius-sm);
       font-family: var(--font-data);
       font-size: 12px;
-      color: var(--accent);
+      color: var(--accent-text);
       word-break: break-all;
     }
     .btn-text-close {

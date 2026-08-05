@@ -296,7 +296,7 @@ interface ProducerRow {
         font-family: var(--font-data);
         font-size: 10px;
         font-weight: 500;
-        color: var(--accent);
+        color: var(--accent-text);
         background: var(--accent-muted);
         padding: 2px var(--sp-2);
         border-radius: var(--radius-full);
@@ -390,7 +390,7 @@ interface ProducerRow {
         background: var(--bg-hover);
       }
       .tab.active {
-        color: var(--accent);
+        color: var(--accent-text);
         background: var(--accent-muted);
       }
 
@@ -425,7 +425,7 @@ interface ProducerRow {
       }
       .col-url {
         font-size: 11px;
-        color: var(--text-disabled);
+        color: var(--text-muted);
       }
       .truncate {
         overflow: hidden;
@@ -540,7 +540,7 @@ interface ProducerRow {
         border: 1px solid var(--accent);
         border-radius: var(--radius-sm);
         background: transparent;
-        color: var(--accent);
+        color: var(--accent-text);
         font-family: var(--font-body);
         font-size: 12px;
         font-weight: 500;
@@ -563,7 +563,7 @@ interface ProducerRow {
         transition: color 150ms ease;
       }
       .btn-text:hover {
-        color: var(--accent);
+        color: var(--accent-text);
       }
     `,
   ],

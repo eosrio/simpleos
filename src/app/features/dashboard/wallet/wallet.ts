@@ -469,7 +469,7 @@ type ValueNode =
       transition: color 0.15s, border-color 0.15s;
     }
     .refresh-btn:hover:not(:disabled) {
-      color: var(--accent);
+      color: var(--accent-text);
       border-color: var(--accent);
     }
     .refresh-btn:disabled { opacity: 0.4; cursor: default; }
@@ -643,7 +643,7 @@ type ValueNode =
       border: none;
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
@@ -675,7 +675,7 @@ type ValueNode =
       height: 32px;
       border-radius: var(--radius-sm);
       background: var(--accent-muted);
-      color: var(--accent);
+      color: var(--accent-text);
       flex-shrink: 0;
     }
 
@@ -763,12 +763,12 @@ type ValueNode =
 
     .action-time {
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
 
     .action-hash {
       font-size: 10px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       padding: 1px 5px;
       border-radius: var(--radius-sm);
       background: var(--bg-base);
@@ -831,7 +831,7 @@ type ValueNode =
       transition: color 150ms, background 150ms;
       flex-shrink: 0;
     }
-    .icon-btn:hover { color: var(--accent); background: var(--bg-hover); }
+    .icon-btn:hover { color: var(--accent-text); background: var(--bg-hover); }
 
     /* Data card (action arguments) */
     .data-card {
@@ -890,7 +890,7 @@ type ValueNode =
       padding-bottom: 4px;
     }
     .dv-count {
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-size: 10px;
       font-weight: normal;
     }
@@ -902,7 +902,7 @@ type ValueNode =
     }
     .dv-group-index {
       font-size: 10px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
       margin-bottom: 2px;
     }
@@ -955,7 +955,7 @@ type ValueNode =
       gap: 5px;
       font-size: 11px;
       font-weight: 500;
-      color: var(--accent);
+      color: var(--accent-text);
       background: var(--bg-base);
       border: 1px solid var(--border-subtle);
       padding: 4px 10px;
@@ -968,7 +968,7 @@ type ValueNode =
     .explorer-link:hover {
       background: var(--accent-muted);
       border-color: var(--accent);
-      color: var(--accent);
+      color: var(--accent-text);
     }
 
     .load-more {
@@ -978,7 +978,7 @@ type ValueNode =
       border: none;
       border-top: 1px solid var(--border-subtle);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-body);
       font-size: 13px;
       font-weight: 500;

@@ -206,7 +206,7 @@ interface CreatedRecord {
     }
     h2 { font-size: 24px; margin-bottom: var(--sp-2); }
     .lede { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-5); }
-    .lede .payer { color: var(--accent); font-family: var(--font-data); }
+    .lede .payer { color: var(--accent-text); font-family: var(--font-data); }
 
     .form-group { margin-bottom: var(--sp-5); }
     .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
@@ -295,7 +295,7 @@ interface CreatedRecord {
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-data);
       font-size: 12px;
       font-weight: 500;
@@ -341,7 +341,7 @@ interface CreatedRecord {
     .success-row .v { color: var(--text-bright); }
     .success-row .v.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
     .mono { font-family: var(--font-data); }
-    .explorer-link { font-size: 12px; color: var(--accent); text-decoration: none; }
+    .explorer-link { font-size: 12px; color: var(--accent-text); text-decoration: none; }
     .explorer-link:hover { text-decoration: underline; }
     .success-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
     .import-note { font-size: 12px; color: var(--text-muted); margin-top: var(--sp-2); }
@@ -353,7 +353,7 @@ interface CreatedRecord {
       align-self: flex-start;
     }
     .recent-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-3); }
-    .recent-empty { font-size: 12px; color: var(--text-disabled); }
+    .recent-empty { font-size: 12px; color: var(--text-muted); }
     .recent-row {
       display: flex;
       align-items: center;
