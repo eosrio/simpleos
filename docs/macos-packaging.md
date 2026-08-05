@@ -74,6 +74,11 @@ export TAURI_SIGNING_PRIVATE_KEY_PATH="$HOME/.tauri/simpleos-updater.key"
 export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
 ```
 
+`macos-package.sh` reads that file into `TAURI_SIGNING_PRIVATE_KEY` before building,
+because `tauri build` ignores the `_PATH` variant and would otherwise fail to sign the
+updater artifacts at the very end of a full release build. See
+[releasing-updates.md](releasing-updates.md) for how the signed artifacts are published.
+
 ## Verification
 
 After the build:

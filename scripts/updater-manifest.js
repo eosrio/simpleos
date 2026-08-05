@@ -110,6 +110,35 @@ function platformKeys(artifactPath) {
   return [`${os}-${HOST_ARCH}`];
 }
 
+/**
+ * Extracts the 8-byte minisign key ID from a base64 public key or `.sig` blob. Both
+ * decode to a two-line minisign file whose payload is `[2-byte algorithm][8-byte key
+ * id][...]`, so the ID identifies which key signed a given artifact.
+ */
+function keyId(base64Block) {
+  try {
+    const text = Buffer.from(base64Block.trim(), 'base64').toString('utf8');
+    const line = text.split('\n').find((l) => l && !l.startsWith('untrusted comment:'));
+    if (!line) return null;
+    const bytes = Buffer.from(line.trim(), 'base64');
+    return bytes.length >= 10 ? bytes.subarray(2, 10).toString('hex') : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The key ID the shipped config trusts, so we can refuse to publish anything else. */
+function configuredKeyId() {
+  try {
+    const config = JSON.parse(
+      fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'),
+    );
+    return keyId(config.plugins?.updater?.pubkey ?? '');
+  } catch {
+    return null;
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const bundleRoot = args['bundle-root'] ? path.resolve(args['bundle-root']) : ROOT;
@@ -165,6 +194,21 @@ function main() {
     }
 
     const signature = fs.readFileSync(sigPath, 'utf8').trim();
+
+    // A self-test build leaves artifacts signed by a throwaway key in the same target
+    // directory. Publishing those would advertise updates no installed app can verify,
+    // so refuse them here rather than discover it after the manifest is live.
+    const expectedKey = configuredKeyId();
+    const signedBy = keyId(signature);
+    if (expectedKey && signedBy && signedBy !== expectedKey) {
+      console.error(
+        `\n${path.basename(artifactPath)} was signed by key ${signedBy}, but the app trusts ` +
+          `${expectedKey}.\nThis is what a leftover self-test build looks like. Delete ` +
+          'src-tauri/target/*/release/bundle\nand rebuild with the release signing key.',
+      );
+      process.exit(1);
+    }
+
     const url = `https://github.com/${repo}/releases/download/${tag}/${path.basename(artifactPath)}`;
 
     for (const key of keys) {

@@ -49,3 +49,6 @@ Thumbs.db
 
 # Playwright MCP scratch output
 .playwright-mcp/
+
+# Local updater rehearsal (throwaway keys + build config)
+.updater-selftest/

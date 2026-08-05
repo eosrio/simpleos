@@ -28,13 +28,31 @@ ng generate --help
 
 ## Building
 
-To build the project run:
+To build the desktop app for your own machine:
 
 ```bash
-ng build
+bun install
+bun run tauri:build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+That produces an NSIS installer on Windows, an AppImage and `.deb` on Linux, and an
+unnotarized `.app`/`.dmg` on macOS, under `src-tauri/target/release/bundle/`. No signing
+key of any kind is required.
+
+A self-built app **still receives official updates**: update verification uses the
+public key committed in `src-tauri/tauri.conf.json`, so a build from this repo trusts
+the same signed releases as a downloaded one. It just cannot be published as an update
+itself, since nothing signed its artifacts. See
+[docs/releasing-updates.md](docs/releasing-updates.md) for how releases are cut and how
+to rehearse the update flow locally.
+
+To build only the Angular bundle (no desktop shell):
+
+```bash
+bun run build
+```
+
+This compiles the frontend into `dist/simpleos/browser`.
 
 ## Running unit tests
 

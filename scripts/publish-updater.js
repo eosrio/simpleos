@@ -2,7 +2,7 @@
 /**
  * Publishes an update: uploads the signed updater artifacts to the GitHub release for
  * the tag, then writes `latest.json` to the `updater` branch — the stable URL the app
- * polls (`tauri.conf.json > bundle.updater.endpoints`).
+ * polls (`tauri.conf.json > plugins > updater > endpoints`).
  *
  * The manifest lives on a branch rather than as a release asset because GitHub's
  * `releases/latest/` only ever resolves to the newest *non-prerelease*. While v2 ships

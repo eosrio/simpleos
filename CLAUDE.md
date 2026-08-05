@@ -19,7 +19,11 @@ The active development branch is `v2-tauri-rewrite`; PRs target `master`. Shippi
 ```bash
 bun install                 # install JS deps
 bun run tauri:dev           # PRIMARY dev loop: builds Angular (ng serve :42024) + opens the Tauri window
-bun run tauri:build         # production desktop bundle (runs `bun run build` first via beforeBuildCommand)
+bun run tauri:build         # desktop bundle for the host OS via scripts/package-desktop.js
+                            # (nsis on Windows, appimage+deb on Linux, app+dmg on macOS). Passes
+                            # --no-sign when no updater key is set, so building from source works
+                            # without one; a source build still receives official updates.
+bun run tauri:build:raw     # unwrapped `tauri build` — fails without the updater signing key
 bun run start               # Angular dev server only (browser, no Rust backend — uses mock data, see below)
 bun run build               # Angular production build into dist/simpleos/browser
 ```

@@ -77,6 +77,19 @@ if [[ "$require_updater_key" -eq 1 ]]; then
     echo "Set TAURI_SIGNING_PRIVATE_KEY or TAURI_SIGNING_PRIVATE_KEY_PATH, or pass --no-updater."
     exit 1
   fi
+
+  # `tauri build` only reads TAURI_SIGNING_PRIVATE_KEY. TAURI_SIGNING_PRIVATE_KEY_PATH
+  # works for `tauri signer sign` but is ignored here, and the bundle then fails with
+  # "a public key has been found, but no private key" *after* a full release build.
+  # Normalize so exporting the path keeps working.
+  if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+    if [[ ! -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ]]; then
+      echo "TAURI_SIGNING_PRIVATE_KEY_PATH points at a missing file: $TAURI_SIGNING_PRIVATE_KEY_PATH"
+      exit 1
+    fi
+    TAURI_SIGNING_PRIVATE_KEY="$(cat "$TAURI_SIGNING_PRIVATE_KEY_PATH")"
+    export TAURI_SIGNING_PRIVATE_KEY
+  fi
 fi
 
 # Notarization is performed below with a Keychain profile. Ensure Tauri cannot
