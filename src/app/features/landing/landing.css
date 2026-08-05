@@ -19,7 +19,6 @@
   display: flex;
   align-items: center;
   z-index: 10;
-  -webkit-app-region: drag;
   pointer-events: auto;
 }
 .landing-titlebar-brand {
@@ -32,7 +31,6 @@
   color: var(--text-muted);
   user-select: none;
   -webkit-user-select: none;
-  -webkit-app-region: drag;
 }
 .landing-titlebar-logo {
   width: 18px;

@@ -52,7 +52,6 @@ import { Component, OnDestroy, OnInit, signal } from '@angular/core';
       display: flex;
       align-self: stretch;
       flex-shrink: 0;
-      -webkit-app-region: no-drag;
     }
     .win-btn {
       width: 46px;
@@ -68,7 +67,6 @@ import { Component, OnDestroy, OnInit, signal } from '@angular/core';
       color: var(--text-muted);
       cursor: pointer;
       transition: background 120ms ease, color 120ms ease;
-      -webkit-app-region: no-drag;
     }
     .win-btn:hover {
       background: var(--bg-hover);

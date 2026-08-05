@@ -12,12 +12,14 @@ import { WindowControlsComponent } from '../../shared/window-controls';
   imports: [FormsModule, WindowControlsComponent],
   template: `
     <div class="lockscreen">
-      <div class="lock-titlebar" data-tauri-drag-region>
-        <div class="lock-titlebar-brand" data-tauri-drag-region>
-          <img src="assets/simpleos-logo.svg" alt="" class="lock-titlebar-logo" data-tauri-drag-region />
-          <span class="lock-titlebar-name" data-tauri-drag-region>Simpl<span class="lock-titlebar-accent">EOS</span></span>
+      <!-- "deep": the whole strip drags, including the brand text and any gaps.
+           Interactive children (the window controls) still block dragging. -->
+      <div class="lock-titlebar" data-tauri-drag-region="deep">
+        <div class="lock-titlebar-brand">
+          <img src="assets/simpleos-logo.svg" alt="" class="lock-titlebar-logo" />
+          <span class="lock-titlebar-name">Simpl<span class="lock-titlebar-accent">EOS</span></span>
         </div>
-        <div class="lock-titlebar-fill" data-tauri-drag-region></div>
+        <div class="lock-titlebar-fill"></div>
         <app-window-controls />
       </div>
       <div class="lockscreen-inner">
@@ -132,7 +134,6 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       display: flex;
       align-items: center;
       z-index: 10;
-      -webkit-app-region: drag;
     }
     .lock-titlebar-brand {
       display: flex;
@@ -144,7 +145,6 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       color: var(--text-muted);
       user-select: none;
       -webkit-user-select: none;
-      -webkit-app-region: drag;
     }
     .lock-titlebar-logo {
       width: 18px;

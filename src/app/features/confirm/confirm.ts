@@ -17,7 +17,7 @@ import { TauriIpcService, SignSummary } from '../../core/services/tauri-ipc.serv
   standalone: true,
   template: `
     <div class="cw">
-      <header class="cw-titlebar" data-tauri-drag-region>
+      <header class="cw-titlebar" data-tauri-drag-region="deep">
         <span class="cw-brand">SimplEOS</span>
       </header>
 

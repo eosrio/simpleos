@@ -52,12 +52,12 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
       <div class="bg-glow" [style.--glow-color]="activeGlowColor()"></div>
 
       <!-- Custom titlebar (transparent, overlays the wizard) -->
-      <div class="landing-titlebar" data-tauri-drag-region>
-        <div class="landing-titlebar-brand" data-tauri-drag-region>
-          <img src="assets/simpleos-logo.svg" alt="" class="landing-titlebar-logo" data-tauri-drag-region />
-          <span class="landing-titlebar-name" data-tauri-drag-region>Simpl<span class="landing-titlebar-accent">EOS</span></span>
+      <div class="landing-titlebar" data-tauri-drag-region="deep">
+        <div class="landing-titlebar-brand">
+          <img src="assets/simpleos-logo.svg" alt="" class="landing-titlebar-logo" />
+          <span class="landing-titlebar-name">Simpl<span class="landing-titlebar-accent">EOS</span></span>
         </div>
-        <div class="landing-titlebar-fill" data-tauri-drag-region></div>
+        <div class="landing-titlebar-fill"></div>
         <app-window-controls />
       </div>
 

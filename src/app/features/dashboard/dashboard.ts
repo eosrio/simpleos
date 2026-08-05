@@ -19,8 +19,12 @@ interface AccountTabFilter {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmModalComponent, WindowControlsComponent],
   template: `
     <div class="dashboard">
-      <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls -->
-      <div class="titlebar">
+      <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls.
+           The "deep" drag region makes the whole strip a drag handle: Tauri walks the event
+           path and any click that does not land on an interactive element (button/link/input)
+           moves the window, so empty gaps — tab-strip padding, space after the last tab, flex
+           gaps — drag instead of being dead zones. Interactive children still block dragging. -->
+      <div class="titlebar" data-tauri-drag-region="deep">
         <button class="titlebar-brand" type="button" title="Wallet overview" aria-label="Open wallet overview" (click)="openOverview()">
           <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="titlebar-logo" />
           <span class="titlebar-name">Simpl<span class="accent">EOS</span></span>
@@ -46,7 +50,7 @@ interface AccountTabFilter {
               </button>
 
               @if (chainFilterOpen()) {
-                <div class="chain-filter-menu" role="menu" aria-label="Account tab chain filter">
+                <div class="chain-filter-menu" role="menu" aria-label="Account tab chain filter" data-tauri-drag-region="false">
                   <button type="button"
                           class="chain-filter-option"
                           [class.active]="selectedChainFilter() === 'all'"
@@ -380,14 +384,13 @@ interface AccountTabFilter {
         linear-gradient(180deg, color-mix(in srgb, var(--chain-tint) 80%, var(--bg-deep)), var(--bg-deep));
       border-bottom: 1px solid var(--border-subtle);
       min-height: 48px;
-      /* Entire strip acts as a drag handle where children don't opt out. */
-      -webkit-app-region: drag;
+      /* Dragging is driven by data-tauri-drag-region="deep" on the element, not by
+         -webkit-app-region — that property is an Electron/Chromium-shell feature and is
+         ignored by the WebView2 / WKWebView runtimes Tauri embeds. */
     }
 
     /* Brand area on the far left of the titlebar — logo + wordmark.
-       Acts as a drag region (entire area is -webkit-app-region: drag
-       via inherited titlebar rule; image and span have data-tauri-drag-region
-       set explicitly for Tauri's JS drag handler). */
+       A real button (opens the wallet overview), so it deliberately does not drag. */
     .titlebar-brand {
       display: flex;
       align-items: center;
@@ -401,7 +404,6 @@ interface AccountTabFilter {
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-app-region: no-drag;
       transition: background 150ms ease, color 150ms ease;
     }
     :host-context(html.os-mac) .titlebar-brand {
@@ -432,7 +434,6 @@ interface AccountTabFilter {
       flex: 0 0 auto;
       padding: 5px var(--sp-3) 0 var(--sp-2);
       margin-left: var(--sp-2);
-      -webkit-app-region: no-drag;
       z-index: 20;
     }
 
@@ -617,7 +618,6 @@ interface AccountTabFilter {
       min-width: 0;
       max-width: min(920px, calc(100vw - 320px));
       overflow: hidden;
-      -webkit-app-region: no-drag;
     }
 
     .account-tabs-shell::before,
@@ -659,7 +659,6 @@ interface AccountTabFilter {
       -ms-overflow-style: none;
       scroll-snap-type: x proximity;
       /* Buttons inside are interactive — opt out of drag. */
-      -webkit-app-region: no-drag;
     }
 
     .account-tabs::-webkit-scrollbar {
@@ -684,7 +683,6 @@ interface AccountTabFilter {
       transform: translateY(-50%);
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
       transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 150ms ease;
-      -webkit-app-region: no-drag;
     }
 
     .tabs-nav:hover {

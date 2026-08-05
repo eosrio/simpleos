@@ -1,6 +1,6 @@
 [package]
 name = "simpleos"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
 description = "SimplEOS - Antelope Desktop Wallet"
 authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
