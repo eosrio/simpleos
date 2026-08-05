@@ -5,6 +5,7 @@ import { ThemeService } from '../../core/services/theme.service';
 import { UiStateService } from '../../core/services/ui-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { AppVersionService } from '../../core/services/app-version.service';
+import { compactAsset } from '../../core/format';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
 import { WindowControlsComponent } from '../../shared/window-controls';
 
@@ -91,9 +92,12 @@ interface AccountTabFilter {
           <div class="account-tabs-shell"
                [class.scrollable-left]="canScrollLeft()"
                [class.scrollable-right]="canScrollRight()">
-            @if (canScrollLeft()) {
+            <!-- Rendered as soon as the strip overflows in either direction and merely
+                 disabled at each end, so the tabs never shift sideways mid-scroll. -->
+            @if (tabsOverflowing()) {
               <button class="tabs-nav tabs-nav-left"
                       type="button"
+                      [disabled]="!canScrollLeft()"
                       aria-label="Scroll account tabs left"
                       title="Scroll account tabs left"
                       (click)="scrollTabs('left')">
@@ -101,6 +105,7 @@ interface AccountTabFilter {
               </button>
             }
 
+            <div class="account-tabs-viewport">
             <div class="account-tabs" #accountTabs (scroll)="updateTabScrollState()" (wheel)="onTabsWheel($event)">
               @for (tab of visibleAccountTabs(); track tab.account.chainId + tab.account.name) {
                 <button class="account-tab"
@@ -122,17 +127,20 @@ interface AccountTabFilter {
                       </span>
                     }
                   </span>
-                  <span class="tab-balance">{{ tab.account.info.core_liquid_balance ?? tab.account.extraBalances?.[0]?.amount ?? '—' }}</span>
+                  @let rawBalance = tab.account.info.core_liquid_balance ?? tab.account.extraBalances?.[0]?.amount;
+                  <span class="tab-balance" [title]="rawBalance ?? ''">{{ compactAsset(rawBalance) }}</span>
                 </button>
               }
               <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
+            </div>
 
-            @if (canScrollRight()) {
+            @if (tabsOverflowing()) {
               <button class="tabs-nav tabs-nav-right"
                       type="button"
+                      [disabled]="!canScrollRight()"
                       aria-label="Scroll account tabs right"
                       title="Scroll account tabs right"
                       (click)="scrollTabs('right')">
@@ -613,16 +621,27 @@ interface AccountTabFilter {
     }
 
     /* ── Account tabs (inside the titlebar) ── */
+    /* Layout is a row: [ ‹ nav ] [ scrolling viewport ] [ nav › ]. The arrows are
+       real flex siblings rather than floating overlays, so they never cover a tab. */
     .account-tabs-shell {
-      position: relative;
+      display: flex;
+      align-items: stretch;
       flex: 1 1 auto;
       min-width: 0;
       max-width: min(920px, calc(100vw - 320px));
       overflow: hidden;
     }
 
-    .account-tabs-shell::before,
-    .account-tabs-shell::after {
+    .account-tabs-viewport {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Fades sit on the viewport, so they stop at the arrows instead of washing over them. */
+    .account-tabs-viewport::before,
+    .account-tabs-viewport::after {
       content: '';
       position: absolute;
       top: 0;
@@ -634,18 +653,18 @@ interface AccountTabFilter {
       transition: opacity 150ms ease;
     }
 
-    .account-tabs-shell::before {
+    .account-tabs-viewport::before {
       left: 0;
       background: linear-gradient(90deg, var(--bg-deep), transparent);
     }
 
-    .account-tabs-shell::after {
+    .account-tabs-viewport::after {
       right: 0;
       background: linear-gradient(270deg, var(--bg-deep), transparent);
     }
 
-    .account-tabs-shell.scrollable-left::before,
-    .account-tabs-shell.scrollable-right::after {
+    .account-tabs-shell.scrollable-left .account-tabs-viewport::before,
+    .account-tabs-shell.scrollable-right .account-tabs-viewport::after {
       opacity: 1;
     }
 
@@ -655,7 +674,7 @@ interface AccountTabFilter {
       height: 100%;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 0 calc(var(--sp-4) + 28px) 0 calc(var(--sp-2) + 28px);
+      padding: 0 var(--sp-2);
       scrollbar-width: none;
       -ms-overflow-style: none;
       scroll-snap-type: x proximity;
@@ -667,41 +686,45 @@ interface AccountTabFilter {
       height: 0;
     }
 
+    /* Full-height edge controls, flush with the titlebar — no shadow or pill, so they
+       read as part of the chrome rather than as something floating on top of it. */
     .tabs-nav {
-      position: absolute;
-      top: 50%;
-      z-index: 2;
-      width: 24px;
-      height: 24px;
+      flex: 0 0 auto;
+      width: 30px;
+      align-self: stretch;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
-      border-radius: var(--radius-full);
-      background: color-mix(in srgb, var(--bg-base) 92%, var(--accent) 8%);
-      color: var(--text-body);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text-muted);
       cursor: pointer;
-      transform: translateY(-50%);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 150ms ease;
-    }
-
-    .tabs-nav:hover {
-      color: var(--text-bright);
-      border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
-      background: color-mix(in srgb, var(--bg-base) 86%, var(--accent) 14%);
-    }
-
-    .tabs-nav:active {
-      transform: translateY(-50%) scale(0.96);
+      transition: color 150ms ease, background 150ms ease;
     }
 
     .tabs-nav-left {
-      left: 2px;
+      border-right: 1px solid var(--border-subtle);
     }
 
     .tabs-nav-right {
-      right: 2px;
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .tabs-nav:hover:not(:disabled) {
+      color: var(--text-bright);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .tabs-nav:active:not(:disabled) {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    /* Kept in place but inert at each end, so the strip width never changes mid-scroll. */
+    .tabs-nav:disabled {
+      color: var(--text-disabled);
+      opacity: 0.4;
+      cursor: default;
     }
 
     .account-tab {
@@ -1115,6 +1138,16 @@ export class DashboardComponent {
   readonly chainFilterRoot = viewChild<ElementRef<HTMLElement>>('chainFilterRoot');
   readonly canScrollLeft = signal(false);
   readonly canScrollRight = signal(false);
+
+  /**
+   * Whether the tab strip overflows at all. Drives rendering of both arrows
+   * together — showing or hiding one mid-scroll would resize the strip and
+   * slide the tabs under the pointer.
+   */
+  readonly tabsOverflowing = computed(() => this.canScrollLeft() || this.canScrollRight());
+
+  /** Tab balances are rounded for scanning; the exact amount stays in the tooltip. */
+  readonly compactAsset = compactAsset;
   readonly chainFilterOpen = signal(false);
   readonly selectedChainFilter = signal('all');
   readonly accountChainFilters = computed<AccountTabFilter[]>(() => {

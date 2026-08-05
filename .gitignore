@@ -46,3 +46,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Playwright MCP scratch output
+.playwright-mcp/
