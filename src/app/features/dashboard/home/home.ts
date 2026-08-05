@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
 import { TokenPriceService } from '../../../core/services/token-price.service';
 import { WalletAccount, WalletStateService } from '../../../core/services/wallet-state.service';
+import { compactAsset } from '../../../core/format';
 import {
   isTestnetPortfolioChain,
   portfolioTokenUsdValue,
@@ -83,82 +84,61 @@ interface AttentionAccount {
           <button type="button" class="empty-action" (click)="addAccount()">Add account</button>
         </section>
       } @else {
-        <section class="hero">
-          <div class="hero-copy">
-            <div class="hero-copy-panel">
-              <span class="hero-kicker">Wallet home</span>
-              <div class="hero-title-row">
-                <h1 class="hero-title">Portfolio overview</h1>
-                <span class="hero-state">No active account</span>
-              </div>
-              <p class="hero-description">
-                Fast snapshot across every imported account using cached balances, stake, resource
-                usage, and token pricing. Spot CPU, NET, or RAM pressure before it blocks a transfer.
-              </p>
-              <div class="hero-meta">
-                <span class="hero-meta-item">{{ stats().totalAccounts }} account{{ plural(stats().totalAccounts) }}</span>
-                <span class="hero-meta-item">{{ stats().totalChains }} chain{{ plural(stats().totalChains) }}</span>
-                <span class="hero-meta-item">{{ stats().pricedAccounts }} priced</span>
-              </div>
-
-              <div class="hero-highlights">
-                @if (primaryChain(); as leadChain) {
-                  <article class="hero-highlight hero-highlight-primary">
-                    <span class="hero-highlight-label">Largest network footprint</span>
-                    <strong>{{ leadChain.chainName }}</strong>
-                    <span>{{ leadChain.accountCount }} account{{ plural(leadChain.accountCount) }} · {{ leadChain.totalLiquidUsd }}</span>
-                  </article>
-                }
-
-                <article class="hero-highlight">
-                  <span class="hero-highlight-label">Producer coverage</span>
-                  <strong>{{ stats().producerAccounts }}</strong>
-                  <span>Producer account{{ plural(stats().producerAccounts) }} visible in the wallet</span>
-                </article>
-
-                <article class="hero-highlight">
-                  <span class="hero-highlight-label">Fast state mode</span>
-                  <strong>{{ stats().pricedAccounts }}/{{ stats().totalAccounts }}</strong>
-                  <span>Accounts with cached token pricing layered into the overview</span>
-                </article>
-              </div>
-            </div>
+        <!-- Summary bar: the four figures worth re-checking on every unlock, on one line.
+             This is a screen people land on several times a day, so it states the numbers
+             and gets out of the way — the explanation of what they mean lives in the empty
+             state, which is where someone seeing this for the first time actually starts. -->
+        <section class="overview">
+          <div class="overview-head">
+            <h1>Portfolio overview</h1>
+            <span class="overview-state">No active account</span>
           </div>
 
-          <div class="hero-stats">
-            <article class="stat-card stat-card-primary">
-              <span class="stat-label">Accounts</span>
-              <span class="stat-value">{{ stats().totalAccounts }}</span>
-              <span class="stat-meta">{{ stats().fullAccounts }} signing · {{ stats().watchAccounts }} watch-only</span>
-            </article>
+          <div class="overview-metrics">
+            <div class="metric metric-lead">
+              <span class="metric-key">Estimated value</span>
+              @if (stats().pricedAccounts === 0) {
+                <span class="metric-figure metric-figure-empty">—</span>
+                <span class="metric-note">No cached price yet</span>
+              } @else {
+                <span class="metric-figure">{{ stats().totalLiquidUsd }}</span>
+                <span class="metric-note">{{ stats().pricedAccounts }} of {{ stats().totalAccounts }} priced</span>
+              }
+            </div>
 
-            <article class="stat-card">
-              <span class="stat-label">Chains</span>
-              <span class="stat-value">{{ stats().totalChains }}</span>
-              <span class="stat-meta">{{ stats().producerAccounts }} producer{{ plural(stats().producerAccounts) }}</span>
-            </article>
+            <div class="metric">
+              <span class="metric-key">Accounts</span>
+              <span class="metric-figure">{{ stats().totalAccounts }}</span>
+              <span class="metric-note">{{ stats().fullAccounts }} signing · {{ stats().watchAccounts }} watch-only</span>
+            </div>
 
-            <article class="stat-card">
-              <span class="stat-label">Estimated liquid value</span>
-              <span class="stat-value">{{ stats().totalLiquidUsd }}</span>
-              <span class="stat-meta">{{ stats().pricedAccounts }} priced account{{ plural(stats().pricedAccounts) }}</span>
-            </article>
+            <div class="metric">
+              <span class="metric-key">Chains</span>
+              <span class="metric-figure">{{ stats().totalChains }}</span>
+              <span class="metric-note">
+                @if (stats().producerAccounts > 0) {
+                  {{ stats().producerAccounts }} producer account{{ plural(stats().producerAccounts) }}
+                } @else {
+                  No producer accounts
+                }
+              </span>
+            </div>
 
-            <article class="stat-card"
-                     [class.stat-card-warning]="stats().attentionAccounts > 0"
-                     [class.stat-card-critical]="stats().criticalAccounts > 0">
-              <span class="stat-label">Needs attention</span>
-              <span class="stat-value">{{ stats().attentionAccounts }}</span>
-              <span class="stat-meta">
+            <div class="metric"
+                 [class.metric-caution]="stats().attentionAccounts > 0"
+                 [class.metric-alarm]="stats().criticalAccounts > 0">
+              <span class="metric-key">Needs attention</span>
+              <span class="metric-figure">{{ stats().attentionAccounts }}</span>
+              <span class="metric-note">
                 @if (stats().attentionAccounts === 0) {
-                  All accounts within safe CPU / NET / RAM limits
+                  CPU, NET and RAM all healthy
                 } @else if (stats().criticalAccounts > 0) {
                   {{ stats().criticalAccounts }} critical · rest above {{ RESOURCE_WARNING_PCT }}%
                 } @else {
-                  CPU, NET, or RAM above {{ RESOURCE_WARNING_PCT }}%
+                  Above {{ RESOURCE_WARNING_PCT }}% on CPU, NET or RAM
                 }
               </span>
-            </article>
+            </div>
           </div>
         </section>
 
@@ -166,25 +146,23 @@ interface AttentionAccount {
         <section class="resource-health"
                  [class.resource-health-ok]="attentionList().length === 0"
                  [class.resource-health-alert]="attentionList().length > 0">
+          <!-- Title and threshold legend share one line; each row below carries its own
+               Manage action, so the panel does not need to explain what to do next. -->
           <header class="resource-health-header">
-            <div>
-              <span class="resource-health-kicker">Resource health</span>
-              <h2>
-                @if (attentionList().length === 0) {
-                  All accounts look healthy
-                } @else {
-                  {{ attentionList().length }} account{{ plural(attentionList().length) }} need{{ attentionList().length === 1 ? 's' : '' }} attention
-                }
-              </h2>
-              <p>
-                @if (attentionList().length === 0) {
-                  CPU, NET, and RAM are below {{ RESOURCE_WARNING_PCT }}% on every imported account.
-                } @else {
-                  Usage above {{ RESOURCE_WARNING_PCT }}% (warning) or {{ RESOURCE_CRITICAL_PCT }}% (critical).
-                  Open resources to power up, stake, or buy RAM.
-                }
-              </p>
-            </div>
+            <h2>
+              @if (attentionList().length === 0) {
+                All accounts look healthy
+              } @else {
+                {{ attentionList().length }} account{{ plural(attentionList().length) }} need{{ attentionList().length === 1 ? 's' : '' }} attention
+              }
+            </h2>
+            <p>
+              @if (attentionList().length === 0) {
+                CPU, NET and RAM below {{ RESOURCE_WARNING_PCT }}% everywhere
+              } @else {
+                Warning above {{ RESOURCE_WARNING_PCT }}% · critical above {{ RESOURCE_CRITICAL_PCT }}%
+              }
+            </p>
           </header>
 
           @if (attentionList().length > 0) {
@@ -243,13 +221,12 @@ interface AttentionAccount {
             <article class="chain-card">
               <header class="chain-header">
                 <div class="chain-title-block">
-                  <span class="chain-kicker">Network summary</span>
                   <h2>{{ chain.chainName }}</h2>
                   <p>{{ chain.accountCount }} account{{ plural(chain.accountCount) }} · {{ chain.fullCount }} signing · {{ chain.watchCount }} watch-only</p>
                 </div>
 
                 <div class="chain-totals">
-                  <span class="chain-balance">{{ chain.totalLiquid }}</span>
+                  <span class="chain-balance" [title]="chain.totalLiquid">{{ compactAsset(chain.totalLiquid) }}</span>
                   <span class="chain-usd">{{ chain.totalLiquidUsd }}</span>
                 </div>
               </header>
@@ -280,28 +257,21 @@ interface AttentionAccount {
                         </div>
                       </div>
 
-                      <span class="open-label">Open account</span>
+                      <svg class="open-chevron" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
 
+                    <!-- Liquid and staked only: RAM is already one of the three meters below. -->
                     <div class="metric-grid">
                       <div class="metric-block">
                         <span class="metric-label">Liquid</span>
-                        <span class="metric-value">{{ account.liquid }}</span>
+                        <span class="metric-value" [title]="account.liquid">{{ compactAsset(account.liquid) }}</span>
                         <span class="metric-meta">{{ account.liquidUsd }}</span>
                       </div>
 
                       <div class="metric-block">
                         <span class="metric-label">Staked</span>
-                        <span class="metric-value">{{ account.staked }}</span>
+                        <span class="metric-value" [title]="account.staked">{{ compactAsset(account.staked) }}</span>
                         <span class="metric-meta">CPU + NET weight</span>
-                      </div>
-
-                      <div class="metric-block">
-                        <span class="metric-label">RAM</span>
-                        <span class="metric-value"
-                              [class.metric-warning]="account.ramPct > RESOURCE_WARNING_PCT"
-                              [class.metric-critical]="account.ramPct > RESOURCE_CRITICAL_PCT">{{ account.ramPct }}%</span>
-                        <span class="metric-meta">{{ account.ramText }}</span>
                       </div>
                     </div>
 
@@ -324,7 +294,8 @@ interface AttentionAccount {
                           <div class="mini-meter-fill" [style.width.%]="account.netPct"></div>
                         </div>
                       </div>
-                      <div class="mini-meter" [class.warning]="account.ramPct > RESOURCE_WARNING_PCT" [class.critical]="account.ramPct > RESOURCE_CRITICAL_PCT">
+                      <div class="mini-meter" [title]="account.ramText"
+                           [class.warning]="account.ramPct > RESOURCE_WARNING_PCT" [class.critical]="account.ramPct > RESOURCE_CRITICAL_PCT">
                         <div class="mini-meter-head">
                           <span>RAM</span>
                           <span>{{ account.ramPct }}%</span>
@@ -350,7 +321,6 @@ interface AttentionAccount {
       gap: var(--sp-5);
     }
 
-    .hero,
     .empty-state {
       position: relative;
       overflow: hidden;
@@ -364,7 +334,6 @@ interface AttentionAccount {
       box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
     }
 
-    .hero::before,
     .empty-state::before {
       content: '';
       position: absolute;
@@ -377,22 +346,6 @@ interface AttentionAccount {
       pointer-events: none;
     }
 
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-      gap: var(--sp-5);
-      align-items: start;
-    }
-
-    .hero-copy-panel {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
-      padding-right: var(--sp-4);
-    }
-
-    .hero-kicker,
     .empty-kicker {
       display: inline-flex;
       align-items: center;
@@ -423,22 +376,105 @@ interface AttentionAccount {
       line-height: 1.6;
     }
 
-    .hero-title-row {
+    /* ── Summary bar ──
+       One panel, four figures, hairline dividers. The previous hero nested cards inside
+       cards, which is where most of its height came from; the numbers here are sized to
+       be read, not to fill space. */
+    .overview {
+      padding: var(--sp-4) var(--sp-5);
+      border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border-subtle));
+      border-radius: var(--radius-lg);
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 46%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+        var(--bg-deep);
+    }
+
+    .overview-head {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: var(--sp-3);
+      margin-bottom: var(--sp-4);
     }
 
-    .hero-title {
+    .overview-head h1 {
       margin: 0;
       color: var(--text-bright);
-      font-size: clamp(1.5rem, 2vw, 2rem);
-      line-height: 1.15;
+      font-size: 17px;
       font-weight: 600;
+      line-height: 1.2;
     }
 
-    .hero-state {
+    .overview-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--sp-4);
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      padding-left: var(--sp-4);
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .metric:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .metric-key {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .metric-figure {
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* The one figure that earns extra size — it is the reason to open the screen. */
+    .metric-lead .metric-figure {
+      font-size: 26px;
+    }
+
+    .metric-figure-empty {
+      color: var(--text-disabled);
+    }
+
+    .metric-note {
+      color: var(--text-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .metric-caution .metric-figure { color: var(--caution); }
+    .metric-alarm .metric-figure { color: var(--negative); }
+
+    @media (max-width: 940px) {
+      .overview-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: var(--sp-4);
+      }
+
+      .metric:nth-child(odd) {
+        padding-left: 0;
+        border-left: 0;
+      }
+    }
+
+    .overview-state {
       display: inline-flex;
       align-items: center;
       padding: 5px 10px;
@@ -453,147 +489,9 @@ interface AttentionAccount {
       white-space: nowrap;
     }
 
-    .hero-description {
-      margin: var(--sp-3) 0 0;
-      max-width: 56ch;
-      color: var(--text-muted);
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
-    .hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--sp-2);
-      margin-top: var(--sp-3);
-    }
-
-    .hero-meta-item {
-      display: inline-flex;
-      align-items: center;
-      padding: 5px 9px;
-      border-radius: var(--radius-full);
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
-      color: var(--text-body);
-      font-size: 12px;
-      line-height: 1;
-    }
-
-    .hero-highlights {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: var(--sp-3);
-      margin-top: var(--sp-5);
-    }
-
-    .hero-highlight {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: var(--sp-3) var(--sp-4);
-      border-radius: var(--radius-md);
-      border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border-subtle));
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), rgba(0, 0, 0, 0.08);
-      min-height: 92px;
-    }
-
-    .hero-highlight-primary {
-      background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 18%, transparent), transparent 46%),
-        linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent),
-        rgba(0, 0, 0, 0.08);
-    }
-
-    .hero-highlight-label {
-      color: var(--text-disabled);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .hero-highlight strong {
-      color: var(--text-bright);
-      font-family: var(--font-data);
-      font-size: 18px;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-
-    .hero-highlight span:last-child {
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--sp-3);
-    }
-
-    .stat-card {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-2);
-      min-height: 116px;
-      padding: var(--sp-4);
-      border-radius: var(--radius-md);
-      border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent), rgba(0, 0, 0, 0.08);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    }
-
-    .stat-card-primary {
-      background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 22%, transparent), transparent 44%),
-        linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 4%, transparent));
-      border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
-    }
-
-    .stat-card-warning {
-      border-color: color-mix(in srgb, var(--caution) 35%, var(--border-subtle));
-      background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--caution) 18%, transparent), transparent 46%),
-        linear-gradient(180deg, color-mix(in srgb, var(--caution) 10%, transparent), transparent),
-        rgba(0, 0, 0, 0.08);
-    }
-
-    .stat-card-critical {
-      border-color: color-mix(in srgb, var(--negative) 40%, var(--border-subtle));
-      background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--negative) 18%, transparent), transparent 46%),
-        linear-gradient(180deg, color-mix(in srgb, var(--negative) 10%, transparent), transparent),
-        rgba(0, 0, 0, 0.08);
-    }
-
-    .stat-label {
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      color: var(--text-bright);
-      font-family: var(--font-data);
-      font-size: 28px;
-      font-weight: 600;
-      line-height: 1.1;
-    }
-
-    .stat-meta {
-      margin-top: auto;
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
     /* Resource health panel */
     .resource-health {
-      padding: var(--sp-4) var(--sp-5);
+      padding: var(--sp-4);
       border-radius: var(--radius-lg);
       border: 1px solid color-mix(in srgb, var(--positive) 22%, var(--border-subtle));
       background:
@@ -611,45 +509,34 @@ interface AttentionAccount {
         var(--bg-deep);
     }
 
+    .resource-health-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--sp-2) var(--sp-4);
+    }
+
     .resource-health-header h2 {
       margin: 0;
       color: var(--text-bright);
-      font-size: 18px;
+      font-size: 15px;
+      font-weight: 600;
       line-height: 1.2;
     }
 
     .resource-health-header p {
-      margin: 6px 0 0;
+      margin: 0;
       color: var(--text-muted);
-      font-size: 13px;
-      line-height: 1.45;
-      max-width: 70ch;
-    }
-
-    .resource-health-kicker {
-      display: inline-flex;
-      width: fit-content;
-      margin-bottom: var(--sp-2);
-      padding: 4px 8px;
-      border-radius: var(--radius-full);
-      background: color-mix(in srgb, var(--positive) 14%, transparent);
-      color: var(--positive);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .resource-health-alert .resource-health-kicker {
-      background: color-mix(in srgb, var(--caution) 16%, transparent);
-      color: var(--caution);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .attention-list {
       display: flex;
       flex-direction: column;
       gap: var(--sp-2);
-      margin-top: var(--sp-4);
+      margin-top: var(--sp-3);
     }
 
     .attention-row {
@@ -658,7 +545,7 @@ interface AttentionAccount {
       gap: var(--sp-3);
       align-items: center;
       width: 100%;
-      padding: var(--sp-3) var(--sp-4);
+      padding: var(--sp-2) var(--sp-3);
       border: 1px solid color-mix(in srgb, var(--caution) 22%, var(--border-subtle));
       border-radius: var(--radius-md);
       background: color-mix(in srgb, var(--caution) 5%, var(--bg-base));
@@ -808,25 +695,13 @@ interface AttentionAccount {
     .chain-title-block {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-    }
-
-    .chain-kicker {
-      display: inline-flex;
-      width: fit-content;
-      padding: 4px 8px;
-      border-radius: var(--radius-full);
-      background: color-mix(in srgb, var(--accent) 12%, transparent);
-      color: var(--accent);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      gap: 2px;
+      min-width: 0;
     }
 
     .chain-header {
       display: flex;
-      align-items: flex-start;
+      align-items: baseline;
       justify-content: space-between;
       gap: var(--sp-3);
     }
@@ -834,28 +709,29 @@ interface AttentionAccount {
     .chain-header h2 {
       margin: 0;
       color: var(--text-bright);
-      font-size: 20px;
-      line-height: 1.1;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.2;
     }
 
     .chain-header p {
-      margin: 2px 0 0;
+      margin: 0;
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .chain-totals {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 4px;
+      gap: 2px;
       text-align: right;
     }
 
     .chain-balance {
       color: var(--text-bright);
       font-family: var(--font-data);
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 600;
     }
 
@@ -873,9 +749,9 @@ interface AttentionAccount {
     .account-card {
       display: flex;
       flex-direction: column;
-      gap: var(--sp-3);
+      gap: var(--sp-2);
       width: 100%;
-      padding: var(--sp-3) var(--sp-4);
+      padding: var(--sp-3);
       border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
       border-radius: var(--radius-md);
       background:
@@ -910,15 +786,15 @@ interface AttentionAccount {
     .account-name {
       color: var(--text-bright);
       font-family: var(--font-data);
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
     }
 
     .account-badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: var(--sp-2);
+      gap: 5px;
+      margin-top: 6px;
     }
 
     .badge {
@@ -954,26 +830,29 @@ interface AttentionAccount {
       color: var(--negative);
     }
 
-    .open-label {
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      opacity: 0.9;
+    /* Replaces an "Open account" caption — the card is a button, so it only needs to
+       point, not to say so in words that repeat on every card. */
+    .open-chevron {
+      flex-shrink: 0;
+      color: var(--text-disabled);
+      transition: color 150ms ease, transform 150ms ease;
+    }
+
+    .account-card:hover .open-chevron {
+      color: var(--accent);
+      transform: translateX(2px);
     }
 
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--sp-3);
     }
 
     .metric-block {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 3px;
       min-width: 0;
     }
 
@@ -992,14 +871,6 @@ interface AttentionAccount {
       font-weight: 600;
       line-height: 1.35;
       word-break: break-word;
-    }
-
-    .metric-warning {
-      color: var(--caution);
-    }
-
-    .metric-critical {
-      color: var(--negative);
     }
 
     .metric-meta {
@@ -1035,21 +906,6 @@ interface AttentionAccount {
       color: var(--text-bright);
     }
 
-    @media (max-width: 1100px) {
-      .hero {
-        grid-template-columns: 1fr;
-        gap: var(--sp-4);
-      }
-
-      .hero-highlights {
-        margin-top: var(--sp-4);
-      }
-
-       .hero-copy-panel {
-        padding-right: 0;
-      }
-    }
-
     @media (max-width: 900px) {
       .attention-row {
         grid-template-columns: 1fr;
@@ -1062,25 +918,23 @@ interface AttentionAccount {
     }
 
     @media (max-width: 720px) {
-      .hero,
       .empty-state,
       .chain-card,
       .resource-health {
         padding: var(--sp-5);
       }
 
+      .overview {
+        padding: var(--sp-4);
+      }
+
       .home-view {
         gap: var(--sp-4);
       }
 
-      .hero-stats,
       .metric-grid,
       .resource-meters,
       .attention-meters {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-highlights {
         grid-template-columns: 1fr;
       }
 
@@ -1105,8 +959,6 @@ export class HomeComponent {
   /** Exposed for template threshold classes / copy. */
   readonly RESOURCE_WARNING_PCT = RESOURCE_WARNING_PCT;
   readonly RESOURCE_CRITICAL_PCT = RESOURCE_CRITICAL_PCT;
-
-  readonly primaryChain = computed(() => this.chainSections()[0] ?? null);
 
   readonly stats = computed<HomeStats>(() => {
     const accounts = this.wallet.accounts();
@@ -1276,6 +1128,9 @@ export class HomeComponent {
   constructor() {
     this.wallet.clearSelectedAccount();
   }
+
+  /** Balances are rounded for scanning; the exact amount stays in the title attribute. */
+  readonly compactAsset = compactAsset;
 
   plural(count: number): string {
     return count === 1 ? '' : 's';
