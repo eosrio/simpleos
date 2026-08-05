@@ -8,7 +8,7 @@ SimplEOS v2 is a desktop wallet for Antelope-based blockchains (Vaulta/EOS, WAX,
 
 **The app version is declared once, in `package.json`** — bump it there and nowhere else. `src-tauri/tauri.conf.json` reads it (`"version": "../package.json"`), so bundle metadata and the updater follow automatically; `src-tauri/Cargo.toml` is pinned to `0.0.0` because the crate version is not the app version. The UI never hard-codes a version string — it injects `AppVersionService` (`core/services/app-version.service.ts`), which resolves the running bundle's version via Tauri's `getVersion()` and shows `dev` in the browser-only dev server. The one exception is `src-tauri/tauri.appstore.conf.json`, which must pin a plain `x.y.z` (App Store `CFBundleShortVersionString` rejects prerelease tags); `scripts/macos-appstore-package.sh` fails the build if that number drifts from `package.json`.
 
-The active development branch is `v2-tauri-rewrite`; PRs target `master`.
+The active development branch is `v2-tauri-rewrite`; PRs target `master`. Shipping a build to existing installs (updater manifest, signing, `bun run updater:manifest` / `updater:publish`) is documented in `docs/releasing-updates.md`.
 
 ## Toolchain & Commands
 

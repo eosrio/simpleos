@@ -5,6 +5,7 @@ import { ThemeService } from '../../core/services/theme.service';
 import { UiStateService } from '../../core/services/ui-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { AppVersionService } from '../../core/services/app-version.service';
+import { UpdateService } from '../../core/services/update.service';
 import { compactAsset } from '../../core/format';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
 import { WindowControlsComponent } from '../../shared/window-controls';
@@ -326,7 +327,19 @@ interface AccountTabFilter {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               }
             </button>
-            <span class="version">{{ appVersion.display() }}</span>
+            <!-- The startup check is silent by design; this is the notification. It takes
+                 the version label's place only when there is something to act on. -->
+            @if (updates.isUpdateAvailable()) {
+              <button type="button"
+                      class="version version-update"
+                      [title]="'Version ' + updates.newVersion() + ' is available — open Settings to install'"
+                      (click)="openUpdates()">
+                <span class="update-dot" aria-hidden="true"></span>
+                Update ready
+              </button>
+            } @else {
+              <span class="version">{{ appVersion.display() }}</span>
+            }
           </div>
         </nav>
         }
@@ -990,6 +1003,44 @@ interface AccountTabFilter {
       font-family: var(--font-data);
     }
 
+    .version-update {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+
+    .version-update:hover {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+
+    .update-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* The dot is the only thing that moves — enough to catch the eye on a screen
+       people are not looking at, and silent for anyone who prefers less motion. */
+    @media (prefers-reduced-motion: no-preference) {
+      .update-dot {
+        animation: update-pulse 2.4s ease-in-out infinite;
+      }
+    }
+
+    @keyframes update-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
     /* Watch-only indicators */
     .watch-badge {
       display: inline-flex;
@@ -1193,6 +1244,7 @@ export class DashboardComponent {
     public theme: ThemeService,
     public ui: UiStateService,
     public appVersion: AppVersionService,
+    public updates: UpdateService,
     private router: Router,
     private ipc: TauriIpcService,
   ) {
@@ -1376,6 +1428,11 @@ export class DashboardComponent {
 
   goHome() {
     this.openOverview();
+  }
+
+  /** Deep-links to the Updates card in Settings, which scrolls to and highlights it. */
+  openUpdates() {
+    this.router.navigate(['/dashboard/settings'], { fragment: 'updates' });
   }
 
   addAccount() {
