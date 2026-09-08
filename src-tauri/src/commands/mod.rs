@@ -1,4 +1,5 @@
 pub mod anchor;
+pub mod bridge;
 pub mod chain;
 pub mod config;
 pub mod dapp;

@@ -8,6 +8,7 @@ import { AppVersionService } from '../../core/services/app-version.service';
 import { UpdateService } from '../../core/services/update.service';
 import { compactAsset } from '../../core/format';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
+import { BRIDGE_ROUTES } from '../../core/bridges/bridge-model';
 import { WindowControlsComponent } from '../../shared/window-controls';
 
 interface AccountTabFilter {
@@ -239,6 +240,9 @@ interface AccountTabFilter {
                 Contracts
               </a>
             </li>
+            @if (hasBridges()) {
+              <li><a routerLink="bridges" routerLinkActive="active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18m-4-4 4 4-4 4M21 17H3m4-4-4 4 4 4"/></svg>EVM Bridges</a></li>
+            }
             <li>
               <a routerLink="permissions" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -1192,6 +1196,7 @@ interface AccountTabFilter {
   `],
 })
 export class DashboardComponent {
+  readonly hasBridges = computed(() => BRIDGE_ROUTES.some(route => route.sourceChainId === this.wallet.selectedAccount()?.chainId));
   readonly accountTabs = viewChild<ElementRef<HTMLDivElement>>('accountTabs');
   readonly chainFilterRoot = viewChild<ElementRef<HTMLElement>>('chainFilterRoot');
   readonly canScrollLeft = signal(false);

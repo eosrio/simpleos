@@ -227,6 +227,7 @@ export class WalletStateService {
 
       // Fetch account info from chain
       const info = await this.ipc.getAccount(chainId, accountName);
+      await this.loadPrimaryBalance(chain, accountName, info);
 
       const account: WalletAccount = {
         name: info.account_name,
@@ -287,22 +288,7 @@ export class WalletStateService {
       const info = await this.ipc.getAccount(account.chainId, account.name);
       const chain = this.chains().find((c) => c.id === account.chainId);
 
-      // Fetch primary token balance from the chain's token contract
-      if (chain && chain.token_contract !== 'eosio.token') {
-        try {
-          const bal = await this.ipc.getBalances(
-            chain.id,
-            account.name,
-            chain.token_contract,
-            chain.symbol,
-          );
-          if (bal.length > 0) {
-            info.core_liquid_balance = bal[0];
-          }
-        } catch (e) {
-          console.warn(`[wallet] getBalances failed for ${account.name} on ${chain.name}:`, e);
-        }
-      }
+      if (chain) await this.loadPrimaryBalance(chain, account.name, info);
 
       const extraBalances = chain ? await this.fetchExtraTokenBalances(chain, account.name) : [];
 
@@ -492,19 +478,7 @@ export class WalletStateService {
       info = await this.ipc.getAccount(normalizedChainId, name);
       hasFreshInfo = true;
 
-      if (chain.token_contract !== 'eosio.token') {
-        try {
-          const bal = await this.ipc.getBalances(
-            chain.id,
-            name,
-            chain.token_contract,
-            chain.symbol,
-          );
-          if (bal.length > 0) info.core_liquid_balance = bal[0];
-        } catch (e) {
-          console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
-        }
-      }
+      await this.loadPrimaryBalance(chain, name, info);
 
       extraBalances = await this.fetchExtraTokenBalances(chain, name);
     } catch (e) {
@@ -552,20 +526,7 @@ export class WalletStateService {
               if (allAccounts.some((a) => a.name === name && a.chainId === chain.id)) continue;
               try {
                 const info = await this.ipc.getAccount(chain.id, name);
-                // Override core_liquid_balance with the chain's primary token if needed
-                if (chain.token_contract !== 'eosio.token') {
-                  try {
-                    const bal = await this.ipc.getBalances(
-                      chain.id,
-                      name,
-                      chain.token_contract,
-                      chain.symbol,
-                    );
-                    if (bal.length > 0) info.core_liquid_balance = bal[0];
-                  } catch (e) {
-                    console.warn(`[wallet] getBalances failed for ${name} on ${chain.name}:`, e);
-                  }
-                }
+                await this.loadPrimaryBalance(chain, name, info);
                 const extraBalances = await this.fetchExtraTokenBalances(chain, name);
                 allAccounts.push({
                   name,
@@ -650,6 +611,18 @@ export class WalletStateService {
       if (mode === 'SignPerUse') {
         this.locked.set(false); // Don't show lockscreen, but signing will prompt
       }
+    }
+  }
+
+  /** Account RPCs may omit liquid balances even for eosio.token (notably XPR). */
+  private async loadPrimaryBalance(chain: ChainConfig, name: string, info: AccountInfo) {
+    const balanceSymbol = info.core_liquid_balance?.trim().split(/\s+/)[1];
+    if (chain.token_contract === 'eosio.token' && balanceSymbol === chain.symbol) return;
+    try {
+      const balances = await this.ipc.getBalances(chain.id, name, chain.token_contract, chain.symbol);
+      info.core_liquid_balance = balances[0] ?? `${(0).toFixed(chain.precision)} ${chain.symbol}`;
+    } catch (error) {
+      console.warn(`[wallet] Primary balance unavailable for ${name} on ${chain.name}:`, error);
     }
   }
 

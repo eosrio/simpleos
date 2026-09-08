@@ -399,6 +399,10 @@ export class TauriIpcService {
     return invoke<TableRowsResult>('get_table_rows', { chainId, params });
   }
 
+  async getEvmBridgeState(bridgeId: string, counters: string[]): Promise<{ paused: boolean; schedule_version: string; settlements: { counter: string; block: string }[] }> {
+    return invoke('get_evm_bridge_state', { bridgeId, counters });
+  }
+
   async getProducers(chainId: string, limit: number): Promise<any> {
     return invoke<any>('get_producers', { chainId, limit });
   }

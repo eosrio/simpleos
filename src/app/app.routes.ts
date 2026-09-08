@@ -32,6 +32,7 @@ export const routes: Routes = [
       { path: 'rex', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/rex/rex').then(m => m.RexComponent) },
       { path: 'contracts', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/contracts/contracts').then(m => m.ContractsComponent) },
       { path: 'permissions', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/permissions/permissions').then(m => m.PermissionsComponent) },
+      { path: 'bridges', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/bridges/bridges').then(m => m.BridgesComponent) },
       { path: 'dapp', canActivate: [accountSelectedGuard], loadComponent: () => import('./features/dashboard/dapp/dapp').then(m => m.DappComponent) },
       { path: 'settings', loadComponent: () => import('./features/dashboard/settings/settings').then(m => m.SettingsComponent) },
       { path: 'about', loadComponent: () => import('./features/dashboard/about/about').then(m => m.AboutComponent) },

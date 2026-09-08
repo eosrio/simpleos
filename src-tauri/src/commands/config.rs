@@ -23,6 +23,7 @@ fn validate_preference_key(key: &str) -> Result<(), Error> {
         "contractAbi:",
         "bp_config_",
         "msig_cache_",
+        "bridge_transfers:",
     ];
     if key.len() <= 256 && (exact.contains(&key) || prefix.iter().any(|p| key.starts_with(p))) {
         Ok(())

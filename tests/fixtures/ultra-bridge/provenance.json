@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-09-08T21:57:27.558006+00:00",
+  "ultra_rpc": "https://ultra.eosrio.io",
+  "ethereum_bridge_proxy": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50",
+  "ethereum_implementation_from_verified_proxy_page": "0xd21d15751ca9df6813ac5fb1ff366f05a28fda27",
+  "frontend_url": "https://bridge.ultra.io/assets/index-CEFn9oeE.js",
+  "frontend_sha256": "71e94010a8bc9152996e54287deadb2aa6852fc1e97af67d349341ec65816f51",
+  "sha256": {
+    "2evmatts.a.json": "b52cbf240811e21e48d2b29ff7f90261e449921c246f3a0bb2596bb0bb8510eb",
+    "2evmcounter.json": "5a2f7c0fafa88136ea560c4c8484b47a0c8a5cefe9116ce86199d536b821ca35",
+    "2evmreqs.a.json": "b52cbf240811e21e48d2b29ff7f90261e449921c246f3a0bb2596bb0bb8510eb",
+    "2ultstats.a.json": "b52cbf240811e21e48d2b29ff7f90261e449921c246f3a0bb2596bb0bb8510eb",
+    "ethereum-read-calls.json": "4f2ae963018c5c732e67aa8642d0905aab697cb26a393acfaba3bf01111cd92b",
+    "evms.a.json": "371c74b280041f7adcc105e28c6b1fe00d399d372003d27e3ad092b7f7950598",
+    "maint.a.json": "b52cbf240811e21e48d2b29ff7f90261e449921c246f3a0bb2596bb0bb8510eb",
+    "schedule.a.json": "85cf7d413b8157ed4f88333f7dabf7437afb26dfa2e62681d6b39ddd25f5a496",
+    "symbols.json": "b52cbf240811e21e48d2b29ff7f90261e449921c246f3a0bb2596bb0bb8510eb",
+    "tokens.a.json": "7d067a345a91832ddd675e2ef887e639e6204fb845aee0172ab7dfefb233099f",
+    "ultra-bridge-abi.json": "5e4d2aa31ec20c1020648f3a884b64cf6c572a0ab4bd2cbde77115d5e7436511",
+    "ultra-swap-abi.json": "1bfab6f88522d9aa9829c9d098a638651af4ff17883a39cca468b3f9aa08ea4d",
+    "validators.a.json": "9593109c46c49f9096fdef0b20982ffeea8d56a3f683940f31d75b11d3998edc"
+  },
+  "ethereum_rpc": "https://ethereum-rpc.publicnode.com"
+}

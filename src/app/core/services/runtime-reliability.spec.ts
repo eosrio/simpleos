@@ -153,6 +153,16 @@ describe('resource and governance response ownership', () => {
 });
 
 describe('wallet account refresh ownership', () => {
+  it('loads XPR from the token contract when get_account omits the liquid balance', async () => {
+    const info = { ...account('eosrio', 'xpr').info, core_liquid_balance: undefined };
+    const ipc = { getAccount: async () => ({ ...info }), getBalances: vi.fn().mockResolvedValue(['74797.0757 XPR']), getProducers: async () => ({ rows: [] }) };
+    const wallet = new WalletStateService(ipc as any);
+    wallet.hasTauri.set(true);
+    wallet.chains.set([{ id: 'xpr', name: 'XPR', symbol: 'XPR', precision: 4, token_contract: 'eosio.token', extra_tokens: [] } as any]);
+    wallet.accounts.set([account('eosrio', 'xpr')]);
+    await wallet.refreshAccount(0);
+    expect(wallet.accounts()[0].info.core_liquid_balance).toBe('74797.0757 XPR');
+  });
   it('does not overwrite another account when an account is removed during refresh', async () => {
     const pending = deferred();
     const wallet = new WalletStateService({ getAccount: () => pending.promise, getProducers: async () => ({ rows: [] }) } as any);

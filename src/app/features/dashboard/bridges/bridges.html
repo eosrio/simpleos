@@ -1,0 +1,94 @@
+<section class="bridge-view">
+  <header class="page-header">
+    <div><h1>EVM Bridges</h1><p>Move tokens between your native account and an Ethereum-compatible network.</p></div>
+  </header>
+  @if (!route()) {
+    <div class="empty"><h2>No bridge configured for this network</h2><p>Select an Ultra Mainnet account to use the Ultra–Ethereum bridge.</p></div>
+  } @else {
+    <div class="account-context"><span>Account <strong>{{ wallet.selectedAccount()?.name }}</strong></span><span>Bridge <strong>{{ route()!.sourceName }} / {{ route()!.destinationName }}</strong></span></div>
+    @if (availableRoutes().length > 1) {
+      <label for="bridge-route">Bridge</label><select id="bridge-route" [ngModel]="routeId()" (ngModelChange)="selectRoute($event)" [disabled]="busy()">@for (item of availableRoutes(); track item.id) { <option [value]="item.id">{{ item.sourceName }} to {{ item.destinationName }}</option> }</select>
+    }
+    <div class="direction" role="group" aria-label="Transfer direction">
+      <button type="button" [class.selected]="direction() === 'outbound'" [attr.aria-pressed]="direction() === 'outbound'" (click)="direction.set('outbound')" [disabled]="busy()">{{ route()!.sourceName }} to {{ route()!.destinationName }}</button>
+      <button type="button" [class.selected]="direction() === 'inbound'" [attr.aria-pressed]="direction() === 'inbound'" (click)="direction.set('inbound')" [disabled]="busy()">{{ route()!.destinationName }} to {{ route()!.sourceName }}</button>
+    </div>
+    @if (notice()) { <p class="notice" role="status">{{ notice() }}</p> }
+    @if (error()) { <p class="notice error" role="alert">{{ error() }}</p> }
+    <div class="workspace">
+      <div class="transfer-pane">
+        @if (direction() === 'outbound') {
+          <div class="section-header"><h2>Send from {{ route()!.sourceName }}</h2><button class="text-button" type="button" (click)="refresh()" [disabled]="loading() || busy()">{{ loading() ? 'Refreshing…' : 'Refresh' }}</button></div>
+          <p class="intro">Sign with your SimplEOS account. The recipient completes the claim on Ethereum.</p>
+          @if (loading()) { <p role="status" class="loading">Loading token balances and bridge limits…</p> }
+          @if (loadError()) { <p role="alert" class="notice error">{{ loadError() }}</p> }
+          @if (snapshot(); as data) {
+            @if (data.evmPaused) { <p role="alert" class="notice">The Ethereum bridge is paused. New transfers are disabled.</p> }
+            @if (data.maintenanceAt !== null) { <p class="notice">Bridge maintenance starts {{ date(data.maintenanceAt) }}. Transfers are disabled once maintenance starts.</p> }
+            <fieldset [disabled]="busy() || loading()">
+              <label for="bridge-token">Token</label>
+              <select id="bridge-token" [ngModel]="tokenId()" (ngModelChange)="tokenId.set($event); amount.set(''); acknowledged.set(false)">
+                @for (item of data.tokens; track item.id) { <option [value]="item.id" [disabled]="!item.active">{{ item.symbol }}{{ item.active ? '' : ' · Unavailable' }}</option> }
+              </select>
+              @if (!data.tokens.length) { <p class="hint">No tokens are configured for this bridge.</p> }
+              @if (token(); as selected) {
+                <div class="balance-line"><span>Available</span><strong>{{ balance() ?? 'Unavailable — refresh to retry' }} {{ balance() !== undefined ? selected.symbol : '' }}</strong></div>
+                <div class="label-row"><label for="bridge-amount">Amount</label><button type="button" class="text-button" (click)="useMaximum()" [disabled]="balance() === undefined">Use maximum</button></div>
+                <input id="bridge-amount" inputmode="decimal" autocomplete="off" placeholder="0.00" [ngModel]="amount()" (ngModelChange)="amount.set($event)" aria-describedby="amount-limits" />
+                <p id="amount-limits" class="hint">Minimum {{ limit(selected.minimum, selected.precision) }} · Maximum {{ limit(selected.maximum, selected.precision) }} {{ selected.symbol }}</p>
+                <label for="bridge-recipient">Recipient on {{ route()!.destinationName }} Mainnet</label>
+                <input id="bridge-recipient" class="address-input" spellcheck="false" autocomplete="off" placeholder="0x…" [ngModel]="recipient()" (ngModelChange)="recipient.set($event); acknowledged.set(false)" aria-describedby="recipient-help" />
+                <p id="recipient-help" class="hint">Use an Ethereum wallet address. ENS names are not supported. The recipient needs access to this wallet to claim.</p>
+                @if (validation()) { <p class="validation" role="status">{{ validation() }}</p> }
+                <dl class="summary">
+                  <div><dt>Expected on Ethereum</dt><dd>{{ quote()?.received ?? '—' }}</dd></div>
+                  <div><dt>Bridge fee</dt><dd>No bridge fee</dd></div>
+                  <div><dt>Ethereum claim</dt><dd>Separate transaction · ETH gas</dd></div>
+                </dl>
+                <label class="acknowledgement"><input type="checkbox" [ngModel]="acknowledged()" (ngModelChange)="acknowledged.set($event)" /><span>The recipient can access this Ethereum wallet and will need ETH to claim.</span></label>
+                @if (wallet.selectedAccount()?.mode !== 'full') { <p class="hint">This account is watch-only. Import its signer or connect its Ledger to send.</p> }
+                <button type="button" class="primary" [disabled]="!canReview()" (click)="reviewTransfer()">{{ busy() ? 'Reviewing transfer…' : 'Review bridge transfer' }}</button>
+                <p class="hint signing-note">You will review the {{ route()!.sourceName }} transaction in SimplEOS before signing. Tokens move to {{ route()!.depositAccount }} for bridging.</p>
+              }
+            </fieldset>
+          }
+          @if (latest(); as sent) {
+            <div class="submission" role="status"><h3>Submitted on {{ route()!.sourceName }}</h3><p>{{ sent.quantity }} to <code>{{ sent.recipient }}</code></p><p>This is the first step. Wait for validator proofs, then claim on Ethereum.</p><code>{{ sent.transactionId }}</code><button type="button" class="text-button" (click)="copy(sent.transactionId)">Copy transaction ID</button></div>
+          }
+        } @else {
+          <h2>Receive on {{ route()!.sourceName }}</h2>
+          <p class="intro">Use your Ethereum wallet on the official bridge. Your Ultra account stays in SimplEOS.</p>
+          <label>Ultra destination account</label><div class="copy-row"><code>{{ wallet.selectedAccount()?.name }}</code><button type="button" class="secondary" (click)="copy(wallet.selectedAccount()!.name)">Copy account</button></div>
+          <ol class="steps"><li>Open the official bridge and choose <strong>Ethereum to Ultra</strong>.</li><li>Connect the Ethereum wallet that holds your tokens.</li><li>Paste this account name in <strong>Destination Wallet</strong>. You do not need to connect an Ultra wallet.</li><li>Review the token approval and transfer in your Ethereum wallet. Both require ETH for gas.</li></ol>
+          <p>Validators deliver the tokens to Ultra after Ethereum finality. No Ultra-side claim is required.</p>
+          <button type="button" class="primary" (click)="openOfficial()">Open Ultra Bridge</button>
+          <p class="hint">Opens {{ route()!.officialUrl }} in your browser.</p>
+        }
+      </div>
+      <aside class="progress-pane">
+        <h2>Complete an Ethereum claim</h2>
+        <p>Your Ultra account does not need to connect to the bridge site.</p>
+        <ol class="steps"><li>Connect the <strong>recipient’s Ethereum wallet</strong> on the official bridge.</li><li>Choose Ultra to Ethereum, then <strong>Resume Transfer to EVM</strong>.</li><li>Select the request and choose <strong>Move Assets</strong>. Review the ETH gas and sign the claim.</li></ol>
+        <button type="button" class="secondary" (click)="openOfficial()">Continue on Ultra Bridge <span aria-hidden="true">↗</span></button>
+        <p class="hint">Opens {{ route()!.officialUrl }}. The bridge finds requests using the connected Ethereum address.</p>
+        <div class="section-header progress-header"><h2>Bridge requests</h2><button type="button" class="text-button" [disabled]="requestsLoading()" (click)="refreshProgress()">{{ requestsLoading() ? 'Checking…' : 'Refresh status' }}</button></div>
+        @if (requestsError()) { <p role="alert" class="notice error">{{ requestsError() }} Displayed details may be out of date.</p> }
+        @if (!requests().length && !requestsLoading() && !requestsError()) { <p class="empty">No retained outgoing requests were found for this account. A missing request does not prove completion; use the official bridge to check the recipient wallet.</p> }
+        @for (request of requests(); track request.counter) {
+          <article class="request"><div class="request-heading"><strong>{{ request.quantity }}</strong><span>{{ status(request) }}</span></div><p>Request #{{ request.counter }} · {{ date(request.createdAt) }}</p><code>{{ request.recipient }}</code>
+            @if (request.threshold) { <p>{{ request.attestations }} / {{ request.threshold }} validator attestations</p> }
+            @if (request.status === 'attested') { <p>Proofs are recorded. The official bridge verifies them and submits the Ethereum claim.</p> }
+            @if (request.statusDetail) { <p>{{ request.statusDetail }}</p> }
+            <button type="button" class="text-button" (click)="copy(request.recipient)">Copy recipient</button>
+          </article>
+        }
+        @if (moreRequests()) { <p class="hint">Showing the first 20 retained requests. The official bridge can find further requests by recipient.</p> }
+        @if (submissions().length) {
+          <details class="saved"><summary>Recent submissions ({{ submissions().length }})</summary><p class="hint">Saved on this device. These transaction IDs confirm submission, not Ethereum payout.</p>
+            @for (sent of submissions(); track sent.transactionId) { <article class="request"><strong>{{ sent.quantity }}</strong><p>{{ date(sent.createdAt) }}</p><code>{{ sent.recipient }}</code><code class="txid">{{ sent.transactionId }}</code><button class="text-button" type="button" (click)="copy(sent.transactionId)">Copy transaction ID</button></article> }
+          </details>
+        }
+      </aside>
+    </div>
+  }
+</section>

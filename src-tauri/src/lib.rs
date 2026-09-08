@@ -214,6 +214,7 @@ pub fn run() {
             commands::network::get_producers,
             commands::network::lookup_key_accounts,
             commands::network::get_actions_history,
+            commands::bridge::get_evm_bridge_state,
             commands::network::get_msig_inbox,
             commands::network::get_msig_proposal_details,
             commands::network::refresh_msig_status,
