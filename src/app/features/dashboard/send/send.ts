@@ -1,3 +1,4 @@
+import { resolveAccountSigner, AccountSigner } from '../../../core/services/account-signer';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService, TokenBalance, WalletAccount } from '../../../core/services/wallet-state.service';
@@ -826,12 +827,9 @@ export class SendComponent {
       return;
     }
 
-    // Find signing key
-    const keys = await this.ipc.listPublicKeys(account.chainId);
-    if (keys.length === 0) {
-      this.sendError.set('No signing key found. This is a watch-only account');
-      return;
-    }
+    let signer: AccountSigner;
+    try { signer = await resolveAccountSigner(this.ipc, account); }
+    catch (e) { this.sendError.set(e instanceof Error ? e.message : String(e)); return; }
 
     let actions: any[];
 
@@ -884,10 +882,12 @@ export class SendComponent {
     } else {
       // ── Standard Antelope transfer ──
       const recipient = recipientRaw.toLowerCase();
-      if (!/^[a-z1-5.]{1,13}$/.test(recipient)) {
-        this.sendError.set('Invalid account name. Use only a-z, 1-5, and . (max 13 chars)');
+      if (!/^[a-z1-5.]{1,12}[a-j1-5.]?$/.test(recipient)) {
+        this.sendError.set('Invalid account name. Use a-z, 1-5, and .; character 13 must be . 1-5 or a-j');
         return;
       }
+      try { await this.ipc.getAccount(account.chainId, recipient); }
+      catch { this.sendError.set('Could not verify the recipient on this chain'); return; }
       if (recipient === account.name) {
         this.sendError.set('Cannot send to yourself');
         return;
@@ -918,7 +918,7 @@ export class SendComponent {
 
     const result = await this.tx.confirm({
       chainId: account.chainId,
-      publicKey: keys[0],
+      ...signer,
       actions,
       title: `Send ${tok.symbol}`,
     });

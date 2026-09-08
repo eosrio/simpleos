@@ -545,15 +545,20 @@ pub fn default_chains() -> Vec<ChainConfig> {
                     owner: Some("Greymass".into()),
                 },
                 Endpoint {
-                    url: "https://xpr.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
+                    url: "https://proton.protonuk.io".into(),
+                    owner: Some("Proton UK".into()),
                 },
                 Endpoint {
-                    url: "https://proton.eosphere.io".into(),
-                    owner: Some("EOSphere".into()),
+                    url: "https://proton.eosusa.io".into(),
+                    owner: Some("EOS USA".into()),
                 },
             ],
-            hyperion_apis: vec!["https://proton.eosphere.io".into()],
+            // XPR's published Hyperion providers; keep independent fallbacks.
+            hyperion_apis: vec![
+                "https://proton.protonuk.io".into(),
+                "https://proton.eosusa.io".into(),
+                "https://api-xprnetwork-main.saltant.io".into(),
+            ],
             explorers: vec![Explorer {
                 name: "XPR Explorer".into(),
                 url: "https://explorer.xprnetwork.org".into(),

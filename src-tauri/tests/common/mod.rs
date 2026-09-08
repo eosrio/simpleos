@@ -74,6 +74,8 @@ macro_rules! require_chain_or_skip {
         match crate::common::require_chain().await {
             Some(id) => id,
             None => {
+                assert!(std::env::var_os("CI").is_none() && std::env::var_os("SIMPLEOS_REQUIRE_E2E").is_none(),
+                    "Required e2e chain is unavailable; integration tests did not run");
                 eprintln!(
                     "\n  SKIPPED: e2e chain not reachable at {}.\n           Run: bun run e2e:run\n",
                     crate::common::E2E_RPC_URL

@@ -93,6 +93,34 @@ pub async fn try_serialize_action_json(
 mod tests {
     use crate::antelope::serialize::{hex_encode, serialize_name};
 
+    #[test]
+    fn wax_linkauth_serializes_without_optional_authorized_by() {
+        // WAX's linkauth adds a trailing name$ binary extension. Omitting it
+        // must produce the same four-name payload as cleos set action permission.
+        let abi = r#"{
+            "version":"eosio::abi/1.2", "types":[],
+            "structs":[{"name":"linkauth","base":"","fields":[
+                {"name":"account","type":"name"},
+                {"name":"code","type":"name"},
+                {"name":"type","type":"name"},
+                {"name":"requirement","type":"name"},
+                {"name":"authorized_by","type":"name$"}
+            ]}],
+            "actions":[{"name":"linkauth","type":"linkauth","ricardian_contract":""}],
+            "tables":[], "ricardian_clauses":[], "error_messages":[], "abi_extensions":[]
+        }"#;
+        let serializer = rs_abieos::Abieos::new();
+        serializer.set_abi_json("eosio", abi).unwrap();
+        let data = r#"{"account":"eosriobrazil","code":"eosio","type":"claimstandby","requirement":"claim2"}"#;
+        let encoded = serializer.json_to_hex("eosio", "linkauth", data).unwrap();
+        let mut expected = Vec::new();
+        for name in ["eosriobrazil", "eosio", "claimstandby", "claim2"] {
+            expected.extend(serialize_name(name).unwrap());
+        }
+        assert_eq!(encoded.to_lowercase(), hex_encode(&expected));
+        assert_eq!(expected.len(), 32);
+    }
+
     /// Minimal eosio.msig ABI covering `approve`, including the
     /// `binary_extension<checksum256>` proposal_hash field.
     const MSIG_ABI: &str = r#"{

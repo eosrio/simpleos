@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { Store } from '@tauri-apps/plugin-store';
 
 // ── Types matching Rust backend ──
 
@@ -44,6 +43,8 @@ export interface Permission {
   perm_name: string;
   parent: string;
   required_auth: any;
+  /** Absent on older nodes; absence must not be presented as an empty list. */
+  linked_actions?: { account: string; action: string }[] | null;
 }
 
 export interface TableRowsParams {
@@ -529,28 +530,22 @@ export class TauriIpcService {
   }
 
   /**
-   * Begin an ESR (signing request) confirmation. The actions are shown for
-   * context; the signed value is the wharfkit-resolved `digestHex`. Resolves with
-   * `{ signature }` after the user approves in the trusted window; the caller then
-   * performs the ESR callback (its host was disclosed during confirmation).
+   * Begin an ESR confirmation from packed transaction bytes. Rust derives both
+   * the signing digest and the approval summary, including identity semantics.
+   * The caller performs the disclosed ESR callback after approval.
    */
   async beginEsrSign(
     chainId: string,
     publicKey: string,
-    actions: any[],
-    digestHex: string,
-    isIdentity: boolean,
-    opts?: { origin?: string; callbackUrl?: string; identityScope?: string },
-  ): Promise<{ signature: string; transaction_id: string }> {
-    return invoke<{ signature: string; transaction_id: string }>('begin_esr_sign', {
+    packedTransactionHex: string,
+    opts?: { origin?: string; callbackUrl?: string },
+  ): Promise<{ signature: string; packed_trx: string }> {
+    return invoke<{ signature: string; packed_trx: string }>('begin_esr_sign', {
       chainId,
       publicKey,
-      actions,
-      digestHex,
-      isIdentity,
+      packedTransactionHex,
       origin: opts?.origin ?? null,
       callbackUrl: opts?.callbackUrl ?? null,
-      identityScope: opts?.identityScope ?? null,
     });
   }
 
@@ -828,30 +823,15 @@ export class TauriIpcService {
 
   // ── Local Store (non-sensitive persistence via tauri-plugin-store) ──
 
-  private store: Store | null = null;
-
-  private async getStore(): Promise<Store> {
-    if (!this.store) {
-      this.store = await Store.load('wallet-state.json');
-    }
-    return this.store;
-  }
-
-  async storeSet(key: string, value: any): Promise<void> {
-    const store = await this.getStore();
-    await store.set(key, value);
-    await store.save();
+  async storeSet(key: string, value: unknown): Promise<void> {
+    return invoke<void>('preference_set', { key, value });
   }
 
   async storeGet<T>(key: string): Promise<T | null> {
-    const store = await this.getStore();
-    const val = await store.get<T>(key);
-    return val ?? null;
+    return invoke<T | null>('preference_get', { key });
   }
 
   async storeDelete(key: string): Promise<void> {
-    const store = await this.getStore();
-    await store.delete(key);
-    await store.save();
+    return invoke<void>('preference_delete', { key });
   }
 }

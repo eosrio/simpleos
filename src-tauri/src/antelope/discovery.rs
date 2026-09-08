@@ -116,7 +116,7 @@ where
     });
 
     // Seed with existing config endpoints to ensure they are tested even if bp.json discovery fails.
-    for ep in &pm.rpc_endpoints {
+    for ep in &pm.rpc_endpoints() {
         all_endpoints.push(DiscoveredEndpoint {
             url: ep.url.clone(),
             endpoint_type: EndpointType::Api,
@@ -126,7 +126,7 @@ where
             capabilities: EndpointCapabilities::default(),
         });
     }
-    for ep in &pm.hyperion_endpoints {
+    for ep in &pm.hyperion_endpoints() {
         all_endpoints.push(DiscoveredEndpoint {
             url: ep.url.clone(),
             endpoint_type: EndpointType::Hyperion,

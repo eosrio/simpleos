@@ -31,7 +31,7 @@ export function contactsStoreKey(chainId: string): string {
 }
 
 /** Antelope account name: a-z, 1-5 and dots, max 13 chars. */
-const ACCOUNT_NAME_RE = /^[a-z1-5.]{1,13}$/;
+const ACCOUNT_NAME_RE = /^[a-z1-5.]{1,12}[a-j1-5.]?$/;
 /** FIO handle part: a-z, 0-9 and inner hyphens. */
 const FIO_PART_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 /** FIO public key: `FIO` prefix + base58 body (same shape as a K1 key). */

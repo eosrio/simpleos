@@ -1,4 +1,4 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal, untracked, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { ChainFeaturesService } from '../../../core/services/chain-features.service';
@@ -20,6 +20,10 @@ interface ProducerRow {
   template: `
     <div class="vote-view">
       <h2>Vote / Stake</h2>
+      @if (features.loadError()) {
+        <p class="section-desc" role="alert">{{ features.loadError() }}</p>
+        <button type="button" class="btn-primary" (click)="features.detect()">Retry network capabilities</button>
+      }
 
       <!-- Summary cards -->
       <div class="summary-row">
@@ -176,6 +180,9 @@ interface ProducerRow {
 
           @if (loadingProducers()) {
             <p class="section-desc">Loading producers...</p>
+          } @else if (producerError()) {
+            <p class="section-desc" role="alert">{{ producerError() }}</p>
+            <button type="button" class="btn-primary" (click)="retryProducers()">Retry producers</button>
           } @else {
             <div class="producers-table">
               <div class="table-header">
@@ -568,7 +575,7 @@ interface ProducerRow {
     `,
   ],
 })
-export class VoteComponent {
+export class VoteComponent implements OnDestroy {
   voteTab = signal<'bp' | 'proxy'>('bp');
   stakePercent = signal(0);
   cpuAmount = signal('');
@@ -582,6 +589,14 @@ export class VoteComponent {
   // Real producer data
   producers = signal<ProducerRow[]>([]);
   loadingProducers = signal(false);
+  producerError = signal('');
+  private producerRequest = 0;
+  private destroyed = false;
+  ngOnDestroy() { this.destroyed = true; this.producerRequest++; }
+  retryProducers() {
+    const account = this.wallet.selectedAccount();
+    if (account) void this.loadProducers(account.chainId);
+  }
 
   filteredProducers = computed(() => {
     const q = this.searchQuery().toLowerCase();
@@ -604,7 +619,7 @@ export class VoteComponent {
         } else {
           this.features.setMockCapabilities(account.chainName);
         }
-        this.loadProducers(account.chainId);
+        untracked(() => void this.loadProducers(account.chainId));
         this.loadCurrentVotes(account);
         // Reset the stake form so amounts reflect this account's balance, not a previous one.
         this.stakePercent.set(0);
@@ -615,10 +630,16 @@ export class VoteComponent {
   }
 
   private async loadProducers(chainId: string) {
+    const request = ++this.producerRequest;
+    const current = () => !this.destroyed && request === this.producerRequest && this.wallet.selectedAccount()?.chainId === chainId;
     this.loadingProducers.set(true);
+    this.producerError.set('');
+    this.producers.set([]);
     try {
       const result = await this.ipc.getProducers(chainId, 200);
-      const all: any[] = result?.rows ?? result?.producers ?? [];
+      if (!current()) return;
+      const all: any[] = result?.rows ?? result?.producers;
+      if (!Array.isArray(all)) throw new Error('Invalid producer response');
       const isActive = (r: any) => r.is_active === 1 || r.is_active === true;
       // Only registered producers are votable — the chain rejects the whole tx
       // with "producer ... is not currently registered" otherwise. Unregistered
@@ -637,9 +658,12 @@ export class VoteComponent {
         this.selectedProducers.update((list) => list.filter((p) => !inactive.has(p)));
       }
     } catch {
-      this.producers.set([]);
+      if (current()) {
+        this.producers.set([]);
+        this.producerError.set('Could not load producers. Check the network and retry.');
+      }
     } finally {
-      this.loadingProducers.set(false);
+      if (current()) this.loadingProducers.set(false);
     }
   }
 

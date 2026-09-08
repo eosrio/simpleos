@@ -8,7 +8,7 @@ use crate::AppWallet;
 
 /// Check if a vault has been created by looking for a marker file.
 #[tauri::command]
-pub fn has_wallet(app: tauri::AppHandle) -> Result<bool, Error> {
+pub fn has_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<bool, Error> {
     log::info!("[wallet] has_wallet: checking marker file...");
     let app_dir = app.path().app_data_dir().map_err(|e| {
         Error::Io(std::io::Error::new(
@@ -17,7 +17,7 @@ pub fn has_wallet(app: tauri::AppHandle) -> Result<bool, Error> {
         ))
     })?;
     let marker = app_dir.join("vault.marker");
-    let exists = marker.exists();
+    let exists = marker.exists() || wallet.0.has_vault_material()?;
     log::info!(
         "[wallet] has_wallet: marker at {:?} exists={}",
         marker,
@@ -73,7 +73,7 @@ pub fn import_private_key(
     let result = wallet.0.import_key(&wif, &chain_id, &passphrase)?;
 
     // Mark vault as created
-    let _ = mark_vault_created(&app);
+    mark_vault_created(&app)?;
 
     Ok(crate::antelope::types::ImportResult {
         public_key: result.public_key,
@@ -93,7 +93,7 @@ pub fn import_key_with_session(
 ) -> Result<crate::antelope::types::ImportResult, Error> {
     let result = wallet.0.import_key_with_session(&wif, &chain_id)?;
 
-    let _ = mark_vault_created(&app);
+    mark_vault_created(&app)?;
 
     Ok(crate::antelope::types::ImportResult {
         public_key: result.public_key,
@@ -209,13 +209,9 @@ pub fn generate_finalizer_key(
     // Use a special chain prefix to distinguish from secp256k1 keys
     let bls_chain = format!("bls_{}", chain_id);
 
-    let mut session = wallet.0.session_lock()?;
-    let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-    let encrypted =
-        crate::keystore::derive::encrypt(&sk_bytes, master_key, b"simpleos-master-key")?;
-    drop(session);
-
-    wallet.0.store_raw_key(&bls_chain, &pub_key, &encrypted)?;
+    wallet
+        .0
+        .store_secret_with_session(&bls_chain, &pub_key, &sk_bytes)?;
 
     // Pre-formatted config.ini line. Spring/leap use the unified `signature-provider`
     // option for both secp256k1 signing keys and BLS finalizer keys.
@@ -248,14 +244,7 @@ pub fn get_finalizer_pop(
 ) -> Result<serde_json::Value, Error> {
     let bls_chain = format!("bls_{}", chain_id);
 
-    // Decrypt the BLS private key
-    let mut session = wallet.0.session_lock()?;
-    let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-
-    let encrypted = wallet.0.load_raw_key(&bls_chain, &finalizer_key)?;
-    let sk_bytes = crate::keystore::derive::decrypt(&encrypted, master_key, b"simpleos-master-key")
-        .map_err(|_| Error::InvalidPassphrase)?;
-    drop(session);
+    let sk_bytes = wallet.0.decrypt_key(&bls_chain, &finalizer_key)?;
 
     let (pub_key, pop) = crate::antelope::bls::proof_of_possession(&sk_bytes)?;
 
@@ -422,11 +411,14 @@ pub fn export_backup(passphrase: String, wallet: State<AppWallet>) -> Result<Str
 // async: Anchor's non-standard 70-round Rijndael is particularly slow — off-thread.
 #[tauri::command(async)]
 pub fn import_backup(
+    app: tauri::AppHandle,
     json: String,
     passphrase: String,
     wallet: State<AppWallet>,
 ) -> Result<usize, Error> {
-    wallet.0.import_backup(&json, &passphrase)
+    let count = wallet.0.import_backup(&json, &passphrase)?;
+    mark_vault_created(&app)?;
+    Ok(count)
 }
 
 // ── Reset ──

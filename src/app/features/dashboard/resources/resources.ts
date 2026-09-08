@@ -1,4 +1,4 @@
-import { Component, effect, signal, computed } from '@angular/core';
+import { Component, effect, signal, computed, untracked, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { ChainFeaturesService } from '../../../core/services/chain-features.service';
@@ -18,6 +18,9 @@ import { TransactionService } from '../../../core/services/transaction.service';
           <div class="skeleton skeleton-panel"></div>
           <div class="skeleton skeleton-panel"></div>
         </div>
+      } @else if (features.loadError()) {
+        <p role="alert">{{ features.loadError() }}</p>
+        <button type="button" class="btn-primary" (click)="retryData()">Retry network capabilities</button>
       } @else {
         <!-- Free chain banner -->
         @if (features.isFreeChain()) {
@@ -583,7 +586,38 @@ import { TransactionService } from '../../../core/services/transaction.service';
   `,
   styleUrl: './resources.css',
 })
-export class ResourcesComponent {
+export class ResourcesComponent implements OnDestroy {
+  private dataRequest = 0;
+  private estimateRequest = 0;
+  private destroyed = false;
+  ngOnDestroy() { this.destroyed = true; this.dataRequest++; this.estimateRequest++; clearTimeout(this.estimateTimer); }
+  private currentAccount(account: { name: string; chainId: string }, request: number) {
+    return !this.destroyed && request === this.dataRequest && this.wallet.selectedAccount()?.name === account.name &&
+      this.wallet.selectedAccount()?.chainId === account.chainId;
+  }
+  async retryData() {
+    const account = this.wallet.selectedAccount();
+    if (!account) return;
+    const request = ++this.dataRequest;
+    this.estimateRequest++;
+    clearTimeout(this.estimateTimer);
+    this.powerupState.set(null);
+    this.activeOrders.set([]);
+    this.powerupLoaded.set(false);
+    this.ramPrice.set('—');
+    this.delegations.set([]);
+    this.estimatedFee.set('—');
+    this.estimating.set(false);
+    this.powerupError.set('');
+    await this.features.detect();
+    if (!this.currentAccount(account, request) || this.features.loadError()) return;
+    const caps = this.features.capabilities();
+    await Promise.all([
+      caps.powerup ? this.loadPowerUpData() : Promise.resolve(),
+      caps.ramBancor ? this.loadRamPrice() : Promise.resolve(),
+      caps.staking ? this.loadDelegations() : Promise.resolve(),
+    ]);
+  }
   // PowerUp form state
   cpuPercent = signal(0.01);
   netPercent = signal(0.001);
@@ -636,11 +670,7 @@ export class ResourcesComponent {
       const account = this.wallet.selectedAccount();
       if (account) {
         if (this.wallet.hasTauri()) {
-          this.features.detect().then(() => {
-            this.loadPowerUpData();
-            this.loadRamPrice();
-            this.loadDelegations();
-          });
+          untracked(() => void this.retryData());
         } else {
           this.features.setMockCapabilities(account.chainName);
         }
@@ -653,13 +683,16 @@ export class ResourcesComponent {
   async loadPowerUpData() {
     const account = this.wallet.selectedAccount();
     if (!account) return;
+    const request = this.dataRequest;
 
     try {
       const summary = await this.ipc.getPowerUpInfo(account.chainId, account.name);
+      if (!this.currentAccount(account, request)) return;
       this.powerupState.set(summary.state);
       this.activeOrders.set(summary.active_orders ?? []);
       this.powerupLoaded.set(true);
     } catch (e) {
+      if (!this.currentAccount(account, request)) return;
       console.warn('[resources] PowerUp data not available:', e);
       this.powerupLoaded.set(false);
     }
@@ -668,6 +701,7 @@ export class ResourcesComponent {
   // ── Cost Estimation ──
 
   estimateCost() {
+    this.estimateRequest++;
     clearTimeout(this.estimateTimer);
     this.estimateTimer = setTimeout(() => this.doEstimate(), 300);
   }
@@ -675,12 +709,16 @@ export class ResourcesComponent {
   private async doEstimate() {
     const account = this.wallet.selectedAccount();
     if (!account || !this.wallet.hasTauri()) return;
+    const request = ++this.estimateRequest;
+    const dataRequest = this.dataRequest;
+    const current = () => request === this.estimateRequest && this.currentAccount(account, dataRequest);
 
     const cpuFrac = (this.cpuPercent() || 0) / 100;
     const netFrac = (this.netPercent() || 0) / 100;
 
     if (cpuFrac <= 0 && netFrac <= 0) {
       this.estimatedFee.set('—');
+      this.estimating.set(false);
       return;
     }
 
@@ -689,12 +727,14 @@ export class ResourcesComponent {
 
     try {
       const est = await this.ipc.estimatePowerUp(account.chainId, cpuFrac, netFrac);
+      if (!current()) return;
       this.estimatedFee.set(est.fee);
     } catch (e: any) {
+      if (!current()) return;
       this.estimatedFee.set('—');
       this.powerupError.set(e?.toString() ?? 'Estimation failed');
     } finally {
-      this.estimating.set(false);
+      if (current()) this.estimating.set(false);
     }
   }
 
@@ -921,6 +961,7 @@ export class ResourcesComponent {
   private async loadRamPrice() {
     const account = this.wallet.selectedAccount();
     if (!account) return;
+    const request = this.dataRequest;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
         code: 'eosio',
@@ -929,6 +970,8 @@ export class ResourcesComponent {
         limit: 1,
         json: true,
       });
+      if (!this.currentAccount(account, request)) return;
+      this.ramPrice.set('—');
       if (result.rows.length > 0) {
         const row = result.rows[0];
         // Bancor formula: price = quote_balance / base_balance
@@ -941,7 +984,7 @@ export class ResourcesComponent {
         }
       }
     } catch {
-      this.ramPrice.set('—');
+      if (this.currentAccount(account, request)) this.ramPrice.set('—');
     }
   }
 
@@ -950,6 +993,7 @@ export class ResourcesComponent {
   private async loadDelegations() {
     const account = this.wallet.selectedAccount();
     if (!account) return;
+    const request = this.dataRequest;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
         code: 'eosio',
@@ -958,6 +1002,7 @@ export class ResourcesComponent {
         limit: 100,
         json: true,
       });
+      if (!this.currentAccount(account, request)) return;
       const delegations = result.rows
         .filter((r: any) => r.to !== account.name) // exclude self-delegation
         .map((r: any) => ({
@@ -967,7 +1012,7 @@ export class ResourcesComponent {
         }));
       this.delegations.set(delegations);
     } catch {
-      this.delegations.set([]);
+      if (this.currentAccount(account, request)) this.delegations.set([]);
     }
   }
 

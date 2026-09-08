@@ -1,0 +1,221 @@
+{
+  "captured_at_unix": 1788899663,
+  "results": [
+    {
+      "account": "ok",
+      "active_history": "https://fio.eosphere.io",
+      "active_rpc": "https://fio.greymass.com",
+      "chain": "FIO",
+      "chain_id": "21dcae42c0182200e93f954a074011f9048a7624c6fe81d3c9541a614a88bd1c",
+      "endpoints": [
+        {
+          "latency_ms": 414,
+          "owner": "Greymass",
+          "stale": false,
+          "url": "https://fio.greymass.com"
+        },
+        {
+          "latency_ms": 1122,
+          "owner": "EOSphere",
+          "stale": false,
+          "url": "https://fio.eosphere.io"
+        },
+        {
+          "latency_ms": -1,
+          "owner": "EOS Nation",
+          "stale": false,
+          "url": "https://fio.api.eosnation.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": "https://libre.eosphere.io",
+      "active_rpc": "https://libre.greymass.com",
+      "chain": "Libre",
+      "chain_id": "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465",
+      "endpoints": [
+        {
+          "latency_ms": 429,
+          "owner": "Greymass",
+          "stale": false,
+          "url": "https://libre.greymass.com"
+        },
+        {
+          "latency_ms": -1,
+          "owner": "Edenia",
+          "stale": false,
+          "url": "https://libre-api.edenia.cloud"
+        },
+        {
+          "latency_ms": 1159,
+          "owner": "EOSphere",
+          "stale": false,
+          "url": "https://libre.eosphere.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": "https://mainnet.telos.net",
+      "active_rpc": "https://mainnet.telos.net",
+      "chain": "Telos",
+      "chain_id": "4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11",
+      "endpoints": [
+        {
+          "latency_ms": 213,
+          "owner": "Telos Foundation",
+          "stale": false,
+          "url": "https://mainnet.telos.net"
+        },
+        {
+          "latency_ms": 1110,
+          "owner": "EOSphere",
+          "stale": false,
+          "url": "https://telos.eosphere.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": null,
+      "active_rpc": "https://ultra.eosrio.io",
+      "chain": "Ultra",
+      "chain_id": "a9c481dfbc7d9506dc7e87e9a137c931b0a9303f64fd7a1d08b8230133920097",
+      "endpoints": [
+        {
+          "latency_ms": 32,
+          "owner": "EOS Rio",
+          "stale": false,
+          "url": "https://ultra.eosrio.io"
+        },
+        {
+          "latency_ms": 319,
+          "owner": "Ultra",
+          "stale": false,
+          "url": "https://api.mainnet.ultra.io"
+        }
+      ],
+      "history": "not configured",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": "https://eos.hyperion.eosrio.io",
+      "active_rpc": "https://eos.greymass.com",
+      "chain": "Vaulta",
+      "chain_id": "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+      "endpoints": [
+        {
+          "latency_ms": 183,
+          "owner": "Greymass",
+          "stale": false,
+          "url": "https://eos.greymass.com"
+        },
+        {
+          "latency_ms": -1,
+          "owner": "EOS Sweden",
+          "stale": false,
+          "url": "https://api.eossweden.org"
+        },
+        {
+          "latency_ms": -1,
+          "owner": "EOS Rio",
+          "stale": false,
+          "url": "https://api.eosrio.io"
+        },
+        {
+          "latency_ms": 558,
+          "owner": "EOS Nation",
+          "stale": false,
+          "url": "https://eos.api.eosnation.io"
+        },
+        {
+          "latency_ms": 1117,
+          "owner": "EOSphere",
+          "stale": false,
+          "url": "https://eos.eosphere.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": "https://api.waxsweden.org",
+      "active_rpc": "https://wax.greymass.com",
+      "chain": "WAX",
+      "chain_id": "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4",
+      "endpoints": [
+        {
+          "latency_ms": 242,
+          "owner": "Greymass",
+          "stale": false,
+          "url": "https://wax.greymass.com"
+        },
+        {
+          "latency_ms": 697,
+          "owner": "WAX Sweden",
+          "stale": false,
+          "url": "https://api.waxsweden.org"
+        },
+        {
+          "latency_ms": 494,
+          "owner": "EOSphere",
+          "stale": false,
+          "url": "https://wax.eosphere.io"
+        },
+        {
+          "latency_ms": 525,
+          "owner": "EOS Nation",
+          "stale": false,
+          "url": "https://wax.api.eosnation.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    },
+    {
+      "account": "ok",
+      "active_history": "https://proton.protonuk.io",
+      "active_rpc": "https://proton.eosusa.io",
+      "chain": "XPR",
+      "chain_id": "384da888112027f0321850a169f737c33e53b388aad48b5adace4bab97f437e0",
+      "endpoints": [
+        {
+          "latency_ms": 421,
+          "owner": "Greymass",
+          "stale": false,
+          "url": "https://proton.greymass.com"
+        },
+        {
+          "latency_ms": 589,
+          "owner": "Proton UK",
+          "stale": false,
+          "url": "https://proton.protonuk.io"
+        },
+        {
+          "latency_ms": 377,
+          "owner": "EOS USA",
+          "stale": false,
+          "url": "https://proton.eosusa.io"
+        }
+      ],
+      "history": "ok",
+      "producers": "ok",
+      "system_abi": "ok"
+    }
+  ]
+}

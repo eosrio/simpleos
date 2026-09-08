@@ -17,6 +17,7 @@
  */
 
 const fs = require('node:fs');
+const { verifyUpdaterSignature } = require('./verify-updater-signature');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { findSignatures, parseArgs, ROOT } = require('./updater-manifest.js');
@@ -69,6 +70,11 @@ function main() {
   for (const sigPath of findSignatures(bundleRoot)) {
     const artifactPath = sigPath.slice(0, -'.sig'.length);
     if (referenced.has(path.basename(artifactPath)) && fs.existsSync(artifactPath)) {
+      const entry = referenced.get(path.basename(artifactPath));
+      const signature = fs.readFileSync(sigPath, 'utf8').trim();
+      if (signature !== entry.signature.trim()) throw new Error(`Manifest signature differs from ${sigPath}`);
+      const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'));
+      verifyUpdaterSignature(fs.readFileSync(artifactPath), config.plugins?.updater?.pubkey ?? '', signature);
       uploads.push(artifactPath, sigPath);
     }
   }

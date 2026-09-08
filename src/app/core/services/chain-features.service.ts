@@ -55,6 +55,8 @@ const DEFAULT_CAPABILITIES: ChainCapabilities = {
 export class ChainFeaturesService {
   readonly capabilities = signal<ChainCapabilities>(DEFAULT_CAPABILITIES);
   readonly loading = signal(false);
+  readonly loadError = signal('');
+  private detectionRequest = 0;
 
   /** Convenience computed signals for template use */
   readonly hasStaking = computed(() => this.capabilities().staking);
@@ -86,13 +88,20 @@ export class ChainFeaturesService {
   async detect() {
     const chain = this.wallet.activeChain();
     if (!chain) return;
+    const request = ++this.detectionRequest;
+    const current = () => request === this.detectionRequest && this.wallet.activeChain()?.id === chain.id;
 
     this.loading.set(true);
+    this.loadError.set('');
+    this.capabilities.set({ ...DEFAULT_CAPABILITIES });
     try {
       const caps = { ...DEFAULT_CAPABILITIES };
 
       // Probe system contract ABI for available actions
-      const abiActions = await this.probeAbiActions(chain.id);
+      const contracts = [...new Set(['eosio', chain.system_contract || 'eosio', ...(chain.symbol === 'FIO' ? ['fio.staking'] : [])])];
+      const sets = await Promise.all(contracts.map(contract => this.probeAbiActions(chain.id, contract)));
+      const abiActions = new Set(sets.flatMap(actions => [...actions]));
+      if (!current()) return;
 
       // Staking detection
       caps.staking = abiActions.has('delegatebw');
@@ -134,12 +143,14 @@ export class ChainFeaturesService {
       // Savannah detection — check for finalizer-related actions
       caps.savannah = abiActions.has('regfinkey') || abiActions.has('actfinkey');
 
-      this.capabilities.set(caps);
+      if (current()) this.capabilities.set(caps);
     } catch {
-      // Probing failed — use defaults
-      this.capabilities.set(DEFAULT_CAPABILITIES);
+      if (current()) {
+        this.capabilities.set({ ...DEFAULT_CAPABILITIES });
+        this.loadError.set('Could not detect network capabilities. Check the connection and retry.');
+      }
     } finally {
-      this.loading.set(false);
+      if (current()) this.loading.set(false);
     }
   }
 
@@ -147,6 +158,9 @@ export class ChainFeaturesService {
    * For mock/design mode — manually set capabilities based on chain name.
    */
   setMockCapabilities(chainName: string) {
+    this.detectionRequest++;
+    this.loading.set(false);
+    this.loadError.set('');
     const name = chainName.toLowerCase();
     const caps = { ...DEFAULT_CAPABILITIES };
 
@@ -205,9 +219,9 @@ export class ChainFeaturesService {
     this.capabilities.set(caps);
   }
 
-  private async probeAbiActions(chainId: string): Promise<Set<string>> {
-    try {
-      const abi = await this.ipc.getAbi(chainId, 'eosio');
+  private async probeAbiActions(chainId: string, contract: string): Promise<Set<string>> {
+      const abi = await this.ipc.getAbi(chainId, contract);
+      if (!Array.isArray(abi?.abi?.actions)) throw new Error('Invalid system ABI response');
       const actions = new Set<string>();
       if (abi?.abi?.actions) {
         for (const action of abi.abi.actions) {
@@ -215,9 +229,6 @@ export class ChainFeaturesService {
         }
       }
       return actions;
-    } catch {
-      return new Set();
-    }
   }
 
   private async tableExists(chainId: string, code: string, scope: string, table: string): Promise<boolean> {
@@ -226,8 +237,9 @@ export class ChainFeaturesService {
         code, scope, table, limit: 1, json: true,
       });
       return result.rows.length > 0;
-    } catch {
-      return false;
+    } catch (error) {
+      if (/not specified in the ABI|unknown table|table.*does not exist/i.test(String(error))) return false;
+      throw error;
     }
   }
 }

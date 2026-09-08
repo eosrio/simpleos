@@ -240,6 +240,12 @@ interface AccountTabFilter {
               </a>
             </li>
             <li>
+              <a routerLink="permissions" routerLinkActive="active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>
+                Permissions
+              </a>
+            </li>
+            <li>
               <a routerLink="msig-inbox" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9"/><polyline points="2 6 12 13 22 6"/><circle cx="18" cy="18" r="4"/><path d="m16 18 1.5 1.5L20 17"/></svg>
                 Multisig Inbox

@@ -1,0 +1,186 @@
+{
+  "checkedAt": "2026-09-08T16:33:32.851Z",
+  "results": [
+    {
+      "name": "Vaulta",
+      "chainId": "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+      "endpoints": [
+        {
+          "url": "https://eos.greymass.com",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 2,
+          "latencyMs": 465
+        },
+        {
+          "url": "https://api.eossweden.org",
+          "error": "fetch failed"
+        },
+        {
+          "url": "https://api.eosrio.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 62
+        },
+        {
+          "url": "https://eos.api.eosnation.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 841
+        },
+        {
+          "url": "https://eos.eosphere.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 1692
+        }
+      ]
+    },
+    {
+      "name": "WAX",
+      "chainId": "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4",
+      "endpoints": [
+        {
+          "url": "https://wax.greymass.com",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 2,
+          "latencyMs": 799
+        },
+        {
+          "url": "https://api.waxsweden.org",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 8,
+          "latencyMs": 1092
+        },
+        {
+          "url": "https://wax.eosphere.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 1211
+        },
+        {
+          "url": "https://wax.api.eosnation.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 2,
+          "latencyMs": 1220
+        }
+      ]
+    },
+    {
+      "name": "Telos",
+      "chainId": "4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11",
+      "endpoints": [
+        {
+          "url": "https://mainnet.telos.net",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 4,
+          "latencyMs": 1366
+        },
+        {
+          "url": "https://telos.eosphere.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 1994
+        }
+      ]
+    },
+    {
+      "name": "Ultra",
+      "chainId": "a9c481dfbc7d9506dc7e87e9a137c931b0a9303f64fd7a1d08b8230133920097",
+      "endpoints": [
+        {
+          "url": "https://ultra.eosrio.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 868
+        },
+        {
+          "url": "https://api.mainnet.ultra.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 2,
+          "latencyMs": 2064
+        }
+      ]
+    },
+    {
+      "name": "FIO",
+      "chainId": "21dcae42c0182200e93f954a074011f9048a7624c6fe81d3c9541a614a88bd1c",
+      "endpoints": [
+        {
+          "url": "https://fio.greymass.com",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 1284
+        },
+        {
+          "url": "https://fio.eosphere.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 2094
+        },
+        {
+          "url": "https://fio.api.eosnation.io",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "name": "Libre",
+      "chainId": "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465",
+      "endpoints": [
+        {
+          "url": "https://libre.greymass.com",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 1433
+        },
+        {
+          "url": "https://libre-api.edenia.cloud",
+          "error": "fetch failed"
+        },
+        {
+          "url": "https://libre.eosphere.io",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 1,
+          "latencyMs": 2242
+        }
+      ]
+    },
+    {
+      "name": "XPR",
+      "chainId": "384da888112027f0321850a169f737c33e53b388aad48b5adace4bab97f437e0",
+      "endpoints": [
+        {
+          "url": "https://proton.greymass.com",
+          "status": 200,
+          "chainMatches": true,
+          "headLagSeconds": 3,
+          "latencyMs": 1436
+        },
+        {
+          "url": "https://xpr.api.eosnation.io",
+          "error": "fetch failed"
+        },
+        {
+          "url": "https://proton.eosphere.io",
+          "error": "fetch failed"
+        }
+      ]
+    }
+  ]
+}

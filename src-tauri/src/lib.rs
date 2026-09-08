@@ -233,6 +233,9 @@ pub fn run() {
             commands::anchor::import_anchor_entries,
             // Config
             commands::config::get_chains_config,
+            commands::config::preference_get,
+            commands::config::preference_set,
+            commands::config::preference_delete,
             // DApp browser
             commands::dapp::open_dapp_browser,
             commands::dapp::close_dapp_browser,

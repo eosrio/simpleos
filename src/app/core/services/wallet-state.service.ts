@@ -273,11 +273,15 @@ export class WalletStateService {
   }
 
   /** Refresh a single account's data from the chain. */
+  private readonly refreshRequests = new Map<string, number>();
   async refreshAccount(index: number | null) {
     if (index === null) return;
 
     const account = this.accounts()[index];
     if (!account || !this.hasTauri()) return;
+    const identity = `${account.chainId}:${account.name}`;
+    const request = (this.refreshRequests.get(identity) ?? 0) + 1;
+    this.refreshRequests.set(identity, request);
 
     try {
       const info = await this.ipc.getAccount(account.chainId, account.name);
@@ -337,9 +341,10 @@ export class WalletStateService {
         console.warn(`[wallet] producer check failed for ${account.name}@${account.chainName}:`, e);
       }
 
+      if (this.refreshRequests.get(identity) !== request) return;
       this.accounts.update((list) =>
-        list.map((a, i) =>
-          i === index ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a,
+        list.map((a) =>
+          a.name === account.name && a.chainId === account.chainId ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a,
         ),
       );
     } catch (e: any) {

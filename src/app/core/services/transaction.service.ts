@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { TauriIpcService } from './tauri-ipc.service';
 import { WalletStateService } from './wallet-state.service';
+import { resolveAccountSigner } from './account-signer';
 
 export interface TxAction {
   account: string;
@@ -66,6 +67,17 @@ export class TransactionService {
   async confirm(request: TxRequest & { mode: 'signOnly' }): Promise<TxCompletion | null>;
   async confirm(request: TxRequest): Promise<TxResult | null>;
   async confirm(request: TxRequest): Promise<TxCompletion | null> {
+    if (this.wallet.hasTauri()) {
+      const account = this.wallet.selectedAccount();
+      if (!account || account.chainId !== request.chainId) {
+        throw new Error('Select the account and chain that will authorize this transaction');
+      }
+      const permissions = [...new Set(request.actions.flatMap(action => action.authorization)
+        .filter(auth => auth.actor === account.name).map(auth => auth.permission))];
+      // Every feature uses the same signer resolution, even older callers that
+      // still provide a first-chain-key guess or omit their Ledger index.
+      request = { ...request, ...await resolveAccountSigner(this.ipc, account, permissions) };
+    }
     // R2+R3: plain key signing goes through the backend-owned trusted
     // confirmation window — the renderer can neither forge nor suppress it, and
     // the bytes shown there are the bytes that get signed. Only Ledger (the
@@ -77,7 +89,7 @@ export class TransactionService {
     // ── Legacy in-renderer modal path (Ledger / custom-sign) ──
     // Check if passphrase is needed for signing
     let needsPass = false;
-    if (this.wallet.hasTauri()) {
+    if (this.wallet.hasTauri() && request.ledgerIndex === undefined) {
       try {
         needsPass = await this.ipc.needsPassphraseForSigning();
       } catch { /* default to false */ }

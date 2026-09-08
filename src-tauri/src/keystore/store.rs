@@ -43,6 +43,21 @@ pub trait KeyStore: Send + Sync {
     /// SEC-028: delete the per-chain key index entry so a wallet reset leaves
     /// nothing behind in the backing store (e.g. the OS credential store).
     fn clear_index(&self, chain_id: &str) -> Result<(), Error>;
+    /// Commit encrypted records together. Unsupported backends must fail before writing.
+    fn store_batch(&self, _records: &[(String, String, Vec<u8>)]) -> Result<(), Error> {
+        Err(Error::Keyring(
+            "This storage backend does not support atomic vault changes".into(),
+        ))
+    }
+    /// True only when there is no existing vault material. Errors must not mean empty.
+    fn is_empty(&self) -> Result<bool, Error> {
+        Err(Error::Keyring(
+            "Cannot establish that the key store is empty".into(),
+        ))
+    }
+    fn namespaces(&self, known: &[String]) -> Result<Vec<String>, Error> {
+        Ok(known.to_vec())
+    }
 }
 
 /// In-memory key store for testing. No OS dependencies.
@@ -63,6 +78,25 @@ impl MemoryKeyStore {
 }
 
 impl KeyStore for MemoryKeyStore {
+    fn namespaces(&self, _known: &[String]) -> Result<Vec<String>, Error> {
+        Ok(self.indices.lock().unwrap().keys().cloned().collect())
+    }
+    fn store_batch(&self, records: &[(String, String, Vec<u8>)]) -> Result<(), Error> {
+        let mut keys = self.keys.lock().unwrap();
+        let mut indices = self.indices.lock().unwrap();
+        for (chain, public, encrypted) in records {
+            keys.insert(format!("{chain}:{public}"), encrypted.clone());
+            let index = indices.entry(chain.clone()).or_default();
+            if !index.contains(public) {
+                index.push(public.clone());
+            }
+        }
+        Ok(())
+    }
+
+    fn is_empty(&self) -> Result<bool, Error> {
+        Ok(self.keys.lock().unwrap().is_empty())
+    }
     fn store_key(&self, chain_id: &str, public_key: &str, encrypted: &[u8]) -> Result<(), Error> {
         let key = format!("{}:{}", chain_id, public_key);
         self.keys.lock().unwrap().insert(key, encrypted.to_vec());
@@ -137,130 +171,359 @@ impl KeyStore for OsKeyStore {
     }
 }
 
-/// File-based key store. Stores encrypted key blobs as files in a directory.
-/// Reliable fallback when the OS keyring doesn't work (Snap, Flatpak, WSL, etc).
-///
-/// Layout:
-///   {base_dir}/keys/{hex(chain_id)}/{hex(public_key)}.bin  — encrypted blob
-///   {base_dir}/keys/{hex(chain_id)}/index.json             — list of public keys
+/// File store with an atomically replaced encrypted snapshot. Existing per-key
+/// files are read lazily and retained during migration; once a namespace is in
+/// the snapshot it is authoritative, including an empty (deleted) namespace.
 pub struct FileKeyStore {
     base_dir: std::path::PathBuf,
+    mutation: Mutex<()>,
+    #[cfg(test)]
+    pub(crate) fail_before_commit: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
+
+type Snapshot = std::collections::BTreeMap<String, std::collections::BTreeMap<String, Vec<u8>>>;
 
 impl FileKeyStore {
     pub fn new(app_data_dir: std::path::PathBuf) -> Self {
         Self {
             base_dir: app_data_dir.join("keys"),
+            mutation: Mutex::new(()),
+            #[cfg(test)]
+            fail_before_commit: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 
-    fn chain_dir(&self, chain_id: &str) -> std::path::PathBuf {
-        // Use first 16 chars of chain_id as directory name (enough to be unique, filesystem-safe)
-        self.base_dir.join(&chain_id[..chain_id.len().min(16)])
+    fn legacy_dir(&self, chain: &str) -> Result<std::path::PathBuf, Error> {
+        // Never use unchecked renderer text as a path, even for legacy reads.
+        if chain.is_empty()
+            || !chain
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+        {
+            return Err(Error::Serialization("Invalid key namespace".into()));
+        }
+        Ok(self.base_dir.join(&chain[..chain.len().min(16)]))
     }
 
-    /// Current filename: short SHA-256 hex of the public key.
-    /// BLS pubkeys are ~140 chars, so hex-encoding the whole key (≈280 chars + ".bin")
-    /// exceeded the 255-byte filesystem limit on ext4/NTFS → ENAMETOOLONG.
-    fn key_file(&self, chain_id: &str, public_key: &str) -> std::path::PathBuf {
+    fn snapshot(&self) -> Result<Snapshot, Error> {
+        match std::fs::read(self.base_dir.join("vault-v2.json")) {
+            Ok(bytes) => serde_json::from_slice(&bytes)
+                .map_err(|e| Error::Serialization(format!("Corrupt key store: {e}"))),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Snapshot::new()),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    fn legacy_index(&self, chain: &str) -> Result<Vec<String>, Error> {
+        let dir = self.legacy_dir(chain)?;
+        let keys: Vec<String> = match std::fs::read(dir.join("index.json")) {
+            Ok(bytes) => serde_json::from_slice(&bytes)
+                .map_err(|e| Error::Serialization(format!("Corrupt key index: {e}"))),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(vec![]),
+            Err(e) => Err(e.into()),
+        }?;
+        if dir.exists() {
+            use sha2::{Digest, Sha256};
+            let expected: std::collections::BTreeSet<String> = keys
+                .iter()
+                .flat_map(|key| {
+                    [
+                        format!("{}.bin", hex::encode(key.as_bytes())),
+                        format!("{}.bin", hex::encode(Sha256::digest(key.as_bytes()))),
+                    ]
+                })
+                .collect();
+            for entry in std::fs::read_dir(dir)? {
+                let entry = entry?;
+                let name = entry.file_name().to_string_lossy().into_owned();
+                if name.ends_with(".bin") && !expected.contains(&name) {
+                    return Err(Error::Keyring("Unindexed legacy key material; recover the key index before changing this vault".into()));
+                }
+            }
+        }
+        Ok(keys)
+    }
+
+    fn legacy_load(&self, chain: &str, public: &str) -> Result<Vec<u8>, Error> {
         use sha2::{Digest, Sha256};
-        let digest = Sha256::digest(public_key.as_bytes());
-        let safe_name = hex::encode(digest);
-        self.chain_dir(chain_id).join(format!("{}.bin", safe_name))
-    }
-
-    /// Legacy filename used before the BLS fix: full hex of the pubkey bytes.
-    /// Still read on load/delete so keys stored by older builds keep working.
-    fn legacy_key_file(&self, chain_id: &str, public_key: &str) -> std::path::PathBuf {
-        let safe_name = hex::encode(public_key.as_bytes());
-        self.chain_dir(chain_id).join(format!("{}.bin", safe_name))
-    }
-
-    fn index_file(&self, chain_id: &str) -> std::path::PathBuf {
-        self.chain_dir(chain_id).join("index.json")
-    }
-
-    fn read_index(&self, chain_id: &str) -> Vec<String> {
-        let path = self.index_file(chain_id);
-        match std::fs::read_to_string(&path) {
-            Ok(json) => serde_json::from_str(&json).unwrap_or_default(),
-            Err(_) => Vec::new(),
+        let dir = self.legacy_dir(chain)?;
+        let current = dir.join(format!(
+            "{}.bin",
+            hex::encode(Sha256::digest(public.as_bytes()))
+        ));
+        match std::fs::read(current) {
+            Ok(bytes) => return Ok(bytes),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
+            Err(e) => return Err(e.into()),
+        }
+        // The older full-hex filename could exceed the filesystem component limit.
+        if public.len() * 2 + 4 > 255 {
+            return Err(Error::KeyNotFound(public.into()));
+        }
+        match std::fs::read(dir.join(format!("{}.bin", hex::encode(public.as_bytes())))) {
+            Ok(bytes) => Ok(bytes),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                Err(Error::KeyNotFound(public.into()))
+            }
+            Err(e) => Err(e.into()),
         }
     }
 
-    fn write_index(&self, chain_id: &str, keys: &[String]) -> Result<(), Error> {
-        let dir = self.chain_dir(chain_id);
-        std::fs::create_dir_all(&dir)?;
-        // SEC-030: owner-only directory for the on-disk key store.
-        restrict_dir_permissions(&dir);
-        let json = serde_json::to_string(keys).map_err(|e| Error::Serialization(e.to_string()))?;
-        let index_path = self.index_file(chain_id);
-        std::fs::write(&index_path, json)?;
-        // SEC-030: owner-only key index file.
-        restrict_file_permissions(&index_path);
+    fn migrate_namespace(&self, snapshot: &mut Snapshot, chain: &str) -> Result<(), Error> {
+        self.legacy_dir(chain)?;
+        if !snapshot.contains_key(chain) {
+            let mut entries = std::collections::BTreeMap::new();
+            for public in self.legacy_index(chain)? {
+                entries.insert(public.clone(), self.legacy_load(chain, &public)?);
+            }
+            snapshot.insert(chain.into(), entries);
+        }
+        Ok(())
+    }
+
+    fn commit(&self, snapshot: &Snapshot) -> Result<(), Error> {
+        use std::io::Write;
+        std::fs::create_dir_all(&self.base_dir)?;
+        restrict_dir_permissions(&self.base_dir);
+        // Same-directory rename is the commit point. A failed write/rename leaves
+        // the old snapshot readable, including after restart. No delete-then-rename.
+        let mut temp = tempfile::NamedTempFile::new_in(&self.base_dir)?;
+        restrict_file_permissions(temp.path());
+        serde_json::to_writer(&mut temp, snapshot)
+            .map_err(|e| Error::Serialization(e.to_string()))?;
+        temp.flush()?;
+        temp.as_file().sync_all()?;
+        #[cfg(test)]
+        if self
+            .fail_before_commit
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
+            return Err(Error::Io(std::io::Error::other(
+                "injected failure before snapshot commit",
+            )));
+        }
+        temp.persist(self.base_dir.join("vault-v2.json"))
+            .map_err(|e| Error::Io(e.error))?;
+        #[cfg(unix)]
+        if let Err(e) = std::fs::File::open(&self.base_dir).and_then(|dir| dir.sync_all()) {
+            // Rename already committed. Never report an aborted transaction and
+            // leave the session using the old password after this commit point.
+            log::error!("Vault committed, but directory synchronization failed: {e}");
+        }
         Ok(())
     }
 }
 
 impl KeyStore for FileKeyStore {
-    fn store_key(&self, chain_id: &str, public_key: &str, encrypted: &[u8]) -> Result<(), Error> {
-        let dir = self.chain_dir(chain_id);
-        std::fs::create_dir_all(&dir)?;
-        // SEC-030: owner-only directory for the on-disk key store.
-        restrict_dir_permissions(&dir);
-        let key_path = self.key_file(chain_id, public_key);
-        std::fs::write(&key_path, encrypted)?;
-        // SEC-030: owner-only encrypted key blob.
-        restrict_file_permissions(&key_path);
-
-        // Update index
-        let mut index = self.read_index(chain_id);
-        if !index.contains(&public_key.to_string()) {
-            index.push(public_key.to_string());
+    fn namespaces(&self, known: &[String]) -> Result<Vec<String>, Error> {
+        let mut namespaces: std::collections::BTreeSet<String> = known.iter().cloned().collect();
+        namespaces.extend(self.snapshot()?.into_keys());
+        if self.base_dir.exists() {
+            for entry in std::fs::read_dir(&self.base_dir)? {
+                let entry = entry?;
+                if entry.file_type()?.is_dir()
+                    && !namespaces
+                        .iter()
+                        .any(|n| self.legacy_dir(n).ok().as_ref() == Some(&entry.path()))
+                    && std::fs::read_dir(entry.path())?
+                        .next()
+                        .transpose()?
+                        .is_some()
+                {
+                    return Err(Error::Keyring("Unknown legacy key namespace; recover its chain configuration before changing or exporting the vault".into()));
+                }
+            }
         }
-        self.write_index(chain_id, &index)?;
-
-        log::info!(
-            "[file-keystore] Stored key for {} on chain {}",
-            public_key,
-            crate::util::short_prefix(chain_id, 8) // SEC-013: renderer-supplied chain_id
-        );
-        Ok(())
+        Ok(namespaces.into_iter().collect())
+    }
+    fn store_key(&self, chain: &str, public: &str, encrypted: &[u8]) -> Result<(), Error> {
+        self.store_batch(&[(chain.into(), public.into(), encrypted.to_vec())])
     }
 
-    fn load_key(&self, chain_id: &str, public_key: &str) -> Result<Vec<u8>, Error> {
-        let path = self.key_file(chain_id, public_key);
-        if let Ok(bytes) = std::fs::read(&path) {
-            return Ok(bytes);
+    fn store_batch(&self, records: &[(String, String, Vec<u8>)]) -> Result<(), Error> {
+        let _guard = self.mutation.lock().unwrap();
+        let mut snapshot = self.snapshot()?;
+        for (chain, public, encrypted) in records {
+            self.migrate_namespace(&mut snapshot, chain)?;
+            snapshot
+                .get_mut(chain)
+                .unwrap()
+                .insert(public.clone(), encrypted.clone());
         }
-        std::fs::read(self.legacy_key_file(chain_id, public_key))
-            .map_err(|_| Error::KeyNotFound(format!("{}:{}", chain_id, public_key)))
+        self.commit(&snapshot)
     }
 
-    fn delete_key(&self, chain_id: &str, public_key: &str) -> Result<(), Error> {
-        let _ = std::fs::remove_file(self.key_file(chain_id, public_key));
-        let _ = std::fs::remove_file(self.legacy_key_file(chain_id, public_key));
-
-        let mut index = self.read_index(chain_id);
-        index.retain(|k| k != public_key);
-        self.write_index(chain_id, &index)?;
-        Ok(())
+    fn load_key(&self, chain: &str, public: &str) -> Result<Vec<u8>, Error> {
+        self.legacy_dir(chain)?;
+        let snapshot = self.snapshot()?;
+        if let Some(entries) = snapshot.get(chain) {
+            return entries
+                .get(public)
+                .cloned()
+                .ok_or_else(|| Error::KeyNotFound(public.into()));
+        }
+        self.legacy_load(chain, public)
     }
 
-    fn list_keys(&self, chain_id: &str) -> Result<Vec<String>, Error> {
-        Ok(self.read_index(chain_id))
+    fn delete_key(&self, chain: &str, public: &str) -> Result<(), Error> {
+        let _guard = self.mutation.lock().unwrap();
+        let mut snapshot = self.snapshot()?;
+        self.migrate_namespace(&mut snapshot, chain)?;
+        snapshot.get_mut(chain).unwrap().remove(public);
+        self.commit(&snapshot)
     }
 
-    fn clear_index(&self, chain_id: &str) -> Result<(), Error> {
-        // SEC-028: best-effort removal of the on-disk index for this chain.
-        let _ = std::fs::remove_file(self.index_file(chain_id));
-        Ok(())
+    fn list_keys(&self, chain: &str) -> Result<Vec<String>, Error> {
+        self.legacy_dir(chain)?;
+        match self.snapshot()?.get(chain) {
+            Some(entries) => Ok(entries.keys().cloned().collect()),
+            None => self.legacy_index(chain),
+        }
+    }
+
+    fn clear_index(&self, chain: &str) -> Result<(), Error> {
+        let _guard = self.mutation.lock().unwrap();
+        let mut snapshot = self.snapshot()?;
+        self.legacy_dir(chain)?;
+        snapshot.insert(chain.into(), Default::default());
+        self.commit(&snapshot)
+    }
+
+    fn is_empty(&self) -> Result<bool, Error> {
+        let snapshot = self.snapshot()?;
+        if snapshot.values().any(|entries| !entries.is_empty()) {
+            return Ok(false);
+        }
+        let dirs = match std::fs::read_dir(&self.base_dir) {
+            Ok(dirs) => dirs,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(true),
+            Err(e) => return Err(e.into()),
+        };
+        for entry in dirs {
+            let entry = entry?;
+            if entry.file_type()?.is_dir() {
+                let covered = snapshot
+                    .keys()
+                    .any(|chain| self.legacy_dir(chain).ok().as_ref() == Some(&entry.path()));
+                if !covered
+                    && std::fs::read_dir(entry.path())?
+                        .next()
+                        .transpose()?
+                        .is_some()
+                {
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn corrupt_snapshot_and_unindexed_legacy_material_fail_closed() {
+        let dir = tempfile::tempdir().unwrap();
+        let legacy = dir.path().join("keys/legacy-chain");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("orphan.bin"), b"existing encrypted material").unwrap();
+        let store = FileKeyStore::new(dir.path().into());
+        assert!(!store.is_empty().unwrap());
+        assert!(store
+            .store_key("legacy-chain", "new", b"new bytes")
+            .is_err());
+        assert!(store.list_keys("legacy-chain").is_err());
+        let snapshot = dir.path().join("keys/vault-v2.json");
+        std::fs::write(&snapshot, b"broken json").unwrap();
+        assert!(store.is_empty().is_err());
+        assert!(store.store_key("chain", "key", b"new bytes").is_err());
+        assert_eq!(std::fs::read(snapshot).unwrap(), b"broken json");
+    }
+
+    #[test]
+    fn file_batch_failure_keeps_all_old_records_after_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = FileKeyStore::new(dir.path().into());
+        store
+            .store_batch(&[
+                ("chain".into(), "a".into(), b"old-a".to_vec()),
+                ("chain".into(), "b".into(), b"old-b".to_vec()),
+            ])
+            .unwrap();
+        store
+            .fail_before_commit
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        assert!(store
+            .store_batch(&[
+                ("chain".into(), "a".into(), b"new-a".to_vec()),
+                ("chain".into(), "b".into(), b"new-b".to_vec())
+            ])
+            .is_err());
+        let restarted = FileKeyStore::new(dir.path().into());
+        assert_eq!(restarted.load_key("chain", "a").unwrap(), b"old-a");
+        assert_eq!(restarted.load_key("chain", "b").unwrap(), b"old-b");
+        restarted
+            .store_batch(&[
+                ("chain".into(), "a".into(), b"new-a".to_vec()),
+                ("chain".into(), "b".into(), b"new-b".to_vec()),
+            ])
+            .unwrap();
+        let restarted = FileKeyStore::new(dir.path().into());
+        assert_eq!(restarted.load_key("chain", "a").unwrap(), b"new-a");
+        assert_eq!(restarted.load_key("chain", "b").unwrap(), b"new-b");
+    }
+
+    #[test]
+    fn file_store_rejects_unsafe_namespaces_and_keeps_full_chain_identity() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = FileKeyStore::new(dir.path().into());
+        for chain in ["../escaped", "aaaaaaaaaaaaaaaé", "C:\\temp", "", "foo/bar"] {
+            assert!(store.store_key(chain, "key", b"value").is_err());
+            assert!(store.list_keys(chain).is_err());
+        }
+        assert!(!dir.path().join("escaped").exists());
+        store.store_key("aaaaaaaaaaaaaaaa1", "key", b"one").unwrap();
+        store.store_key("aaaaaaaaaaaaaaaa2", "key", b"two").unwrap();
+        assert_eq!(store.load_key("aaaaaaaaaaaaaaaa1", "key").unwrap(), b"one");
+        assert_eq!(store.load_key("aaaaaaaaaaaaaaaa2", "key").unwrap(), b"two");
+    }
+
+    #[test]
+    fn legacy_keys_survive_migration_and_deleted_keys_do_not_reappear() {
+        use sha2::{Digest, Sha256};
+        let dir = tempfile::tempdir().unwrap();
+        let legacy = dir.path().join("keys/legacy-chain");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("index.json"), br#"["first","second"]"#).unwrap();
+        std::fs::write(
+            legacy.join(format!("{}.bin", hex::encode(Sha256::digest(b"first")))),
+            b"old-first",
+        )
+        .unwrap();
+        std::fs::write(
+            legacy.join(format!("{}.bin", hex::encode(b"second"))),
+            b"old-second",
+        )
+        .unwrap();
+        let store = FileKeyStore::new(dir.path().into());
+        assert!(!store.is_empty().unwrap());
+        store
+            .store_key("legacy-chain", "first", b"new-first")
+            .unwrap();
+        assert_eq!(
+            store.load_key("legacy-chain", "second").unwrap(),
+            b"old-second"
+        );
+        store.delete_key("legacy-chain", "second").unwrap();
+        let restarted = FileKeyStore::new(dir.path().into());
+        assert!(restarted.load_key("legacy-chain", "second").is_err());
+        assert_eq!(
+            restarted.load_key("legacy-chain", "first").unwrap(),
+            b"new-first"
+        );
+    }
 
     #[test]
     fn memory_store_crud() {

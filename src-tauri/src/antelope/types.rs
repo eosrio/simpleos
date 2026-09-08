@@ -146,6 +146,25 @@ pub struct Permission {
     pub perm_name: String,
     pub parent: String,
     pub required_auth: serde_json::Value,
+    /// Older nodes omit this field. Preserve that distinction for the UI.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub linked_actions: Option<Vec<LinkedAction>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LinkedAction {
+    pub account: String,
+    // nodeos omits action for a contract-wide link. Normalize absent/null to
+    // the empty Antelope name, which the UI already displays as "All actions".
+    #[serde(default, deserialize_with = "deserialize_link_action")]
+    pub action: String,
+}
+
+fn deserialize_link_action<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 /// Parameters for get_table_rows.
@@ -237,4 +256,85 @@ pub struct ImportResult {
 pub struct KeyPairResult {
     pub wif: String,
     pub public_key: String,
+}
+
+#[cfg(test)]
+mod permission_link_tests {
+    use super::AccountInfo;
+    use serde_json::json;
+
+    #[test]
+    fn wax_account_with_contract_wide_link_loads_permissions() {
+        let account: AccountInfo = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/wax-eosriobrazil-account.json"
+        )).expect("WAX account response must load permissions, including links without action");
+        let output = serde_json::to_value(account).unwrap();
+        let teleport = output["permissions"].as_array().unwrap().iter()
+            .find(|p| p["perm_name"] == "teleport").unwrap();
+        assert!(teleport["linked_actions"].as_array().unwrap().iter().any(|link|
+            link["account"] == "other.worlds" && link["action"] == ""));
+    }
+
+    #[test]
+    fn omitted_link_action_is_normalized_to_contract_wide() {
+        let account: AccountInfo = serde_json::from_value(json!({
+            "account_name": "alice", "permissions": [{
+                "perm_name": "custom", "parent": "active", "required_auth": {},
+                "linked_actions": [{"account": "other.worlds"}]
+            }]
+        })).expect("missing action on a contract-wide link is valid");
+        assert_eq!(serde_json::to_value(account).unwrap()["permissions"][0]["linked_actions"][0],
+            json!({"account":"other.worlds", "action":""}));
+    }
+
+    #[test]
+    fn null_and_empty_link_actions_are_contract_wide_but_malformed_values_fail() {
+        for action in [json!(null), json!("")] {
+            let link: super::LinkedAction = serde_json::from_value(json!({
+                "account": "other.worlds", "action": action
+            })).unwrap();
+            assert_eq!(link.action, "");
+        }
+        assert!(serde_json::from_value::<super::LinkedAction>(json!({
+            "account": "other.worlds", "action": 42
+        })).is_err());
+        assert!(serde_json::from_value::<super::LinkedAction>(json!({"action":"transfer"})).is_err());
+    }
+
+    #[tokio::test]
+    #[ignore = "Read-only WAX RPC acceptance check; requires network"]
+    async fn live_wax_account_permissions_parse() {
+        let account: AccountInfo = reqwest::Client::new()
+            .post("https://wax.eosrio.io/v1/chain/get_account")
+            .timeout(std::time::Duration::from_secs(20))
+            .json(&json!({"account_name":"eosriobrazil"}))
+            .send().await.unwrap().error_for_status().unwrap()
+            .json().await.expect("live WAX get_account must parse with the application's AccountInfo type");
+        assert_eq!(account.account_name, "eosriobrazil");
+        assert!(account.permissions.iter().any(|p| p.perm_name == "active"));
+        assert!(account.permissions.iter().any(|p| p.perm_name == "claim2"));
+    }
+
+    #[test]
+    fn account_response_preserves_permission_links_through_ipc() {
+        let value = json!({ "account_name": "eosriobrazil", "permissions": [{
+            "perm_name": "claim2", "parent": "active", "required_auth": {"threshold": 1},
+            "linked_actions": [{"account": "eosio", "action": "claimstandby"}]
+        }] });
+        let account: AccountInfo = serde_json::from_value(value).unwrap();
+        let output = serde_json::to_value(account).unwrap();
+        assert_eq!(output["permissions"][0]["linked_actions"][0],
+            json!({"account": "eosio", "action": "claimstandby"}));
+    }
+
+    #[test]
+    fn old_nodes_do_not_become_false_empty_link_lists() {
+        let account: AccountInfo = serde_json::from_value(json!({
+            "account_name": "alice", "permissions": [{
+                "perm_name": "active", "parent": "owner", "required_auth": {}
+            }]
+        })).unwrap();
+        assert!(account.permissions[0].linked_actions.is_none());
+        assert!(serde_json::to_value(account).unwrap()["permissions"][0].get("linked_actions").is_none());
+    }
 }

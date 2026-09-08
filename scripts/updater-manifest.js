@@ -20,6 +20,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { verifyUpdaterSignature } = require('./verify-updater-signature');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -194,6 +195,8 @@ function main() {
     }
 
     const signature = fs.readFileSync(sigPath, 'utf8').trim();
+    const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'));
+    verifyUpdaterSignature(fs.readFileSync(artifactPath), config.plugins?.updater?.pubkey ?? '', signature);
 
     // A self-test build leaves artifacts signed by a throwaway key in the same target
     // directory. Publishing those would advertise updates no installed app can verify,

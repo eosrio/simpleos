@@ -113,12 +113,6 @@ pub enum SignPayload {
         packed_trx: Vec<u8>,
         broadcast: bool,
     },
-    /// An ESR identity proof: a precomputed 32-byte digest (hex) + callback.
-    Identity {
-        digest_hex: String,
-        callback_url: Option<String>,
-        callback_payload: serde_json::Value,
-    },
     /// A private-key export (the key is identified by the entry's signer pubkey).
     Export,
 }
@@ -315,16 +309,23 @@ fn high_risk_warning(account: &str, name: &str, data: &serde_json::Value) -> Opt
 /// Build one [`ActionSummary`] from a built action, marking verification status
 /// and accumulating whether any action is unverified.
 fn action_summary(a: &BuiltAction, any_unverified: &mut bool) -> ActionSummary {
-    let verified = a.provenance.is_locally_verified() && a.original_json.is_some();
+    let decoded_transfer = if a.name == "transfer" {
+        hex::decode(&a.data_hex)
+            .ok()
+            .and_then(|bytes| crate::antelope::serialize::decode_transfer(&bytes).ok())
+    } else {
+        None
+    };
+    let verified = decoded_transfer.is_some()
+        || (a.name != "transfer"
+            && a.provenance.is_locally_verified()
+            && a.original_json.is_some());
     if !verified {
         *any_unverified = true;
     }
-
-    // Display the reviewed JSON when we have it, otherwise the raw signed hex.
-    let data = match &a.original_json {
-        Some(json) => json.clone(),
-        None => serde_json::json!({ "_unverified_hex": a.data_hex }),
-    };
+    let data = decoded_transfer
+        .or_else(|| a.original_json.clone())
+        .unwrap_or_else(|| serde_json::json!({ "_unverified_hex": a.data_hex }));
 
     let mut warnings: Vec<String> = Vec::new();
     let high_risk = high_risk_warning(&a.account, &a.name, &data);
@@ -449,40 +450,6 @@ fn unlock_signing_key(
     }
 }
 
-/// POST an ESR callback result to its (https-only) URL, injecting the signature.
-/// Runs in the backend so the renderer CSP can stay strict (SEC-005). Refined in
-/// task 7.
-async fn post_esr_callback(
-    url: &str,
-    mut payload: serde_json::Value,
-    signature: &str,
-) -> Result<(), Error> {
-    if !url.starts_with("https://") {
-        return Err(Error::Signing(format!(
-            "Refusing non-https ESR callback: {url}"
-        )));
-    }
-    if let Some(obj) = payload.as_object_mut() {
-        obj.insert(
-            "sig".into(),
-            serde_json::Value::String(signature.to_string()),
-        );
-    }
-    let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| Error::Rpc(e.to_string()))?;
-    let resp = client
-        .post(url)
-        .json(&payload)
-        .send()
-        .await
-        .map_err(|e| Error::Rpc(format!("ESR callback failed: {e}")))?;
-    log::info!("[esr] callback POSTed to {} status {}", url, resp.status());
-    Ok(())
-}
-
 /// Execute a user-approved request: sign the exact stored bytes and (per mode)
 /// broadcast / return the signature / export the key.
 async fn execute_approved(
@@ -510,10 +477,7 @@ async fn execute_approved(
         } => {
             let signature = signing::sign_transaction(chain_id, &packed_trx, &key)?;
             if broadcast {
-                let mut map = providers.0.lock().await;
-                let pm = map
-                    .get_mut(chain_id)
-                    .ok_or_else(|| Error::ChainNotFound(chain_id.to_string()))?;
+                let pm = &mut providers.get(chain_id).await?;
                 let result = transaction::push_signed(pm, &packed_trx, &signature).await?;
                 serde_json::to_value(result).map_err(|e| Error::Serialization(e.to_string()))
             } else {
@@ -522,18 +486,6 @@ async fn execute_approved(
                     "signature": signature,
                 }))
             }
-        }
-        SignPayload::Identity {
-            digest_hex,
-            callback_url,
-            callback_payload,
-        } => {
-            let signature = signing::sign_digest(&digest_hex, &key)?;
-            if let Some(url) = callback_url {
-                post_esr_callback(&url, callback_payload, &signature).await?;
-            }
-            // The frontend uses the digest as a pseudo transaction id for display.
-            Ok(serde_json::json!({ "signature": signature, "transaction_id": digest_hex }))
         }
         SignPayload::Export => Ok(serde_json::json!({ "wif": signing::wif_encode(&key) })),
     }
@@ -560,10 +512,7 @@ pub async fn begin_sign(
 ) -> Result<serde_json::Value, Error> {
     forbid_confirm_window(&webview)?;
     let built = {
-        let mut map = providers.0.lock().await;
-        let pm = map
-            .get_mut(&chain_id)
-            .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+        let pm = &mut providers.get(&chain_id).await?;
         transaction::build_tx(pm, &actions).await?
     };
 
@@ -738,99 +687,154 @@ pub struct EsrAuthInput {
     pub permission: String,
 }
 
-/// A wharfkit-resolved action passed from the renderer for DISPLAY in the
-/// trusted window. The signed value is the precomputed `digest_hex` (computed by
-/// the request author), so these are shown but flagged unverified.
-#[derive(serde::Deserialize)]
-pub struct EsrAction {
-    pub account: String,
-    pub name: String,
-    pub authorization: Vec<EsrAuthInput>,
-    pub data: serde_json::Value,
+/// Classify ESR intent from the exact bytes that will be signed.
+fn inspect_esr(
+    packed: &[u8],
+) -> Result<
+    (
+        crate::antelope::serialize::ParsedTransaction,
+        Option<String>,
+    ),
+    Error,
+> {
+    use crate::antelope::serialize::{parse_packed_transaction, u64_to_name};
+    let parsed = parse_packed_transaction(packed)?;
+    if !parsed.context_free_actions.is_empty() || parsed.extension_count != 0 {
+        return Err(Error::Signing(
+            "ESR context-free actions and extensions are not supported".into(),
+        ));
+    }
+    if parsed.actions.is_empty() {
+        return Err(Error::Signing("Empty ESR transaction".into()));
+    }
+    let candidate = parsed.actions.iter().any(|a| a.account.is_empty());
+    let identity = if candidate {
+        let a = &parsed.actions[0];
+        if parsed.actions.len() != 1
+            || !a.account.is_empty()
+            || a.name != "identity"
+            || parsed.ref_block_num != 0
+            || parsed.ref_block_prefix != 0
+            || parsed.delay_sec != 0
+            || parsed.max_net_usage_words != 0
+            || parsed.max_cpu_usage_ms != 0
+            || a.authorization.len() != 1
+        {
+            return Err(Error::Signing("Invalid ESR identity envelope".into()));
+        }
+        let data = hex::decode(&a.data_hex).map_err(|e| Error::Serialization(e.to_string()))?;
+        let offset = match data.len() {
+            17 => 0,
+            25 => 8,
+            _ => return Err(Error::Signing("Invalid identity data".into())),
+        };
+        if data[offset] != 1 {
+            return Err(Error::Signing("Identity permission is required".into()));
+        }
+        let actor = u64_to_name(u64::from_le_bytes(
+            data[offset + 1..offset + 9].try_into().unwrap(),
+        ));
+        let permission = u64_to_name(u64::from_le_bytes(
+            data[offset + 9..offset + 17].try_into().unwrap(),
+        ));
+        if actor.is_empty()
+            || permission.is_empty()
+            || a.authorization[0] != (actor.clone(), permission.clone())
+        {
+            return Err(Error::Signing(
+                "Identity permission does not match authorization".into(),
+            ));
+        }
+        let scope = if offset == 8 {
+            u64_to_name(u64::from_le_bytes(data[..8].try_into().unwrap()))
+        } else {
+            String::new()
+        };
+        Some(format!(
+            "{actor}@{permission}; scope: {}",
+            if scope.is_empty() {
+                "unspecified"
+            } else {
+                &scope
+            }
+        ))
+    } else {
+        None
+    };
+    Ok((parsed, identity))
 }
 
-/// Begin an ESR (EOSIO Signing Request) confirmation. Unlike `begin_sign`, the
-/// signed value is the wharfkit-resolved `digest_hex` rather than bytes the
-/// backend rebuilt — so the actions are shown for context but marked unverified,
-/// and the requesting origin + callback URL are shown prominently (SEC-004).
-/// After approval the renderer receives the signature and performs the ESR
-/// callback (the callback host was disclosed and acknowledged here).
-#[allow(clippy::too_many_arguments)]
+/// The renderer submits packed bytes, never an independent digest or login flag.
 #[tauri::command]
 pub async fn begin_esr_sign(
     app: AppHandle,
     webview: WebviewWindow,
     chain_id: String,
     public_key: String,
-    actions: Vec<EsrAction>,
-    digest_hex: String,
-    is_identity: bool,
+    packed_transaction_hex: String,
     origin: Option<String>,
     callback_url: Option<String>,
-    identity_scope: Option<String>,
     registry: State<'_, SignRegistry>,
 ) -> Result<serde_json::Value, Error> {
     forbid_confirm_window(&webview)?;
-    // Basic hardening: the digest must be 32 bytes of hex (SEC-033 / hostile ESR).
-    if digest_hex.len() != 64 || !digest_hex.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(Error::Signing(
-            "ESR signing digest must be 32-byte hex".into(),
-        ));
+    if chain_id.len() != 64 || !chain_id.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(Error::Signing("Invalid ESR chain ID".into()));
     }
-
-    let request_id = registry.next_id();
-    let action_summaries: Vec<ActionSummary> = actions
-        .iter()
-        .map(|a| {
-            let hr = high_risk_warning(&a.account, &a.name, &a.data);
-            ActionSummary {
-                account: a.account.clone(),
-                name: a.name.clone(),
-                authorization: a
-                    .authorization
-                    .iter()
-                    .map(|au| AuthSummary {
-                        actor: au.actor.clone(),
-                        permission: au.permission.clone(),
-                    })
-                    .collect(),
-                data: a.data.clone(),
-                // The signed digest is computed by the request author from these
-                // actions; we cannot locally prove the digest matches.
-                verified: false,
-                high_risk: hr.is_some(),
-                warning: hr,
-            }
-        })
-        .collect();
-
+    if packed_transaction_hex.len() > 2 * 1024 * 1024 {
+        return Err(Error::Signing("ESR transaction too large".into()));
+    }
+    let packed =
+        hex::decode(packed_transaction_hex).map_err(|e| Error::Serialization(e.to_string()))?;
+    let (parsed, identity_scope) = inspect_esr(&packed)?;
+    let is_identity = identity_scope.is_some();
     let mode = if is_identity {
         SignMode::Identity
     } else {
         SignMode::SignOnly
     };
-    let title = if is_identity {
-        "Login request".to_string()
-    } else {
-        "Sign request".to_string()
-    };
+    let request_id = registry.next_id();
+    let mut any_unverified = false;
+    let actions = parsed
+        .actions
+        .iter()
+        .map(|a| {
+            let built = BuiltAction {
+                account: a.account.clone(),
+                name: a.name.clone(),
+                data_hex: a.data_hex.clone(),
+                authorization: a
+                    .authorization
+                    .iter()
+                    .map(|(actor, permission)| transaction::AuthDesc {
+                        actor: actor.clone(),
+                        permission: permission.clone(),
+                    })
+                    .collect(),
+                original_json: None,
+                provenance: transaction::DataProvenance::PreSerialized,
+            };
+            action_summary(&built, &mut any_unverified)
+        })
+        .collect();
     let summary = SignSummary {
         request_id: request_id.clone(),
         chain_id: chain_id.clone(),
-        title,
+        title: if is_identity {
+            "Login request".into()
+        } else {
+            "Sign request".into()
+        },
         signer_public_key: public_key.clone(),
         mode,
-        actions: action_summaries,
-        expiration: None,
-        delay_sec: 0,
+        actions,
+        expiration: Some(parsed.expiration),
+        delay_sec: parsed.delay_sec,
         has_context_free_actions: false,
         origin,
-        // Shown for disclosure; the renderer performs the POST after approval.
         callback_url,
         identity_scope,
-        any_unverified: !is_identity,
+        any_unverified: !is_identity && any_unverified,
     };
-
     let (tx, rx) = oneshot::channel();
     registry.begin(
         request_id.clone(),
@@ -838,29 +842,24 @@ pub async fn begin_esr_sign(
             chain_id,
             signer_public_key: public_key,
             mode,
-            payload: SignPayload::Identity {
-                digest_hex,
-                callback_url: None, // renderer performs the ESR callback after approval
-                callback_payload: serde_json::Value::Null,
+            payload: SignPayload::Transaction {
+                packed_trx: packed,
+                broadcast: false,
             },
             summary,
             responder: tx,
         },
     )?;
-
     if let Err(e) = open_sign_confirm_window(&app, &request_id) {
         let _ = registry.take(&request_id);
         return Err(e);
     }
-
     let result = rx.await.map_err(|_| Error::SignRejected)?;
     if let Some(win) = app.get_webview_window(SIGN_CONFIRM_LABEL) {
         let _ = win.close();
     }
     result
 }
-
-// ── Confirmation policy (R2+R3, task 9) ──
 
 /// User-configurable confirmation strength. BOTH tiers always use the trusted
 /// window (the floor is absolute — no tier can bypass it); the difference is
@@ -882,10 +881,10 @@ impl ConfirmationPolicy {
         }
     }
     fn parse(s: &str) -> Self {
-        if s.trim().eq_ignore_ascii_case("strict") {
-            Self::Strict
-        } else {
+        if s.trim().eq_ignore_ascii_case("standard") {
             Self::Standard
+        } else {
+            Self::Strict
         }
     }
 }
@@ -904,11 +903,14 @@ fn policy_path(app: &AppHandle) -> Result<std::path::PathBuf, Error> {
 }
 
 fn load_policy(app: &AppHandle) -> ConfirmationPolicy {
-    policy_path(app)
-        .ok()
-        .and_then(|p| std::fs::read_to_string(p).ok())
-        .map(|s| ConfirmationPolicy::parse(&s))
-        .unwrap_or(ConfirmationPolicy::Standard)
+    let Ok(path) = policy_path(app) else {
+        return ConfirmationPolicy::Strict;
+    };
+    match std::fs::read_to_string(path) {
+        Ok(s) => ConfirmationPolicy::parse(&s),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => ConfirmationPolicy::Standard,
+        Err(_) => ConfirmationPolicy::Strict,
+    }
 }
 
 #[tauri::command]
@@ -925,6 +927,9 @@ pub fn set_confirmation_policy(
     passphrase: String,
     wallet: State<AppWallet>,
 ) -> Result<(), Error> {
+    if policy != "standard" && policy != "strict" {
+        return Err(Error::Serialization("Unknown confirmation policy".into()));
+    }
     // Verify the passphrase (unlocks the session, acceptable for a user-initiated
     // settings change).
     wallet.0.unlock(&passphrase)?;
@@ -933,13 +938,98 @@ pub fn set_confirmation_policy(
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(Error::Io)?;
     }
-    std::fs::write(&path, p.as_str()).map_err(Error::Io)?;
+    use std::io::Write;
+    let mut temp = tempfile::NamedTempFile::new_in(path.parent().unwrap())?;
+    temp.write_all(p.as_str().as_bytes())?;
+    temp.as_file().sync_all()?;
+    temp.persist(path).map_err(|e| Error::Io(e.error))?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn esr_identity_bytes_match_wharfkit_v2_and_v3() {
+        use sha2::{Digest, Sha256};
+        let fixtures: serde_json::Value =
+            serde_json::from_str(include_str!("../../../tests/fixtures/esr-identities.json"))
+                .unwrap();
+        for fixture in fixtures.as_array().unwrap() {
+            let packed = hex::decode(fixture["packed"].as_str().unwrap()).unwrap();
+            let (_, identity) = inspect_esr(&packed).unwrap();
+            assert!(identity.unwrap().contains("alice@active"));
+            let mut hasher = Sha256::new();
+            hasher.update(hex::decode(fixture["chainId"].as_str().unwrap()).unwrap());
+            hasher.update(&packed);
+            hasher.update([0u8; 32]);
+            assert_eq!(
+                hex::encode(hasher.finalize()),
+                fixture["digest"].as_str().unwrap()
+            );
+            let mut trailing = packed.clone();
+            trailing.push(0);
+            assert!(inspect_esr(&trailing).is_err());
+            // A second, hidden action must never be accepted as a login.
+            let mut multiple = packed;
+            multiple[14] = 2; // action count in the identity fixture header
+            assert!(inspect_esr(&multiple).is_err());
+        }
+    }
+
+    #[test]
+    fn transfers_cannot_be_classified_as_login_or_use_unrelated_display_json() {
+        use crate::antelope::{serialize::*, transaction::*};
+        let bytes = serialize_transfer("alice", "bob", "1.0000 EOS", "").unwrap();
+        let packed = RawTransaction {
+            expiration: 100,
+            ref_block_num: 0,
+            ref_block_prefix: 0,
+            max_net_usage_words: 0,
+            max_cpu_usage_ms: 0,
+            delay_sec: 0,
+            context_free_actions: vec![],
+            actions: vec![serialize_action(
+                "eosio.token",
+                "transfer",
+                &[("alice", "active")],
+                &hex::encode(&bytes),
+            )
+            .unwrap()],
+            transaction_extensions: vec![],
+        }
+        .serialize();
+        assert!(inspect_esr(&packed).unwrap().1.is_none());
+        let mut unverified = false;
+        let summary = action_summary(
+            &BuiltAction {
+                account: "eosio.token".into(),
+                name: "transfer".into(),
+                authorization: vec![],
+                data_hex: hex::encode(bytes),
+                original_json: Some(serde_json::json!({"to":"carol","quantity":"1000.0000 EOS"})),
+                provenance: DataProvenance::Native,
+            },
+            &mut unverified,
+        );
+        assert_eq!(summary.data["to"], "bob");
+        assert_eq!(summary.data["quantity"], "1.0000 EOS");
+    }
+
+    #[test]
+    fn malformed_policy_requires_strict_confirmation() {
+        for policy in ["{}", "", "invalid", "null"] {
+            assert_eq!(
+                ConfirmationPolicy::parse(policy),
+                ConfirmationPolicy::Strict
+            );
+        }
+        assert_eq!(
+            ConfirmationPolicy::parse("standard"),
+            ConfirmationPolicy::Standard
+        );
+    }
 
     fn dummy_summary(id: &str) -> SignSummary {
         SignSummary {
@@ -1010,7 +1100,15 @@ mod tests {
                         actor: "alice".into(),
                         permission: "active".into(),
                     }],
-                    data_hex: "00".into(),
+                    data_hex: hex::encode(
+                        crate::antelope::serialize::serialize_transfer(
+                            "alice",
+                            "bob",
+                            "1.0000 EOS",
+                            "",
+                        )
+                        .unwrap(),
+                    ),
                     original_json: Some(serde_json::json!({
                         "from": "alice", "to": "bob", "quantity": "1.0000 EOS", "memo": ""
                     })),

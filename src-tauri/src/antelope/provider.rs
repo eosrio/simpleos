@@ -20,10 +20,8 @@ const MAX_HEALTHY_LATENCY_MS: u64 = 1200;
 /// A synced Antelope node is always within a couple seconds of real time; this
 /// generous ceiling still rejects a node that has forked off / stalled (e.g. a
 /// pre-Savanna node stuck days behind) while tolerating brief production hiccups
-/// and modest client-clock skew. Staleness only DEprioritizes a node in
-/// selection — it never trips the circuit breaker — so if every endpoint looks
-/// stale (e.g. the local clock is wildly off) the wallet still degrades to using
-/// the active endpoint rather than locking up.
+/// and modest client-clock skew. Stale nodes are rechecked before use; if all
+/// remain stale, report failure instead of using old TAPOS/account data.
 const MAX_HEAD_LAG_SECS: i64 = 120;
 /// SEC-017: hard ceiling for chain JSON RPC response bodies (8 MiB).
 pub const MAX_RPC_BODY_BYTES: usize = 8 * 1024 * 1024;
@@ -53,6 +51,8 @@ pub struct EndpointState {
     /// When the circuit was tripped (if circuit-broken).
     #[serde(skip)]
     pub circuit_broken_at: Option<Instant>,
+    #[serde(skip)]
+    verified_at: Option<Instant>,
 }
 
 impl EndpointState {
@@ -65,6 +65,7 @@ impl EndpointState {
             failures: 0,
             last_check: None,
             circuit_broken_at: None,
+            verified_at: None,
         }
     }
 
@@ -91,7 +92,17 @@ impl EndpointState {
         self.last_check = Some(Instant::now());
     }
 
+    fn record_probe_success(&mut self, latency_ms: i64, stale: bool) {
+        let failures = self.failures;
+        let circuit = self.circuit_broken_at;
+        self.record_success(latency_ms.max(1), stale);
+        // A health route cannot establish that a failing application route recovered.
+        self.failures = failures;
+        self.circuit_broken_at = circuit;
+    }
+
     fn record_failure(&mut self) {
+        self.verified_at = None;
         self.failures += 1;
         self.latency_ms = -1;
         self.last_check = Some(Instant::now());
@@ -105,165 +116,213 @@ impl EndpointState {
 
 /// Manages multiple RPC and Hyperion endpoints for a single chain.
 /// Handles health checks, latency-based selection, failover, and circuit breaking.
+#[derive(Default)]
+struct EndpointPool {
+    endpoints: Vec<EndpointState>,
+    active: usize,
+}
+
+/// Clones share endpoint health and selection, but never hold a lock over I/O.
+#[derive(Clone)]
 pub struct ProviderManager {
     pub chain_id: String,
-    pub rpc_endpoints: Vec<EndpointState>,
-    pub hyperion_endpoints: Vec<EndpointState>,
-    pub active_rpc_index: usize,
-    pub active_hyperion_index: usize,
+    rpc: Arc<std::sync::Mutex<EndpointPool>>,
+    hyperion: Arc<std::sync::Mutex<EndpointPool>>,
     client: reqwest::Client,
+}
+
+const CALL_BUDGET: Duration = Duration::from_secs(15);
+const VERIFY_INTERVAL: Duration = Duration::from_secs(60);
+
+fn pool_lock(pool: &std::sync::Mutex<EndpointPool>) -> std::sync::MutexGuard<'_, EndpointPool> {
+    pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn candidates(pool: &EndpointPool) -> Vec<(usize, EndpointState)> {
+    let mut result: Vec<_> = pool
+        .endpoints
+        .iter()
+        .enumerate()
+        .filter(|(_, ep)| !ep.is_circuit_broken())
+        .map(|(idx, ep)| (idx, ep.clone()))
+        .collect();
+    result.sort_by_key(|(idx, ep)| {
+        (
+            if ep.stale {
+                3
+            } else if ep.failures > 0 {
+                2
+            } else if *idx == pool.active {
+                0
+            } else {
+                1
+            },
+            if ep.latency_ms > 0 {
+                ep.latency_ms
+            } else {
+                i64::MAX
+            },
+        )
+    });
+    result
 }
 
 impl ProviderManager {
     pub fn new(chain_id: &str) -> Self {
         let client = reqwest::Client::builder()
             .timeout(REQUEST_TIMEOUT)
-            // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
             .redirect(reqwest::redirect::Policy::none())
             .build()
             .unwrap_or_default();
-
         Self {
-            chain_id: chain_id.to_string(),
-            rpc_endpoints: Vec::new(),
-            hyperion_endpoints: Vec::new(),
-            active_rpc_index: 0,
-            active_hyperion_index: 0,
+            chain_id: chain_id.into(),
+            rpc: Arc::default(),
+            hyperion: Arc::default(),
             client,
         }
     }
 
     pub fn add_rpc_endpoint(&mut self, url: &str, owner: Option<&str>) {
-        if !self
-            .rpc_endpoints
-            .iter()
-            .any(|e| e.url == url.trim_end_matches('/'))
-        {
-            self.rpc_endpoints.push(EndpointState::new(url, owner));
-        }
+        Self::add(&self.rpc, url, owner);
     }
-
     pub fn add_hyperion_endpoint(&mut self, url: &str) {
-        let normalized = url.trim_end_matches('/').to_string();
-        if !self.hyperion_endpoints.iter().any(|e| e.url == normalized) {
-            self.hyperion_endpoints.push(EndpointState::new(url, None));
+        Self::add(&self.hyperion, url, None);
+    }
+    fn add(pool: &std::sync::Mutex<EndpointPool>, url: &str, owner: Option<&str>) {
+        let mut pool = pool_lock(pool);
+        let normalized = url.trim_end_matches('/');
+        if !pool.endpoints.iter().any(|ep| ep.url == normalized) {
+            pool.endpoints.push(EndpointState::new(normalized, owner));
+        }
+    }
+    pub fn rpc_endpoints(&self) -> Vec<EndpointState> {
+        pool_lock(&self.rpc).endpoints.clone()
+    }
+    pub fn hyperion_endpoints(&self) -> Vec<EndpointState> {
+        pool_lock(&self.hyperion).endpoints.clone()
+    }
+    pub fn active_rpc_url(&self) -> Option<String> {
+        let pool = pool_lock(&self.rpc);
+        pool.endpoints.get(pool.active).map(|ep| ep.url.clone())
+    }
+    pub fn active_hyperion_url(&self) -> Option<String> {
+        let pool = pool_lock(&self.hyperion);
+        pool.endpoints.get(pool.active).map(|ep| ep.url.clone())
+    }
+    fn success(pool: &std::sync::Mutex<EndpointPool>, idx: usize, latency: i64) {
+        let mut pool = pool_lock(pool);
+        if let Some(ep) = pool.endpoints.get_mut(idx) {
+            ep.record_success(latency.max(1), false);
+        }
+        pool.active = idx;
+    }
+    fn failure(pool: &std::sync::Mutex<EndpointPool>, idx: usize) {
+        if let Some(ep) = pool_lock(pool).endpoints.get_mut(idx) {
+            ep.record_failure();
         }
     }
 
-    pub fn active_rpc_url(&self) -> Option<&str> {
-        self.rpc_endpoints
-            .get(self.active_rpc_index)
-            .map(|e| e.url.as_str())
-    }
-
-    pub fn active_hyperion_url(&self) -> Option<&str> {
-        self.hyperion_endpoints
-            .get(self.active_hyperion_index)
-            .map(|e| e.url.as_str())
-    }
-
-    /// Run health checks on all RPC endpoints concurrently.
-    /// Verifies chain_id matches. Updates latency and selects the best endpoint.
     pub async fn check_all_rpc_endpoints(&mut self) -> Vec<EndpointState> {
-        let chain_id = self.chain_id.clone();
-        let client = self.client.clone();
-
-        // Launch all checks concurrently
-        let mut handles = Vec::new();
-        for (idx, ep) in self.rpc_endpoints.iter().enumerate() {
-            let url = ep.url.clone();
-            let chain_id = chain_id.clone();
-            let client = client.clone();
-            handles.push(tokio::spawn(async move {
-                let (latency_ms, valid, stale) =
-                    check_endpoint_health(&client, &url, &chain_id).await;
-                (idx, latency_ms, valid, stale)
-            }));
+        let mut tasks = tokio::task::JoinSet::new();
+        for (idx, ep) in self.rpc_endpoints().into_iter().enumerate() {
+            let client = self.client.clone();
+            let chain = self.chain_id.clone();
+            tasks.spawn(async move {
+                (
+                    idx,
+                    ep.last_check,
+                    check_endpoint_health(&client, &ep.url, &chain).await,
+                )
+            });
         }
-
-        // Collect results
-        for handle in handles {
-            if let Ok((idx, latency_ms, valid, stale)) = handle.await {
-                if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                    if valid {
-                        ep.record_success(latency_ms, stale);
-                        if stale {
-                            log::warn!(
-                                "RPC endpoint {} is stale (head block lagging real time) — deprioritizing",
-                                ep.url
-                            );
-                        }
-                    } else {
-                        ep.record_failure();
-                    }
+        while let Some(Ok((idx, previous, (latency, valid, stale)))) = tasks.join_next().await {
+            let mut pool = pool_lock(&self.rpc);
+            if let Some(ep) = pool.endpoints.get_mut(idx) {
+                // A request that completed after this probe started has newer evidence.
+                if ep.last_check != previous {
+                    continue;
+                }
+                if valid {
+                    ep.record_probe_success(latency, stale);
+                    ep.verified_at = Some(Instant::now());
+                } else {
+                    ep.record_failure();
                 }
             }
         }
-
-        self.select_best_rpc();
-        self.rpc_endpoints.clone()
+        let mut pool = pool_lock(&self.rpc);
+        if let Some((idx, _)) = pool
+            .endpoints
+            .iter()
+            .enumerate()
+            .filter(|(_, ep)| ep.latency_ms > 0 && !ep.stale && !ep.is_circuit_broken())
+            .min_by_key(|(_, ep)| ep.latency_ms)
+        {
+            pool.active = idx;
+        }
+        pool.endpoints.clone()
     }
 
-    /// Check all Hyperion endpoints concurrently.
     pub async fn check_all_hyperion_endpoints(&mut self) -> Vec<EndpointState> {
-        let client = self.client.clone();
-
-        let mut handles = Vec::new();
-        for (idx, ep) in self.hyperion_endpoints.iter().enumerate() {
-            let url = ep.url.clone();
-            let client = client.clone();
-            handles.push(tokio::spawn(async move {
-                let result = check_hyperion_health(&client, &url).await;
-                (idx, result.0, result.1)
-            }));
+        let mut tasks = tokio::task::JoinSet::new();
+        for (idx, ep) in self.hyperion_endpoints().into_iter().enumerate() {
+            let client = self.client.clone();
+            tasks.spawn(async move {
+                (
+                    idx,
+                    ep.last_check,
+                    check_hyperion_health(&client, &ep.url).await,
+                )
+            });
         }
-
-        for handle in handles {
-            if let Ok((idx, latency_ms, valid)) = handle.await {
-                if let Some(ep) = self.hyperion_endpoints.get_mut(idx) {
-                    if valid {
-                        // Hyperion sync state is already covered by /v2/health.
-                        ep.record_success(latency_ms, false);
-                    } else {
-                        ep.record_failure();
-                    }
+        while let Some(Ok((idx, previous, (latency, valid)))) = tasks.join_next().await {
+            let mut pool = pool_lock(&self.hyperion);
+            if let Some(ep) = pool.endpoints.get_mut(idx) {
+                if ep.last_check != previous {
+                    continue;
+                }
+                if valid {
+                    ep.record_probe_success(latency, false);
+                } else {
+                    ep.record_failure();
                 }
             }
         }
-
-        self.select_best_hyperion();
-        self.hyperion_endpoints.clone()
+        let mut pool = pool_lock(&self.hyperion);
+        if let Some((idx, _)) = pool
+            .endpoints
+            .iter()
+            .enumerate()
+            .filter(|(_, ep)| ep.latency_ms > 0 && !ep.is_circuit_broken())
+            .min_by_key(|(_, ep)| ep.latency_ms)
+        {
+            pool.active = idx;
+        }
+        pool.endpoints.clone()
     }
 
-    fn select_best_rpc(&mut self) {
-        let mut best_idx = self.active_rpc_index;
-        let mut best_latency = i64::MAX;
-
-        for (idx, ep) in self.rpc_endpoints.iter().enumerate() {
-            if ep.is_healthy() && ep.latency_ms < best_latency {
-                best_latency = ep.latency_ms;
-                best_idx = idx;
+    async fn verify_rpc(&self, idx: usize, endpoint: &EndpointState) -> bool {
+        if !endpoint.stale
+            && endpoint
+                .verified_at
+                .is_some_and(|time| time.elapsed() < VERIFY_INTERVAL)
+        {
+            return true;
+        }
+        let (latency, valid, stale) =
+            check_endpoint_health(&self.client, &endpoint.url, &self.chain_id).await;
+        let mut pool = pool_lock(&self.rpc);
+        if let Some(ep) = pool.endpoints.get_mut(idx) {
+            if valid {
+                ep.record_probe_success(latency, stale);
+                ep.verified_at = Some(Instant::now());
+            } else {
+                ep.record_failure();
             }
         }
-
-        self.active_rpc_index = best_idx;
+        valid && !stale
     }
 
-    fn select_best_hyperion(&mut self) {
-        let mut best_idx = self.active_hyperion_index;
-        let mut best_latency = i64::MAX;
-
-        for (idx, ep) in self.hyperion_endpoints.iter().enumerate() {
-            if ep.is_healthy() && ep.latency_ms < best_latency {
-                best_latency = ep.latency_ms;
-                best_idx = idx;
-            }
-        }
-
-        self.active_hyperion_index = best_idx;
-    }
-
-    /// Execute an RPC POST call with automatic failover.
     pub async fn rpc_call<T, F>(
         &mut self,
         path: &str,
@@ -273,79 +332,9 @@ impl ProviderManager {
     where
         F: Fn(serde_json::Value) -> Result<T, Error> + Copy,
     {
-        // Try active endpoint first
-        if let Some(ep) = self.rpc_endpoints.get(self.active_rpc_index) {
-            if !ep.is_circuit_broken() {
-                let url = format!("{}{}", ep.url, path);
-                match rpc_post(&self.client, &url, body).await {
-                    Ok(json) => {
-                        if let Some(ep) = self.rpc_endpoints.get_mut(self.active_rpc_index) {
-                            ep.failures = 0;
-                        }
-                        return parse(json);
-                    }
-                    // HTTP response errors mean the endpoint is fine but rejected
-                    // the request — propagate without failover.
-                    Err(e @ Error::RpcResponse(_)) => {
-                        if let Some(ep) = self.rpc_endpoints.get_mut(self.active_rpc_index) {
-                            ep.failures = 0; // endpoint is healthy
-                        }
-                        return Err(e);
-                    }
-                    Err(_) => {
-                        if let Some(ep) = self.rpc_endpoints.get_mut(self.active_rpc_index) {
-                            ep.record_failure();
-                        }
-                    }
-                }
-            }
-        }
-
-        // Failover: try other healthy endpoints sorted by latency
-        let mut candidates: Vec<(usize, i64)> = self
-            .rpc_endpoints
-            .iter()
-            .enumerate()
-            .filter(|(idx, ep)| *idx != self.active_rpc_index && ep.is_healthy())
-            .map(|(idx, ep)| (idx, ep.latency_ms))
-            .collect();
-
-        candidates.sort_by_key(|(_, lat)| *lat);
-
-        for (idx, _) in candidates {
-            let url = format!("{}{}", self.rpc_endpoints[idx].url, path);
-            match rpc_post(&self.client, &url, body).await {
-                Ok(json) => {
-                    self.active_rpc_index = idx;
-                    if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                        ep.failures = 0;
-                    }
-                    log::info!("Failover: switched RPC to {}", self.rpc_endpoints[idx].url);
-                    return parse(json);
-                }
-                Err(e @ Error::RpcResponse(_)) => {
-                    // Endpoint works, request was rejected — propagate immediately.
-                    self.active_rpc_index = idx;
-                    if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                        ep.failures = 0;
-                    }
-                    return Err(e);
-                }
-                Err(_) => {
-                    if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                        ep.record_failure();
-                    }
-                }
-            }
-        }
-
-        Err(Error::Rpc("All RPC endpoints failed".into()))
+        self.rpc_call_compatible_paths(&[path], body, parse).await
     }
 
-    /// Execute a POST call against several possible RPC paths and fail over on
-    /// endpoint-level "unknown endpoint" responses. This is intentionally more
-    /// permissive than `rpc_call` for compatibility endpoints such as transaction
-    /// broadcast routes, where nodeos variants may expose different path names.
     pub async fn rpc_call_compatible_paths<T, F>(
         &mut self,
         paths: &[&str],
@@ -355,149 +344,56 @@ impl ProviderManager {
     where
         F: Fn(serde_json::Value) -> Result<T, Error> + Copy,
     {
-        let mut endpoint_order = Vec::new();
-        if self.active_rpc_index < self.rpc_endpoints.len() {
-            endpoint_order.push(self.active_rpc_index);
-        }
-
-        let mut others: Vec<(usize, i64)> = self
-            .rpc_endpoints
-            .iter()
-            .enumerate()
-            .filter(|(idx, ep)| *idx != self.active_rpc_index && !ep.is_circuit_broken())
-            .map(|(idx, ep)| {
-                let latency = if ep.latency_ms > 0 {
-                    ep.latency_ms
-                } else {
-                    i64::MAX / 2
-                };
-                (idx, latency)
-            })
-            .collect();
-        others.sort_by_key(|(_, latency)| *latency);
-        endpoint_order.extend(others.into_iter().map(|(idx, _)| idx));
-
-        let mut diagnostics = Vec::new();
-
-        for idx in endpoint_order {
-            if self
-                .rpc_endpoints
-                .get(idx)
-                .map(|ep| ep.is_circuit_broken())
-                .unwrap_or(true)
-            {
-                continue;
-            }
-
-            for path in paths {
-                let endpoint = self.rpc_endpoints[idx].url.clone();
-                let url = format!("{}{}", endpoint, path);
-                log::info!("[rpc] compatible call: POST {}", url);
-
-                match rpc_post(&self.client, &url, body).await {
-                    Ok(json) => {
-                        self.active_rpc_index = idx;
-                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                            ep.failures = 0;
+        let order = candidates(&pool_lock(&self.rpc));
+        tokio::time::timeout(CALL_BUDGET, async {
+            let mut last_error = String::from("No RPC endpoint is available; retry after the cooldown or check network settings");
+            for (idx, endpoint) in order {
+                if !self.verify_rpc(idx, &endpoint).await {
+                    last_error = format!("{} failed chain/freshness verification", endpoint.url);
+                    continue;
+                }
+                for path in paths {
+                    let start = Instant::now();
+                    let url = format!("{}{}", endpoint.url, path);
+                    match rpc_post(&self.client, &url, body).await {
+                        Ok(json) => match parse(json) {
+                            Ok(result) => { Self::success(&self.rpc, idx, start.elapsed().as_millis() as i64); return Ok(result); }
+                            Err(error) => { last_error = error.to_string(); Self::failure(&self.rpc, idx); break; }
+                        },
+                        Err(Error::RpcResponse(msg)) if is_unknown_endpoint_response(&msg) => { last_error = msg; continue; }
+                        Err(error @ Error::RpcResponse(_)) => {
+                            Self::success(&self.rpc, idx, start.elapsed().as_millis() as i64);
+                            return Err(error);
                         }
-                        return parse(json);
-                    }
-                    Err(Error::RpcResponse(msg)) if is_unknown_endpoint_response(&msg) => {
-                        diagnostics.push(msg);
-                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                            ep.failures = 0;
-                        }
-                        continue;
-                    }
-                    Err(Error::RpcResponse(msg)) => {
-                        self.active_rpc_index = idx;
-                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                            ep.failures = 0;
-                        }
-                        return Err(Error::RpcResponse(msg));
-                    }
-                    Err(e) => {
-                        diagnostics.push(format!("{}{} -> {}", endpoint, path, e));
-                        if let Some(ep) = self.rpc_endpoints.get_mut(idx) {
-                            ep.record_failure();
-                        }
+                        Err(error) => { last_error = error.to_string(); Self::failure(&self.rpc, idx); break; }
                     }
                 }
             }
-        }
-
-        Err(Error::RpcResponse(format!(
-            "No compatible RPC endpoint succeeded. Tried: {}",
-            diagnostics.join(" | ")
-        )))
+            Err(Error::Rpc(format!("All RPC endpoints failed: {}", last_error)))
+        }).await.unwrap_or_else(|_| Err(Error::Rpc("RPC request exceeded the 15 second failover budget; retry or check network settings".into())))
     }
 
-    /// Execute a Hyperion GET call with failover.
     pub async fn hyperion_get<T: serde::de::DeserializeOwned>(
         &mut self,
         path: &str,
     ) -> Result<T, Error> {
-        // Try active Hyperion first
-        if let Some(ep) = self.hyperion_endpoints.get(self.active_hyperion_index) {
-            if !ep.is_circuit_broken() {
-                let url = format!("{}{}", ep.url, path);
-                match http_get::<T>(&self.client, &url).await {
+        let order = candidates(&pool_lock(&self.hyperion));
+        tokio::time::timeout(CALL_BUDGET, async {
+            let mut last_error = String::from("No history endpoint configured or all endpoints are cooling down");
+            for (idx, endpoint) in order {
+                let start = Instant::now();
+                match http_get(&self.client, &format!("{}{}", endpoint.url, path)).await {
                     Ok(result) => {
-                        if let Some(ep) =
-                            self.hyperion_endpoints.get_mut(self.active_hyperion_index)
-                        {
-                            ep.failures = 0;
-                        }
+                        Self::success(&self.hyperion, idx, start.elapsed().as_millis() as i64);
                         return Ok(result);
                     }
-                    Err(_) => {
-                        if let Some(ep) =
-                            self.hyperion_endpoints.get_mut(self.active_hyperion_index)
-                        {
-                            ep.record_failure();
-                        }
-                    }
+                    Err(error) => { last_error = error.to_string(); Self::failure(&self.hyperion, idx); }
                 }
             }
-        }
-
-        // Failover
-        let mut candidates: Vec<(usize, i64)> = self
-            .hyperion_endpoints
-            .iter()
-            .enumerate()
-            .filter(|(idx, ep)| *idx != self.active_hyperion_index && ep.is_healthy())
-            .map(|(idx, ep)| (idx, ep.latency_ms))
-            .collect();
-
-        candidates.sort_by_key(|(_, lat)| *lat);
-
-        for (idx, _) in candidates {
-            let url = format!("{}{}", self.hyperion_endpoints[idx].url, path);
-            match http_get::<T>(&self.client, &url).await {
-                Ok(result) => {
-                    self.active_hyperion_index = idx;
-                    if let Some(ep) = self.hyperion_endpoints.get_mut(idx) {
-                        ep.failures = 0;
-                    }
-                    log::info!(
-                        "Failover: switched Hyperion to {}",
-                        self.hyperion_endpoints[idx].url
-                    );
-                    return Ok(result);
-                }
-                Err(_) => {
-                    if let Some(ep) = self.hyperion_endpoints.get_mut(idx) {
-                        ep.record_failure();
-                    }
-                }
-            }
-        }
-
-        Err(Error::Rpc("All Hyperion endpoints failed".into()))
+            Err(Error::Rpc(format!("All history endpoints failed: {}", last_error)))
+        }).await.unwrap_or_else(|_| Err(Error::Rpc("History request exceeded the 15 second failover budget; retry or check network settings".into())))
     }
 }
-
 // ── Thread-safe wrapper for Tauri state ──
 
 pub struct ProviderState(pub Arc<Mutex<std::collections::HashMap<String, ProviderManager>>>);
@@ -505,6 +401,16 @@ pub struct ProviderState(pub Arc<Mutex<std::collections::HashMap<String, Provide
 impl ProviderState {
     pub fn new() -> Self {
         Self(Arc::new(Mutex::new(std::collections::HashMap::new())))
+    }
+
+    /// Hold the registry lock only while cloning a shared provider handle.
+    pub async fn get(&self, chain_id: &str) -> Result<ProviderManager, Error> {
+        self.0
+            .lock()
+            .await
+            .get(chain_id)
+            .cloned()
+            .ok_or_else(|| Error::ChainNotFound(chain_id.to_string()))
     }
 }
 
@@ -532,6 +438,9 @@ async fn check_endpoint_health(
 
     match result {
         Ok(response) => {
+            if !response.status().is_success() {
+                return (-1, false, false);
+            }
             let latency_ms = start.elapsed().as_millis() as i64;
             // SEC-017: cap the get_info body before parsing.
             let parsed = match read_body_capped(response, MAX_INFO_BODY_BYTES).await {
@@ -711,9 +620,19 @@ async fn rpc_post(
             (None, None) => format!("{} -> HTTP {}: {}", url, status.as_u16(), what),
         };
 
-        // Use RpcResponse to signal "endpoint is fine, request was rejected" —
-        // callers should propagate without triggering failover.
-        return Err(Error::RpcResponse(msg));
+        // Gateway/rate-limit/service errors are endpoint failures, not chain
+        // rejections. A nodeos exception or FIO field validation is terminal.
+        let chain_rejection = json.get("error").is_some_and(|error| {
+            error.get("code").and_then(|v| v.as_i64()).is_some()
+                && error.get("name").and_then(|v| v.as_str()).is_some()
+        });
+        if chain_rejection
+            || json.get("fields").is_some_and(|v| v.is_array())
+            || is_unknown_endpoint_response(&msg)
+        {
+            return Err(Error::RpcResponse(msg));
+        }
+        return Err(Error::Rpc(msg));
     }
 
     Ok(json)
@@ -730,10 +649,22 @@ async fn http_get<T: serde::de::DeserializeOwned>(
         .await
         .map_err(|e| Error::Rpc(format!("{}: {}", url, e)))?;
 
-    // SEC-017: cap the buffered response body before parsing.
+    let status = response.status();
     let bytes = read_body_capped(response, MAX_RPC_BODY_BYTES).await?;
-    serde_json::from_slice::<T>(&bytes).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
+    if !status.is_success() {
+        return Err(Error::Rpc(format!("{} -> HTTP {}", url, status.as_u16())));
+    }
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))?;
+    if json.get("error").is_some_and(|v| !v.is_null()) {
+        return Err(Error::Rpc("History server returned an error".into()));
+    }
+    serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
 }
+
+#[cfg(test)]
+#[path = "provider_tests.rs"]
+mod reliability_tests;
 
 #[cfg(test)]
 mod tests {
@@ -801,6 +732,6 @@ mod tests {
         pm.add_rpc_endpoint("https://api.example.com", None);
         pm.add_rpc_endpoint("https://api.example.com/", None);
         pm.add_rpc_endpoint("https://api.example.com", None);
-        assert_eq!(pm.rpc_endpoints.len(), 1);
+        assert_eq!(pm.rpc_endpoints().len(), 1);
     }
 }

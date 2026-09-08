@@ -1,3 +1,4 @@
+import { resolveAccountSigner } from './account-signer';
 import { Injectable, inject, effect } from '@angular/core';
 import { WalletStateService } from './wallet-state.service';
 import { TauriIpcService } from './tauri-ipc.service';
@@ -67,9 +68,16 @@ export class EsrService {
 
       const request = SigningRequest.from(uri, opts);
       const esrChainId = request.getChainId().hexString;
+      if (!request.isMultiChain() && esrChainId.toLowerCase() !== account.chainId.toLowerCase()) {
+        throw new Error('Select an account on the chain requested by this signing request.');
+      }
       // Use the active account's chain ID for key lookup — it matches the keystore
       const chainId = account.chainId;
-      const signer = { actor: account.name, permission: 'active' };
+      const requestedIdentity = request.getIdentity()?.toString();
+      if (requestedIdentity && requestedIdentity !== account.name) {
+        throw new Error(`This login requires the ${requestedIdentity} account`);
+      }
+      const signer = { actor: account.name, permission: request.getIdentityPermission()?.toString() ?? 'active' };
       const isIdentity = request.isIdentity();
 
       console.log('[esr] ESR chain:', esrChainId, 'account chain:', chainId, 'identity:', isIdentity);
@@ -77,6 +85,7 @@ export class EsrService {
       // Fetch chain info for TaPoS context
       const info = await this.ipc.getChainInfo(chainId);
       const ctx = {
+        chainId,
         timestamp: info.head_block_time,
         block_num: info.last_irreversible_block_num,
         ref_block_num: info.last_irreversible_block_num & 0xffff,
@@ -87,26 +96,15 @@ export class EsrService {
       const abis = await request.fetchAbis(opts.abiProvider);
       const resolved = request.resolve(abis, signer, ctx);
 
-      const keys = await this.ipc.listPublicKeys(chainId);
-      console.log('[esr] Keys for chain', chainId, ':', keys);
-      if (keys.length === 0) {
-        this.alert.error(`No signing key available for chain ${chainId}`);
-        return;
+      const permissions = [...new Set(resolved.transaction.actions.flatMap(action => action.authorization)
+        .filter(auth => auth.actor.toString() === account.name).map(auth => auth.permission.toString()))];
+      const accountSigner = await resolveAccountSigner(this.ipc, account, permissions);
+      if (accountSigner.ledgerIndex !== undefined) {
+        throw new Error('ESR signing with Ledger is not supported yet. Use the transaction builder for hardware signing.');
       }
 
-      // Build a display-only action list. The signed value is the wharfkit
-      // signing digest computed from the request — shown for context but flagged
-      // unverified in the trusted window (it cannot be locally proven).
-      const displayActions = resolved.transaction.actions.map(act => ({
-        account: act.account.toString(),
-        name: act.name.toString(),
-        authorization: act.authorization.map(auth => ({
-          actor: auth.actor.toString(),
-          permission: auth.permission.toString(),
-        })),
-        data: act.data as any,
-      }));
-      const digest = resolved.signingDigest.hexString;
+      const packedTransactionHex = Array.from(resolved.serializedTransaction,
+        byte => byte.toString(16).padStart(2, '0')).join('');
 
       // Disclose the callback destination (SEC-004/005). getCallback templates the
       // signature into the URL; a placeholder is enough to surface the host.
@@ -123,11 +121,10 @@ export class EsrService {
       let signResult: { signature: string };
       try {
         signResult = await this.ipc.beginEsrSign(
-          chainId, keys[0], displayActions, digest, isIdentity,
+          chainId, accountSigner.publicKey, packedTransactionHex,
           {
             origin,
             callbackUrl,
-            identityScope: isIdentity ? `Prove ownership of ${account.name}` : undefined,
           },
         );
       } catch (e: any) {

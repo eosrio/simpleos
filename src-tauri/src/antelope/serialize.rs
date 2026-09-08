@@ -15,10 +15,15 @@ use crate::error::Error;
 
 /// Encode an Antelope name string to its u64 representation.
 /// Names are up to 12 characters from the set `.12345abcdefghijklmnopqrstuvwxyz`.
-/// A 13th character is allowed but only a-p (4 bits).
+/// A 13th character is allowed only from `.12345abcdefghij` (4 bits).
 pub fn name_to_u64(name: &str) -> Result<u64, Error> {
     let mut value: u64 = 0;
     let bytes = name.as_bytes();
+    if bytes.len() > 13 {
+        return Err(Error::Serialization(
+            "Antelope names cannot exceed 13 characters".into(),
+        ));
+    }
 
     for i in 0..13.min(bytes.len()) {
         let c = char_to_value(bytes[i])?;
@@ -27,7 +32,12 @@ pub fn name_to_u64(name: &str) -> Result<u64, Error> {
             value |= (c as u64 & 0x1F) << (64 - 5 * (i + 1));
         } else {
             // 13th char uses 4 bits
-            value |= c as u64 & 0x0F;
+            if c > 0x0F {
+                return Err(Error::Serialization(
+                    "Invalid thirteenth name character".into(),
+                ));
+            }
+            value |= c as u64;
         }
     }
 
@@ -45,7 +55,11 @@ pub fn u64_to_name(n: u64) -> String {
     }
     // 13th char uses the lowest 4 bits.
     bytes[12] = CHARSET[(n & 0x0F) as usize];
-    let end = bytes.iter().rposition(|&c| c != b'.').map(|p| p + 1).unwrap_or(0);
+    let end = bytes
+        .iter()
+        .rposition(|&c| c != b'.')
+        .map(|p| p + 1)
+        .unwrap_or(0);
     std::str::from_utf8(&bytes[..end]).unwrap_or("").to_string()
 }
 
@@ -59,6 +73,9 @@ pub fn read_varuint32(bytes: &[u8], pos: &mut usize) -> Result<u32, Error> {
         }
         let b = bytes[*pos];
         *pos += 1;
+        if shift == 28 && b > 0x0F {
+            return Err(Error::Serialization("varuint32 overflow".into()));
+        }
         value |= ((b & 0x7F) as u32) << shift;
         if b & 0x80 == 0 {
             return Ok(value);
@@ -100,6 +117,28 @@ pub fn serialize_asset(asset_str: &str) -> Result<Vec<u8>, Error> {
 
     let amount_str = parts[0];
     let symbol_str = parts[1];
+    if symbol_str.is_empty()
+        || symbol_str.len() > 7
+        || !symbol_str.bytes().all(|b| b.is_ascii_uppercase())
+    {
+        return Err(Error::Serialization(
+            "Asset symbol must contain 1 to 7 uppercase ASCII letters".into(),
+        ));
+    }
+    let unsigned = amount_str.strip_prefix('-').unwrap_or(amount_str);
+    let mut decimal = unsigned.split('.');
+    let whole = decimal.next().unwrap_or("");
+    let fraction = decimal.next();
+    if whole.is_empty()
+        || !whole.bytes().all(|b| b.is_ascii_digit())
+        || decimal.next().is_some()
+        || fraction
+            .is_some_and(|f| f.is_empty() || f.len() > 18 || !f.bytes().all(|b| b.is_ascii_digit()))
+    {
+        return Err(Error::Serialization(format!(
+            "Invalid amount: '{amount_str}'"
+        )));
+    }
 
     // Determine precision from decimal places
     let precision = if let Some(dot_pos) = amount_str.find('.') {
@@ -113,6 +152,11 @@ pub fn serialize_asset(asset_str: &str) -> Result<Vec<u8>, Error> {
     let amount: i64 = cleaned
         .parse()
         .map_err(|_| Error::Serialization(format!("Invalid amount: '{}'", amount_str)))?;
+    if amount.unsigned_abs() > ((1u64 << 62) - 1) {
+        return Err(Error::Serialization(
+            "Asset amount exceeds Antelope's range".into(),
+        ));
+    }
 
     // Build symbol: precision byte + up to 7 symbol chars (zero-padded)
     let mut symbol_bytes = [0u8; 8];
@@ -202,6 +246,46 @@ pub fn serialize_transfer(
     data.extend_from_slice(&serialize_varuint32(memo_bytes.len() as u32));
     data.extend_from_slice(memo_bytes);
     Ok(data)
+}
+
+/// Decode the standard transfer layout, rejecting malformed or trailing data.
+/// Confirmation uses this value, not caller-supplied JSON.
+pub fn decode_transfer(data: &[u8]) -> Result<serde_json::Value, Error> {
+    if data.len() < 33 {
+        return Err(Error::Serialization("Truncated transfer".into()));
+    }
+    let from = u64_to_name(u64::from_le_bytes(data[..8].try_into().unwrap()));
+    let to = u64_to_name(u64::from_le_bytes(data[8..16].try_into().unwrap()));
+    let amount = i64::from_le_bytes(data[16..24].try_into().unwrap());
+    let precision = data[24] as usize;
+    if precision > 18 {
+        return Err(Error::Serialization("Invalid asset precision".into()));
+    }
+    let symbol_end = data[25..32].iter().position(|b| *b == 0).unwrap_or(7) + 25;
+    if data[symbol_end..32].iter().any(|b| *b != 0) {
+        return Err(Error::Serialization("Invalid asset padding".into()));
+    }
+    let symbol = std::str::from_utf8(&data[25..symbol_end])
+        .map_err(|e| Error::Serialization(e.to_string()))?;
+    let mut digits = format!("{:0width$}", amount.unsigned_abs(), width = precision + 1);
+    if precision > 0 {
+        digits.insert(digits.len() - precision, '.');
+    }
+    if amount < 0 {
+        digits.insert(0, '-');
+    }
+    let quantity = format!("{digits} {symbol}");
+    let mut pos = 32;
+    let memo_len = read_varuint32(data, &mut pos)? as usize;
+    if memo_len != data.len().saturating_sub(pos) {
+        return Err(Error::Serialization("Invalid transfer memo length".into()));
+    }
+    let memo =
+        std::str::from_utf8(&data[pos..]).map_err(|e| Error::Serialization(e.to_string()))?;
+    if serialize_transfer(&from, &to, &quantity, memo)? != data {
+        return Err(Error::Serialization("Noncanonical transfer".into()));
+    }
+    Ok(serde_json::json!({ "from": from, "to": to, "quantity": quantity, "memo": memo }))
 }
 
 /// Serialize the data for `eosio::delegatebw`.
@@ -348,10 +432,7 @@ pub fn serialize_regfinkey(
 
 /// Serialize the data for `eosio::actfinkey` / `eosio::delfinkey`.
 /// Both take `finalizer_name(name) || finalizer_key(string)`.
-pub fn serialize_finkey_ref(
-    finalizer_name: &str,
-    finalizer_key: &str,
-) -> Result<Vec<u8>, Error> {
+pub fn serialize_finkey_ref(finalizer_name: &str, finalizer_key: &str) -> Result<Vec<u8>, Error> {
     let mut data = Vec::new();
     data.extend_from_slice(&serialize_name(finalizer_name)?);
     data.extend_from_slice(&serialize_string(finalizer_key));
@@ -435,6 +516,13 @@ pub struct ParsedAction {
 pub struct ParsedTransaction {
     /// Unix timestamp (seconds since epoch).
     pub expiration: u32,
+    pub ref_block_num: u16,
+    pub ref_block_prefix: u32,
+    pub max_net_usage_words: u32,
+    pub max_cpu_usage_ms: u8,
+    pub delay_sec: u32,
+    pub context_free_actions: Vec<ParsedAction>,
+    pub extension_count: usize,
     pub actions: Vec<ParsedAction>,
 }
 
@@ -460,7 +548,12 @@ fn read_u32_le(bytes: &[u8], pos: &mut usize) -> Result<u32, Error> {
     if *pos + 4 > bytes.len() {
         return Err(Error::Serialization("u32 truncated".into()));
     }
-    let v = u32::from_le_bytes([bytes[*pos], bytes[*pos + 1], bytes[*pos + 2], bytes[*pos + 3]]);
+    let v = u32::from_le_bytes([
+        bytes[*pos],
+        bytes[*pos + 1],
+        bytes[*pos + 2],
+        bytes[*pos + 3],
+    ]);
     *pos += 4;
     Ok(v)
 }
@@ -548,16 +641,17 @@ pub fn parse_packed_transaction(bytes: &[u8]) -> Result<ParsedTransaction, Error
     }
     let mut pos = 0;
     let expiration = read_u32_le(bytes, &mut pos)?;
-    let _ref_block_num = read_u16_le(bytes, &mut pos)?;
-    let _ref_block_prefix = read_u32_le(bytes, &mut pos)?;
-    let _max_net = read_varuint32(bytes, &mut pos)?;
-    let _max_cpu = read_u8(bytes, &mut pos)?;
-    let _delay = read_varuint32(bytes, &mut pos)?;
+    let ref_block_num = read_u16_le(bytes, &mut pos)?;
+    let ref_block_prefix = read_u32_le(bytes, &mut pos)?;
+    let max_net_usage_words = read_varuint32(bytes, &mut pos)?;
+    let max_cpu_usage_ms = read_u8(bytes, &mut pos)?;
+    let delay_sec = read_varuint32(bytes, &mut pos)?;
     let cfa_count = read_varuint32(bytes, &mut pos)? as usize;
     // SEC-043: an action is at least 17 bytes (2 u64 names + 1 varuint auth count).
     let cfa_count = checked_list_count(cfa_count, bytes.len().saturating_sub(pos), 17)?;
+    let mut context_free_actions = Vec::with_capacity(cfa_count);
     for _ in 0..cfa_count {
-        let _ = read_action(bytes, &mut pos)?;
+        context_free_actions.push(read_action(bytes, &mut pos)?);
     }
     let act_count = read_varuint32(bytes, &mut pos)? as usize;
     // SEC-043: reject implausible counts and avoid pre-sizing from untrusted input.
@@ -566,9 +660,29 @@ pub fn parse_packed_transaction(bytes: &[u8]) -> Result<ParsedTransaction, Error
     for _ in 0..act_count {
         actions.push(read_action(bytes, &mut pos)?);
     }
+    let extension_count = read_varuint32(bytes, &mut pos)? as usize;
+    let extension_count = checked_list_count(extension_count, bytes.len().saturating_sub(pos), 3)?;
+    for _ in 0..extension_count {
+        let _kind = read_u16_le(bytes, &mut pos)?;
+        let len = read_varuint32(bytes, &mut pos)? as usize;
+        if len > bytes.len().saturating_sub(pos) {
+            return Err(Error::Serialization("Truncated extension".into()));
+        }
+        pos += len;
+    }
+    if pos != bytes.len() {
+        return Err(Error::Serialization("Trailing transaction bytes".into()));
+    }
     Ok(ParsedTransaction {
         expiration,
         actions,
+        ref_block_num,
+        ref_block_prefix,
+        max_net_usage_words,
+        max_cpu_usage_ms,
+        delay_sec,
+        context_free_actions,
+        extension_count,
     })
 }
 
@@ -590,7 +704,7 @@ pub fn tapos_ref_block_num(block_num: u64) -> u16 {
 /// On little-endian platforms (x86, ARM LE), `reinterpret_cast<uint32_t*>` reads
 /// the four bytes in little-endian order, so we use `from_le_bytes`.
 pub fn tapos_ref_block_prefix(block_id_hex: &str) -> Result<u32, Error> {
-    if block_id_hex.len() < 24 {
+    if block_id_hex.len() < 24 || !block_id_hex.is_ascii() {
         return Err(Error::Serialization("Block ID too short for TAPOS".into()));
     }
     // Bytes 8..12 of the block ID = hex chars 16..24
@@ -612,6 +726,9 @@ pub fn hex_encode(data: &[u8]) -> String {
 }
 
 pub fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
+    if !hex.is_ascii() {
+        return Err("Non-ASCII hex string".into());
+    }
     if hex.len() % 2 != 0 {
         return Err("Odd-length hex string".into());
     }
@@ -624,6 +741,39 @@ pub fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rejects_names_that_would_change_the_signed_recipient() {
+        for recipient in ["abcdefghijklz", "abcdefghijklaa", "é", "alice/other"] {
+            assert!(
+                serialize_transfer("alice", recipient, "1.0000 EOS", "").is_err(),
+                "{recipient}"
+            );
+        }
+        for recipient in ["abcdefghijklj", "abcdefghijkl5", "bob"] {
+            let bytes = serialize_transfer("alice", recipient, "1.0000 EOS", "").unwrap();
+            assert_eq!(
+                u64_to_name(u64::from_le_bytes(bytes[8..16].try_into().unwrap())),
+                recipient
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_assets_that_cannot_be_represented_exactly() {
+        for asset in [
+            "1.2.3 EOS",
+            "1. EOS",
+            ".1 EOS",
+            "1.0000 TOOLONGSYM",
+            "1 eos",
+            "1 EÖS",
+            "4611686018427387904 EOS",
+            "0.0000000000000000000 EOS",
+        ] {
+            assert!(serialize_asset(asset).is_err(), "{asset}");
+        }
+    }
 
     #[test]
     fn name_encoding() {
@@ -738,7 +888,15 @@ mod tests {
 
     #[test]
     fn u64_to_name_roundtrip() {
-        for n in ["eosio", "eosio.token", "alice", "bob", "eosriobrazil", "a", ""] {
+        for n in [
+            "eosio",
+            "eosio.token",
+            "alice",
+            "bob",
+            "eosriobrazil",
+            "a",
+            "",
+        ] {
             let encoded = name_to_u64(n).unwrap();
             assert_eq!(u64_to_name(encoded), n, "roundtrip failed for {:?}", n);
         }
@@ -779,7 +937,10 @@ mod tests {
         assert_eq!(parsed.actions.len(), 1);
         assert_eq!(parsed.actions[0].account, "eosio.token");
         assert_eq!(parsed.actions[0].name, "transfer");
-        assert_eq!(parsed.actions[0].authorization, vec![("alice".into(), "active".into())]);
+        assert_eq!(
+            parsed.actions[0].authorization,
+            vec![("alice".into(), "active".into())]
+        );
         assert_eq!(parsed.actions[0].data_hex, data_hex);
     }
 

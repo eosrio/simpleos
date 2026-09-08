@@ -396,7 +396,7 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                     }
                     @case ('backup') {
                       <h2>Restore Backup</h2>
-                      <p>Upload a SimplEOS backup file (.bkp)</p>
+                      <p>Restore an encrypted SimplEOS v2 backup (.json)</p>
                     }
                     @case ('anchor') {
                       <h2>Import from Anchor</h2>
@@ -570,9 +570,19 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                     <div class="form-card">
                       <div class="backup-dropzone">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <p>Select a .bkp file</p>
-                        <span class="hint">Backup import will be available once the key management backend is complete.</span>
+                        <label class="field-label" for="restore-file">SimplEOS v2 backup (.json)</label>
+                        <input id="restore-file" type="file" accept=".json,application/json" [disabled]="importing()" (change)="onBackupFile($event)" />
+                        <span class="hint">Legacy .bkp files are not supported. Restore those in SimplEOS v1 and export your keys first.</span>
                       </div>
+                      <label class="field-label" for="restore-password">Backup passphrase</label>
+                      <input id="restore-password" type="password" autocomplete="current-password"
+                        [ngModel]="passphrase()" (ngModelChange)="passphrase.set($event)" [disabled]="importing()" />
+                      @if (error()) { <div class="msg error-msg" role="alert">{{ error() }}</div> }
+                      @if (success()) { <div class="msg" role="status">{{ success() }}</div> }
+                      @if (importing()) { <p role="status">{{ importStatus() }}</p> }
+                      <button class="btn-primary" [disabled]="!backupJson() || !passphrase() || importing()" (click)="onRestoreBackup()">
+                        {{ importing() ? 'Restoring...' : 'Restore backup' }}
+                      </button>
                     </div>
                   }
 
@@ -837,6 +847,7 @@ export class LandingComponent implements OnInit, OnDestroy {
   importStatus = signal('Encrypting key...');
 
   // Anchor import
+  backupJson = signal('');
   anchorStep = signal(1);
   anchorJson = signal('');
   anchorParsing = signal(false);
@@ -1269,6 +1280,57 @@ export class LandingComponent implements OnInit, OnDestroy {
     } finally {
       this.keySearching.set(false);
     }
+  }
+
+  async onBackupFile(event: Event) {
+    this.error.set('');
+    this.success.set('');
+    this.backupJson.set('');
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) { this.error.set('Backup file exceeds 16 MB'); return; }
+    try {
+      const json = await file.text();
+      if (JSON.parse(json).version !== 'simpleos-v2') throw new Error('Choose a SimplEOS v2 JSON backup');
+      this.backupJson.set(json);
+    } catch (e) { this.error.set(e instanceof Error ? e.message : 'Could not read backup'); }
+  }
+
+  async onRestoreBackup() {
+    if (this.importing() || !this.backupJson() || !this.passphrase()) return;
+    this.error.set('');
+    this.success.set('');
+    this.importing.set(true);
+    this.importStatus.set('Verifying and restoring encrypted keys...');
+    try {
+      const json = this.backupJson();
+      const count = await this.ipc.importBackup(json, this.passphrase());
+      this.passphrase.set('');
+      this.backupJson.set('');
+      this.wallet.vaultExists.set(true);
+      this.wallet.locked.set(false);
+      this.importStatus.set('Discovering restored accounts...');
+      const imported: WalletAccount[] = [];
+      let unavailable = false;
+      for (const entry of JSON.parse(json).keys) {
+        if (entry.chain_id.startsWith('bls_')) continue;
+        try {
+          const result = await this.ipc.lookupKeyAccounts(entry.chain_id, entry.public_key);
+          for (const name of new Set<string>(result.account_names)) {
+            const account = await this.wallet.addImportedAccount(name, entry.chain_id, 'full');
+            if (account) imported.push(account);
+          }
+        } catch { unavailable = true; }
+      }
+      await this.wallet.saveAccounts();
+      this.selectFirstImportedAccount(imported);
+      if (imported.length && !unavailable) {
+        await this.router.navigate(['/dashboard']);
+      } else {
+        this.success.set(`${count} encrypted key(s) restored. ${unavailable ? 'Some account lookups were unavailable.' : 'No on-chain accounts were discovered.'} Your keys are saved; you can add accounts by name or retry discovery after connecting.`);
+      }
+    } catch (e) { this.error.set(e instanceof Error ? e.message : String(e)); }
+    finally { this.importing.set(false); }
   }
 
   async onImportKey() {

@@ -1,4 +1,4 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal, untracked, OnDestroy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
@@ -156,16 +156,20 @@ type ValueNode =
             }
           </div>
 
-          @if (historyLoading() && actions().length === 0) {
+          @if (historyError()) {
+            <div class="activity-empty" role="alert">
+              <p>{{ historyError() }}</p>
+              <button class="load-more" [disabled]="historyLoading()" (click)="loadHistory(actions().length)">Retry history</button>
+            </div>
+          }
+          @if (historyUnavailable()) {
+            <div class="activity-empty"><p>Transaction history is not available for this network.</p></div>
+          } @else if (historyLoading() && actions().length === 0) {
             <div class="activity-loading">
               <div class="header-spinner"></div>
               <p>Loading history...</p>
             </div>
-          } @else if (historyError()) {
-            <div class="activity-empty">
-              <p>{{ historyError() }}</p>
-            </div>
-          } @else if (actions().length === 0) {
+          } @else if (actions().length === 0 && !historyError()) {
             <div class="activity-empty">
               <p>No transaction history found.</p>
             </div>
@@ -1024,13 +1028,21 @@ type ValueNode =
     }
   `],
 })
-export class WalletComponent {
+export class WalletComponent implements OnDestroy {
+  private historyRequest = 0;
+  private destroyed = false;
+  private historyAccount = '';
+  ngOnDestroy() { this.destroyed = true; this.historyRequest++; }
   private static readonly PAGE_SIZE = 20;
 
   refreshing = signal(false);
   actions = signal<HistoryAction[]>([]);
   historyLoading = signal(false);
   historyError = signal('');
+  historyUnavailable = computed(() => {
+    const chain = this.wallet.activeChain();
+    return chain?.features?.history === false || (this.wallet.hasTauri() && chain?.hyperion_apis?.length === 0);
+  });
   hasMore = signal(false);
   expandedIndex = signal<number | null>(null);
 
@@ -1046,10 +1058,16 @@ export class WalletComponent {
     // Reload history when selected account changes
     effect(() => {
       const acct = this.wallet.selectedAccount();
-      if (acct) {
+      const key = acct ? `${acct.chainId}:${acct.name}` : '';
+      if (key !== this.historyAccount) {
+        this.historyAccount = key;
+        this.historyRequest++;
         this.actions.set([]);
         this.expandedIndex.set(null);
-        this.loadHistory(0);
+        this.hasMore.set(false);
+        this.historyLoading.set(false);
+        this.historyError.set('');
+        if (acct) untracked(() => void this.loadHistory(0));
       }
     });
   }
@@ -1093,6 +1111,11 @@ export class WalletComponent {
   async loadHistory(skip: number) {
     const acct = this.wallet.selectedAccount();
     if (!acct || !this.wallet.hasTauri()) return;
+    if (this.historyUnavailable()) return;
+    if (skip > 0 && this.historyLoading()) return;
+    const request = ++this.historyRequest;
+    const current = () => !this.destroyed && request === this.historyRequest &&
+      this.wallet.selectedAccount()?.chainId === acct.chainId && this.wallet.selectedAccount()?.name === acct.name;
 
     this.historyLoading.set(true);
     this.historyError.set('');
@@ -1103,7 +1126,9 @@ export class WalletComponent {
         this.activeFilters,
       );
 
-      const raw: any[] = result?.actions ?? [];
+      if (!current()) return;
+      if (!Array.isArray(result?.actions)) throw new Error('History server returned an invalid response');
+      const raw: any[] = result.actions;
       const mapped: HistoryAction[] = raw.map((a: any) => ({
         trx_id: a.trx_id ?? '',
         block_num: a.block_num ?? 0,
@@ -1123,14 +1148,15 @@ export class WalletComponent {
         this.actions.update(prev => [...prev, ...mapped]);
       }
 
-      const total = result?.total?.value ?? 0;
-      this.hasMore.set(skip + mapped.length < total);
+      const total = typeof result?.total === 'number' ? result.total : result?.total?.value;
+      this.hasMore.set(mapped.length > 0 && (typeof total === 'number' && result?.total?.relation !== 'gte'
+        ? skip + mapped.length < total : mapped.length === WalletComponent.PAGE_SIZE));
     } catch (e: any) {
-      if (skip === 0) {
-        this.historyError.set('Could not load history. No Hyperion endpoint available.');
+      if (current()) {
+        this.historyError.set(skip === 0 ? 'Could not load history. Check the network and retry.' : 'Could not load more history. Your loaded transactions are still shown. Retry to continue.');
       }
     } finally {
-      this.historyLoading.set(false);
+      if (current()) this.historyLoading.set(false);
     }
   }
 
@@ -1143,12 +1169,17 @@ export class WalletComponent {
   }
 
   async refreshAccount() {
+    const account = this.wallet.selectedAccount();
+    if (!account || this.refreshing()) return;
     this.refreshing.set(true);
     try {
       await this.wallet.refreshAccount(this.wallet.selectedIndex());
       await this.wallet.saveAccounts();
-      this.actions.set([]);
-      this.loadHistory(0);
+      if (!this.destroyed && this.wallet.selectedAccount()?.name === account.name &&
+          this.wallet.selectedAccount()?.chainId === account.chainId) {
+        this.actions.set([]);
+        await this.loadHistory(0);
+      }
     } finally {
       this.refreshing.set(false);
     }

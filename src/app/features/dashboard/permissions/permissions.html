@@ -1,0 +1,92 @@
+<section class="permissions-view" aria-labelledby="permissions-title">
+  <header class="page-header">
+    <div>
+      <h1 id="permissions-title">Permissions</h1>
+      <p>Choose which permission can authorize a contract action.</p>
+    </div>
+    <button type="button" class="secondary" (click)="refresh()" [disabled]="loading() || busy()">{{ loading() ? 'Refreshing…' : 'Refresh' }}</button>
+  </header>
+
+  @if (wallet.selectedAccount(); as account) {
+    <div class="account-context"><span>Account <strong>{{ account.name }}</strong></span><span>Network <strong>{{ account.chainName }}</strong></span></div>
+    @if (loadError()) { <p class="notice" role="alert">{{ loadError() }}</p> }
+    @if (account.mode === 'watch') { <p class="notice">This is a watch-only account. Import its active key to link an action.</p> }
+
+    <div class="workspace">
+      <section class="editor" aria-labelledby="link-heading">
+        <h2 id="link-heading">Link an action</h2>
+        <p class="intro">Select an existing permission. This does not create a permission or change its keys.</p>
+        <form (submit)="$event.preventDefault(); reviewLink()">
+          <fieldset [disabled]="busy() || loading() || !info()">
+            <label for="link-contract">Contract account</label>
+            <div class="contract-input">
+              <input id="link-contract" type="text" autocomplete="off" spellcheck="false" placeholder="eosio"
+                [value]="contract()" (input)="setContract($any($event.target).value)"
+                (keydown.enter)="$event.preventDefault(); loadActions()" aria-describedby="contract-hint" />
+              <button type="button" class="secondary" (click)="loadActions()" [disabled]="loadingActions() || !contract().trim()">{{ loadingActions() ? 'Loading…' : 'Load actions' }}</button>
+            </div>
+            <p id="contract-hint" class="hint">The contract that receives the action, for example eosio.</p>
+            @if (actionError()) { <p class="notice" role="alert">{{ actionError() }}</p> }
+
+            <label for="link-action">Action</label>
+            <select id="link-action" [value]="action()" (change)="action.set($any($event.target).value); clearOutcome()" [disabled]="!loadedContract()">
+              <option value="">{{ loadedContract() ? 'Select an action' : 'Load the contract actions first' }}</option>
+              @for (name of actions(); track name) { <option [value]="name">{{ name }}</option> }
+            </select>
+
+            <label for="link-permission">Required permission</label>
+            <select id="link-permission" [value]="permission()" (change)="permission.set($any($event.target).value); clearOutcome()" aria-describedby="permission-hint">
+              <option value="">Select a permission</option>
+              @for (item of permissions(); track item.perm_name) { <option [value]="item.perm_name">{{ item.perm_name }}</option> }
+            </select>
+            <p id="permission-hint" class="hint">This permission, or an ancestor such as active, can authorize the action.</p>
+          </fieldset>
+
+          @if (action() && permission()) {
+            <div class="review-summary" aria-live="polite">
+              <h3>{{ currentLink() ? 'Change link' : 'New link' }}</h3>
+              <p><code>{{ contract().trim() }}::{{ action() }}</code> will require <code>{{ account.name }}&#64;{{ permission() }}</code>.</p>
+              @if (currentLink(); as link) { <p class="hint">Currently linked to <code>{{ link.permission }}</code>.</p> }
+              @else if (!linksAvailable()) { <p class="hint">The node does not report all existing links. This may replace a previous link.</p> }
+              @else { <p class="hint">No explicit link for this action. A contract-wide link may still apply.</p> }
+              @if (unchanged()) { <p class="hint">Already linked. No transaction is needed.</p> }
+            </div>
+          }
+          <p class="signing-note">Changes are signed with <code>{{ account.name }}&#64;active</code>. You will review the transaction before it is sent.</p>
+          @if (error()) { <p class="notice" role="alert">{{ error() }}</p> }
+          @if (transactionId()) {
+            <div class="success" role="status"><strong>Link transaction sent</strong><span>Transaction ID</span><code>{{ transactionId() }}</code></div>
+          }
+          <button type="submit" class="primary" [disabled]="!canReview()">{{ busy() ? 'Waiting for transaction…' : 'Review link' }}</button>
+        </form>
+      </section>
+
+      <section class="existing" aria-labelledby="existing-heading" [attr.aria-busy]="loading()">
+        <h2 id="existing-heading">Linked actions</h2>
+        <p class="intro">Explicit links reported by the selected network.</p>
+        @if (loading()) { <p class="empty" role="status">Loading permissions and links…</p> }
+        @else if (!info()) { <p class="empty">Permissions are unavailable. Use Refresh to reconnect.</p> }
+        @else {
+          @if (!linksAvailable()) { <p class="notice">This node does not report all linked actions. You can still create or replace a link.</p> }
+          @if (links().length) {
+            <div class="table-scroll">
+              <table>
+                <caption class="sr-only">Existing action permission links for {{ account.name }}</caption>
+                <thead><tr><th scope="col">Contract / action</th><th scope="col">Permission</th><th scope="col"><span class="sr-only">Edit</span></th></tr></thead>
+                <tbody>
+                  @for (link of links(); track link.contract + ':' + link.action) {
+                    <tr>
+                      <td><code>{{ link.contract }}</code><span class="action-name">{{ link.action || 'All actions' }}</span></td>
+                      <td><code>{{ link.permission }}</code></td>
+                      <td>@if (link.action) { <button type="button" class="text-button" (click)="editLink(link)" [disabled]="busy()" [attr.aria-label]="'Change permission for ' + link.contract + ' ' + link.action">Change</button> }</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (linksAvailable()) { <p class="empty">No explicit action links yet. Use the form to add the first one.</p> }
+        }
+      </section>
+    </div>
+  }
+</section>
