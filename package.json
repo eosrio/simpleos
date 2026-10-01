@@ -56,7 +56,7 @@
     "@wharfkit/antelope": "1.1.1",
     "@wharfkit/signing-request": "3.4.0",
     "echarts": "6.1.0",
-    "pako": "2.1.0",
+    "pako": "3.0.2",
     "rxjs": "7.8.2",
     "tslib": "2.8.1"
   },
@@ -65,7 +65,6 @@
     "@angular/cli": "22.2.1",
     "@angular/compiler-cli": "22.2.1",
     "@tauri-apps/cli": "2.12.1",
-    "@types/pako": "2.0.4",
     "jsdom": "29.1.1",
     "prettier": "3.9.9",
     "typescript": "6.0.3",
