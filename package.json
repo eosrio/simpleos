@@ -54,7 +54,7 @@
     "@tauri-apps/plugin-store": "2.5.0",
     "@tauri-apps/plugin-updater": "2.13.1",
     "@wharfkit/antelope": "4.0.2",
-    "@wharfkit/signing-request": "3.4.0",
+    "@wharfkit/signing-request": "4.0.2",
     "echarts": "6.1.0",
     "pako": "3.0.2",
     "rxjs": "7.8.2",
