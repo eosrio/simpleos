@@ -9,7 +9,7 @@ authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
 repository = "https://github.com/eosrio/simpleos"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.85"
 
 [lib]
 name = "simpleos_lib"
@@ -61,7 +61,7 @@ ripemd = "0.1"
 aes-gcm = "0.10"
 aes = "0.8"
 cbc = { version = "0.1", features = ["alloc"] }
-pbkdf2 = { version = "0.12", features = ["simple"] }
+pbkdf2 = { version = "0.13", features = ["sha2"] }
 hmac = "0.12"
 zeroize = { version = "1", features = ["derive"] }
 rand = "0.8"

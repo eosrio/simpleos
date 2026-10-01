@@ -3,7 +3,7 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use pbkdf2::pbkdf2_hmac;
-use sha2::Sha256;
+use pbkdf2::sha2::Sha256;
 use zeroize::Zeroize;
 
 const PBKDF2_ITERATIONS: u32 = 600_000;
