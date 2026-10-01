@@ -41,10 +41,11 @@ pub fn encrypt_with_key(
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
     let nonce_bytes: [u8; NONCE_LEN] = crate::rng::secure_array();
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = Nonce::try_from(nonce_bytes.as_slice())
+        .map_err(|_| crate::error::Error::Encryption("invalid nonce length".into()))?;
 
     let ciphertext = cipher
-        .encrypt(nonce, plaintext)
+        .encrypt(&nonce, plaintext)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
     let mut result = Vec::with_capacity(NONCE_LEN + ciphertext.len());
@@ -78,9 +79,10 @@ pub fn decrypt_with_key(
     let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
-    let nonce = Nonce::from_slice(&data[..NONCE_LEN]);
+    let nonce = Nonce::try_from(&data[..NONCE_LEN])
+        .map_err(|_| crate::error::Error::Encryption("invalid nonce length".into()))?;
     let plaintext = cipher
-        .decrypt(nonce, &data[NONCE_LEN..])
+        .decrypt(&nonce, &data[NONCE_LEN..])
         .map_err(|_| crate::error::Error::InvalidPassphrase)?;
 
     Ok(plaintext)
