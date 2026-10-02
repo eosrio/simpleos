@@ -37,6 +37,7 @@ pub const E2E_TEST_ACCOUNTS: &[&str] = &[
 /// Check if the local e2e chain is reachable, skipping the test if not.
 /// Returns Some(chain_id) if the chain is up, None if tests should be skipped.
 pub async fn require_chain() -> Option<String> {
+    simpleos_lib::antelope::provider::install_tls_provider();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()

@@ -59,6 +59,7 @@ pub fn run() {
     // Fail closed before anything can generate a key: verify the OS CSPRNG is
     // producing distinct, non-trivial output on this platform.
     rng::self_test();
+    antelope::provider::install_tls_provider();
 
     let mut all_chains = antelope::chain_config::default_chains();
     all_chains.extend(antelope::chain_config::default_testnets());

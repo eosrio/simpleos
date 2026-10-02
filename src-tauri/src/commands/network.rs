@@ -1028,6 +1028,7 @@ pub async fn discover_endpoints(
 ) -> Result<Vec<DiscoveredEndpoint>, Error> {
     let pm = &mut providers.get(&chain_id).await?;
 
+    crate::antelope::provider::install_tls_provider();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)

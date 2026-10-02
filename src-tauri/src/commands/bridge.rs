@@ -97,6 +97,7 @@ pub async fn get_evm_bridge_state(
     counters: Vec<String>,
 ) -> Result<EvmBridgeState, Error> {
     let body = request_batch(&bridge_id, &counters)?;
+    crate::antelope::provider::install_tls_provider();
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(8))
         .redirect(reqwest::redirect::Policy::none())

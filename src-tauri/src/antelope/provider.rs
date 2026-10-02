@@ -167,8 +167,18 @@ fn candidates(pool: &EndpointPool) -> Vec<(usize, EndpointState)> {
     result
 }
 
+/// Install ring as the process-wide rustls provider.
+///
+/// reqwest 0.13's `rustls-no-provider` feature does not install one, and
+/// `Client` construction panics without it. ring is the provider the 0.12
+/// `rustls-tls` feature used. A second call is a no-op.
+pub fn install_tls_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
 impl ProviderManager {
     pub fn new(chain_id: &str) -> Self {
+        install_tls_provider();
         let client = reqwest::Client::builder()
             .timeout(REQUEST_TIMEOUT)
             .redirect(reqwest::redirect::Policy::none())

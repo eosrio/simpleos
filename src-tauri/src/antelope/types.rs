@@ -304,6 +304,7 @@ mod permission_link_tests {
     #[tokio::test]
     #[ignore = "Read-only WAX RPC acceptance check; requires network"]
     async fn live_wax_account_permissions_parse() {
+        crate::antelope::provider::install_tls_provider();
         let account: AccountInfo = reqwest::Client::new()
             .post("https://wax.eosrio.io/v1/chain/get_account")
             .timeout(std::time::Duration::from_secs(20))

@@ -173,6 +173,7 @@ async fn timeout_fails_over_and_selection_is_shared_between_requests() {
     let slow = Server::new(200, serde_json::json!({"slow":true}), 250);
     let backup = Server::new(200, serde_json::json!({"right":true}), 0);
     let mut pm = ProviderManager::new("test-chain");
+    super::install_tls_provider();
     pm.client = reqwest::Client::builder()
         .timeout(Duration::from_millis(50))
         .build()

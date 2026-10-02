@@ -50,7 +50,10 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # HTTP client (async, shares Tauri's tokio runtime)
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# `rustls` (the 0.13 rename of `rustls-tls`) selects aws-lc. `rustls-no-provider`
+# keeps ring, installed once in `install_tls_provider`.
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 tokio = { version = "1", features = ["sync", "time"] }
 
 # Crypto (RustCrypto suite - audited, pure Rust)

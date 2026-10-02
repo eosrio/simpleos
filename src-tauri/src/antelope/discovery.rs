@@ -161,6 +161,7 @@ where
     });
 
     // Phase 2: Crawl bp.json for all producers concurrently (batches of 10)
+    crate::antelope::provider::install_tls_provider();
     let bp_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(4))
         // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
