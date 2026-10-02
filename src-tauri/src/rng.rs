@@ -13,18 +13,53 @@
 //! an all-zero draw — the signature of a catastrophically broken RNG (chance
 //! 2^-8n for an n-byte buffer, i.e. never for real key sizes).
 
+use core::convert::Infallible;
+
+use k256::elliptic_curve::rand_core::{TryCryptoRng, TryRng};
 use rand::rngs::OsRng;
 use rand::RngCore;
 
 /// The cryptographically secure RNG used for all secret generation.
 ///
-/// [`OsRng`] implements `CryptoRng + RngCore`, satisfying k256's
-/// `CryptoRngCore` bound, so it can be handed straight to
-/// `SigningKey::random(&mut secure_rng())`.
+/// [`OsRng`] is the rand 0.8 type. k256 0.14 asks for rand_core 0.10, so key
+/// generation goes through [`k256_rng`], which only forwards `fill_bytes` to
+/// this same OS CSPRNG.
 #[inline]
 pub fn secure_rng() -> OsRng {
     OsRng
 }
+
+/// rand 0.8 [`OsRng`] adapted to the rand_core 0.10 traits k256 0.14 requires.
+///
+/// Entropy still comes only from [`secure_rng`]. The adapter does not draw
+/// from a second generator.
+pub struct K256Rng(OsRng);
+
+/// RNG handle for `SigningKey::generate_from_rng`.
+#[inline]
+pub fn k256_rng() -> K256Rng {
+    K256Rng(secure_rng())
+}
+
+impl TryRng for K256Rng {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        Ok(RngCore::next_u32(&mut self.0))
+    }
+
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(RngCore::next_u64(&mut self.0))
+    }
+
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
+        // OsRng panics if the OS RNG is unavailable (fail-closed).
+        RngCore::fill_bytes(&mut self.0, dst);
+        Ok(())
+    }
+}
+
+impl TryCryptoRng for K256Rng {}
 
 /// Fill `dest` with cryptographically secure bytes from the OS CSPRNG.
 ///

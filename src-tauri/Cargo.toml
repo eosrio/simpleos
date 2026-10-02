@@ -54,7 +54,10 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 tokio = { version = "1", features = ["sync", "time"] }
 
 # Crypto (RustCrypto suite - audited, pure Rust)
-k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa", "ecdh"] }
+k256 = { version = "0.14", features = ["ecdsa-core", "ecdsa", "ecdh"] }
+# k256 0.14 does not re-export ecdsa::hazmat. The grind calls it directly so
+# RFC 6979 additional data stays the attempt counter (deterministic, low-S).
+ecdsa = { version = "0.17", default-features = false, features = ["algorithm"] }
 sha2 = "0.10"
 hex = "0.4"
 ripemd = "0.1"

@@ -1,8 +1,6 @@
-use k256::ecdsa::hazmat::SignPrimitive;
 use k256::ecdsa::{Signature, SigningKey};
-use k256::elliptic_curve::generic_array::GenericArray;
-use k256::elliptic_curve::sec1::FromEncodedPoint;
-use k256::{NonZeroScalar, PublicKey, Scalar};
+use k256::elliptic_curve::Generate;
+use k256::PublicKey;
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
@@ -19,11 +17,11 @@ const CANONICAL_GRIND_MAX_ATTEMPTS: u32 = 100;
 pub fn generate_keypair() -> Result<(String, String), Error> {
     // Entropy comes straight from the OS CSPRNG via the audited crate::rng
     // helper; k256 rejection-samples a valid non-zero scalar internally.
-    let signing_key = SigningKey::random(&mut crate::rng::secure_rng());
+    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::k256_rng());
     let mut private_bytes = signing_key.to_bytes();
 
     let verifying_key = signing_key.verifying_key();
-    let compressed = verifying_key.to_encoded_point(true);
+    let compressed = verifying_key.to_sec1_point(true);
     let pub_bytes = compressed.as_bytes();
 
     let wif = wif_encode(&private_bytes);
@@ -39,14 +37,14 @@ pub fn generate_keypair() -> Result<(String, String), Error> {
 /// Generate a new secp256k1 keypair, returning raw bytes.
 /// Returns (32-byte private key, 33-byte compressed public key).
 pub fn generate_keypair_raw() -> Result<([u8; 32], Vec<u8>), Error> {
-    let signing_key = SigningKey::random(&mut crate::rng::secure_rng());
+    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::k256_rng());
     let mut sk_bytes = signing_key.to_bytes();
     let mut private_bytes = [0u8; 32];
     private_bytes.copy_from_slice(&sk_bytes);
     sk_bytes.as_mut_slice().zeroize();
 
     let verifying_key = signing_key.verifying_key();
-    let compressed = verifying_key.to_encoded_point(true);
+    let compressed = verifying_key.to_sec1_point(true);
     let pub_bytes = compressed.as_bytes().to_vec();
 
     Ok((private_bytes, pub_bytes))
@@ -62,15 +60,11 @@ pub fn ecdh_shared_secret(
         return Err(Error::Signing("Private key must be 32 bytes".into()));
     }
 
-    let secret_scalar = k256::SecretKey::from_bytes(GenericArray::from_slice(our_private))
+    let secret_scalar = k256::SecretKey::from_slice(our_private)
         .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
 
-    let their_point = k256::EncodedPoint::from_bytes(their_public_compressed)
-        .map_err(|e| Error::Signing(format!("Invalid public key encoding: {}", e)))?;
-
-    let their_pk = PublicKey::from_encoded_point(&their_point)
-        .into_option()
-        .ok_or_else(|| Error::Signing("Invalid public key point".into()))?;
+    let their_pk = PublicKey::from_sec1_bytes(their_public_compressed)
+        .map_err(|_| Error::Signing("Invalid public key point".into()))?;
 
     let shared = k256::ecdh::diffie_hellman(secret_scalar.to_nonzero_scalar(), their_pk.as_affine());
     let mut out = [0u8; 32];
@@ -125,36 +119,7 @@ pub fn sign_transaction(
     hasher.update(serialized_transaction);
     hasher.update(&[0u8; 32]);
     let digest = hasher.finalize();
-
-    // Parse private key as a non-zero scalar for low-level signing API.
-    if private_key_bytes.len() != 32 {
-        return Err(Error::Signing("Private key must be 32 bytes".into()));
-    }
-    let priv_array = GenericArray::from_slice(private_key_bytes);
-    let priv_scalar = NonZeroScalar::from_repr(*priv_array)
-        .into_option()
-        .ok_or_else(|| Error::Signing("Invalid private key scalar".into()))?;
-    let scalar: Scalar = *priv_scalar.as_ref();
-
-    // Grind until the signature is Antelope-canonical. RFC 6979 is deterministic
-    // per (priv_key, digest, additional_data), so we vary `ad` each iteration.
-    for attempt in 0u32..CANONICAL_GRIND_MAX_ATTEMPTS {
-        let ad = attempt.to_le_bytes();
-        let (signature, recovery_id) = scalar
-            .try_sign_prehashed_rfc6979::<Sha256>(&digest, &ad)
-            .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
-
-        let recid = recovery_id.ok_or_else(|| Error::Signing("No recovery id produced".into()))?;
-
-        if is_canonical(&signature) {
-            return encode_k1_signature(&signature, recid);
-        }
-    }
-
-    Err(Error::Signing(format!(
-        "Could not produce canonical signature after {} attempts",
-        CANONICAL_GRIND_MAX_ATTEMPTS
-    )))
+    sign_prehash_canonical(&digest, private_key_bytes)
 }
 
 /// Sign a pre-computed 32-byte digest directly (for ESR identity proofs, etc.).
@@ -162,30 +127,35 @@ pub fn sign_transaction(
 pub fn sign_digest(digest_hex: &str, private_key_bytes: &[u8]) -> Result<String, Error> {
     let digest_bytes =
         hex_decode(digest_hex).map_err(|e| Error::Signing(format!("Invalid digest hex: {}", e)))?;
-    if digest_bytes.len() != 32 {
+    sign_prehash_canonical(&digest_bytes, private_key_bytes)
+}
+
+/// Sign an already-hashed 32-byte digest.
+///
+/// `digest` is the Antelope signing digest (or an ESR identity digest). It is
+/// passed to RFC 6979 as `z` and is not hashed again. The `Sha256` type
+/// parameter is k256's sha2 0.11, used only as the HMAC inside the nonce
+/// generator. The attempt counter is the RFC 6979 additional data, so the
+/// grind stays deterministic.
+fn sign_prehash_canonical(digest: &[u8], private_key_bytes: &[u8]) -> Result<String, Error> {
+    if digest.len() != 32 {
         return Err(Error::Signing("Digest must be 32 bytes".into()));
     }
-    let digest = GenericArray::clone_from_slice(&digest_bytes);
-
     if private_key_bytes.len() != 32 {
         return Err(Error::Signing("Private key must be 32 bytes".into()));
     }
-    let priv_array = GenericArray::from_slice(private_key_bytes);
-    let priv_scalar = NonZeroScalar::from_repr(*priv_array)
-        .into_option()
-        .ok_or_else(|| Error::Signing("Invalid private key scalar".into()))?;
-    let scalar: Scalar = *priv_scalar.as_ref();
+    let signing_key = SigningKey::from_slice(private_key_bytes)
+        .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
 
     for attempt in 0u32..CANONICAL_GRIND_MAX_ATTEMPTS {
         let ad = attempt.to_le_bytes();
-        let (signature, recovery_id) = scalar
-            .try_sign_prehashed_rfc6979::<Sha256>(&digest, &ad)
-            .map_err(|e| Error::Signing(format!("Signing failed: {}", e)))?;
-
-        let recid = recovery_id.ok_or_else(|| Error::Signing("No recovery id produced".into()))?;
+        let (signature, recovery_id) = ecdsa::hazmat::sign_prehashed_rfc6979::<
+            k256::Secp256k1,
+            k256::sha2::Sha256,
+        >(signing_key.as_nonzero_scalar(), digest, &ad);
 
         if is_canonical(&signature) {
-            return encode_k1_signature(&signature, recid);
+            return encode_k1_signature(&signature, recovery_id);
         }
     }
 
@@ -220,11 +190,11 @@ pub fn public_key_from_wif(key: &str) -> Result<(Vec<u8>, String), Error> {
         bytes
     };
 
-    let signing_key = SigningKey::from_bytes((&private_key_bytes[..]).into())
+    let signing_key = SigningKey::from_slice(&private_key_bytes)
         .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
 
     let verifying_key = signing_key.verifying_key();
-    let compressed = verifying_key.to_encoded_point(true);
+    let compressed = verifying_key.to_sec1_point(true);
     let pub_bytes = compressed.as_bytes().to_vec();
 
     // Return PUB_K1_ format for modern keys, EOS format for legacy
@@ -669,9 +639,8 @@ mod tests {
         let (_, pub_key) = public_key_from_wif(wif).unwrap();
 
         // Re-derive manually
-        let signing_key =
-            SigningKey::from_bytes((&public_key_from_wif(wif).unwrap().0[..]).into()).unwrap();
-        let compressed = signing_key.verifying_key().to_encoded_point(true);
+        let signing_key = SigningKey::from_slice(&public_key_from_wif(wif).unwrap().0).unwrap();
+        let compressed = signing_key.verifying_key().to_sec1_point(true);
         let derived = encode_eos_public_key_from_bytes(compressed.as_bytes());
 
         assert_eq!(pub_key, derived);

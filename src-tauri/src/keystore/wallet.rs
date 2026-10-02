@@ -536,10 +536,10 @@ impl WalletService {
         let private_key_bytes = self.decrypt_key(chain_id, public_key)?;
 
         // Re-derive public key from the decrypted private key
-        let signing_key = k256::ecdsa::SigningKey::from_bytes((&private_key_bytes[..]).into())
+        let signing_key = k256::ecdsa::SigningKey::from_slice(&private_key_bytes)
             .map_err(|e| Error::Signing(format!("Invalid private key: {}", e)))?;
         let verifying_key = signing_key.verifying_key();
-        let compressed = verifying_key.to_encoded_point(true);
+        let compressed = verifying_key.to_sec1_point(true);
 
         // Check both formats
         let eos_pub = signing::encode_eos_public_key_from_bytes(compressed.as_bytes());
@@ -663,7 +663,7 @@ impl WalletService {
             } else {
                 let private = k256::ecdsa::SigningKey::from_slice(&secret)
                     .map_err(|_| Error::Encryption("Invalid private key in backup".into()))?;
-                if private.verifying_key().to_encoded_point(true).as_bytes()
+                if private.verifying_key().to_sec1_point(true).as_bytes()
                     != signing::decode_public_key_flexible(pub_key)?
                 {
                     return Err(Error::Encryption(
