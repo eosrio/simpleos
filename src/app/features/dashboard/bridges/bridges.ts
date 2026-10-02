@@ -1,6 +1,6 @@
 import { Component, computed, effect, OnDestroy, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { open } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { EvmBridgeService } from '../../../core/bridges/evm-bridge.service';
@@ -157,7 +157,7 @@ export class BridgesComponent implements OnDestroy {
   }
   async openOfficial() {
     const route = this.route(); if (!route) return;
-    try { await open(route.officialUrl); } catch (e) { this.error.set(`Could not open ${route.officialUrl} ${this.message(e)}`); }
+    try { await openUrl(route.officialUrl); } catch (e) { this.error.set(`Could not open ${route.officialUrl} ${this.message(e)}`); }
   }
   async copy(value: string) {
     try { await navigator.clipboard.writeText(value); this.notice.set('Copied to clipboard.'); }

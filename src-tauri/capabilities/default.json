@@ -7,7 +7,7 @@
   ],
   "permissions": [
     "core:default",
-    "shell:allow-open",
+    "opener:default",
     "window-state:default",
     "core:window:allow-start-dragging",
     "core:window:allow-start-resize-dragging",

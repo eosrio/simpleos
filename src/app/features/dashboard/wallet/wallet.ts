@@ -1,6 +1,6 @@
 import { Component, computed, effect, signal, untracked, OnDestroy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 

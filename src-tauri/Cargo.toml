@@ -9,7 +9,7 @@ authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
 repository = "https://github.com/eosrio/simpleos"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.95"
 
 [lib]
 name = "simpleos_lib"
@@ -30,17 +30,18 @@ ledger = ["dep:hidapi"]
 local-abieos = ["dep:rs_abieos"]
 
 [build-dependencies]
-tauri-build = { version = "2.7.1", features = [] }
+tauri-build = { version = "3.0.0-alpha.3", features = [] }
 
 [dependencies]
 # Framework
 # SEC-008: do NOT enable the "devtools" feature — it ships the WebView inspector
 # in release builds. Debug builds auto-enable devtools without the feature flag.
-tauri = { version = "2.12.1", features = ["unstable", "tray-icon", "image-png"] }
-tauri-plugin-log = "2"
-tauri-plugin-store = "2"
-tauri-plugin-shell = "2"
-tauri-plugin-window-state = "2"
+tauri = { version = "3.0.0-alpha.4", features = ["tray-icon", "image-png"] }
+tauri-runtime-wry = { version = "3.0.0-alpha.4", features = ["unstable"] }
+tauri-plugin-log = "3.0.0-alpha.2"
+tauri-plugin-store = "3.0.0-alpha.2"
+tauri-plugin-opener = "3.0.0-alpha.2"
+tauri-plugin-window-state = "3.0.0-alpha.2"
 
 # URL parsing (for dapp webview navigation)
 url = "2"
@@ -90,8 +91,8 @@ tempfile = "3.27"
 
 # Logging
 log = "0.4"
-tauri-plugin-deep-link = "2"
-tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+tauri-plugin-deep-link = "3.0.0-alpha.2"
+tauri-plugin-single-instance = { version = "3.0.0-alpha.2", features = ["deep-link"] }
 
 [dev-dependencies]
 # Async test runtime for integration tests that hit the local e2e chain
@@ -108,11 +109,11 @@ codegen-units = 1
 panic = "abort"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = "3.0.0-alpha.2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-process = "2.4.0"
-tauri-plugin-updater = "2.13.1"
+tauri-plugin-process = "3.0.0-alpha.2"
+tauri-plugin-updater = "3.0.0-alpha.2"
 
 [target.'cfg(windows)'.dependencies]
 windows-future = "0.3.2"

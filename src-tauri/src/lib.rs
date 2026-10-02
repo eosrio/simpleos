@@ -66,6 +66,7 @@ pub fn run() {
     let chain_ids: Vec<String> = all_chains.iter().map(|c| c.id.clone()).collect();
 
     tauri::Builder::default()
+        .runtime(tauri_runtime_wry::Wry::default())
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_deep_link::init())
         .manage(ProviderState::new())
@@ -73,7 +74,7 @@ pub fn run() {
         .manage(commands::sign_confirm::SignRegistry::new())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             // Intercept close on the main window so it hides to the tray
             // instead of exiting the app. The tray "Quit" menu item flips
