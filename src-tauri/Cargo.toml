@@ -9,7 +9,7 @@ authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
 repository = "https://github.com/eosrio/simpleos"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [lib]
 name = "simpleos_lib"
@@ -73,7 +73,7 @@ blst = "0.3"
 base64 = "0.22"
 
 # OS keychain
-keyring = "3"
+keyring = "4"
 
 # USB HID for Ledger (optional — gated behind "ledger" feature)
 hidapi = { version = "2", optional = true }
