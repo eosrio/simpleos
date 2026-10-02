@@ -112,8 +112,8 @@ tauri-plugin-process = "2.4.0"
 tauri-plugin-updater = "2.13.1"
 
 [target.'cfg(windows)'.dependencies]
-windows-future = "0.2.1"
-windows = { version = "0.61.3", features = [
+windows-future = "0.3.2"
+windows = { version = "0.62.2", features = [
   "Foundation",
   "Security_Credentials_UI",
   "Win32_Foundation",

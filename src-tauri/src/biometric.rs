@@ -118,7 +118,7 @@ mod platform {
         let _ = unsafe { RoInitialize(RO_INIT_MULTITHREADED) };
         let result = UserConsentVerifier::CheckAvailabilityAsync()
             .map_err(|e| Error::Keyring(format!("Windows Hello availability failed: {e}")))?
-            .get()
+            .join()
             .map_err(|e| Error::Keyring(format!("Windows Hello availability failed: {e}")))?;
 
         let message = match result {
@@ -172,7 +172,7 @@ mod platform {
         };
 
         match operation
-            .get()
+            .join()
             .map_err(|e| Error::Keyring(format!("Windows Hello verification failed: {e}")))?
         {
             UserConsentVerificationResult::Verified => Ok(()),
