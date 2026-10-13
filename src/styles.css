@@ -8,7 +8,8 @@
  * Default: dark theme, vaulta chain (SimplEOS brand blue)
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
+/* Inter and Space Grotesk are bundled from @fontsource (see angular.json "styles"),
+ * so the app makes no font requests at runtime. */
 
 /* ═══════════════════════════════════════════
    CONSTANTS (theme-independent)

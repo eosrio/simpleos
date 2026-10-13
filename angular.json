@@ -31,7 +31,16 @@
                 "output": "assets"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "node_modules/@fontsource/inter/400.css",
+              "node_modules/@fontsource/inter/500.css",
+              "node_modules/@fontsource/inter/600.css",
+              "node_modules/@fontsource/inter/700.css",
+              "node_modules/@fontsource/space-grotesk/400.css",
+              "node_modules/@fontsource/space-grotesk/500.css",
+              "node_modules/@fontsource/space-grotesk/600.css",
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "production": {
