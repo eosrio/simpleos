@@ -157,10 +157,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                     owner: Some("Greymass".into()),
                 },
                 Endpoint {
-                    url: "https://api.eossweden.org".into(),
-                    owner: Some("EOS Sweden".into()),
-                },
-                Endpoint {
                     url: "https://api.eosrio.io".into(),
                     owner: Some("EOS Rio".into()),
                 },
@@ -456,10 +452,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                     url: "https://fio.eosphere.io".into(),
                     owner: Some("EOSphere".into()),
                 },
-                Endpoint {
-                    url: "https://fio.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
-                },
             ],
             hyperion_apis: vec!["https://fio.eosphere.io".into()],
             explorers: vec![Explorer {
@@ -497,10 +489,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://libre.greymass.com".into(),
                     owner: Some("Greymass".into()),
-                },
-                Endpoint {
-                    url: "https://libre-api.edenia.cloud".into(),
-                    owner: Some("Edenia".into()),
                 },
                 Endpoint {
                     url: "https://libre.eosphere.io".into(),
@@ -648,10 +636,6 @@ pub fn default_testnets() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://testnet.waxsweden.org".into(),
                     owner: Some("WAX Sweden".into()),
-                },
-                Endpoint {
-                    url: "https://testnet.wax.pink.gg".into(),
-                    owner: Some("Pink.gg".into()),
                 },
                 Endpoint {
                     url: "https://wax-testnet.eosphere.io".into(),
