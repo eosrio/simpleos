@@ -66,10 +66,7 @@ sha2 = "0.10"
 hex = "0.4"
 ripemd = "0.1"
 aes-gcm = "0.11"
-aes = "0.8"
-cbc = { version = "0.1", features = ["alloc"] }
 pbkdf2 = { version = "0.13", features = ["sha2"] }
-hmac = "0.12"
 zeroize = { version = "1", features = ["derive"] }
 rand = "0.8"
 # BLS12-381 for Savannah finalizer keys
