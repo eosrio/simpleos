@@ -62,9 +62,9 @@ k256 = { version = "0.14", features = ["ecdsa-core", "ecdsa", "ecdh"] }
 # k256 0.14 does not re-export ecdsa::hazmat. The grind calls it directly so
 # RFC 6979 additional data stays the attempt counter (deterministic, low-S).
 ecdsa = { version = "0.17", default-features = false, features = ["algorithm"] }
-sha2 = "0.10"
+sha2 = "0.11"
 hex = "0.4"
-ripemd = "0.1"
+ripemd = "0.2"
 aes-gcm = "0.11"
 pbkdf2 = { version = "0.13", features = ["sha2"] }
 zeroize = { version = "1", features = ["derive"] }
