@@ -470,13 +470,14 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
 pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     let mut report = Vec::new();
 
-    // Report which backend is active
+    // The wallet always uses FileKeyStore; the probe only reports OS keyring health.
+    report.push("Backend: FileKeyStore".into());
     report.push(format!(
-        "Backend: {}",
+        "OS keyring probe: {}",
         if crate::probe_os_keyring() {
-            "OS Keyring"
+            "passed"
         } else {
-            "FileKeyStore (OS keyring probe failed)"
+            "failed"
         }
     ));
 

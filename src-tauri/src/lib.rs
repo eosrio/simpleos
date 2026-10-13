@@ -15,7 +15,7 @@ use tauri::{Manager, WindowEvent};
 use tauri_plugin_store::StoreExt;
 
 use antelope::provider::ProviderState;
-use keystore::store::{FileKeyStore, OsKeyStore};
+use keystore::store::FileKeyStore;
 use keystore::wallet::WalletService;
 use tray::TrayState;
 
@@ -109,17 +109,19 @@ pub fn run() {
                 app.handle().plugin(tauri_plugin_process::init())?;
             }
 
-            // Pick key store backend: OS keyring if it works, file-based fallback
+            // Key store backend: always the encrypted file store. Every shipped
+            // vault lives there: keyring 3 was built without a platform feature,
+            // so the old OS keyring probe only ever reached keyring's mock store
+            // and fell back. keyring 4 enables the real OS store by default, and
+            // choosing it here hides the existing file vault (unlock then fails as
+            // a wrong passphrase). OsKeyStore also lacks the atomic `store_batch`
+            // and `is_empty` the vault relies on. Moving to the OS keyring needs
+            // an explicit migration, not a startup probe.
             let app_data_dir = app.path().app_data_dir()
                 .expect("Failed to resolve app data directory");
-
-            let store: Box<dyn keystore::store::KeyStore> = if probe_os_keyring() {
-                log::info!("[wallet] OS keyring probe passed — using OsKeyStore");
-                Box::new(OsKeyStore)
-            } else {
-                log::warn!("[wallet] OS keyring probe FAILED — falling back to FileKeyStore at {:?}", app_data_dir);
-                Box::new(FileKeyStore::new(app_data_dir))
-            };
+            log::info!("[wallet] using FileKeyStore at {:?}", app_data_dir);
+            let store: Box<dyn keystore::store::KeyStore> =
+                Box::new(FileKeyStore::new(app_data_dir));
 
             let wallet = AppWallet(Arc::new(WalletService::new(store, chain_ids)));
 
