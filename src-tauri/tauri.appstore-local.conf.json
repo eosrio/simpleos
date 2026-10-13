@@ -24,7 +24,8 @@
             "core:window:allow-set-focus",
             "deep-link:default"
           ]
-        }
+        },
+        "sign-confirm"
       ]
     }
   },
