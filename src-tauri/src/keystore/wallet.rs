@@ -35,6 +35,8 @@ const VAULT_VERIFY_CHAIN: &str = "__vault__";
 const VAULT_VERIFY_KEY: &str = "__verify__";
 /// The known plaintext we encrypt to verify the passphrase on unlock.
 const VAULT_VERIFY_PLAINTEXT: &[u8] = b"simpleos-vault-ok";
+/// Wrong PINs allowed before the session PIN is dropped and the passphrase is required.
+const PIN_MAX_ATTEMPTS: u8 = 5;
 const LIBRE_MAINNET_CHAIN_ID: &str =
     "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465";
 const LEGACY_LIBRE_MAINNET_CHAIN_ID: &str =
@@ -59,6 +61,21 @@ pub struct WalletService {
     known_chains: Vec<String>,
     /// Current security mode.
     security_mode: Mutex<SecurityMode>,
+    /// Quick-unlock PIN for this run of the app only (see `set_pin`).
+    pin: Mutex<Option<SessionPin>>,
+}
+
+/// The master key, encrypted under a key derived from the PIN, held in memory so
+/// the wallet can be re-opened after a lock without the passphrase.
+struct SessionPin {
+    salt: [u8; 16],
+    /// nonce || AES-256-GCM ciphertext of the master key.
+    wrapped_master_key: Vec<u8>,
+    attempts_left: u8,
+}
+
+fn is_valid_pin(pin: &str) -> bool {
+    (4..=6).contains(&pin.len()) && pin.bytes().all(|b| b.is_ascii_digit())
 }
 
 /// Result of importing a key.
@@ -77,6 +94,7 @@ impl WalletService {
             store,
             known_chains,
             security_mode: Mutex::new(SecurityMode::SessionUnlock),
+            pin: Mutex::new(None),
         }
     }
 
@@ -189,6 +207,85 @@ impl WalletService {
         session.is_idle_expired()
     }
 
+    // ── Session PIN ──
+
+    /// Enable PIN unlock until the app quits.
+    ///
+    /// A 4-6 digit PIN cannot protect anything at rest: whoever holds a copy of
+    /// data encrypted under it can try every PIN offline in minutes. So the PIN
+    /// never reaches disk. The master key is kept in memory, encrypted under a key
+    /// derived from the PIN with a random salt, and the PIN re-opens the session
+    /// after an auto-lock or manual lock. It is dropped on quit, after
+    /// `PIN_MAX_ATTEMPTS` wrong PINs, on passphrase change and on reset, and it is
+    /// not offered in SignPerUse mode, which keeps no key material in memory.
+    pub fn set_pin(&self, passphrase: &str, pin: &str) -> Result<(), Error> {
+        if !is_valid_pin(pin) {
+            return Err(Error::Pin("PIN must be 4-6 digits".into()));
+        }
+        if self.security_mode() == SecurityMode::SignPerUse {
+            return Err(Error::Pin(
+                "PIN unlock is not available in sign-per-use mode".into(),
+            ));
+        }
+        self.unlock(passphrase)?;
+        let master_key = {
+            let mut session = self.session.lock().unwrap();
+            Zeroizing::new(session.master_key().ok_or(Error::WalletLocked)?.to_vec())
+        };
+        let salt: [u8; 16] = crate::rng::secure_array();
+        let pin_key = Zeroizing::new(derive::derive_key(pin.as_bytes(), &salt));
+        let wrapped_master_key = derive::encrypt_with_key(&master_key, &pin_key)?;
+        *self.pin.lock().unwrap() = Some(SessionPin {
+            salt,
+            wrapped_master_key,
+            attempts_left: PIN_MAX_ATTEMPTS,
+        });
+        Ok(())
+    }
+
+    /// Re-open the session with the PIN set by `set_pin`.
+    pub fn unlock_with_pin(&self, pin: &str) -> Result<(), Error> {
+        let _operation = self.operation.lock().unwrap();
+        let mut slot = self.pin.lock().unwrap();
+        let Some(entry) = slot.as_mut() else {
+            return Err(Error::Pin(
+                "No PIN is set for this session. Enter your passphrase.".into(),
+            ));
+        };
+        let pin_key = Zeroizing::new(derive::derive_key(pin.as_bytes(), &entry.salt));
+        let master_key = match derive::decrypt_with_key(&entry.wrapped_master_key, &pin_key) {
+            Ok(key) => Zeroizing::new(key),
+            Err(_) => {
+                entry.attempts_left -= 1;
+                let left = entry.attempts_left;
+                if left == 0 {
+                    *slot = None;
+                    return Err(Error::Pin(
+                        "Too many wrong PINs. Enter your passphrase.".into(),
+                    ));
+                }
+                return Err(Error::Pin(format!("Wrong PIN. {left} attempts left.")));
+            }
+        };
+        let storage_key = Zeroizing::new(Self::derive_storage_key(&master_key));
+        if let Err(e) = self.verify_vault(&storage_key) {
+            // The vault no longer matches this key (replaced or reset).
+            *slot = None;
+            return Err(e);
+        }
+        entry.attempts_left = PIN_MAX_ATTEMPTS;
+        self.session.lock().unwrap().unlock(master_key.to_vec());
+        Ok(())
+    }
+
+    pub fn has_pin(&self) -> bool {
+        self.pin.lock().unwrap().is_some()
+    }
+
+    pub fn clear_pin(&self) {
+        *self.pin.lock().unwrap() = None;
+    }
+
     // ── Security Mode ──
 
     pub fn security_mode(&self) -> SecurityMode {
@@ -199,8 +296,10 @@ impl WalletService {
         *self.security_mode.lock().unwrap() = mode;
         // If switching to SignPerUse, immediately wipe keys from memory
         if mode == SecurityMode::SignPerUse {
-            let mut session = self.session.lock().unwrap();
-            session.lock();
+            // Never hold the session lock while taking the PIN lock;
+            // unlock_with_pin takes them in the other order.
+            self.session.lock().unwrap().lock();
+            self.clear_pin();
         }
     }
 
@@ -497,7 +596,8 @@ impl WalletService {
         ));
         self.store.store_batch(&records)?;
 
-        // Update session
+        // Update session. The session PIN wraps the old master key.
+        self.clear_pin();
         let mut session = self.session.lock().unwrap();
         session.unlock(new_master.to_vec());
 
@@ -957,6 +1057,94 @@ mod tests {
 
         w.lock();
         assert!(w.is_locked());
+    }
+
+    fn read_tree(dir: &std::path::Path) -> std::collections::BTreeMap<std::path::PathBuf, Vec<u8>> {
+        let mut files = std::collections::BTreeMap::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                files.extend(read_tree(&path));
+            } else {
+                files.insert(path.clone(), std::fs::read(&path).unwrap());
+            }
+        }
+        files
+    }
+
+    #[test]
+    fn session_pin_reopens_a_locked_session_and_never_reaches_disk() {
+        use crate::keystore::store::FileKeyStore;
+        let dir = tempfile::tempdir().unwrap();
+        let w = WalletService::new(
+            Box::new(FileKeyStore::new(dir.path().into())),
+            vec![TEST_CHAIN.into()],
+        );
+        w.import_key(TEST_WIF, TEST_CHAIN, TEST_PASS).unwrap();
+        let before = read_tree(dir.path());
+        w.set_pin(TEST_PASS, "4821").unwrap();
+        assert_eq!(read_tree(dir.path()), before);
+
+        w.lock();
+        assert!(w.is_locked());
+        w.unlock_with_pin("4821").unwrap();
+        assert!(!w.is_locked());
+        assert!(w.verify_key_integrity(TEST_CHAIN, TEST_PUB).unwrap());
+        drop(w);
+
+        let restarted = WalletService::new(
+            Box::new(FileKeyStore::new(dir.path().into())),
+            vec![TEST_CHAIN.into()],
+        );
+        assert!(!restarted.has_pin());
+        assert!(restarted.unlock_with_pin("4821").is_err());
+        assert!(restarted.is_locked());
+    }
+
+    #[test]
+    fn wrong_pins_are_capped_then_the_session_pin_is_dropped() {
+        let w = make_wallet();
+        w.import_key(TEST_WIF, TEST_CHAIN, TEST_PASS).unwrap();
+        w.set_pin(TEST_PASS, "4821").unwrap();
+        w.lock();
+
+        // A correct PIN resets the count.
+        assert!(w.unlock_with_pin("0000").is_err());
+        w.unlock_with_pin("4821").unwrap();
+        w.lock();
+
+        for left in (1..PIN_MAX_ATTEMPTS).rev() {
+            let err = w.unlock_with_pin("0000").unwrap_err().to_string();
+            assert!(err.contains(&format!("{left} attempts left")), "{err}");
+        }
+        let err = w.unlock_with_pin("0000").unwrap_err().to_string();
+        assert!(err.contains("Too many wrong PINs"), "{err}");
+        assert!(!w.has_pin());
+        assert!(w.unlock_with_pin("4821").is_err());
+        assert!(w.is_locked());
+    }
+
+    #[test]
+    fn session_pin_is_refused_or_dropped_where_it_would_outlive_its_key() {
+        let w = make_wallet();
+        w.import_key(TEST_WIF, TEST_CHAIN, TEST_PASS).unwrap();
+        assert!(w.set_pin(TEST_PASS, "12a4").is_err());
+        assert!(w.set_pin(TEST_PASS, "123").is_err());
+        assert!(w.set_pin(TEST_PASS, "1234567").is_err());
+        assert!(matches!(
+            w.set_pin("wrong-passphrase", "1234"),
+            Err(Error::InvalidPassphrase)
+        ));
+        assert!(!w.has_pin());
+
+        w.set_pin(TEST_PASS, "1234").unwrap();
+        w.change_passphrase(TEST_PASS, "new-passphrase").unwrap();
+        assert!(!w.has_pin());
+
+        w.set_pin("new-passphrase", "1234").unwrap();
+        w.set_security_mode(SecurityMode::SignPerUse);
+        assert!(!w.has_pin());
+        assert!(w.set_pin("new-passphrase", "1234").is_err());
     }
 
     #[test]

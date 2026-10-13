@@ -160,9 +160,6 @@ pub fn change_passphrase(
         .0
         .change_passphrase(&old_passphrase, &new_passphrase)?;
     let _ = crate::biometric::remove_unlock_secret(&app);
-    if let Ok(app_dir) = app.path().app_data_dir() {
-        let _ = std::fs::remove_file(app_dir.join("pin.dat"));
-    }
     Ok(())
 }
 
@@ -255,106 +252,35 @@ pub fn get_finalizer_pop(
 }
 
 // ── PIN ──
+//
+// The PIN lasts only while the app runs and is never written to disk; see
+// WalletService::set_pin for why.
 
-/// Set a quick-unlock PIN. Encrypts the passphrase with a PIN-derived key.
-// async: derives two keys + encrypts — keep off the main thread.
+/// Enable PIN unlock for the rest of this session.
+// async: verifies the passphrase and derives the PIN key — keep off the main thread.
 #[tauri::command(async)]
-pub fn set_pin(
-    passphrase: String,
-    pin: String,
-    wallet: State<AppWallet>,
-    app: tauri::AppHandle,
-) -> Result<(), Error> {
-    use crate::keystore::derive;
-
-    // Verify passphrase works by trying to unlock
-    wallet.0.unlock(&passphrase)?;
-
-    let pin_salt = b"simpleos-pin-key";
-    let pin_key = derive::derive_key(pin.as_bytes(), pin_salt);
-    let encrypted = derive::encrypt(passphrase.as_bytes(), &pin_key, pin_salt)?;
-
-    // Store in app data dir
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    std::fs::create_dir_all(&app_dir).map_err(Error::Io)?;
-    let pin_path = app_dir.join("pin.dat");
-    std::fs::write(&pin_path, &encrypted).map_err(Error::Io)?;
-    // SEC-030: restrict pin.dat to owner read/write only.
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(&pin_path, std::fs::Permissions::from_mode(0o600));
-    }
-    // SEC-030 TODO(windows ACL): restrict pin.dat to the current user via an explicit DACL.
-    Ok(())
+pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>) -> Result<(), Error> {
+    wallet.0.set_pin(&passphrase, &pin)
 }
 
-/// Unlock wallet using PIN. Decrypts stored passphrase, then unlocks normally.
-// async: PIN key derivation + decrypt + passphrase-based vault unlock.
-// This is the slowest single command in the app — must run off the main thread
-// or the loader animation stays frozen until the command returns.
+/// Re-open a locked session with the session PIN.
+// async: PIN key derivation + vault verification — keep off the main thread.
 #[tauri::command(async)]
-pub fn unlock_with_pin(
-    pin: String,
-    app: tauri::AppHandle,
-    wallet: State<AppWallet>,
-) -> Result<bool, Error> {
-    use crate::keystore::derive;
-
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    let pin_path = app_dir.join("pin.dat");
-    if !pin_path.exists() {
-        return Err(Error::KeyNotFound("No PIN configured".into()));
-    }
-
-    let encrypted = std::fs::read(&pin_path).map_err(Error::Io)?;
-    let pin_salt = b"simpleos-pin-key";
-    let pin_key = derive::derive_key(pin.as_bytes(), pin_salt);
-    let passphrase_bytes =
-        derive::decrypt(&encrypted, &pin_key, pin_salt).map_err(|_| Error::InvalidPassphrase)?;
-
-    let passphrase =
-        String::from_utf8(passphrase_bytes).map_err(|e| Error::Serialization(e.to_string()))?;
-
-    wallet.0.unlock(&passphrase)?;
+pub fn unlock_with_pin(pin: String, wallet: State<AppWallet>) -> Result<bool, Error> {
+    wallet.0.unlock_with_pin(&pin)?;
     Ok(true)
 }
 
-/// Check if a PIN has been configured.
+/// Whether a session PIN is set.
 #[tauri::command]
-pub fn has_pin(app: tauri::AppHandle) -> Result<bool, Error> {
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    Ok(app_dir.join("pin.dat").exists())
+pub fn has_pin(wallet: State<AppWallet>) -> Result<bool, Error> {
+    Ok(wallet.0.has_pin())
 }
 
-/// Remove the PIN.
+/// Remove the session PIN.
 #[tauri::command]
-pub fn remove_pin(app: tauri::AppHandle) -> Result<(), Error> {
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    let pin_path = app_dir.join("pin.dat");
-    if pin_path.exists() {
-        std::fs::remove_file(&pin_path).map_err(Error::Io)?;
-    }
+pub fn remove_pin(wallet: State<AppWallet>) -> Result<(), Error> {
+    wallet.0.clear_pin();
     Ok(())
 }
 
@@ -429,8 +355,9 @@ pub fn import_backup(
 pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(), Error> {
     log::warn!("[wallet] RESET: wiping all wallet data");
 
-    // Lock the session
+    // Lock the session and drop the session PIN
     wallet.0.lock();
+    wallet.0.clear_pin();
 
     // Delete the vault marker
     if let Ok(app_dir) = app.path().app_data_dir() {
@@ -442,6 +369,10 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
         // Delete the tauri-plugin-store file
         let _ = std::fs::remove_file(app_dir.join("wallet-state.json"));
         let _ = std::fs::remove_file(app_dir.join("biometric.dat"));
+        // Passphrase copy from builds before the session PIN
+        let _ = std::fs::remove_file(app_dir.join("pin.dat"));
+        // A new wallet starts from the strict confirmation policy
+        let _ = std::fs::remove_file(app_dir.join("confirm_policy"));
     }
 
     // SEC-028: clear keys for every known chain (mainnets AND testnets), plus the

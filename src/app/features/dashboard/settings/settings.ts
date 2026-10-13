@@ -340,11 +340,19 @@ import { AppVersionService } from '../../../core/services/app-version.service';
             <div class="setting-item">
               <div>
                 <span class="setting-label">Quick Unlock PIN</span>
-                <span class="setting-desc">{{ hasPinConfigured() ? 'PIN is set — use it on the lockscreen' : 'Set a 4-6 digit PIN for faster unlocking' }}</span>
+                <span class="setting-desc">
+                  @if (wallet.securityMode() === 'SignPerUse') {
+                    Not available in sign-per-use mode, which keeps no keys in memory
+                  } @else if (hasPinConfigured()) {
+                    PIN is set until SimplEOS quits — use it on the lockscreen
+                  } @else {
+                    Unlock with a 4-6 digit PIN after auto-lock. Lasts until SimplEOS quits; your passphrase is needed after a restart
+                  }
+                </span>
               </div>
               @if (hasPinConfigured()) {
                 <button class="btn-danger btn-small" (click)="onRemovePin()">REMOVE</button>
-              } @else {
+              } @else if (wallet.securityMode() !== 'SignPerUse') {
                 <button class="btn-ghost btn-small" (click)="showPinSetup.set(true)">SET PIN</button>
               }
             </div>
@@ -1136,6 +1144,8 @@ export class SettingsComponent {
 
   async setMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
     await this.wallet.setSecurityMode(mode);
+    // Sign-per-use drops the session PIN.
+    await this.loadPinStatus();
   }
 
   private async loadConfirmationPolicy() {
@@ -1400,7 +1410,7 @@ export class SettingsComponent {
       this.pinSuccess.set('PIN set successfully');
       setTimeout(() => this.closePinSetup(), 1500);
     } catch (e: any) {
-      this.pinError.set(e?.toString()?.includes('InvalidPassphrase') ? 'Incorrect passphrase' : (e?.toString() ?? 'Failed to set PIN'));
+      this.pinError.set(e?.toString()?.includes('Invalid passphrase') ? 'Incorrect passphrase' : (e?.toString() ?? 'Failed to set PIN'));
     }
   }
 

@@ -119,6 +119,10 @@ pub fn run() {
             // an explicit migration, not a startup probe.
             let app_data_dir = app.path().app_data_dir()
                 .expect("Failed to resolve app data directory");
+            // Earlier builds kept the passphrase in pin.dat, encrypted under a key
+            // derived from the 4-6 digit PIN with a fixed salt, which anyone with a
+            // copy of the folder can search offline. The PIN is session-only now.
+            let _ = std::fs::remove_file(app_data_dir.join("pin.dat"));
             log::info!("[wallet] using FileKeyStore at {:?}", app_data_dir);
             let store: Box<dyn keystore::store::KeyStore> =
                 Box::new(FileKeyStore::new(app_data_dir));

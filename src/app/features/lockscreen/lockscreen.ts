@@ -447,8 +447,8 @@ export class LockscreenComponent {
   async onPinUnlock() {
     this.error.set('');
     this.loader.show('Unlocking wallet', 'Deriving key from PIN');
-    // Let the overlay paint before we hand off to the 70-round Rijndael
-    // key derivation — otherwise the user sees a frozen UI.
+    // Let the overlay paint before the PBKDF2 key derivation — otherwise the
+    // user sees a frozen UI.
     await this.loader.yieldToPaint();
     try {
       const success = await this.ipc.unlockWithPin(this.pin());
@@ -469,8 +469,12 @@ export class LockscreenComponent {
       } else {
         this.error.set('Invalid PIN');
       }
-    } catch {
-      this.error.set('Invalid PIN');
+    } catch (e: unknown) {
+      // The backend says how many tries are left, or that the PIN was dropped
+      // after too many; re-check so the passphrase form takes over.
+      this.error.set(typeof e === 'string' && e ? e : 'Invalid PIN');
+      this.pin.set('');
+      await this.checkPin();
     } finally {
       this.loader.hide();
     }
