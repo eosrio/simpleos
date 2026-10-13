@@ -68,7 +68,7 @@ ripemd = "0.2"
 aes-gcm = "0.11"
 pbkdf2 = { version = "0.13", features = ["sha2"] }
 zeroize = { version = "1", features = ["derive"] }
-rand = "0.8"
+rand = "0.10"
 # BLS12-381 for Savannah finalizer keys
 blst = "0.3"
 base64 = "0.23"

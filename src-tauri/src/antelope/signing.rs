@@ -17,7 +17,7 @@ const CANONICAL_GRIND_MAX_ATTEMPTS: u32 = 100;
 pub fn generate_keypair() -> Result<(String, String), Error> {
     // Entropy comes straight from the OS CSPRNG via the audited crate::rng
     // helper; k256 rejection-samples a valid non-zero scalar internally.
-    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::k256_rng());
+    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::secure_rng());
     let mut private_bytes = signing_key.to_bytes();
 
     let verifying_key = signing_key.verifying_key();
@@ -37,7 +37,7 @@ pub fn generate_keypair() -> Result<(String, String), Error> {
 /// Generate a new secp256k1 keypair, returning raw bytes.
 /// Returns (32-byte private key, 33-byte compressed public key).
 pub fn generate_keypair_raw() -> Result<([u8; 32], Vec<u8>), Error> {
-    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::k256_rng());
+    let signing_key = SigningKey::generate_from_rng(&mut crate::rng::secure_rng());
     let mut sk_bytes = signing_key.to_bytes();
     let mut private_bytes = [0u8; 32];
     private_bytes.copy_from_slice(&sk_bytes);
