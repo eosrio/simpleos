@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX package manifest for the Microsoft Store build. scripts/windows-msstore-package.js
+  fills in the Identity version and stages this file next to the binary; see
+  docs/windows-store.md.
+
+  Identity values come from Partner Center (SimplEOS Wallet > Product identity) and must
+  match it exactly, including case.
+
+  The vault lives in files under %APPDATA%\io.eosrio.simpleos. By default MSIX redirects
+  new files there to a private per-package folder that Windows deletes on uninstall,
+  which would take keys with it. Both app-data folders are therefore excluded from
+  write virtualization, so the Store build reads and writes the same files as the NSIS
+  build and they survive uninstall:
+    - Windows 11: virtualization:ExcludedDirectories (only these two folders).
+    - Windows 10 1903+: desktop6:FileSystemWriteVirtualization=disabled (all of AppData).
+  Windows uses the per-folder form where it understands it. Both need the
+  unvirtualizedResources restricted capability, justified at submission.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
+  IgnorableNamespaces="uap uap3 desktop6 rescap virtualization">
+
+  <Identity
+    Name="RioBlocks.SimplEOSWallet"
+    Publisher="CN=3EA41842-BD9E-4823-8F44-4A9B252BBB25"
+    Version="{{VERSION}}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>SimplEOS Wallet</DisplayName>
+    <PublisherDisplayName>Rio Blocks</PublisherDisplayName>
+    <Logo>assets\StoreLogo.png</Logo>
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+    <virtualization:FileSystemWriteVirtualization>
+      <virtualization:ExcludedDirectories>
+        <virtualization:ExcludedDirectory>$(KnownFolder:RoamingAppData)\io.eosrio.simpleos</virtualization:ExcludedDirectory>
+        <virtualization:ExcludedDirectory>$(KnownFolder:LocalAppData)\io.eosrio.simpleos</virtualization:ExcludedDirectory>
+      </virtualization:ExcludedDirectories>
+    </virtualization:FileSystemWriteVirtualization>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="SimplEOS" Executable="SimplEOS.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="SimplEOS Wallet"
+        Description="Antelope Desktop Wallet"
+        BackgroundColor="transparent"
+        Square150x150Logo="assets\Square150x150Logo.png"
+        Square44x44Logo="assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- ESR signing requests. The URI arrives as the first argument, as with the
+             registry entry the NSIS installer writes. -->
+        <uap3:Extension Category="windows.protocol">
+          <uap3:Protocol Name="esr" Parameters="&quot;%1&quot;">
+            <uap:DisplayName>EOSIO Signing Request</uap:DisplayName>
+          </uap3:Protocol>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+</Package>

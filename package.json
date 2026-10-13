@@ -13,6 +13,7 @@
     "tauri:build": "node scripts/package-desktop.js",
     "tauri:build:raw": "tauri build",
     "tauri:build:win": "node scripts/package-desktop.js",
+    "tauri:build:win:store": "node scripts/windows-msstore-package.js",
     "tauri:build:linux": "node scripts/package-desktop.js",
     "tauri:build:mac": "scripts/macos-package.sh",
     "tauri:build:mac:no-updater": "scripts/macos-package.sh --no-updater",

@@ -15,8 +15,9 @@ Nothing is installed without a valid signature — the public key is pinned in
 `src-tauri/tauri.conf.json > plugins > updater > pubkey`, and the private key never leaves
 the release machine.
 
-Mac App Store builds strip the updater plugin entirely (Apple ships those updates), so
-the Settings card and the indicator are hidden there.
+Mac App Store and Microsoft Store builds strip the updater plugin entirely (the store
+ships those updates), so the Settings card and the indicator are hidden there. See
+[windows-store.md](windows-store.md) for the Microsoft Store build.
 
 ## Where the manifest lives
 

@@ -49,6 +49,8 @@ There is **no JS lint script**. Prettier is the formatter (`bunx prettier --writ
 
 ### macOS App Store / Windows notes
 
+- Microsoft Store builds (`bun run tauri:build:win:store`) reuse the same `app-store` feature + `appstore` Angular config, add `src-tauri/tauri.msstore.conf.json`, and pack an MSIX with the Windows SDK's `makeappx` from `src-tauri/msstore/AppxManifest.xml` (Tauri can't bundle MSIX). The manifest excludes `%APPDATA%`/`%LOCALAPPDATA%\io.eosrio.simpleos` from MSIX write virtualization so the vault survives uninstall and stays shared with the NSIS build — don't remove that. The GitHub NSIS installer is unchanged. See `docs/windows-store.md`.
+- Store config overlays that set `app.security.capabilities` enable **only** the listed capabilities, so they must list `"sign-confirm"` or the trusted confirmation window can't approve signatures.
 - App Store builds use a separate path: `bun run tauri:build:mac:appstore` + the `appstore` Angular configuration (swaps `src/environments/environment.ts` → `environment.appstore.ts`) + the Cargo `app-store` feature (disables the self-updater/process plugin in favor of Apple's update mechanism). See `scripts/macos-*.sh`.
 - The package/launch scripts are fully **cross-platform**: `start`/`build`/`watch`/`test` and `tauri:dev` use cross-platform Javascript helpers (`scripts/with-supported-node.js` and `scripts/tauri-dev.js`) to set environment paths (such as macOS Homebrew Node 24), strip GTK variables under Linux, and spawn commands, allowing them to run directly on Windows, macOS, and Linux.
 
