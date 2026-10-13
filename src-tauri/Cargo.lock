@@ -4190,7 +4190,7 @@ name = "simpleos"
 version = "0.0.0"
 dependencies = [
  "aes-gcm",
- "base64 0.22.1",
+ "base64 0.23.1",
  "blst",
  "ecdsa",
  "hex",
