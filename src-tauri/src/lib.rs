@@ -123,6 +123,8 @@ pub fn run() {
             // derived from the 4-6 digit PIN with a fixed salt, which anyone with a
             // copy of the folder can search offline. The PIN is session-only now.
             let _ = std::fs::remove_file(app_data_dir.join("pin.dat"));
+            // Same for a biometric.dat from before the Windows Hello key binding.
+            biometric::discard_legacy_secret(&app_data_dir);
             log::info!("[wallet] using FileKeyStore at {:?}", app_data_dir);
             let store: Box<dyn keystore::store::KeyStore> =
                 Box::new(FileKeyStore::new(app_data_dir));

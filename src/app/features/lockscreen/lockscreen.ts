@@ -502,8 +502,12 @@ export class LockscreenComponent {
       } else {
         this.error.set('Windows Hello unlock failed');
       }
-    } catch (e: any) {
-      this.error.set(e?.toString()?.includes('canceled') ? 'Windows Hello was canceled' : 'Windows Hello unlock failed');
+    } catch (e: unknown) {
+      // The backend explains what happened, e.g. that the Hello key is gone after
+      // a Windows PIN reset. Re-check so the passphrase form takes over if the
+      // shortcut was removed.
+      this.error.set(typeof e === 'string' && e ? e : 'Windows Hello unlock failed');
+      await this.checkBiometric();
     } finally {
       this.loader.hide();
     }

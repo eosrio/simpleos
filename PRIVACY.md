@@ -28,8 +28,9 @@ SimplEOS keeps the following in its data folder on your computer:
   address book, security and display settings, dApp sessions (site, account and chain),
   bridge transfer history, and caches of prices, contract ABIs and network endpoints.
 - **Quick-unlock data, if you turn it on.** Windows Hello unlock stores your passphrase
-  protected by Windows (DPAPI) for your Windows user. The PIN is kept only in memory while
-  the app runs and is never written to disk.
+  encrypted under a key that only Windows Hello can produce, after you confirm with your
+  face, fingerprint or Windows PIN. The PIN is kept only in memory while the app runs and
+  is never written to disk.
 
 The data folder is `%APPDATA%\io.eosrio.simpleos` and `%LOCALAPPDATA%\io.eosrio.simpleos`
 on Windows. On macOS and Linux it is the standard application-data folder for

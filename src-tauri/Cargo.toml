@@ -116,8 +116,12 @@ tauri-plugin-updater = "3.0.0-alpha.2"
 windows-future = "0.3.2"
 windows = { version = "0.62.2", features = [
   "Foundation",
+  "Security_Credentials",
   "Security_Credentials_UI",
+  "Security_Cryptography",
+  "Security_Cryptography_Core",
+  "Storage_Streams",
   "Win32_Foundation",
-  "Win32_Security_Cryptography",
   "Win32_System_WinRT",
+  "Win32_UI_WindowsAndMessaging",
 ] }

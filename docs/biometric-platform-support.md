@@ -7,13 +7,13 @@ The current implementation exposes a platform-neutral Rust facade in `src-tauri/
 ## Security Model
 
 - The wallet passphrase remains the primary encryption secret.
-- Biometric unlock stores a passphrase shortcut protected by the local operating system.
+- Biometric unlock stores a passphrase shortcut that only the OS biometric/device authentication can decrypt. A prompt that merely gates access to an otherwise readable secret is not enough: the platform's authentication must be what produces the decryption key.
 - Enabling biometric unlock requires the current wallet passphrase and a successful OS biometric/user-verification prompt.
-- Unlocking with biometrics retrieves the stored passphrase shortcut and then calls the normal wallet unlock path.
+- Unlocking with biometrics recovers the passphrase shortcut and then calls the normal wallet unlock path.
 - Changing the wallet passphrase clears quick-unlock secrets, including PIN and biometric unlock.
 - Resetting the wallet removes the stored biometric shortcut.
 
-This is equivalent to a desktop password-manager biometric unlock model. It improves local usability, but it is not a second cryptographic factor and does not protect against malware already running as the same OS user.
+This is the desktop password-manager biometric unlock model (Bitwarden and KeePassXC use the same Windows scheme). A program running as the same OS user cannot read the shortcut silently; it would have to trigger a Windows Hello prompt and get the user to approve it. It is not a second factor: the passphrase alone still unlocks the wallet.
 
 ## Stable API
 
@@ -39,17 +39,21 @@ Frontend code should only depend on this generic status, not on platform details
 
 ## Current Windows Backend
 
-Windows support uses:
+Windows support uses a Windows Hello key (`KeyCredentialManager`, key name `io.eosrio.simpleos.unlock`):
 
-- Windows Hello user verification through `UserConsentVerifier`.
-- `IUserConsentVerifierInterop::RequestVerificationForWindowAsync` when a Tauri HWND is available, so the prompt is parented to the app window.
-- DPAPI `CryptProtectData` / `CryptUnprotectData` for user-bound local secret storage.
-- `biometric.dat` in the Tauri app data directory for the protected passphrase shortcut.
+- **Enable:** create the key (or open it if it exists), sign a fresh random 32-byte challenge with `RequestSignAsync` (Windows Hello prompt), and encrypt the passphrase with AES-256-GCM under `SHA-256(domain tag || signature)`. `biometric.dat` stores only the challenge and the ciphertext.
+- **Unlock:** sign the stored challenge again (Windows Hello prompt) to rebuild the key and decrypt.
+- **Determinism check:** the scheme needs the same signature every time. Microsoft's docs disagree on whether the padding is PKCS#1 v1.5 or PSS, so enrollment verifies the signature as RSA PKCS#1 v1.5 / SHA-256 against the key's public half and refuses to enable otherwise. PKCS#1 v1.5 signatures are unique per key and message.
+- **Lost key:** a Windows PIN reset deletes Windows Hello app keys. Unlock then reports that the key is gone, removes `biometric.dat`, and the user re-enables it after unlocking with the passphrase.
+- **Prompt focus:** `windows` 0.62 has no way to parent the Hello dialog to the app window (the `…ForWindowAsync` APIs arrived in a later SDK), and the request fails if the dialog opens behind the app, so a watcher brings the "Credential Dialog Xaml Host" window to the foreground.
+- **Both editions:** Hello keys belong to the Windows user, so the GitHub (NSIS) and Microsoft Store builds share the key, as they share `biometric.dat`.
+- **Legacy files:** builds before this design stored a DPAPI-protected passphrase behind a UI-only `UserConsentVerifier` prompt. Any program running as the user could decrypt it, so startup deletes any `biometric.dat` that is not in the current format.
 
 Implementation notes:
 
-- The `windows` crate is pinned to `0.61.3` because the app currently targets Rust `1.77.2`; newer `windows` versions require newer Rust.
+- WinRT operations are joined on worker threads (the biometric commands are async); never on the UI thread.
 - Windows-specific dependencies are under `target.'cfg(windows)'.dependencies`.
+- The file format lives in `biometric::sealed`, which builds on every platform so it is unit-tested everywhere.
 - Non-Windows builds currently return `available = false` from the same facade.
 
 ## macOS Plan

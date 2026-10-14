@@ -286,7 +286,8 @@ pub fn remove_pin(wallet: State<AppWallet>) -> Result<(), Error> {
 
 // ── Biometric Unlock ──
 
-#[tauri::command]
+// async: the status check waits on WinRT operations, which must stay off the UI thread.
+#[tauri::command(async)]
 pub fn biometric_status(app: tauri::AppHandle) -> Result<crate::biometric::BiometricStatus, Error> {
     crate::biometric::status(&app)
 }
@@ -298,11 +299,7 @@ pub fn set_biometric_unlock(
     app: tauri::AppHandle,
 ) -> Result<(), Error> {
     wallet.0.unlock(&passphrase)?;
-    crate::biometric::set_unlock_secret(
-        &app,
-        &passphrase,
-        "Use Windows Hello to enable biometric unlock for SimplEOS",
-    )
+    crate::biometric::set_unlock_secret(&app, &passphrase)
 }
 
 #[tauri::command(async)]
@@ -310,8 +307,7 @@ pub fn unlock_with_biometric(
     app: tauri::AppHandle,
     wallet: State<AppWallet>,
 ) -> Result<bool, Error> {
-    let passphrase =
-        crate::biometric::unlock_secret(&app, "Use Windows Hello to unlock your SimplEOS wallet")?;
+    let passphrase = zeroize::Zeroizing::new(crate::biometric::unlock_secret(&app)?);
     wallet.0.unlock(&passphrase)?;
     Ok(true)
 }
@@ -355,9 +351,10 @@ pub fn import_backup(
 pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(), Error> {
     log::warn!("[wallet] RESET: wiping all wallet data");
 
-    // Lock the session and drop the session PIN
+    // Lock the session and drop both quick-unlock shortcuts
     wallet.0.lock();
     wallet.0.clear_pin();
+    let _ = crate::biometric::remove_unlock_secret(&app);
 
     // Delete the vault marker
     if let Ok(app_dir) = app.path().app_data_dir() {
@@ -368,7 +365,6 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
         let _ = std::fs::remove_dir_all(app_dir.join("keys"));
         // Delete the tauri-plugin-store file
         let _ = std::fs::remove_file(app_dir.join("wallet-state.json"));
-        let _ = std::fs::remove_file(app_dir.join("biometric.dat"));
         // Passphrase copy from builds before the session PIN
         let _ = std::fs::remove_file(app_dir.join("pin.dat"));
         // A new wallet starts from the strict confirmation policy
