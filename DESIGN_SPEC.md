@@ -83,7 +83,7 @@ This means buttons, active nav indicators, focused inputs, and links all shift s
 | Data/Mono     | Space Grotesk       | 'SF Mono', monospace                  |
 
 **Why Inter**: Clean, legible at all sizes, excellent number rendering, widely cached in browsers.
-**Why Space Grotesk for data**: Geometric, monospaced-feeling but proportional. Account names like `igorls.gm`, public keys, and token amounts read better in it. It has a technical, crypto-native quality without being cold.
+**Why Space Grotesk for data**: Geometric, monospaced-feeling but proportional. Account names like `alice.gm`, public keys, and token amounts read better in it. It has a technical, crypto-native quality without being cold.
 
 ### 3.2 Type Scale
 
@@ -171,7 +171,7 @@ STRUCTURE:
 │  SimplEOS               │  Brand wordmark, Inter 600, 18px
 │                         │
 │  ┌─────────────────────┐│
-│  │ igorls.gm        ▾ ││  Account name (Space Grotesk, 14px, 500)
+│  │ alice.gm         ▾ ││  Account name (Space Grotesk, 14px, 500)
 │  │ 12,847.3291 EOS    ││  Balance (Space Grotesk, 13px, --text-muted)
 │  └─────────────────────┘│
 │                         │

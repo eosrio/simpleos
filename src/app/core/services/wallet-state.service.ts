@@ -1025,12 +1025,12 @@ const MOCK_CHAINS: ChainConfig[] = [
 
 const MOCK_ACCOUNTS: WalletAccount[] = [
   {
-    name: 'igorls.gm',
+    name: 'alice.gm',
     chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
     chainName: 'Vaulta',
     mode: 'full',
     info: {
-      account_name: 'igorls.gm',
+      account_name: 'alice.gm',
       core_liquid_balance: '12,847.3291 A',
       ram_quota: 177000,
       ram_usage: 127400,
@@ -1043,12 +1043,12 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'igor.wax',
+    name: 'alicewallet1',
     chainId: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4',
     chainName: 'WAX',
     mode: 'full',
     info: {
-      account_name: 'igor.wax',
+      account_name: 'alicewallet1',
       core_liquid_balance: '3,250.00000000 WAX',
       ram_quota: 65000,
       ram_usage: 42300,
@@ -1060,12 +1060,12 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'igorls.tlos',
+    name: 'alice.tlos',
     chainId: '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11',
     chainName: 'Telos',
     mode: 'full',
     info: {
-      account_name: 'igorls.tlos',
+      account_name: 'alice.tlos',
       core_liquid_balance: '890.4200 TLOS',
       ram_quota: 32000,
       ram_usage: 8900,
@@ -1077,12 +1077,12 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'igorls.ultra',
+    name: 'alice.ultra',
     chainId: 'ultra-chain-id',
     chainName: 'Ultra',
     mode: 'full',
     info: {
-      account_name: 'igorls.ultra',
+      account_name: 'alice.ultra',
       core_liquid_balance: '156.0000 UOS',
       ram_quota: 48000,
       ram_usage: 12000,
@@ -1094,12 +1094,12 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'igor@fio',
+    name: 'alice@fio',
     chainId: 'fio-chain-id',
     chainName: 'FIO',
     mode: 'full',
     info: {
-      account_name: 'igor@fio',
+      account_name: 'alice@fio',
       core_liquid_balance: '2,100.000000000 FIO',
       ram_quota: 100000,
       ram_usage: 34000,
@@ -1109,7 +1109,7 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'eosriobrazil',
+    name: 'bob.gm',
     chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
     chainName: 'Vaulta',
     mode: 'full',
@@ -1117,7 +1117,7 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     producerRank: 14,
     producerUrl: 'https://eosrio.io',
     info: {
-      account_name: 'eosriobrazil',
+      account_name: 'bob.gm',
       core_liquid_balance: '45,891.2030 A',
       ram_quota: 524000,
       ram_usage: 389000,
@@ -1131,12 +1131,12 @@ const MOCK_ACCOUNTS: WalletAccount[] = [
     },
   },
   {
-    name: 'b1',
+    name: 'carol.gm',
     chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
     chainName: 'Vaulta',
     mode: 'watch',
     info: {
-      account_name: 'b1',
+      account_name: 'carol.gm',
       core_liquid_balance: '0.0000 A',
       ram_quota: 14822140,
       ram_usage: 6878028,
