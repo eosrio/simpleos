@@ -38,6 +38,13 @@ pub enum Error {
     #[error("Ledger error: {0}")]
     Ledger(String),
 
+    #[error("Signing request was rejected")]
+    SignRejected,
+
+    /// Session PIN problems, worded for display on the lockscreen and in settings.
+    #[error("{0}")]
+    Pin(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }

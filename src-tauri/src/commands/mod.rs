@@ -1,10 +1,11 @@
 pub mod anchor;
+pub mod bridge;
 pub mod chain;
 pub mod config;
 pub mod dapp;
 #[cfg(feature = "ledger")]
 pub mod ledger;
 pub mod network;
-pub mod session;
+pub mod sign_confirm;
 pub mod tray;
 pub mod wallet;

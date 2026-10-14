@@ -37,6 +37,7 @@ pub const E2E_TEST_ACCOUNTS: &[&str] = &[
 /// Check if the local e2e chain is reachable, skipping the test if not.
 /// Returns Some(chain_id) if the chain is up, None if tests should be skipped.
 pub async fn require_chain() -> Option<String> {
+    simpleos_lib::antelope::provider::install_tls_provider();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()
@@ -74,6 +75,8 @@ macro_rules! require_chain_or_skip {
         match crate::common::require_chain().await {
             Some(id) => id,
             None => {
+                assert!(std::env::var_os("CI").is_none() && std::env::var_os("SIMPLEOS_REQUIRE_E2E").is_none(),
+                    "Required e2e chain is unavailable; integration tests did not run");
                 eprintln!(
                     "\n  SKIPPED: e2e chain not reachable at {}.\n           Run: bun run e2e:run\n",
                     crate::common::E2E_RPC_URL

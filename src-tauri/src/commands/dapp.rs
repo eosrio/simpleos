@@ -6,6 +6,41 @@ fn get_dapp_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
     app.get_webview_window(DAPP_LABEL)
 }
 
+/// SEC-045: validate a page-derived request id against the only shape the bridge
+/// ever generates (`req_<counter>_<timestamp>`). Reject anything else so a
+/// hostile page cannot smuggle a crafted id into the resolve/reject path.
+fn is_valid_request_id(id: &str) -> bool {
+    let rest = match id.strip_prefix("req_") {
+        Some(r) => r,
+        None => return false,
+    };
+    match rest.split_once('_') {
+        Some((counter, timestamp)) => {
+            !counter.is_empty()
+                && !timestamp.is_empty()
+                && counter.bytes().all(|b| b.is_ascii_digit())
+                && timestamp.bytes().all(|b| b.is_ascii_digit())
+        }
+        None => false,
+    }
+}
+
+/// SEC-048: validate a dapp URL scheme before loading/navigating, mirroring the
+/// `on_navigation` allowlist (https everywhere; http only for localhost).
+fn validate_dapp_url(parsed: &url::Url) -> Result<(), String> {
+    let scheme = parsed.scheme();
+    if scheme != "https" && scheme != "http" {
+        return Err(format!("Blocked URL with non-HTTP scheme: {}", scheme));
+    }
+    if scheme == "http" {
+        let host = parsed.host_str().unwrap_or("");
+        if host != "localhost" && host != "127.0.0.1" {
+            return Err(format!("Blocked insecure HTTP URL to: {}", host));
+        }
+    }
+    Ok(())
+}
+
 /// Open a DApp in a separate managed WebviewWindow.
 ///
 /// This avoids the z-order and coordinate issues of child webviews on Linux/X11.
@@ -18,6 +53,11 @@ pub async fn open_dapp_browser(app: AppHandle, url: String, title: String) -> Re
     }
 
     let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
+
+    // SEC-048: validate the initial URL scheme up front — `on_navigation` only
+    // fires for subsequent navigations, so the first External load would
+    // otherwise accept file://, data:, etc.
+    validate_dapp_url(&parsed)?;
 
     let nav_handle = app.clone();
 
@@ -91,6 +131,8 @@ pub async fn close_dapp_browser(app: AppHandle) -> Result<(), String> {
 pub async fn navigate_dapp(app: AppHandle, url: String) -> Result<(), String> {
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
     let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
+    // SEC-048: validate the scheme before navigating, mirroring `on_navigation`.
+    validate_dapp_url(&parsed)?;
     win.navigate(parsed).map_err(|e| e.to_string())
 }
 
@@ -125,11 +167,18 @@ pub async fn dapp_resolve_signing(
     request_id: String,
     result: serde_json::Value,
 ) -> Result<(), String> {
+    // SEC-045: reject any request id that does not match the bridge-generated shape.
+    if !is_valid_request_id(&request_id) {
+        return Err("Invalid request_id".to_string());
+    }
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
+    // SEC-045: JSON-encode the page-derived id (instead of string-interpolating an
+    // unescaped value) so no breakout character can survive into the eval'd snippet.
+    let id_json = serde_json::to_string(&request_id).map_err(|e| e.to_string())?;
     let json = serde_json::to_string(&result).map_err(|e| e.to_string())?;
     let script = format!(
-        "window.__simpleos_bridge && window.__simpleos_bridge._resolveRequest('{}', {})",
-        request_id, json
+        "window.__simpleos_bridge && window.__simpleos_bridge._resolveRequest({}, {})",
+        id_json, json
     );
     win.eval(&script).map_err(|e: tauri::Error| e.to_string())
 }
@@ -141,11 +190,18 @@ pub async fn dapp_reject_signing(
     request_id: String,
     reason: String,
 ) -> Result<(), String> {
+    // SEC-045: reject any request id that does not match the bridge-generated shape.
+    if !is_valid_request_id(&request_id) {
+        return Err("Invalid request_id".to_string());
+    }
     let win = get_dapp_window(&app).ok_or("DApp browser not open")?;
+    // SEC-045: JSON-encode both the page-derived id and the reason (instead of the
+    // previous weak single-quote-only escaping) so no breakout char survives.
+    let id_json = serde_json::to_string(&request_id).map_err(|e| e.to_string())?;
+    let reason_json = serde_json::to_string(&reason).map_err(|e| e.to_string())?;
     let script = format!(
-        "window.__simpleos_bridge && window.__simpleos_bridge._rejectRequest('{}', '{}')",
-        request_id,
-        reason.replace('\'', "\\'")
+        "window.__simpleos_bridge && window.__simpleos_bridge._rejectRequest({}, {})",
+        id_json, reason_json
     );
     win.eval(&script).map_err(|e: tauri::Error| e.to_string())
 }

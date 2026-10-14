@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { WalletStateService } from '../../core/services/wallet-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
 import { LoaderService } from '../../core/services/loader.service';
+import { AppVersionService } from '../../core/services/app-version.service';
 import { WindowControlsComponent } from '../../shared/window-controls';
 
 @Component({
@@ -12,12 +13,14 @@ import { WindowControlsComponent } from '../../shared/window-controls';
   imports: [FormsModule, WindowControlsComponent],
   template: `
     <div class="lockscreen">
-      <div class="lock-titlebar" data-tauri-drag-region>
-        <div class="lock-titlebar-brand" data-tauri-drag-region>
-          <img src="assets/simpleos-logo.svg" alt="" class="lock-titlebar-logo" data-tauri-drag-region />
-          <span class="lock-titlebar-name" data-tauri-drag-region>Simpl<span class="lock-titlebar-accent">EOS</span></span>
+      <!-- "deep": the whole strip drags, including the brand text and any gaps.
+           Interactive children (the window controls) still block dragging. -->
+      <div class="lock-titlebar" data-tauri-drag-region="deep">
+        <div class="lock-titlebar-brand">
+          <img src="assets/simpleos-logo.svg" alt="" class="lock-titlebar-logo" />
+          <span class="lock-titlebar-name">Simpl<span class="lock-titlebar-accent">EOS</span></span>
         </div>
-        <div class="lock-titlebar-fill" data-tauri-drag-region></div>
+        <div class="lock-titlebar-fill"></div>
         <app-window-controls />
       </div>
       <div class="lockscreen-inner">
@@ -105,7 +108,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
           <a class="reset-link" (click)="showResetConfirm.set(true)">Reset wallet</a>
         }
 
-        <span class="version">v2.0.0-alpha</span>
+        <span class="version">{{ appVersion.display() }}</span>
       </div>
     </div>
   `,
@@ -132,7 +135,6 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       display: flex;
       align-items: center;
       z-index: 10;
-      -webkit-app-region: drag;
     }
     .lock-titlebar-brand {
       display: flex;
@@ -144,7 +146,6 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       color: var(--text-muted);
       user-select: none;
       -webkit-user-select: none;
-      -webkit-app-region: drag;
     }
     .lock-titlebar-logo {
       width: 18px;
@@ -157,7 +158,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
       letter-spacing: 0.2px;
       color: var(--text-muted);
     }
-    .lock-titlebar-accent { color: var(--accent); }
+    .lock-titlebar-accent { color: var(--accent-text); }
     .lock-titlebar-fill {
       flex: 1 1 auto;
       min-width: 0;
@@ -220,7 +221,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
     }
 
     .brand-accent {
-      color: var(--accent);
+      color: var(--accent-text);
     }
 
     .subtitle {
@@ -294,7 +295,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .import-link {
       font-size: 13px;
-      color: var(--accent);
+      color: var(--accent-text);
       cursor: pointer;
       transition: color 150ms ease;
       text-decoration: none;
@@ -306,7 +307,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .reset-link {
       font-size: 12px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       cursor: pointer;
       transition: color 150ms ease;
       text-decoration: none;
@@ -352,7 +353,7 @@ import { WindowControlsComponent } from '../../shared/window-controls';
 
     .version {
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       margin-top: var(--sp-6);
     }
 
@@ -396,6 +397,7 @@ export class LockscreenComponent {
   showPassphrase = signal(false);
 
   constructor(
+    public appVersion: AppVersionService,
     private wallet: WalletStateService,
     private router: Router,
     private ipc: TauriIpcService,
@@ -445,8 +447,8 @@ export class LockscreenComponent {
   async onPinUnlock() {
     this.error.set('');
     this.loader.show('Unlocking wallet', 'Deriving key from PIN');
-    // Let the overlay paint before we hand off to the 70-round Rijndael
-    // key derivation — otherwise the user sees a frozen UI.
+    // Let the overlay paint before the PBKDF2 key derivation — otherwise the
+    // user sees a frozen UI.
     await this.loader.yieldToPaint();
     try {
       const success = await this.ipc.unlockWithPin(this.pin());
@@ -467,8 +469,12 @@ export class LockscreenComponent {
       } else {
         this.error.set('Invalid PIN');
       }
-    } catch {
-      this.error.set('Invalid PIN');
+    } catch (e: unknown) {
+      // The backend says how many tries are left, or that the PIN was dropped
+      // after too many; re-check so the passphrase form takes over.
+      this.error.set(typeof e === 'string' && e ? e : 'Invalid PIN');
+      this.pin.set('');
+      await this.checkPin();
     } finally {
       this.loader.hide();
     }
@@ -496,8 +502,12 @@ export class LockscreenComponent {
       } else {
         this.error.set('Windows Hello unlock failed');
       }
-    } catch (e: any) {
-      this.error.set(e?.toString()?.includes('canceled') ? 'Windows Hello was canceled' : 'Windows Hello unlock failed');
+    } catch (e: unknown) {
+      // The backend explains what happened, e.g. that the Hello key is gone after
+      // a Windows PIN reset. Re-check so the passphrase form takes over if the
+      // shortcut was removed.
+      this.error.set(typeof e === 'string' && e ? e : 'Windows Hello unlock failed');
+      await this.checkBiometric();
     } finally {
       this.loader.hide();
     }

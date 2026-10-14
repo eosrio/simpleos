@@ -1,12 +1,15 @@
 [package]
 name = "simpleos"
-version = "2.0.0-alpha.0"
+# Crate version only — NOT the app version. The shipped version comes from
+# package.json via `tauri.conf.json > version`, which is the single source of
+# truth (bundle metadata, updater, and the `getVersion()` the UI displays).
+version = "0.0.0"
 description = "SimplEOS - Antelope Desktop Wallet"
 authors = ["Igor Lins e Silva", "EOS Rio"]
 license = "MIT"
 repository = "https://github.com/eosrio/simpleos"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.95"
 
 [lib]
 name = "simpleos_lib"
@@ -21,20 +24,24 @@ app-store = []
 # Disable with `cargo test --no-default-features` to run backend tests
 # on systems without libudev headers.
 ledger = ["dep:hidapi"]
-# Local ABI JSON serialization via eosrio/rs-abieos. The dependency is target-
-# gated below because rs-abieos supports Unix-like C++ toolchains and Windows GNU.
+# Local ABI JSON serialization via eosrio/rs-abieos using its pure-Rust backend
+# on all targets (no C++ toolchain, libclang, or bindgen required), matching the
+# pure-Rust posture of the crypto stack.
 local-abieos = ["dep:rs_abieos"]
 
 [build-dependencies]
-tauri-build = { version = "2.6.2", features = [] }
+tauri-build = { version = "3.0.0-alpha.3", features = [] }
 
 [dependencies]
 # Framework
-tauri = { version = "2.11.2", features = ["devtools", "unstable", "tray-icon", "image-png"] }
-tauri-plugin-log = "2"
-tauri-plugin-store = "2"
-tauri-plugin-shell = "2"
-tauri-plugin-window-state = "2"
+# SEC-008: do NOT enable the "devtools" feature — it ships the WebView inspector
+# in release builds. Debug builds auto-enable devtools without the feature flag.
+tauri = { version = "3.0.0-alpha.4", features = ["tray-icon", "image-png"] }
+tauri-runtime-wry = { version = "3.0.0-alpha.4", features = ["unstable"] }
+tauri-plugin-log = "3.0.0-alpha.2"
+tauri-plugin-store = "3.0.0-alpha.2"
+tauri-plugin-opener = "3.0.0-alpha.2"
+tauri-plugin-window-state = "3.0.0-alpha.2"
 
 # URL parsing (for dapp webview navigation)
 url = "2"
@@ -44,65 +51,77 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # HTTP client (async, shares Tauri's tokio runtime)
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# `rustls` (the 0.13 rename of `rustls-tls`) selects aws-lc. `rustls-no-provider`
+# keeps ring, installed once in `install_tls_provider`.
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 tokio = { version = "1", features = ["sync", "time"] }
 
 # Crypto (RustCrypto suite - audited, pure Rust)
-k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa", "ecdh"] }
-sha2 = "0.10"
+k256 = { version = "0.14", features = ["ecdsa-core", "ecdsa", "ecdh"] }
+# k256 0.14 does not re-export ecdsa::hazmat. The grind calls it directly so
+# RFC 6979 additional data stays the attempt counter (deterministic, low-S).
+ecdsa = { version = "0.17", default-features = false, features = ["algorithm"] }
+sha2 = "0.11"
 hex = "0.4"
-ripemd = "0.1"
-aes-gcm = "0.10"
-aes = "0.8"
-cbc = { version = "0.1", features = ["alloc"] }
-pbkdf2 = { version = "0.12", features = ["simple"] }
-hmac = "0.12"
+ripemd = "0.2"
+aes-gcm = "0.11"
+pbkdf2 = { version = "0.13", features = ["sha2"] }
 zeroize = { version = "1", features = ["derive"] }
-rand = "0.8"
+rand = "0.10"
 # BLS12-381 for Savannah finalizer keys
 blst = "0.3"
-base64 = "0.22"
+base64 = "0.23"
 
 # OS keychain
-keyring = "3"
+keyring = "4"
 
 # USB HID for Ledger (optional — gated behind "ledger" feature)
 hidapi = { version = "2", optional = true }
 
+# Antelope ABI serialization (pure-Rust backend; optional — gated behind "local-abieos")
+rs_abieos = { version = "0.6.0", optional = true, default-features = false, features = ["rust-backend"] }
+
 # Error handling
 thiserror = "2"
+tempfile = "3.27"
 
 # Logging
 log = "0.4"
-tauri-plugin-deep-link = "2"
-tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+tauri-plugin-deep-link = "3.0.0-alpha.2"
+tauri-plugin-single-instance = { version = "3.0.0-alpha.2", features = ["deep-link"] }
 
 [dev-dependencies]
 # Async test runtime for integration tests that hit the local e2e chain
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"] }
 
 [profile.release]
-strip = true
+# The macOS 27 toolchain currently produces malformed proc-macro Mach-O files
+# when Cargo strips them (dyld reports a mis-aligned LINKEDIT string pool).
+# Tauri signs the final app binary; keep dependency proc macros unstripped so
+# the release can compile reliably on the release Mac.
+strip = false
 lto = true
 codegen-units = 1
 panic = "abort"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = "3.0.0-alpha.2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-process = "2.3.1"
-tauri-plugin-updater = "2.10.1"
-
-[target.'cfg(any(target_os = "linux", target_os = "macos", all(target_os = "windows", target_env = "gnu")))'.dependencies]
-rs_abieos = { version = "0.4.0", optional = true }
+tauri-plugin-process = "3.0.0-alpha.2"
+tauri-plugin-updater = "3.0.0-alpha.2"
 
 [target.'cfg(windows)'.dependencies]
-windows-future = "0.2.1"
-windows = { version = "0.61.3", features = [
+windows-future = "0.3.2"
+windows = { version = "0.62.2", features = [
   "Foundation",
+  "Security_Credentials",
   "Security_Credentials_UI",
+  "Security_Cryptography",
+  "Security_Cryptography_Core",
+  "Storage_Streams",
   "Win32_Foundation",
-  "Win32_Security_Cryptography",
   "Win32_System_WinRT",
+  "Win32_UI_WindowsAndMessaging",
 ] }

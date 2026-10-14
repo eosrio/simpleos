@@ -11,6 +11,7 @@ use crate::error::Error;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use ripemd::{Digest, Ripemd160};
+use zeroize::Zeroize;
 
 const POP_DST: &[u8] = b"BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
@@ -28,9 +29,11 @@ fn encode_checksummed(raw: &[u8]) -> String {
 /// Returns (private_key_bytes, PUB_BLS_..., SIG_BLS_..., PVT_BLS_...).
 /// `private_key_bytes` is 32 bytes in blst/IETF big-endian format (what we store).
 pub fn generate_finalizer_key() -> Result<(Vec<u8>, String, String, String), Error> {
-    let ikm: [u8; 32] = rand::random();
-    let sk = blst::min_pk::SecretKey::key_gen(&ikm, &[])
-        .map_err(|e| Error::Signing(format!("BLS key_gen failed: {:?}", e)))?;
+    // 32 bytes of OS-CSPRNG entropy as BLS key-derivation input material.
+    let mut ikm = crate::rng::secure_array::<32>();
+    let sk_result = blst::min_pk::SecretKey::key_gen(&ikm, &[]);
+    ikm.zeroize(); // wipe the IKM regardless of success/failure
+    let sk = sk_result.map_err(|e| Error::Signing(format!("BLS key_gen failed: {:?}", e)))?;
 
     let pk = sk.sk_to_pk();
     let pk_bytes = pk.serialize(); // 96 bytes uncompressed BE
@@ -54,6 +57,7 @@ pub fn generate_finalizer_key() -> Result<(Vec<u8>, String, String, String), Err
     let pop_str = format!("SIG_BLS_{}", encode_checksummed(&pop_le));
     let priv_key_str = format!("PVT_BLS_{}", encode_checksummed(&sk_le));
 
+    sk_le.zeroize(); // transient LE copy of the secret; the returned bytes are the caller's
     Ok((sk_be.to_vec(), pub_key_str, pop_str, priv_key_str))
 }
 

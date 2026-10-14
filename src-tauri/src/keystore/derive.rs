@@ -3,7 +3,7 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use pbkdf2::pbkdf2_hmac;
-use sha2::Sha256;
+use pbkdf2::sha2::Sha256;
 use zeroize::Zeroize;
 
 const PBKDF2_ITERATIONS: u32 = 600_000;
@@ -40,11 +40,12 @@ pub fn encrypt_with_key(
     let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
-    let nonce_bytes: [u8; NONCE_LEN] = rand::random();
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce_bytes: [u8; NONCE_LEN] = crate::rng::secure_array();
+    let nonce = Nonce::try_from(nonce_bytes.as_slice())
+        .map_err(|_| crate::error::Error::Encryption("invalid nonce length".into()))?;
 
     let ciphertext = cipher
-        .encrypt(nonce, plaintext)
+        .encrypt(&nonce, plaintext)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
     let mut result = Vec::with_capacity(NONCE_LEN + ciphertext.len());
@@ -78,9 +79,10 @@ pub fn decrypt_with_key(
     let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| crate::error::Error::Encryption(e.to_string()))?;
 
-    let nonce = Nonce::from_slice(&data[..NONCE_LEN]);
+    let nonce = Nonce::try_from(&data[..NONCE_LEN])
+        .map_err(|_| crate::error::Error::Encryption("invalid nonce length".into()))?;
     let plaintext = cipher
-        .decrypt(nonce, &data[NONCE_LEN..])
+        .decrypt(&nonce, &data[NONCE_LEN..])
         .map_err(|_| crate::error::Error::InvalidPassphrase)?;
 
     Ok(plaintext)
@@ -100,6 +102,33 @@ mod tests {
         let decrypted = decrypt(&encrypted, passphrase, salt).unwrap();
 
         assert_eq!(plaintext.to_vec(), decrypted);
+    }
+
+    /// Pins the unlock chain (PBKDF2 master key -> PBKDF2 storage key ->
+    /// AES-256-GCM verify token) to vectors from an independent implementation
+    /// (Node crypto). Round-trip tests cannot catch a crate upgrade that changes
+    /// the output, which would lock existing vaults out.
+    #[test]
+    fn unlock_chain_matches_known_answer() {
+        let salt = b"simpleos-master-key";
+        let master = derive_key(b"correct horse battery staple", salt);
+        assert_eq!(
+            hex::encode(master),
+            "029419120b2ee0f7439bc5ccc45415cb366a79ca962adace0cca14dc57d5f782"
+        );
+        let storage = derive_key(&master, salt);
+        assert_eq!(
+            hex::encode(storage),
+            "ae8cc370441c5db3c9ed544505989ebf2b5e0c8c7653bf9af2dc349a60ff5291"
+        );
+        let token = hex::decode(
+            "000102030405060708090a0be88cc5c7ce8e0b923187ce642b40140d8d02ef0cdf937002fc644b1a91be0b25dc",
+        )
+        .unwrap();
+        assert_eq!(
+            decrypt_with_key(&token, &storage).unwrap(),
+            b"simpleos-vault-ok"
+        );
     }
 
     #[test]

@@ -1,9 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, afterNextRender, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WalletStateService } from '../../../core/services/wallet-state.service';
 import { NetworkService } from '../../../core/services/network.service';
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
+import { UpdateService } from '../../../core/services/update.service';
+import { AppVersionService } from '../../../core/services/app-version.service';
 
 @Component({
   selector: 'app-settings',
@@ -244,6 +246,30 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
               </button>
             </div>
 
+            <!-- Confirmation strength (R2+R3) -->
+            <div class="setting-item">
+              <div>
+                <span class="setting-label">Require passphrase for every signature</span>
+                <span class="setting-desc">Strict: the confirmation window asks for your passphrase on every signature</span>
+              </div>
+              <button class="btn-ghost btn-small" (click)="togglePolicyPrompt()">
+                {{ confirmationPolicy() === 'strict' ? 'ON' : 'OFF' }}
+              </button>
+            </div>
+            @if (showPolicyPrompt()) {
+              <div class="setting-item">
+                <input type="password" class="wif-input" placeholder="Passphrase to confirm change"
+                  [value]="policyPassphrase()" (input)="policyPassphrase.set($any($event.target).value)"
+                  (keyup.enter)="applyPolicy()" />
+                <button class="btn-primary btn-small" (click)="applyPolicy()" [disabled]="!policyPassphrase()">
+                  {{ confirmationPolicy() === 'strict' ? 'TURN OFF' : 'TURN ON' }}
+                </button>
+              </div>
+              @if (policyError()) {
+                <span class="setting-desc" style="color: var(--danger)">{{ policyError() }}</span>
+              }
+            }
+
             <!-- Change Passphrase -->
             <div class="setting-item">
               <span class="setting-label">Change Passphrase</span>
@@ -314,11 +340,19 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
             <div class="setting-item">
               <div>
                 <span class="setting-label">Quick Unlock PIN</span>
-                <span class="setting-desc">{{ hasPinConfigured() ? 'PIN is set — use it on the lockscreen' : 'Set a 4-6 digit PIN for faster unlocking' }}</span>
+                <span class="setting-desc">
+                  @if (wallet.securityMode() === 'SignPerUse') {
+                    Not available in sign-per-use mode, which keeps no keys in memory
+                  } @else if (hasPinConfigured()) {
+                    PIN is set until SimplEOS quits — use it on the lockscreen
+                  } @else {
+                    Unlock with a 4-6 digit PIN after auto-lock. Lasts until SimplEOS quits; your passphrase is needed after a restart
+                  }
+                </span>
               </div>
               @if (hasPinConfigured()) {
                 <button class="btn-danger btn-small" (click)="onRemovePin()">REMOVE</button>
-              } @else {
+              } @else if (wallet.securityMode() !== 'SignPerUse') {
                 <button class="btn-ghost btn-small" (click)="showPinSetup.set(true)">SET PIN</button>
               }
             </div>
@@ -460,6 +494,69 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
             }
           </div>
 
+          <!-- Updates. Hidden in Mac App Store builds, which ship without the updater
+               plugin because Apple delivers those updates. -->
+          @if (updates.enabled) {
+            <div class="section-card" id="updates" [class.section-highlight]="highlightUpdates()">
+              <h3>Updates</h3>
+              <p class="section-desc">Running <strong>{{ appVersion.display() }}</strong></p>
+
+              <div class="setting-item">
+                <div>
+                  <span class="setting-label">
+                    @if (updates.isUpdateAvailable()) {
+                      Version {{ updates.newVersion() }} is available
+                    } @else if (updates.isChecking()) {
+                      Checking for updates
+                    } @else if (updates.isUpToDate()) {
+                      SimplEOS is up to date
+                    } @else {
+                      Check for a new version
+                    }
+                  </span>
+                  <span class="setting-desc">
+                    @if (updates.isDownloading()) {
+                      Downloading — the wallet restarts once it finishes
+                    } @else if (updates.lastError()) {
+                      Last check failed — {{ updates.lastError() }}
+                    } @else if (updates.isUpdateAvailable()) {
+                      Downloads, verifies the signature, and restarts the wallet
+                    } @else if (updates.lastCheckedLabel()) {
+                      Last checked at {{ updates.lastCheckedLabel() }}
+                    } @else {
+                      Every update is signature-checked before it installs
+                    }
+                  </span>
+                </div>
+
+                @if (updates.isUpdateAvailable()) {
+                  <button class="btn-primary btn-small update-action"
+                          (click)="updates.installUpdate()"
+                          [disabled]="updates.isDownloading()">
+                    {{ updates.isDownloading() ? updates.downloadProgress() + '%' : 'Install and restart' }}
+                  </button>
+                } @else {
+                  <button class="btn-cancel btn-small update-action"
+                          (click)="updates.checkForUpdates()"
+                          [disabled]="updates.isChecking()">
+                    {{ updates.isChecking() ? 'Checking' : 'Check now' }}
+                  </button>
+                }
+              </div>
+
+              @if (updates.isDownloading()) {
+                <div class="update-progress" role="progressbar"
+                     [attr.aria-valuenow]="updates.downloadProgress()" aria-valuemin="0" aria-valuemax="100">
+                  <div class="update-progress-fill" [style.width.%]="updates.downloadProgress()"></div>
+                </div>
+              }
+
+              @if (updates.releaseNotes()) {
+                <p class="update-notes">{{ updates.releaseNotes() }}</p>
+              }
+            </div>
+          }
+
           <!-- Danger Zone -->
           <div class="section-card danger-zone">
             <h3>Danger Zone</h3>
@@ -522,6 +619,43 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
     .section-desc strong { color: var(--text-bright); }
 
     .danger-zone { border: 1px solid rgba(240, 68, 56, 0.2); }
+
+    /* Update card. The highlight only appears when the sidebar indicator linked here,
+       so the card announces itself once and then stays quiet. */
+    .section-highlight {
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .update-action {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .update-progress {
+      height: 4px;
+      margin-top: var(--sp-3);
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--text-disabled) 28%, transparent);
+      overflow: hidden;
+    }
+
+    .update-progress-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      transition: width 200ms ease;
+    }
+
+    .update-notes {
+      margin: var(--sp-3) 0 0;
+      padding-top: var(--sp-3);
+      border-top: 1px solid var(--border-subtle);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      white-space: pre-line;
+    }
 
     /* Endpoints */
     .ep-section { margin-bottom: var(--sp-3); }
@@ -641,7 +775,7 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
       flex-shrink: 0;
       color: var(--text-muted);
     }
-    .mode-option.active svg { color: var(--accent); }
+    .mode-option.active svg { color: var(--accent-text); }
     .mode-name {
       font-size: 13px;
       font-weight: 500;
@@ -661,7 +795,7 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-body);
       font-size: 12px;
       font-weight: 500;
@@ -695,7 +829,7 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
       display: block;
       border: none;
       background: none;
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 12px;
       cursor: pointer;
       padding: var(--sp-2) 0;
@@ -765,7 +899,7 @@ import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
       border-radius: var(--radius-sm);
       font-family: var(--font-data);
       font-size: 12px;
-      color: var(--accent);
+      color: var(--accent-text);
       word-break: break-all;
     }
     .btn-text-close {
@@ -972,24 +1106,74 @@ export class SettingsComponent {
   showViewKeyDialog = signal(false);
   selectedExportKey = signal('');
   exportedWif = signal('');
+
+  // Confirmation strength (R2+R3, T9)
+  confirmationPolicy = signal<'standard' | 'strict'>('standard');
+  showPolicyPrompt = signal(false);
+  policyPassphrase = signal('');
+  policyError = signal('');
   keyError = signal('');
   generatedKey = signal<{ wif: string; public_key: string } | null>(null);
   private hideTimer: any;
 
+  /** Set when the sidebar's update indicator sent us here, to draw the eye to the card. */
+  readonly highlightUpdates = signal(false);
+
   constructor(
     public wallet: WalletStateService,
     public network: NetworkService,
+    public updates: UpdateService,
+    public appVersion: AppVersionService,
     private ipc: TauriIpcService,
     private router: Router,
+    route: ActivatedRoute,
   ) {
     this.loadPinStatus();
     this.loadBiometricStatus();
     this.loadAutoLockSetting();
     this.loadCloseToTraySetting();
+    this.loadConfirmationPolicy();
+
+    // Settings is a long two-column page, so the update indicator deep-links straight
+    // to its card rather than dropping people at the top to hunt for it.
+    if (route.snapshot.fragment === 'updates' && this.updates.enabled) {
+      this.highlightUpdates.set(true);
+      afterNextRender(() => document.getElementById('updates')?.scrollIntoView({ block: 'center' }));
+    }
   }
 
   async setMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
     await this.wallet.setSecurityMode(mode);
+    // Sign-per-use drops the session PIN.
+    await this.loadPinStatus();
+  }
+
+  private async loadConfirmationPolicy() {
+    try {
+      this.confirmationPolicy.set(await this.ipc.getConfirmationPolicy());
+    } catch { /* defaults to 'standard' */ }
+  }
+
+  togglePolicyPrompt() {
+    this.policyError.set('');
+    this.policyPassphrase.set('');
+    this.showPolicyPrompt.set(!this.showPolicyPrompt());
+  }
+
+  async applyPolicy() {
+    if (!this.policyPassphrase()) return;
+    const next = this.confirmationPolicy() === 'strict' ? 'standard' : 'strict';
+    this.policyError.set('');
+    try {
+      await this.ipc.setConfirmationPolicy(next, this.policyPassphrase());
+      this.confirmationPolicy.set(next);
+      this.showPolicyPrompt.set(false);
+      this.policyPassphrase.set('');
+    } catch (e: any) {
+      this.policyError.set(
+        /InvalidPassphrase/i.test(e?.toString() ?? '') ? 'Incorrect passphrase' : 'Failed to update',
+      );
+    }
   }
 
   async lockWallet() {
@@ -1026,12 +1210,16 @@ export class SettingsComponent {
     if (!account || !pubKey) return;
     this.keyError.set('');
     try {
-      const wif = await this.ipc.exportPrivateKey(account.chainId, pubKey);
+      // Route through the trusted confirmation window — requires a passphrase
+      // factor even when the session is unlocked (SEC-006).
+      const { wif } = await this.ipc.beginExportKey(account.chainId, pubKey);
       this.exportedWif.set(wif);
       clearTimeout(this.hideTimer);
       this.hideTimer = setTimeout(() => this.closeKeyDialog(), 30000);
     } catch (e: any) {
-      this.keyError.set(e?.toString() ?? 'Failed to export key');
+      const msg = e?.toString() ?? '';
+      if (/rejected|cancelled|canceled|closed/i.test(msg)) return; // user declined
+      this.keyError.set(msg || 'Failed to export key');
     }
   }
 
@@ -1222,7 +1410,7 @@ export class SettingsComponent {
       this.pinSuccess.set('PIN set successfully');
       setTimeout(() => this.closePinSetup(), 1500);
     } catch (e: any) {
-      this.pinError.set(e?.toString()?.includes('InvalidPassphrase') ? 'Incorrect passphrase' : (e?.toString() ?? 'Failed to set PIN'));
+      this.pinError.set(e?.toString()?.includes('Invalid passphrase') ? 'Incorrect passphrase' : (e?.toString() ?? 'Failed to set PIN'));
     }
   }
 

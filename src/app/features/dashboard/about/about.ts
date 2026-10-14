@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AppVersionService } from '../../../core/services/app-version.service';
 
 @Component({
   selector: 'app-about',
@@ -8,7 +9,7 @@ import { Component } from '@angular/core';
       <div class="about-header">
         <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="about-logo" />
         <h2>Simpl<span class="accent">EOS</span></h2>
-        <span class="about-version">v2.0.0-alpha.0</span>
+        <span class="about-version">{{ appVersion.display() }}</span>
       </div>
 
       <div class="about-content">
@@ -60,7 +61,7 @@ import { Component } from '@angular/core';
       font-weight: 700;
       letter-spacing: 0.5px;
     }
-    .accent { color: var(--accent); }
+    .accent { color: var(--accent-text); }
 
     .about-version {
       font-family: var(--font-data);
@@ -118,4 +119,6 @@ import { Component } from '@angular/core';
     }
   `],
 })
-export class AboutComponent {}
+export class AboutComponent {
+  readonly appVersion = inject(AppVersionService);
+}

@@ -1,0 +1,49 @@
+:host { display: block; }
+.permissions-view { max-width: 1120px; margin: 0 auto; }
+.page-header, .account-context, .contract-input { display: flex; align-items: center; gap: var(--sp-4); }
+.page-header { justify-content: space-between; margin-bottom: var(--sp-6); }
+h1 { color: var(--text-bright); font-size: 26px; margin: 0 0 var(--sp-2); }
+h2 { color: var(--text-bright); font-size: 19px; margin: 0 0 var(--sp-2); }
+h3 { color: var(--text-bright); font-size: 14px; margin: 0 0 var(--sp-2); }
+p { line-height: 1.6; font-size: 14px; max-width: 70ch; }
+.account-context { flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); padding-bottom: var(--sp-5); border-bottom: 1px solid var(--border-subtle); margin-bottom: var(--sp-6); font-size: 13px; }
+.account-context strong { color: var(--text-bright); margin-left: var(--sp-2); font-family: var(--font-data); font-weight: 500; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-8); align-items: start; }
+.editor { background: var(--bg-raised); padding: var(--sp-6); border-radius: var(--radius-lg); }
+.intro { color: var(--text-muted); margin-bottom: var(--sp-6); }
+fieldset { border: 0; padding: 0; min-width: 0; }
+label { display: block; color: var(--text-bright); font-size: 13px; font-weight: 500; margin: var(--sp-5) 0 var(--sp-2); }
+label:first-child { margin-top: 0; }
+input, select { width: 100%; min-width: 0; background: var(--bg-base); color: var(--text-bright); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 11px 12px; font: 14px var(--font-data); caret-color: var(--accent-text); }
+input::placeholder { color: var(--text-muted); }
+.contract-input { gap: var(--sp-2); }
+.contract-input button { flex-shrink: 0; }
+button { font: 500 13px var(--font-body); cursor: pointer; border-radius: var(--radius-sm); padding: 11px 14px; }
+button:disabled, fieldset:disabled { opacity: .6; cursor: default; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.secondary { color: var(--text-bright); background: var(--bg-base); border: 1px solid var(--border-subtle); }
+.secondary:hover:enabled { background: var(--bg-hover); }
+.primary { width: 100%; margin-top: var(--sp-5); border: 1px solid var(--accent-text); color: var(--text-bright); background: var(--accent-muted); }
+.primary:hover:enabled { background: var(--bg-active); }
+.hint { color: var(--text-muted); font-size: 12px; margin-top: var(--sp-2); }
+.signing-note { color: var(--text-muted); margin-top: var(--sp-5); font-size: 12px; }
+code { font-family: var(--font-data); overflow-wrap: anywhere; }
+.review-summary { margin-top: var(--sp-6); padding-top: var(--sp-5); border-top: 1px solid var(--border-subtle); }
+.notice { margin: var(--sp-3) 0; padding: var(--sp-3); border: 1px solid var(--border-subtle); background: var(--bg-base); color: var(--text-bright); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
+.success { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); color: var(--text-bright); font-size: 13px; }
+.success span { color: var(--text-muted); font-size: 12px; }
+.success code { font-size: 12px; }
+.existing { min-width: 0; padding-top: var(--sp-6); }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+th { color: var(--text-muted); font-size: 12px; font-weight: 500; padding-bottom: var(--sp-3); }
+td { padding: var(--sp-3) 0; border-top: 1px solid var(--border-subtle); }
+th:not(:last-child), td:not(:last-child) { padding-right: var(--sp-3); }
+td:last-child { text-align: right; }
+.action-name { display: block; color: var(--text-bright); margin-top: var(--sp-1); font-family: var(--font-data); }
+.text-button { border: 0; padding: var(--sp-2) 0 var(--sp-2) var(--sp-2); color: var(--accent-text); background: transparent; }
+.text-button:hover:enabled { text-decoration: underline; text-underline-offset: 3px; }
+.empty { padding: var(--sp-5) 0; color: var(--text-muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 1050px) { .workspace { grid-template-columns: minmax(0, 1fr); } .existing { padding-top: 0; } }
+@media (max-width: 480px) { .page-header { align-items: flex-start; } .editor { padding: var(--sp-4); } .contract-input { flex-wrap: wrap; } }

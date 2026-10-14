@@ -1,0 +1,313 @@
+{
+  "account_name": "eosriobrazil",
+  "head_block_num": 454811998,
+  "head_block_time": "2026-09-08T18:39:59.5",
+  "privileged": false,
+  "last_code_update": "1970-01-01T00:00:00",
+  "created": "2019-07-03T15:57:39.5",
+  "core_liquid_balance": "19174.60367698 WAX",
+  "ram_quota": 19632,
+  "net_weight": "2619356142626",
+  "cpu_weight": "2619328975440",
+  "net_limit": {
+    "used": 245820,
+    "available": 1348064789,
+    "max": 1348310609,
+    "last_usage_update_time": "2026-09-08T18:39:50.5",
+    "current_used": 245794
+  },
+  "cpu_limit": {
+    "used": 518834,
+    "available": 712524,
+    "max": 1231358,
+    "last_usage_update_time": "2026-09-08T18:39:50.5",
+    "current_used": 518780
+  },
+  "ram_usage": 14132,
+  "permissions": [
+    {
+      "perm_name": "active",
+      "parent": "owner",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS7tytkrnAdh9r821sFX3r3YgT1HveAtdPgq6hPTavwUNMoc26ew",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": []
+    },
+    {
+      "perm_name": "canary",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS6NwWx6hRJMaKYgAKmq99QWeSMzKx4YBB6JCqj36eXe78NojF4o",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "wax.gg",
+          "action": "updatecanary"
+        }
+      ]
+    },
+    {
+      "perm_name": "claim",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS8b3A6mYbPiiL3sbf8CZoYXYiJVcwY7YnJ6hFbMug7ZS7U1a4Dn",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": []
+    },
+    {
+      "perm_name": "claim2",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS5dRFHwEAizSbbQCbWCwuB5mg69LaQtYqgnFFmYtSquQvp26mUU",
+            "weight": 1
+          }
+        ],
+        "accounts": [
+          {
+            "permission": {
+              "actor": "eosrio.io",
+              "permission": "claim"
+            },
+            "weight": 1
+          }
+        ],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "eosio",
+          "action": "claimgbmvote"
+        },
+        {
+          "account": "eosio",
+          "action": "claimgenesis"
+        },
+        {
+          "account": "eosio",
+          "action": "voteproducer"
+        },
+        {
+          "account": "eosio",
+          "action": "claimrewards"
+        },
+        {
+          "account": "eosio",
+          "action": "voterclaim"
+        },
+        {
+          "account": "eosio",
+          "action": "claimgbmprod"
+        }
+      ]
+    },
+    {
+      "perm_name": "oracle",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS8NB1zLPcMuZohvp5XXFovyMcandSYPU8WsvBR1XjXCK3a8J25V",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "delphioracle",
+          "action": "write"
+        }
+      ]
+    },
+    {
+      "perm_name": "owner",
+      "parent": "",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS5nAuKHJ293nW9Z62maVtoACTJrCmb33i7bkJxbiuHLGAaVmUde",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": []
+    },
+    {
+      "perm_name": "regprod",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS5chU8quguAJ7585WF1VBLQq9aE6dFnkRrzgT6SY792qa9Br4nX",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "eosio",
+          "action": "regproducer"
+        },
+        {
+          "account": "eosio",
+          "action": "unregprod"
+        }
+      ]
+    },
+    {
+      "perm_name": "res",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS8bMRd5mMAJAH2bkPjSfVkR1rUbnvM9fkK7EnfaF6ATC7mWgimf",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "res.tibs",
+          "action": "payforcpu"
+        }
+      ]
+    },
+    {
+      "perm_name": "teleport",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS75wW4PxNk2CFTs3zvL3vq5R5ea6zPc4e6VqeZ78vqDDFeG84UU",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "other.worlds",
+          "action": "claimed"
+        },
+        {
+          "account": "other.worlds",
+          "action": "sign"
+        },
+        {
+          "account": "other.worlds",
+          "action": "teleport"
+        },
+        {
+          "account": "other.worlds"
+        },
+        {
+          "account": "other.worlds",
+          "action": "received"
+        }
+      ]
+    },
+    {
+      "perm_name": "wps",
+      "parent": "active",
+      "required_auth": {
+        "threshold": 1,
+        "keys": [
+          {
+            "key": "EOS56pD9qdNxhhTRYnddiJBgbRB1hjh8irkCFwYtZ6fKcUTSzv25o",
+            "weight": 1
+          }
+        ],
+        "accounts": [],
+        "waits": []
+      },
+      "linked_actions": [
+        {
+          "account": "eosio",
+          "action": "regproposer"
+        },
+        {
+          "account": "eosio",
+          "action": "regproposal"
+        }
+      ]
+    }
+  ],
+  "total_resources": {
+    "owner": "eosriobrazil",
+    "net_weight": "26193.56142626 WAX",
+    "cpu_weight": "26193.28975440 WAX",
+    "ram_bytes": 18232
+  },
+  "self_delegated_bandwidth": {
+    "from": "eosriobrazil",
+    "to": "eosriobrazil",
+    "net_weight": "26193.36142626 WAX",
+    "cpu_weight": "26193.08975440 WAX"
+  },
+  "refund_request": null,
+  "voter_info": {
+    "owner": "eosriobrazil",
+    "proxy": "waxcommunity",
+    "producers": [],
+    "staked": "5326085118066",
+    "unpaid_voteshare": "0.00000000000000000",
+    "unpaid_voteshare_last_updated": "2026-09-08T14:11:19.5",
+    "unpaid_voteshare_change_rate": "911535930889148383157013820956102178803548160.00000000000000000",
+    "last_claim_time": "2026-09-08T14:11:19.5",
+    "last_vote_weight": "911535930889148383157013820956102178803548160.00000000000000000",
+    "proxied_vote_weight": "0.00000000000000000",
+    "is_proxy": 0,
+    "flags1": 0,
+    "reserved2": 0,
+    "reserved3": "0 "
+  },
+  "rex_info": null,
+  "subjective_cpu_bill_limit": {
+    "used": 0,
+    "available": 0,
+    "max": 0,
+    "last_usage_update_time": "2000-01-01T00:00:00",
+    "current_used": 0
+  },
+  "eosio_any_linked_actions": []
+}

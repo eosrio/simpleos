@@ -415,23 +415,37 @@ const ANCHOR_KEY_LEN: usize = 256; // 256 bytes = 64 x u32 words
 
 /// Parse Anchor's encrypted string format: `<32 hex salt><32 hex IV><base64 ciphertext>`
 fn parse_anchor_encrypted(input: &str) -> Result<(Vec<u8>, [u8; 16], Vec<u8>), String> {
-    if input.len() < 65 {
+    // SEC-044: operate on bytes for fixed-offset parsing. A multibyte char
+    // straddling byte offset 32/64 would panic an `&input[..32]`/`[32..64]`/`[64..]`
+    // str-slice (process abort under panic="abort"). Byte slicing never panics on
+    // char boundaries; non-hex/non-base64 bytes are rejected by the decoders below.
+    let b = input.as_bytes();
+    if b.len() < 65 {
         return Err("Encrypted string too short".into());
     }
 
     // First 32 hex chars = 16-byte salt
-    let salt = hex::decode(&input[..32]).map_err(|e| format!("Invalid salt hex: {}", e))?;
+    let salt = hex::decode(&b[..32]).map_err(|e| format!("Invalid salt hex: {}", e))?;
     if salt.len() != 16 {
         return Err(format!("Expected 16-byte salt, got {}", salt.len()));
     }
 
     // Next 32 hex chars = 16-byte IV
-    let iv_bytes = hex::decode(&input[32..64]).map_err(|e| format!("Invalid IV hex: {}", e))?;
+    let iv_bytes = hex::decode(&b[32..64]).map_err(|e| format!("Invalid IV hex: {}", e))?;
+    // SEC-044: validate length before copy_from_slice (would panic on mismatch)
+    if iv_bytes.len() != 16 {
+        return Err(format!("Expected 16-byte IV, got {}", iv_bytes.len()));
+    }
     let mut iv = [0u8; 16];
     iv.copy_from_slice(&iv_bytes);
 
     // Remainder = base64-encoded ciphertext
-    let ciphertext = base64_decode(&input[64..])?;
+    // SEC-044: byte-slice (never str-index `&input[64..]`, which panics on a
+    // multibyte char straddling offset 64). Anchor's format is ASCII base64, so a
+    // non-UTF-8 remainder is malformed → clean error instead of a process abort.
+    let ciphertext_str =
+        std::str::from_utf8(&b[64..]).map_err(|_| "Invalid ciphertext encoding".to_string())?;
+    let ciphertext = base64_decode(ciphertext_str)?;
 
     Ok((salt, iv, ciphertext))
 }

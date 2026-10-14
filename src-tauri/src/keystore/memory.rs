@@ -50,6 +50,14 @@ impl Session {
         self.master_key = None;
     }
 
+    /// SEC-027: true when a master key is still held in memory but the session
+    /// has been idle longer than `SESSION_TIMEOUT`. Used by the proactive
+    /// background auto-lock task to zeroize the idle key without waiting for an
+    /// access to lazily evict it. This does NOT refresh the activity timer.
+    pub fn is_idle_expired(&self) -> bool {
+        self.master_key.is_some() && self.last_activity.elapsed() > SESSION_TIMEOUT
+    }
+
     /// Check if the session is unlocked and not expired.
     pub fn is_unlocked(&self) -> bool {
         if self.master_key.is_none() {

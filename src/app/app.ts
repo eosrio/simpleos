@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { WalletStateService } from './core/services/wallet-state.service';
 import { ThemeService } from './core/services/theme.service';
@@ -64,6 +65,24 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     console.log('[app] ngOnInit: ENTERED');
+
+    // Window-aware bootstrap (R2): the trusted `sign-confirm` window loads the
+    // same bundle but must render ONLY the confirmation UI — it must not run the
+    // wallet/lock startup flow, register tray/deep-link/ESR handlers, or load
+    // accounts. Detect it by window label before anything else.
+    let windowLabel: string | null = null;
+    try {
+      windowLabel = getCurrentWindow().label;
+    } catch {
+      windowLabel = null; // not a Tauri window (e.g. `bun run start` in a browser)
+    }
+    if (windowLabel === 'sign-confirm') {
+      console.log('[app] sign-confirm window — routing to /confirm');
+      await this.router.navigate(['/confirm']);
+      this.ready.set(true);
+      return;
+    }
+
     console.log('[app] hasTauri initial:', this.wallet.hasTauri());
     console.log('[app] current URL:', this.router.url);
 

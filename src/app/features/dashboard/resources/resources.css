@@ -72,7 +72,7 @@ h2 { font-size: 24px; margin-bottom: var(--sp-6); }
 }
 .meter-sub {
   font-size: 10px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -126,7 +126,7 @@ h2 { font-size: 24px; margin-bottom: var(--sp-6); }
   font-family: var(--font-data);
   font-size: 10px;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-muted);
   padding: 2px var(--sp-2);
   border-radius: var(--radius-full);
@@ -150,7 +150,7 @@ h2 { font-size: 24px; margin-bottom: var(--sp-6); }
 }
 .market-stat .stat-label {
   font-size: 10px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -283,7 +283,7 @@ label {
 .btn-primary { border: none; background: var(--accent); color: #fff; flex: 1; }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-ghost { border: 1px solid var(--accent); background: transparent; color: var(--accent); flex: 1; }
+.btn-ghost { border: 1px solid var(--accent); background: transparent; color: var(--accent-text); flex: 1; }
 .btn-ghost:hover { background: var(--accent-muted); }
 .btn-danger { border: none; background: var(--negative); color: #fff; flex: 1; }
 .btn-danger:hover { opacity: 0.85; }

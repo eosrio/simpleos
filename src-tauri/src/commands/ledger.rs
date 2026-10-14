@@ -58,10 +58,7 @@ pub async fn ledger_sign_and_push(
 ) -> Result<crate::antelope::transaction::TransactionResult, Error> {
     let path = protocol::eos_bip44_path(0, account_index);
 
-    let mut map = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     // Build and serialize the transaction (but don't sign it in software)
     let (packed_trx, actual_chain_id) = transaction::build_transaction(pm, &actions).await?;
@@ -122,10 +119,7 @@ pub async fn ledger_sign_transaction(
 ) -> Result<serde_json::Value, Error> {
     let path = protocol::eos_bip44_path(0, account_index);
 
-    let mut map = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let (packed_trx, actual_chain_id) = transaction::build_transaction(pm, &actions).await?;
     let chain_id_bytes = hex::decode(&actual_chain_id)
@@ -161,13 +155,15 @@ pub fn ledger_watch_devices(app: AppHandle) {
 
             // Detect newly connected devices
             for device in current.difference(&known) {
-                let _ = app.emit("ledger-connected", device.clone());
+                // SEC-050: scope Ledger presence events to the main window only
+                let _ = app.emit_to("main", "ledger-connected", device.clone());
                 log::info!("[ledger] Device connected: {}", device);
             }
 
             // Detect disconnected devices
             for device in known.difference(&current) {
-                let _ = app.emit("ledger-disconnected", device.clone());
+                // SEC-050: scope Ledger presence events to the main window only
+                let _ = app.emit_to("main", "ledger-disconnected", device.clone());
                 log::info!("[ledger] Device disconnected: {}", device);
             }
 

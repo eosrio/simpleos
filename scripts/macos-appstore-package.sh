@@ -115,6 +115,20 @@ const releaseVersion = String(version).match(/^\d+\.\d+\.\d+/)?.[0];
 if (!releaseVersion) {
   throw new Error(`Invalid Mac App Store version: ${version}`);
 }
+
+// package.json is the single source of truth for the app version, but the App Store
+// build must pin a plain x.y.z in tauri.appstore.conf.json — CFBundleShortVersionString
+// rejects prerelease tags like `-alpha.2`. Guard the one number that has to be kept in
+// step by hand, so a bumped package.json can never ship under a stale marketing version.
+const sourceOfTruth = require('./package.json').version;
+const sourceRelease = String(sourceOfTruth).match(/^\d+\.\d+\.\d+/)?.[0];
+if (sourceRelease && sourceRelease !== releaseVersion) {
+  throw new Error(
+    `Mac App Store version ${releaseVersion} (src-tauri/tauri.appstore.conf.json) does not match `
+      + `package.json ${sourceOfTruth}. Update the App Store config to ${sourceRelease}.`,
+  );
+}
+
 process.stdout.write(releaseVersion);
 NODE
 )"

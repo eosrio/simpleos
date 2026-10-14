@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { Store } from '@tauri-apps/plugin-store';
 
 // ── Types matching Rust backend ──
 
@@ -44,6 +43,8 @@ export interface Permission {
   perm_name: string;
   parent: string;
   required_auth: any;
+  /** Absent on older nodes; absence must not be presented as an empty list. */
+  linked_actions?: { account: string; action: string }[] | null;
 }
 
 export interface TableRowsParams {
@@ -92,6 +93,13 @@ export interface ChainConfig {
   precision: number;
   icon?: string;
   token_contract: string;
+  /**
+   * System-contract account for core economic actions (claimrewards,
+   * voteproducer, buyram, delegatebw, rex, powerup, …). "eosio" on every chain
+   * except Vaulta, where those actions must be called from "core.vaulta".
+   * Defaults to "eosio" when absent.
+   */
+  system_contract?: string;
   extra_tokens: TokenConfig[];
   endpoints: { url: string; owner?: string }[];
   hyperion_apis: string[];
@@ -101,6 +109,22 @@ export interface ChainConfig {
   coingecko_id?: string;
   oracle_contract?: string;
   oracle_scope?: string;
+  /** Known exchange deposit accounts on this chain (see chain_config.rs). */
+  exchanges?: Exchange[];
+}
+
+/**
+ * An exchange deposit account. The memo is the only thing routing a transfer
+ * to the right customer, so it is mandatory and — where the exchange has a
+ * stable tag format — shape-checked before signing.
+ */
+export interface Exchange {
+  account: string;
+  label?: string;
+  /** Exact memo length, when the deposit tag is fixed-width. */
+  memo_size?: number;
+  /** Regex (JS syntax) the memo must match. */
+  memo_pattern?: string;
 }
 
 export interface ChainFeatures {
@@ -197,9 +221,38 @@ export interface BiometricStatus {
   reason: string;
 }
 
+/** One action as it will be signed, decoded locally for the trusted window (R3). */
+export interface ActionSummary {
+  account: string;
+  name: string;
+  authorization: { actor: string; permission: string }[];
+  /** Locally-decoded action data (the bytes that will be signed). */
+  data: any;
+  /** True if the displayed data was verified locally against the signed bytes. */
+  verified: boolean;
+  high_risk: boolean;
+  warning?: string;
+}
+
+/** The backend-built signing summary rendered by the trusted confirm window. */
+export interface SignSummary {
+  request_id: string;
+  chain_id: string;
+  title: string;
+  signer_public_key: string;
+  mode: 'push' | 'sign_only' | 'identity' | 'export';
+  actions: ActionSummary[];
+  expiration?: number;
+  delay_sec: number;
+  has_context_free_actions: boolean;
+  origin?: string;
+  callback_url?: string;
+  identity_scope?: string;
+  any_unverified: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TauriIpcService {
-
   // ── Wallet ──
 
   async hasWallet(): Promise<boolean> {
@@ -253,10 +306,6 @@ export class TauriIpcService {
 
   async listPublicKeys(chainId: string): Promise<string[]> {
     return invoke<string[]>('list_public_keys', { chainId });
-  }
-
-  async exportPrivateKey(chainId: string, publicKey: string): Promise<string> {
-    return invoke<string>('export_private_key', { chainId, publicKey });
   }
 
   async testKeyring(): Promise<string[]> {
@@ -333,7 +382,12 @@ export class TauriIpcService {
     return invoke<AccountInfo>('get_account', { chainId, accountName });
   }
 
-  async getBalances(chainId: string, account: string, code: string, symbol: string): Promise<string[]> {
+  async getBalances(
+    chainId: string,
+    account: string,
+    code: string,
+    symbol: string,
+  ): Promise<string[]> {
     return invoke<string[]>('get_balances', { chainId, account, code, symbol });
   }
 
@@ -345,6 +399,10 @@ export class TauriIpcService {
     return invoke<TableRowsResult>('get_table_rows', { chainId, params });
   }
 
+  async getEvmBridgeState(bridgeId: string, counters: string[]): Promise<{ paused: boolean; schedule_version: string; settlements: { counter: string; block: string }[] }> {
+    return invoke('get_evm_bridge_state', { bridgeId, counters });
+  }
+
   async getProducers(chainId: string, limit: number): Promise<any> {
     return invoke<any>('get_producers', { chainId, limit });
   }
@@ -353,16 +411,29 @@ export class TauriIpcService {
     return invoke<KeyAccountsResult>('lookup_key_accounts', { chainId, publicKey });
   }
 
-  async getMsigInbox(chainId: string, account: string, limit = 50): Promise<{
+  async getMsigInbox(
+    chainId: string,
+    account: string,
+    limit = 50,
+  ): Promise<{
     source: 'hyperion' | 'scan' | 'none';
     proposals: any[];
   }> {
     return invoke('get_msig_inbox', { chainId, account, limit });
   }
 
-  async getMsigProposalDetails(chainId: string, proposer: string, proposalName: string): Promise<{
+  async getMsigProposalDetails(
+    chainId: string,
+    proposer: string,
+    proposalName: string,
+  ): Promise<{
     expiration: number;
-    actions: { account: string; name: string; authorization: { actor: string; permission: string }[]; data: any }[];
+    actions: {
+      account: string;
+      name: string;
+      authorization: { actor: string; permission: string }[];
+      data: any;
+    }[];
     requested_approvals: { actor: string; permission: string; time?: string }[];
     provided_approvals: { actor: string; permission: string; time?: string }[];
   }> {
@@ -370,7 +441,11 @@ export class TauriIpcService {
   }
 
   /** Check current on-chain status of a known set of proposals. Fast — just reads approvals2. */
-  async refreshMsigStatus(chainId: string, account: string, keys: { proposer: string; proposal_name: string }[]): Promise<{
+  async refreshMsigStatus(
+    chainId: string,
+    account: string,
+    keys: { proposer: string; proposal_name: string }[],
+  ): Promise<{
     active: any[];
     dead: { proposer: string; proposal_name: string }[];
   }> {
@@ -378,16 +453,29 @@ export class TauriIpcService {
   }
 
   /** Full scope-walk of eosio.msig::proposal. Emits `msig-scan-progress` and `msig-scan-proposal` events during the walk. */
-  async scanMsigScopesStream(chainId: string, account: string, maxScopes?: number): Promise<{
+  async scanMsigScopesStream(
+    chainId: string,
+    account: string,
+    maxScopes?: number,
+  ): Promise<{
     proposals: any[];
     scanned: number;
   }> {
     return invoke('scan_msig_scopes_stream', { chainId, account, maxScopes });
   }
 
-  async getActionsHistory(chainId: string, account: string, limit: number, skip: number, filters?: { actName?: string; after?: string; before?: string }): Promise<any> {
+  async getActionsHistory(
+    chainId: string,
+    account: string,
+    limit: number,
+    skip: number,
+    filters?: { actName?: string; after?: string; before?: string },
+  ): Promise<any> {
     return invoke<any>('get_actions_history', {
-      chainId, account, limit, skip,
+      chainId,
+      account,
+      limit,
+      skip,
       actName: filters?.actName ?? null,
       after: filters?.after ?? null,
       before: filters?.before ?? null,
@@ -414,26 +502,81 @@ export class TauriIpcService {
     });
   }
 
-  // ── Transactions ──
+  // ── Trusted-confirmation signing (R2+R3) ──
 
-  async signAndPush(chainId: string, publicKey: string, actions: any[]): Promise<{ transaction_id: string }> {
-    return invoke<{ transaction_id: string }>('sign_and_push', { chainId, publicKey, actions });
+  /**
+   * Begin a transaction signing flow. The backend builds the canonical bytes,
+   * opens the trusted confirmation window, and resolves with the broadcast
+   * result (or `{ packed_trx, signature }` when `broadcast` is false). Rejects
+   * if the user declines or closes the window.
+   */
+  async beginSign(
+    chainId: string,
+    publicKey: string,
+    actions: any[],
+    broadcast: boolean,
+    opts?: { title?: string; origin?: string; callbackUrl?: string },
+  ): Promise<any> {
+    return invoke<any>('begin_sign', {
+      chainId,
+      publicKey,
+      actions,
+      broadcast,
+      title: opts?.title ?? null,
+      origin: opts?.origin ?? null,
+      callbackUrl: opts?.callbackUrl ?? null,
+    });
   }
 
-  async signTransaction(chainId: string, publicKey: string, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('sign_transaction', { chainId, publicKey, actions });
+  /** Begin a private-key export; resolves with `{ wif }` after confirmation. */
+  async beginExportKey(chainId: string, publicKey: string): Promise<{ wif: string }> {
+    return invoke<{ wif: string }>('begin_export_key', { chainId, publicKey });
   }
 
-  async signTransactionWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('sign_transaction_with_passphrase', { chainId, publicKey, passphrase, actions });
+  /**
+   * Begin an ESR confirmation from packed transaction bytes. Rust derives both
+   * the signing digest and the approval summary, including identity semantics.
+   * The caller performs the disclosed ESR callback after approval.
+   */
+  async beginEsrSign(
+    chainId: string,
+    publicKey: string,
+    packedTransactionHex: string,
+    opts?: { origin?: string; callbackUrl?: string },
+  ): Promise<{ signature: string; packed_trx: string }> {
+    return invoke<{ signature: string; packed_trx: string }>('begin_esr_sign', {
+      chainId,
+      publicKey,
+      packedTransactionHex,
+      origin: opts?.origin ?? null,
+      callbackUrl: opts?.callbackUrl ?? null,
+    });
   }
 
-  async signAndPushWithPassphrase(chainId: string, publicKey: string, passphrase: string, actions: any[]): Promise<{ transaction_id: string }> {
-    return invoke<{ transaction_id: string }>('sign_and_push_with_passphrase', { chainId, publicKey, passphrase, actions });
+  /** (Trusted confirm window) Fetch the active request's summary. */
+  async getPendingSignRequest(): Promise<SignSummary> {
+    return invoke<SignSummary>('get_pending_sign_request');
   }
 
-  async signDigest(chainId: string, publicKey: string, digestHex: string): Promise<string> {
-    return invoke<string>('sign_digest', { chainId, publicKey, digestHex });
+  /** (Trusted confirm window) Approve the active request. */
+  async approveSign(requestId: string, passphrase?: string): Promise<void> {
+    return invoke<void>('approve_sign', { requestId, passphrase: passphrase ?? null });
+  }
+
+  /** (Trusted confirm window) Reject the active request. */
+  async rejectSign(requestId: string): Promise<void> {
+    return invoke<void>('reject_sign', { requestId });
+  }
+
+  /** Confirmation strength: 'standard' (passphrase per security mode) or 'strict'
+   *  (passphrase on every signature). Both always use the trusted window. */
+  async getConfirmationPolicy(): Promise<'standard' | 'strict'> {
+    return invoke<'standard' | 'strict'>('get_confirmation_policy');
+  }
+
+  /** Change the confirmation policy (passphrase-gated, backend-owned). */
+  async setConfirmationPolicy(policy: 'standard' | 'strict', passphrase: string): Promise<void> {
+    return invoke<void>('set_confirmation_policy', { policy, passphrase });
   }
 
   // ── PowerUp ──
@@ -452,7 +595,13 @@ export class TauriIpcService {
     return invoke<string[]>('ledger_list_devices');
   }
 
-  async ledgerGetAppConfig(): Promise<{ major: number; minor: number; patch: number; allow_unknown: boolean; verbose: boolean }> {
+  async ledgerGetAppConfig(): Promise<{
+    major: number;
+    minor: number;
+    patch: number;
+    allow_unknown: boolean;
+    verbose: boolean;
+  }> {
     return invoke('ledger_get_app_config');
   }
 
@@ -460,16 +609,30 @@ export class TauriIpcService {
     return invoke<string>('ledger_get_public_key', { account, index, confirm });
   }
 
-  async ledgerDiscoverKeys(maxIndex: number): Promise<{ path: string; public_key: string; index: number }[]> {
+  async ledgerDiscoverKeys(
+    maxIndex: number,
+  ): Promise<{ path: string; public_key: string; index: number }[]> {
     return invoke('ledger_discover_keys', { maxIndex });
   }
 
-  async ledgerSignAndPush(chainId: string, accountIndex: number, actions: any[]): Promise<{ transaction_id: string }> {
+  async ledgerSignAndPush(
+    chainId: string,
+    accountIndex: number,
+    actions: any[],
+  ): Promise<{ transaction_id: string }> {
     return invoke('ledger_sign_and_push', { chainId, accountIndex, actions });
   }
 
-  async ledgerSignTransaction(chainId: string, accountIndex: number, actions: any[]): Promise<SignedTransactionResult> {
-    return invoke<SignedTransactionResult>('ledger_sign_transaction', { chainId, accountIndex, actions });
+  async ledgerSignTransaction(
+    chainId: string,
+    accountIndex: number,
+    actions: any[],
+  ): Promise<SignedTransactionResult> {
+    return invoke<SignedTransactionResult>('ledger_sign_transaction', {
+      chainId,
+      accountIndex,
+      actions,
+    });
   }
 
   /** Start background polling for Ledger device connect/disconnect events. */
@@ -506,8 +669,14 @@ export class TauriIpcService {
     return invoke<string[]>('list_finalizer_keys', { chainId });
   }
 
-  async getFinalizerPop(chainId: string, finalizerKey: string): Promise<{ finalizer_key: string; proof_of_possession: string }> {
-    return invoke<{ finalizer_key: string; proof_of_possession: string }>('get_finalizer_pop', { chainId, finalizerKey });
+  async getFinalizerPop(
+    chainId: string,
+    finalizerKey: string,
+  ): Promise<{ finalizer_key: string; proof_of_possession: string }> {
+    return invoke<{ finalizer_key: string; proof_of_possession: string }>('get_finalizer_pop', {
+      chainId,
+      finalizerKey,
+    });
   }
 
   // ── FIO ──
@@ -638,59 +807,35 @@ export class TauriIpcService {
     return invoke<void>('dapp_reject_signing', { requestId, reason });
   }
 
-  async onDappSigningRequest(callback: (request: { id: string; actions: any[]; chainId: string | null; origin: string }) => void): Promise<UnlistenFn> {
+  async onDappSigningRequest(
+    callback: (request: {
+      id: string;
+      actions: any[];
+      chainId: string | null;
+      origin: string;
+    }) => void,
+  ): Promise<UnlistenFn> {
     return listen<string>('dapp-signing-request', (event) => {
       try {
         const parsed = JSON.parse(event.payload);
         callback(parsed);
-      } catch { /* ignore malformed */ }
+      } catch {
+        /* ignore malformed */
+      }
     });
   }
 
   // ── Local Store (non-sensitive persistence via tauri-plugin-store) ──
 
-  private store: Store | null = null;
-
-  private async getStore(): Promise<Store> {
-    if (!this.store) {
-      this.store = await Store.load('wallet-state.json');
-    }
-    return this.store;
-  }
-
-  async storeSet(key: string, value: any): Promise<void> {
-    const store = await this.getStore();
-    await store.set(key, value);
-    await store.save();
+  async storeSet(key: string, value: unknown): Promise<void> {
+    return invoke<void>('preference_set', { key, value });
   }
 
   async storeGet<T>(key: string): Promise<T | null> {
-    const store = await this.getStore();
-    const val = await store.get<T>(key);
-    return val ?? null;
-  }
-
-  // ── Link Sessions (Anchor-Link Protocol) ──
-
-  async createLinkSession(buoyUrl: string): Promise<{ channel_url: string; link_key: string; link_key_hex: string; link_name: string; channel_uuid: string }> {
-    return invoke('create_link_session', { buoyUrl });
-  }
-
-  async unsealMessage(ciphertextHex: string, nonce: number, fromKey: string, sessionPubkeyHex: string): Promise<string> {
-    return invoke<string>('unseal_message', { ciphertextHex, nonce, fromKey, sessionPubkeyHex });
-  }
-
-  async sealMessage(payload: string, nonce: number, toKeyHex: string, sessionPubkeyHex: string): Promise<string> {
-    return invoke<string>('seal_message', { payload, nonce, toKeyHex, sessionPubkeyHex });
-  }
-
-  async deleteLinkSession(sessionPubkeyHex: string): Promise<void> {
-    return invoke<void>('delete_link_session', { sessionPubkeyHex });
+    return invoke<T | null>('preference_get', { key });
   }
 
   async storeDelete(key: string): Promise<void> {
-    const store = await this.getStore();
-    await store.delete(key);
-    await store.save();
+    return invoke<void>('preference_delete', { key });
   }
 }

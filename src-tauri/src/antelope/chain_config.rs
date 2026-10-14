@@ -12,6 +12,13 @@ pub struct ChainConfig {
     /// Primary system token contract (default: "eosio.token").
     #[serde(default = "default_token_contract")]
     pub token_contract: String,
+    /// System-contract account that wraps the core economic actions
+    /// (claimrewards, voteproducer, buyram, delegatebw, rex, powerup, …).
+    /// "eosio" everywhere except Vaulta, where EOS rebranded and those actions
+    /// must now be called from "core.vaulta" (calling them on eosio asserts).
+    /// Consensus/producer actions (regproducer, regfinkey, …) stay on eosio.
+    #[serde(default = "default_system_contract")]
+    pub system_contract: String,
     /// Additional token contracts to query for balance display.
     /// Each entry: { contract, symbol, precision }.
     #[serde(default)]
@@ -35,6 +42,37 @@ pub struct ChainConfig {
     /// On-chain oracle scope for USD pair (e.g. "eosusd").
     #[serde(default)]
     pub oracle_scope: Option<String>,
+    /// Exchange deposit accounts on this chain. Deposit accounts are
+    /// chain-specific, so this list must not be shared across chains.
+    #[serde(default)]
+    pub exchanges: Vec<Exchange>,
+}
+
+/// A known exchange deposit account.
+///
+/// Every user of an exchange deposit account shares the same on-chain
+/// account; the memo is the only thing that routes a transfer to the right
+/// customer. A transfer with a missing or malformed memo is credited to
+/// nobody and normally cannot be recovered, so the wallet makes the memo
+/// mandatory here and, where an exchange publishes a stable tag format,
+/// checks its shape before signing.
+///
+/// Being listed here only ever *adds* a check, so an entry that is stale or
+/// wrong is harmless — a missing entry is what costs a user their deposit.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Exchange {
+    /// On-chain deposit account name.
+    pub account: String,
+    /// Exchange name, shown in the warning (e.g. "Binance").
+    #[serde(default)]
+    pub label: Option<String>,
+    /// Exact memo length, when the deposit tag is fixed-width.
+    #[serde(default)]
+    pub memo_size: Option<usize>,
+    /// Regex the memo must match. Must be valid in JavaScript: the renderer
+    /// compiles it with `new RegExp` to validate before submitting.
+    #[serde(default)]
+    pub memo_pattern: Option<String>,
 }
 
 /// A token to query beyond the system token.
@@ -47,6 +85,10 @@ pub struct TokenConfig {
 
 fn default_token_contract() -> String {
     "eosio.token".to_string()
+}
+
+fn default_system_contract() -> String {
+    "eosio".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +133,9 @@ fn default_true() -> bool {
 }
 
 /// Build the default chain configurations for priority chains.
+///
+/// Chains whose `exchanges` list is empty simply have no verified deposit
+/// accounts recorded yet — add them there, per chain, never globally.
 pub fn default_chains() -> Vec<ChainConfig> {
     vec![
         ChainConfig {
@@ -100,6 +145,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: "core.vaulta".into(),
+            system_contract: "core.vaulta".into(),
             extra_tokens: vec![TokenConfig {
                 contract: "eosio.token".into(),
                 symbol: "EOS".into(),
@@ -109,10 +155,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://eos.greymass.com".into(),
                     owner: Some("Greymass".into()),
-                },
-                Endpoint {
-                    url: "https://api.eossweden.org".into(),
-                    owner: Some("EOS Sweden".into()),
                 },
                 Endpoint {
                     url: "https://api.eosrio.io".into(),
@@ -167,6 +209,79 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("eos".into()),
             oracle_contract: Some("delphioracle".into()),
             oracle_scope: Some("eosusd".into()),
+            // Ported from SimplEOS v1 (`v1/config.json`), which is the last
+            // list that was verified against live deposit accounts.
+            //
+            // NEEDS REVIEW before release — v1 predates several delistings and
+            // every exchange that has listed EOS since. Known gaps: no entries
+            // for exchanges that arrived after v1 (Bybit, MEXC, KuCoin, …), and
+            // Poloniex/Chaince/ZB below are almost certainly defunct. Leaving a
+            // dead account listed is harmless (it only forces a memo); leaving
+            // a live one out is what loses a user's deposit.
+            exchanges: vec![
+                Exchange {
+                    account: "binancecleos".into(),
+                    label: Some("Binance".into()),
+                    memo_size: Some(9),
+                    memo_pattern: Some("^[0-9]+$".into()),
+                },
+                Exchange {
+                    account: "bitfinexdep1".into(),
+                    label: Some("Bitfinex".into()),
+                    memo_size: Some(16),
+                    memo_pattern: Some("^[a-f0-9]+$".into()),
+                },
+                Exchange {
+                    account: "krakenkraken".into(),
+                    label: Some("Kraken".into()),
+                    memo_size: None,
+                    memo_pattern: Some("^[0-9]+$".into()),
+                },
+                Exchange {
+                    account: "huobideposit".into(),
+                    label: Some("Huobi / HTX".into()),
+                    memo_size: None,
+                    memo_pattern: Some("^[0-9]+$".into()),
+                },
+                Exchange {
+                    account: "gateiowallet".into(),
+                    label: Some("Gate.io".into()),
+                    memo_size: Some(16),
+                    memo_pattern: Some("^[a-f0-9]+$".into()),
+                },
+                Exchange {
+                    account: "okbtothemoon".into(),
+                    label: Some("OKX".into()),
+                    memo_size: None,
+                    memo_pattern: Some("^[0-9]+$".into()),
+                },
+                Exchange {
+                    account: "eosusrwallet".into(),
+                    label: None,
+                    memo_size: Some(36),
+                    memo_pattern: Some("^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$".into()),
+                },
+                // Legacy v1 entries, kept because an unnecessary memo prompt is
+                // cheaper than a missed one. Safe to drop once confirmed dead.
+                Exchange {
+                    account: "poloniexeos1".into(),
+                    label: Some("Poloniex".into()),
+                    memo_size: Some(16),
+                    memo_pattern: Some("^[a-f0-9]+$".into()),
+                },
+                Exchange {
+                    account: "chainceoneos".into(),
+                    label: Some("Chaince".into()),
+                    memo_size: Some(10),
+                    memo_pattern: Some("^[a-z]+$".into()),
+                },
+                Exchange {
+                    account: "zbeoscharge1".into(),
+                    label: Some("ZB.com".into()),
+                    memo_size: Some(18),
+                    memo_pattern: Some("^[0-9]+$".into()),
+                },
+            ],
         },
         ChainConfig {
             id: "1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4".into(),
@@ -175,6 +290,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 8,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -226,6 +342,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("wax".into()),
             oracle_contract: Some("delphioracle".into()),
             oracle_scope: Some("waxpusd".into()),
+            exchanges: vec![],
         },
         ChainConfig {
             id: "4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11".into(),
@@ -234,12 +351,9 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
-                Endpoint {
-                    url: "https://telos.greymass.com".into(),
-                    owner: Some("Greymass".into()),
-                },
                 Endpoint {
                     url: "https://mainnet.telos.net".into(),
                     owner: Some("Telos Foundation".into()),
@@ -247,10 +361,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://telos.eosphere.io".into(),
                     owner: Some("EOSphere".into()),
-                },
-                Endpoint {
-                    url: "https://telos.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
                 },
             ],
             hyperion_apis: vec![
@@ -280,6 +390,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("telos".into()),
             oracle_contract: Some("delphioracle".into()),
             oracle_scope: Some("tlosusd".into()),
+            exchanges: vec![],
         },
         ChainConfig {
             id: "a9c481dfbc7d9506dc7e87e9a137c931b0a9303f64fd7a1d08b8230133920097".into(),
@@ -288,6 +399,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -320,6 +432,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("ultra".into()),
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         ChainConfig {
             id: "21dcae42c0182200e93f954a074011f9048a7624c6fe81d3c9541a614a88bd1c".into(),
@@ -328,6 +441,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 9,
             icon: None,
             token_contract: "fio.token".into(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -337,10 +451,6 @@ pub fn default_chains() -> Vec<ChainConfig> {
                 Endpoint {
                     url: "https://fio.eosphere.io".into(),
                     owner: Some("EOSphere".into()),
-                },
-                Endpoint {
-                    url: "https://fio.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
                 },
             ],
             hyperion_apis: vec!["https://fio.eosphere.io".into()],
@@ -364,6 +474,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("fio-protocol".into()),
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         ChainConfig {
             id: "38b1d7815474d0c60683ecbea321d723e83f5da6ae5f1c1f9fecc69d9ba96465".into(),
@@ -372,15 +483,12 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
                     url: "https://libre.greymass.com".into(),
                     owner: Some("Greymass".into()),
-                },
-                Endpoint {
-                    url: "https://libre-api.edenia.cloud".into(),
-                    owner: Some("Edenia".into()),
                 },
                 Endpoint {
                     url: "https://libre.eosphere.io".into(),
@@ -408,6 +516,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("libre".into()),
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         ChainConfig {
             id: "384da888112027f0321850a169f737c33e53b388aad48b5adace4bab97f437e0".into(),
@@ -416,6 +525,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -423,15 +533,20 @@ pub fn default_chains() -> Vec<ChainConfig> {
                     owner: Some("Greymass".into()),
                 },
                 Endpoint {
-                    url: "https://xpr.api.eosnation.io".into(),
-                    owner: Some("EOS Nation".into()),
+                    url: "https://proton.protonuk.io".into(),
+                    owner: Some("Proton UK".into()),
                 },
                 Endpoint {
-                    url: "https://proton.eosphere.io".into(),
-                    owner: Some("EOSphere".into()),
+                    url: "https://proton.eosusa.io".into(),
+                    owner: Some("EOS USA".into()),
                 },
             ],
-            hyperion_apis: vec!["https://proton.eosphere.io".into()],
+            // XPR's published Hyperion providers; keep independent fallbacks.
+            hyperion_apis: vec![
+                "https://proton.protonuk.io".into(),
+                "https://proton.eosusa.io".into(),
+                "https://api-xprnetwork-main.saltant.io".into(),
+            ],
             explorers: vec![Explorer {
                 name: "XPR Explorer".into(),
                 url: "https://explorer.xprnetwork.org".into(),
@@ -452,6 +567,7 @@ pub fn default_chains() -> Vec<ChainConfig> {
             coingecko_id: Some("proton".into()),
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
     ]
 }
@@ -467,6 +583,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -503,6 +620,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         // ── WAX Testnet ──
         ChainConfig {
@@ -512,15 +630,12 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 8,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
                     url: "https://testnet.waxsweden.org".into(),
                     owner: Some("WAX Sweden".into()),
-                },
-                Endpoint {
-                    url: "https://testnet.wax.pink.gg".into(),
-                    owner: Some("Pink.gg".into()),
                 },
                 Endpoint {
                     url: "https://wax-testnet.eosphere.io".into(),
@@ -548,6 +663,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         // ── Telos Testnet ──
         ChainConfig {
@@ -557,6 +673,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -584,6 +701,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         // ── Ultra Testnet ──
         ChainConfig {
@@ -593,6 +711,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -625,6 +744,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         // ── FIO Testnet ──
         ChainConfig {
@@ -634,6 +754,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 9,
             icon: None,
             token_contract: "fio.token".into(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![Endpoint {
                 url: "https://testnet.fioprotocol.io".into(),
@@ -660,6 +781,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
         // ── XPR Testnet ──
         ChainConfig {
@@ -669,6 +791,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             precision: 4,
             icon: None,
             token_contract: default_token_contract(),
+            system_contract: default_system_contract(),
             extra_tokens: vec![],
             endpoints: vec![
                 Endpoint {
@@ -703,6 +826,7 @@ pub fn default_testnets() -> Vec<ChainConfig> {
             coingecko_id: None,
             oracle_contract: None,
             oracle_scope: None,
+            exchanges: vec![],
         },
     ]
 }

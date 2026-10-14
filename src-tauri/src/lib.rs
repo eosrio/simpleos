@@ -5,7 +5,9 @@ pub mod error;
 pub mod keystore;
 #[cfg(feature = "ledger")]
 pub mod ledger;
+pub mod rng;
 pub mod tray;
+pub mod util;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -13,7 +15,7 @@ use tauri::{Manager, WindowEvent};
 use tauri_plugin_store::StoreExt;
 
 use antelope::provider::ProviderState;
-use keystore::store::{FileKeyStore, OsKeyStore};
+use keystore::store::FileKeyStore;
 use keystore::wallet::WalletService;
 use tray::TrayState;
 
@@ -54,17 +56,25 @@ fn probe_os_keyring() -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Fail closed before anything can generate a key: verify the OS CSPRNG is
+    // producing distinct, non-trivial output on this platform.
+    rng::self_test();
+    antelope::provider::install_tls_provider();
+
     let mut all_chains = antelope::chain_config::default_chains();
     all_chains.extend(antelope::chain_config::default_testnets());
     let chain_ids: Vec<String> = all_chains.iter().map(|c| c.id.clone()).collect();
 
     tauri::Builder::default()
+        .runtime(tauri_runtime_wry::Wry::default())
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_deep_link::init())
         .manage(ProviderState::new())
+        // R2+R3: registry of in-flight signing requests awaiting trusted-window confirmation.
+        .manage(commands::sign_confirm::SignRegistry::new())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             // Intercept close on the main window so it hides to the tray
             // instead of exiting the app. The tray "Quit" menu item flips
@@ -99,19 +109,44 @@ pub fn run() {
                 app.handle().plugin(tauri_plugin_process::init())?;
             }
 
-            // Pick key store backend: OS keyring if it works, file-based fallback
+            // Key store backend: always the encrypted file store. Every shipped
+            // vault lives there: keyring 3 was built without a platform feature,
+            // so the old OS keyring probe only ever reached keyring's mock store
+            // and fell back. keyring 4 enables the real OS store by default, and
+            // choosing it here hides the existing file vault (unlock then fails as
+            // a wrong passphrase). OsKeyStore also lacks the atomic `store_batch`
+            // and `is_empty` the vault relies on. Moving to the OS keyring needs
+            // an explicit migration, not a startup probe.
             let app_data_dir = app.path().app_data_dir()
                 .expect("Failed to resolve app data directory");
-
-            let store: Box<dyn keystore::store::KeyStore> = if probe_os_keyring() {
-                log::info!("[wallet] OS keyring probe passed — using OsKeyStore");
-                Box::new(OsKeyStore)
-            } else {
-                log::warn!("[wallet] OS keyring probe FAILED — falling back to FileKeyStore at {:?}", app_data_dir);
-                Box::new(FileKeyStore::new(app_data_dir))
-            };
+            // Earlier builds kept the passphrase in pin.dat, encrypted under a key
+            // derived from the 4-6 digit PIN with a fixed salt, which anyone with a
+            // copy of the folder can search offline. The PIN is session-only now.
+            let _ = std::fs::remove_file(app_data_dir.join("pin.dat"));
+            // Same for a biometric.dat from before the Windows Hello key binding.
+            biometric::discard_legacy_secret(&app_data_dir);
+            log::info!("[wallet] using FileKeyStore at {:?}", app_data_dir);
+            let store: Box<dyn keystore::store::KeyStore> =
+                Box::new(FileKeyStore::new(app_data_dir));
 
             let wallet = AppWallet(Arc::new(WalletService::new(store, chain_ids)));
+
+            // SEC-027: proactively zeroize the master key on idle. Auto-lock was
+            // previously lazy-only (evaluated on access), so the master key could
+            // linger in RAM indefinitely while the app sat idle in the tray. This
+            // lightweight background task polls every ~30s and calls lock() once the
+            // session has been idle past SESSION_TIMEOUT, regardless of IPC activity.
+            let auto_lock_wallet = wallet.0.clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    if auto_lock_wallet.is_idle_expired() {
+                        auto_lock_wallet.lock();
+                        log::info!("[wallet] auto-locked session after idle timeout");
+                    }
+                }
+            });
+
             app.manage(wallet);
 
             // Load close-to-tray preference from the shared store that the
@@ -145,18 +180,18 @@ pub fn run() {
             commands::wallet::to_fio_public_key,
             commands::wallet::generate_key_pair,
             commands::wallet::list_public_keys,
-            commands::wallet::export_private_key,
             commands::wallet::remove_key,
-            commands::wallet::sign_and_push,
-            commands::wallet::sign_transaction,
-            commands::wallet::sign_transaction_with_passphrase,
-            commands::wallet::sign_digest,
+            // SEC-004/006: export_private_key, sign_and_push, sign_transaction,
+            // sign_transaction_with_passphrase and sign_digest are intentionally
+            // NOT exposed. All signing and key export now flows through the
+            // trusted confirmation window (begin_sign / begin_esr_sign /
+            // begin_export_key) so a compromised renderer cannot sign or export
+            // silently, and sign_digest is no longer a blind-signing oracle.
             commands::wallet::change_passphrase,
             commands::wallet::get_security_mode,
             commands::wallet::set_security_mode,
             commands::wallet::needs_passphrase_for_signing,
             commands::wallet::needs_lockscreen,
-            commands::wallet::sign_and_push_with_passphrase,
             commands::wallet::generate_finalizer_key,
             commands::wallet::list_finalizer_keys,
             commands::wallet::get_finalizer_pop,
@@ -189,6 +224,7 @@ pub fn run() {
             commands::network::get_producers,
             commands::network::lookup_key_accounts,
             commands::network::get_actions_history,
+            commands::bridge::get_evm_bridge_state,
             commands::network::get_msig_inbox,
             commands::network::get_msig_proposal_details,
             commands::network::refresh_msig_status,
@@ -208,6 +244,9 @@ pub fn run() {
             commands::anchor::import_anchor_entries,
             // Config
             commands::config::get_chains_config,
+            commands::config::preference_get,
+            commands::config::preference_set,
+            commands::config::preference_delete,
             // DApp browser
             commands::dapp::open_dapp_browser,
             commands::dapp::close_dapp_browser,
@@ -218,10 +257,18 @@ pub fn run() {
             commands::dapp::dapp_resolve_signing,
             commands::dapp::dapp_reject_signing,
             // Link sessions (anchor-link protocol)
-            commands::session::create_link_session,
-            commands::session::unseal_message,
-            commands::session::seal_message,
-            commands::session::delete_link_session,
+            // R4: anchor-link sealed-session commands (create/unseal/seal/delete
+            // link session) are removed for v1. The unauthenticated buoy channel
+            // is dropped (SEC-014/032/058); ESR works via deep links + dapp esr:.
+            // R2+R3: trusted-confirmation signing flow.
+            commands::sign_confirm::begin_sign,
+            commands::sign_confirm::begin_esr_sign,
+            commands::sign_confirm::begin_export_key,
+            commands::sign_confirm::get_pending_sign_request,
+            commands::sign_confirm::approve_sign,
+            commands::sign_confirm::reject_sign,
+            commands::sign_confirm::get_confirmation_policy,
+            commands::sign_confirm::set_confirmation_policy,
             // Ledger
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_list_devices,

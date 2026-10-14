@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+
 use tauri::{Emitter, Manager, State};
 
 use crate::antelope::discovery::{self, DiscoveredEndpoint};
@@ -7,7 +7,7 @@ use crate::antelope::provider::{EndpointState, ProviderManager, ProviderState};
 use crate::antelope::types::*;
 use crate::error::Error;
 
-type ProviderMap<'a> = tokio::sync::MutexGuard<'a, HashMap<String, ProviderManager>>;
+
 
 /// Initialize a chain's provider manager with endpoints from config.
 #[tauri::command]
@@ -38,10 +38,7 @@ pub async fn check_rpc_endpoints(
     chain_id: String,
     providers: State<'_, ProviderState>,
 ) -> Result<Vec<EndpointState>, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     Ok(pm.check_all_rpc_endpoints().await)
 }
@@ -52,10 +49,7 @@ pub async fn check_hyperion_endpoints(
     chain_id: String,
     providers: State<'_, ProviderState>,
 ) -> Result<Vec<EndpointState>, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     Ok(pm.check_all_hyperion_endpoints().await)
 }
@@ -66,10 +60,7 @@ pub async fn get_chain_info(
     chain_id: String,
     providers: State<'_, ProviderState>,
 ) -> Result<ChainInfo, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call("/v1/chain/get_info", &serde_json::json!({}), |json| {
         serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
@@ -84,10 +75,7 @@ pub async fn get_account(
     account_name: String,
     providers: State<'_, ProviderState>,
 ) -> Result<AccountInfo, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_account",
@@ -106,10 +94,7 @@ pub async fn get_balances(
     symbol: String,
     providers: State<'_, ProviderState>,
 ) -> Result<Vec<String>, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_currency_balance",
@@ -126,10 +111,7 @@ pub async fn get_table_rows(
     params: serde_json::Value,
     providers: State<'_, ProviderState>,
 ) -> Result<TableRowsResult, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call("/v1/chain/get_table_rows", &params, |json| {
         serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
@@ -144,15 +126,18 @@ pub async fn get_abi(
     account_name: String,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_abi",
         &serde_json::json!({ "account_name": account_name }),
-        |json| Ok(json),
+        |json| {
+            if json.get("abi").is_some_and(|abi| abi.is_null() || abi["actions"].is_array()) {
+                Ok(json)
+            } else {
+                Err(Error::Rpc("Invalid contract ABI response".into()))
+            }
+        },
     )
     .await
 }
@@ -164,15 +149,18 @@ pub async fn get_producers(
     limit: u32,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_producers",
         &serde_json::json!({ "limit": limit, "lower_bound": "", "json": true }),
-        |json| Ok(json),
+        |json| {
+            if json["rows"].is_array() || json["producers"].is_array() {
+                Ok(json)
+            } else {
+                Err(Error::Rpc("Invalid producer list response".into()))
+            }
+        },
     )
     .await
 }
@@ -302,10 +290,7 @@ pub async fn lookup_key_accounts(
     public_key: String,
     providers: State<'_, ProviderState>,
 ) -> Result<KeyAccountsResult, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     lookup_key_accounts_impl(pm, &public_key).await
 }
@@ -415,25 +400,33 @@ pub async fn get_actions_history(
     before: Option<String>,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
-    let mut path = format!(
-        "/v2/history/get_actions?account={}&limit={}&skip={}",
-        account, limit, skip
-    );
+    let mut url = reqwest::Url::parse("https://history.invalid/v2/history/get_actions").unwrap();
+    url.query_pairs_mut().append_pair("account", &account)
+        .append_pair("limit", &limit.clamp(1, 1000).to_string())
+        .append_pair("skip", &skip.to_string()).append_pair("sort", "desc");
     if let Some(name) = act_name {
-        path.push_str(&format!("&act.name={}", name));
+        url.query_pairs_mut().append_pair("act.name", &name);
     }
     if let Some(a) = after {
-        path.push_str(&format!("&after={}", a));
+        url.query_pairs_mut().append_pair("after", &a);
     }
     if let Some(b) = before {
-        path.push_str(&format!("&before={}", b));
+        url.query_pairs_mut().append_pair("before", &b);
     }
-    pm.hyperion_get(&path).await
+    let path = format!("{}?{}", url.path(), url.query().unwrap_or_default());
+    // Validate the payload at the provider boundary so malformed HTTP 200
+    // responses fail over instead of appearing as an empty account history.
+    let history: ActionsHistory = pm.hyperion_get(&path).await?;
+    serde_json::to_value(history).map_err(|e| Error::Rpc(e.to_string()))
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ActionsHistory {
+    actions: Vec<serde_json::Value>,
+    #[serde(flatten)]
+    metadata: serde_json::Map<String, serde_json::Value>,
 }
 
 /// Multisig inbox: proposals that still need `account`'s approval.
@@ -449,14 +442,11 @@ pub async fn get_msig_inbox(
     limit: Option<u32>,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let lim = limit.unwrap_or(50);
 
-    if pm.hyperion_endpoints.is_empty() {
+    if pm.hyperion_endpoints().is_empty() {
         // No Hyperion: the frontend will orchestrate via cache + a manual
         // `scan_msig_scopes` call. Returning an empty list here keeps the
         // initial page load instant instead of stalling on a long scan.
@@ -511,10 +501,7 @@ pub async fn get_msig_proposal_details(
 ) -> Result<serde_json::Value, Error> {
     use crate::antelope::serialize::{hex_decode, parse_packed_transaction};
 
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     // 1. Read the proposal row from eosio.msig::proposal (scope = proposer, pk = proposal_name).
     let rows: serde_json::Value = pm
@@ -551,6 +538,14 @@ pub async fn get_msig_proposal_details(
         .ok_or_else(|| Error::Serialization("packed_transaction missing".into()))?;
     let packed_bytes = hex_decode(packed_hex)
         .map_err(|e| Error::Serialization(format!("Invalid packed_transaction hex: {}", e)))?;
+
+    // SEC-003: sha256 of the on-chain packed_transaction. Passed as the
+    // eosio.msig::approve `proposal_hash` so the chain rejects any approval that
+    // doesn't match the exact bytes of the reviewed proposal.
+    let proposal_hash = {
+        use sha2::{Digest, Sha256};
+        hex::encode(Sha256::digest(&packed_bytes))
+    };
 
     let parsed = parse_packed_transaction(&packed_bytes)?;
 
@@ -602,6 +597,7 @@ pub async fn get_msig_proposal_details(
         "actions": decoded_actions,
         "requested_approvals": requested,
         "provided_approvals": provided,
+        "proposal_hash": proposal_hash,
     }))
 }
 
@@ -621,10 +617,7 @@ pub async fn refresh_msig_status(
     keys: Vec<serde_json::Value>,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let mut active = Vec::new();
     let mut dead = Vec::new();
@@ -696,10 +689,7 @@ pub async fn scan_msig_scopes_stream(
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
     use tauri::Emitter;
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let cap = max_scopes.unwrap_or(500);
     let mut lower = String::new();
@@ -708,7 +698,9 @@ pub async fn scan_msig_scopes_stream(
     let mut results: Vec<serde_json::Value> = Vec::new();
     const PAGE: u32 = 200;
 
-    let _ = app.emit(
+    // SEC-050: scope sensitive msig events to the main window only
+    let _ = app.emit_to(
+        "main",
         "msig-scan-progress",
         serde_json::json!({ "scanned": 0, "found": 0, "done": false }),
     );
@@ -744,7 +736,9 @@ pub async fn scan_msig_scopes_stream(
 
         for row in rows.iter() {
             scanned += 1;
-            let _ = app.emit(
+            // SEC-050: scope sensitive msig events to the main window only
+            let _ = app.emit_to(
+                "main",
                 "msig-scan-progress",
                 serde_json::json!({ "scanned": scanned, "found": found, "done": false }),
             );
@@ -805,7 +799,8 @@ pub async fn scan_msig_scopes_stream(
                         "provided_approvals": provided,
                     });
                     found += 1;
-                    let _ = app.emit("msig-scan-proposal", payload.clone());
+                    // SEC-050: scope sensitive msig events to the main window only
+                    let _ = app.emit_to("main", "msig-scan-proposal", payload.clone());
                     results.push(payload);
                 }
             }
@@ -825,7 +820,9 @@ pub async fn scan_msig_scopes_stream(
         lower = more.to_string();
     }
 
-    let _ = app.emit(
+    // SEC-050: scope sensitive msig events to the main window only
+    let _ = app.emit_to(
+        "main",
         "msig-scan-progress",
         serde_json::json!({ "scanned": scanned, "found": found, "done": true }),
     );
@@ -897,10 +894,7 @@ pub async fn get_tokens(
     account: String,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let path = format!("/v2/state/get_tokens?account={}", account);
     pm.hyperion_get(&path).await
@@ -914,10 +908,7 @@ pub async fn fio_get_fee(
     fio_address: String,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_fee",
@@ -934,10 +925,7 @@ pub async fn fio_get_names(
     fio_public_key: String,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_fio_names",
@@ -954,10 +942,7 @@ pub async fn fio_get_pub_address(
     fio_address: String,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     pm.rpc_call(
         "/v1/chain/get_pub_address",
@@ -977,16 +962,13 @@ pub async fn get_active_endpoints(
     chain_id: String,
     providers: State<'_, ProviderState>,
 ) -> Result<ActiveEndpoints, Error> {
-    let map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     Ok(ActiveEndpoints {
-        rpc: pm.active_rpc_url().unwrap_or("").to_string(),
-        hyperion: pm.active_hyperion_url().unwrap_or("").to_string(),
-        rpc_endpoints: pm.rpc_endpoints.clone(),
-        hyperion_endpoints: pm.hyperion_endpoints.clone(),
+        rpc: pm.active_rpc_url().unwrap_or_default().to_string(),
+        hyperion: pm.active_hyperion_url().unwrap_or_default().to_string(),
+        rpc_endpoints: pm.rpc_endpoints(),
+        hyperion_endpoints: pm.hyperion_endpoints(),
     })
 }
 
@@ -1016,7 +998,7 @@ pub fn load_cached_endpoints(
                 .collect();
             log::info!(
                 "[discovery] Loaded cache for {}: {} endpoints ({} healthy, fresh={})",
-                &chain_id[..8],
+                crate::util::short_prefix(&chain_id, 8), // SEC-013
                 cache.endpoints.len(),
                 healthy.len(),
                 fresh
@@ -1044,18 +1026,19 @@ pub async fn discover_endpoints(
     chain_id: String,
     providers: State<'_, ProviderState>,
 ) -> Result<Vec<DiscoveredEndpoint>, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
+    crate::antelope::provider::install_tls_provider();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
+        // SEC-060: do not follow redirects (prevents redirect-based SSRF/downgrade)
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .unwrap_or_default();
 
     let result = discovery::discover_endpoints(pm, &chain_id, &client, |progress| {
-        let _ = app.emit("discovery-progress", &progress);
+        // SEC-050: scope discovery progress events to the main window only
+        let _ = app.emit_to("main", "discovery-progress", &progress);
     })
     .await?;
 
@@ -1076,10 +1059,7 @@ pub async fn get_powerup_info(
     account: String,
     providers: State<'_, ProviderState>,
 ) -> Result<powerup::ResourceSummary, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     powerup::get_resource_summary(pm, &account).await
 }
@@ -1093,10 +1073,7 @@ pub async fn estimate_powerup(
     net_frac: f64,
     providers: State<'_, ProviderState>,
 ) -> Result<powerup::PowerUpEstimate, Error> {
-    let mut map: ProviderMap<'_> = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
+    let pm = &mut providers.get(&chain_id).await?;
 
     let state = powerup::get_powerup_state(pm).await?;
     powerup::estimate_powerup_cost(&state, cpu_frac, net_frac)

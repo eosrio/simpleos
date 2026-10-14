@@ -158,7 +158,8 @@ pub fn parse_backup(json: &str) -> Result<ParsedAnchorBackup, Error> {
         let (chain_name, symbol, is_testnet) = match networks.get(&w.chain_id) {
             Some((net,)) => (net.name.clone(), net.symbol.clone(), net.testnet),
             None => (
-                format!("Unknown ({})", &w.chain_id[..8]),
+                // SEC-010: never byte-index an unvalidated backup string
+                format!("Unknown ({})", crate::util::short_prefix(&w.chain_id, 8)),
                 "???".into(),
                 false,
             ),

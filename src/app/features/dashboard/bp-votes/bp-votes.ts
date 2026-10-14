@@ -78,7 +78,7 @@ interface VoterRow {
     .bp-badge {
       display: inline-flex; align-items: center; gap: var(--sp-2);
       padding: var(--sp-1) var(--sp-3); background: var(--accent-muted);
-      color: var(--accent); border-radius: var(--radius-full);
+      color: var(--accent-text); border-radius: var(--radius-full);
       font-size: 12px; font-weight: 500; margin-bottom: var(--sp-3);
     }
     h2 { font-size: 24px; margin-bottom: var(--sp-6); }
@@ -121,13 +121,13 @@ interface VoterRow {
     .table-row:hover { background: var(--bg-hover); }
     .rank { color: var(--text-muted); font-weight: 500; }
     .data { font-family: var(--font-data); }
-    .account { color: var(--accent); cursor: pointer; }
+    .account { color: var(--accent-text); cursor: pointer; }
     .account:hover { text-decoration: underline; }
     .type-badge {
       font-size: 11px; font-weight: 500; padding: 2px var(--sp-2);
       border-radius: var(--radius-full); display: inline-block; text-align: center;
     }
-    .type-badge.proxy { background: var(--accent-muted); color: var(--accent); }
+    .type-badge.proxy { background: var(--accent-muted); color: var(--accent-text); }
     .type-badge.direct { background: rgba(45, 212, 168, 0.12); color: var(--positive); }
   `],
 })

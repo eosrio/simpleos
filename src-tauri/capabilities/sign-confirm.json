@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "sign-confirm",
+  "description": "Trusted transaction-confirmation window (R2+R3). Renders the backend-built signing summary and relays the user's approve/reject decision. Loads only the app's own bundle; the renderer cannot script into it, so it can neither forge nor suppress a confirmation. App commands (begin_sign/approve_sign/...) are reachable here because this window has a capability; the untrusted dapp-browser window deliberately has none.",
+  "windows": [
+    "sign-confirm"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-close",
+    "core:window:allow-set-focus"
+  ]
+}

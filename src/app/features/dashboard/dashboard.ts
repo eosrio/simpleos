@@ -4,7 +4,11 @@ import { WalletStateService } from '../../core/services/wallet-state.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { UiStateService } from '../../core/services/ui-state.service';
 import { TauriIpcService } from '../../core/services/tauri-ipc.service';
+import { AppVersionService } from '../../core/services/app-version.service';
+import { UpdateService } from '../../core/services/update.service';
+import { compactAsset } from '../../core/format';
 import { ConfirmModalComponent } from '../../shared/confirm-modal';
+import { BRIDGE_ROUTES } from '../../core/bridges/bridge-model';
 import { WindowControlsComponent } from '../../shared/window-controls';
 
 interface AccountTabFilter {
@@ -19,8 +23,12 @@ interface AccountTabFilter {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmModalComponent, WindowControlsComponent],
   template: `
     <div class="dashboard">
-      <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls -->
-      <div class="titlebar">
+      <!-- Custom titlebar: brand + account tabs (browser-style) + drag region + window controls.
+           The "deep" drag region makes the whole strip a drag handle: Tauri walks the event
+           path and any click that does not land on an interactive element (button/link/input)
+           moves the window, so empty gaps — tab-strip padding, space after the last tab, flex
+           gaps — drag instead of being dead zones. Interactive children still block dragging. -->
+      <div class="titlebar" data-tauri-drag-region="deep">
         <button class="titlebar-brand" type="button" title="Wallet overview" aria-label="Open wallet overview" (click)="openOverview()">
           <img src="assets/simpleos-logo.svg" alt="SimplEOS" class="titlebar-logo" />
           <span class="titlebar-name">Simpl<span class="accent">EOS</span></span>
@@ -46,7 +54,7 @@ interface AccountTabFilter {
               </button>
 
               @if (chainFilterOpen()) {
-                <div class="chain-filter-menu" role="menu" aria-label="Account tab chain filter">
+                <div class="chain-filter-menu" role="menu" aria-label="Account tab chain filter" data-tauri-drag-region="false">
                   <button type="button"
                           class="chain-filter-option"
                           [class.active]="selectedChainFilter() === 'all'"
@@ -86,9 +94,12 @@ interface AccountTabFilter {
           <div class="account-tabs-shell"
                [class.scrollable-left]="canScrollLeft()"
                [class.scrollable-right]="canScrollRight()">
-            @if (canScrollLeft()) {
+            <!-- Rendered as soon as the strip overflows in either direction and merely
+                 disabled at each end, so the tabs never shift sideways mid-scroll. -->
+            @if (tabsOverflowing()) {
               <button class="tabs-nav tabs-nav-left"
                       type="button"
+                      [disabled]="!canScrollLeft()"
                       aria-label="Scroll account tabs left"
                       title="Scroll account tabs left"
                       (click)="scrollTabs('left')">
@@ -96,6 +107,7 @@ interface AccountTabFilter {
               </button>
             }
 
+            <div class="account-tabs-viewport">
             <div class="account-tabs" #accountTabs (scroll)="updateTabScrollState()" (wheel)="onTabsWheel($event)">
               @for (tab of visibleAccountTabs(); track tab.account.chainId + tab.account.name) {
                 <button class="account-tab"
@@ -117,17 +129,20 @@ interface AccountTabFilter {
                       </span>
                     }
                   </span>
-                  <span class="tab-balance">{{ tab.account.info.core_liquid_balance ?? tab.account.extraBalances?.[0]?.amount ?? '—' }}</span>
+                  @let rawBalance = tab.account.info.core_liquid_balance ?? tab.account.extraBalances?.[0]?.amount;
+                  <span class="tab-balance" [title]="rawBalance ?? ''">{{ compactAsset(rawBalance) }}</span>
                 </button>
               }
               <button class="account-tab add-tab" title="Add account" (click)="addAccount()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
+            </div>
 
-            @if (canScrollRight()) {
+            @if (tabsOverflowing()) {
               <button class="tabs-nav tabs-nav-right"
                       type="button"
+                      [disabled]="!canScrollRight()"
                       aria-label="Scroll account tabs right"
                       title="Scroll account tabs right"
                       (click)="scrollTabs('right')">
@@ -193,6 +208,12 @@ interface AccountTabFilter {
               </a>
             </li>
             <li>
+              <a routerLink="create-account" routerLinkActive="active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                Create Account
+              </a>
+            </li>
+            <li>
               <a routerLink="vote" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 Vote / Stake
@@ -217,6 +238,15 @@ interface AccountTabFilter {
               <a routerLink="contracts" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18 22 12 16 6"/><path d="M8 6 2 12 8 18"/><path d="m14 4-4 16"/></svg>
                 Contracts
+              </a>
+            </li>
+            @if (hasBridges()) {
+              <li><a routerLink="bridges" routerLinkActive="active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18m-4-4 4 4-4 4M21 17H3m4-4-4 4 4 4"/></svg>EVM Bridges</a></li>
+            }
+            <li>
+              <a routerLink="permissions" routerLinkActive="active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>
+                Permissions
               </a>
             </li>
             <li>
@@ -307,7 +337,19 @@ interface AccountTabFilter {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               }
             </button>
-            <span class="version">v2.0.0-alpha</span>
+            <!-- The startup check is silent by design; this is the notification. It takes
+                 the version label's place only when there is something to act on. -->
+            @if (updates.isUpdateAvailable()) {
+              <button type="button"
+                      class="version version-update"
+                      [title]="'Version ' + updates.newVersion() + ' is available — open Settings to install'"
+                      (click)="openUpdates()">
+                <span class="update-dot" aria-hidden="true"></span>
+                Update ready
+              </button>
+            } @else {
+              <span class="version">{{ appVersion.display() }}</span>
+            }
           </div>
         </nav>
         }
@@ -317,8 +359,39 @@ interface AccountTabFilter {
             <div class="watch-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>Watch-only account — import keys to enable transactions</span>
-              <button class="banner-action">IMPORT KEY</button>
+              <button class="banner-action" (click)="openImportKey()">IMPORT KEY</button>
             </div>
+            @if (showImportKey()) {
+              <div class="import-key-panel">
+                <label class="import-key-label" for="import-key-wif">
+                  Private key for <strong>{{ wallet.selectedAccount()?.name }}</strong>
+                  on {{ wallet.selectedAccount()?.chainName }}
+                </label>
+                <input id="import-key-wif" class="import-key-input" type="password"
+                       autocomplete="off" spellcheck="false" placeholder="5… / PVT_K1_…"
+                       [value]="importKeyWif()"
+                       (input)="importKeyWif.set($any($event.target).value)"
+                       (keydown.enter)="confirmImportKey()" />
+                @if (importKeyNeedsPassphrase()) {
+                  <input class="import-key-input" type="password" autocomplete="off"
+                         placeholder="Wallet passphrase"
+                         [value]="importKeyPassphrase()"
+                         (input)="importKeyPassphrase.set($any($event.target).value)"
+                         (keydown.enter)="confirmImportKey()" />
+                }
+                @if (importKeyError()) {
+                  <p class="import-key-msg error">{{ importKeyError() }}</p>
+                }
+                <div class="import-key-actions">
+                  <button class="import-key-btn ghost" (click)="cancelImportKey()"
+                          [disabled]="importKeyBusy()">Cancel</button>
+                  <button class="import-key-btn primary" (click)="confirmImportKey()"
+                          [disabled]="importKeyBusy() || !importKeyWif().trim() || (importKeyNeedsPassphrase() && !importKeyPassphrase())">
+                    {{ importKeyBusy() ? 'Importing…' : 'Import key' }}
+                  </button>
+                </div>
+              </div>
+            }
           }
           <router-outlet />
         </main>
@@ -343,14 +416,13 @@ interface AccountTabFilter {
         linear-gradient(180deg, color-mix(in srgb, var(--chain-tint) 80%, var(--bg-deep)), var(--bg-deep));
       border-bottom: 1px solid var(--border-subtle);
       min-height: 48px;
-      /* Entire strip acts as a drag handle where children don't opt out. */
-      -webkit-app-region: drag;
+      /* Dragging is driven by data-tauri-drag-region="deep" on the element, not by
+         -webkit-app-region — that property is an Electron/Chromium-shell feature and is
+         ignored by the WebView2 / WKWebView runtimes Tauri embeds. */
     }
 
     /* Brand area on the far left of the titlebar — logo + wordmark.
-       Acts as a drag region (entire area is -webkit-app-region: drag
-       via inherited titlebar rule; image and span have data-tauri-drag-region
-       set explicitly for Tauri's JS drag handler). */
+       A real button (opens the wallet overview), so it deliberately does not drag. */
     .titlebar-brand {
       display: flex;
       align-items: center;
@@ -364,7 +436,6 @@ interface AccountTabFilter {
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-app-region: no-drag;
       transition: background 150ms ease, color 150ms ease;
     }
     :host-context(html.os-mac) .titlebar-brand {
@@ -385,7 +456,7 @@ interface AccountTabFilter {
       letter-spacing: 0.4px;
       color: var(--text-bright);
     }
-    .titlebar-name .accent { color: var(--accent); }
+    .titlebar-name .accent { color: var(--accent-text); }
 
     .chain-filter {
       position: relative;
@@ -395,7 +466,6 @@ interface AccountTabFilter {
       flex: 0 0 auto;
       padding: 5px var(--sp-3) 0 var(--sp-2);
       margin-left: var(--sp-2);
-      -webkit-app-region: no-drag;
       z-index: 20;
     }
 
@@ -477,7 +547,7 @@ interface AccountTabFilter {
       padding: 0 6px;
       border-radius: var(--radius-full);
       background: color-mix(in srgb, var(--accent) 16%, transparent);
-      color: var(--accent);
+      color: var(--accent-text);
       font-family: var(--font-data);
       font-size: 10px;
       font-weight: 700;
@@ -553,7 +623,7 @@ interface AccountTabFilter {
     }
 
     .option-meta {
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-size: 10px;
       font-weight: 600;
     }
@@ -574,17 +644,27 @@ interface AccountTabFilter {
     }
 
     /* ── Account tabs (inside the titlebar) ── */
+    /* Layout is a row: [ ‹ nav ] [ scrolling viewport ] [ nav › ]. The arrows are
+       real flex siblings rather than floating overlays, so they never cover a tab. */
     .account-tabs-shell {
-      position: relative;
+      display: flex;
+      align-items: stretch;
       flex: 1 1 auto;
       min-width: 0;
       max-width: min(920px, calc(100vw - 320px));
       overflow: hidden;
-      -webkit-app-region: no-drag;
     }
 
-    .account-tabs-shell::before,
-    .account-tabs-shell::after {
+    .account-tabs-viewport {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Fades sit on the viewport, so they stop at the arrows instead of washing over them. */
+    .account-tabs-viewport::before,
+    .account-tabs-viewport::after {
       content: '';
       position: absolute;
       top: 0;
@@ -596,18 +676,18 @@ interface AccountTabFilter {
       transition: opacity 150ms ease;
     }
 
-    .account-tabs-shell::before {
+    .account-tabs-viewport::before {
       left: 0;
       background: linear-gradient(90deg, var(--bg-deep), transparent);
     }
 
-    .account-tabs-shell::after {
+    .account-tabs-viewport::after {
       right: 0;
       background: linear-gradient(270deg, var(--bg-deep), transparent);
     }
 
-    .account-tabs-shell.scrollable-left::before,
-    .account-tabs-shell.scrollable-right::after {
+    .account-tabs-shell.scrollable-left .account-tabs-viewport::before,
+    .account-tabs-shell.scrollable-right .account-tabs-viewport::after {
       opacity: 1;
     }
 
@@ -617,12 +697,11 @@ interface AccountTabFilter {
       height: 100%;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 0 calc(var(--sp-4) + 28px) 0 calc(var(--sp-2) + 28px);
+      padding: 0 var(--sp-2);
       scrollbar-width: none;
       -ms-overflow-style: none;
       scroll-snap-type: x proximity;
       /* Buttons inside are interactive — opt out of drag. */
-      -webkit-app-region: no-drag;
     }
 
     .account-tabs::-webkit-scrollbar {
@@ -630,42 +709,45 @@ interface AccountTabFilter {
       height: 0;
     }
 
+    /* Full-height edge controls, flush with the titlebar — no shadow or pill, so they
+       read as part of the chrome rather than as something floating on top of it. */
     .tabs-nav {
-      position: absolute;
-      top: 50%;
-      z-index: 2;
-      width: 24px;
-      height: 24px;
+      flex: 0 0 auto;
+      width: 30px;
+      align-self: stretch;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
-      border-radius: var(--radius-full);
-      background: color-mix(in srgb, var(--bg-base) 92%, var(--accent) 8%);
-      color: var(--text-body);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text-muted);
       cursor: pointer;
-      transform: translateY(-50%);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 150ms ease;
-      -webkit-app-region: no-drag;
-    }
-
-    .tabs-nav:hover {
-      color: var(--text-bright);
-      border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
-      background: color-mix(in srgb, var(--bg-base) 86%, var(--accent) 14%);
-    }
-
-    .tabs-nav:active {
-      transform: translateY(-50%) scale(0.96);
+      transition: color 150ms ease, background 150ms ease;
     }
 
     .tabs-nav-left {
-      left: 2px;
+      border-right: 1px solid var(--border-subtle);
     }
 
     .tabs-nav-right {
-      right: 2px;
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .tabs-nav:hover:not(:disabled) {
+      color: var(--text-bright);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .tabs-nav:active:not(:disabled) {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    /* Kept in place but inert at each end, so the strip width never changes mid-scroll. */
+    .tabs-nav:disabled {
+      color: var(--text-disabled);
+      opacity: 0.4;
+      cursor: default;
     }
 
     .account-tab {
@@ -741,9 +823,9 @@ interface AccountTabFilter {
       justify-content: center;
       min-width: 44px;
       padding: var(--sp-2);
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
-    .add-tab:hover { color: var(--accent); }
+    .add-tab:hover { color: var(--accent-text); }
 
     /* ── Main area (sidebar + content) ── */
     .main-area {
@@ -767,7 +849,7 @@ interface AccountTabFilter {
       transition: background-image 300ms ease;
     }
 
-    .accent { color: var(--accent); }
+    .accent { color: var(--accent-text); }
 
     /* Account card */
     .account-card {
@@ -842,7 +924,7 @@ interface AccountTabFilter {
     .nav-list li a:hover .shortcut { opacity: 1; }
 
     .nav-list li a.active {
-      color: var(--accent);
+      color: var(--accent-text);
       border-left-color: var(--accent);
       background: var(--accent-muted);
     }
@@ -852,7 +934,7 @@ interface AccountTabFilter {
     .shortcut {
       margin-left: auto;
       font-size: 10px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
       opacity: 0;
       transition: opacity 150ms ease;
@@ -869,7 +951,7 @@ interface AccountTabFilter {
       font-weight: 600;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--accent-text);
       padding: var(--sp-1) var(--sp-5);
       list-style: none;
     }
@@ -904,8 +986,9 @@ interface AccountTabFilter {
     .mode-badge {
       display: flex;
       align-items: center;
-      color: var(--accent);
-      opacity: 0.6;
+      /* Recessed via the token, not opacity — 0.6 alpha undid the contrast the
+         accent-text ramp is there to guarantee. */
+      color: var(--text-muted);
     }
     .theme-toggle {
       display: flex;
@@ -921,14 +1004,52 @@ interface AccountTabFilter {
       transition: color 150ms ease, border-color 150ms ease;
     }
     .theme-toggle:hover {
-      color: var(--accent);
+      color: var(--accent-text);
       border-color: var(--accent);
     }
 
     .version {
       font-size: 11px;
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
+    }
+
+    .version-update {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent-text);
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+
+    .version-update:hover {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+
+    .update-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* The dot is the only thing that moves — enough to catch the eye on a screen
+       people are not looking at, and silent for anyone who prefers less motion. */
+    @media (prefers-reduced-motion: no-preference) {
+      .update-dot {
+        animation: update-pulse 2.4s ease-in-out infinite;
+      }
+    }
+
+    @keyframes update-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
     }
 
     /* Watch-only indicators */
@@ -999,6 +1120,63 @@ interface AccountTabFilter {
     }
     .banner-action:hover { background: rgba(245, 166, 35, 0.1); }
 
+    /* ── Inline import-key panel (watch-only → full upgrade) ── */
+    .import-key-panel {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+      padding: var(--sp-4);
+      margin-bottom: var(--sp-6);
+      background: rgba(245, 166, 35, 0.06);
+      border: 1px solid rgba(245, 166, 35, 0.15);
+      border-radius: var(--radius-md);
+    }
+    .import-key-label {
+      font-size: 12px;
+      color: var(--text-body);
+    }
+    .import-key-label strong { color: var(--text-bright); font-weight: 600; }
+    .import-key-input {
+      width: 100%;
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-bright);
+      font-family: var(--font-data);
+      font-size: 13px;
+    }
+    .import-key-input:focus { outline: none; border-color: var(--caution); }
+    .import-key-msg { margin: 0; font-size: 12px; }
+    .import-key-msg.error { color: var(--negative); }
+    .import-key-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--sp-2);
+    }
+    .import-key-btn {
+      padding: var(--sp-2) var(--sp-4);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 150ms ease, background 150ms ease;
+    }
+    .import-key-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .import-key-btn.ghost {
+      background: transparent;
+      border-color: var(--border-subtle);
+      color: var(--text-body);
+    }
+    .import-key-btn.ghost:hover:not(:disabled) { background: var(--bg-hover); }
+    .import-key-btn.primary {
+      background: var(--caution);
+      color: #1a1205;
+    }
+    .import-key-btn.primary:hover:not(:disabled) { opacity: 0.9; }
+
     /* ── Content ── */
     .content {
       flex: 1;
@@ -1018,10 +1196,21 @@ interface AccountTabFilter {
   `],
 })
 export class DashboardComponent {
+  readonly hasBridges = computed(() => BRIDGE_ROUTES.some(route => route.sourceChainId === this.wallet.selectedAccount()?.chainId));
   readonly accountTabs = viewChild<ElementRef<HTMLDivElement>>('accountTabs');
   readonly chainFilterRoot = viewChild<ElementRef<HTMLElement>>('chainFilterRoot');
   readonly canScrollLeft = signal(false);
   readonly canScrollRight = signal(false);
+
+  /**
+   * Whether the tab strip overflows at all. Drives rendering of both arrows
+   * together — showing or hiding one mid-scroll would resize the strip and
+   * slide the tabs under the pointer.
+   */
+  readonly tabsOverflowing = computed(() => this.canScrollLeft() || this.canScrollRight());
+
+  /** Tab balances are rounded for scanning; the exact amount stays in the tooltip. */
+  readonly compactAsset = compactAsset;
   readonly chainFilterOpen = signal(false);
   readonly selectedChainFilter = signal('all');
   readonly accountChainFilters = computed<AccountTabFilter[]>(() => {
@@ -1066,6 +1255,8 @@ export class DashboardComponent {
     public wallet: WalletStateService,
     public theme: ThemeService,
     public ui: UiStateService,
+    public appVersion: AppVersionService,
+    public updates: UpdateService,
     private router: Router,
     private ipc: TauriIpcService,
   ) {
@@ -1251,8 +1442,103 @@ export class DashboardComponent {
     this.openOverview();
   }
 
+  /** Deep-links to the Updates card in Settings, which scrolls to and highlights it. */
+  openUpdates() {
+    this.router.navigate(['/dashboard/settings'], { fragment: 'updates' });
+  }
+
   addAccount() {
     this.router.navigate(['/landing']);
+  }
+
+  // ── Import key for a watch-only account (upgrade to a signing account) ──
+
+  readonly showImportKey = signal(false);
+  readonly importKeyWif = signal('');
+  readonly importKeyPassphrase = signal('');
+  readonly importKeyNeedsPassphrase = signal(false);
+  readonly importKeyBusy = signal(false);
+  readonly importKeyError = signal('');
+
+  openImportKey() {
+    this.importKeyWif.set('');
+    this.importKeyPassphrase.set('');
+    this.importKeyNeedsPassphrase.set(false);
+    this.importKeyError.set('');
+    this.showImportKey.set(true);
+  }
+
+  cancelImportKey() {
+    this.showImportKey.set(false);
+    this.importKeyWif.set('');
+    this.importKeyPassphrase.set('');
+    this.importKeyError.set('');
+  }
+
+  async confirmImportKey() {
+    const account = this.wallet.selectedAccount();
+    const wif = this.importKeyWif().trim();
+    if (!account || !wif || this.importKeyBusy()) return;
+    if (this.importKeyNeedsPassphrase() && !this.importKeyPassphrase()) return;
+
+    this.importKeyBusy.set(true);
+    this.importKeyError.set('');
+
+    try {
+      // 1. Validate the WIF and derive its public key.
+      let pubKey: string;
+      try {
+        pubKey = await this.ipc.derivePublicKey(wif);
+      } catch {
+        this.importKeyError.set('Invalid private key format');
+        return;
+      }
+
+      // 2. Verify the key actually controls this account before storing it.
+      //    Tolerate lookup failures (offline / node lacks the index) — only
+      //    block when the node positively reports a different set of accounts.
+      try {
+        const names = (await this.ipc.lookupKeyAccounts(account.chainId, pubKey)).account_names ?? [];
+        if (names.length > 0 && !names.includes(account.name)) {
+          this.importKeyError.set(`This key controls ${names.slice(0, 3).join(', ')}, not ${account.name}.`);
+          return;
+        }
+      } catch {
+        // Couldn't verify — proceed, trusting the user's intent.
+      }
+
+      // 3. Store the key. Use the active session when available; fall back to a
+      //    passphrase prompt for SignPerUse (no master key held in memory).
+      try {
+        if (this.importKeyNeedsPassphrase()) {
+          await this.ipc.importPrivateKey(wif, account.chainId, this.importKeyPassphrase());
+        } else {
+          await this.ipc.importKeyWithSession(wif, account.chainId);
+        }
+      } catch (e: any) {
+        const msg = e?.toString() ?? '';
+        if (!this.importKeyNeedsPassphrase() && msg.toLowerCase().includes('locked')) {
+          this.importKeyNeedsPassphrase.set(true);
+          this.importKeyError.set('Enter your wallet passphrase to import this key.');
+          return;
+        }
+        if (msg.toLowerCase().includes('passphrase')) {
+          this.importKeyError.set('Invalid passphrase');
+          return;
+        }
+        throw e;
+      }
+
+      // 4. Upgrade the watch-only account in place to a signing account and persist.
+      await this.wallet.addImportedAccount(account.name, account.chainId, 'full');
+      await this.wallet.saveAccounts();
+
+      this.cancelImportKey();
+    } catch (e: any) {
+      this.importKeyError.set(e?.toString() ?? 'Import failed');
+    } finally {
+      this.importKeyBusy.set(false);
+    }
   }
 
   async lockWallet() {

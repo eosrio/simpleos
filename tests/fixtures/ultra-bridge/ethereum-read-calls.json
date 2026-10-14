@@ -1,0 +1,119 @@
+{
+  "calls": {
+    "settled68": {
+      "request": {
+        "params": [
+          {
+            "data": "0x56fcff130000000000000000000000000000000000000000000000000000000000000044",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "ultra": {
+      "request": {
+        "params": [
+          {
+            "data": "0xe2bfe6aa",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0xa9c481dfbc7d9506dc7e87e9a137c931b0a9303f64fd7a1d08b8230133920097"
+      }
+    },
+    "chain": {
+      "request": {
+        "params": [
+          {
+            "data": "0x64d42b17",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      }
+    },
+    "settled67": {
+      "request": {
+        "params": [
+          {
+            "data": "0x56fcff130000000000000000000000000000000000000000000000000000000000000043",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x00000000000000000000000000000000000000000000000000000000018b25d3"
+      }
+    },
+    "paused": {
+      "request": {
+        "params": [
+          {
+            "data": "0x5c975abb",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "schedule": {
+      "request": {
+        "params": [
+          {
+            "data": "0x39958b29",
+            "to": "0x95cCdDC90266F5A31732eFeF6Ab69Baf53a54E50"
+          },
+          "latest"
+        ],
+        "id": 1,
+        "method": "eth_call",
+        "jsonrpc": "2.0"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x0000000000000000000000000000000000000000000000000000000000000005"
+      }
+    }
+  },
+  "rpc": "https://ethereum-rpc.publicnode.com"
+}

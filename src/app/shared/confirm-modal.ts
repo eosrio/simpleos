@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { TransactionService, TxAction } from '../core/services/transaction.service';
 import { WalletStateService } from '../core/services/wallet-state.service';
 
@@ -275,11 +275,11 @@ import { WalletStateService } from '../core/services/wallet-state.service';
     }
 
     .action-contract {
-      color: var(--accent);
+      color: var(--accent-text);
     }
 
     .action-arrow {
-      color: var(--text-disabled);
+      color: var(--text-muted);
     }
 
     .action-name {
@@ -480,7 +480,7 @@ import { WalletStateService } from '../core/services/wallet-state.service';
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       background: var(--bg-base);
-      color: var(--accent);
+      color: var(--accent-text);
       font-size: 12px;
       font-weight: 500;
       font-family: var(--font-body);
@@ -545,7 +545,7 @@ export class ConfirmModalComponent {
     return this.signOnlyResult() !== null;
   }
 
-  /** Open an explorer URL in the system's default browser via Tauri shell plugin. */
+  /** Open an explorer URL in the system's default browser. */
   async openExplorer(url: string): Promise<void> {
     try {
       await openUrl(url);

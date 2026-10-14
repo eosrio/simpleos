@@ -1,8 +1,8 @@
+import { resolveAccountSigner } from './account-signer';
 import { Injectable, inject, effect } from '@angular/core';
 import { WalletStateService } from './wallet-state.service';
 import { TauriIpcService } from './tauri-ipc.service';
 import { AlertService } from './alert.service';
-import { TransactionService } from './transaction.service';
 import { LinkSessionService } from './link-session.service';
 import { deflateRaw, inflateRaw } from 'pako';
 import { SigningRequest } from '@wharfkit/signing-request';
@@ -12,7 +12,6 @@ export class EsrService {
   private wallet = inject(WalletStateService);
   private ipc = inject(TauriIpcService);
   private alert = inject(AlertService);
-  private tx = inject(TransactionService);
   private linkSession = inject(LinkSessionService);
 
   private pendingEsr: string | null = null;
@@ -49,11 +48,6 @@ export class EsrService {
   }
 
   async handleEsrRequest(esrUri: string) {
-    if (this.tx.visible()) {
-      console.warn('[esr] Ignoring ESR request, another transaction is already in review.');
-      return;
-    }
-
     const account = this.wallet.selectedAccount();
     if (!account) {
       console.log('[esr] Wallet locked or no active account. Queuing request until unlocked.');
@@ -74,9 +68,16 @@ export class EsrService {
 
       const request = SigningRequest.from(uri, opts);
       const esrChainId = request.getChainId().hexString;
+      if (!request.isMultiChain() && esrChainId.toLowerCase() !== account.chainId.toLowerCase()) {
+        throw new Error('Select an account on the chain requested by this signing request.');
+      }
       // Use the active account's chain ID for key lookup — it matches the keystore
       const chainId = account.chainId;
-      const signer = { actor: account.name, permission: 'active' };
+      const requestedIdentity = request.getIdentity()?.toString();
+      if (requestedIdentity && requestedIdentity !== account.name) {
+        throw new Error(`This login requires the ${requestedIdentity} account`);
+      }
+      const signer = { actor: account.name, permission: request.getIdentityPermission()?.toString() ?? 'active' };
       const isIdentity = request.isIdentity();
 
       console.log('[esr] ESR chain:', esrChainId, 'account chain:', chainId, 'identity:', isIdentity);
@@ -84,6 +85,7 @@ export class EsrService {
       // Fetch chain info for TaPoS context
       const info = await this.ipc.getChainInfo(chainId);
       const ctx = {
+        chainId,
         timestamp: info.head_block_time,
         block_num: info.last_irreversible_block_num,
         ref_block_num: info.last_irreversible_block_num & 0xffff,
@@ -94,90 +96,62 @@ export class EsrService {
       const abis = await request.fetchAbis(opts.abiProvider);
       const resolved = request.resolve(abis, signer, ctx);
 
-      const keys = await this.ipc.listPublicKeys(chainId);
-      console.log('[esr] Keys for chain', chainId, ':', keys);
-      if (keys.length === 0) {
-        this.alert.error(`No signing key available for chain ${chainId}`);
-        return;
+      const permissions = [...new Set(resolved.transaction.actions.flatMap(action => action.authorization)
+        .filter(auth => auth.actor.toString() === account.name).map(auth => auth.permission.toString()))];
+      const accountSigner = await resolveAccountSigner(this.ipc, account, permissions);
+      if (accountSigner.ledgerIndex !== undefined) {
+        throw new Error('ESR signing with Ledger is not supported yet. Use the transaction builder for hardware signing.');
       }
 
-      // For identity requests, prepare session fields before showing the modal
-      let sessionFields: { link_ch: string; link_key: string; link_name: string } | null = null;
-      if (isIdentity) {
-        try {
-          const session = await this.linkSession.createSession(chainId);
-          sessionFields = {
-            link_ch: session.channelUrl,
-            link_key: session.linkKey,
-            link_name: session.linkName,
-          };
-          console.log('[esr] Session created for identity request:', sessionFields.link_ch);
-        } catch (err) {
-          console.error('[esr] Failed to create link session (continuing without):', err);
+      const packedTransactionHex = Array.from(resolved.serializedTransaction,
+        byte => byte.toString(16).padStart(2, '0')).join('');
+
+      // Disclose the callback destination (SEC-004/005). getCallback templates the
+      // signature into the URL; a placeholder is enough to surface the host.
+      let callbackUrl: string | undefined;
+      let origin: string | undefined;
+      try {
+        callbackUrl = resolved.getCallback([''])?.url;
+        if (callbackUrl) origin = new URL(callbackUrl).host;
+      } catch { /* request has no callback */ }
+
+      // Sign via the backend trusted-confirmation window (R2+R3). The user
+      // reviews the origin, callback, and actions and approves there; the renderer
+      // never receives the signature until after explicit approval.
+      let signResult: { signature: string };
+      try {
+        signResult = await this.ipc.beginEsrSign(
+          chainId, accountSigner.publicKey, packedTransactionHex,
+          {
+            origin,
+            callbackUrl,
+          },
+        );
+      } catch (e: any) {
+        const msg = typeof e === 'string' ? e : (e?.message ?? '');
+        if (/rejected|cancelled|canceled|closed/i.test(msg)) {
+          console.log('[esr] user declined the signing request');
+          return;
         }
+        throw e;
       }
 
-      // Show the Transaction Modal for explicit review
-      const result = await this.tx.confirm({
-        chainId,
-        publicKey: keys[0],
-        actions: resolved.transaction.actions.map(act => ({
-          account: act.account.toString(),
-          name: act.name.toString(),
-          authorization: act.authorization.map(auth => ({
-            actor: auth.actor.toString(),
-            permission: auth.permission.toString()
-          })),
-          data: act.data as any
-        })),
-        title: isIdentity ? 'Login with SimplEOS (Anchor)' : 'Sign ESR Request (Anchor)',
-        isLogin: isIdentity,
-      }, async () => {
-        // Custom signing logic: just sign the digest and fire the callback
-        const digest = resolved.signingDigest.hexString;
-        console.log('[esr] Signing digest:', digest);
-
-        let signature: string;
-        if (this.tx.needsPassphrase()) {
-          const unlocked = await this.ipc.unlock(this.tx.passphrase());
-          if (!unlocked) throw new Error('Invalid passphrase');
-          signature = await this.ipc.signDigest(chainId, keys[0], digest);
-          // Relock if it's supposed to be locked (e.g. SignPerUse mode)
-          await this.ipc.lock();
+      // Deliver the result to the dapp via the ESR callback. The destination was
+      // disclosed and approved in the trusted window above.
+      const callback = resolved.getCallback([signResult.signature]);
+      if (callback && callback.url) {
+        if (callback.background) {
+          const res = await fetch(callback.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(callback.payload),
+          });
+          console.log('[esr] callback POSTed to', callback.url, 'status:', res.status);
         } else {
-          signature = await this.ipc.signDigest(chainId, keys[0], digest);
+          console.log('[esr] foreground callback:', callback.url);
         }
-
-        console.log('[esr] Signature obtained');
-
-        // Build and POST the callback
-        const callback = resolved.getCallback([signature]);
-        if (callback && callback.url) {
-          // Merge session fields into callback payload for identity requests
-          const payload = sessionFields
-            ? { ...callback.payload, ...sessionFields }
-            : callback.payload;
-
-          if (callback.background) {
-            const res = await fetch(callback.url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            });
-            console.log('[esr] ESR callback POSTed to', callback.url, 'status:', res.status);
-          } else {
-            console.log('[esr] ESR foreground callback:', callback.url);
-          }
-        } else {
-          console.log('[esr] ESR request has no callback');
-        }
-
-        return { transaction_id: digest }; // Return the digest as the dummy tx id
-      });
-
-      if (result) {
-        console.log('[esr] ESR request completed successfully');
       }
+      console.log('[esr] ESR request completed');
 
     } catch (e: any) {
       console.error('[esr] ESR handling failed:', e);

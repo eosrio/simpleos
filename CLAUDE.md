@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SimplEOS v2 is a desktop wallet for Antelope-based blockchains (Vaulta/EOS, WAX, Telos, Ultra, FIO, Libre, XPR). It is a **Tauri 2 + Angular 22** rewrite of the original Electron app — all cryptography, key storage, and chain I/O live in a **Rust backend** (`src-tauri/`); the Angular SPA (`src/`) is a pure renderer that talks to Rust over Tauri IPC and never touches private keys.
 
-Workspace versions are `2.0.0-alpha.0`. The active development branch is `v2-tauri-rewrite`; PRs target `master`.
+**The app version is declared once, in `package.json`** — bump it there and nowhere else. `src-tauri/tauri.conf.json` reads it (`"version": "../package.json"`), so bundle metadata and the updater follow automatically; `src-tauri/Cargo.toml` is pinned to `0.0.0` because the crate version is not the app version. The UI never hard-codes a version string — it injects `AppVersionService` (`core/services/app-version.service.ts`), which resolves the running bundle's version via Tauri's `getVersion()` and shows `dev` in the browser-only dev server. The one exception is `src-tauri/tauri.appstore.conf.json`, which must pin a plain `x.y.z` (App Store `CFBundleShortVersionString` rejects prerelease tags); `scripts/macos-appstore-package.sh` fails the build if that number drifts from `package.json`.
+
+The active development branch is `v2-tauri-rewrite`; PRs target `master`. Shipping a build to existing installs (updater manifest, signing, `bun run updater:manifest` / `updater:publish`) is documented in `docs/releasing-updates.md`.
 
 ## Toolchain & Commands
 
@@ -16,8 +18,12 @@ Workspace versions are `2.0.0-alpha.0`. The active development branch is `v2-tau
 
 ```bash
 bun install                 # install JS deps
-bun run tauri:dev           # PRIMARY dev loop: builds Angular (ng serve :4200) + opens the Tauri window
-bun run tauri:build         # production desktop bundle (runs `bun run build` first via beforeBuildCommand)
+bun run tauri:dev           # PRIMARY dev loop: builds Angular (ng serve :42024) + opens the Tauri window
+bun run tauri:build         # desktop bundle for the host OS via scripts/package-desktop.js
+                            # (nsis on Windows, appimage+deb on Linux, app+dmg on macOS). Passes
+                            # --no-sign when no updater key is set, so building from source works
+                            # without one; a source build still receives official updates.
+bun run tauri:build:raw     # unwrapped `tauri build` — fails without the updater signing key
 bun run start               # Angular dev server only (browser, no Rust backend — uses mock data, see below)
 bun run build               # Angular production build into dist/simpleos/browser
 ```
@@ -43,8 +49,10 @@ There is **no JS lint script**. Prettier is the formatter (`bunx prettier --writ
 
 ### macOS App Store / Windows notes
 
+- Microsoft Store builds (`bun run tauri:build:win:store`) reuse the same `app-store` feature + `appstore` Angular config, add `src-tauri/tauri.msstore.conf.json`, and pack an MSIX with the Windows SDK's `makeappx` from `src-tauri/msstore/AppxManifest.xml` (Tauri can't bundle MSIX). The manifest excludes `%APPDATA%`/`%LOCALAPPDATA%\io.eosrio.simpleos` from MSIX write virtualization so the vault survives uninstall and stays shared with the NSIS build — don't remove that. The GitHub NSIS installer is unchanged. See `docs/windows-store.md`.
+- Store config overlays that set `app.security.capabilities` enable **only** the listed capabilities, so they must list `"sign-confirm"` or the trusted confirmation window can't approve signatures.
 - App Store builds use a separate path: `bun run tauri:build:mac:appstore` + the `appstore` Angular configuration (swaps `src/environments/environment.ts` → `environment.appstore.ts`) + the Cargo `app-store` feature (disables the self-updater/process plugin in favor of Apple's update mechanism). See `scripts/macos-*.sh`.
-- The npm scripts assume a **Unix-like shell**: `start`/`build` go through `scripts/with-supported-node.sh` (ensures Node 24 is on PATH; macOS Homebrew-oriented) and `tauri:dev` uses `env -u` to strip GTK vars. On Windows, run the underlying tools directly (`bunx ng serve`, `bunx tauri dev`) or use Git Bash.
+- The package/launch scripts are fully **cross-platform**: `start`/`build`/`watch`/`test` and `tauri:dev` use cross-platform Javascript helpers (`scripts/with-supported-node.js` and `scripts/tauri-dev.js`) to set environment paths (such as macOS Homebrew Node 24), strip GTK variables under Linux, and spawn commands, allowing them to run directly on Windows, macOS, and Linux.
 
 ## Architecture
 
@@ -86,7 +94,10 @@ Plain CSS (no Tailwind/SCSS framework). Global tokens in `src/styles.css`; compo
 ## Key Concepts (require reading multiple files)
 
 ### Wallet security model
-Three-layer encryption: **passphrase → PBKDF2-HMAC-SHA256 (600k iters) master key → derived storage key → AES-256-GCM** per-key blobs (`keystore/derive.rs`). The master key lives only in an in-memory `Session` (`keystore/memory.rs`) that auto-locks. Encrypted blobs are stored in the **OS keyring** (`OsKeyStore`, preferred — Keychain/Credential Manager/secret-service) or an encrypted **file fallback** (`FileKeyStore`) chosen at startup by `probe_os_keyring()` in `lib.rs`. Three `SecurityMode`s (`get/set_security_mode`): `SessionUnlock` (default; unlock once), `SignPerUse` (passphrase on every signature, nothing held in RAM), `ManualToggle` (user-controlled lock).
+Three-layer encryption: **passphrase → PBKDF2-HMAC-SHA256 (600k iters) master key → derived storage key → AES-256-GCM** per-key blobs (`keystore/derive.rs`). The master key lives only in an in-memory `Session` (`keystore/memory.rs`) that auto-locks. Encrypted blobs are stored in the **file store** (`FileKeyStore`, `<app_data_dir>/keys`) — always, on every platform. Every existing vault lives there: keyring 3 was built without a platform feature, so the old startup probe only ever saw keyring's mock store and fell back. `OsKeyStore` is not selected (it lacks the atomic `store_batch`/`is_empty` the vault needs); do not re-introduce probe-based backend selection — keyring 4 makes the probe pass, which hides existing file vaults and makes unlock fail as a wrong passphrase. Moving to the OS keyring would need an explicit migration. Quick unlock: the **PIN is session-only** — `WalletService::set_pin` keeps the master key in memory wrapped under a PIN-derived key (random salt, 5 wrong tries, gone on quit/passphrase change/reset/SignPerUse) and nothing PIN-related is written to disk. Never persist it: a 4–6 digit secret can't protect data at rest against an offline search. Windows Hello unlock (`biometric.rs`) encrypts the passphrase under a key derived from a Windows Hello signature, so only a Hello prompt can decrypt `biometric.dat`; don't go back to "verify, then read a DPAPI secret" (see `docs/biometric-platform-support.md`). Three `SecurityMode`s (`get/set_security_mode`): `SessionUnlock` (default; unlock once), `SignPerUse` (passphrase on every signature, nothing held in RAM), `ManualToggle` (user-controlled lock).
+
+### Trusted transaction confirmation (R2+R3)
+All signing and key export flow through a backend-owned **trusted confirmation window** (`sign-confirm`), not the renderer. The renderer submits a signing *intent* via `begin_sign` / `begin_esr_sign` / `begin_export_key` (`commands/sign_confirm.rs`); the Rust backend builds the canonical bytes (`transaction::build_tx`), decodes them into a locally-derived `SignSummary` (the exact bytes that will be signed, with per-action verification status + high-risk flags), opens the `sign-confirm` window (loads the app's own bundle + has its own capability — the main/dapp renderer cannot script into it), and awaits `approve_sign` / `reject_sign`. Only on approval does it decrypt the key and sign the exact displayed bytes. The legacy `sign_and_push` / `sign_transaction*` / `sign_digest` / `export_private_key` commands are **deliberately unregistered** in `lib.rs` so a compromised renderer cannot sign or export silently (`sign_digest` is no longer a blind-signing oracle). The frontend funnel is `TransactionService.confirm()` → `begin_sign`; ESR (`esr://` deep links + the dapp browser's `esr:` interception) → `begin_esr_sign`. The anchor-link sealed-session (buoy) transport has been removed.
 
 ### Multi-chain configuration — Rust is the source of truth
 Built-in chains live in `src-tauri/src/antelope/chain_config.rs` (`default_chains()` + `default_testnets()`), exposed to the frontend via the `get_chains_config` command. **To add/edit a chain (endpoints, token contract, explorers, features), edit `chain_config.rs`** — not the frontend. The mock chain list in the frontend is only a fallback for browser-only (`bun run start`) UI work where the Tauri backend is absent (`hasTauri()` is false).
@@ -96,7 +107,7 @@ Built-in chains live in `src-tauri/src/antelope/chain_config.rs` (`default_chain
 
 ### Cargo features & platform gating (`src-tauri/Cargo.toml`)
 - `ledger` (default) — Ledger HID support via `hidapi`; needs `libudev-dev` on Linux. Disable with `--no-default-features` to build the core on minimal systems.
-- `local-abieos` (default) — local ABI JSON serialization via `rs_abieos`, which is **target-gated to Linux/macOS/Windows-GNU only**. On Windows MSVC (and other targets) ABI encoding falls back to the RPC `abi_json_to_bin` endpoint.
+- `local-abieos` (default) — local ABI JSON serialization via `rs_abieos` using its **pure-Rust backend on all targets** (no C++ toolchain, libclang, or bindgen needed). Only with the feature disabled does ABI encoding fall back to the RPC `abi_json_to_bin` endpoint, which is deprecated and disabled on most public nodes.
 - `app-store` — strips the self-updater and process plugin for Mac App Store builds.
 
 ### Custom window chrome

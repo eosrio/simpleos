@@ -1,8 +1,6 @@
 use tauri::{Manager, State};
 
-use crate::antelope::provider::ProviderState;
 use crate::antelope::signing;
-use crate::antelope::transaction::{self, ActionDesc, TransactionResult};
 use crate::error::Error;
 use crate::AppWallet;
 
@@ -10,7 +8,7 @@ use crate::AppWallet;
 
 /// Check if a vault has been created by looking for a marker file.
 #[tauri::command]
-pub fn has_wallet(app: tauri::AppHandle) -> Result<bool, Error> {
+pub fn has_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<bool, Error> {
     log::info!("[wallet] has_wallet: checking marker file...");
     let app_dir = app.path().app_data_dir().map_err(|e| {
         Error::Io(std::io::Error::new(
@@ -19,7 +17,7 @@ pub fn has_wallet(app: tauri::AppHandle) -> Result<bool, Error> {
         ))
     })?;
     let marker = app_dir.join("vault.marker");
-    let exists = marker.exists();
+    let exists = marker.exists() || wallet.0.has_vault_material()?;
     log::info!(
         "[wallet] has_wallet: marker at {:?} exists={}",
         marker,
@@ -75,7 +73,7 @@ pub fn import_private_key(
     let result = wallet.0.import_key(&wif, &chain_id, &passphrase)?;
 
     // Mark vault as created
-    let _ = mark_vault_created(&app);
+    mark_vault_created(&app)?;
 
     Ok(crate::antelope::types::ImportResult {
         public_key: result.public_key,
@@ -95,7 +93,7 @@ pub fn import_key_with_session(
 ) -> Result<crate::antelope::types::ImportResult, Error> {
     let result = wallet.0.import_key_with_session(&wif, &chain_id)?;
 
-    let _ = mark_vault_created(&app);
+    mark_vault_created(&app)?;
 
     Ok(crate::antelope::types::ImportResult {
         public_key: result.public_key,
@@ -141,113 +139,13 @@ pub fn remove_key(
     wallet.0.remove_key(&chain_id, &public_key)
 }
 
-// ── Key Export ──
-
-/// Export a private key as WIF. Requires the wallet to be unlocked.
-#[tauri::command]
-pub fn export_private_key(
-    chain_id: String,
-    public_key: String,
-    wallet: State<AppWallet>,
-) -> Result<String, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-    Ok(signing::wif_encode(&private_key_bytes))
-}
-
-// ── Transaction Signing ──
-
-#[tauri::command]
-pub async fn sign_and_push(
-    chain_id: String,
-    public_key: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<TransactionResult, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    transaction::sign_and_push(pm, &actions, &private_key_bytes).await
-}
-
-#[tauri::command]
-pub async fn sign_transaction(
-    chain_id: String,
-    public_key: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<SignedTransaction, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
-
-    Ok(SignedTransaction {
-        packed_trx,
-        signature,
-    })
-}
-
-/// Sign a transaction with an explicit passphrase without broadcasting it.
-/// Mirrors `sign_and_push_with_passphrase` for SignPerUse / locked ManualToggle mode.
-#[tauri::command]
-pub async fn sign_transaction_with_passphrase(
-    chain_id: String,
-    public_key: String,
-    passphrase: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<SignedTransaction, Error> {
-    let private_key_bytes =
-        wallet
-            .0
-            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    let (packed_trx, signature) = transaction::sign_only(pm, &actions, &private_key_bytes).await?;
-
-    Ok(SignedTransaction {
-        packed_trx,
-        signature,
-    })
-}
-
-/// Sign a raw 32-byte digest (hex-encoded) with the private key matching
-/// the given public key on the specified chain. Used for ESR identity proofs.
-#[tauri::command]
-pub async fn sign_digest(
-    chain_id: String,
-    public_key: String,
-    digest_hex: String,
-    wallet: State<'_, AppWallet>,
-) -> Result<String, Error> {
-    let private_key_bytes = wallet.0.decrypt_key(&chain_id, &public_key)?;
-    let signature = crate::antelope::signing::sign_digest(&digest_hex, &private_key_bytes)?;
-    Ok(signature)
-}
+// ── Key access ──
+//
+// Key export and signing are intentionally NOT exposed as renderer commands.
+// They flow through the trusted confirmation window (commands::sign_confirm:
+// begin_sign / begin_esr_sign / begin_export_key), so a compromised renderer
+// cannot sign or export silently, and sign_digest is no longer a blind-signing
+// oracle. (SEC-004 / SEC-006, R2+R3)
 
 // ── Passphrase ──
 
@@ -262,9 +160,6 @@ pub fn change_passphrase(
         .0
         .change_passphrase(&old_passphrase, &new_passphrase)?;
     let _ = crate::biometric::remove_unlock_secret(&app);
-    if let Ok(app_dir) = app.path().app_data_dir() {
-        let _ = std::fs::remove_file(app_dir.join("pin.dat"));
-    }
     Ok(())
 }
 
@@ -295,32 +190,6 @@ pub fn needs_lockscreen(wallet: State<AppWallet>) -> Result<bool, Error> {
     Ok(wallet.0.needs_lockscreen())
 }
 
-/// Sign and push with an explicit passphrase (for SignPerUse / locked ManualToggle mode).
-#[tauri::command]
-pub async fn sign_and_push_with_passphrase(
-    chain_id: String,
-    public_key: String,
-    passphrase: String,
-    actions: Vec<ActionDesc>,
-    wallet: State<'_, AppWallet>,
-    providers: State<'_, ProviderState>,
-) -> Result<TransactionResult, Error> {
-    let private_key_bytes =
-        wallet
-            .0
-            .decrypt_key_with_passphrase(&chain_id, &public_key, &passphrase)?;
-
-    let mut map: tokio::sync::MutexGuard<
-        '_,
-        std::collections::HashMap<String, crate::antelope::provider::ProviderManager>,
-    > = providers.0.lock().await;
-    let pm = map
-        .get_mut(&chain_id)
-        .ok_or_else(|| Error::ChainNotFound(chain_id.clone()))?;
-
-    transaction::sign_and_push(pm, &actions, &private_key_bytes).await
-}
-
 // ── Finalizer Keys (BLS) ──
 
 /// Generate a BLS12-381 finalizer key pair and proof of possession.
@@ -337,13 +206,9 @@ pub fn generate_finalizer_key(
     // Use a special chain prefix to distinguish from secp256k1 keys
     let bls_chain = format!("bls_{}", chain_id);
 
-    let mut session = wallet.0.session_lock()?;
-    let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-    let encrypted =
-        crate::keystore::derive::encrypt(&sk_bytes, master_key, b"simpleos-master-key")?;
-    drop(session);
-
-    wallet.0.store_raw_key(&bls_chain, &pub_key, &encrypted)?;
+    wallet
+        .0
+        .store_secret_with_session(&bls_chain, &pub_key, &sk_bytes)?;
 
     // Pre-formatted config.ini line. Spring/leap use the unified `signature-provider`
     // option for both secp256k1 signing keys and BLS finalizer keys.
@@ -376,14 +241,7 @@ pub fn get_finalizer_pop(
 ) -> Result<serde_json::Value, Error> {
     let bls_chain = format!("bls_{}", chain_id);
 
-    // Decrypt the BLS private key
-    let mut session = wallet.0.session_lock()?;
-    let master_key = session.master_key().ok_or(Error::WalletLocked)?;
-
-    let encrypted = wallet.0.load_raw_key(&bls_chain, &finalizer_key)?;
-    let sk_bytes = crate::keystore::derive::decrypt(&encrypted, master_key, b"simpleos-master-key")
-        .map_err(|_| Error::InvalidPassphrase)?;
-    drop(session);
+    let sk_bytes = wallet.0.decrypt_key(&bls_chain, &finalizer_key)?;
 
     let (pub_key, pop) = crate::antelope::bls::proof_of_possession(&sk_bytes)?;
 
@@ -394,104 +252,42 @@ pub fn get_finalizer_pop(
 }
 
 // ── PIN ──
+//
+// The PIN lasts only while the app runs and is never written to disk; see
+// WalletService::set_pin for why.
 
-/// Set a quick-unlock PIN. Encrypts the passphrase with a PIN-derived key.
-// async: derives two keys + encrypts — keep off the main thread.
+/// Enable PIN unlock for the rest of this session.
+// async: verifies the passphrase and derives the PIN key — keep off the main thread.
 #[tauri::command(async)]
-pub fn set_pin(
-    passphrase: String,
-    pin: String,
-    wallet: State<AppWallet>,
-    app: tauri::AppHandle,
-) -> Result<(), Error> {
-    use crate::keystore::derive;
-
-    // Verify passphrase works by trying to unlock
-    wallet.0.unlock(&passphrase)?;
-
-    let pin_salt = b"simpleos-pin-key";
-    let pin_key = derive::derive_key(pin.as_bytes(), pin_salt);
-    let encrypted = derive::encrypt(passphrase.as_bytes(), &pin_key, pin_salt)?;
-
-    // Store in app data dir
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    std::fs::create_dir_all(&app_dir).map_err(Error::Io)?;
-    std::fs::write(app_dir.join("pin.dat"), &encrypted).map_err(Error::Io)?;
-    Ok(())
+pub fn set_pin(passphrase: String, pin: String, wallet: State<AppWallet>) -> Result<(), Error> {
+    wallet.0.set_pin(&passphrase, &pin)
 }
 
-/// Unlock wallet using PIN. Decrypts stored passphrase, then unlocks normally.
-// async: PIN key derivation + decrypt + passphrase-based vault unlock.
-// This is the slowest single command in the app — must run off the main thread
-// or the loader animation stays frozen until the command returns.
+/// Re-open a locked session with the session PIN.
+// async: PIN key derivation + vault verification — keep off the main thread.
 #[tauri::command(async)]
-pub fn unlock_with_pin(
-    pin: String,
-    app: tauri::AppHandle,
-    wallet: State<AppWallet>,
-) -> Result<bool, Error> {
-    use crate::keystore::derive;
-
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    let pin_path = app_dir.join("pin.dat");
-    if !pin_path.exists() {
-        return Err(Error::KeyNotFound("No PIN configured".into()));
-    }
-
-    let encrypted = std::fs::read(&pin_path).map_err(Error::Io)?;
-    let pin_salt = b"simpleos-pin-key";
-    let pin_key = derive::derive_key(pin.as_bytes(), pin_salt);
-    let passphrase_bytes =
-        derive::decrypt(&encrypted, &pin_key, pin_salt).map_err(|_| Error::InvalidPassphrase)?;
-
-    let passphrase =
-        String::from_utf8(passphrase_bytes).map_err(|e| Error::Serialization(e.to_string()))?;
-
-    wallet.0.unlock(&passphrase)?;
+pub fn unlock_with_pin(pin: String, wallet: State<AppWallet>) -> Result<bool, Error> {
+    wallet.0.unlock_with_pin(&pin)?;
     Ok(true)
 }
 
-/// Check if a PIN has been configured.
+/// Whether a session PIN is set.
 #[tauri::command]
-pub fn has_pin(app: tauri::AppHandle) -> Result<bool, Error> {
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    Ok(app_dir.join("pin.dat").exists())
+pub fn has_pin(wallet: State<AppWallet>) -> Result<bool, Error> {
+    Ok(wallet.0.has_pin())
 }
 
-/// Remove the PIN.
+/// Remove the session PIN.
 #[tauri::command]
-pub fn remove_pin(app: tauri::AppHandle) -> Result<(), Error> {
-    let app_dir = app.path().app_data_dir().map_err(|e| {
-        Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
-    let pin_path = app_dir.join("pin.dat");
-    if pin_path.exists() {
-        std::fs::remove_file(&pin_path).map_err(Error::Io)?;
-    }
+pub fn remove_pin(wallet: State<AppWallet>) -> Result<(), Error> {
+    wallet.0.clear_pin();
     Ok(())
 }
 
 // ── Biometric Unlock ──
 
-#[tauri::command]
+// async: the status check waits on WinRT operations, which must stay off the UI thread.
+#[tauri::command(async)]
 pub fn biometric_status(app: tauri::AppHandle) -> Result<crate::biometric::BiometricStatus, Error> {
     crate::biometric::status(&app)
 }
@@ -503,11 +299,7 @@ pub fn set_biometric_unlock(
     app: tauri::AppHandle,
 ) -> Result<(), Error> {
     wallet.0.unlock(&passphrase)?;
-    crate::biometric::set_unlock_secret(
-        &app,
-        &passphrase,
-        "Use Windows Hello to enable biometric unlock for SimplEOS",
-    )
+    crate::biometric::set_unlock_secret(&app, &passphrase)
 }
 
 #[tauri::command(async)]
@@ -515,8 +307,7 @@ pub fn unlock_with_biometric(
     app: tauri::AppHandle,
     wallet: State<AppWallet>,
 ) -> Result<bool, Error> {
-    let passphrase =
-        crate::biometric::unlock_secret(&app, "Use Windows Hello to unlock your SimplEOS wallet")?;
+    let passphrase = zeroize::Zeroizing::new(crate::biometric::unlock_secret(&app)?);
     wallet.0.unlock(&passphrase)?;
     Ok(true)
 }
@@ -542,11 +333,14 @@ pub fn export_backup(passphrase: String, wallet: State<AppWallet>) -> Result<Str
 // async: Anchor's non-standard 70-round Rijndael is particularly slow — off-thread.
 #[tauri::command(async)]
 pub fn import_backup(
+    app: tauri::AppHandle,
     json: String,
     passphrase: String,
     wallet: State<AppWallet>,
 ) -> Result<usize, Error> {
-    wallet.0.import_backup(&json, &passphrase)
+    let count = wallet.0.import_backup(&json, &passphrase)?;
+    mark_vault_created(&app)?;
+    Ok(count)
 }
 
 // ── Reset ──
@@ -557,8 +351,10 @@ pub fn import_backup(
 pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(), Error> {
     log::warn!("[wallet] RESET: wiping all wallet data");
 
-    // Lock the session
+    // Lock the session and drop both quick-unlock shortcuts
     wallet.0.lock();
+    wallet.0.clear_pin();
+    let _ = crate::biometric::remove_unlock_secret(&app);
 
     // Delete the vault marker
     if let Ok(app_dir) = app.path().app_data_dir() {
@@ -569,20 +365,25 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
         let _ = std::fs::remove_dir_all(app_dir.join("keys"));
         // Delete the tauri-plugin-store file
         let _ = std::fs::remove_file(app_dir.join("wallet-state.json"));
-        let _ = std::fs::remove_file(app_dir.join("biometric.dat"));
+        // Passphrase copy from builds before the session PIN
+        let _ = std::fs::remove_file(app_dir.join("pin.dat"));
+        // A new wallet starts from the strict confirmation policy
+        let _ = std::fs::remove_file(app_dir.join("confirm_policy"));
     }
 
-    // Clear all keys from the key store for known chains
-    let chains = crate::antelope::chain_config::default_chains();
-    for chain in &chains {
-        if let Ok(keys) = wallet.0.list_keys(&chain.id) {
-            for key in &keys {
-                let _ = wallet.0.remove_key(&chain.id, key);
-            }
-        }
+    // SEC-028: clear keys for every known chain (mainnets AND testnets), plus the
+    // BLS finalizer namespace per chain, and drop the per-chain index entries so the
+    // OS credential store is fully wiped — not just the FileKeyStore directory.
+    for chain_id in wallet.0.known_chains() {
+        wallet.0.clear_chain(chain_id);
+        // BLS finalizer keys are stored under the `bls_<chain_id>` namespace.
+        wallet.0.clear_chain(&format!("bls_{}", chain_id));
     }
-    // Also clear the vault verification token
+    // Also clear the link-session namespace.
+    wallet.0.clear_chain("__link__");
+    // Also clear the vault verification token and its index.
     let _ = wallet.0.remove_key("__vault__", "__verify__");
+    wallet.0.clear_chain("__vault__");
 
     log::warn!("[wallet] RESET: complete");
     Ok(())
@@ -596,13 +397,14 @@ pub fn reset_wallet(app: tauri::AppHandle, wallet: State<AppWallet>) -> Result<(
 pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     let mut report = Vec::new();
 
-    // Report which backend is active
+    // The wallet always uses FileKeyStore; the probe only reports OS keyring health.
+    report.push("Backend: FileKeyStore".into());
     report.push(format!(
-        "Backend: {}",
+        "OS keyring probe: {}",
         if crate::probe_os_keyring() {
-            "OS Keyring"
+            "passed"
         } else {
-            "FileKeyStore (OS keyring probe failed)"
+            "failed"
         }
     ));
 
@@ -683,12 +485,4 @@ pub fn test_keyring(wallet: State<AppWallet>) -> Result<Vec<String>, Error> {
     }
 
     Ok(report)
-}
-
-// ── Types ──
-
-#[derive(serde::Serialize)]
-pub struct SignedTransaction {
-    pub packed_trx: String,
-    pub signature: String,
 }

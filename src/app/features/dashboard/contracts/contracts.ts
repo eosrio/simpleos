@@ -442,7 +442,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
 
     .icon-btn:hover:not(:disabled),
     .icon-btn.accent {
-      color: var(--accent);
+      color: var(--accent-text);
       border-color: color-mix(in srgb, var(--accent) 48%, var(--border-subtle));
       background: var(--accent-muted);
     }
@@ -506,7 +506,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
     .mini-btn {
       border: 0;
       background: transparent;
-      color: var(--accent);
+      color: var(--accent-text);
       cursor: pointer;
       font-family: var(--font-body);
       font-size: 12px;
@@ -537,7 +537,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
     }
 
     .abi-source strong {
-      color: var(--accent);
+      color: var(--accent-text);
       text-transform: uppercase;
     }
 
@@ -678,7 +678,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
     .field-label em,
     .check-row em,
     .object-field summary em {
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-family: var(--font-data);
       font-size: 11px;
       font-style: normal;
@@ -720,7 +720,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
     .field-help {
       display: block;
       margin-top: var(--sp-1);
-      color: var(--text-disabled);
+      color: var(--text-muted);
       font-size: 11px;
     }
 
@@ -770,7 +770,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
 
     .secondary-btn:hover:not(:disabled) {
       border-color: var(--accent);
-      color: var(--accent);
+      color: var(--accent-text);
       background: var(--accent-muted);
     }
 
@@ -864,7 +864,7 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
       align-items: center;
       justify-content: center;
       border-radius: var(--radius-md);
-      color: var(--accent);
+      color: var(--accent-text);
       background: var(--accent-muted);
     }
 
