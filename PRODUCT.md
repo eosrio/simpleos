@@ -20,4 +20,4 @@ This is an extension of the existing dashboard. Keep the established app theme, 
 
 ## Evidence on Hand
 
-Existing app routes and transaction services, user screenshots of the Ultra bridge, official contract research under docs/reviews, and read-only bridge fixtures under tests/fixtures/ultra-bridge.
+Existing app routes and transaction services, user screenshots of the Ultra bridge, and read-only bridge fixtures under tests/fixtures/ultra-bridge.
