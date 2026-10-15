@@ -168,7 +168,7 @@
     "chart.js": "^2.9.3",
     "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
-    "echarts": "^4.7.0",
+    "echarts": "^6.1.0",
     "electron-context-menu": "^2.0.1",
     "eosjs": "^21.0.1-rc2",
     "express": "^4.17.1",
