@@ -1,90 +1,569 @@
 <section class="permissions-view" aria-labelledby="permissions-title">
-  <header class="page-header">
-    <div>
-      <h1 id="permissions-title">Permissions</h1>
-      <p>Choose which permission can authorize a contract action.</p>
-    </div>
-    <button type="button" class="secondary" (click)="refresh()" [disabled]="loading() || busy()">{{ loading() ? 'Refreshing…' : 'Refresh' }}</button>
-  </header>
-
   @if (wallet.selectedAccount(); as account) {
-    <div class="account-context"><span>Account <strong>{{ account.name }}</strong></span><span>Network <strong>{{ account.chainName }}</strong></span></div>
-    @if (loadError()) { <p class="notice" role="alert">{{ loadError() }}</p> }
-    @if (account.mode === 'watch') { <p class="notice">This is a watch-only account. Import its active key to link an action.</p> }
+    <header class="page-header">
+      <div class="header-title-row">
+        <h1 id="permissions-title">Permissions</h1>
+        <span class="header-sep">·</span>
+        <span class="header-meta">{{ account.name }} · {{ account.chainName }}</span>
+      </div>
+      <button type="button" class="btn-refresh" (click)="refresh()" [disabled]="loading() || busy()">
+        <svg [class.spinning]="loading()" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>{{ loading() ? 'Refreshing…' : 'Refresh' }}</span>
+      </button>
+    </header>
 
+    @if (loadError()) {
+      <p class="notice error" role="alert">{{ loadError() }}</p>
+    }
+    @if (account.mode === 'watch') {
+      <p class="notice">Watch-only account — import its active key to link actions.</p>
+    }
+
+    <!-- ── Account Permission Structure ── -->
+    @if (allPermissions().length > 0) {
+      <section class="section-card" aria-labelledby="hierarchy-heading">
+        <div class="card-header">
+          <div class="card-title-row">
+            <h2 id="hierarchy-heading">Permission Structure</h2>
+            <span class="meta-pill">{{ allPermissions().length }} permissions</span>
+          </div>
+          <div class="card-header-actions">
+            <button
+              type="button"
+              class="btn-toggle-keys"
+              (click)="openNewPermission()"
+              [disabled]="busy() || loading()"
+              title="Create a new child permission via updateauth"
+            >
+              + New Permission
+            </button>
+            <button
+              type="button"
+              class="btn-toggle-keys"
+              (click)="showFullKeys.set(!showFullKeys())"
+              [title]="showFullKeys() ? 'Show compact single-line keys' : 'Show full untruncated keys'"
+            >
+              {{ showFullKeys() ? 'Compact' : 'Expand keys' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="perm-grid">
+          @for (perm of allPermissions(); track perm.perm_name) {
+            <div class="perm-card" [class.perm-owner]="perm.perm_name === 'owner'" [class.perm-active]="perm.perm_name === 'active'">
+              <div class="perm-header">
+                <div class="perm-title-group">
+                  <span class="perm-badge" [class.owner]="perm.perm_name === 'owner'" [class.active]="perm.perm_name === 'active'">
+                    {{ perm.perm_name }}
+                  </span>
+                  @if (perm.parent) {
+                    <span class="perm-parent">↳ {{ perm.parent }}</span>
+                  }
+                </div>
+                <div class="perm-header-right">
+                  <span class="perm-threshold" title="Required weight threshold">
+                    Threshold {{ perm.required_auth?.threshold ?? 1 }}
+                  </span>
+                  <button
+                    type="button"
+                    class="btn-edit-perm"
+                    (click)="openEditAuthority(perm.perm_name)"
+                    [disabled]="busy() || loading()"
+                    [title]="'Edit ' + perm.perm_name + ' authority (updateauth)'"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+
+              @if (perm.required_auth?.keys?.length) {
+                <div class="perm-list">
+                  @for (k of perm.required_auth.keys!; track k.key) {
+                    <button
+                      type="button"
+                      class="perm-entry perm-key-btn"
+                      [class.full-wrap]="showFullKeys()"
+                      [class.copied]="copiedKey() === k.key"
+                      (click)="copyKey(k.key)"
+                      [title]="'Click to copy ' + canonicalKey(k.key)"
+                    >
+                      <span class="key-curve-tag" [attr.data-curve]="keyTypeBadge(k.key)">{{ keyTypeBadge(k.key) }}</span>
+                      <div class="perm-key-col">
+                        <code class="perm-key" [class.truncate]="!showFullKeys()">{{ formatKey(k.key) }}</code>
+                        @if (ethAddressFor(k.key); as ethAddr) {
+                          <span class="eth-addr-sub" [title]="'Derived Ethereum address: ' + ethAddr">{{ ethAddr }}</span>
+                        }
+                      </div>
+                      @if (hasVaultKey(k.key)) {
+                        <span class="vault-mini-badge" title="Private key is stored in your local SimplEOS vault">Vault</span>
+                      }
+                      <span class="perm-weight">+{{ k.weight }}</span>
+                      <span class="copy-hint">{{ copiedKey() === k.key ? '✓ Copied' : 'Copy' }}</span>
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (perm.required_auth?.accounts?.length) {
+                <div class="perm-list">
+                  @for (a of perm.required_auth.accounts!; track a.permission.actor + a.permission.permission) {
+                    <div class="perm-entry">
+                      <span class="key-curve-tag" data-curve="ACCT">ACCT</span>
+                      <code class="perm-key">{{ a.permission.actor }}&#64;{{ a.permission.permission }}</code>
+                      <span class="perm-weight">+{{ a.weight }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ── Authority Editor (updateauth) ── -->
+    @if (authEditorOpen()) {
+      <section class="section-card auth-editor-card" aria-labelledby="auth-editor-heading">
+        <div class="card-header">
+          <div class="card-title-row">
+            <h2 id="auth-editor-heading">
+              {{ authIsNew() ? 'Create Permission Authority' : 'Edit Permission Authority' }}
+            </h2>
+            <span class="meta-pill">updateauth</span>
+            @if (!authIsNew()) {
+              <span class="perm-badge" [class.owner]="authPermName() === 'owner'" [class.active]="authPermName() === 'active'">
+                {{ authPermName() }}
+              </span>
+            }
+          </div>
+          <button type="button" class="btn-toggle-keys" (click)="closeAuthEditor()" [disabled]="busy()">
+            Close
+          </button>
+        </div>
+
+        <fieldset [disabled]="busy() || loading()">
+          <div class="auth-meta-grid">
+            <div>
+              <label for="auth-perm-name">Permission Name</label>
+              <input
+                id="auth-perm-name"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="e.g. ops"
+                [readonly]="!authIsNew()"
+                [value]="authPermName()"
+                (input)="authPermName.set($any($event.target).value)"
+              />
+            </div>
+
+            <div>
+              <label for="auth-parent-name">Parent Permission</label>
+              <input
+                id="auth-parent-name"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                [readonly]="authPermName().trim() === 'owner'"
+                [placeholder]="authPermName().trim() === 'owner' ? '(none for owner)' : 'active'"
+                [value]="authParent()"
+                (input)="authParent.set($any($event.target).value)"
+              />
+            </div>
+
+            <div>
+              <label for="auth-threshold">Threshold</label>
+              <input
+                id="auth-threshold"
+                type="number"
+                min="1"
+                step="1"
+                [value]="authThreshold()"
+                (input)="authThreshold.set($any($event.target).valueAsNumber || 1)"
+              />
+            </div>
+
+            <div>
+              <label for="auth-signing-perm">Signed By</label>
+              <select
+                id="auth-signing-perm"
+                [disabled]="authPermName().trim() === 'owner'"
+                [value]="authPermName().trim() === 'owner' ? 'owner' : authSigningPerm()"
+                (change)="authSigningPerm.set($any($event.target).value)"
+              >
+                @if (authPermName().trim() !== 'owner') {
+                  <option value="active">{{ account.name }}&#64;active</option>
+                }
+                <option value="owner">{{ account.name }}&#64;owner</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Keys Section -->
+          <div class="auth-subsection">
+            <div class="auth-subhead">
+              <span class="auth-subtitle">Authorized Keys (canonical sort: K1 → EM)</span>
+              <span class="meta-pill">Total weight: {{ totalAuthWeight() }} / {{ authThreshold() }}</span>
+            </div>
+
+            @if (authKeys().length > 0) {
+              <div class="auth-draft-list">
+                @for (k of authKeys(); track k.key) {
+                  <div class="auth-draft-row">
+                    <span class="key-curve-tag" [attr.data-curve]="keyTypeBadge(k.key)">{{ keyTypeBadge(k.key) }}</span>
+                    <div class="perm-key-col">
+                      <code class="perm-key">{{ k.key }}</code>
+                      @if (ethAddressFor(k.key); as ethAddr) {
+                        <span class="eth-addr-sub">{{ ethAddr }}</span>
+                      }
+                    </div>
+                    @if (hasVaultKey(k.key)) {
+                      <span class="vault-mini-badge">Vault</span>
+                    }
+                    <input
+                      type="number"
+                      class="weight-input"
+                      min="1"
+                      step="1"
+                      [value]="k.weight"
+                      (input)="updateKeyWeight(k.key, $any($event.target).valueAsNumber || 1)"
+                      title="Key weight"
+                    />
+                    <button
+                      type="button"
+                      class="btn-remove-entry"
+                      (click)="removeKeyFromAuthority(k.key)"
+                      title="Remove key from authority"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-block compact">No keys in this authority draft. Add a K1 or EM key below.</div>
+            }
+
+            <!-- Add Key Input + Hardware/MetaMask/Vault Discovery -->
+            <div class="add-key-box">
+              <label for="auth-new-key">Add Key (`PUB_EM_...`, `PUB_K1_...`, `EOS...`, or 33/65-byte `0x` secp256k1 pubkey hex)</label>
+              <div class="add-key-row">
+                <input
+                  id="auth-new-key"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="PUB_EM_02... / EOS6MRy... / 0x04..."
+                  [value]="newKeyInput()"
+                  (input)="newKeyInput.set($any($event.target).value)"
+                  (keydown.enter)="$event.preventDefault(); addKeyToAuthority()"
+                />
+                <input
+                  type="number"
+                  class="weight-input"
+                  min="1"
+                  step="1"
+                  [value]="newKeyWeight()"
+                  (input)="newKeyWeight.set($any($event.target).valueAsNumber || 1)"
+                  title="Weight for new key"
+                />
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="addKeyToAuthority()"
+                  [disabled]="!newKeyInput().trim() || is20ByteEthAddress()"
+                >
+                  Add Key
+                </button>
+              </div>
+
+              @if (is20ByteEthAddress()) {
+                <div class="eth-address-warning" role="alert">
+                  <strong>20-byte Ethereum address detected:</strong>
+                  An Ethereum address (`0x` + 40 hex chars) is a one-way Keccak-256 hash and does not contain the full 33-byte compressed secp256k1 public key (`PUB_EM_...`) required on-chain. Use one of the buttons below to recover the full `PUB_EM_` public key directly from your wallet:
+                </div>
+              }
+
+              <div class="key-discover-bar">
+                <span class="discover-label">Derive `PUB_EM_` / Add from wallet:</span>
+                <button
+                  type="button"
+                  class="btn-discover"
+                  (click)="discoverFromMetaMask()"
+                  [disabled]="discoveringKey() !== null"
+                >
+                  {{ discoveringKey() === 'metamask' ? 'Waiting for MetaMask…' : '🦊 From MetaMask' }}
+                </button>
+
+                <div class="ledger-discover-group">
+                  <button
+                    type="button"
+                    class="btn-discover"
+                    (click)="discoverFromLedgerEth()"
+                    [disabled]="discoveringKey() !== null"
+                  >
+                    {{ discoveringKey() === 'ledger_eth' ? 'Reading Ledger ETH…' : '🔐 From Ledger ETH' }}
+                  </button>
+                  <input
+                    type="number"
+                    class="slot-input"
+                    min="0"
+                    max="50"
+                    [value]="ledgerEthSlot()"
+                    (input)="ledgerEthSlot.set($any($event.target).valueAsNumber || 0)"
+                    title="Ledger Ethereum BIP44 address index (m/44'/60'/0'/0/index)"
+                  />
+                </div>
+
+                @if (vaultKeyList().length > 0) {
+                  <select
+                    class="vault-picker"
+                    (change)="$any($event.target).value && addKeyToAuthority($any($event.target).value); $any($event.target).value = ''"
+                  >
+                    <option value="">+ From Local Vault ({{ vaultKeyList().length }})</option>
+                    @for (vk of vaultKeyList(); track vk) {
+                      <option [value]="vk">{{ formatKey(vk) }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Accounts Section -->
+          <div class="auth-subsection">
+            <div class="auth-subhead">
+              <span class="auth-subtitle">Authorized Accounts (`actor&#64;permission`)</span>
+            </div>
+
+            @if (authAccounts().length > 0) {
+              <div class="auth-draft-list">
+                @for (a of authAccounts(); track a.permission.actor + '@' + a.permission.permission) {
+                  <div class="auth-draft-row">
+                    <span class="key-curve-tag" data-curve="ACCT">ACCT</span>
+                    <code class="perm-key">{{ a.permission.actor }}&#64;{{ a.permission.permission }}</code>
+                    <span class="perm-weight">+{{ a.weight }}</span>
+                    <button
+                      type="button"
+                      class="btn-remove-entry"
+                      (click)="removeAccountFromAuthority(a.permission.actor, a.permission.permission)"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="add-acct-row">
+              <input
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="actor (e.g. sysio.prods)"
+                [value]="newAcctActor()"
+                (input)="newAcctActor.set($any($event.target).value)"
+              />
+              <input
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="permission (e.g. active)"
+                [value]="newAcctPerm()"
+                (input)="newAcctPerm.set($any($event.target).value)"
+              />
+              <input
+                type="number"
+                class="weight-input"
+                min="1"
+                step="1"
+                [value]="newAcctWeight()"
+                (input)="newAcctWeight.set($any($event.target).valueAsNumber || 1)"
+                title="Account weight"
+              />
+              <button
+                type="button"
+                class="secondary"
+                (click)="addAccountToAuthority()"
+                [disabled]="!newAcctActor().trim() || !newAcctPerm().trim()"
+              >
+                Add Account
+              </button>
+            </div>
+          </div>
+
+          <!-- Owner Safety Confirmation Guard -->
+          @if (authPermName().trim() === 'owner') {
+            <div class="owner-guard-box" role="alert">
+              <div class="owner-guard-title">⚠️ Owner Authority Modification Guard</div>
+              <p class="owner-guard-desc">
+                Modifying <code>owner</code> replaces the root recovery authority of <strong>{{ account.name }}</strong>.
+                If the new keys are inaccessible, this account will be permanently irrecoverable.
+                Type <code>{{ ownerConfirmExpected() }}</code> below to unlock review:
+              </p>
+              <input
+                id="owner-confirm-input"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                [placeholder]="ownerConfirmExpected()"
+                [value]="ownerConfirmText()"
+                (input)="ownerConfirmText.set($any($event.target).value)"
+              />
+            </div>
+          }
+        </fieldset>
+
+        @if (totalAuthWeight() < authThreshold()) {
+          <p class="notice error" role="alert">
+            Total authority weight ({{ totalAuthWeight() }}) is less than threshold ({{ authThreshold() }}). Add a key or account so the permission can be satisfied.
+          </p>
+        }
+        @if (authNotice()) {
+          <p class="notice" role="status">{{ authNotice() }}</p>
+        }
+        @if (authError()) {
+          <p class="notice error" role="alert">{{ authError() }}</p>
+        }
+        @if (authTxId()) {
+          <div class="success" role="status">
+            <strong>✓ Authority update broadcast</strong>
+            <code>{{ authTxId() }}</code>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="primary"
+          [disabled]="!canReviewAuth()"
+          (click)="reviewAuthorityUpdate()"
+        >
+          {{ busy() ? 'Waiting for confirmation…' : 'Review Authority Update (updateauth)' }}
+        </button>
+      </section>
+    }
+
+    <!-- ── Action Linker & Linked Actions Workspace ── -->
     <div class="workspace">
-      <section class="editor" aria-labelledby="link-heading">
-        <h2 id="link-heading">Link an action</h2>
-        <p class="intro">Select an existing permission. This does not create a permission or change its keys.</p>
+      <section class="section-card editor" aria-labelledby="link-heading">
+        <div class="card-header">
+          <div class="card-title-row">
+            <h2 id="link-heading">Link Action Permission</h2>
+            <span class="meta-pill">linkauth</span>
+          </div>
+        </div>
+
         <form (submit)="$event.preventDefault(); reviewLink()">
           <fieldset [disabled]="busy() || loading() || !info()">
-            <label for="link-contract">Contract account</label>
+            <label for="link-contract">Contract Account</label>
             <div class="contract-input">
               <input id="link-contract" type="text" autocomplete="off" spellcheck="false" placeholder="eosio"
                 [value]="contract()" (input)="setContract($any($event.target).value)"
-                (keydown.enter)="$event.preventDefault(); loadActions()" aria-describedby="contract-hint" />
+                (keydown.enter)="$event.preventDefault(); loadActions()" />
               <button type="button" class="secondary" (click)="loadActions()" [disabled]="loadingActions() || !contract().trim()">{{ loadingActions() ? 'Loading…' : 'Load actions' }}</button>
             </div>
-            <p id="contract-hint" class="hint">The contract that receives the action, for example eosio.</p>
-            @if (actionError()) { <p class="notice" role="alert">{{ actionError() }}</p> }
+            @if (actionError()) { <p class="notice error" role="alert">{{ actionError() }}</p> }
 
-            <label for="link-action">Action</label>
-            <select id="link-action" [value]="action()" (change)="action.set($any($event.target).value); clearOutcome()" [disabled]="!loadedContract()">
-              <option value="">{{ loadedContract() ? 'Select an action' : 'Load the contract actions first' }}</option>
-              @for (name of actions(); track name) { <option [value]="name">{{ name }}</option> }
-            </select>
+            <div class="field-grid-2">
+              <div>
+                <label for="link-action">Contract Action</label>
+                <select id="link-action" [value]="action()" (change)="action.set($any($event.target).value); clearOutcome()" [disabled]="!loadedContract()">
+                  <option value="">{{ loadedContract() ? 'Select an action' : 'Load contract first' }}</option>
+                  @for (name of actions(); track name) { <option [value]="name">{{ name }}</option> }
+                </select>
+              </div>
 
-            <label for="link-permission">Required permission</label>
-            <select id="link-permission" [value]="permission()" (change)="permission.set($any($event.target).value); clearOutcome()" aria-describedby="permission-hint">
-              <option value="">Select a permission</option>
-              @for (item of permissions(); track item.perm_name) { <option [value]="item.perm_name">{{ item.perm_name }}</option> }
-            </select>
-            <p id="permission-hint" class="hint">This permission, or an ancestor such as active, can authorize the action.</p>
+              <div>
+                <label for="link-permission">Required Permission</label>
+                <select id="link-permission" [value]="permission()" (change)="permission.set($any($event.target).value); clearOutcome()">
+                  <option value="">Select permission</option>
+                  @for (item of permissions(); track item.perm_name) { <option [value]="item.perm_name">{{ item.perm_name }}</option> }
+                </select>
+              </div>
+            </div>
           </fieldset>
 
           @if (action() && permission()) {
             <div class="review-summary" aria-live="polite">
-              <h3>{{ currentLink() ? 'Change link' : 'New link' }}</h3>
-              <p><code>{{ contract().trim() }}::{{ action() }}</code> will require <code>{{ account.name }}&#64;{{ permission() }}</code>.</p>
+              <div class="review-head">
+                <span class="review-tag">{{ currentLink() ? 'Update Link' : 'New Link' }}</span>
+                <span class="signing-pill">Signed by {{ account.name }}&#64;active</span>
+              </div>
+              <p class="review-line"><code>{{ contract().trim() }}::{{ action() }}</code> → <code>{{ account.name }}&#64;{{ permission() }}</code></p>
               @if (currentLink(); as link) { <p class="hint">Currently linked to <code>{{ link.permission }}</code>.</p> }
               @else if (!linksAvailable()) { <p class="hint">The node does not report all existing links. This may replace a previous link.</p> }
-              @else { <p class="hint">No explicit link for this action. A contract-wide link may still apply.</p> }
-              @if (unchanged()) { <p class="hint">Already linked. No transaction is needed.</p> }
+              @else { <p class="hint">No explicit link for this action yet.</p> }
+              @if (unchanged()) { <p class="hint">Already linked to this permission — no transaction needed.</p> }
             </div>
           }
-          <p class="signing-note">Changes are signed with <code>{{ account.name }}&#64;active</code>. You will review the transaction before it is sent.</p>
-          @if (error()) { <p class="notice" role="alert">{{ error() }}</p> }
+
+          @if (error()) { <p class="notice error" role="alert">{{ error() }}</p> }
           @if (transactionId()) {
-            <div class="success" role="status"><strong>Link transaction sent</strong><span>Transaction ID</span><code>{{ transactionId() }}</code></div>
+            <div class="success" role="status">
+              <strong>✓ Link transaction broadcast</strong>
+              <code>{{ transactionId() }}</code>
+            </div>
           }
           <button type="submit" class="primary" [disabled]="!canReview()">{{ busy() ? 'Waiting for transaction…' : 'Review link' }}</button>
         </form>
       </section>
 
-      <section class="existing" aria-labelledby="existing-heading" [attr.aria-busy]="loading()">
-        <h2 id="existing-heading">Linked actions</h2>
-        <p class="intro">Explicit links reported by the selected network.</p>
-        @if (loading()) { <p class="empty" role="status">Loading permissions and links…</p> }
-        @else if (!info()) { <p class="empty">Permissions are unavailable. Use Refresh to reconnect.</p> }
-        @else {
-          @if (!linksAvailable()) { <p class="notice">This node does not report all linked actions. You can still create or replace a link.</p> }
+      <section class="section-card existing" aria-labelledby="existing-heading" [attr.aria-busy]="loading()">
+        <div class="card-header">
+          <div class="card-title-row">
+            <h2 id="existing-heading">Linked Actions</h2>
+            @if (links().length > 0) {
+              <span class="meta-pill">{{ links().length }} active</span>
+            }
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="empty-block" role="status">Loading permissions and links…</div>
+        } @else if (!info()) {
+          <div class="empty-block">Permissions are unavailable. Use Refresh to reconnect.</div>
+        } @else {
+          @if (!linksAvailable()) {
+            <p class="notice">This node does not report all linked actions. You can still create or replace a link.</p>
+          }
           @if (links().length) {
             <div class="table-scroll">
               <table>
                 <caption class="sr-only">Existing action permission links for {{ account.name }}</caption>
-                <thead><tr><th scope="col">Contract / action</th><th scope="col">Permission</th><th scope="col"><span class="sr-only">Edit</span></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th scope="col">Contract · Action</th>
+                    <th scope="col">Permission</th>
+                    <th scope="col"><span class="sr-only">Edit</span></th>
+                  </tr>
+                </thead>
                 <tbody>
                   @for (link of links(); track link.contract + ':' + link.action) {
                     <tr>
-                      <td><code>{{ link.contract }}</code><span class="action-name">{{ link.action || 'All actions' }}</span></td>
-                      <td><code>{{ link.permission }}</code></td>
-                      <td>@if (link.action) { <button type="button" class="text-button" (click)="editLink(link)" [disabled]="busy()" [attr.aria-label]="'Change permission for ' + link.contract + ' ' + link.action">Change</button> }</td>
+                      <td>
+                        <div class="link-cell">
+                          <code class="contract-code">{{ link.contract }}</code>
+                          <span class="link-sep">::</span>
+                          <span class="action-name">{{ link.action || 'All actions' }}</span>
+                        </div>
+                      </td>
+                      <td><code class="perm-pill">{{ link.permission }}</code></td>
+                      <td>
+                        @if (link.action) {
+                          <button type="button" class="text-button" (click)="editLink(link)" [disabled]="busy()" [attr.aria-label]="'Change permission for ' + link.contract + ' ' + link.action">Change</button>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
-          } @else if (linksAvailable()) { <p class="empty">No explicit action links yet. Use the form to add the first one.</p> }
+          } @else if (linksAvailable()) {
+            <div class="empty-block">No explicit action links yet. Use the form to add the first one.</div>
+          }
         }
       </section>
     </div>

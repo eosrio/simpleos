@@ -46,6 +46,8 @@ export class ChainIconComponent {
     'Ultra Testnet':  { bg: '#7b2dfa', text: '#fff', letter: 'U' },
     'FIO Testnet':    { bg: '#4c5eeb', text: '#fff', letter: 'F' },
     'XPR Testnet':    { bg: '#7543e3', text: '#fff', letter: 'X' },
+    'Wire':           { bg: '#0ea5e9', text: '#fff', letter: 'W' },
+    'Wire Testnet':   { bg: '#0ea5e9', text: '#fff', letter: 'W' },
   };
 
   bgColor = computed(() => this.CHAIN_COLORS[this.chainName]?.bg ?? '#444');

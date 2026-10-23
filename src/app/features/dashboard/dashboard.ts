@@ -207,12 +207,14 @@ interface AccountTabFilter {
                 <span class="shortcut">Alt+R</span>
               </a>
             </li>
-            <li>
-              <a routerLink="create-account" routerLinkActive="active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                Create Account
-              </a>
-            </li>
+            @if (wallet.activeChain().system_contract !== 'sysio') {
+              <li>
+                <a routerLink="create-account" routerLinkActive="active">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                  Create Account
+                </a>
+              </li>
+            }
             <li>
               <a routerLink="vote" routerLinkActive="active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -266,28 +268,32 @@ interface AccountTabFilter {
               </li>
             }
 
-            <!-- BP-only section -->
-            @if (wallet.isProducer()) {
+            <!-- BP / Wire Rewards section -->
+            @if (wallet.isProducer() || wallet.hasRewardsAccess()) {
               <li class="nav-divider"></li>
-              <li class="nav-section-label">Producer</li>
-              <li>
-                <a routerLink="bp-keys" routerLinkActive="active">
-                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                  Keys
-                </a>
-              </li>
+              <li class="nav-section-label">{{ wallet.isProducer() ? 'Producer' : 'Rewards' }}</li>
+              @if (wallet.isProducer()) {
+                <li>
+                  <a routerLink="bp-keys" routerLinkActive="active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                    Keys
+                  </a>
+                </li>
+              }
               <li>
                 <a routerLink="bp-rewards" routerLinkActive="active">
                   <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   Rewards
                 </a>
               </li>
-              <li>
-                <a routerLink="bp-votes" routerLinkActive="active">
-                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                  Vote Analytics
-                </a>
-              </li>
+              @if (wallet.isProducer()) {
+                <li>
+                  <a routerLink="bp-votes" routerLinkActive="active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Vote Analytics
+                  </a>
+                </li>
+              }
             }
             } @else {
               <li class="nav-hint">

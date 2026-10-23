@@ -5,6 +5,8 @@ import { PermissionsComponent } from './permissions';
 import { AccountInfo, TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { WalletAccount, WalletStateService } from '../../../core/services/wallet-state.service';
 import { TransactionService } from '../../../core/services/transaction.service';
+import { resolveActionPermissionAndSigner } from '../../../core/services/account-signer';
+import { BpRewardsComponent, formatWireBaseUnits, mapWireClaimError } from '../bp-rewards/bp-rewards';
 
 function accountInfo(): AccountInfo {
   return { account_name: 'eosriobrazil', permissions: [
@@ -255,5 +257,279 @@ describe('action permission linking', () => {
     expect(component.permission()).toBe('claim2');
     expect(component.unchanged()).toBe(true);
     expect(tx.confirm).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('authority editor (updateauth) and PUB_EM_ keys', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  const UNCOMPRESSED_EM =
+    'PUB_EM_04602efca9b2d30f01ad8ef1bedc7b194131aa15a8b095be5fc56c3b644a428b1368ac0c806a9e2b33915d8ad66202e093be0e87a4ac9d65d68a18e4d80ff7b318';
+  const COMPRESSED_EM =
+    'PUB_EM_02602efca9b2d30f01ad8ef1bedc7b194131aa15a8b095be5fc56c3b644a428b13';
+  const WIRE_K1 = 'PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5BoDq63';
+
+  it('normalizes uncompressed PUB_EM_04... keys and matches compressed Vault keys', async () => {
+    const { component, ipc } = await setup();
+    (component.wallet as any).activeChain = () => ({ id: 'wax-chain', system_contract: 'sysio' });
+    ipc.listPublicKeys.mockResolvedValue([COMPRESSED_EM]);
+    await component.refresh();
+    expect(component.canonicalKey(UNCOMPRESSED_EM)).toBe(COMPRESSED_EM);
+    expect(component.hasVaultKey(UNCOMPRESSED_EM)).toBe(true);
+  });
+
+  it('detects and rejects 20-byte 0x Ethereum addresses while allowing MetaMask discovery', async () => {
+    const { component, ipc } = await setup();
+    (ipc as any).metamaskDiscoverKey = vi.fn().mockResolvedValue({
+      public_key: COMPRESSED_EM,
+      eth_address: '0xbFD24112203baA44E04F82fcB727824616930419',
+    });
+    component.openEditAuthority('active');
+    component.newKeyInput.set('0xbFD24112203baA44E04F82fcB727824616930419');
+    expect(component.is20ByteEthAddress()).toBe(true);
+    await component.addKeyToAuthority();
+    expect(component.authError()).toContain('Ethereum address (20 bytes)');
+
+    await component.discoverFromMetaMask();
+    expect(component.authKeys().some(k => k.key === COMPRESSED_EM)).toBe(true);
+    expect(component.ethAddressFor(COMPRESSED_EM)).toBe('0xbFD24112203baA44E04F82fcB727824616930419');
+  });
+
+  it('sorts K1 keys before EM keys and submits sysio::updateauth without waits', async () => {
+    const { component, ipc, tx } = await setup();
+    (component.wallet as any).systemAccount = () => 'sysio';
+    const info = accountInfo();
+    info.permissions[1].required_auth = {
+      threshold: 1,
+      keys: [
+        { key: UNCOMPRESSED_EM, weight: 1 },
+        { key: WIRE_K1, weight: 1 },
+      ],
+      accounts: [],
+    };
+    ipc.getAccount.mockResolvedValue(info);
+    ipc.listPublicKeys.mockResolvedValue([COMPRESSED_EM]);
+    await component.refresh();
+
+    component.openEditAuthority('active');
+    expect(component.authKeys().map(k => k.key)).toEqual([WIRE_K1, COMPRESSED_EM]);
+    expect(component.canReviewAuth()).toBe(true);
+
+    await component.reviewAuthorityUpdate();
+    expect(tx.confirm).toHaveBeenCalledExactlyOnceWith({
+      chainId: 'wax-chain',
+      publicKey: COMPRESSED_EM,
+      ledgerIndex: undefined,
+      title: 'Update Authority (eosriobrazil@active)',
+      actions: [{
+        account: 'sysio',
+        name: 'updateauth',
+        authorization: [{ actor: 'eosriobrazil', permission: 'active' }],
+        data: {
+          account: 'eosriobrazil',
+          permission: 'active',
+          parent: 'owner',
+          auth: {
+            threshold: 1,
+            keys: [
+              { key: WIRE_K1, weight: 1 },
+              { key: COMPRESSED_EM, weight: 1 },
+            ],
+            accounts: [],
+          },
+        },
+      }],
+    });
+  });
+
+  it('enforces explicit <account>@owner confirmation guard when editing owner authority', async () => {
+    const { component, ipc, tx } = await setup();
+    const info = accountInfo();
+    info.permissions[0].required_auth = {
+      threshold: 1,
+      keys: [{ key: COMPRESSED_EM, weight: 1 }],
+      accounts: [],
+    };
+    ipc.getAccount.mockResolvedValue(info);
+    ipc.listPublicKeys.mockResolvedValue([COMPRESSED_EM]);
+    await component.refresh();
+
+    component.openEditAuthority('owner');
+    expect(component.canReviewAuth()).toBe(false);
+    component.ownerConfirmText.set('wrong@owner');
+    expect(component.canReviewAuth()).toBe(false);
+    component.ownerConfirmText.set('eosriobrazil@owner');
+    expect(component.canReviewAuth()).toBe(true);
+
+    await component.reviewAuthorityUpdate();
+    expect(tx.confirm).toHaveBeenCalledOnce();
+    expect(tx.confirm.mock.calls[0][0].actions[0].authorization).toEqual([
+      { actor: 'eosriobrazil', permission: 'owner' },
+    ]);
+  });
+
+  it('preserves existing authority waits on non-sysio chains', async () => {
+    const { component, ipc, tx } = await setup();
+    (component.wallet as any).systemAccount = () => 'eosio';
+    const info = accountInfo();
+    info.permissions[1].required_auth = {
+      threshold: 2,
+      keys: [{ key: WIRE_K1, weight: 1 }],
+      accounts: [],
+      waits: [{ wait_sec: 3600, weight: 1 }],
+    } as any;
+    ipc.getAccount.mockResolvedValue(info);
+    ipc.listPublicKeys.mockResolvedValue([WIRE_K1]);
+    // owner key can sign when active has threshold 2
+    info.permissions[0].required_auth = {
+      threshold: 1,
+      keys: [{ key: WIRE_K1, weight: 1 }],
+      accounts: [],
+    };
+    await component.refresh();
+
+    component.openEditAuthority('active');
+    expect(component.totalAuthWeight()).toBe(2);
+    expect(component.canReviewAuth()).toBe(true);
+
+    await component.reviewAuthorityUpdate();
+    expect(tx.confirm).toHaveBeenCalledOnce();
+    expect(tx.confirm.mock.calls[0][0].actions[0].data.auth.waits).toEqual([
+      { wait_sec: 3600, weight: 1 },
+    ]);
+  });
+
+  it('resolves linked claim permission when key is available and falls back to active otherwise', async () => {
+    const info = accountInfo();
+    info.permissions.push({
+      perm_name: 'claim',
+      parent: 'active',
+      required_auth: { threshold: 1, keys: [{ key: 'claim-wire-key', weight: 1 }] },
+      linked_actions: [
+        { account: 'sysio', action: 'claimpay' },
+        { account: 'sysio', action: 'claimnodedis' },
+      ],
+    });
+    const acct: WalletAccount = {
+      name: 'eosriobrazil',
+      chainId: 'wire-testnet',
+      chainName: 'Wire Testnet',
+      mode: 'full',
+      info,
+    };
+    const ipcWithClaimKey = {
+      getAccount: vi.fn().mockResolvedValue(info),
+      listPublicKeys: vi.fn().mockResolvedValue(['claim-wire-key', 'active-key']),
+    } as any;
+    const res1 = await resolveActionPermissionAndSigner(
+      ipcWithClaimKey,
+      acct,
+      'sysio',
+      'claimpay',
+      'active',
+    );
+    expect(res1.permission).toBe('claim');
+    expect(res1.publicKey).toBe('claim-wire-key');
+
+    const ipcOnlyActiveKey = {
+      getAccount: vi.fn().mockResolvedValue(info),
+      listPublicKeys: vi.fn().mockResolvedValue(['active-key']),
+    } as any;
+    const res2 = await resolveActionPermissionAndSigner(
+      ipcOnlyActiveKey,
+      acct,
+      'sysio',
+      'claimnodedis',
+      'active',
+    );
+    expect(res2.permission).toBe('active');
+    expect(res2.publicKey).toBe('active-key');
+  });
+
+  it('formats 9-decimal WIRE base units and maps Wire claim assertion messages', () => {
+    expect(formatWireBaseUnits('12500000000')).toBe('12.500000000 WIRE');
+    expect(formatWireBaseUnits('5')).toBe('0.000000005 WIRE');
+    expect(formatWireBaseUnits('0')).toBe('0.000000000 WIRE');
+    expect(
+      mapWireClaimError('assertion failure with message: treasury balance is reserved against unclaimed epoch pay; try again later'),
+    ).toContain('reserved against unclaimed epoch pay');
+    expect(
+      mapWireClaimError('assertion failure with message: claim amount below minimum threshold'),
+    ).toContain('minimum claim threshold');
+    expect(
+      mapWireClaimError('assertion failure with message: no epoch pay to claim'),
+    ).toContain('No unclaimed epoch pay');
+  });
+
+  it('keeps the Wire node-owner card visible from nodedist row on transient viewnodedist failure and skips history when unavailable', async () => {
+    const info = accountInfo();
+    const selectedAccount = signal<WalletAccount | null>({
+      name: 'eosriobrazil',
+      chainId: 'wire-id',
+      chainName: 'Wire Testnet',
+      mode: 'full',
+      info,
+      isNodeOwner: true,
+      wireNodeDistRow: {
+        total_allocation: '7500000.000000000 WIRE',
+        claimed: '250000.000000000 WIRE',
+      },
+    });
+    const wallet = {
+      selectedAccount,
+      hasTauri: signal(true),
+      canSign: signal(true),
+      activeChain: signal<any>({
+        id: 'wire-id',
+        name: 'Wire Testnet',
+        symbol: 'WIRE',
+        system_contract: 'sysio',
+        token_contract: 'sysio.token',
+        hyperion_apis: [],
+        features: { history: false },
+      }),
+    };
+    const ipc = {
+      getTableRows: vi.fn().mockImplementation(async (_chainId: string, params: any) => {
+        if (params.table === 'nodeowners') {
+          return { rows: [{ owner: 'eosriobrazil', tier: 1 }] };
+        }
+        return { rows: [] };
+      }),
+      callReadOnlyAction: vi.fn().mockImplementation(async (_chain: string, _code: string, action: string) => {
+        if (action === 'viewnodedist') {
+          throw new Error('RPC timeout');
+        }
+        return {};
+      }),
+      getAccount: vi.fn().mockResolvedValue(info),
+      listPublicKeys: vi.fn().mockResolvedValue(['active-key']),
+      getActionsHistory: vi.fn(),
+    };
+
+    const view = TestBed.runInInjectionContext(
+      () => new BpRewardsComponent(wallet as any, ipc as any, {} as any, {} as any, {} as any),
+    );
+    await view.refresh();
+
+    expect(view.historyUnavailable()).toBe(true);
+    expect(ipc.getActionsHistory).not.toHaveBeenCalled();
+    expect(view.wireNodeDist()?.total_allocation).toBe('7500000.000000000 WIRE');
+    expect(view.wireNodeDist()?.claimed).toBe('250000.000000000 WIRE');
+    expect(view.wireNodeClaimableLoading()).toBe(true);
+    expect(view.wireNodeTier()).toBe('T1');
+    expect(view.wireLoadError()).toContain('Retry');
+
+    // Only clear when chain explicitly reports account is not a node owner
+    ipc.callReadOnlyAction.mockImplementation(async (_chain: string, _code: string, action: string) => {
+      if (action === 'viewnodedist') {
+        throw new Error('assertion failure with message: account is not a node owner');
+      }
+      return {};
+    });
+    await view.refresh();
+    expect(view.wireNodeDist()).toBeNull();
+    expect(view.wireLoadError()).toBe('');
   });
 });

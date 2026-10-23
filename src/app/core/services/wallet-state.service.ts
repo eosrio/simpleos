@@ -9,6 +9,12 @@ export interface TokenBalance {
   amount: string;
 }
 
+export interface WireNodeDistTableRow {
+  total_allocation: string;
+  claimed: string;
+  total_duration?: number;
+}
+
 export interface WalletAccount {
   name: string;
   chainId: string;
@@ -24,6 +30,12 @@ export interface WalletAccount {
   producerRank?: number;
   /** Producer URL, if a producer */
   producerUrl?: string;
+  /** Whether this account has a Wire `sysio::payclaims` row */
+  hasPayclaim?: boolean;
+  /** Whether this account is a Wire node owner (`sysio::nodedist` / `sysio.roa::nodeowners`) */
+  isNodeOwner?: boolean;
+  /** Cached `sysio::nodedist` row (allocation & claimed) for immediate Wire Rewards display */
+  wireNodeDistRow?: WireNodeDistTableRow;
   /** Ledger BIP44 key index, if imported from a Ledger device */
   ledgerIndex?: number;
 }
@@ -61,6 +73,19 @@ export class WalletStateService {
 
   /** Whether the currently selected account is a registered block producer */
   readonly isProducer = computed(() => this.selectedAccount()?.isProducer ?? false);
+
+  /** Whether the currently selected account has a Wire `sysio::payclaims` row */
+  readonly hasPayclaim = computed(() => this.selectedAccount()?.hasPayclaim ?? false);
+
+  /** Whether the currently selected account is a Wire node owner */
+  readonly isNodeOwner = computed(() => this.selectedAccount()?.isNodeOwner ?? false);
+
+  /** Whether the currently selected account has access to the Rewards tab */
+  readonly hasRewardsAccess = computed(() => {
+    const account = this.selectedAccount();
+    if (!account) return false;
+    return !!(account.isProducer || account.hasPayclaim || account.isNodeOwner);
+  });
 
   /** Whether the currently selected account can sign transactions (has keys imported) */
   readonly canSign = computed(() => this.selectedAccount()?.mode === 'full');
@@ -127,17 +152,34 @@ export class WalletStateService {
 
   /**
    * Resolve the contract account for a core system action on the active chain.
-   * Returns the chain's `system_contract` (e.g. `core.vaulta` on Vaulta) for the
-   * wrapped economic actions above, and `eosio` otherwise. Use this instead of a
-   * hard-coded `'eosio'` when building eosio-system actions so they route
-   * correctly after the Vaulta rebrand.
+   * - On `sysio` chains (Wire Network), all system actions live on `sysio`.
+   * - On Vaulta (`core.vaulta`), wrapped economic actions route to `core.vaulta`
+   *   while consensus/auth actions stay on `eosio`.
    */
   systemAccount(actionName: string): string {
     const sys = this.activeChain()?.system_contract;
+    if (sys === 'sysio') {
+      return 'sysio';
+    }
     if (sys && sys !== 'eosio' && WalletStateService.SYSTEM_WRAPPED_ACTIONS.has(actionName)) {
       return sys;
     }
     return 'eosio';
+  }
+
+  /**
+   * Base system contract for authority, consensus, and system table queries
+   * (`eosio` on Antelope/Vaulta chains, `sysio` on Wire Network chains).
+   */
+  coreSystemContract(): string {
+    return this.activeChain()?.system_contract === 'sysio' ? 'sysio' : 'eosio';
+  }
+
+  /**
+   * Multisig contract for the active chain (`sysio.msig` on Wire Network, `eosio.msig` otherwise).
+   */
+  msigContract(): string {
+    return this.activeChain()?.system_contract === 'sysio' ? 'sysio.msig' : 'eosio.msig';
   }
 
   constructor(private ipc: TauriIpcService) {}
@@ -237,29 +279,8 @@ export class WalletStateService {
         info,
       };
 
-      // Check if this account is a producer
-      try {
-        const producers = await this.ipc.getProducers(chainId, 200);
-        const bpList = producers?.rows ?? producers?.producers ?? [];
-        const bp = bpList.find((r: any) => r.owner === accountName);
-        if (bp) {
-          account.isProducer = true;
-          account.producerUrl = bp.url;
-          const sorted = bpList
-            .filter((r: any) => r.is_active === 1 || r.is_active === true)
-            .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
-          const rank = sorted.findIndex((r: any) => r.owner === accountName);
-          if (rank >= 0) account.producerRank = rank + 1;
-        }
-        console.log(
-          `[wallet] addWatch producer check: ${accountName}@${chain.name} isProducer=${!!account.isProducer} rank=${account.producerRank ?? '—'}`,
-        );
-      } catch (e) {
-        console.warn(
-          `[wallet] addWatch producer check failed for ${accountName}@${chain.name}:`,
-          e,
-        );
-      }
+      // Check if this account is a producer / has Wire reward roles
+      await this.populateRewardRoles(chain, account);
 
       // Add to accounts list and persist
       this.accounts.update((list) => [...list, account]);
@@ -292,57 +313,49 @@ export class WalletStateService {
 
       const extraBalances = chain ? await this.fetchExtraTokenBalances(chain, account.name) : [];
 
-      // Detect producer status. Sticky: once an account is known to be a
-      // producer we never downgrade it on a later miss/failure. An
-      // unregistered producer is still a producer (its `producers` row
-      // persists, is_active:0), and a transient FIO/RPC hiccup must not hide
-      // the Producer section — that would trap the user with no way to reach
-      // the RE-REGISTER button (the whole point of emergency-unreg saving
-      // config). Rank, by contrast, only reflects *active* production.
-      let isProducer = account.isProducer ?? false;
-      let producerRank: number | undefined;
-      let producerUrl = account.producerUrl;
-      try {
-        const producers = await this.ipc.getProducers(account.chainId, 200);
-        const bpList = producers?.rows ?? producers?.producers ?? [];
-        const bp = bpList.find((r: any) => r.owner === account.name);
-        if (bp) {
-          isProducer = true;
-          producerUrl = bp.url;
-          const sorted = bpList
-            .filter((r: any) => r.is_active === 1 || r.is_active === true)
-            .sort((a: any, b: any) => parseFloat(b.total_votes) - parseFloat(a.total_votes));
-          const rank = sorted.findIndex((r: any) => r.owner === account.name);
-          if (rank >= 0) producerRank = rank + 1;
-        }
-        // bp not found → leave isProducer at its sticky (cached) value;
-        // rank stays undefined since the account is not actively producing.
-        console.log(
-          `[wallet] producer check: ${account.name}@${account.chainName} isProducer=${isProducer} rank=${producerRank ?? '—'}`,
-        );
-      } catch (e) {
-        // Keep existing value on failure so cached state survives
-        isProducer = account.isProducer ?? false;
-        producerRank = account.producerRank;
-        console.warn(`[wallet] producer check failed for ${account.name}@${account.chainName}:`, e);
-      }
+      const updated: WalletAccount = {
+        ...account,
+        info,
+        extraBalances,
+      };
+      await this.populateRewardRoles(chain, updated);
 
       if (this.refreshRequests.get(identity) !== request) return;
       this.accounts.update((list) =>
         list.map((a) =>
-          a.name === account.name && a.chainId === account.chainId ? { ...a, info, extraBalances, isProducer, producerRank, producerUrl } : a,
+          a.name === account.name && a.chainId === account.chainId ? updated : a,
         ),
       );
+      await this.saveAccounts();
     } catch (e: any) {
       console.warn(`[wallet] refreshAccount FAILED for ${account.name}:`, e);
     }
   }
 
-  /** Refresh all accounts. */
+  /** Refresh all accounts, starting with the currently selected account. */
   async refreshAllAccounts() {
-    const accounts = this.accounts();
-    for (let i = 0; i < accounts.length; i++) {
-      await this.refreshAccount(i);
+    const refreshed = new Set<string>();
+    const keyOf = (a: WalletAccount) => `${a.chainId}:${a.name}`;
+
+    while (true) {
+      const accounts = this.accounts();
+      const selIdx = this.selectedIndex();
+      let nextIdx = -1;
+
+      if (
+        selIdx !== null &&
+        selIdx >= 0 &&
+        selIdx < accounts.length &&
+        !refreshed.has(keyOf(accounts[selIdx]))
+      ) {
+        nextIdx = selIdx;
+      } else {
+        nextIdx = accounts.findIndex((a) => !refreshed.has(keyOf(a)));
+      }
+
+      if (nextIdx < 0) break;
+      refreshed.add(keyOf(accounts[nextIdx]));
+      await this.refreshAccount(nextIdx);
     }
   }
 
@@ -429,6 +442,7 @@ export class WalletStateService {
   /** Save current accounts to local store. */
   async saveAccounts() {
     if (!this.hasTauri()) return;
+    if (typeof (this.ipc as any).storeSet !== 'function') return;
     try {
       const accts = this.accounts();
       console.log(`[wallet] saveAccounts: saving ${accts.length} accounts`);
@@ -498,6 +512,10 @@ export class WalletStateService {
       ledgerIndex: options.ledgerIndex,
     };
 
+    if (hasFreshInfo) {
+      await this.populateRewardRoles(chain, account);
+    }
+
     this.upsertAccount(account, hasFreshInfo);
 
     return (
@@ -528,14 +546,16 @@ export class WalletStateService {
                 const info = await this.ipc.getAccount(chain.id, name);
                 await this.loadPrimaryBalance(chain, name, info);
                 const extraBalances = await this.fetchExtraTokenBalances(chain, name);
-                allAccounts.push({
+                const acct: WalletAccount = {
                   name,
                   chainId: chain.id,
                   chainName: chain.name,
                   mode: 'full',
                   info,
                   extraBalances,
-                });
+                };
+                await this.populateRewardRoles(chain, acct);
+                allAccounts.push(acct);
               } catch (e) {
                 console.warn(`[wallet] Failed to load ${name} on ${chain.name}:`, e);
               }
@@ -596,10 +616,130 @@ export class WalletStateService {
         isProducer: account.isProducer ?? existing.isProducer,
         producerRank: account.producerRank ?? existing.producerRank,
         producerUrl: account.producerUrl ?? existing.producerUrl,
+        hasPayclaim: account.hasPayclaim ?? existing.hasPayclaim,
+        isNodeOwner: account.isNodeOwner ?? existing.isNodeOwner,
+        wireNodeDistRow: account.wireNodeDistRow ?? existing.wireNodeDistRow,
         ledgerIndex: account.ledgerIndex ?? existing.ledgerIndex,
       };
       return next;
     });
+  }
+
+  private async populateRewardRoles(chain: ChainConfig | undefined, account: WalletAccount) {
+    let isProducer = account.isProducer ?? false;
+    let producerRank: number | undefined = account.producerRank;
+    let producerUrl = account.producerUrl;
+    let hasPayclaim = account.hasPayclaim ?? false;
+    let isNodeOwner = account.isNodeOwner ?? false;
+    let wireNodeDistRow = account.wireNodeDistRow;
+
+    if (chain?.system_contract === 'sysio') {
+      const [prodRow, payclaimRow, nodedistRow] = await Promise.allSettled([
+        this.ipc.getTableRows(account.chainId, {
+          code: 'sysio',
+          scope: 'sysio',
+          table: 'producers',
+          lower_bound: account.name,
+          upper_bound: account.name,
+          limit: 1,
+          json: true,
+        }),
+        this.ipc.getTableRows(account.chainId, {
+          code: 'sysio',
+          scope: 'sysio',
+          table: 'payclaims',
+          lower_bound: account.name,
+          upper_bound: account.name,
+          limit: 1,
+          json: true,
+        }),
+        this.ipc.getTableRows(account.chainId, {
+          code: 'sysio',
+          scope: 'sysio',
+          table: 'nodedist',
+          lower_bound: account.name,
+          upper_bound: account.name,
+          limit: 1,
+          json: true,
+        }),
+      ]);
+
+      if (prodRow.status === 'fulfilled' && Array.isArray(prodRow.value?.rows)) {
+        const prow = prodRow.value.rows[0];
+        if (prow?.owner === account.name) {
+          isProducer = true;
+          producerUrl = prow.url ?? producerUrl;
+        } else {
+          isProducer = false;
+        }
+      }
+      if (payclaimRow.status === 'fulfilled' && Array.isArray(payclaimRow.value?.rows)) {
+        hasPayclaim = payclaimRow.value.rows[0]?.account_name === account.name;
+      }
+      if (nodedistRow.status === 'fulfilled' && Array.isArray(nodedistRow.value?.rows)) {
+        const nrow = nodedistRow.value.rows[0];
+        if (nrow?.account_name === account.name) {
+          isNodeOwner = true;
+          if (typeof nrow.total_allocation === 'string' && typeof nrow.claimed === 'string') {
+            wireNodeDistRow = {
+              total_allocation: nrow.total_allocation,
+              claimed: nrow.claimed,
+              total_duration:
+                nrow.total_duration !== undefined ? Number(nrow.total_duration) : undefined,
+            };
+          }
+        } else {
+          try {
+            const roaRes = await this.ipc.getTableRows(account.chainId, {
+              code: 'sysio.roa',
+              scope: '0',
+              table: 'nodeowners',
+              lower_bound: account.name,
+              upper_bound: account.name,
+              limit: 1,
+              json: true,
+            });
+            isNodeOwner = roaRes?.rows?.[0]?.owner === account.name;
+            if (!isNodeOwner) wireNodeDistRow = undefined;
+          } catch {
+            // ignore if sysio.roa is absent
+          }
+        }
+      }
+    } else {
+      try {
+        const producers = await this.ipc.getProducers(account.chainId, 200);
+        const bpList = producers?.rows ?? producers?.producers ?? [];
+        const bp = bpList.find((r: any) => r.owner === account.name);
+        if (bp) {
+          isProducer = true;
+          producerUrl = bp.url;
+          const sorted = bpList
+            .filter((r: any) => r.is_active === 1 || r.is_active === true)
+            .sort(
+              (a: any, b: any) =>
+                parseFloat(b.total_votes ?? b.rank_score ?? '0') -
+                parseFloat(a.total_votes ?? a.rank_score ?? '0'),
+            );
+          const rank = sorted.findIndex((r: any) => r.owner === account.name);
+          if (rank >= 0) producerRank = rank + 1;
+        } else {
+          isProducer = false;
+          producerRank = undefined;
+        }
+      } catch (e) {
+        isProducer = account.isProducer ?? false;
+        producerRank = account.producerRank;
+        console.warn(`[wallet] producer check failed for ${account.name}@${account.chainName}:`, e);
+      }
+    }
+
+    account.isProducer = isProducer;
+    account.producerRank = producerRank;
+    account.producerUrl = producerUrl;
+    account.hasPayclaim = hasPayclaim;
+    account.isNodeOwner = isNodeOwner;
+    account.wireNodeDistRow = wireNodeDistRow;
   }
 
   async setSecurityMode(mode: 'SessionUnlock' | 'SignPerUse' | 'ManualToggle') {
@@ -662,6 +802,16 @@ export class WalletStateService {
       return;
     }
     this.selectedIndex.set(index);
+    const acct = this.accounts()[index];
+    if (
+      acct &&
+      this.hasTauri() &&
+      acct.isProducer === undefined &&
+      acct.hasPayclaim === undefined &&
+      acct.isNodeOwner === undefined
+    ) {
+      void this.refreshAccount(index);
+    }
   }
 
   clearSelectedAccount() {
@@ -1015,6 +1165,29 @@ const MOCK_CHAINS: ChainConfig[] = [
       staking: true,
       rex: true,
       powerup: true,
+      resource: true,
+      dapps: false,
+      history: false,
+    },
+    testnet: true,
+  },
+  {
+    id: '9ccd94e823fda51363bd4265ad618a909c4985c445078c79f8d030fe9697b71d',
+    name: 'Wire Testnet',
+    symbol: 'WIRE',
+    precision: 9,
+    token_contract: 'sysio.token',
+    system_contract: 'sysio',
+    extra_tokens: [{ contract: 'sysio.token', symbol: 'SYS', precision: 4 }],
+    endpoints: [{ url: 'https://testnet.wire.eosrio.io' }],
+    hyperion_apis: [],
+    explorers: [],
+    features: {
+      send: true,
+      vote: true,
+      staking: false,
+      rex: false,
+      powerup: false,
       resource: true,
       dapps: false,
       history: false,

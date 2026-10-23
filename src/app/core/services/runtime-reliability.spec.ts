@@ -171,4 +171,62 @@ describe('wallet account refresh ownership', () => {
     wallet.accounts.set([account('bob')]); pending.resolve(account('alice').info); await refresh;
     expect(wallet.accounts()[0].info.account_name).toBe('bob');
   });
+
+  it('refreshes the selected account first in refreshAllAccounts and skips 200-row getProducers on Wire', async () => {
+    const order: string[] = [];
+    const savedSnapshots: number[] = [];
+    const ipc = {
+      getAccount: vi.fn().mockImplementation(async (_chainId: string, name: string) => {
+        order.push(name);
+        return account(name, _chainId).info;
+      }),
+      getBalances: vi.fn().mockResolvedValue(['10.000000000 WIRE']),
+      getProducers: vi.fn().mockResolvedValue({ rows: [] }),
+      getTableRows: vi.fn().mockImplementation(async (_chainId: string, params: any) => {
+        if (params.table === 'nodedist' && params.lower_bound === 'wirenode') {
+          return {
+            rows: [
+              {
+                account_name: 'wirenode',
+                total_allocation: '7500000.000000000 WIRE',
+                claimed: '100000.000000000 WIRE',
+                total_duration: 31104000,
+              },
+            ],
+          };
+        }
+        return { rows: [] };
+      }),
+      storeSet: vi.fn().mockImplementation(async (_key: string, val: any[]) => {
+        savedSnapshots.push(val.filter((a) => a.isNodeOwner !== undefined).length);
+      }),
+    };
+    const wallet = new WalletStateService(ipc as any);
+    wallet.hasTauri.set(true);
+    wallet.chains.set([
+      {
+        id: 'wire-id',
+        name: 'Wire Testnet',
+        symbol: 'WIRE',
+        precision: 9,
+        token_contract: 'sysio.token',
+        system_contract: 'sysio',
+        extra_tokens: [],
+      } as any,
+    ]);
+    wallet.accounts.set([account('firstacct', 'wire-id'), account('wirenode', 'wire-id')]);
+    wallet.selectedIndex.set(1);
+
+    await wallet.refreshAllAccounts();
+
+    expect(order).toEqual(['wirenode', 'firstacct']);
+    expect(ipc.getProducers).not.toHaveBeenCalled();
+    expect(ipc.storeSet).toHaveBeenCalledTimes(2);
+    expect(wallet.accounts()[1].isNodeOwner).toBe(true);
+    expect(wallet.accounts()[1].wireNodeDistRow).toEqual({
+      total_allocation: '7500000.000000000 WIRE',
+      claimed: '100000.000000000 WIRE',
+      total_duration: 31104000,
+    });
+  });
 });

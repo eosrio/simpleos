@@ -5,6 +5,7 @@ pub mod error;
 pub mod keystore;
 #[cfg(feature = "ledger")]
 pub mod ledger;
+pub mod metamask_bridge;
 pub mod rng;
 pub mod tray;
 pub mod util;
@@ -177,6 +178,8 @@ pub fn run() {
             commands::wallet::import_private_key,
             commands::wallet::import_key_with_session,
             commands::wallet::derive_public_key,
+            commands::wallet::normalize_em_public_key,
+            commands::wallet::eth_address_from_public_key,
             commands::wallet::to_fio_public_key,
             commands::wallet::generate_key_pair,
             commands::wallet::list_public_keys,
@@ -221,6 +224,7 @@ pub fn run() {
             commands::network::get_balances,
             commands::network::get_table_rows,
             commands::network::get_abi,
+            commands::network::call_read_only_action,
             commands::network::get_producers,
             commands::network::lookup_key_accounts,
             commands::network::get_actions_history,
@@ -284,6 +288,13 @@ pub fn run() {
             commands::ledger::ledger_sign_transaction,
             #[cfg(feature = "ledger")]
             commands::ledger::ledger_watch_devices,
+            #[cfg(feature = "ledger")]
+            commands::ledger::ledger_get_eth_app_config,
+            #[cfg(feature = "ledger")]
+            commands::ledger::ledger_get_eth_public_key,
+            #[cfg(feature = "ledger")]
+            commands::ledger::ledger_discover_eth_keys,
+            metamask_bridge::metamask_discover_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

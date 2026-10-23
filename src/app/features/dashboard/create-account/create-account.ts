@@ -16,353 +16,903 @@ interface CreatedRecord {
   selector: 'app-create-account',
   standalone: true,
   template: `
-    <div class="create-layout">
-      <!-- ── Create form ── -->
-      <div class="create-form">
-        <h2>Create Account</h2>
-        <p class="lede">
-          Create a new account on <strong>{{ wallet.activeChain().name }}</strong>.
-          <span class="payer">{{ creator() }}</span> pays for RAM and the CPU / NET stake.
-        </p>
-
-        @if (!wallet.canSign()) {
-          <div class="banner error">
-            The selected account is watch-only — it can't sign the creation transaction.
-            Switch to an account whose keys you hold.
-          </div>
-        }
-
-        <!-- New account name -->
-        <div class="form-group">
-          <label>New account name</label>
-          <input class="form-input mono" type="text" spellcheck="false" autocapitalize="off"
-                 placeholder="12 chars, a–z and 1–5"
-                 maxlength="13"
-                 [class.input-valid]="nameValid() === true"
-                 [class.input-invalid]="nameValid() === false"
-                 [value]="newName()"
-                 (input)="onNameInput($any($event.target).value)"
-                 (blur)="checkNameAvailable()" />
-          @if (nameHint()) {
-            <span class="field-hint" [class.error]="nameValid() === false" [class.valid]="nameValid() === true">
-              {{ nameHint() }}
-            </span>
-          }
+    <div class="create-view">
+      <!-- ── Top Header ── -->
+      <header class="page-header">
+        <div class="header-title-row">
+          <h2>Create Account</h2>
+          <span class="header-sep">·</span>
+          <span class="header-meta">Payer: {{ creator() }} · {{ wallet.activeChain().name }}</span>
         </div>
+      </header>
 
-        <!-- Keys -->
-        <div class="form-group">
-          <div class="label-row">
-            <label>Owner public key</label>
-            <button class="btn-ghost btn-small" type="button" (click)="generate()">Generate keys</button>
+      @if (isWire()) {
+        <div class="msg-banner error" role="alert">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Account creation on Wire requires a privileged system account (<code>sysio::newaccount</code> is privileged-only).</span>
+        </div>
+      } @else if (!wallet.canSign()) {
+        <div class="msg-banner error" role="alert">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Watch-only account — switch to an account with an imported signing key to create accounts.</span>
+        </div>
+      }
+
+      <div class="create-layout">
+        <!-- ── Left: Create Form Card ── -->
+        <section class="section-card">
+          <div class="card-header">
+            <div class="card-title-row">
+              <h3>New Account Details</h3>
+              <span class="meta-pill">newaccount</span>
+            </div>
           </div>
-          <input class="form-input mono" type="text" spellcheck="false"
-                 placeholder="EOS… or PUB_K1_…"
-                 [class.input-invalid]="ownerKey() !== '' && !isPubKey(ownerKey())"
-                 [value]="ownerKey()"
-                 (input)="onOwnerInput($any($event.target).value)" />
-          @if (generatedOwnerWif()) {
-            <div class="key-reveal">
-              <span class="key-reveal-label">Owner private key — save it now, it is shown only once</span>
-              <div class="key-reveal-row">
-                <code>{{ generatedOwnerWif() }}</code>
-                <button class="btn-ghost btn-small" type="button" (click)="copy(generatedOwnerWif())">Copy</button>
+
+          <!-- New account name -->
+          <div class="field-group">
+            <div class="field-label-row">
+              <label for="new-account-name">Account Name</label>
+              <div class="name-meta">
+                @if (nameHint()) {
+                  <span class="status-tag" [class.error]="nameValid() === false" [class.valid]="nameValid() === true">
+                    {{ nameValid() === true ? '✓ ' : '' }}{{ nameHint() }}
+                  </span>
+                }
+                <span class="char-pill" [class.complete]="newName().length === 12">{{ newName().length }}/12</span>
               </div>
             </div>
-          }
-        </div>
+            <input
+              id="new-account-name"
+              class="form-input mono"
+              type="text"
+              spellcheck="false"
+              autocapitalize="off"
+              placeholder="12 chars (a–z, 1–5)"
+              maxlength="13"
+              [class.input-valid]="nameValid() === true"
+              [class.input-invalid]="nameValid() === false"
+              [value]="newName()"
+              (input)="onNameInput($any($event.target).value)"
+              (blur)="checkNameAvailable()"
+            />
+          </div>
 
-        <div class="form-group">
+          <!-- Owner Public Key -->
+          <div class="field-group">
+            <div class="field-label-row">
+              <label for="owner-pub-key">
+                Owner Public Key
+                @if (isPubKey(ownerKey())) {
+                  <span class="curve-pill">{{ keyCurve(ownerKey()) }}</span>
+                }
+              </label>
+              <button class="btn-inline-action" type="button" (click)="generate()">
+                + Generate Keypair
+              </button>
+            </div>
+            <input
+              id="owner-pub-key"
+              class="form-input mono"
+              type="text"
+              spellcheck="false"
+              placeholder="EOS… / PUB_K1_… / PUB_EM_…"
+              [class.input-invalid]="ownerKey() !== '' && !isPubKey(ownerKey())"
+              [value]="ownerKey()"
+              (input)="onOwnerInput($any($event.target).value)"
+            />
+            @if (generatedOwnerWif()) {
+              <div class="key-reveal">
+                <div class="key-reveal-head">
+                  <span class="key-reveal-label">⚠ Owner Private Key — save now (shown once)</span>
+                  <button
+                    class="btn-copy-sm"
+                    [class.copied]="copiedVal() === generatedOwnerWif()"
+                    type="button"
+                    (click)="copy(generatedOwnerWif())"
+                  >
+                    {{ copiedVal() === generatedOwnerWif() ? 'Copied ✓' : 'Copy WIF' }}
+                  </button>
+                </div>
+                <code>{{ generatedOwnerWif() }}</code>
+              </div>
+            }
+          </div>
+
           <label class="check-label">
             <input type="checkbox" [checked]="sameKey()" (change)="onSameKeyToggle($any($event.target).checked)" />
-            Use the same key for the active permission
+            <span>Use same key for <code>active</code> permission</span>
           </label>
-        </div>
 
-        @if (!sameKey()) {
-          <div class="form-group">
-            <div class="label-row">
-              <label>Active public key</label>
-              <button class="btn-ghost btn-small" type="button" (click)="generateActive()">Generate</button>
-            </div>
-            <input class="form-input mono" type="text" spellcheck="false"
-                   placeholder="EOS… or PUB_K1_…"
-                   [class.input-invalid]="activeKey() !== '' && !isPubKey(activeKey())"
-                   [value]="activeKey()"
-                   (input)="onActiveInput($any($event.target).value)" />
-            @if (generatedActiveWif()) {
-              <div class="key-reveal">
-                <span class="key-reveal-label">Active private key — save it now, it is shown only once</span>
-                <div class="key-reveal-row">
-                  <code>{{ generatedActiveWif() }}</code>
-                  <button class="btn-ghost btn-small" type="button" (click)="copy(generatedActiveWif())">Copy</button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Resources -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>RAM (KB)</label>
-            <input class="form-input mono" type="text" placeholder="8"
-                   [value]="ramKb()" (input)="ramKb.set($any($event.target).value)" />
-          </div>
-          <div class="form-group">
-            <label>CPU stake ({{ sym() }})</label>
-            <input class="form-input mono" type="text" placeholder="1.0000"
-                   [value]="cpuStake()" (input)="cpuStake.set($any($event.target).value)" />
-          </div>
-          <div class="form-group">
-            <label>NET stake ({{ sym() }})</label>
-            <input class="form-input mono" type="text" placeholder="0.5000"
-                   [value]="netStake()" (input)="netStake.set($any($event.target).value)" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="check-label">
-            <input type="checkbox" [checked]="transferStake()" (change)="transferStake.set($any($event.target).checked)" />
-            Transfer staked tokens to the new account (it owns and can unstake them)
-          </label>
-        </div>
-
-        <div class="cost-line">
-          Estimated cost to {{ creator() }}: {{ costSummary() }}
-        </div>
-
-        @if (formError()) {
-          <p class="banner error">{{ formError() }}</p>
-        }
-
-        <button class="btn-primary" [disabled]="!canCreate() || busy()" (click)="onCreate()">
-          {{ busy() ? 'Working…' : 'CREATE ACCOUNT' }}
-        </button>
-
-        <!-- Success card -->
-        @if (created(); as c) {
-          <div class="success-card">
-            <div class="success-head">
-              <span class="success-check">&#10003;</span>
-              <span><strong>{{ c.name }}</strong> created</span>
-            </div>
-            <div class="success-row">
-              <span class="k">Account</span>
-              <span class="v mono">{{ c.name }}</span>
-              @if (explorerUrl(c.name); as url) {
-                <a class="explorer-link" [href]="url" target="_blank" rel="noopener">View</a>
-              }
-            </div>
-            <div class="success-row">
-              <span class="k">Owner key</span>
-              <span class="v mono trunc">{{ c.ownerKey }}</span>
-            </div>
-            <div class="success-row">
-              <span class="k">Active key</span>
-              <span class="v mono trunc">{{ c.activeKey }}</span>
-            </div>
-            <div class="success-actions">
-              @if (canImportCreated()) {
-                <button class="btn-ghost" type="button" [disabled]="busy()" (click)="importCreated()">
-                  Import into wallet
+          @if (!sameKey()) {
+            <div class="field-group">
+              <div class="field-label-row">
+                <label for="active-pub-key">
+                  Active Public Key
+                  @if (isPubKey(activeKey())) {
+                    <span class="curve-pill">{{ keyCurve(activeKey()) }}</span>
+                  }
+                </label>
+                <button class="btn-inline-action" type="button" (click)="generateActive()">
+                  + Generate Keypair
                 </button>
+              </div>
+              <input
+                id="active-pub-key"
+                class="form-input mono"
+                type="text"
+                spellcheck="false"
+                placeholder="EOS… / PUB_K1_… / PUB_EM_…"
+                [class.input-invalid]="activeKey() !== '' && !isPubKey(activeKey())"
+                [value]="activeKey()"
+                (input)="onActiveInput($any($event.target).value)"
+              />
+              @if (generatedActiveWif()) {
+                <div class="key-reveal">
+                  <div class="key-reveal-head">
+                    <span class="key-reveal-label">⚠ Active Private Key — save now (shown once)</span>
+                    <button
+                      class="btn-copy-sm"
+                      [class.copied]="copiedVal() === generatedActiveWif()"
+                      type="button"
+                      (click)="copy(generatedActiveWif())"
+                    >
+                      {{ copiedVal() === generatedActiveWif() ? 'Copied ✓' : 'Copy WIF' }}
+                    </button>
+                  </div>
+                  <code>{{ generatedActiveWif() }}</code>
+                </div>
               }
-              <button class="btn-ghost" type="button" (click)="reset()">Create another</button>
             </div>
-            @if (importNote()) {
-              <p class="import-note">{{ importNote() }}</p>
-            }
-          </div>
-        }
-      </div>
+          }
 
-      <!-- ── Recently created ── -->
-      <div class="recent-panel">
-        <h3>Created here</h3>
-        @if (recentForChain().length > 0) {
-          <div class="recent-list">
-            @for (r of recentForChain(); track r.name + r.chainId) {
-              <div class="recent-row">
-                <span class="recent-name mono">{{ r.name }}</span>
-                @if (explorerUrl(r.name); as url) {
-                  <a class="explorer-link" [href]="url" target="_blank" rel="noopener">View</a>
+          @if (!isWire()) {
+            <div class="divider"></div>
+
+            <!-- Resources -->
+            <div class="resource-header">
+              <span class="sub-heading">Initial Resource Allocation</span>
+              <div class="preset-pills" role="group" aria-label="Resource presets">
+                <button type="button" class="preset-btn" [class.active]="ramKb() === '4'" (click)="applyPreset('4', '0.5000', '0.1000')">Minimal</button>
+                <button type="button" class="preset-btn" [class.active]="ramKb() === '8'" (click)="applyPreset('8', '1.0000', '0.5000')">Standard</button>
+                <button type="button" class="preset-btn" [class.active]="ramKb() === '32'" (click)="applyPreset('32', '5.0000', '1.0000')">Power</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field-group">
+                <label for="ram-kb">RAM (KB)</label>
+                <input
+                  id="ram-kb"
+                  class="form-input mono"
+                  type="text"
+                  placeholder="8"
+                  [value]="ramKb()"
+                  (input)="ramKb.set($any($event.target).value)"
+                />
+              </div>
+              <div class="field-group">
+                <label for="cpu-stake">CPU Stake ({{ sym() }})</label>
+                <input
+                  id="cpu-stake"
+                  class="form-input mono"
+                  type="text"
+                  placeholder="1.0000"
+                  [value]="cpuStake()"
+                  (input)="cpuStake.set($any($event.target).value)"
+                />
+              </div>
+              <div class="field-group">
+                <label for="net-stake">NET Stake ({{ sym() }})</label>
+                <input
+                  id="net-stake"
+                  class="form-input mono"
+                  type="text"
+                  placeholder="0.5000"
+                  [value]="netStake()"
+                  (input)="netStake.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+
+            <label class="check-label">
+              <input type="checkbox" [checked]="transferStake()" (change)="transferStake.set($any($event.target).checked)" />
+              <span>Transfer staked tokens to new account (new account owns &amp; can unstake them)</span>
+            </label>
+          }
+
+          <!-- Cost & Action Bar -->
+          <div class="summary-bar">
+            <div class="summary-cost">
+              <span class="cost-k">Estimated Outlay</span>
+              <span class="cost-v">{{ costSummary() }}</span>
+            </div>
+            <button class="btn-primary" type="button" [disabled]="!canCreate() || busy()" (click)="onCreate()">
+              {{ busy() ? 'Creating…' : 'Create Account' }}
+            </button>
+          </div>
+
+          @if (formError()) {
+            <div class="msg-banner error" role="alert">
+              <span>{{ formError() }}</span>
+            </div>
+          }
+
+          <!-- Success card -->
+          @if (created(); as c) {
+            <div class="success-card" role="status">
+              <div class="success-head">
+                <span class="success-badge">✓ Created</span>
+                <strong class="mono">{{ c.name }}</strong>
+                @if (explorerUrl(c.name); as url) {
+                  <a class="explorer-link" [href]="url" target="_blank" rel="noopener">Explorer ↗</a>
                 }
               </div>
-            }
+              <div class="success-row">
+                <span class="k">Owner</span>
+                <code class="v trunc">{{ formatKeyShort(c.ownerKey) }}</code>
+                <button class="btn-copy-sm" type="button" (click)="copy(c.ownerKey)">
+                  {{ copiedVal() === c.ownerKey ? '✓' : 'Copy' }}
+                </button>
+              </div>
+              <div class="success-row">
+                <span class="k">Active</span>
+                <code class="v trunc">{{ formatKeyShort(c.activeKey) }}</code>
+                <button class="btn-copy-sm" type="button" (click)="copy(c.activeKey)">
+                  {{ copiedVal() === c.activeKey ? '✓' : 'Copy' }}
+                </button>
+              </div>
+              <div class="success-actions">
+                @if (canImportCreated()) {
+                  <button class="btn-ghost" type="button" [disabled]="busy()" (click)="importCreated()">
+                    Import into SimplEOS
+                  </button>
+                }
+                <button class="btn-ghost" type="button" (click)="reset()">Create Another</button>
+              </div>
+              @if (importNote()) {
+                <p class="import-note">{{ importNote() }}</p>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- ── Right: Recently Created Card ── -->
+        <aside class="section-card recent-panel">
+          <div class="card-header">
+            <div class="card-title-row">
+              <h3>Created Here</h3>
+              @if (recentForChain().length > 0) {
+                <span class="meta-pill">{{ recentForChain().length }}</span>
+              }
+            </div>
           </div>
-        } @else {
-          <p class="recent-empty">Accounts you create on this chain will be listed here.</p>
-        }
+
+          @if (recentForChain().length > 0) {
+            <div class="recent-list">
+              @for (r of recentForChain(); track r.name + r.chainId + r.createdAt) {
+                <div class="recent-row">
+                  <button
+                    type="button"
+                    class="recent-copy-btn"
+                    [class.copied]="copiedVal() === r.name"
+                    (click)="copy(r.name)"
+                    [title]="'Copy ' + r.name"
+                  >
+                    <span class="recent-name mono">{{ r.name }}</span>
+                    @if (copiedVal() === r.name) {
+                      <span class="copied-tag">✓ Copied</span>
+                    }
+                  </button>
+                  <div class="recent-meta">
+                    <span class="recent-date">{{ formatShortDate(r.createdAt) }}</span>
+                    @if (explorerUrl(r.name); as url) {
+                      <a class="explorer-link" [href]="url" target="_blank" rel="noopener" title="View in explorer">↗</a>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-block">
+              <p class="empty-title">No accounts created yet</p>
+              <p class="empty-sub">Accounts created on {{ wallet.activeChain().name }} from this wallet are logged here.</p>
+            </div>
+          }
+        </aside>
       </div>
     </div>
   `,
   styles: [`
+    .create-view {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      padding-bottom: var(--sp-8);
+    }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-4);
+      flex-wrap: wrap;
+    }
+
+    .header-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--sp-2);
+      flex-wrap: wrap;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .header-sep {
+      color: var(--text-disabled);
+      font-size: 14px;
+    }
+
+    .header-meta {
+      font-size: 13px;
+      font-family: var(--font-data);
+      color: var(--text-muted);
+    }
+
+    /* ── Layout Grid ── */
     .create-layout {
       display: grid;
-      grid-template-columns: 1fr 240px;
-      gap: var(--sp-6);
-      max-width: 920px;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.75fr);
+      gap: var(--sp-4);
+      align-items: start;
     }
-    h2 { font-size: 24px; margin-bottom: var(--sp-2); }
-    .lede { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-5); }
-    .lede .payer { color: var(--accent-text); font-family: var(--font-data); }
+    @media (max-width: 880px) {
+      .create-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
 
-    .form-group { margin-bottom: var(--sp-5); }
-    .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
-    .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-2); }
-    .label-row label { margin-bottom: 0; }
+    .section-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      min-width: 0;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .card-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin: 0;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-data);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ── Form Fields ── */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-2);
+    }
 
     label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: var(--sp-2);
+      letter-spacing: 0.05em;
     }
-    .check-label {
+
+    .curve-pill {
+      font-family: var(--font-data);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--accent-text);
+    }
+
+    .name-meta {
       display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .status-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .status-tag.valid {
+      color: var(--positive);
+    }
+    .status-tag.error {
+      color: var(--negative);
+    }
+
+    .char-pill {
+      font-family: var(--font-data);
+      font-variant-numeric: tabular-nums;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+    .char-pill.complete {
+      color: var(--accent-text);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border-subtle));
+    }
+
+    .btn-inline-action {
+      padding: 2px 8px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-base);
+      color: var(--accent-text);
+      font-family: var(--font-data);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .btn-inline-action:hover {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-base);
+      color: var(--text-bright);
+      font-size: 13px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .form-input.mono {
+      font-family: var(--font-data);
+    }
+    .form-input::placeholder {
+      color: var(--text-disabled);
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .input-valid {
+      border-color: var(--positive) !important;
+    }
+    .input-invalid {
+      border-color: var(--negative) !important;
+    }
+
+    .check-label {
+      display: inline-flex;
       align-items: center;
       gap: var(--sp-2);
       text-transform: none;
       letter-spacing: 0;
+      font-size: 12.5px;
       font-weight: 400;
       color: var(--text-body);
       cursor: pointer;
     }
-    .check-label input { accent-color: var(--accent); }
-
-    .form-input {
-      width: 100%;
-      padding: var(--sp-3) var(--sp-4);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      background: var(--bg-raised);
-      color: var(--text-bright);
-      font-size: 14px;
-      transition: border-color 150ms ease;
+    .check-label input {
+      accent-color: var(--accent);
     }
-    .form-input.mono { font-family: var(--font-data); }
-    .form-input::placeholder { color: var(--text-disabled); }
-    .input-valid { border-color: var(--positive) !important; }
-    .input-invalid { border-color: var(--negative) !important; }
-
-    .field-hint { display: block; font-size: 11px; margin-top: var(--sp-1); color: var(--text-muted); }
-    .field-hint.error { color: var(--negative); }
-    .field-hint.valid { color: var(--positive); }
-
-    .key-reveal {
-      margin-top: var(--sp-2);
-      padding: var(--sp-3);
-      border: 1px solid var(--caution);
-      border-radius: var(--radius-sm);
-      background: rgba(230, 180, 60, 0.08);
-    }
-    .key-reveal-label { display: block; font-size: 11px; color: var(--caution); margin-bottom: var(--sp-2); }
-    .key-reveal-row { display: flex; align-items: center; gap: var(--sp-2); }
-    .key-reveal-row code {
-      flex: 1;
+    .check-label code {
       font-family: var(--font-data);
       font-size: 12px;
-      color: var(--text-bright);
-      word-break: break-all;
+      color: var(--accent-text);
     }
 
-    .cost-line { font-size: 12px; color: var(--text-muted); margin-bottom: var(--sp-4); }
+    /* ── One-time Key Reveal ── */
+    .key-reveal {
+      margin-top: 4px;
+      padding: var(--sp-3);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: var(--radius-sm);
+      background: rgba(245, 158, 11, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .key-reveal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .key-reveal-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #fbbf24;
+    }
+
+    .key-reveal code {
+      font-family: var(--font-data);
+      font-size: 11.5px;
+      color: var(--text-bright);
+      word-break: break-all;
+      background: var(--bg-base);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-copy-sm {
+      padding: 3px 8px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-raised);
+      color: var(--accent-text);
+      font-family: var(--font-data);
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-copy-sm.copied {
+      color: var(--positive);
+      border-color: color-mix(in srgb, var(--positive) 40%, transparent);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ── Resources & Presets ── */
+    .resource-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-2);
+      flex-wrap: wrap;
+    }
+
+    .sub-heading {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .preset-pills {
+      display: inline-flex;
+      padding: 2px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    .preset-btn {
+      padding: 3px 9px;
+      border: none;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .preset-btn:hover {
+      color: var(--text-bright);
+    }
+    .preset-btn.active {
+      background: var(--bg-raised);
+      color: var(--accent-text);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-3);
+    }
+
+    /* ── Summary & CTA Bar ── */
+    .summary-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    .summary-cost {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cost-k {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .cost-v {
+      font-family: var(--font-data);
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
 
     .btn-primary {
-      width: 100%;
-      padding: var(--sp-3);
+      padding: 9px 18px;
       border: none;
       border-radius: var(--radius-sm);
       background: var(--accent);
       color: #fff;
       font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 500;
-      letter-spacing: 1px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: background 150ms ease;
+      transition: background 150ms ease, opacity 150ms ease;
     }
-    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
     .btn-ghost {
-      padding: var(--sp-2) var(--sp-3);
-      border: 1px solid var(--accent);
+      padding: 7px 12px;
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      background: transparent;
+      background: var(--bg-raised);
       color: var(--accent-text);
       font-family: var(--font-data);
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: background 150ms ease;
+      transition: background 150ms ease, border-color 150ms ease;
     }
-    .btn-ghost:hover:not(:disabled) { background: var(--accent-muted); }
-    .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-small { white-space: nowrap; }
-
-    .banner {
-      font-size: 12px;
-      padding: var(--sp-2) var(--sp-3);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--sp-4);
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--accent-muted);
+      border-color: var(--accent);
     }
-    .banner.error { color: var(--negative); background: rgba(240, 90, 90, 0.08); }
 
+    /* ── Success Card ── */
     .success-card {
-      margin-top: var(--sp-5);
       padding: var(--sp-4);
-      border: 1px solid var(--positive);
+      border: 1px solid rgba(45, 212, 168, 0.35);
       border-radius: var(--radius-md);
       background: rgba(45, 212, 168, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
     }
+
     .success-head {
       display: flex;
       align-items: center;
       gap: var(--sp-2);
-      font-size: 15px;
-      color: var(--positive);
-      margin-bottom: var(--sp-3);
+      font-size: 14px;
+      color: var(--text-bright);
+      margin-bottom: 4px;
     }
-    .success-check { font-size: 18px; font-weight: 700; }
+
+    .success-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: rgba(45, 212, 168, 0.16);
+      color: var(--positive);
+    }
+
     .success-row {
       display: flex;
       align-items: center;
-      gap: var(--sp-3);
+      gap: var(--sp-2);
       font-size: 12px;
-      padding: var(--sp-1) 0;
     }
-    .success-row .k { width: 72px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .success-row .v { color: var(--text-bright); }
-    .success-row .v.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-    .mono { font-family: var(--font-data); }
-    .explorer-link { font-size: 12px; color: var(--accent-text); text-decoration: none; }
-    .explorer-link:hover { text-decoration: underline; }
-    .success-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
-    .import-note { font-size: 12px; color: var(--text-muted); margin-top: var(--sp-2); }
+    .success-row .k {
+      width: 54px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .success-row .v {
+      flex: 1;
+      font-family: var(--font-data);
+      color: var(--text-body);
+      min-width: 0;
+    }
+    .trunc {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .recent-panel {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-4);
-      align-self: flex-start;
+    .mono {
+      font-family: var(--font-data);
     }
-    .recent-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-3); }
-    .recent-empty { font-size: 12px; color: var(--text-muted); }
+
+    .explorer-link {
+      font-size: 11.5px;
+      font-family: var(--font-data);
+      color: var(--accent-text);
+      text-decoration: none;
+      margin-left: auto;
+    }
+    .explorer-link:hover {
+      text-decoration: underline;
+    }
+
+    .success-actions {
+      display: flex;
+      gap: var(--sp-2);
+      margin-top: var(--sp-2);
+    }
+
+    .import-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 4px 0 0;
+    }
+
+    /* ── Recent Panel ── */
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      overflow: hidden;
+    }
+
     .recent-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: var(--sp-2);
-      padding: var(--sp-2) 0;
+      padding: 9px var(--sp-3);
       border-bottom: 1px solid var(--border-subtle);
     }
-    .recent-name { font-size: 12px; color: var(--text-bright); }
+    .recent-row:last-child {
+      border-bottom: none;
+    }
+
+    .recent-copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 6px;
+      margin-left: -6px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-bright);
+      cursor: pointer;
+    }
+    .recent-copy-btn:hover {
+      background: var(--bg-raised);
+      color: var(--accent-text);
+    }
+
+    .recent-name {
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .copied-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--positive);
+    }
+
+    .recent-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .recent-date {
+      font-size: 11px;
+      font-family: var(--font-data);
+      color: var(--text-muted);
+    }
+
+    /* ── Empty & Banners ── */
+    .empty-block {
+      padding: var(--sp-5);
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      border: 1px dashed var(--border-subtle);
+      text-align: center;
+    }
+    .empty-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-body);
+      margin: 0 0 4px;
+    }
+    .empty-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .msg-banner {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .msg-banner.error {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--negative);
+    }
   `],
 })
 export class CreateAccountComponent {
@@ -378,6 +928,7 @@ export class CreateAccountComponent {
 
   generatedOwnerWif = signal('');
   generatedActiveWif = signal('');
+  copiedVal = signal('');
 
   nameValid = signal<boolean | null>(null);
   nameHint = signal('');
@@ -391,6 +942,7 @@ export class CreateAccountComponent {
   private nameTimer: any;
 
   creator = computed(() => this.wallet.selectedAccount()?.name ?? '');
+  isWire = computed(() => this.wallet.activeChain()?.system_contract === 'sysio');
 
   recentForChain = computed(() => {
     const chainId = this.wallet.selectedAccount()?.chainId;
@@ -401,6 +953,7 @@ export class CreateAccountComponent {
   canImportCreated = computed(() => !!this.created() && this.generatedActiveWif() !== '');
 
   costSummary = computed(() => {
+    if (this.isWire()) return 'No resource outlay required on Wire';
     const cpu = parseFloat(this.cpuStake() || '0');
     const net = parseFloat(this.netStake() || '0');
     const staked = cpu + net;
@@ -415,6 +968,30 @@ export class CreateAccountComponent {
     private tx: TransactionService,
   ) {
     this.loadRecent();
+  }
+
+  applyPreset(ram: string, cpu: string, net: string) {
+    this.ramKb.set(ram);
+    this.cpuStake.set(cpu);
+    this.netStake.set(net);
+  }
+
+  keyCurve(k: string): string {
+    const t = k.trim();
+    if (t.startsWith('PUB_EM_')) return 'EM';
+    if (t.startsWith('PUB_R1_')) return 'R1';
+    if (t.startsWith('PUB_WA_')) return 'WA';
+    return 'K1';
+  }
+
+  formatKeyShort(k: string): string {
+    if (!k || k.length <= 36) return k;
+    return `${k.slice(0, 18)}…${k.slice(-10)}`;
+  }
+
+  formatShortDate(ts: number): string {
+    if (!ts) return '';
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   /** User typed an owner key by hand — the generated WIF (if any) no longer
@@ -438,13 +1015,14 @@ export class CreateAccountComponent {
   prec(): number { return this.wallet.activeChain()?.precision ?? 4; }
 
   isPubKey(k: string): boolean {
-    return /^(EOS|PUB_K1_|PUB_R1_)[1-9A-HJ-NP-Za-km-z]{40,}$/.test(k.trim());
+    const trimmed = k.trim();
+    return (
+      /^(EOS|FIO|PUB_K1_|PUB_R1_|PUB_WA_)[1-9A-HJ-NP-Za-km-z]{40,}$/.test(trimmed) ||
+      /^PUB_EM_[0-9a-fA-F]{64,}$/.test(trimmed)
+    );
   }
 
   private nameSyntaxValid(name: string): boolean {
-    // a–z, 1–5 and dots; max 12 chars. 12-char names (or dotted sub-names of a
-    // suffix the creator owns) can be created directly; shorter bare names need
-    // a name-bid auction, so we steer callers toward the direct-create case.
     if (!/^[a-z1-5.]{1,12}$/.test(name)) return false;
     return name.length === 12 || name.includes('.');
   }
@@ -458,15 +1036,14 @@ export class CreateAccountComponent {
     if (!name) { this.nameHint.set(''); return; }
     if (!/^[a-z1-5.]{1,12}$/.test(name)) {
       this.nameValid.set(false);
-      this.nameHint.set('Only a–z, 1–5 and dots; max 12 characters.');
+      this.nameHint.set('Only a–z, 1–5 and dots');
       return;
     }
     if (!this.nameSyntaxValid(name)) {
-      this.nameHint.set('Tip: bare names shorter than 12 chars need a name bid. Use a full 12-char name.');
+      this.nameHint.set('Use 12 chars (or dotted suffix)');
     } else {
       this.nameHint.set('');
     }
-    // Debounced availability check as the user types a plausible name.
     this.nameTimer = setTimeout(() => this.checkNameAvailable(), 500);
   }
 
@@ -477,9 +1054,8 @@ export class CreateAccountComponent {
     if (!name || !chainId || !this.nameSyntaxValid(name)) return;
     try {
       await this.ipc.getAccount(chainId, name);
-      // getAccount succeeded → the name is taken.
       this.nameValid.set(false);
-      this.nameHint.set('That name is already taken.');
+      this.nameHint.set('Already taken');
     } catch {
       this.nameValid.set(true);
       this.nameHint.set('Available');
@@ -492,7 +1068,6 @@ export class CreateAccountComponent {
       this.activeKey.set(this.ownerKey());
       this.generatedActiveWif.set(this.generatedOwnerWif());
     } else {
-      // Detaching: clear the mirrored generated WIF so it isn't shown as active's.
       if (this.activeKey() === this.ownerKey()) this.generatedActiveWif.set('');
     }
   }
@@ -522,17 +1097,27 @@ export class CreateAccountComponent {
   }
 
   async copy(text: string) {
-    try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copiedVal.set(text);
+      setTimeout(() => {
+        if (this.copiedVal() === text) this.copiedVal.set('');
+      }, 1800);
+    } catch { /* ignore */ }
   }
 
   canCreate(): boolean {
+    if (this.isWire()) return false;
     if (!this.wallet.canSign()) return false;
     if (this.nameValid() === false) return false;
     if (!this.nameSyntaxValid(this.newName())) return false;
     if (!this.isPubKey(this.ownerKey())) return false;
     if (!this.sameKey() && !this.isPubKey(this.activeKey())) return false;
-    const ram = parseFloat(this.ramKb() || '0');
-    if (!(ram > 0)) return false;
+    if (!this.isWire()) {
+      const ram = parseFloat(this.ramKb() || '0');
+      if (!(ram > 0)) return false;
+    }
     return true;
   }
 
@@ -556,12 +1141,19 @@ export class CreateAccountComponent {
     }
 
     const auth = [{ actor: creator, permission: 'active' }];
-    const authority = (key: string) => ({
-      threshold: 1,
-      keys: [{ key, weight: 1 }],
-      accounts: [],
-      waits: [],
-    });
+    const authority = (key: string) =>
+      this.isWire()
+        ? {
+            threshold: 1,
+            keys: [{ key, weight: 1 }],
+            accounts: [],
+          }
+        : {
+            threshold: 1,
+            keys: [{ key, weight: 1 }],
+            accounts: [],
+            waits: [],
+          };
 
     const actions: any[] = [
       {
@@ -570,27 +1162,30 @@ export class CreateAccountComponent {
         authorization: auth,
         data: { creator, name, owner: authority(ownerK), active: authority(activeK) },
       },
-      {
+    ];
+
+    if (!this.isWire()) {
+      actions.push({
         account: this.wallet.systemAccount('buyrambytes'),
         name: 'buyrambytes',
         authorization: auth,
         data: { payer: creator, receiver: name, bytes },
-      },
-    ];
-
-    if (cpu > 0 || net > 0) {
-      actions.push({
-        account: this.wallet.systemAccount('delegatebw'),
-        name: 'delegatebw',
-        authorization: auth,
-        data: {
-          from: creator,
-          receiver: name,
-          stake_net_quantity: `${net.toFixed(this.prec())} ${this.sym()}`,
-          stake_cpu_quantity: `${cpu.toFixed(this.prec())} ${this.sym()}`,
-          transfer: this.transferStake(),
-        },
       });
+
+      if (cpu > 0 || net > 0) {
+        actions.push({
+          account: this.wallet.systemAccount('delegatebw'),
+          name: 'delegatebw',
+          authorization: auth,
+          data: {
+            from: creator,
+            receiver: name,
+            stake_net_quantity: `${net.toFixed(this.prec())} ${this.sym()}`,
+            stake_cpu_quantity: `${cpu.toFixed(this.prec())} ${this.sym()}`,
+            transfer: this.transferStake(),
+          },
+        });
+      }
     }
 
     this.busy.set(true);
@@ -613,7 +1208,6 @@ export class CreateAccountComponent {
         this.created.set(record);
         this.importNote.set('');
         await this.rememberCreated(record);
-        // The creator just spent RAM + stake — refresh its balances.
         this.wallet.refreshAccount(this.wallet.selectedIndex());
       }
     } catch (e: any) {
@@ -633,7 +1227,6 @@ export class CreateAccountComponent {
     this.importNote.set('');
     try {
       await this.ipc.importKeyWithSession(wif, c.chainId);
-      // Also stash the owner key if it differs and we hold it.
       const ownerWif = this.generatedOwnerWif();
       if (ownerWif && ownerWif !== wif) {
         try { await this.ipc.importKeyWithSession(ownerWif, c.chainId); } catch { /* non-fatal */ }
@@ -666,8 +1259,6 @@ export class CreateAccountComponent {
     this.nameHint.set('');
     this.formError.set('');
   }
-
-  // ── Persistence of created records ──
 
   private async loadRecent() {
     try {

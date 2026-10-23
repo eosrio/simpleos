@@ -3,119 +3,148 @@ import { WalletStateService } from '../../../core/services/wallet-state.service'
 import { TauriIpcService } from '../../../core/services/tauri-ipc.service';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-api.service';
+import { normalizePubEm, sameKey } from '../../../core/services/account-signer';
+
+const ISO_3166_NAMES: Record<number, string> = {
+  0: 'Unspecified',
+  32: 'Argentina',
+  36: 'Australia',
+  40: 'Austria',
+  56: 'Belgium',
+  76: 'Brazil',
+  124: 'Canada',
+  152: 'Chile',
+  156: 'China',
+  170: 'Colombia',
+  203: 'Czechia',
+  208: 'Denmark',
+  246: 'Finland',
+  250: 'France',
+  276: 'Germany',
+  344: 'Hong Kong',
+  356: 'India',
+  372: 'Ireland',
+  376: 'Israel',
+  380: 'Italy',
+  392: 'Japan',
+  410: 'South Korea',
+  484: 'Mexico',
+  528: 'Netherlands',
+  554: 'New Zealand',
+  578: 'Norway',
+  616: 'Poland',
+  620: 'Portugal',
+  642: 'Romania',
+  702: 'Singapore',
+  710: 'South Africa',
+  724: 'Spain',
+  752: 'Sweden',
+  756: 'Switzerland',
+  764: 'Thailand',
+  784: 'UAE',
+  792: 'Türkiye',
+  804: 'Ukraine',
+  826: 'United Kingdom',
+  840: 'United States',
+};
 
 @Component({
   selector: 'app-bp-keys',
   standalone: true,
   template: `
-    <div class="bp-keys-view">
-      <div class="bp-badge">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+    <section class="bp-keys-view" aria-labelledby="bp-keys-title">
+      <header class="page-header">
+        <div class="header-title-group">
+          <h1 id="bp-keys-title">Key Management</h1>
+          <span class="header-meta">
+            <code>{{ wallet.selectedAccount()?.name }}</code>
+            <span class="meta-sep">·</span>
+            <span>{{ wallet.selectedAccount()?.chainName }}</span>
+          </span>
+        </div>
+        <button
+          type="button"
+          class="btn-ghost btn-refresh"
+          (click)="refreshAll()"
+          [disabled]="refreshing() || busy()"
         >
-          <path
-            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
-          />
-        </svg>
-        <span>Block Producer</span>
-      </div>
-      <h2>Key Management</h2>
+          <svg
+            class="refresh-icon"
+            [class.spinning]="refreshing()"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+          {{ refreshing() ? 'Refreshing' : 'Refresh' }}
+        </button>
+      </header>
 
-      <!-- Emergency unreg/re-reg panel -->
-      <div class="emergency-panel" [class.unreg-state]="!isRegistered()">
+      <!-- Compact operational status strip -->
+      <div class="status-strip" [class.unreg-state]="!isRegistered()">
         @if (isRegistered()) {
-          <div class="emergency-content">
-            <div class="emergency-info">
-              <h3>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                Producer Registered
-              </h3>
-              <p>
-                Your node is actively producing blocks at rank
-                <strong>#{{ wallet.selectedAccount()!.producerRank }}</strong>
-              </p>
+          <div class="status-strip-main">
+            <div class="status-identity">
+              <span class="status-dot online" aria-hidden="true"></span>
+              <span class="status-title">Producer Active</span>
+              @if (wallet.selectedAccount()?.producerRank; as rank) {
+                <span class="rank-pill">#{{ rank }}</span>
+              }
+              <span class="status-detail">
+                Signing key &amp; URL backed up locally for instant recovery
+              </span>
             </div>
-            <button class="btn-emergency" (click)="onUnregprod()" [disabled]="busy()">
+            <button type="button" class="btn-emergency" (click)="onUnregprod()" [disabled]="busy()">
               <svg
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                aria-hidden="true"
               >
                 <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
                 <line x1="12" y1="2" x2="12" y2="12" />
               </svg>
-              EMERGENCY UNREG
+              Emergency Unreg
             </button>
           </div>
-          <p class="emergency-hint">
-            Unregisters your producer immediately. Your signing key and registration info will be
-            saved for quick re-registration.
-          </p>
         } @else {
-          <div class="emergency-content">
-            <div class="emergency-info">
-              <h3>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                Producer Unregistered
-              </h3>
-              <p>
-                Your node is <strong>offline</strong>. Saved registration info is ready for quick
-                re-registration.
-              </p>
+          <div class="status-strip-main">
+            <div class="status-identity">
+              <span class="status-dot offline" aria-hidden="true"></span>
+              <span class="status-title">Producer Unregistered</span>
+              <span class="status-detail">
+                Node removed from schedule — saved registration ready to restore
+              </span>
             </div>
-            <button class="btn-rereg" (click)="onReregister()" [disabled]="busy()">
+            <button type="button" class="btn-rereg" (click)="onReregister()" [disabled]="busy()">
               <svg
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                aria-hidden="true"
               >
                 <polyline points="23 4 23 10 17 10" />
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
               </svg>
-              RE-REGISTER NOW
+              Re-register Now
             </button>
           </div>
           <div class="rereg-form">
@@ -132,444 +161,655 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
             />
             @if (savedConfig()) {
               <div class="saved-config">
-                <span class="config-item"><strong>URL:</strong> {{ savedConfig()!.url }}</span>
-                <span class="config-item"
-                  ><strong>Location:</strong> {{ savedConfig()!.location }}</span
-                >
+                <span class="config-item"><strong>URL:</strong> {{ savedConfig()!.url || '—' }}</span>
+                <span class="config-item">
+                  <strong>Location:</strong> {{ savedConfig()!.location }} ({{ locationLabel(savedConfig()!.location) }})
+                </span>
               </div>
             }
           </div>
         }
         @if (emergencyError()) {
-          <p class="finkey-error">{{ emergencyError() }}</p>
+          <p class="finkey-error" role="alert">{{ emergencyError() }}</p>
         }
       </div>
 
-      <div class="keys-grid">
-        <div class="key-card">
-          <div class="key-header">
-            <h3>Block Signing Key</h3>
-            @if (producerInfo()) {
-              <span class="key-status active">Active</span>
-            } @else {
-              <span class="key-status pending">Unknown</span>
-            }
-          </div>
-          <code class="key-value">{{ producerInfo()?.producer_key ?? 'Loading...' }}</code>
-          <div class="key-actions">
-            <button class="btn-ghost" (click)="copyKey(producerInfo()?.producer_key)">COPY</button>
-          </div>
-        </div>
-
-        @if (isRegistered() && producerInfo()) {
-          <div class="key-card">
+      <div class="workspace">
+        <!-- Left column: Producer Registration + Savanna Finalizer Keys -->
+        <div class="ops-column">
+          <section class="key-card" aria-labelledby="signing-heading">
             <div class="key-header">
-              <h3>Update Registration</h3>
-              @if (regDirty()) {
-                <span class="key-status pending">Unsaved changes</span>
+              <div class="card-title-row">
+                <h2 id="signing-heading">Block Signing &amp; Registration</h2>
+                @if (producerKeyInVault()) {
+                  <span class="vault-badge" title="Private key is stored in your local SimplEOS vault">
+                    ✓ In Vault
+                  </span>
+                }
+              </div>
+              <div class="header-badges">
+                @if (regDirty()) {
+                  <span class="key-status pending">Modified</span>
+                } @else if (producerInfo()) {
+                  <span
+                    class="key-status"
+                    [class.active]="isRegistered()"
+                    [class.pending]="!isRegistered()"
+                  >
+                    {{ isRegistered() ? 'Synced' : 'Unregistered' }}
+                  </span>
+                } @else {
+                  <span class="key-status pending">Loading</span>
+                }
+              </div>
+            </div>
+
+            @if (isRegistered() && producerInfo()) {
+              <div class="reg-form">
+                <div class="reg-field">
+                  <div class="field-label-row">
+                    <label class="reg-label" for="reg-signing-key">Block Signing Key</label>
+                    @if (regKey() !== (producerInfo()?.producer_key ?? '')) {
+                      <span class="field-diff-tag">Edited</span>
+                    }
+                  </div>
+                  <div class="input-with-action">
+                    <input
+                      id="reg-signing-key"
+                      class="form-input has-trailing-btn"
+                      type="text"
+                      spellcheck="false"
+                      autocomplete="off"
+                      [value]="regKey()"
+                      (input)="regKey.set($any($event.target).value)"
+                      placeholder="EOS… / PUB_K1_…"
+                    />
+                    <button
+                      type="button"
+                      class="btn-inline-copy"
+                      [class.copied]="copiedKey() === regKey()"
+                      [disabled]="!regKey()"
+                      (click)="copyKey(regKey())"
+                      title="Copy signing key"
+                    >
+                      {{ copiedKey() === regKey() ? 'Copied ✓' : 'Copy' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="reg-row-split">
+                  <label class="reg-field">
+                    <span class="reg-label">Producer Website (bp.json)</span>
+                    <input
+                      class="form-input"
+                      type="url"
+                      spellcheck="false"
+                      autocomplete="off"
+                      [value]="regUrl()"
+                      (input)="regUrl.set($any($event.target).value)"
+                      placeholder="https://yourdomain.com"
+                    />
+                  </label>
+                  <label class="reg-field">
+                    <div class="field-label-row">
+                      <span class="reg-label">ISO Location</span>
+                      <span class="iso-country-hint">{{ locationLabel(regLocation()) }}</span>
+                    </div>
+                    <input
+                      class="form-input"
+                      type="number"
+                      min="0"
+                      max="999"
+                      [value]="regLocation()"
+                      (input)="regLocation.set(+$any($event.target).value)"
+                      placeholder="0"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div class="reg-footer">
+                <span class="reg-footnote">
+                  Submits <code>{{ wallet.coreSystemContract() }}::regproducer</code>
+                </span>
+                <div class="reg-actions">
+                  @if (regDirty()) {
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      (click)="resetRegForm()"
+                      [disabled]="busy()"
+                    >
+                      Revert
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    (click)="onUpdateRegistration()"
+                    [disabled]="busy() || !regDirty() || !regKey().trim()"
+                  >
+                    {{ busy() ? 'Submitting…' : 'Update Registration' }}
+                  </button>
+                </div>
+              </div>
+
+              @if (regError()) {
+                <p class="finkey-error" role="alert">{{ regError() }}</p>
               }
-            </div>
-            <p class="key-desc">
-              Push a <code>regproducer</code> action to update your signing key, URL, or location.
-            </p>
+            } @else {
+              <div class="key-readout-row">
+                <code class="key-value">{{ producerInfo()?.producer_key ?? 'Loading…' }}</code>
+                <button
+                  type="button"
+                  class="btn-ghost btn-copy-inline"
+                  [class.copied]="copiedKey() === producerInfo()?.producer_key"
+                  [disabled]="!producerInfo()?.producer_key"
+                  (click)="copyKey(producerInfo()?.producer_key)"
+                >
+                  {{ copiedKey() === producerInfo()?.producer_key ? 'Copied ✓' : 'Copy' }}
+                </button>
+              </div>
+            }
+          </section>
 
-            <div class="reg-form">
-              <label class="reg-field">
-                <span class="reg-label">Producer Signing Key</span>
-                <input
-                  class="form-input"
-                  type="text"
-                  spellcheck="false"
-                  [value]="regKey()"
-                  (input)="regKey.set($any($event.target).value)"
-                  placeholder="EOS... / PUB_K1_..."
-                />
-              </label>
-              <label class="reg-field">
-                <span class="reg-label">URL (bp.json)</span>
-                <input
-                  class="form-input"
-                  type="text"
-                  spellcheck="false"
-                  [value]="regUrl()"
-                  (input)="regUrl.set($any($event.target).value)"
-                  placeholder="https://yourdomain.com"
-                />
-              </label>
-              <label class="reg-field">
-                <span class="reg-label">Location (ISO 3166 numeric)</span>
-                <input
-                  class="form-input"
-                  type="number"
-                  min="0"
-                  max="999"
-                  [value]="regLocation()"
-                  (input)="regLocation.set(+$any($event.target).value)"
-                  placeholder="0"
-                />
-              </label>
+          <!-- Finalizer Keys (Savanna) -->
+          <section class="key-card" aria-labelledby="finalizer-heading">
+            <div class="key-header">
+              <div>
+                <h2 id="finalizer-heading">Finalizer Keys (Savanna)</h2>
+                <p class="card-subtitle">BLS12-381 keys for instant finality</p>
+              </div>
+              <span
+                class="key-status"
+                [class.active]="activeFinKey()"
+                [class.pending]="!activeFinKey()"
+              >
+                {{ activeFinKey() ? 'Active' : 'No Active Key' }}
+              </span>
             </div>
 
-            <div class="reg-actions">
-              <button class="btn-ghost" (click)="resetRegForm()" [disabled]="busy() || !regDirty()">
-                REVERT
+            @if (finalizersSupported() === false) {
+              <div class="fin-unsupported" role="status">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4" />
+                  <path d="M12 16h.01" />
+                </svg>
+                <span
+                  ><code>{{ wallet.coreSystemContract() }}</code> does not expose
+                  <code>regfinkey</code> on this network.</span
+                >
+              </div>
+            }
+
+            @if (activeFinKey() && registeredFinKeys().length === 0) {
+              <div class="finkey-active">
+                <div class="key-readout-row">
+                  <code class="key-value" [title]="activeFinKey()!">{{ formatKey(activeFinKey()!) }}</code>
+                  <button
+                    type="button"
+                    class="btn-ghost btn-copy-inline"
+                    [class.copied]="copiedKey() === activeFinKey()"
+                    (click)="copyKey(activeFinKey() ?? undefined)"
+                  >
+                    {{ copiedKey() === activeFinKey() ? 'Copied ✓' : 'Copy' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (pendingConfigLine(); as line) {
+              <div class="config-reveal" role="region" aria-label="Generated finalizer key">
+                <div class="config-reveal-header">
+                  <h4>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 9v4" />
+                      <path d="M12 17h.01" />
+                      <path
+                        d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                      />
+                    </svg>
+                    Save this finalizer key — shown only once
+                  </h4>
+                  <button
+                    type="button"
+                    class="btn-ghost btn-close"
+                    (click)="dismissConfig()"
+                    aria-label="Dismiss"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p class="key-desc">
+                  Add this line to your <code>nodeos</code> <code>config.ini</code>. After closing,
+                  the private key remains encrypted in your vault.
+                </p>
+                <code class="config-line">{{ line }}</code>
+                <div class="key-actions">
+                  <button type="button" class="btn-primary" (click)="copyConfigLine()">
+                    {{ configCopied() ? 'Copied ✓' : 'Copy config.ini Line' }}
+                  </button>
+                  <button type="button" class="btn-ghost" (click)="copyPrivKey()">
+                    {{ privKeyCopied() ? 'Copied ✓' : 'Copy Private Key' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (registeredFinKeys().length > 0) {
+              <div class="finkey-list">
+                @for (key of registeredFinKeys(); track key.id) {
+                  <div class="finkey-row" [class.active-row]="key.key === activeFinKey()">
+                    <div class="finkey-info">
+                      <span class="key-curve-tag curve-bls">BLS</span>
+                      <span class="finkey-id" title="On-chain finalizer key ID">#{{ key.id }}</span>
+                      <code
+                        class="finkey-text"
+                        [class.expanded]="showFullKeys()"
+                        [title]="key.key"
+                      >{{ showFullKeys() ? key.key : formatKey(key.key) }}</code>
+                      @if (key.key === activeFinKey()) {
+                        <span class="finkey-badge active">Active</span>
+                      } @else {
+                        <span class="finkey-badge standby">Standby</span>
+                      }
+                    </div>
+                    <div class="key-actions">
+                      @if (key.key !== activeFinKey()) {
+                        <button
+                          type="button"
+                          class="btn-ghost"
+                          (click)="onActivateFinKey(key.key)"
+                          [disabled]="busy()"
+                        >
+                          Activate
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-ghost btn-danger-text"
+                          (click)="onDeleteFinKey(key.key)"
+                          [disabled]="busy()"
+                        >
+                          Delete
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="btn-ghost"
+                        [class.copied]="copiedKey() === key.key"
+                        (click)="copyKey(key.key)"
+                      >
+                        {{ copiedKey() === key.key ? 'Copied ✓' : 'Copy' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="finkey-actions">
+              <button
+                type="button"
+                class="btn-primary"
+                (click)="onGenerateFinKey()"
+                [disabled]="busy() || importOpen() || finalizersSupported() === false"
+              >
+                {{ busy() && !importOpen() ? 'Generating…' : 'Generate Finalizer Key' }}
               </button>
               <button
-                class="btn-primary"
-                (click)="onUpdateRegistration()"
-                [disabled]="busy() || !regDirty() || !regKey() || !regUrl()"
+                type="button"
+                class="btn-ghost"
+                (click)="toggleImport()"
+                [disabled]="busy() || finalizersSupported() === false"
               >
-                {{ busy() ? 'Submitting...' : 'UPDATE REGISTRATION' }}
+                {{ importOpen() ? 'Cancel' : 'Import Existing Key' }}
               </button>
             </div>
 
-            @if (regError()) {
-              <p class="finkey-error">{{ regError() }}</p>
-            }
-          </div>
-        }
-
-        <!-- Finalizer Keys (Savannah) -->
-        <div class="key-card">
-          <div class="key-header">
-            <h3>Finalizer Keys (Savannah)</h3>
-            <span
-              class="key-status"
-              [class.active]="activeFinKey()"
-              [class.pending]="!activeFinKey()"
-            >
-              {{ activeFinKey() ? 'Active' : 'No Active Key' }}
-            </span>
-          </div>
-
-          @if (finalizersSupported() === false) {
-            <div class="fin-unsupported">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4" />
-                <path d="M12 16h.01" />
-              </svg>
-              <span
-                >This chain has not activated Savanna finality yet — its system contract has no
-                <code>regfinkey</code> action, so finalizer keys can’t be registered here.</span
-              >
-            </div>
-          }
-
-          @if (activeFinKey()) {
-            <div class="finkey-active">
-              <span class="finkey-label">Active Key</span>
-              <code class="key-value">{{ activeFinKey() }}</code>
-            </div>
-          }
-
-          @if (pendingConfigLine(); as line) {
-            <div class="config-reveal">
-              <div class="config-reveal-header">
-                <h4>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+            @if (importOpen()) {
+              <div class="import-form">
+                <label class="reg-field">
+                  <span class="reg-label">Finalizer Public Key</span>
+                  <input
+                    class="form-input"
+                    type="text"
+                    spellcheck="false"
+                    autocomplete="off"
+                    [value]="importKey()"
+                    (input)="importKey.set($any($event.target).value)"
+                    placeholder="PUB_BLS_…"
+                  />
+                </label>
+                <label class="reg-field">
+                  <span class="reg-label">Proof of Possession</span>
+                  <input
+                    class="form-input"
+                    type="text"
+                    spellcheck="false"
+                    autocomplete="off"
+                    [value]="importPop()"
+                    (input)="importPop.set($any($event.target).value)"
+                    placeholder="SIG_BLS_…"
+                  />
+                </label>
+                <div class="reg-footer">
+                  <span class="reg-footnote">From <code>leap-util gen-bls-key</code></span>
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    (click)="onImportFinKey()"
+                    [disabled]="busy() || !canImport() || finalizersSupported() === false"
                   >
-                    <path d="M12 9v4" />
-                    <path d="M12 17h.01" />
-                    <path
-                      d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                    />
-                  </svg>
-                  Save this finalizer key — you will not see it again
-                </h4>
-                <button class="btn-ghost btn-close" (click)="dismissConfig()" aria-label="Dismiss">
-                  ×
-                </button>
-              </div>
-              <p class="key-desc">
-                Paste this line into your <code>nodeos</code> <code>config.ini</code> (finalizer
-                plugin). The private key is decrypted only once, right now — after you close this
-                panel, it stays encrypted in your wallet.
-              </p>
-              <code class="config-line">{{ line }}</code>
-              <div class="key-actions">
-                <button class="btn-primary" (click)="copyConfigLine()">
-                  {{ configCopied() ? 'COPIED ✓' : 'COPY CONFIG.INI LINE' }}
-                </button>
-                <button class="btn-ghost" (click)="copyPrivKey()">
-                  {{ privKeyCopied() ? 'COPIED ✓' : 'COPY PRIVATE KEY ONLY' }}
-                </button>
-              </div>
-            </div>
-          }
-
-          @if (registeredFinKeys().length > 0) {
-            <div class="finkey-list">
-              @for (key of registeredFinKeys(); track key.id) {
-                <div class="finkey-row" [class.active-row]="key.key === activeFinKey()">
-                  <div class="finkey-info">
-                    <code class="finkey-text"
-                      >{{ key.key.slice(0, 20) }}...{{ key.key.slice(-8) }}</code
-                    >
-                    @if (key.key === activeFinKey()) {
-                      <span class="finkey-badge active">Active</span>
-                    } @else {
-                      <span class="finkey-badge standby">Standby</span>
-                    }
-                  </div>
-                  <div class="key-actions">
-                    @if (key.key !== activeFinKey()) {
-                      <button
-                        class="btn-ghost"
-                        (click)="onActivateFinKey(key.key)"
-                        [disabled]="busy()"
-                      >
-                        ACTIVATE
-                      </button>
-                      <button
-                        class="btn-ghost btn-danger-text"
-                        (click)="onDeleteFinKey(key.key)"
-                        [disabled]="busy()"
-                      >
-                        DELETE
-                      </button>
-                    }
-                    <button class="btn-ghost" (click)="copyKey(key.key)">COPY</button>
-                  </div>
+                    {{ busy() ? 'Submitting…' : 'Register Key' }}
+                  </button>
                 </div>
-              }
-            </div>
-          } @else {
-            <p class="key-desc">
-              BLS finalizer key for Savannah fast finality. Required for Instant Finality
-              participation.
-            </p>
-          }
-
-          <div class="finkey-actions">
-            <button
-              class="btn-primary"
-              (click)="onGenerateFinKey()"
-              [disabled]="busy() || importOpen() || finalizersSupported() === false"
-            >
-              {{ busy() && !importOpen() ? 'Generating...' : 'GENERATE FINALIZER KEY' }}
-            </button>
-            <button
-              class="btn-ghost"
-              (click)="toggleImport()"
-              [disabled]="busy() || finalizersSupported() === false"
-            >
-              {{ importOpen() ? 'CANCEL IMPORT' : 'IMPORT EXISTING KEY' }}
-            </button>
-          </div>
-
-          @if (importOpen()) {
-            <div class="import-form">
-              <label class="reg-field">
-                <span class="reg-label">Finalizer Public Key</span>
-                <input
-                  class="form-input"
-                  type="text"
-                  spellcheck="false"
-                  [value]="importKey()"
-                  (input)="importKey.set($any($event.target).value)"
-                  placeholder="PUB_BLS_..."
-                />
-              </label>
-              <label class="reg-field">
-                <span class="reg-label">Proof of Possession</span>
-                <input
-                  class="form-input"
-                  type="text"
-                  spellcheck="false"
-                  [value]="importPop()"
-                  (input)="importPop.set($any($event.target).value)"
-                  placeholder="SIG_BLS_..."
-                />
-              </label>
-              <p class="key-desc import-hint">
-                Get these from <code>leap-util gen-bls-key</code> or your nodeos finalizer plugin
-                config. The proof of possession is a BLS signature over the public key.
-              </p>
-              <div class="reg-actions">
-                <button
-                  class="btn-primary"
-                  (click)="onImportFinKey()"
-                  [disabled]="busy() || !canImport() || finalizersSupported() === false"
-                >
-                  {{ busy() ? 'Submitting...' : 'REGISTER KEY' }}
-                </button>
-              </div>
-            </div>
-          }
-
-          @if (finKeyError()) {
-            <p class="finkey-error">{{ finKeyError() }}</p>
-          }
-        </div>
-      </div>
-
-      <div class="section-card">
-        <h3>Permission Structure</h3>
-        <p class="section-desc">Active permissions on {{ wallet.selectedAccount()!.name }}</p>
-        @if (permTree().length > 0) {
-          <div class="perm-tree">
-            @for (perm of permTree(); track perm.name) {
-              <div class="perm-node" [style.margin-left.px]="perm.depth * 20">
-                <div class="perm-node-head">
-                  <span class="perm-name">{{ perm.name }}</span>
-                  <span class="perm-threshold">threshold: {{ perm.threshold }}</span>
-                </div>
-                @for (k of perm.keys; track k.key) {
-                  <div class="perm-auth-row">
-                    <code class="perm-key">{{ k.key }}</code>
-                    <span class="perm-weight">+{{ k.weight }}</span>
-                    <button class="btn-ghost perm-copy" (click)="copyKey(k.key)">COPY</button>
-                  </div>
-                }
-                @for (a of perm.accounts; track a.actor + '@' + a.permission) {
-                  <div class="perm-auth-row">
-                    <span class="perm-acct">{{ a.actor }}&#64;{{ a.permission }}</span>
-                    <span class="perm-weight">+{{ a.weight }}</span>
-                  </div>
-                }
-                @for (w of perm.waits; track w.wait_sec) {
-                  <div class="perm-auth-row">
-                    <span class="perm-wait">wait {{ w.wait_sec }}s</span>
-                    <span class="perm-weight">+{{ w.weight }}</span>
-                  </div>
-                }
               </div>
             }
-          </div>
-        } @else {
-          <p class="section-desc">No permission data available for this account.</p>
-        }
+
+            @if (finKeyError()) {
+              <p class="finkey-error" role="alert">{{ finKeyError() }}</p>
+            }
+          </section>
+        </div>
+
+        <!-- Right column: Permission Structure -->
+        <aside class="inspect-column">
+          <section class="section-card" aria-labelledby="perm-structure-heading">
+            <div class="key-header">
+              <div>
+                <h2 id="perm-structure-heading">Permission Structure</h2>
+                <p class="card-subtitle">Click any key to copy full public key</p>
+              </div>
+              <div class="header-badges">
+                <button
+                  type="button"
+                  class="btn-text-toggle"
+                  (click)="showFullKeys.set(!showFullKeys())"
+                >
+                  {{ showFullKeys() ? 'Compact' : 'Expand keys' }}
+                </button>
+                <span class="perm-count-badge">
+                  {{ permTree().length }} {{ permTree().length === 1 ? 'role' : 'roles' }}
+                </span>
+              </div>
+            </div>
+
+            @if (permTree().length > 0) {
+              <div class="perm-tree">
+                @for (perm of permTree(); track perm.name) {
+                  <div
+                    class="perm-node"
+                    [class.perm-child]="perm.depth > 0"
+                    [style.margin-left.px]="perm.depth * 14"
+                  >
+                    <div class="perm-node-head">
+                      <div class="perm-title-group">
+                        <span class="perm-name">{{ perm.name }}</span>
+                        @if (perm.parent) {
+                          <span class="perm-parent">← {{ perm.parent }}</span>
+                        }
+                      </div>
+                      <span class="perm-threshold">threshold {{ perm.threshold }}</span>
+                    </div>
+
+                    <div class="perm-auth-list">
+                      @for (k of perm.keys; track k.key) {
+                        <button
+                          type="button"
+                          class="perm-auth-row"
+                          [class.copied-row]="copiedKey() === k.key"
+                          (click)="copyKey(k.key)"
+                          [title]="'Click to copy ' + k.key"
+                        >
+                          <span class="key-curve-tag" [attr.data-curve]="keyCurve(k.key)">
+                            {{ keyCurve(k.key) }}
+                          </span>
+                          <code class="perm-key" [class.expanded]="showFullKeys()">
+                            {{ showFullKeys() ? k.key : formatKey(k.key) }}
+                          </code>
+                          <span class="perm-row-meta">
+                            @if (isKeyInVault(k.key)) {
+                              <span class="vault-mini-badge" title="Private key in local vault">
+                                Vault
+                              </span>
+                            }
+                            <span class="perm-weight">+{{ k.weight }}</span>
+                            <span class="perm-copy-label" [class.copied]="copiedKey() === k.key">
+                              {{ copiedKey() === k.key ? '✓ Copied' : 'Copy' }}
+                            </span>
+                          </span>
+                        </button>
+                      }
+                      @for (a of perm.accounts; track a.actor + '@' + a.permission) {
+                        <div class="perm-auth-row static-row">
+                          <span class="key-curve-tag">ACCT</span>
+                          <code class="perm-acct">{{ a.actor }}&#64;{{ a.permission }}</code>
+                          <span class="perm-row-meta">
+                            <span class="perm-weight">+{{ a.weight }}</span>
+                          </span>
+                        </div>
+                      }
+                      @for (w of perm.waits; track w.wait_sec) {
+                        <div class="perm-auth-row static-row">
+                          <span class="key-curve-tag">WAIT</span>
+                          <span class="perm-wait">{{ w.wait_sec }}s delay</span>
+                          <span class="perm-row-meta">
+                            <span class="perm-weight">+{{ w.weight }}</span>
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="section-desc">No permission data available for this account.</p>
+            }
+          </section>
+        </aside>
       </div>
-    </div>
+    </section>
   `,
   styles: [
     `
-      .bp-keys-view {
-        max-width: 800px;
+      :host {
+        display: block;
       }
 
-      .bp-badge {
+      .bp-keys-view {
+        max-width: 1120px;
+        margin: 0 auto;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-4);
+        margin-bottom: var(--sp-4);
+      }
+
+      .header-title-group {
+        display: flex;
+        align-items: baseline;
+        gap: var(--sp-3);
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-bright);
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+
+      .header-meta {
         display: inline-flex;
         align-items: center;
         gap: var(--sp-2);
-        padding: var(--sp-1) var(--sp-3);
-        background: var(--accent-muted);
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+      .header-meta code {
+        font-family: var(--font-data);
         color: var(--accent-text);
-        border-radius: var(--radius-full);
-        font-size: 12px;
         font-weight: 500;
-        margin-bottom: var(--sp-3);
+      }
+      .meta-sep {
+        color: var(--text-disabled);
       }
 
-      h2 {
-        font-size: 24px;
-        margin-bottom: var(--sp-6);
+      .btn-refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        padding: 7px 12px;
+      }
+      .refresh-icon.spinning {
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
-      /* Emergency panel */
-      .emergency-panel {
+      /* Compact operational status strip */
+      .status-strip {
         background: var(--bg-raised);
-        border: 1px solid rgba(45, 212, 168, 0.2);
-        border-radius: var(--radius-md);
-        padding: var(--sp-5);
-        margin-bottom: var(--sp-6);
+        border: 1px solid rgba(45, 212, 168, 0.22);
+        border-radius: var(--radius-lg);
+        padding: 12px var(--sp-4);
+        margin-bottom: var(--sp-5);
+        box-shadow: var(--shadow-card);
       }
-      .emergency-panel.unreg-state {
-        border-color: rgba(240, 68, 56, 0.3);
-        background: rgba(240, 68, 56, 0.04);
+      .status-strip.unreg-state {
+        border-color: rgba(240, 68, 56, 0.35);
+        background: rgba(240, 68, 56, 0.05);
       }
-      .emergency-content {
+      .status-strip-main {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: var(--sp-4);
       }
-      .emergency-info h3 {
+      .status-identity {
         display: flex;
         align-items: center;
         gap: var(--sp-2);
-        font-size: 15px;
-        margin-bottom: var(--sp-1);
+        flex-wrap: wrap;
+        min-width: 0;
       }
-      .emergency-info p {
-        font-size: 13px;
-        color: var(--text-muted);
-      }
-      .emergency-info p strong {
+      .status-title {
+        font-size: 13.5px;
+        font-weight: 600;
         color: var(--text-bright);
       }
-      .emergency-hint {
-        font-size: 12px;
+      .status-detail {
+        font-size: 12.5px;
         color: var(--text-muted);
-        margin-top: var(--sp-3);
-        padding-top: var(--sp-3);
-        border-top: 1px solid var(--border-subtle);
+        padding-left: var(--sp-2);
+        border-left: 1px solid var(--border-subtle);
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: var(--radius-full);
+        flex-shrink: 0;
+      }
+      .status-dot.online {
+        background: var(--positive);
+        box-shadow: 0 0 0 3px rgba(45, 212, 168, 0.16);
+      }
+      .status-dot.offline {
+        background: var(--negative);
+        box-shadow: 0 0 0 3px rgba(240, 68, 56, 0.16);
+      }
+      .rank-pill {
+        font-family: var(--font-data);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1px 8px;
+        border-radius: var(--radius-full);
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
       }
 
       .btn-emergency {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: var(--sp-2);
-        padding: var(--sp-3) var(--sp-5);
-        border: none;
+        gap: 6px;
+        padding: 7px 12px;
+        border: 1px solid rgba(240, 68, 56, 0.4);
         border-radius: var(--radius-sm);
-        background: var(--negative);
-        color: #fff;
+        background: rgba(240, 68, 56, 0.12);
+        color: #ff7b72;
         font-family: var(--font-body);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
         cursor: pointer;
         white-space: nowrap;
-        transition: opacity 150ms ease;
+        flex-shrink: 0;
+        transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
       }
-      .btn-emergency:hover {
-        opacity: 0.85;
+      .btn-emergency:hover:enabled {
+        background: var(--negative);
+        border-color: var(--negative);
+        color: #fff;
       }
 
       .btn-rereg {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: var(--sp-2);
-        padding: var(--sp-3) var(--sp-5);
+        gap: 6px;
+        padding: 7px 12px;
         border: none;
         border-radius: var(--radius-sm);
         background: var(--positive);
         color: #111218;
         font-family: var(--font-body);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
         cursor: pointer;
         white-space: nowrap;
+        flex-shrink: 0;
         transition: opacity 150ms ease;
       }
-      .btn-rereg:hover {
-        opacity: 0.85;
+      .btn-rereg:hover:enabled {
+        opacity: 0.9;
       }
 
       .saved-config {
         display: flex;
+        flex-wrap: wrap;
         gap: var(--sp-5);
         margin-top: var(--sp-3);
         padding-top: var(--sp-3);
@@ -593,61 +833,102 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
       }
       .rereg-input {
         width: 100%;
-        padding: var(--sp-3) var(--sp-4);
+        padding: 10px var(--sp-3);
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-sm);
-        background: var(--bg-hover);
+        background: var(--bg-base);
         color: var(--text-bright);
         font-family: var(--font-data);
         font-size: 13px;
-        transition: border-color 150ms ease;
-      }
-      .rereg-input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .rereg-input::placeholder {
-        color: var(--text-disabled);
-      }
-      .rereg-form .saved-config {
-        margin-top: var(--sp-3);
+        caret-color: var(--accent-text);
       }
 
-      .keys-grid {
+      /* Two-column workspace */
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: var(--sp-5);
+        align-items: start;
+      }
+
+      .ops-column {
         display: flex;
         flex-direction: column;
-        gap: var(--sp-4);
-        margin-bottom: var(--sp-6);
+        gap: var(--sp-5);
+        min-width: 0;
       }
 
-      .key-card {
+      .inspect-column {
+        min-width: 0;
+      }
+
+      .key-card,
+      .section-card {
         background: var(--bg-raised);
-        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
         padding: var(--sp-5);
+        box-shadow: var(--shadow-card);
       }
 
       .key-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--sp-3);
+        align-items: flex-start;
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-4);
       }
-      .key-header h3 {
-        font-size: 14px;
+      .card-title-row {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+      }
+      .key-header h2 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-bright);
+        margin: 0;
+      }
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 2px 0 0;
       }
 
-      .key-status {
+      .vault-badge {
+        font-family: var(--font-data);
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
+      }
+
+      .header-badges {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        flex-shrink: 0;
+      }
+
+      .key-status,
+      .perm-count-badge {
         font-family: var(--font-data);
         font-size: 11px;
         font-weight: 500;
-        padding: var(--sp-1) var(--sp-2);
+        padding: 2px 9px;
         border-radius: var(--radius-full);
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .key-status.active {
         background: rgba(45, 212, 168, 0.12);
         color: var(--positive);
       }
-      .key-status.standby {
+      .key-status.standby,
+      .perm-count-badge {
         background: var(--accent-muted);
         color: var(--accent-text);
       }
@@ -656,198 +937,267 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         color: var(--caution);
       }
 
-      .key-value {
-        display: block;
+      /* Unified Signing Key & Registration Form */
+      .reg-form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
+      }
+      .reg-row-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 170px;
+        gap: var(--sp-3);
+      }
+      .reg-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+      .field-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .reg-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .field-diff-tag {
         font-family: var(--font-data);
-        font-size: 13px;
-        color: var(--text-body);
-        background: var(--bg-hover);
-        padding: var(--sp-3);
-        border-radius: var(--radius-sm);
-        margin-bottom: var(--sp-3);
-        word-break: break-all;
+        font-size: 10px;
+        color: var(--caution);
+      }
+      .iso-country-hint {
+        font-family: var(--font-data);
+        font-size: 11px;
+        color: var(--accent-text);
       }
 
-      .key-desc {
-        font-size: 13px;
+      .input-with-action {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .form-input {
+        width: 100%;
+        min-width: 0;
+        padding: 10px var(--sp-3);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--bg-base);
+        color: var(--text-bright);
+        font-family: var(--font-data);
+        font-size: 12.5px;
+        caret-color: var(--accent-text);
+        transition: border-color 150ms ease, background 150ms ease;
+      }
+      .form-input.has-trailing-btn {
+        padding-right: 78px;
+      }
+      .form-input:hover:enabled {
+        border-color: var(--text-disabled);
+      }
+      .form-input::placeholder {
+        color: var(--text-disabled);
+      }
+
+      .btn-inline-copy {
+        position: absolute;
+        right: 5px;
+        padding: 5px 10px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--bg-raised);
+        color: var(--text-body);
+        font-family: var(--font-body);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 150ms ease;
+      }
+      .btn-inline-copy:hover:enabled {
+        border-color: var(--accent);
+        color: var(--accent-text);
+      }
+      .btn-inline-copy.copied {
+        border-color: rgba(45, 212, 168, 0.45);
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
+      }
+
+      .reg-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-3);
+        margin-top: var(--sp-4);
+        padding-top: var(--sp-3);
+        border-top: 1px solid var(--border-subtle);
+      }
+      .reg-footnote {
+        font-size: 11.5px;
         color: var(--text-muted);
-        margin-bottom: var(--sp-4);
+      }
+      .reg-footnote code {
+        font-family: var(--font-data);
+        color: var(--text-body);
+      }
+      .reg-actions {
+        display: flex;
+        gap: var(--sp-2);
+        align-items: center;
+      }
+
+      .key-readout-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--sp-2);
+        background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 8px 8px 8px var(--sp-3);
+      }
+      .key-value {
+        font-family: var(--font-data);
+        font-size: 12.5px;
+        color: var(--text-bright);
+        overflow-wrap: anywhere;
+        user-select: all;
       }
 
       .key-actions {
         display: flex;
-        gap: var(--sp-2);
-      }
-
-      .section-card {
-        background: var(--bg-raised);
-        border-radius: var(--radius-md);
-        padding: var(--sp-5);
-      }
-      .section-card h3 {
-        font-size: 14px;
-        margin-bottom: var(--sp-2);
-      }
-      .section-desc {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-bottom: var(--sp-4);
-      }
-
-      .perm-tree {
-        padding-left: var(--sp-2);
-      }
-      .perm-node {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sp-2);
-        padding: var(--sp-2) var(--sp-3);
-        border-left: 2px solid var(--border-subtle);
-        margin-left: 0;
-      }
-      .perm-node-head {
-        display: flex;
-        align-items: baseline;
-        gap: var(--sp-3);
-      }
-      .perm-name {
-        font-family: var(--font-data);
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--text-bright);
-      }
-      .perm-threshold {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-      .perm-auth-row {
-        display: flex;
         align-items: center;
         gap: var(--sp-2);
-        padding-left: var(--sp-3);
-        min-width: 0;
-      }
-      .perm-key,
-      .perm-acct,
-      .perm-wait {
-        font-family: var(--font-data);
-        font-size: 12px;
-        color: var(--text-default);
-        overflow-wrap: anywhere;
-        min-width: 0;
-      }
-      .perm-acct {
-        color: var(--accent-text);
-      }
-      .perm-wait {
-        color: var(--text-muted);
-      }
-      .perm-weight {
-        font-size: 11px;
-        color: var(--text-muted);
-        flex-shrink: 0;
-      }
-      .perm-copy {
-        padding: 2px var(--sp-2);
         flex-shrink: 0;
       }
 
+      /* Buttons */
       .btn-primary {
-        padding: var(--sp-3) var(--sp-5);
-        border: none;
+        padding: 9px 14px;
+        border: 1px solid var(--accent);
         border-radius: var(--radius-sm);
         background: var(--accent);
         color: #fff;
         font-family: var(--font-body);
-        font-size: 13px;
-        font-weight: 500;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: background 150ms ease;
-      }
-      .btn-primary:hover {
-        background: var(--accent-hover);
-      }
-
-      .btn-ghost {
-        padding: var(--sp-2) var(--sp-3);
-        border: 1px solid var(--accent);
-        border-radius: var(--radius-sm);
-        background: transparent;
-        color: var(--accent-text);
-        font-family: var(--font-body);
-        font-size: 11px;
-        font-weight: 500;
+        font-size: 11.5px;
+        font-weight: 600;
         letter-spacing: 0.5px;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 150ms ease;
+        transition: background 150ms ease, border-color 150ms ease;
       }
-      .btn-ghost:hover {
-        background: var(--accent-muted);
+      .btn-primary:hover:enabled {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      .btn-ghost {
+        padding: 7px 11px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--bg-base);
+        color: var(--text-bright);
+        font-family: var(--font-body);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+      }
+      .btn-ghost:hover:enabled {
+        background: var(--bg-hover);
+        border-color: var(--accent);
+        color: var(--accent-text);
+      }
+      .btn-ghost.copied {
+        border-color: rgba(45, 212, 168, 0.45);
+        color: var(--positive);
+        background: rgba(45, 212, 168, 0.1);
       }
       .btn-danger-text {
-        border-color: var(--negative);
+        border-color: rgba(240, 68, 56, 0.35);
         color: var(--negative);
       }
-      .btn-danger-text:hover {
+      .btn-danger-text:hover:enabled {
         background: rgba(240, 68, 56, 0.1);
+        border-color: var(--negative);
+      }
+      .btn-primary:disabled,
+      .btn-ghost:disabled,
+      .btn-emergency:disabled,
+      .btn-rereg:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .btn-text-toggle {
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-family: var(--font-body);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        transition: color 150ms ease, background 150ms ease;
+      }
+      .btn-text-toggle:hover {
+        color: var(--accent-text);
+        background: var(--bg-base);
       }
 
       /* Finalizer keys */
       .fin-unsupported {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: var(--sp-2);
-        padding: var(--sp-3);
-        margin-bottom: var(--sp-4);
-        border: 1px solid rgba(240, 68, 56, 0.25);
-        background: rgba(240, 68, 56, 0.05);
+        padding: 10px var(--sp-3);
+        margin-bottom: var(--sp-3);
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-base);
         border-radius: var(--radius-sm);
         font-size: 12px;
-        color: var(--text-default);
-        line-height: 1.5;
+        color: var(--text-body);
       }
       .fin-unsupported svg {
         flex-shrink: 0;
-        margin-top: 2px;
-        color: var(--negative);
+        color: var(--caution);
       }
       .fin-unsupported code {
         font-family: var(--font-data);
         font-size: 11px;
-        padding: 1px 4px;
-        background: var(--bg-deep);
-        border-radius: 3px;
+        color: var(--text-bright);
       }
       .finkey-active {
-        margin-bottom: var(--sp-4);
-      }
-      .finkey-label {
-        display: block;
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: var(--sp-1);
+        margin-bottom: var(--sp-3);
       }
       .finkey-list {
-        margin-bottom: var(--sp-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+        margin-bottom: var(--sp-3);
       }
       .finkey-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: var(--sp-3);
-        border-bottom: 1px solid var(--border-subtle);
-        gap: var(--sp-3);
-      }
-      .finkey-row:last-child {
-        border-bottom: none;
+        padding: 8px 10px;
+        background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        gap: var(--sp-2);
       }
       .finkey-row.active-row {
+        border-color: rgba(45, 212, 168, 0.3);
         background: rgba(45, 212, 168, 0.04);
       }
       .finkey-info {
@@ -855,16 +1205,37 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         align-items: center;
         gap: var(--sp-2);
         min-width: 0;
+        flex: 1;
+      }
+      .finkey-id {
+        font-family: var(--font-data);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .key-curve-tag.curve-bls {
+        background: rgba(45, 212, 168, 0.14);
+        color: var(--positive);
       }
       .finkey-text {
         font-family: var(--font-data);
         font-size: 12px;
-        color: var(--text-body);
+        color: var(--text-bright);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .finkey-text.expanded {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
       }
       .finkey-badge {
         font-size: 10px;
         font-weight: 600;
-        padding: 1px 6px;
+        padding: 2px 7px;
         border-radius: var(--radius-full);
         white-space: nowrap;
       }
@@ -879,89 +1250,27 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
       .finkey-error {
         font-size: 12px;
         color: var(--negative);
-        margin-top: var(--sp-3);
+        margin: var(--sp-3) 0 0;
       }
-
-      /* Update registration form */
-      .reg-form {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sp-3);
-        margin-bottom: var(--sp-4);
-      }
-      .reg-field {
-        display: flex;
-        flex-direction: column;
-        gap: var(--sp-1);
-      }
-      .reg-label {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .form-input {
-        width: 100%;
-        padding: var(--sp-3) var(--sp-4);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-sm);
-        background: var(--bg-hover);
-        color: var(--text-bright);
-        font-family: var(--font-data);
-        font-size: 13px;
-        transition: border-color 150ms ease;
-      }
-      .form-input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .form-input::placeholder {
-        color: var(--text-disabled);
-      }
-      .reg-actions {
-        display: flex;
-        gap: var(--sp-2);
-        justify-content: flex-end;
-      }
-      .btn-primary:disabled,
-      .btn-ghost:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      /* Import existing finalizer key */
       .finkey-actions {
         display: flex;
         gap: var(--sp-2);
         flex-wrap: wrap;
       }
       .import-form {
-        margin-top: var(--sp-4);
-        padding: var(--sp-4);
-        background: var(--bg-hover);
+        margin-top: var(--sp-3);
+        padding: var(--sp-3);
+        background: var(--bg-base);
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-sm);
         display: flex;
         flex-direction: column;
         gap: var(--sp-3);
       }
-      .import-hint {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-      .import-hint code {
-        font-family: var(--font-data);
-        font-size: 11px;
-        background: var(--bg-raised);
-        padding: 1px 4px;
-        border-radius: var(--radius-xs);
-      }
 
-      /* One-time config.ini reveal after generating a finalizer key */
+      /* One-time config.ini reveal */
       .config-reveal {
-        margin-top: var(--sp-4);
+        margin: var(--sp-3) 0;
         padding: var(--sp-4);
         background: rgba(245, 166, 35, 0.06);
         border: 1px solid rgba(245, 166, 35, 0.35);
@@ -983,12 +1292,11 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         color: var(--caution);
         margin: 0;
       }
-      .config-reveal .key-desc code {
-        font-family: var(--font-data);
-        font-size: 11px;
-        background: var(--bg-raised);
-        padding: 1px 4px;
-        border-radius: var(--radius-xs);
+      .key-desc {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin: 0 0 var(--sp-3);
       }
       .config-line {
         display: block;
@@ -996,6 +1304,7 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         font-size: 12px;
         color: var(--text-bright);
         background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
         padding: var(--sp-3);
         border-radius: var(--radius-sm);
         margin-bottom: var(--sp-3);
@@ -1003,13 +1312,199 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
         user-select: all;
       }
       .btn-close {
-        padding: 0 var(--sp-2);
+        padding: 2px var(--sp-2);
         line-height: 1;
-        font-size: 20px;
+        font-size: 18px;
+        border-color: transparent;
+        background: transparent;
+      }
+
+      /* Permission Structure — Single-Line Interactive Authority Rows */
+      .section-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0;
+      }
+      .perm-tree {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
+      }
+      .perm-node {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .perm-node.perm-child {
+        padding-left: var(--sp-3);
+        border-left: 1px solid var(--border-subtle);
+      }
+      .perm-node-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .perm-title-group {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .perm-name {
+        font-family: var(--font-data);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-bright);
+      }
+      .perm-parent {
+        font-family: var(--font-data);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .perm-threshold {
+        font-family: var(--font-data);
+        font-size: 10.5px;
+        color: var(--text-muted);
+      }
+      .perm-auth-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .perm-auth-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--sp-2);
+        width: 100%;
+        text-align: left;
+        padding: 8px 10px;
+        background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: border-color 150ms ease, background 150ms ease;
+      }
+      .perm-auth-row:hover {
+        border-color: var(--accent);
+        background: var(--bg-hover);
+      }
+      .perm-auth-row.copied-row {
+        border-color: rgba(45, 212, 168, 0.45);
+        background: rgba(45, 212, 168, 0.06);
+      }
+      .perm-auth-row.static-row {
+        cursor: default;
+      }
+      .perm-auth-row.static-row:hover {
+        border-color: var(--border-subtle);
+        background: var(--bg-base);
+      }
+
+      .key-curve-tag {
+        font-family: var(--font-data);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-raised);
+        color: var(--text-muted);
+        border: 1px solid var(--border-subtle);
+        letter-spacing: 0.3px;
+      }
+      .key-curve-tag[data-curve='K1'] {
+        color: var(--accent-text);
+        background: var(--accent-muted);
         border-color: transparent;
       }
-      .btn-close:hover {
-        background: var(--bg-hover);
+      .key-curve-tag[data-curve='EM'] {
+        color: var(--info);
+        background: rgba(139, 124, 246, 0.12);
+        border-color: transparent;
+      }
+
+      .perm-key,
+      .perm-acct,
+      .perm-wait {
+        font-family: var(--font-data);
+        font-size: 12px;
+        color: var(--text-bright);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .perm-key.expanded {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
+      }
+      .perm-acct {
+        color: var(--accent-text);
+      }
+      .perm-wait {
+        color: var(--text-body);
+      }
+
+      .perm-row-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .vault-mini-badge {
+        font-family: var(--font-data);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        background: rgba(45, 212, 168, 0.12);
+        color: var(--positive);
+      }
+      .perm-weight {
+        font-family: var(--font-data);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+      .perm-copy-label {
+        font-family: var(--font-body);
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-raised);
+        transition: color 150ms ease, background 150ms ease;
+      }
+      .perm-auth-row:hover .perm-copy-label {
+        color: var(--accent-text);
+      }
+      .perm-copy-label.copied {
+        color: var(--positive);
+        background: rgba(45, 212, 168, 0.14);
+      }
+
+      @media (max-width: 1060px) {
+        .workspace {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .status-strip-main {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .status-detail {
+          padding-left: 0;
+          border-left: none;
+        }
+        .reg-row-split {
+          grid-template-columns: minmax(0, 1fr);
+        }
       }
     `,
   ],
@@ -1017,6 +1512,11 @@ import { FioApiService, fioNoHandleMessage } from '../../../core/services/fio-ap
 export class BpKeysComponent {
   isRegistered = signal(true);
   busy = signal(false);
+  refreshing = signal(false);
+  showFullKeys = signal(false);
+  copiedKey = signal<string | null>(null);
+  vaultKeys = signal<Set<string>>(new Set());
+  private copyTimer: ReturnType<typeof setTimeout> | null = null;
   producerInfo = signal<any>(null);
   savedConfig = signal<{ url: string; location: number; producer_key: string } | null>(null);
   /** FIO handle the producer registered under — required for FIO reg/unreg actions. */
@@ -1025,6 +1525,21 @@ export class BpKeysComponent {
   emergencyError = signal('');
   /** Editable block-signing key for re-registration (defaults to last good key). */
   reregKey = signal('');
+
+  producerKeyInVault = computed(() => {
+    const key = this.producerInfo()?.producer_key;
+    return !!key && this.isKeyInVault(key);
+  });
+
+  isKeyInVault(key: string): boolean {
+    if (!key) return false;
+    const set = this.vaultKeys();
+    if (set.has(key)) return true;
+    for (const vk of set) {
+      if (sameKey(vk, key)) return true;
+    }
+    return false;
+  }
 
   /**
    * A producer's `producer_public_key` is zeroed to the all-ones sentinel
@@ -1094,6 +1609,7 @@ export class BpKeysComponent {
     const rows: {
       depth: number;
       name: string;
+      parent: string;
       threshold: number;
       keys: { key: string; weight: number }[];
       accounts: { actor: string; permission: string; weight: number }[];
@@ -1105,8 +1621,9 @@ export class BpKeysComponent {
       rows.push({
         depth,
         name: perm.perm_name,
+        parent: perm.parent ?? '',
         threshold: Number(auth.threshold ?? 1),
-        keys: (auth.keys ?? []).map((k: any) => ({ key: k.key, weight: Number(k.weight ?? 1) })),
+        keys: (auth.keys ?? []).map((k: any) => ({ key: normalizePubEm(k.key), weight: Number(k.weight ?? 1) })),
         accounts: (auth.accounts ?? []).map((a: any) => ({
           actor: a.permission?.actor ?? '',
           permission: a.permission?.permission ?? '',
@@ -1139,8 +1656,8 @@ export class BpKeysComponent {
     effect(() => {
       const acct = this.wallet.selectedAccount();
       if (!acct) return;
-      // Savanna support is a chain-level property, independent of producer status.
       this.checkFinalizerSupport(acct.chainId);
+      this.loadVaultKeys(acct.chainId);
       if (acct.isProducer) {
         this.loadProducerInfo(acct.chainId, acct.name);
         this.loadFinalizerKeys(acct.chainId, acct.name);
@@ -1148,8 +1665,53 @@ export class BpKeysComponent {
     });
   }
 
+  formatKey(key: string): string {
+    if (!key || key.length <= 36) return key;
+    return `${key.slice(0, 20)}…${key.slice(-10)}`;
+  }
+
+  keyCurve(key: string): string {
+    if (key.startsWith('PUB_K1_') || key.startsWith('EOS') || key.startsWith('FIO')) return 'K1';
+    if (key.startsWith('PUB_EM_')) return 'EM';
+    if (key.startsWith('PUB_R1_')) return 'R1';
+    if (key.startsWith('PUB_WA_')) return 'WA';
+    if (key.startsWith('PUB_BLS_')) return 'BLS';
+    return 'KEY';
+  }
+
+  locationLabel(code: number): string {
+    return ISO_3166_NAMES[code | 0] ?? `Code ${code | 0}`;
+  }
+
+  private async loadVaultKeys(chainId: string) {
+    try {
+      const keys = await this.ipc.listPublicKeys(chainId);
+      this.vaultKeys.set(new Set(keys ?? []));
+    } catch {
+      this.vaultKeys.set(new Set());
+    }
+  }
+
+  async refreshAll() {
+    const acct = this.wallet.selectedAccount();
+    if (!acct || this.refreshing()) return;
+    this.refreshing.set(true);
+    try {
+      this.finSupportChain = null;
+      await Promise.all([
+        this.wallet.refreshAccount(this.wallet.selectedIndex()),
+        this.loadVaultKeys(acct.chainId),
+        this.checkFinalizerSupport(acct.chainId),
+        this.loadProducerInfo(acct.chainId, acct.name),
+        this.loadFinalizerKeys(acct.chainId, acct.name),
+      ]);
+    } finally {
+      this.refreshing.set(false);
+    }
+  }
+
   /**
-   * Check whether the chain's `eosio` system contract exposes the finalizer-key
+   * Check whether the chain's system contract exposes the finalizer-key
    * actions (`regfinkey`), i.e. it has activated Savanna. Cached per chain so we
    * don't refetch the ABI on every account refresh. On error we leave support
    * as unknown (null) rather than blocking, since it may be a transient hiccup.
@@ -1158,7 +1720,7 @@ export class BpKeysComponent {
     if (this.finSupportChain === chainId) return;
     this.finSupportChain = chainId;
     try {
-      const abi = await this.ipc.getAbi(chainId, 'eosio');
+      const abi = await this.ipc.getAbi(chainId, this.wallet.coreSystemContract?.() ?? 'eosio');
       const actions = abi?.abi?.actions ?? [];
       this.finalizersSupported.set(actions.some((a: any) => a.name === 'regfinkey'));
     } catch {
@@ -1169,37 +1731,86 @@ export class BpKeysComponent {
 
   private async loadFinalizerKeys(chainId: string, account: string) {
     try {
-      // Load registered keys from finkeys table (by finalizer name)
-      const result = await this.ipc.getTableRows(chainId, {
-        code: 'eosio',
-        table: 'finkeys',
-        scope: 'eosio',
-        index_position: 'secondary',
-        key_type: 'i64',
-        lower_bound: account,
-        upper_bound: account,
-        limit: 20,
-        json: true,
-      });
-      const keys = (result?.rows ?? []).map((r: any) => ({
-        id: r.id,
+      const sysContract = this.wallet.coreSystemContract?.() ?? 'eosio';
+      let finkeyRows: any[] = [];
+
+      if (sysContract === 'sysio') {
+        // Wire (`sysio`) KV table `finkeys` uses primary key `{ id }` and rejects
+        // secondary-index string bounds over `/v1/chain/get_table_rows`.
+        const result = await this.ipc.getTableRows(chainId, {
+          code: sysContract,
+          table: 'finkeys',
+          scope: sysContract,
+          limit: 500,
+          json: true,
+        });
+        finkeyRows = (result?.rows ?? []).filter((r: any) => r.finalizer_name === account);
+      } else {
+        try {
+          const result = await this.ipc.getTableRows(chainId, {
+            code: sysContract,
+            table: 'finkeys',
+            scope: sysContract,
+            index_position: 'secondary',
+            key_type: 'i64',
+            lower_bound: account,
+            upper_bound: account,
+            limit: 20,
+            json: true,
+          });
+          finkeyRows = (result?.rows ?? []).filter(
+            (r: any) => !r.finalizer_name || r.finalizer_name === account,
+          );
+        } catch {
+          const fallback = await this.ipc.getTableRows(chainId, {
+            code: sysContract,
+            table: 'finkeys',
+            scope: sysContract,
+            limit: 500,
+            json: true,
+          });
+          finkeyRows = (fallback?.rows ?? []).filter((r: any) => r.finalizer_name === account);
+        }
+      }
+
+      const keys = finkeyRows.map((r: any) => ({
+        id: Number(r.id),
         key: r.finalizer_key ?? '',
+        binary: r.finalizer_key_binary ?? '',
       }));
-      this.registeredFinKeys.set(keys);
+      this.registeredFinKeys.set(keys.map(({ id, key }) => ({ id, key })));
 
       // Load active key from finalizers table.
       // Field layout varies: some versions store `active_key` (BLS pubkey string),
       // others store `active_key_id` (uint64 referencing finkeys.id).
-      const finResult = await this.ipc.getTableRows(chainId, {
-        code: 'eosio',
-        table: 'finalizers',
-        scope: 'eosio',
-        lower_bound: account,
-        upper_bound: account,
-        limit: 1,
-        json: true,
-      });
-      const finRow = finResult?.rows?.[0];
+      let finRow: any = null;
+      try {
+        const finResult = await this.ipc.getTableRows(chainId, {
+          code: sysContract,
+          table: 'finalizers',
+          scope: sysContract,
+          lower_bound: account,
+          upper_bound: account,
+          limit: 1,
+          json: true,
+        });
+        finRow = finResult?.rows?.find(
+          (r: any) => !r.finalizer_name || r.finalizer_name === account,
+        );
+      } catch {
+        /* fallback below */
+      }
+      if (!finRow && sysContract === 'sysio') {
+        const allFin = await this.ipc.getTableRows(chainId, {
+          code: sysContract,
+          table: 'finalizers',
+          scope: sysContract,
+          limit: 200,
+          json: true,
+        });
+        finRow = (allFin?.rows ?? []).find((r: any) => r.finalizer_name === account);
+      }
+
       let active: string | null = null;
       if (finRow) {
         if (typeof finRow.active_key === 'string' && finRow.active_key.startsWith('PUB_BLS')) {
@@ -1208,10 +1819,13 @@ export class BpKeysComponent {
           const id = Number(finRow.active_key_id);
           active = keys.find((k) => k.id === id)?.key ?? null;
         }
+        if (!active && finRow.active_key_binary) {
+          active = keys.find((k) => k.binary && k.binary === finRow.active_key_binary)?.key ?? null;
+        }
       }
       this.activeFinKey.set(active);
     } catch {
-      // Chain may not support Savannah yet
+      // Chain may not support Savanna yet
       this.registeredFinKeys.set([]);
       this.activeFinKey.set(null);
     }
@@ -1240,7 +1854,7 @@ export class BpKeysComponent {
       // Push regfinkey action
       const ok = await this.confirmAction('Register Finalizer Key', [
         {
-          account: 'eosio',
+          account: this.wallet.coreSystemContract?.() ?? 'eosio',
           name: 'regfinkey',
           authorization: this.auth(),
           data: {
@@ -1280,7 +1894,7 @@ export class BpKeysComponent {
     try {
       const ok = await this.confirmAction('Register Finalizer Key', [
         {
-          account: 'eosio',
+          account: this.wallet.coreSystemContract?.() ?? 'eosio',
           name: 'regfinkey',
           authorization: this.auth(),
           data: {
@@ -1310,7 +1924,7 @@ export class BpKeysComponent {
     try {
       const ok = await this.confirmAction('Activate Finalizer Key', [
         {
-          account: 'eosio',
+          account: this.wallet.coreSystemContract?.() ?? 'eosio',
           name: 'actfinkey',
           authorization: this.auth(),
           data: { finalizer_name: this.me(), finalizer_key: key },
@@ -1333,7 +1947,7 @@ export class BpKeysComponent {
     try {
       const ok = await this.confirmAction('Delete Finalizer Key', [
         {
-          account: 'eosio',
+          account: this.wallet.coreSystemContract?.() ?? 'eosio',
           name: 'delfinkey',
           authorization: this.auth(),
           data: { finalizer_name: this.me(), finalizer_key: key },
@@ -1424,10 +2038,6 @@ export class BpKeysComponent {
   }
 
   /**
-   * The FIO handle this producer is registered under. Prefer the value from
-   * the producers row; fall back to resolving the account's owned handles.
-   */
-  /**
    * Currently-registered FIO handle owned by this account, or '' if none.
    * Delegates to the shared resolver, preferring the handle the producer
    * registered under only if it is still live (it may have been burned).
@@ -1484,7 +2094,7 @@ export class BpKeysComponent {
         }
         actions = [
           {
-            account: 'eosio',
+            account: this.wallet.coreSystemContract?.() ?? 'eosio',
             name: 'unregprod',
             authorization: this.auth(),
             data: {
@@ -1497,7 +2107,7 @@ export class BpKeysComponent {
       } else {
         actions = [
           {
-            account: 'eosio',
+            account: this.wallet.coreSystemContract?.() ?? 'eosio',
             name: 'unregprod',
             authorization: this.auth(),
             data: { producer: this.me() },
@@ -1529,7 +2139,7 @@ export class BpKeysComponent {
     try {
       await this.confirmAction('Update Producer Registration', [
         {
-          account: 'eosio',
+          account: this.wallet.coreSystemContract?.() ?? 'eosio',
           name: 'regproducer',
           authorization: this.auth(),
           data: {
@@ -1574,7 +2184,7 @@ export class BpKeysComponent {
         }
         actions = [
           {
-            account: 'eosio',
+            account: this.wallet.coreSystemContract?.() ?? 'eosio',
             name: 'regproducer',
             authorization: this.auth(),
             data: {
@@ -1590,7 +2200,7 @@ export class BpKeysComponent {
       } else {
         actions = [
           {
-            account: 'eosio',
+            account: this.wallet.coreSystemContract?.() ?? 'eosio',
             name: 'regproducer',
             authorization: this.auth(),
             data: {
@@ -1611,8 +2221,14 @@ export class BpKeysComponent {
     }
   }
 
-  copyKey(key?: string) {
-    if (key) navigator.clipboard.writeText(key);
+  async copyKey(key?: string) {
+    if (!key) return;
+    await navigator.clipboard.writeText(key);
+    this.copiedKey.set(key);
+    if (this.copyTimer) clearTimeout(this.copyTimer);
+    this.copyTimer = setTimeout(() => {
+      if (this.copiedKey() === key) this.copiedKey.set(null);
+    }, 2000);
   }
 
   async copyConfigLine() {

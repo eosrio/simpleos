@@ -132,6 +132,75 @@ pub async fn push_packed_transaction(
     .await
 }
 
+/// Dry-run a packed transaction via `/v1/chain/compute_transaction` without committing state.
+///
+/// Validates authority structures, key ordering, permission hierarchy, and RAM requirements
+/// before the user signs or broadcasts. If the RPC node does not expose `compute_transaction`
+/// (HTTP 404 / unknown endpoint), logs a notice and returns `Ok(())` so older nodes continue
+/// to work. Any on-chain execution/assertion failure is surfaced as `Err(Error::Rpc(...))`.
+pub async fn preflight_compute_transaction(
+    pm: &mut ProviderManager,
+    packed_trx: &[u8],
+    signatures: &[String],
+) -> Result<(), Error> {
+    let body = serde_json::json!({
+        "transaction": {
+            "signatures": signatures,
+            "compression": "none",
+            "packed_context_free_data": "",
+            "packed_trx": hex_encode(packed_trx),
+        }
+    });
+
+    match pm
+        .rpc_call_compatible_paths(&["/v1/chain/compute_transaction"], &body, Ok)
+        .await
+    {
+        Ok(res) => {
+            if let Some(except) = res
+                .get("processed")
+                .and_then(|p| p.get("except"))
+                .filter(|v| !v.is_null())
+            {
+                let stack_msg = except
+                    .get("stack")
+                    .and_then(|s| s.as_array())
+                    .and_then(|arr| arr.first())
+                    .and_then(|item| item.get("format").or_else(|| item.get("msg")))
+                    .and_then(|f| f.as_str());
+                let main_msg = except
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Preflight compute_transaction failed");
+                let detail = match stack_msg {
+                    Some(s) if !s.is_empty() => format!("{main_msg}: {s}"),
+                    _ => main_msg.to_string(),
+                };
+                return Err(Error::Rpc(format!("Preflight validation failed: {detail}")));
+            }
+            Ok(())
+        }
+        Err(Error::RpcResponse(msg)) | Err(Error::Rpc(msg)) => {
+            let lower = msg.to_lowercase();
+            if lower.contains("unknown endpoint") || lower.contains("http 404") {
+                log::info!(
+                    "[tx] compute_transaction not supported by active RPC; skipping preflight"
+                );
+                Ok(())
+            } else {
+                Err(Error::Rpc(format!("Preflight validation failed: {msg}")))
+            }
+        }
+        Err(other) => {
+            log::warn!(
+                "[tx] compute_transaction transport warning (continuing): {}",
+                other
+            );
+            Ok(())
+        }
+    }
+}
+
 /// Push an already-signed packed transaction and parse the broadcast result.
 /// Shared by `sign_and_push` and the trusted-confirmation `approve_sign` flow
 /// (R2+R3), which signs the exact bytes it displayed and then broadcasts here.
@@ -361,13 +430,12 @@ fn try_native_serialize(
     name: &str,
     json: &serde_json::Value,
 ) -> Result<Option<String>, Error> {
-    // Vaulta's `core.vaulta` wraps the eosio system actions (claimrewards,
-    // voteproducer, buyram*, delegatebw, rex, powerup, …) with identical
-    // action-data layouts, so encode their data with the same trusted built-in
-    // serializers as eosio. This keeps them on the Native/WYSIWYS path instead
-    // of falling back to a node-fetched ABI. Only the action's target account
-    // differs, and that is carried in the transaction envelope, not the data.
-    let account = if account == "core.vaulta" {
+    let is_sysio = account == "sysio";
+    // Vaulta's `core.vaulta` and Wire's `sysio` wrap the eosio system actions
+    // (claimrewards, voteproducer, buyram*, delegatebw, updateauth, linkauth, …).
+    // Encode their data with the trusted built-in serializers so they stay on the
+    // Native/WYSIWYS path instead of falling back to a node-fetched ABI.
+    let account = if account == "core.vaulta" || is_sysio {
         "eosio"
     } else {
         account
@@ -387,6 +455,162 @@ fn try_native_serialize(
             let quantity = json_str(json, "quantity")?;
             let memo = json.get("memo").and_then(|v| v.as_str()).unwrap_or("");
             let data = serialize::serialize_transfer(from, to, quantity, memo)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "updateauth") => {
+            let target_account = json_str(json, "account")?;
+            let permission = json_str(json, "permission")?;
+            let parent = json.get("parent").and_then(|v| v.as_str()).unwrap_or("");
+            let auth = json.get("auth").ok_or_else(|| {
+                Error::Serialization("Missing field 'auth' in updateauth data".into())
+            })?;
+            let threshold_raw = auth
+                .get("threshold")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| {
+                    Error::Serialization("Missing field 'auth.threshold' in updateauth".into())
+                })?;
+            let threshold = u32::try_from(threshold_raw).map_err(|_| {
+                Error::Serialization(format!("Invalid threshold '{}' in updateauth", threshold_raw))
+            })?;
+
+            let mut keys = Vec::new();
+            if let Some(arr) = auth.get("keys").and_then(|v| v.as_array()) {
+                for item in arr {
+                    let key_str = json_str(item, "key")?.to_string();
+                    let weight_raw = item
+                        .get("weight")
+                        .and_then(|v| v.as_u64())
+                        .ok_or_else(|| {
+                            Error::Serialization(
+                                "Missing field 'weight' in authority key".into(),
+                            )
+                        })?;
+                    let weight = u16::try_from(weight_raw).map_err(|_| {
+                        Error::Serialization(format!(
+                            "Invalid key weight '{}' in updateauth",
+                            weight_raw
+                        ))
+                    })?;
+                    keys.push((key_str, weight));
+                }
+            }
+
+            let mut accounts = Vec::new();
+            if let Some(arr) = auth.get("accounts").and_then(|v| v.as_array()) {
+                for item in arr {
+                    let perm_obj = item.get("permission").unwrap_or(item);
+                    let actor = json_str(perm_obj, "actor")?.to_string();
+                    let perm = json_str(perm_obj, "permission")?.to_string();
+                    let weight_raw = item
+                        .get("weight")
+                        .and_then(|v| v.as_u64())
+                        .ok_or_else(|| {
+                            Error::Serialization(
+                                "Missing field 'weight' in authority account".into(),
+                            )
+                        })?;
+                    let weight = u16::try_from(weight_raw).map_err(|_| {
+                        Error::Serialization(format!(
+                            "Invalid account weight '{}' in updateauth",
+                            weight_raw
+                        ))
+                    })?;
+                    accounts.push((actor, perm, weight));
+                }
+            }
+
+            let waits_vec = if is_sysio {
+                None
+            } else {
+                let mut waits = Vec::new();
+                if let Some(arr) = auth.get("waits").and_then(|v| v.as_array()) {
+                    for item in arr {
+                        let wait_raw = item
+                            .get("wait_sec")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
+                        let wait_sec = u32::try_from(wait_raw).map_err(|_| {
+                            Error::Serialization(format!(
+                                "Invalid wait_sec '{}' in updateauth",
+                                wait_raw
+                            ))
+                        })?;
+                        let weight_raw = item
+                            .get("weight")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(1);
+                        let weight = u16::try_from(weight_raw).map_err(|_| {
+                            Error::Serialization(format!(
+                                "Invalid wait weight '{}' in updateauth",
+                                weight_raw
+                            ))
+                        })?;
+                        waits.push((wait_sec, weight));
+                    }
+                }
+                Some(waits)
+            };
+
+            let authorized_by = if is_sysio {
+                json.get("authorized_by").and_then(|v| v.as_str())
+            } else {
+                None
+            };
+
+            let data = serialize::serialize_updateauth(
+                target_account,
+                permission,
+                parent,
+                threshold,
+                &keys,
+                &accounts,
+                waits_vec.as_deref(),
+                authorized_by,
+            )?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "deleteauth") => {
+            let target_account = json_str(json, "account")?;
+            let permission = json_str(json, "permission")?;
+            let authorized_by = if is_sysio {
+                json.get("authorized_by").and_then(|v| v.as_str())
+            } else {
+                None
+            };
+            let data = serialize::serialize_deleteauth(target_account, permission, authorized_by)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "linkauth") => {
+            let target_account = json_str(json, "account")?;
+            let code = json_str(json, "code")?;
+            let action_type = json.get("type").and_then(|v| v.as_str()).unwrap_or("");
+            let requirement = json_str(json, "requirement")?;
+            let authorized_by = if is_sysio {
+                json.get("authorized_by").and_then(|v| v.as_str())
+            } else {
+                None
+            };
+            let data = serialize::serialize_linkauth(
+                target_account,
+                code,
+                action_type,
+                requirement,
+                authorized_by,
+            )?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "unlinkauth") => {
+            let target_account = json_str(json, "account")?;
+            let code = json_str(json, "code")?;
+            let action_type = json.get("type").and_then(|v| v.as_str()).unwrap_or("");
+            let authorized_by = if is_sysio {
+                json.get("authorized_by").and_then(|v| v.as_str())
+            } else {
+                None
+            };
+            let data =
+                serialize::serialize_unlinkauth(target_account, code, action_type, authorized_by)?;
             Ok(Some(hex_encode(&data)))
         }
         ("eosio", "delegatebw") => {
@@ -446,6 +670,12 @@ fn try_native_serialize(
             let data = serialize::serialize_claimrewards(owner)?;
             Ok(Some(hex_encode(&data)))
         }
+        ("eosio", "claimpay") | ("eosio", "claimnodedis") | ("eosio", "viewnodedist") => {
+            let account_name = json_str(json, "account_name")?;
+            let data = serialize::serialize_name(account_name)?;
+            Ok(Some(hex_encode(&data)))
+        }
+        ("eosio", "viewepoch") | ("eosio", "viewemitcfg") => Ok(Some(String::new())),
         ("eosio", "regproducer") => {
             // FIO's regproducer ABI is unrelated to Antelope's
             // (fio_address, fio_pub_key, url, location, actor, max_fee).
@@ -625,5 +855,53 @@ mod tests {
             try_native_serialize("eosio", "voteproducer", &vp).unwrap(),
             try_native_serialize("core.vaulta", "voteproducer", &vp).unwrap(),
         );
+    }
+
+    #[test]
+    fn native_sysio_updateauth_matches_test_vector() {
+        let json = serde_json::json!({
+            "account": "alice",
+            "permission": "active",
+            "parent": "owner",
+            "auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "PUB_EM_041d483a28813838ddc6a048085ac2eef13a12d8a6e6324eb10c3bc5c272f91f5690c18f11f86b00510150f402ba01b72fa2becc9c132001304e518ae65a951827",
+                        "weight": 1
+                    },
+                    {
+                        "key": "PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5BoDq63",
+                        "weight": 1
+                    }
+                ],
+                "accounts": []
+            }
+        });
+        let hex = try_native_serialize("sysio", "updateauth", &json)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            hex,
+            "0000000000855c3400000000a8ed32320000000080ab26a701000000020002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf010003031d483a28813838ddc6a048085ac2eef13a12d8a6e6324eb10c3bc5c272f91f56010000"
+        );
+    }
+
+    #[test]
+    fn native_sysio_claim_and_view_actions_serialize() {
+        let json = serde_json::json!({ "account_name": "alice" });
+        for act in ["claimpay", "claimnodedis", "viewnodedist"] {
+            let hex = try_native_serialize("sysio", act, &json)
+                .unwrap()
+                .expect(act);
+            assert_eq!(hex, "0000000000855c34");
+        }
+        let empty = serde_json::json!({});
+        for act in ["viewepoch", "viewemitcfg"] {
+            let hex = try_native_serialize("sysio", act, &empty)
+                .unwrap()
+                .expect(act);
+            assert_eq!(hex, "");
+        }
     }
 }

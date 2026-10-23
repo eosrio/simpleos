@@ -173,6 +173,15 @@
   --chain-tint:    rgba(217, 70, 239, 0.03);
 }
 
+/* Wire — sky cyan */
+[data-chain="wire"] {
+  --accent:        #0ea5e9;
+  --accent-hover:  #38bdf8;
+  --accent-text:   #38bdf8;
+  --accent-muted:  rgba(14, 165, 233, 0.12);
+  --chain-tint:    rgba(14, 165, 233, 0.03);
+}
+
 /* ═══════════════════════════════════════════
    LIGHT THEME + CHAIN overrides
    Slightly stronger tints on light backgrounds, and a deepened --accent-text:
@@ -190,6 +199,7 @@
 [data-theme="light"][data-chain="fio"]   { --accent-text: #1d4ed8; --accent-muted: rgba(59, 130, 246, 0.08);  --chain-tint: rgba(59, 130, 246, 0.04); }
 [data-theme="light"][data-chain="libre"] { --accent-text: #12703a; --accent-muted: rgba(34, 197, 94, 0.08);   --chain-tint: rgba(34, 197, 94, 0.04); }
 [data-theme="light"][data-chain="xpr"]   { --accent-text: #a21caf; --accent-muted: rgba(217, 70, 239, 0.08);  --chain-tint: rgba(217, 70, 239, 0.04); }
+[data-theme="light"][data-chain="wire"]  { --accent-text: #0369a1; --accent-muted: rgba(14, 165, 233, 0.08);  --chain-tint: rgba(14, 165, 233, 0.04); }
 
 /* ═══════════════════════════════════════════
    GLOBAL RESETS & UTILITIES

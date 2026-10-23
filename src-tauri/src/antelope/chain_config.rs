@@ -14,9 +14,7 @@ pub struct ChainConfig {
     pub token_contract: String,
     /// System-contract account that wraps the core economic actions
     /// (claimrewards, voteproducer, buyram, delegatebw, rex, powerup, …).
-    /// "eosio" everywhere except Vaulta, where EOS rebranded and those actions
-    /// must now be called from "core.vaulta" (calling them on eosio asserts).
-    /// Consensus/producer actions (regproducer, regfinkey, …) stay on eosio.
+    /// "eosio" everywhere except Vaulta ("core.vaulta") and Wire ("sysio").
     #[serde(default = "default_system_contract")]
     pub system_contract: String,
     /// Additional token contracts to query for balance display.
@@ -89,6 +87,14 @@ fn default_token_contract() -> String {
 
 fn default_system_contract() -> String {
     "eosio".to_string()
+}
+
+/// True if `chain_id` belongs to a Wire (`sysio`) chain.
+pub fn is_sysio_chain(chain_id: &str) -> bool {
+    default_chains()
+        .into_iter()
+        .chain(default_testnets())
+        .any(|c| c.id == chain_id && c.system_contract == "sysio")
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -816,6 +822,42 @@ pub fn default_testnets() -> Vec<ChainConfig> {
                 send: true,
                 vote: true,
                 staking: true,
+                rex: false,
+                powerup: false,
+                resource: true,
+                dapps: false,
+                history: false,
+            },
+            testnet: true,
+            coingecko_id: None,
+            oracle_contract: None,
+            oracle_scope: None,
+            exchanges: vec![],
+        },
+        // ── Wire Testnet (sysio namespace) ──
+        ChainConfig {
+            id: "9ccd94e823fda51363bd4265ad618a909c4985c445078c79f8d030fe9697b71d".into(),
+            name: "Wire Testnet".into(),
+            symbol: "WIRE".into(),
+            precision: 9,
+            icon: None,
+            token_contract: "sysio.token".into(),
+            system_contract: "sysio".into(),
+            extra_tokens: vec![TokenConfig {
+                contract: "sysio.token".into(),
+                symbol: "SYS".into(),
+                precision: 4,
+            }],
+            endpoints: vec![Endpoint {
+                url: "https://testnet.wire.eosrio.io".into(),
+                owner: Some("EOS Rio".into()),
+            }],
+            hyperion_apis: vec![],
+            explorers: vec![],
+            features: ChainFeatures {
+                send: true,
+                vote: false,
+                staking: false,
                 rex: false,
                 powerup: false,
                 resource: true,

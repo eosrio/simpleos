@@ -55,7 +55,7 @@ serde_json = "1.0"
 # keeps ring, installed once in `install_tls_provider`.
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
-tokio = { version = "1", features = ["sync", "time"] }
+tokio = { version = "1", features = ["sync", "time", "net", "io-util"] }
 
 # Crypto (RustCrypto suite - audited, pure Rust)
 k256 = { version = "0.14", features = ["ecdsa-core", "ecdsa", "ecdh"] }
@@ -63,6 +63,7 @@ k256 = { version = "0.14", features = ["ecdsa-core", "ecdsa", "ecdh"] }
 # RFC 6979 additional data stays the attempt counter (deterministic, low-S).
 ecdsa = { version = "0.17", default-features = false, features = ["algorithm"] }
 sha2 = "0.11"
+sha3 = "0.11"
 hex = "0.4"
 ripemd = "0.2"
 aes-gcm = "0.11"
@@ -80,7 +81,7 @@ keyring = "4"
 hidapi = { version = "2", optional = true }
 
 # Antelope ABI serialization (pure-Rust backend; optional — gated behind "local-abieos")
-rs_abieos = { version = "0.6.0", optional = true, default-features = false, features = ["rust-backend"] }
+rs_abieos = { version = "0.7.0", optional = true, default-features = false, features = ["rust-backend"] }
 
 # Error handling
 thiserror = "2"

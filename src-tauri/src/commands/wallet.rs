@@ -111,6 +111,16 @@ pub fn derive_public_key(wif: String) -> Result<String, Error> {
 /// format (`FIO...`). FIO chain APIs and actions reject EOS/PUB_K1_ keys with
 /// "Invalid FIO Public Key" — every FIO op that takes a pubkey must convert.
 #[tauri::command]
+pub fn normalize_em_public_key(key: String) -> Result<String, Error> {
+    signing::normalize_pub_em(&key)
+}
+
+#[tauri::command]
+pub fn eth_address_from_public_key(key: String) -> Result<String, Error> {
+    signing::eth_address_from_pub_em(&key)
+}
+
+#[tauri::command]
 pub fn to_fio_public_key(key: String) -> Result<String, Error> {
     if key.starts_with("FIO") {
         return Ok(key);

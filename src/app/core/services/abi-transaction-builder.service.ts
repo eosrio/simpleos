@@ -35,6 +35,7 @@ export interface AbiDefinition {
   structs: AbiStruct[];
   actions: AbiAction[];
   variants?: AbiVariant[];
+  enums?: { name: string; type: string; values: { name: string; value: number | string }[] }[];
 }
 
 export type AbiSource = 'chain' | 'cache' | 'pasted';
@@ -79,6 +80,7 @@ export interface ParsedAbiType {
   isOptional: boolean;
   isBinaryExtension: boolean;
   variant?: AbiVariant;
+  enumValues?: string[];
 }
 
 export type AbiFieldKind =
@@ -219,6 +221,7 @@ export function normalizeAbi(input: any): AbiDefinition {
     structs: Array.isArray(input?.structs) ? input.structs : [],
     actions: Array.isArray(input?.actions) ? input.actions : [],
     variants: Array.isArray(input?.variants) ? input.variants : [],
+    enums: Array.isArray(input?.enums) ? input.enums : [],
   };
 
   if (!isValidAbi(abi)) {
@@ -255,7 +258,8 @@ export function parseAbiType(abi: AbiDefinition, rawType: string): ParsedAbiType
   const resolvedType = resolveAlias(abi, type);
   const variant = abi.variants?.find(v => v.name === resolvedType);
 
-  return { raw, baseType: type, resolvedType, isArray, isOptional, isBinaryExtension, variant };
+  const enumValues = abi.enums?.find(e => e.name === resolvedType)?.values?.map(v => v.name);
+  return { raw, baseType: type, resolvedType, isArray, isOptional, isBinaryExtension, variant, enumValues };
 }
 
 export function resolveAlias(abi: AbiDefinition, type: string): string {
@@ -294,6 +298,7 @@ export function initialValueForType(abi: AbiDefinition, type: string): any {
   if (parsed.isArray) return [];
   if (parsed.isOptional || parsed.isBinaryExtension) return null;
   if (parsed.variant) return {};
+  if (parsed.enumValues?.length) return parsed.enumValues[0];
 
   if (parsed.resolvedType === 'bool') return false;
   if (INTEGER_TYPES.has(parsed.resolvedType) || FLOAT_TYPES.has(parsed.resolvedType)) return 0;
@@ -327,7 +332,7 @@ export function createFieldDescriptor(abi: AbiDefinition, field: AbiField, pathP
     kind,
     optional: parsed.isOptional,
     binaryExtension: parsed.isBinaryExtension,
-    placeholder: placeholderForType(parsed.resolvedType, kind),
+    placeholder: parsed.enumValues?.length ? parsed.enumValues.join(' | ') : placeholderForType(parsed.resolvedType, kind),
     children: kind === 'object' && nestedStruct ? createFieldsForStruct(abi, parsed.resolvedType, path) : [],
     itemType: parsed.isArray ? parsed.resolvedType : undefined,
     variantTypes: parsed.variant?.types,

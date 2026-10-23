@@ -12,7 +12,7 @@ pub async fn try_serialize_action_json(
         .rpc_call(
             "/v1/chain/get_abi",
             &serde_json::json!({ "account_name": account }),
-            |json| Ok(json),
+            Ok,
         )
         .await
     {
@@ -87,6 +87,59 @@ pub async fn try_serialize_action_json(
         "local abieos is not available for {}::{} in this build (feature local-abieos is disabled)",
         account, action
     )))
+}
+
+#[cfg(feature = "local-abieos")]
+pub async fn try_deserialize_action_hex(
+    pm: &mut ProviderManager,
+    account: &str,
+    action: &str,
+    data_hex: &str,
+) -> Result<Option<serde_json::Value>, Error> {
+    let abi_response = match pm
+        .rpc_call(
+            "/v1/chain/get_abi",
+            &serde_json::json!({ "account_name": account }),
+            Ok,
+        )
+        .await
+    {
+        Ok(json) => json,
+        Err(_) => return Ok(None),
+    };
+
+    let abi = abi_response.get("abi").cloned().unwrap_or(abi_response);
+    if abi.is_null() {
+        return Ok(None);
+    }
+
+    let abi_json = serde_json::to_string(&abi)
+        .map_err(|e| Error::Serialization(format!("Serialize ABI JSON: {}", e)))?;
+
+    let abieos = rs_abieos::Abieos::new();
+    if abieos.set_abi_json(account, &abi_json).is_err() {
+        return Ok(None);
+    }
+    let Ok(datatype) = abieos.get_type_for_action(account, action) else {
+        return Ok(None);
+    };
+    let Ok(json_str) = abieos.hex_to_json(account, &datatype, data_hex) else {
+        return Ok(None);
+    };
+    let Ok(val) = serde_json::from_str::<serde_json::Value>(&json_str) else {
+        return Ok(None);
+    };
+    Ok(Some(val))
+}
+
+#[cfg(not(feature = "local-abieos"))]
+pub async fn try_deserialize_action_hex(
+    _pm: &mut ProviderManager,
+    _account: &str,
+    _action: &str,
+    _data_hex: &str,
+) -> Result<Option<serde_json::Value>, Error> {
+    Ok(None)
 }
 
 #[cfg(all(test, feature = "local-abieos"))]
@@ -182,5 +235,32 @@ mod tests {
             .unwrap()
             .to_lowercase();
         assert_eq!(hex, format!("{}{}", expected_approve_prefix(), hash));
+    }
+
+    #[test]
+    fn abieos_serializes_and_deserializes_sysio_abi() {
+        let sysio_abi = r#"{
+            "version": "sysio::abi/1.2",
+            "types": [],
+            "structs": [
+                {"name": "transfer", "base": "", "fields": [
+                    {"name": "from", "type": "name"},
+                    {"name": "to", "type": "name"},
+                    {"name": "quantity", "type": "asset"},
+                    {"name": "memo", "type": "string"}
+                ]}
+            ],
+            "actions": [{"name": "transfer", "type": "transfer", "ricardian_contract": ""}],
+            "tables": [{"name": "accounts", "index_type": "i64", "key_names": [], "key_types": [], "type": "transfer", "table_id": 0, "secondary_indexes": []}],
+            "enums": [{"name": "mode", "type": "uint8", "values": [{"name": "fast", "value": 0}, {"name": "safe", "value": 1}]}]
+        }"#;
+        let abieos = rs_abieos::Abieos::new();
+        abieos.set_abi_json("sysio.token", sysio_abi).unwrap();
+        let data = r#"{"from":"alice","to":"bob","quantity":"1.000000000 WIRE","memo":"wire"}"#;
+        let hex = abieos.json_to_hex("sysio.token", "transfer", data).unwrap();
+        let decoded = abieos.hex_to_json("sysio.token", "transfer", &hex).unwrap();
+        let val: serde_json::Value = serde_json::from_str(&decoded).unwrap();
+        assert_eq!(val["quantity"], "1.000000000 WIRE");
+        assert_eq!(val["memo"], "wire");
     }
 }

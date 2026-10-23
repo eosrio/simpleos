@@ -26,7 +26,20 @@ pub fn ledger_get_app_config() -> Result<serde_json::Value, Error> {
     }))
 }
 
-/// Get a public key from the Ledger at a BIP44 slot.
+/// Get the Ethereum app version from the Ledger.
+/// Returns { major, minor, patch, arbitrary_data_enabled }.
+#[tauri::command]
+pub fn ledger_get_eth_app_config() -> Result<serde_json::Value, Error> {
+    let (arbitrary_data_enabled, major, minor, patch) = protocol::get_eth_app_configuration()?;
+    Ok(serde_json::json!({
+        "major": major,
+        "minor": minor,
+        "patch": patch,
+        "arbitrary_data_enabled": arbitrary_data_enabled,
+    }))
+}
+
+/// Get a public key from the Ledger EOS app at a BIP44 slot.
 /// If confirm is true, the user must confirm on the device screen.
 #[tauri::command]
 pub fn ledger_get_public_key(account: u32, index: u32, confirm: bool) -> Result<String, Error> {
@@ -34,20 +47,57 @@ pub fn ledger_get_public_key(account: u32, index: u32, confirm: bool) -> Result<
     protocol::get_public_key(&path, confirm)
 }
 
+/// Get a `PUB_EM_...` public key and `0x...` Ethereum address from the Ledger Ethereum app at a BIP44 slot.
+#[tauri::command]
+pub fn ledger_get_eth_public_key(
+    account: u32,
+    index: u32,
+    confirm: bool,
+) -> Result<serde_json::Value, Error> {
+    let path = protocol::eth_bip44_path(account, index);
+    let (pub_em, eth_address) = protocol::get_eth_public_key(&path, confirm)?;
+    Ok(serde_json::json!({
+        "public_key": pub_em,
+        "eth_address": eth_address,
+        "account": account,
+        "index": index,
+    }))
+}
+
 /// Discover all EOS public keys on the Ledger (account=0, indices 0..max_index).
 #[tauri::command]
 pub fn ledger_discover_keys(max_index: u32) -> Result<Vec<serde_json::Value>, Error> {
     let keys = protocol::discover_keys(max_index)?;
-    Ok(keys.into_iter().map(|(path, pubkey)| {
-        serde_json::json!({
-            "path": path.iter().map(|p| format!("{}{}", p & 0x7FFFFFFF, if p & 0x80000000 != 0 { "'" } else { "" })).collect::<Vec<_>>().join("/"),
-            "public_key": pubkey,
-            "index": path.last().copied().unwrap_or(0),
+    Ok(keys
+        .into_iter()
+        .map(|(path, pubkey)| {
+            serde_json::json!({
+                "path": path.iter().map(|p| format!("{}{}", p & 0x7FFFFFFF, if p & 0x80000000 != 0 { "'" } else { "" })).collect::<Vec<_>>().join("/"),
+                "public_key": pubkey,
+                "index": path.last().copied().unwrap_or(0),
+            })
         })
-    }).collect())
+        .collect())
 }
 
-/// Sign a transaction using the Ledger.
+/// Discover Ethereum `PUB_EM_...` public keys on the Ledger Ethereum app (account=0, indices 0..max_index).
+#[tauri::command]
+pub fn ledger_discover_eth_keys(max_index: u32) -> Result<Vec<serde_json::Value>, Error> {
+    let keys = protocol::discover_eth_keys(max_index)?;
+    Ok(keys
+        .into_iter()
+        .map(|(path, pub_em, eth_address)| {
+            serde_json::json!({
+                "path": path.iter().map(|p| format!("{}{}", p & 0x7FFFFFFF, if p & 0x80000000 != 0 { "'" } else { "" })).collect::<Vec<_>>().join("/"),
+                "public_key": pub_em,
+                "eth_address": eth_address,
+                "index": path.last().copied().unwrap_or(0),
+            })
+        })
+        .collect())
+}
+
+/// Sign a transaction using the Ledger EOS app.
 /// Builds the signing digest (chain_id + packed_trx + 32 zeros) and sends to device.
 #[tauri::command]
 pub async fn ledger_sign_and_push(
@@ -75,40 +125,10 @@ pub async fn ledger_sign_and_push(
     // Send to Ledger for signing (this blocks while user confirms on device)
     let signature = protocol::sign_transaction(&path, &signing_data)?;
 
-    // Push the signed transaction
-    let packed_hex = hex::encode(&packed_trx);
-    let push_body = serde_json::json!({
-        "signatures": [signature],
-        "compression": "none",
-        "packed_context_free_data": "",
-        "packed_trx": packed_hex,
-    });
-
-    let result = transaction::push_packed_transaction(pm, &push_body).await?;
-
-    if let Some(tx_id) = result.get("transaction_id").and_then(|v| v.as_str()) {
-        Ok(crate::antelope::transaction::TransactionResult {
-            transaction_id: tx_id.to_string(),
-            block_num: result
-                .get("processed")
-                .and_then(|p| p.get("block_num"))
-                .and_then(|b| b.as_u64()),
-            block_time: None,
-        })
-    } else {
-        let err_msg = result
-            .get("error")
-            .and_then(|e| e.get("details"))
-            .and_then(|d| d.as_array())
-            .and_then(|a| a.first())
-            .and_then(|d| d.get("message"))
-            .and_then(|m| m.as_str())
-            .unwrap_or("Push transaction failed");
-        Err(Error::Rpc(err_msg.to_string()))
-    }
+    transaction::push_signed(pm, &packed_trx, &signature).await
 }
 
-/// Sign a transaction using the Ledger without broadcasting it.
+/// Sign a transaction using the Ledger EOS app without broadcasting it.
 /// Returns packed transaction hex plus the Ledger-produced signature.
 #[tauri::command]
 pub async fn ledger_sign_transaction(

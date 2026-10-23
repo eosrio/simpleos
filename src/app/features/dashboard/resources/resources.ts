@@ -964,9 +964,9 @@ export class ResourcesComponent implements OnDestroy {
     const request = this.dataRequest;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio',
+        code: this.wallet.coreSystemContract?.() ?? 'eosio',
         table: 'rammarket',
-        scope: 'eosio',
+        scope: this.wallet.coreSystemContract?.() ?? 'eosio',
         limit: 1,
         json: true,
       });
@@ -996,7 +996,7 @@ export class ResourcesComponent implements OnDestroy {
     const request = this.dataRequest;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio',
+        code: this.wallet.coreSystemContract?.() ?? 'eosio',
         table: 'delband',
         scope: account.name,
         limit: 100,

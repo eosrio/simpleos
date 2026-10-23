@@ -1,13 +1,14 @@
 import { Injectable, signal, effect } from '@angular/core';
 
 export type BaseTheme = 'dark' | 'light';
-export type ChainTheme = 'vaulta' | 'wax' | 'telos' | 'ultra' | 'fio' | 'libre' | 'xpr';
+export type ChainTheme = 'vaulta' | 'wax' | 'telos' | 'ultra' | 'fio' | 'libre' | 'xpr' | 'wire';
 
 /** Maps chain config IDs to chain theme keys */
 const CHAIN_ID_MAP: Record<string, ChainTheme> = {
   'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906': 'vaulta',
   '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4': 'wax',
   '4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11': 'telos',
+  '9ccd94e823fda51363bd4265ad618a909c4985c445078c79f8d030fe9697b71d': 'wire',
 };
 
 /** Maps chain names (lowercase) to theme keys as fallback */
@@ -21,6 +22,7 @@ const CHAIN_NAME_MAP: Record<string, ChainTheme> = {
   'libre': 'libre',
   'xpr': 'xpr',
   'proton': 'xpr',
+  'wire': 'wire',
 };
 
 @Injectable({ providedIn: 'root' })

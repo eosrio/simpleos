@@ -103,7 +103,7 @@ export interface ChainConfig {
   extra_tokens: TokenConfig[];
   endpoints: { url: string; owner?: string }[];
   hyperion_apis: string[];
-  explorers: { name: string; url: string; tx_url?: string; account_url?: string }[];
+  explorers: { name: string; url: string; tx_url?: string; transaction_url?: string; account_url?: string }[];
   features: ChainFeatures;
   testnet?: boolean;
   coingecko_id?: string;
@@ -249,6 +249,10 @@ export interface SignSummary {
   callback_url?: string;
   identity_scope?: string;
   any_unverified: boolean;
+  signing_digest_hex?: string;
+  eip191_hash_hex?: string;
+  signer_eth_address?: string;
+  is_em_signer?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -289,6 +293,16 @@ export class TauriIpcService {
 
   async derivePublicKey(wif: string): Promise<string> {
     return invoke<string>('derive_public_key', { wif });
+  }
+
+  /** Normalize any PUB_EM_ (compressed or uncompressed) or 0x secp256k1 pubkey hex to canonical compressed PUB_EM_. */
+  async normalizeEmPublicKey(key: string): Promise<string> {
+    return invoke<string>('normalize_em_public_key', { key });
+  }
+
+  /** Derive the EIP-55 checksummed 0x Ethereum address from a PUB_EM_ key. */
+  async ethAddressFromPublicKey(key: string): Promise<string> {
+    return invoke<string>('eth_address_from_public_key', { key });
   }
 
   /** Convert an EOS/PUB_K1_ public key to FIO legacy format (`FIO...`). */
@@ -397,6 +411,15 @@ export class TauriIpcService {
 
   async getTableRows(chainId: string, params: TableRowsParams): Promise<TableRowsResult> {
     return invoke<TableRowsResult>('get_table_rows', { chainId, params });
+  }
+
+  async callReadOnlyAction<T = any>(
+    chainId: string,
+    account: string,
+    action: string,
+    args: Record<string, any> = {},
+  ): Promise<T> {
+    return invoke<T>('call_read_only_action', { chainId, account, action, args });
   }
 
   async getEvmBridgeState(bridgeId: string, counters: string[]): Promise<{ paused: boolean; schedule_version: string; settlements: { counter: string; block: string }[] }> {
@@ -559,8 +582,17 @@ export class TauriIpcService {
   }
 
   /** (Trusted confirm window) Approve the active request. */
-  async approveSign(requestId: string, passphrase?: string): Promise<void> {
-    return invoke<void>('approve_sign', { requestId, passphrase: passphrase ?? null });
+  async approveSign(
+    requestId: string,
+    passphrase?: string,
+    opts?: { signerBackend?: 'vault' | 'ledger_eth' | 'ledger_eos' | 'metamask'; ledgerIndex?: number },
+  ): Promise<void> {
+    return invoke<void>('approve_sign', {
+      requestId,
+      passphrase: passphrase ?? null,
+      signerBackend: opts?.signerBackend ?? null,
+      ledgerIndex: opts?.ledgerIndex ?? null,
+    });
   }
 
   /** (Trusted confirm window) Reject the active request. */
@@ -638,6 +670,33 @@ export class TauriIpcService {
   /** Start background polling for Ledger device connect/disconnect events. */
   async ledgerWatchDevices(): Promise<void> {
     return invoke<void>('ledger_watch_devices');
+  }
+
+  async ledgerGetEthAppConfig(): Promise<{
+    major: number;
+    minor: number;
+    patch: number;
+    arbitrary_data_enabled: boolean;
+  }> {
+    return invoke('ledger_get_eth_app_config');
+  }
+
+  async ledgerGetEthPublicKey(
+    account: number,
+    index: number,
+    confirm: boolean,
+  ): Promise<{ public_key: string; eth_address: string; account: number; index: number }> {
+    return invoke('ledger_get_eth_public_key', { account, index, confirm });
+  }
+
+  async ledgerDiscoverEthKeys(
+    maxIndex: number,
+  ): Promise<{ path: string; public_key: string; eth_address: string; index: number }[]> {
+    return invoke('ledger_discover_eth_keys', { maxIndex });
+  }
+
+  async metamaskDiscoverKey(): Promise<{ public_key: string; eth_address: string }> {
+    return invoke('metamask_discover_key');
   }
 
   /** Listen for Ledger device connection events. Returns an unlisten function. */

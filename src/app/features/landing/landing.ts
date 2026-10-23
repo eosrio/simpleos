@@ -6,6 +6,7 @@ import { WalletAccount, WalletStateService } from '../../core/services/wallet-st
 import { NetworkService } from '../../core/services/network.service';
 import { ChainIconComponent } from '../../shared/chain-icon';
 import { WindowControlsComponent } from '../../shared/window-controls';
+import { sameKey } from '../../core/services/account-signer';
 
 type WizardStep = 'chain' | 'action' | 'form';
 type ActionType = 'watch' | 'import' | 'backup' | 'anchor' | 'ledger';
@@ -33,6 +34,8 @@ const CHAIN_COLORS: Record<string, string> = {
   'Ultra Testnet':  '#6f3de0',
   'FIO Testnet':    '#765cd6',
   'XPR Testnet':    '#7543e3',
+  'Wire':           '#0ea5e9',
+  'Wire Testnet':   '#0ea5e9',
 };
 
 const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
@@ -449,13 +452,13 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                     <div class="form-card">
                       @switch (importStep()) {
                         @case (1) {
-                          <p class="form-hint">Enter your private key (WIF format). We recommend importing your <strong>active</strong> key.</p>
+                          <p class="form-hint">Enter your private key (WIF <code>5K...</code> or Ethereum hex <code>0x...</code>). We recommend importing your <strong>active</strong> key.</p>
 
                           <div class="form-group">
                             <label>PRIVATE KEY</label>
                             <div class="key-input-row">
                               <input [type]="showKey() ? 'text' : 'password'" class="form-input"
-                                     placeholder="5K..."
+                                     placeholder="5K... or 0x..."
                                      [value]="privateKey()"
                                      (input)="onKeyInput($any($event.target).value)"
                                      autofocus />
@@ -484,6 +487,22 @@ const WIZARD_STEPS: { key: WizardStep; label: string }[] = [
                                   <div class="discovered-item">{{ acct }}</div>
                                 }
                               }
+                            </div>
+                          }
+
+                          @if (derivedPubKey() && discoveredAccounts().length === 0 && !keySearching()) {
+                            <div class="form-group">
+                              <label>ACCOUNT NAME (MANUAL ENTRY)</label>
+                              <div class="key-input-row">
+                                <input class="form-input" type="text"
+                                       placeholder="Enter account name on {{ selectedChain()?.name ?? customChainName() }}"
+                                       [value]="manualImportAccount()"
+                                       (input)="manualImportAccount.set($any($event.target).value)"
+                                       (keyup.enter)="verifyManualImportAccount()" />
+                                <button class="toggle-vis" [disabled]="!manualImportAccount().trim()" (click)="verifyManualImportAccount()">
+                                  Verify
+                                </button>
+                              </div>
                             </div>
                           }
 
@@ -1218,10 +1237,13 @@ export class LandingComponent implements OnInit, OnDestroy {
   }
 
   private keyInputTimeout: any;
+  derivedPubKey = signal('');
+  manualImportAccount = signal('');
 
   async onKeyInput(value: string) {
     this.privateKey.set(value);
     this.discoveredAccounts.set([]);
+    this.derivedPubKey.set('');
     this.error.set('');
 
     // Debounce — wait 300ms after user stops typing
@@ -1260,6 +1282,7 @@ export class LandingComponent implements OnInit, OnDestroy {
       // Simplest correct approach: try to discover accounts via public key.
       // We need the public key from the WIF. Let's call a new command.
       const pubKey = await this.ipc.derivePublicKey(wif);
+      this.derivedPubKey.set(pubKey);
 
       // Step 2: Lookup accounts associated with this key on the selected chain
       const result = await this.ipc.lookupKeyAccounts(chain.id, pubKey);
@@ -1268,7 +1291,7 @@ export class LandingComponent implements OnInit, OnDestroy {
         this.discoveredAccounts.set(result.account_names);
         this.discoveredAuthorities.set(result.authorities ?? []);
       } else {
-        this.error.set('No accounts found for this key on ' + chain.name);
+        this.error.set('No accounts automatically discovered on ' + chain.name + '. Enter your account name above and click Verify.');
       }
     } catch (e: any) {
       const msg = e?.toString() ?? '';
@@ -1277,6 +1300,28 @@ export class LandingComponent implements OnInit, OnDestroy {
       } else {
         this.error.set('Could not verify key: ' + msg);
       }
+    } finally {
+      this.keySearching.set(false);
+    }
+  }
+
+  async verifyManualImportAccount() {
+    const chain = this.selectedChain();
+    const name = this.manualImportAccount().trim().toLowerCase();
+    if (!chain || !name) return;
+    this.keySearching.set(true);
+    this.error.set('');
+    try {
+      const info = await this.ipc.getAccount(chain.id, name);
+      const acctName = info.account_name || name;
+      const pubKey = this.derivedPubKey();
+      const authorities = (info.permissions ?? [])
+        .filter(p => p.required_auth?.keys?.some((k: any) => sameKey(k.key, pubKey)))
+        .map(p => ({ account_name: acctName, permission_name: p.perm_name }));
+      this.discoveredAccounts.set([acctName]);
+      this.discoveredAuthorities.set(authorities);
+    } catch (e: any) {
+      this.error.set(e?.toString() ?? `Account "${name}" not found on ${chain.name}`);
     } finally {
       this.keySearching.set(false);
     }

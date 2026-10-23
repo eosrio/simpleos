@@ -98,7 +98,8 @@ export class ChainFeaturesService {
       const caps = { ...DEFAULT_CAPABILITIES };
 
       // Probe system contract ABI for available actions
-      const contracts = [...new Set(['eosio', chain.system_contract || 'eosio', ...(chain.symbol === 'FIO' ? ['fio.staking'] : [])])];
+      const baseSys = chain.system_contract === 'sysio' ? 'sysio' : 'eosio';
+      const contracts = [...new Set([baseSys, chain.system_contract || baseSys, ...(chain.symbol === 'FIO' ? ['fio.staking'] : [])])];
       const sets = await Promise.all(contracts.map(contract => this.probeAbiActions(chain.id, contract)));
       const abiActions = new Set(sets.flatMap(actions => [...actions]));
       if (!current()) return;
@@ -108,12 +109,12 @@ export class ChainFeaturesService {
 
       // PowerUp detection
       if (abiActions.has('powerup')) {
-        caps.powerup = await this.tableExists(chain.id, 'eosio', 'eosio', 'powup.state');
+        caps.powerup = await this.tableExists(chain.id, baseSys, baseSys, 'powup.state');
       }
 
       // REX detection
       if (abiActions.has('buyrex')) {
-        caps.rex = await this.tableExists(chain.id, 'eosio', 'eosio', 'rexpool');
+        caps.rex = await this.tableExists(chain.id, baseSys, baseSys, 'rexpool');
       }
 
       // RAM model detection
@@ -213,6 +214,11 @@ export class ChainFeaturesService {
         caps.dualTokenStaking = true;
         caps.ramFixed = true;
         caps.unstakeDelaySec = 0; // SYS is instant
+        break;
+      case 'wire':
+      case 'wire testnet':
+        caps.freeTransactions = true;
+        caps.savannah = true;
         break;
     }
 

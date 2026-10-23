@@ -101,6 +101,18 @@ pub struct SignSummary {
     pub identity_scope: Option<String>,
     /// True if any action's data could not be locally verified (display warning).
     pub any_unverified: bool,
+    /// Hex-encoded 32-byte signing digest (`sha256(chain_id || packed_trx || zeros_32)`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signing_digest_hex: Option<String>,
+    /// Hex-encoded 32-byte EIP-191 digest (`keccak256("\x19Ethereum Signed Message:\n32" || signing_digest)`),
+    /// populated when signing with a Wire `PUB_EM_` key.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub eip191_hash_hex: Option<String>,
+    /// EIP-55 Ethereum address (`0x...`) derived from `signer_public_key` when `is_em_signer` is true.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signer_eth_address: Option<String>,
+    /// True when `signer_public_key` is a Wire `PUB_EM_` key.
+    pub is_em_signer: bool,
 }
 
 /// Everything `approve_sign` needs to execute once the user consents. Holding
@@ -276,9 +288,10 @@ fn open_sign_confirm_window(app: &AppHandle, request_id: &str) -> Result<(), Err
 
 /// Return a warning string for elevated-risk actions, or `None` for ordinary ones.
 fn high_risk_warning(account: &str, name: &str, data: &serde_json::Value) -> Option<String> {
-    // On Vaulta these actions arrive on `core.vaulta` (see try_native_serialize);
-    // treat them as their eosio equivalents so the risk hints still apply.
-    let account = if account == "core.vaulta" {
+    // On Vaulta (`core.vaulta`) and Wire (`sysio`) these actions arrive on the
+    // chain's system contract (see try_native_serialize); treat them as their
+    // eosio equivalents so the risk hints still apply.
+    let account = if account == "core.vaulta" || account == "sysio" {
         "eosio"
     } else {
         account
@@ -309,21 +322,38 @@ fn high_risk_warning(account: &str, name: &str, data: &serde_json::Value) -> Opt
 /// Build one [`ActionSummary`] from a built action, marking verification status
 /// and accumulating whether any action is unverified.
 fn action_summary(a: &BuiltAction, any_unverified: &mut bool) -> ActionSummary {
-    let decoded_transfer = if a.name == "transfer" {
-        hex::decode(&a.data_hex)
+    let decoded_native = match a.name.as_str() {
+        "transfer" => hex::decode(&a.data_hex)
             .ok()
-            .and_then(|bytes| crate::antelope::serialize::decode_transfer(&bytes).ok())
-    } else {
-        None
+            .and_then(|bytes| crate::antelope::serialize::decode_transfer(&bytes).ok()),
+        "updateauth" if a.account == "sysio" || a.account == "eosio" || a.account == "core.vaulta" => {
+            hex::decode(&a.data_hex)
+                .ok()
+                .and_then(|bytes| {
+                    crate::antelope::serialize::decode_updateauth(&bytes, a.account == "sysio")
+                        .ok()
+                })
+        }
+        "claimpay" | "claimnodedis" if a.account == "sysio" || a.account == "eosio" => {
+            hex::decode(&a.data_hex).ok().and_then(|bytes| {
+                let arr: [u8; 8] = bytes.as_slice().try_into().ok()?;
+                let name = crate::antelope::serialize::u64_to_name(u64::from_le_bytes(arr));
+                if name.is_empty() {
+                    return None;
+                }
+                Some(serde_json::json!({ "account_name": name }))
+            })
+        }
+        _ => None,
     };
-    let verified = decoded_transfer.is_some()
+    let verified = decoded_native.is_some()
         || (a.name != "transfer"
             && a.provenance.is_locally_verified()
             && a.original_json.is_some());
     if !verified {
         *any_unverified = true;
     }
-    let data = decoded_transfer
+    let data = decoded_native
         .or_else(|| a.original_json.clone())
         .unwrap_or_else(|| serde_json::json!({ "_unverified_hex": a.data_hex }));
 
@@ -386,6 +416,22 @@ pub fn build_sign_summary(
         .map(|a| action_summary(a, &mut any_unverified))
         .collect();
 
+    let is_em_signer = signing::is_em_public_key(signer_public_key);
+    let digest_opt = signing::compute_signing_digest(&built.chain_id, &built.packed_trx).ok();
+    let signing_digest_hex = digest_opt.as_ref().map(hex::encode);
+    let eip191_hash_hex = if is_em_signer {
+        digest_opt
+            .as_ref()
+            .map(|d| hex::encode(signing::eip191_digest32(d)))
+    } else {
+        None
+    };
+    let signer_eth_address = if is_em_signer {
+        signing::eth_address_from_pub_em(signer_public_key).ok()
+    } else {
+        None
+    };
+
     SignSummary {
         request_id,
         chain_id: built.chain_id.clone(),
@@ -400,6 +446,10 @@ pub fn build_sign_summary(
         callback_url,
         identity_scope,
         any_unverified,
+        signing_digest_hex,
+        eip191_hash_hex,
+        signer_eth_address,
+        is_em_signer,
     }
 }
 
@@ -452,30 +502,101 @@ fn unlock_signing_key(
 
 /// Execute a user-approved request: sign the exact stored bytes and (per mode)
 /// broadcast / return the signature / export the key.
+#[allow(clippy::too_many_arguments)]
 async fn execute_approved(
+    app: &AppHandle,
+    request_id: &str,
     chain_id: &str,
     signer_public_key: &str,
     payload: SignPayload,
     passphrase: Option<String>,
+    signer_backend: Option<String>,
+    ledger_index: Option<u32>,
     extra_force_passphrase: bool,
     wallet: &AppWallet,
     providers: &ProviderState,
+    registry: &SignRegistry,
 ) -> Result<serde_json::Value, Error> {
-    let force_passphrase = extra_force_passphrase || matches!(payload, SignPayload::Export);
-    let key = unlock_signing_key(
-        wallet,
-        chain_id,
-        signer_public_key,
-        passphrase,
-        force_passphrase,
-    )?;
-
     match payload {
         SignPayload::Transaction {
             packed_trx,
             broadcast,
         } => {
-            let signature = signing::sign_transaction(chain_id, &packed_trx, &key)?;
+            let backend = signer_backend
+                .as_deref()
+                .unwrap_or("vault")
+                .trim()
+                .to_lowercase();
+            let signature = match backend.as_str() {
+                "metamask" => {
+                    let digest = signing::compute_signing_digest(chain_id, &packed_trx)?;
+                    crate::metamask_bridge::sign_digest_via_metamask(
+                        app,
+                        &digest,
+                        signer_public_key,
+                    )
+                    .await?
+                }
+                #[cfg(feature = "ledger")]
+                "ledger_eth" => {
+                    let digest = signing::compute_signing_digest(chain_id, &packed_trx)?;
+                    let idx = ledger_index.unwrap_or(0);
+                    let path = crate::ledger::protocol::eth_bip44_path(0, idx);
+                    crate::ledger::protocol::sign_eth_personal_message_32(
+                        &path,
+                        &digest,
+                        Some(signer_public_key),
+                    )?
+                }
+                #[cfg(feature = "ledger")]
+                "ledger_eos" => {
+                    let idx = ledger_index.unwrap_or(0);
+                    let path = crate::ledger::protocol::eos_bip44_path(0, idx);
+                    let device_pub = crate::ledger::protocol::get_public_key(&path, false)?;
+                    if device_pub != signer_public_key {
+                        return Err(Error::Ledger(format!(
+                            "Ledger EOS key mismatch at index {}: expected {}, got {}",
+                            idx, signer_public_key, device_pub
+                        )));
+                    }
+                    let chain_id_bytes = hex::decode(chain_id)
+                        .map_err(|e| Error::Serialization(format!("Invalid chain_id hex: {e}")))?;
+                    let mut signing_data =
+                        Vec::with_capacity(chain_id_bytes.len() + packed_trx.len() + 32);
+                    signing_data.extend_from_slice(&chain_id_bytes);
+                    signing_data.extend_from_slice(&packed_trx);
+                    signing_data.extend_from_slice(&[0u8; 32]);
+                    crate::ledger::protocol::sign_transaction(&path, &signing_data)?
+                }
+                _ => {
+                    let key = unlock_signing_key(
+                        wallet,
+                        chain_id,
+                        signer_public_key,
+                        passphrase,
+                        extra_force_passphrase,
+                    )?;
+                    let sig = signing::sign_transaction_for_key(
+                        chain_id,
+                        &packed_trx,
+                        &key,
+                        signer_public_key,
+                    )?;
+                    if signing::is_em_public_key(signer_public_key) {
+                        let digest = signing::compute_signing_digest(chain_id, &packed_trx)?;
+                        signing::verify_sig_em_for_pubkey(&digest, &sig, signer_public_key)?
+                    } else {
+                        sig
+                    }
+                }
+            };
+
+            // Abort before broadcasting if the confirmation request was rejected or
+            // its window was closed while awaiting an external signer (MetaMask/Ledger).
+            if registry.summary(request_id).is_none() {
+                return Err(Error::SignRejected);
+            }
+
             if broadcast {
                 let pm = &mut providers.get(chain_id).await?;
                 let result = transaction::push_signed(pm, &packed_trx, &signature).await?;
@@ -487,7 +608,21 @@ async fn execute_approved(
                 }))
             }
         }
-        SignPayload::Export => Ok(serde_json::json!({ "wif": signing::wif_encode(&key) })),
+        SignPayload::Export => {
+            let key = unlock_signing_key(
+                wallet,
+                chain_id,
+                signer_public_key,
+                passphrase,
+                true,
+            )?;
+            let exported = if signing::is_em_public_key(signer_public_key) {
+                format!("0x{}", hex::encode(&*key))
+            } else {
+                signing::wif_encode(&key)
+            };
+            Ok(serde_json::json!({ "wif": exported }))
+        }
     }
 }
 
@@ -513,7 +648,23 @@ pub async fn begin_sign(
     forbid_confirm_window(&webview)?;
     let built = {
         let pm = &mut providers.get(&chain_id).await?;
-        transaction::build_tx(pm, &actions).await?
+        let built = transaction::build_tx(pm, &actions).await?;
+        if broadcast
+            && actions.iter().any(|a| {
+                matches!(
+                    a.name.as_str(),
+                    "updateauth"
+                        | "deleteauth"
+                        | "linkauth"
+                        | "unlinkauth"
+                        | "claimpay"
+                        | "claimnodedis"
+                )
+            })
+        {
+            transaction::preflight_compute_transaction(pm, &built.packed_trx, &[]).await?;
+        }
+        built
     };
 
     let mode = if broadcast {
@@ -573,6 +724,12 @@ pub async fn begin_export_key(
 ) -> Result<serde_json::Value, Error> {
     forbid_confirm_window(&webview)?;
     let request_id = registry.next_id();
+    let is_em_signer = signing::is_em_public_key(&public_key);
+    let signer_eth_address = if is_em_signer {
+        signing::eth_address_from_pub_em(&public_key).ok()
+    } else {
+        None
+    };
     let summary = SignSummary {
         request_id: request_id.clone(),
         chain_id: chain_id.clone(),
@@ -587,6 +744,10 @@ pub async fn begin_export_key(
         callback_url: None,
         identity_scope: Some(format!("Reveal the private key for {public_key}")),
         any_unverified: false,
+        signing_digest_hex: None,
+        eip191_hash_hex: None,
+        signer_eth_address,
+        is_em_signer,
     };
 
     let (tx, rx) = oneshot::channel();
@@ -630,12 +791,15 @@ pub fn get_pending_sign_request(
 /// Approve the active request. On success, resolves the awaiting `begin_sign`
 /// caller and closes the window; on failure (e.g. wrong passphrase) the request
 /// stays open so the user can retry.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn approve_sign(
     app: AppHandle,
     webview: WebviewWindow,
     request_id: String,
     passphrase: Option<String>,
+    signer_backend: Option<String>,
+    ledger_index: Option<u32>,
     wallet: State<'_, AppWallet>,
     providers: State<'_, ProviderState>,
     registry: State<'_, SignRegistry>,
@@ -648,7 +812,18 @@ pub async fn approve_sign(
     // Strict policy forces a passphrase on every signature (SEC hardening, T9).
     let strict = load_policy(&app) == ConfirmationPolicy::Strict;
     let outcome = execute_approved(
-        &chain_id, &signer, payload, passphrase, strict, &wallet, &providers,
+        &app,
+        &request_id,
+        &chain_id,
+        &signer,
+        payload,
+        passphrase,
+        signer_backend,
+        ledger_index,
+        strict,
+        &wallet,
+        &providers,
+        &registry,
     )
     .await?;
 
@@ -816,6 +991,21 @@ pub async fn begin_esr_sign(
             action_summary(&built, &mut any_unverified)
         })
         .collect();
+    let is_em_signer = signing::is_em_public_key(&public_key);
+    let digest_opt = signing::compute_signing_digest(&chain_id, &packed).ok();
+    let signing_digest_hex = digest_opt.as_ref().map(hex::encode);
+    let eip191_hash_hex = if is_em_signer {
+        digest_opt
+            .as_ref()
+            .map(|d| hex::encode(signing::eip191_digest32(d)))
+    } else {
+        None
+    };
+    let signer_eth_address = if is_em_signer {
+        signing::eth_address_from_pub_em(&public_key).ok()
+    } else {
+        None
+    };
     let summary = SignSummary {
         request_id: request_id.clone(),
         chain_id: chain_id.clone(),
@@ -834,6 +1024,10 @@ pub async fn begin_esr_sign(
         callback_url,
         identity_scope,
         any_unverified: !is_identity && any_unverified,
+        signing_digest_hex,
+        eip191_hash_hex,
+        signer_eth_address,
+        is_em_signer,
     };
     let (tx, rx) = oneshot::channel();
     registry.begin(
@@ -1046,6 +1240,10 @@ mod tests {
             callback_url: None,
             identity_scope: None,
             any_unverified: false,
+            signing_digest_hex: None,
+            eip191_hash_hex: None,
+            signer_eth_address: None,
+            is_em_signer: false,
         }
     }
 

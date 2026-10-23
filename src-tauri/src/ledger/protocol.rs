@@ -1,16 +1,21 @@
-//! EOS Ledger app APDU protocol.
+//! EOS & Ethereum Ledger app APDU protocol.
 //!
-//! Based on VaultaFoundation/ledger-app source code.
-//! CLA=0xD4, INS: 0x02 (get key), 0x04 (sign), 0x06 (get config).
+//! - EOS app (VaultaFoundation/ledger-app): CLA=0xD4, INS: 0x02 (get key), 0x04 (sign), 0x06 (get config).
+//! - Ethereum app (LedgerHQ/app-ethereum): CLA=0xE0, INS: 0x02 (get key), 0x06 (get config), 0x08 (sign personal message EIP-191).
 
 use super::transport::{exchange, open_ledger, Apdu};
 use crate::antelope::signing;
 use crate::error::Error;
 
-const CLA: u8 = 0xD4;
+const CLA_EOS: u8 = 0xD4;
 const INS_GET_PUBLIC_KEY: u8 = 0x02;
 const INS_SIGN: u8 = 0x04;
 const INS_GET_APP_CONFIGURATION: u8 = 0x06;
+
+const CLA_ETH: u8 = 0xE0;
+const INS_ETH_GET_PUBLIC_KEY: u8 = 0x02;
+const INS_ETH_GET_APP_CONFIGURATION: u8 = 0x06;
+const INS_ETH_SIGN_PERSONAL_MESSAGE: u8 = 0x08;
 
 const P1_CONFIRM: u8 = 0x01;
 const P1_NON_CONFIRM: u8 = 0x00;
@@ -18,11 +23,22 @@ const P1_FIRST: u8 = 0x00;
 const P1_MORE: u8 = 0x80;
 const P2_NO_CHAINCODE: u8 = 0x00;
 
-/// BIP44 path for EOS: m/44'/194'/0'/0/{index}
+/// BIP44 path for EOS: m/44'/194'/{account}'/0/{index}
 pub fn eos_bip44_path(account: u32, index: u32) -> Vec<u32> {
     vec![
         0x8000002C,           // 44'
         0x800000C2,           // 194'
+        0x80000000 | account, // account'
+        0,                    // change (always 0)
+        index,                // address index
+    ]
+}
+
+/// BIP44 path for Ethereum: m/44'/60'/{account}'/0/{index}
+pub fn eth_bip44_path(account: u32, index: u32) -> Vec<u32> {
+    vec![
+        0x8000002C,           // 44'
+        0x8000003C,           // 60'
         0x80000000 | account, // account'
         0,                    // change (always 0)
         index,                // address index
@@ -47,7 +63,7 @@ pub fn get_app_configuration() -> Result<(bool, bool, u8, u8, u8), Error> {
     let response = exchange(
         &device,
         &Apdu {
-            cla: CLA,
+            cla: CLA_EOS,
             ins: INS_GET_APP_CONFIGURATION,
             p1: 0,
             p2: 0,
@@ -68,7 +84,37 @@ pub fn get_app_configuration() -> Result<(bool, bool, u8, u8, u8), Error> {
     ))
 }
 
-/// Get a public key from the Ledger at the given BIP44 path.
+/// Get the Ethereum app configuration from the Ledger.
+/// Returns (arbitrary_data_enabled, major, minor, patch).
+pub fn get_eth_app_configuration() -> Result<(bool, u8, u8, u8), Error> {
+    let device = open_ledger()?;
+    let response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA_ETH,
+            ins: INS_ETH_GET_APP_CONFIGURATION,
+            p1: 0,
+            p2: 0,
+            data: vec![],
+        },
+    )?;
+
+    if response.len() < 4 {
+        return Err(Error::Ledger(
+            "Invalid Ethereum app configuration response (is the Ethereum app open on Ledger?)"
+                .into(),
+        ));
+    }
+
+    Ok((
+        (response[0] & 0x01) != 0,
+        response[1],
+        response[2],
+        response[3],
+    ))
+}
+
+/// Get a public key from the Ledger EOS app at the given BIP44 path.
 ///
 /// If `confirm` is true, the user must confirm on the device screen.
 /// Returns the EOS public key string (e.g., "EOS6MRy...").
@@ -78,7 +124,7 @@ pub fn get_public_key(path: &[u32], confirm: bool) -> Result<String, Error> {
     let response = exchange(
         &device,
         &Apdu {
-            cla: CLA,
+            cla: CLA_EOS,
             ins: INS_GET_PUBLIC_KEY,
             p1: if confirm { P1_CONFIRM } else { P1_NON_CONFIRM },
             p2: P2_NO_CHAINCODE,
@@ -111,7 +157,47 @@ pub fn get_public_key(path: &[u32], confirm: bool) -> Result<String, Error> {
     Ok(address)
 }
 
-/// Discover all public keys from the Ledger across multiple BIP44 slots.
+/// Get an Ethereum secp256k1 public key from the Ledger Ethereum app (`CLA = 0xE0`) at `path`.
+///
+/// Compresses the 65-byte uncompressed SEC1 public key returned by the Ledger into Wire's
+/// canonical `PUB_EM_<66 lowercase hex>` format and returns `(pub_em, eth_address_eip55)`.
+pub fn get_eth_public_key(path: &[u32], confirm: bool) -> Result<(String, String), Error> {
+    let device = open_ledger()?;
+
+    let response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA_ETH,
+            ins: INS_ETH_GET_PUBLIC_KEY,
+            p1: if confirm { P1_CONFIRM } else { P1_NON_CONFIRM },
+            p2: P2_NO_CHAINCODE,
+            data: serialize_path(path),
+        },
+    )?;
+
+    if response.len() < 2 {
+        return Err(Error::Ledger(
+            "Invalid Ethereum public key response (make sure the Ethereum app is open on Ledger)"
+                .into(),
+        ));
+    }
+
+    let pk_len = response[0] as usize;
+    if response.len() < 1 + pk_len {
+        return Err(Error::Ledger(
+            "Ethereum public key response too short".into(),
+        ));
+    }
+
+    let uncompressed_pk = &response[1..1 + pk_len];
+    let pub_em = signing::encode_pub_em_from_bytes(uncompressed_pk)
+        .map_err(|e| Error::Ledger(format!("Invalid secp256k1 point from Ledger ETH app: {}", e)))?;
+    let eth_address = signing::eth_address_from_pub_em(&pub_em)?;
+
+    Ok((pub_em, eth_address))
+}
+
+/// Discover all public keys from the Ledger EOS app across multiple BIP44 slots.
 /// Scans account=0, indices 0..max_index.
 pub fn discover_keys(max_index: u32) -> Result<Vec<(Vec<u32>, String)>, Error> {
     let mut keys = Vec::new();
@@ -127,7 +213,28 @@ pub fn discover_keys(max_index: u32) -> Result<Vec<(Vec<u32>, String)>, Error> {
     Ok(keys)
 }
 
-/// Sign a transaction hash using the Ledger.
+/// Discover Ethereum `PUB_EM_` keys from the Ledger Ethereum app across BIP44 slots `m/44'/60'/0'/0/{0..max_index}`.
+/// Returns `Vec<(path, pub_em, eth_address)>`.
+pub fn discover_eth_keys(max_index: u32) -> Result<Vec<(Vec<u32>, String, String)>, Error> {
+    let mut keys = Vec::new();
+
+    for index in 0..max_index {
+        let path = eth_bip44_path(0, index);
+        match get_eth_public_key(&path, false) {
+            Ok((pub_em, eth_address)) => keys.push((path, pub_em, eth_address)),
+            Err(e) => {
+                if index == 0 {
+                    return Err(e);
+                }
+                break;
+            }
+        }
+    }
+
+    Ok(keys)
+}
+
+/// Sign a transaction hash using the Ledger EOS app (`SIG_K1_...`).
 ///
 /// The `data` should be: chain_id (32 bytes) + serialized_transaction + 32 zero bytes.
 /// This is sent in chunks (first chunk includes the BIP44 path).
@@ -147,7 +254,7 @@ pub fn sign_transaction(path: &[u32], data: &[u8]) -> Result<String, Error> {
     let mut response = exchange(
         &device,
         &Apdu {
-            cla: CLA,
+            cla: CLA_EOS,
             ins: INS_SIGN,
             p1: P1_FIRST,
             p2: 0x00,
@@ -162,7 +269,7 @@ pub fn sign_transaction(path: &[u32], data: &[u8]) -> Result<String, Error> {
         response = exchange(
             &device,
             &Apdu {
-                cla: CLA,
+                cla: CLA_EOS,
                 ins: INS_SIGN,
                 p1: P1_MORE,
                 p2: 0x00,
@@ -203,4 +310,59 @@ pub fn sign_transaction(path: &[u32], data: &[u8]) -> Result<String, Error> {
     sig_data.extend_from_slice(&checksum[..4]);
 
     Ok(format!("SIG_K1_{}", signing::bs58_encode(&sig_data)))
+}
+
+/// Sign a 32-byte Wire/Antelope `signing_digest` using the Ledger Ethereum app (`CLA = 0xE0`,
+/// `INS_SIGN_PERSONAL_MESSAGE = 0x08`).
+///
+/// The Ledger Ethereum app prepends `"\x19Ethereum Signed Message:\n32"` to the 32 raw bytes
+/// of `signing_digest`, hashes with Keccak-256, prompts the user on the hardware screen, and
+/// returns `[v: 1 byte] [r: 32 bytes] [s: 32 bytes]`.
+///
+/// If `expected_pub_em` is provided, verifies that the recovered public key matches before returning
+/// `SIG_EM_<130 lowercase hex>`.
+pub fn sign_eth_personal_message_32(
+    path: &[u32],
+    signing_digest: &[u8; 32],
+    expected_pub_em: Option<&str>,
+) -> Result<String, Error> {
+    let device = open_ledger()?;
+
+    let path_data = serialize_path(path);
+    let mut payload = Vec::with_capacity(path_data.len() + 4 + 32);
+    payload.extend_from_slice(&path_data);
+    payload.extend_from_slice(&(32u32).to_be_bytes());
+    payload.extend_from_slice(signing_digest);
+
+    let response = exchange(
+        &device,
+        &Apdu {
+            cla: CLA_ETH,
+            ins: INS_ETH_SIGN_PERSONAL_MESSAGE,
+            p1: P1_FIRST,
+            p2: 0x00,
+            data: payload,
+        },
+    )?;
+
+    if response.len() != 65 {
+        return Err(Error::Ledger(format!(
+            "Unexpected Ethereum signature response length: {} (expected 65)",
+            response.len()
+        )));
+    }
+
+    let v = response[0];
+    let mut r = [0u8; 32];
+    let mut s = [0u8; 32];
+    r.copy_from_slice(&response[1..33]);
+    s.copy_from_slice(&response[33..65]);
+
+    let sig_em = signing::encode_sig_em_from_rsv(&r, &s, v)?;
+    if let Some(expected) = expected_pub_em {
+        return signing::verify_sig_em_for_pubkey(signing_digest, &sig_em, expected);
+    }
+    // Even if no expected key was provided, verify that secp256k1 recovery succeeds
+    let _ = signing::recover_pub_em(signing_digest, &sig_em)?;
+    Ok(sig_em)
 }

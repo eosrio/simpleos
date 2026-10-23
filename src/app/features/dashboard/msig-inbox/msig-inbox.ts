@@ -57,28 +57,34 @@ interface ProposalDetails {
   standalone: true,
   template: `
     <div class="msig-view">
-      <h2>Multisig Inbox</h2>
-      <div class="head-row">
-        <p class="subtitle">
-          Proposals that still need a signature from
-          <strong>{{ me() }}</strong>
-          on <strong>{{ wallet.activeChain().name }}</strong>.
+      <!-- ── Top Header ── -->
+      <header class="page-header">
+        <div class="header-title-row">
+          <h2>Multisig Inbox</h2>
+          <span class="header-sep">·</span>
+          <span class="header-meta">{{ me() }} · {{ wallet.activeChain().name }}</span>
           @if (source() === 'cached') {
-            <span class="source-hint" title="Loaded from cache — status refreshed">· from cache</span>
+            <span class="source-pill" title="Loaded from cache — status refreshed">Cached</span>
           } @else if (source() === 'scan') {
-            <span class="source-hint" title="Just walked every scope in eosio.msig::proposal">· fresh scan</span>
+            <span class="source-pill active" title="Fresh on-chain scan">Scanned</span>
+          } @else if (source() === 'hyperion') {
+            <span class="source-pill active">Indexed</span>
           }
-        </p>
+        </div>
         <div class="toolbar">
           @if (source() !== 'hyperion') {
-            <button class="btn-ghost" (click)="rescanScopes()"
+            <button class="btn-refresh" type="button" (click)="rescanScopes()"
               [disabled]="scanning() || loading() || busy()"
-              title="Walk every scope in eosio.msig::proposal — finds any proposal awaiting your signature">
-              {{ scanning() ? 'SCANNING…' : 'SCAN SCOPES' }}
+              title="Walk proposer scopes on-chain to find proposals awaiting your signature">
+              <svg [class.spinning]="scanning()" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              <span>{{ scanning() ? 'Scanning…' : 'Scan Scopes' }}</span>
             </button>
           }
         </div>
-      </div>
+      </header>
 
       @if (scanning()) {
         <div class="scan-progress">
@@ -93,20 +99,20 @@ interface ProposalDetails {
       <!-- Manual lookup — always available, primary fallback when no Hyperion -->
       <details class="manual-panel" [open]="source() === 'none'">
         <summary>
-          <span>Look up a specific proposal</span>
-          <span class="subtitle-inline">(useful when the inbox can't reach it)</span>
+          <span class="summary-title">Look Up Proposal by Name</span>
+          <span class="subtitle-inline">Direct on-chain query</span>
         </summary>
         <div class="manual-lookup">
-          <input class="form-input" placeholder="proposer" [value]="manualProposer()"
+          <input class="form-input" placeholder="Proposer account" [value]="manualProposer()"
             (input)="manualProposer.set($any($event.target).value)"
             (keydown.enter)="loadManual()" />
-          <input class="form-input" placeholder="proposal_name" [value]="manualName()"
+          <input class="form-input" placeholder="Proposal name" [value]="manualName()"
             (input)="manualName.set($any($event.target).value)"
             (keydown.enter)="loadManual()" />
           <button class="btn-primary"
             [disabled]="!manualProposer() || !manualName() || manualLoading()"
             (click)="loadManual()">
-            {{ manualLoading() ? 'LOADING…' : 'LOAD' }}
+            {{ manualLoading() ? 'Loading…' : 'Load' }}
           </button>
         </div>
         @if (manualError()) {
@@ -118,30 +124,26 @@ interface ProposalDetails {
         <div class="state-card loading">Loading proposals…</div>
       } @else if (source() === 'none' && manualProposals().length === 0 && !scanning()) {
         <div class="state-card warn">
-          <h3>No cached proposals for {{ wallet.activeChain().name }}</h3>
-          <p>
-            This chain doesn't have a Hyperion endpoint, so we can't list proposals
-            automatically. Scan every proposer scope on-chain to find proposals
-            awaiting your signature — results are cached so subsequent visits are fast.
-          </p>
-          <div class="empty-actions">
+          <div class="warn-row">
+            <div>
+              <h3>On-Chain Proposal Discovery</h3>
+              <p>
+                {{ wallet.activeChain().name }} does not use a Hyperion indexer. Scan proposer scopes directly on-chain or look up a proposal above.
+              </p>
+            </div>
             <button class="btn-primary" (click)="rescanScopes()" [disabled]="scanning()">
-              SCAN SCOPES NOW
+              Scan Scopes Now
             </button>
           </div>
-          <p class="key-desc" style="margin-top: var(--sp-4)">
-            Or use the lookup form above if you already know a proposer + proposal name.
-          </p>
         </div>
       } @else if (proposals().length === 0 && manualProposals().length === 0 && !scanning()) {
         <div class="state-card">
-          <h3>Inbox empty</h3>
+          <h3>Inbox Clear</h3>
           <p>
             @if (source() === 'scan') {
-              Walked every proposer scope — nothing awaiting your signature.
+              Walked every proposer scope — no proposals are awaiting your signature.
             } @else if (source() === 'cached') {
-              No cached proposals need your signature right now. Run a fresh scan
-              to discover new ones.
+              No cached proposals need your signature right now.
             } @else {
               No proposals awaiting your approval.
             }
@@ -156,18 +158,18 @@ interface ProposalDetails {
               @if (isManual(p)) {
                 <div class="manual-badge">
                   <span>Loaded via lookup</span>
-                  <button class="btn-ghost btn-tiny" (click)="dismissManual(p)">DISMISS</button>
+                  <button class="btn-ghost btn-tiny" (click)="dismissManual(p)">Dismiss</button>
                 </div>
               }
               <div class="prop-head">
                 <div class="prop-id">
                   <code class="prop-name">{{ p.proposal_name }}</code>
                   <span class="prop-sep">·</span>
-                  <span class="prop-proposer">by {{ p.proposer }}</span>
+                  <span class="prop-proposer">by <code>{{ p.proposer }}</code></span>
                 </div>
                 <div class="prop-status">
                   <span class="approval-count">
-                    {{ p.provided_approvals.length }} / {{ p.requested_approvals.length + p.provided_approvals.length }}
+                    {{ p.provided_approvals.length }} / {{ p.requested_approvals.length + p.provided_approvals.length }} approved
                   </span>
                   @if (proposedAt(p); as pa) {
                     <span class="proposed-at" [title]="pa.absolute">proposed {{ pa.relative }}</span>
@@ -183,7 +185,7 @@ interface ProposalDetails {
               @if (actionsFor(p); as actions) {
                 <details class="prop-actions" [open]="detailsOpen().has(trackBy(p))">
                   <summary (click)="onToggleDetails(p, $event)">
-                    {{ actions.length }} action(s)
+                    {{ actions.length }} action{{ actions.length === 1 ? '' : 's' }}
                   </summary>
                   @for (a of actions; track $index) {
                     <div class="action-row">
@@ -203,9 +205,9 @@ interface ProposalDetails {
                     <span class="muted">Decoding actions…</span>
                   } @else if (detailsError().get(trackBy(p)); as err) {
                     <span class="muted error-inline">{{ err }}</span>
-                    <button class="btn-ghost btn-tiny" (click)="loadDetails(p)">RETRY</button>
+                    <button class="btn-ghost btn-tiny" (click)="loadDetails(p)">Retry</button>
                   } @else {
-                    <button class="btn-ghost btn-tiny" (click)="loadDetails(p)">DECODE ACTIONS</button>
+                    <button class="btn-ghost btn-tiny" (click)="loadDetails(p)">Decode Actions</button>
                   }
                 </div>
               }
@@ -221,7 +223,7 @@ interface ProposalDetails {
                   }
                 </div>
                 <div class="approvals-group">
-                  <span class="approvals-label">Still pending</span>
+                  <span class="approvals-label">Pending</span>
                   @for (a of p.requested_approvals; track a.actor) {
                     <code class="approver pending" [class.me]="a.actor === me()">
                       {{ a.actor }}&#64;{{ a.permission }}
@@ -231,11 +233,11 @@ interface ProposalDetails {
               </div>
 
               <div class="prop-actions-bar">
-                <button class="btn-primary" (click)="approve(p)" [disabled]="busy()">APPROVE</button>
+                <button class="btn-primary" (click)="approve(p)" [disabled]="busy()">Approve</button>
                 <button class="btn-ghost" (click)="exec(p)" [disabled]="busy() || !canExec(p)"
-                  [title]="canExec(p) ? '' : 'Not enough approvals yet'">EXECUTE</button>
+                  [title]="canExec(p) ? '' : 'Not enough approvals yet'">Execute</button>
                 <button class="btn-ghost btn-danger-text" (click)="unapprove(p)" [disabled]="busy()"
-                  [title]="'Use if you previously approved and want to withdraw'">UNAPPROVE</button>
+                  [title]="'Use if you previously approved and want to withdraw'">Unapprove</button>
               </div>
             </li>
           }
@@ -248,27 +250,108 @@ interface ProposalDetails {
     </div>
   `,
   styles: [`
-    .msig-view { max-width: 900px; }
-    h2 { font-size: 24px; margin-bottom: var(--sp-2); }
-    .head-row {
+    .msig-view {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      padding-bottom: var(--sp-8);
+    }
+
+    /* ── Header ── */
+    .page-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-4);
+      align-items: center;
+      gap: var(--sp-4);
       flex-wrap: wrap;
     }
-    .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
-    .subtitle strong { color: var(--text-bright); }
-    .source-hint { font-size: 11px; color: var(--text-muted); margin-left: var(--sp-1); }
-    .toolbar { display: flex; gap: var(--sp-2); }
-    .empty-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+    .header-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--sp-2);
+      flex-wrap: wrap;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .header-sep {
+      color: var(--text-disabled);
+      font-size: 14px;
+    }
+
+    .header-meta {
+      font-size: 13px;
+      font-family: var(--font-data);
+      color: var(--text-muted);
+    }
+
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-data);
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .source-pill.active {
+      color: var(--accent-text);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
+    }
+
+    .toolbar {
+      display: flex;
+      gap: var(--sp-2);
+    }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-raised);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+    .btn-refresh:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--border);
+      color: var(--text-bright);
+    }
+    .btn-refresh:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .spinning {
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
     .scan-progress {
-      margin-bottom: var(--sp-4);
-      padding: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
       background: var(--bg-raised);
-      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
     }
     .scan-progress-bar {
       height: 4px;
@@ -302,18 +385,45 @@ interface ProposalDetails {
 
     .state-card {
       background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
       text-align: center;
     }
     .state-card.loading { color: var(--text-muted); }
     .state-card.warn {
       text-align: left;
-      border: 1px solid rgba(245, 166, 35, 0.35);
-      background: rgba(245, 166, 35, 0.06);
+      border-color: rgba(245, 166, 35, 0.35);
+      background: rgba(245, 166, 35, 0.05);
     }
-    .state-card h3 { font-size: 15px; margin-bottom: var(--sp-2); }
-    .state-card p { font-size: 13px; color: var(--text-muted); margin-bottom: var(--sp-4); }
+    .warn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-4);
+      flex-wrap: wrap;
+    }
+    .state-card h3 { font-size: 14px; font-weight: 600; color: var(--text-bright); margin: 0 0 4px; }
+    .state-card p { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+
+    .manual-panel {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-3) var(--sp-4);
+    }
+    .manual-panel summary {
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+      display: flex;
+      gap: var(--sp-2);
+      align-items: baseline;
+    }
+    .subtitle-inline { color: var(--text-muted); font-size: 11px; font-weight: 400; font-family: var(--font-data); }
+    .manual-panel[open] .manual-lookup { margin-top: var(--sp-3); }
 
     .manual-lookup {
       display: flex;
@@ -322,13 +432,13 @@ interface ProposalDetails {
     }
     .form-input {
       flex: 1;
-      padding: var(--sp-3);
+      padding: 8px 12px;
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      background: var(--bg-hover);
+      background: var(--bg-base);
       color: var(--text-bright);
       font-family: var(--font-data);
-      font-size: 13px;
+      font-size: 12.5px;
     }
     .form-input:focus { outline: none; border-color: var(--accent); }
 
@@ -337,11 +447,14 @@ interface ProposalDetails {
       display: flex;
       flex-direction: column;
       gap: var(--sp-3);
+      padding: 0;
+      margin: 0;
     }
     .prop-card {
       background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4) var(--sp-5);
       display: flex;
       flex-direction: column;
       gap: var(--sp-3);
@@ -358,66 +471,52 @@ interface ProposalDetails {
     .prop-name {
       font-family: var(--font-data);
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-bright);
     }
     .prop-sep { color: var(--text-muted); }
-    .prop-proposer { font-size: 13px; color: var(--text-muted); }
+    .prop-proposer { font-size: 12.5px; color: var(--text-muted); }
+    .prop-proposer code { font-family: var(--font-data); color: var(--accent-text); }
     .prop-status { display: flex; gap: var(--sp-3); align-items: center; font-size: 12px; }
     .approval-count {
       font-family: var(--font-data);
+      font-variant-numeric: tabular-nums;
+      font-size: 11px;
+      font-weight: 600;
       padding: 2px 8px;
       border-radius: var(--radius-full);
       background: var(--accent-muted);
       color: var(--accent-text);
     }
-    .expiry, .proposed-at { color: var(--text-muted); }
-    .expiry.urgent { color: var(--caution); font-weight: 500; }
-    .expiry.expired { color: var(--negative); font-weight: 500; }
+    .expiry, .proposed-at { color: var(--text-muted); font-family: var(--font-data); font-size: 11px; }
+    .expiry.urgent { color: var(--caution); font-weight: 600; }
+    .expiry.expired { color: var(--negative); font-weight: 600; }
 
     .prop-actions-placeholder {
       display: flex;
       gap: var(--sp-2);
       align-items: center;
-      padding: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
       border: 1px dashed var(--border-subtle);
       border-radius: var(--radius-sm);
+      background: var(--bg-base);
       font-size: 12px;
     }
-    .btn-tiny { padding: 2px var(--sp-2); font-size: 10px; }
+    .btn-tiny { padding: 3px 8px; font-size: 10px; }
     .error-inline { color: var(--negative); }
 
-    .manual-panel {
-      background: var(--bg-raised);
-      border-radius: var(--radius-md);
-      padding: var(--sp-3) var(--sp-4);
-      margin-bottom: var(--sp-4);
-    }
-    .manual-panel summary {
-      cursor: pointer;
-      user-select: none;
-      font-size: 13px;
-      color: var(--text-bright);
-      display: flex;
-      gap: var(--sp-2);
-      align-items: baseline;
-    }
-    .subtitle-inline { color: var(--text-muted); font-size: 11px; font-weight: 400; }
-    .manual-panel[open] .manual-lookup { margin-top: var(--sp-3); }
-
     .prop-card.manual {
-      border: 1px solid rgba(124, 92, 255, 0.3);
-      background: linear-gradient(var(--bg-raised), var(--bg-raised)) padding-box,
-                  rgba(124, 92, 255, 0.08);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border-subtle));
     }
     .manual-badge {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
+      font-size: 10.5px;
+      font-weight: 600;
       color: var(--accent-text);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
       padding-bottom: var(--sp-2);
       border-bottom: 1px solid var(--border-subtle);
     }
@@ -425,11 +524,13 @@ interface ProposalDetails {
     .prop-actions {
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
+      background: var(--bg-base);
       padding: var(--sp-3);
     }
     .prop-actions summary {
       font-size: 12px;
-      color: var(--text-muted);
+      font-weight: 600;
+      color: var(--text-body);
       cursor: pointer;
       user-select: none;
     }
@@ -442,7 +543,8 @@ interface ProposalDetails {
     .action-contract {
       display: inline-block;
       font-family: var(--font-data);
-      font-size: 13px;
+      font-size: 12.5px;
+      font-weight: 600;
       color: var(--accent-text);
       margin-bottom: var(--sp-1);
     }
@@ -455,77 +557,79 @@ interface ProposalDetails {
     .action-data {
       font-family: var(--font-data);
       font-size: 11px;
-      background: var(--bg-base);
+      background: var(--bg-raised);
       padding: var(--sp-2);
-      border-radius: var(--radius-xs);
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
       overflow-x: auto;
       color: var(--text-body);
+      margin: 0;
     }
 
     .approvals-summary {
       display: flex;
-      gap: var(--sp-5);
+      gap: var(--sp-4);
       flex-wrap: wrap;
       font-size: 12px;
     }
-    .approvals-group { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; }
+    .approvals-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .approvals-label {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 10px;
+      font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.06em;
     }
     .approver {
       font-family: var(--font-data);
       font-size: 11px;
-      padding: 2px 6px;
-      border-radius: var(--radius-xs);
-      background: rgba(45, 212, 168, 0.1);
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(45, 212, 168, 0.12);
       color: var(--positive);
     }
-    .approver.pending { background: var(--bg-hover); color: var(--text-muted); }
-    .approver.me { outline: 1px solid var(--accent); color: var(--accent-text); }
+    .approver.pending { background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-muted); }
+    .approver.me { border-color: var(--accent); color: var(--accent-text); }
     .muted { color: var(--text-muted); font-size: 11px; }
 
     .prop-actions-bar {
       display: flex;
       gap: var(--sp-2);
       justify-content: flex-end;
-      padding-top: var(--sp-2);
+      padding-top: var(--sp-3);
       border-top: 1px solid var(--border-subtle);
     }
 
     .btn-primary {
-      padding: var(--sp-2) var(--sp-4);
+      padding: 8px 16px;
       border: none; border-radius: var(--radius-sm);
       background: var(--accent); color: #fff;
       font-family: var(--font-body); font-size: 12px;
-      font-weight: 500; letter-spacing: 0.5px;
+      font-weight: 600; letter-spacing: 0.04em;
       text-transform: uppercase; cursor: pointer;
     }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .btn-ghost {
-      padding: var(--sp-2) var(--sp-3);
-      border: 1px solid var(--accent);
+      padding: 7px 12px;
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      background: transparent;
+      background: var(--bg-base);
       color: var(--accent-text);
       font-family: var(--font-body);
       font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       cursor: pointer;
     }
-    .btn-ghost:hover { background: var(--accent-muted); }
+    .btn-ghost:hover:not(:disabled) { background: var(--accent-muted); border-color: var(--accent); }
     .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-danger-text { border-color: var(--negative); color: var(--negative); }
-    .btn-danger-text:hover { background: rgba(240, 68, 56, 0.1); }
+    .btn-danger-text { border-color: rgba(248, 113, 113, 0.35); color: var(--negative); }
+    .btn-danger-text:hover:not(:disabled) { background: rgba(240, 68, 56, 0.1); border-color: var(--negative); }
 
-    .error { color: var(--negative); font-size: 12px; margin-top: var(--sp-3); }
+    .error { color: var(--negative); font-size: 12px; margin-top: var(--sp-2); }
   `],
 })
 export class MsigInboxComponent {
@@ -571,16 +675,11 @@ export class MsigInboxComponent {
     effect(() => {
       const acct = this.wallet.selectedAccount();
       if (!acct) return;
-      // Wipe all per-account state before refetching so nothing from the
-      // previous account lingers in the UI while the new load is in flight.
       this.resetState();
       this.load(acct.chainId, acct.name);
     });
   }
 
-  /** Monotonically increasing token — any in-flight load whose token is older than
-   *  `activeLoadToken` has been superseded and must not mutate state. Prevents a
-   *  stale response from overwriting fresh data when the user switches fast. */
   private activeLoadToken = 0;
 
   private resetState() {
@@ -598,9 +697,6 @@ export class MsigInboxComponent {
     this.manualError.set('');
     this.manualLoading.set(false);
     this.scanProgress.set({ scanned: 0, found: 0, done: false });
-    // If a scan was running, its listeners are chain-wide and harmless to
-    // leave attached; its finally-block will still unsubscribe. We only reset
-    // the visible progress bar here.
   }
 
   private cacheKey(chainId: string) { return `msig_cache_${chainId}`; }
@@ -619,8 +715,6 @@ export class MsigInboxComponent {
         return;
       }
 
-      // No Hyperion: use the per-chain cache of previously-discovered proposals
-      // and just refresh their on-chain status. A full rescan is a user action.
       const cached = await this.ipc.storeGet<{ proposer: string; proposal_name: string }[]>(
         this.cacheKey(chainId),
       );
@@ -637,7 +731,6 @@ export class MsigInboxComponent {
       this.source.set('cached');
       this.proposals.set(status.active as MsigProposal[]);
 
-      // Prune dead entries from the cache so the next refresh is even quicker.
       if (status.dead.length > 0) {
         const deadSet = new Set(status.dead.map(d => `${d.proposer}:${d.proposal_name}`));
         const pruned = cached.filter(k => !deadSet.has(`${k.proposer}:${k.proposal_name}`));
@@ -652,8 +745,6 @@ export class MsigInboxComponent {
     }
   }
 
-  /** Full scope-walk with live progress. Streams proposals into the list as
-   *  they're found and saves the final list to per-chain cache. */
   async rescanScopes() {
     const acct = this.wallet.selectedAccount();
     if (!acct || this.scanning()) return;
@@ -661,7 +752,6 @@ export class MsigInboxComponent {
     this.scanning.set(true);
     this.scanProgress.set({ scanned: 0, found: 0, done: false });
     this.error.set('');
-    // Clear the current list — fresh matches will stream in via the event listener.
     this.proposals.set([]);
 
     const unlisteners: UnlistenFn[] = [];
@@ -678,7 +768,6 @@ export class MsigInboxComponent {
       const result = await this.ipc.scanMsigScopesStream(acct.chainId, acct.name);
       this.source.set('scan');
 
-      // Persist discovered proposals so next page load is instant.
       const keys = (result.proposals as MsigProposal[]).map(p => ({
         proposer: p.proposer,
         proposal_name: p.proposal_name,
@@ -698,7 +787,6 @@ export class MsigInboxComponent {
     return p.requested_approvals.length === 0 && p.provided_approvals.length > 0;
   }
 
-  /** Decoded actions come from either the Hyperion payload or the lazy-loaded fallback. */
   actionsFor(p: MsigProposal): MsigAction[] | null {
     const fromHyperion = p.trx?.actions ?? p.transaction?.actions;
     if (fromHyperion && fromHyperion.length > 0) return fromHyperion;
@@ -706,7 +794,6 @@ export class MsigInboxComponent {
     return loaded?.actions ?? null;
   }
 
-  /** Extract a proposed-at date: Hyperion's `@timestamp` or `block_time`. */
   proposedAt(p: MsigProposal): { relative: string; absolute: string } | null {
     const ts = p['@timestamp'] ?? p.block_time;
     if (!ts) return null;
@@ -718,7 +805,6 @@ export class MsigInboxComponent {
     };
   }
 
-  /** Expiration comes from Hyperion's trx OR the lazily-loaded details. */
   expiresAt(p: MsigProposal): { relative: string; absolute: string; soon: boolean; expired: boolean } | null {
     const fromHyperion = p.trx?.expiration ?? p.transaction?.expiration;
     let expMs: number | null = null;
@@ -750,7 +836,6 @@ export class MsigInboxComponent {
       next.delete(key);
     } else {
       next.add(key);
-      // If we don't have actions yet, kick off decode.
       if (!this.actionsFor(p)) {
         ev.preventDefault();
         this.loadDetails(p);
@@ -777,7 +862,6 @@ export class MsigInboxComponent {
       const map = new Map(this.details());
       map.set(key, res);
       this.details.set(map);
-      // Auto-expand the details block once we have data.
       const open = new Set(this.detailsOpen());
       open.add(key);
       this.detailsOpen.set(open);
@@ -817,10 +901,6 @@ export class MsigInboxComponent {
       data['executer'] = this.me();
     }
 
-    // SEC-003: bind an approval to the exact proposal bytes via proposal_hash, so
-    // a malicious/MITM'd endpoint cannot obtain an approval valid for different
-    // bytes than the user reviewed. Best-effort: if the lookup fails, approve
-    // without the binding rather than block the user.
     if (name === 'approve') {
       try {
         const details: any = await this.ipc.getMsigProposalDetails(acct.chainId, proposer, proposalName);
@@ -828,12 +908,9 @@ export class MsigInboxComponent {
       } catch { /* approve without binding */ }
     }
 
-    // FIO's msig contract requires `max_fee` on every action (fee-metered chain).
-    // Query the actual fee and cap at 2x, with a generous floor in case the fee
-    // lookup returns 0/unset.
     if (this.wallet.isFio()) {
-      const endPoint = `msig_${name}`; // msig_approve / msig_unapprove / msig_exec
-      let maxFee = 1_000_000_000; // 1 FIO floor in SUFs (9 decimals)
+      const endPoint = `msig_${name}`;
+      let maxFee = 1_000_000_000;
       try {
         const { fee } = await this.ipc.fioGetFee(acct.chainId, endPoint, '');
         if (fee > 0) maxFee = Math.max(fee * 2, maxFee);
@@ -854,18 +931,14 @@ export class MsigInboxComponent {
         publicKey: keys[0],
         title,
         actions: [{
-          account: 'eosio.msig',
+          account: this.wallet.msigContract?.() ?? 'eosio.msig',
           name,
           authorization: this.auth(),
           data,
         }],
       });
       if (ok) {
-        // 1. Optimistic update for instant feedback — Hyperion lags a few seconds
-        //    behind chain state and the inbox reload might still show the old list.
         this.applyOptimistic(proposer, proposalName, name);
-        // 2. Fire authoritative refetches in the background so the UI becomes
-        //    correct once the chain/indexer catches up.
         this.scheduleRefresh(acct.chainId, acct.name, proposer, proposalName, name);
       }
     } catch (e: any) {
@@ -875,7 +948,6 @@ export class MsigInboxComponent {
     }
   }
 
-  /** Move `me` between requested/provided locally so the card updates before any refetch. */
   private applyOptimistic(
     proposer: string,
     proposalName: string,
@@ -902,7 +974,6 @@ export class MsigInboxComponent {
           ],
         };
       }
-      // unapprove: move back to requested
       const entry = p.provided_approvals.find(a => a.actor === actor);
       const perm = entry?.permission ?? 'active';
       return {
@@ -919,7 +990,6 @@ export class MsigInboxComponent {
     this.manualProposals.update(list => list.map(mutate));
   }
 
-  /** Authoritative refetch scheduled after a successful action. */
   private scheduleRefresh(
     chainId: string,
     account: string,
@@ -930,21 +1000,14 @@ export class MsigInboxComponent {
     const key = `${proposer}:${proposalName}`;
 
     if (action === 'exec') {
-      // Executed proposals are deleted from the msig table — drop locally too.
       this.proposals.update(list => list.filter(p => this.trackBy(p) !== key));
       this.manualProposals.update(list => list.filter(p => this.trackBy(p) !== key));
       this.load(chainId, account).catch(() => {});
       return;
     }
 
-    // Short delay so Hyperion / table state has time to catch up, otherwise the
-    // refetch would overwrite our optimistic update with stale data.
     setTimeout(() => {
-      // Refresh the inbox list — filtering is re-applied, so the proposal may
-      // disappear from the list (it no longer needs `account`'s signature).
       this.load(chainId, account).catch(() => {});
-      // If the same proposal is also showing as a manual lookup, refresh its
-      // approvals in-place so the card stays but shows fresh state.
       const inManual = this.manualProposals().some(p => this.trackBy(p) === key);
       if (inManual) {
         this.refreshManualProposal(chainId, proposer, proposalName).catch(() => {});
@@ -963,7 +1026,6 @@ export class MsigInboxComponent {
         provided_approvals: d.provided_approvals,
       };
     }));
-    // Also refresh the details cache (actions/expiration) in case it was re-proposed.
     const map = new Map(this.details());
     map.set(key, { expiration: d.expiration, actions: d.actions });
     this.details.set(map);
@@ -987,7 +1049,6 @@ export class MsigInboxComponent {
     const acct = this.wallet.selectedAccount();
     if (!proposer || !name || !acct) return;
 
-    // Prevent duplicate load of the same proposal.
     const key = `${proposer}:${name}`;
     if (this.manualProposals().some(p => this.trackBy(p) === key)
         || this.proposals().some(p => this.trackBy(p) === key)) {
@@ -999,7 +1060,6 @@ export class MsigInboxComponent {
     this.manualError.set('');
     try {
       const d = await this.ipc.getMsigProposalDetails(acct.chainId, proposer, name);
-      // Reuse the details cache so the card renders immediately without a second fetch.
       const map = new Map(this.details());
       map.set(key, { expiration: d.expiration, actions: d.actions });
       this.details.set(map);
@@ -1015,7 +1075,6 @@ export class MsigInboxComponent {
         },
       };
       this.manualProposals.update(list => [proposal, ...list]);
-      // Expand the actions panel by default for manual lookups.
       const open = new Set(this.detailsOpen());
       open.add(key);
       this.detailsOpen.set(open);

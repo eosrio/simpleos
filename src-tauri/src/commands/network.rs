@@ -1,4 +1,3 @@
-
 use tauri::{Emitter, Manager, State};
 
 use crate::antelope::discovery::{self, DiscoveredEndpoint};
@@ -7,7 +6,131 @@ use crate::antelope::provider::{EndpointState, ProviderManager, ProviderState};
 use crate::antelope::types::*;
 use crate::error::Error;
 
+/// Unwrap a Wire KV table row `{ "key": {...}, "value": {...} }` into its inner `"value"` object.
+/// Leaves standard Antelope table rows untouched.
+fn unwrap_kv_row(row: serde_json::Value) -> serde_json::Value {
+    if let serde_json::Value::Object(ref map) = row {
+        if map.len() == 2 && map.contains_key("key") {
+            if let Some(val @ serde_json::Value::Object(_)) = map.get("value") {
+                return val.clone();
+            }
+        }
+    }
+    row
+}
 
+/// Normalize `get_table_rows` parameters for Wire (`sysio` / `sysio.msig` / `sysio.roa`) KV tables:
+/// - `sysio` `producers` (`key_names: ["owner"]`, `key_types: ["uint64"]`)
+/// - `sysio` `finalizers` (`key_names: ["finalizer_name"]`, `key_types: ["uint64"]`)
+/// - `sysio` `payclaims` / `nodedist` (`key_names: ["account_name"]`, `key_types: ["uint64"]`)
+/// - `sysio.roa` `nodeowners` (`key_names: ["scope", "owner"]`)
+/// - `sysio.msig` `proposal` / `approvals2` (`key_names: ["scope", "proposal_name"]`, `key_types: ["name", "uint64"]`)
+///
+/// Wire's `upper_bound` is exclusive `[lower_bound, upper_bound)`, so an exact-match
+/// query sets `upper_bound` to `u64 + 1`.
+fn normalize_sysio_table_params(params: &serde_json::Value) -> serde_json::Value {
+    let Some(obj) = params.as_object() else {
+        return params.clone();
+    };
+    let code = obj.get("code").and_then(|v| v.as_str()).unwrap_or("");
+    let table = obj.get("table").and_then(|v| v.as_str()).unwrap_or("");
+    let lb = obj
+        .get("lower_bound")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if lb.is_empty() || lb.starts_with('{') {
+        return params.clone();
+    }
+
+    if code == "sysio" && table == "finkeys" {
+        let mut out = obj.clone();
+        out.remove("index_position");
+        out.remove("key_type");
+        out.remove("lower_bound");
+        out.remove("upper_bound");
+        out.insert("limit".into(), serde_json::json!(500));
+        return serde_json::Value::Object(out);
+    }
+
+    if (code == "sysio"
+        && (table == "producers"
+            || table == "finalizers"
+            || table == "payclaims"
+            || table == "nodedist"))
+        || (code == "sysio.roa" && table == "nodeowners")
+    {
+        let key_field = match table {
+            "producers" | "nodeowners" => "owner",
+            "finalizers" => "finalizer_name",
+            _ => "account_name",
+        };
+        let Ok(u) = crate::antelope::serialize::name_to_u64(lb) else {
+            return params.clone();
+        };
+        let mut out = obj.clone();
+        out.insert(
+            "lower_bound".into(),
+            serde_json::Value::String(format!("{{\"{}\":\"{}\"}}", key_field, u)),
+        );
+        if obj
+            .get("upper_bound")
+            .and_then(|v| v.as_str())
+            .is_some_and(|ub| !ub.is_empty() && !ub.starts_with('{'))
+        {
+            out.insert(
+                "upper_bound".into(),
+                serde_json::Value::String(format!(
+                    "{{\"{}\":\"{}\"}}",
+                    key_field,
+                    u.saturating_add(1)
+                )),
+            );
+        }
+        return serde_json::Value::Object(out);
+    }
+
+    if code == "sysio.msig"
+        && (table == "proposal" || table == "approvals2" || table == "approvals")
+    {
+        let scope = obj.get("scope").and_then(|v| v.as_str()).unwrap_or("");
+        let Ok(u) = crate::antelope::serialize::name_to_u64(lb) else {
+            return params.clone();
+        };
+        let mut out = obj.clone();
+        out.insert(
+            "lower_bound".into(),
+            serde_json::Value::String(format!(
+                "{{\"scope\":\"{}\",\"proposal_name\":\"{}\"}}",
+                scope, u
+            )),
+        );
+        if obj
+            .get("upper_bound")
+            .and_then(|v| v.as_str())
+            .is_some_and(|ub| !ub.is_empty() && !ub.starts_with('{'))
+        {
+            out.insert(
+                "upper_bound".into(),
+                serde_json::Value::String(format!(
+                    "{{\"scope\":\"{}\",\"proposal_name\":\"{}\"}}",
+                    scope,
+                    u.saturating_add(1)
+                )),
+            );
+        }
+        return serde_json::Value::Object(out);
+    }
+
+    params.clone()
+}
+
+fn msig_contract_for_chain(chain_id: &str) -> &'static str {
+    if crate::antelope::chain_config::is_sysio_chain(chain_id) {
+        "sysio.msig"
+    } else {
+        "eosio.msig"
+    }
+}
 
 /// Initialize a chain's provider manager with endpoints from config.
 #[tauri::command]
@@ -112,11 +235,15 @@ pub async fn get_table_rows(
     providers: State<'_, ProviderState>,
 ) -> Result<TableRowsResult, Error> {
     let pm = &mut providers.get(&chain_id).await?;
+    let req_params = normalize_sysio_table_params(&params);
 
-    pm.rpc_call("/v1/chain/get_table_rows", &params, |json| {
-        serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
-    })
-    .await
+    let mut res: TableRowsResult = pm
+        .rpc_call("/v1/chain/get_table_rows", &req_params, |json| {
+            serde_json::from_value(json).map_err(|e| Error::Rpc(format!("Parse error: {}", e)))
+        })
+        .await?;
+    res.rows = res.rows.into_iter().map(unwrap_kv_row).collect();
+    Ok(res)
 }
 
 /// Get ABI with failover.
@@ -132,7 +259,10 @@ pub async fn get_abi(
         "/v1/chain/get_abi",
         &serde_json::json!({ "account_name": account_name }),
         |json| {
-            if json.get("abi").is_some_and(|abi| abi.is_null() || abi["actions"].is_array()) {
+            if json
+                .get("abi")
+                .is_some_and(|abi| abi.is_null() || abi["actions"].is_array())
+            {
                 Ok(json)
             } else {
                 Err(Error::Rpc("Invalid contract ABI response".into()))
@@ -140,6 +270,121 @@ pub async fn get_abi(
         },
     )
     .await
+}
+
+fn decode_asset_16(bytes: &[u8]) -> Option<String> {
+    if bytes.len() != 16 {
+        return None;
+    }
+    let amount = i64::from_le_bytes(bytes[0..8].try_into().ok()?);
+    let precision = bytes[8] as usize;
+    if precision > 18 {
+        return None;
+    }
+    let symbol_end = bytes[9..16].iter().position(|b| *b == 0).unwrap_or(7) + 9;
+    let symbol = std::str::from_utf8(&bytes[9..symbol_end]).ok()?;
+    let mut digits = format!("{:0width$}", amount.unsigned_abs(), width = precision + 1);
+    if precision > 0 {
+        digits.insert(digits.len() - precision, '.');
+    }
+    if amount < 0 {
+        digits.insert(0, '-');
+    }
+    Some(format!("{digits} {symbol}"))
+}
+
+fn decode_read_only_return_value(action: &str, hex_str: &str) -> Option<serde_json::Value> {
+    let bytes = hex::decode(hex_str).ok()?;
+    match action {
+        "viewnodedist" if bytes.len() == 49 => {
+            let total_allocation = decode_asset_16(&bytes[0..16])?;
+            let claimed = decode_asset_16(&bytes[16..32])?;
+            let claimable = decode_asset_16(&bytes[32..48])?;
+            let can_claim = bytes[48] != 0;
+            Some(serde_json::json!({
+                "total_allocation": total_allocation,
+                "claimed": claimed,
+                "claimable": claimable,
+                "can_claim": can_claim,
+            }))
+        }
+        _ => None,
+    }
+}
+
+/// Execute a read-only contract action via `/v1/chain/send_read_only_transaction`.
+/// Builds an unsigned transaction with `authorization: []` and returns
+/// `processed.action_traces[0].return_value_data` (or decoded `return_value`).
+#[tauri::command]
+pub async fn call_read_only_action(
+    chain_id: String,
+    account: String,
+    action: String,
+    args: serde_json::Value,
+    providers: State<'_, ProviderState>,
+) -> Result<serde_json::Value, Error> {
+    let pm = &mut providers.get(&chain_id).await?;
+    let action_desc = crate::antelope::transaction::ActionDesc {
+        account: account.clone(),
+        name: action.clone(),
+        authorization: vec![],
+        data: crate::antelope::transaction::ActionData::Json(args),
+    };
+    let (packed_trx, _) = crate::antelope::transaction::build_transaction(pm, &[action_desc]).await?;
+    let body = serde_json::json!({
+        "transaction": {
+            "signatures": [],
+            "compression": "none",
+            "packed_context_free_data": "",
+            "packed_trx": crate::antelope::serialize::hex_encode(&packed_trx),
+        }
+    });
+
+    let res: serde_json::Value = pm
+        .rpc_call_compatible_paths(&["/v1/chain/send_read_only_transaction"], &body, Ok)
+        .await?;
+
+    if let Some(except) = res
+        .get("processed")
+        .and_then(|p| p.get("except"))
+        .filter(|v| !v.is_null())
+    {
+        let stack_msg = except
+            .get("stack")
+            .and_then(|s| s.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|item| item.get("format").or_else(|| item.get("msg")))
+            .and_then(|f| f.as_str());
+        let main_msg = except
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Read-only action failed");
+        let detail = match stack_msg {
+            Some(s) if !s.is_empty() => format!("{main_msg}: {s}"),
+            _ => main_msg.to_string(),
+        };
+        return Err(Error::Rpc(detail));
+    }
+
+    let first_trace = res
+        .get("processed")
+        .and_then(|p| p.get("action_traces"))
+        .and_then(|t| t.as_array())
+        .and_then(|arr| arr.first())
+        .ok_or_else(|| Error::Rpc("Missing action_traces in read-only response".into()))?;
+
+    if let Some(data) = first_trace.get("return_value_data").filter(|v| !v.is_null()) {
+        return Ok(data.clone());
+    }
+
+    if let Some(hex_str) = first_trace.get("return_value").and_then(|v| v.as_str()) {
+        if let Some(decoded) = decode_read_only_return_value(&action, hex_str) {
+            return Ok(decoded);
+        }
+        return Ok(serde_json::json!({ "return_value": hex_str }));
+    }
+
+    Ok(serde_json::Value::Null)
 }
 
 /// Get producers with failover.
@@ -403,9 +648,11 @@ pub async fn get_actions_history(
     let pm = &mut providers.get(&chain_id).await?;
 
     let mut url = reqwest::Url::parse("https://history.invalid/v2/history/get_actions").unwrap();
-    url.query_pairs_mut().append_pair("account", &account)
+    url.query_pairs_mut()
+        .append_pair("account", &account)
         .append_pair("limit", &limit.clamp(1, 1000).to_string())
-        .append_pair("skip", &skip.to_string()).append_pair("sort", "desc");
+        .append_pair("skip", &skip.to_string())
+        .append_pair("sort", "desc");
     if let Some(name) = act_name {
         url.query_pairs_mut().append_pair("act.name", &name);
     }
@@ -475,9 +722,9 @@ pub async fn get_msig_inbox(
             // Keep only proposals where `me` hasn't already approved.
             let provided = p.get("provided_approvals").and_then(|v| v.as_array());
             match provided {
-                Some(arr) => !arr.iter().any(|a| {
-                    a.get("actor").and_then(|x| x.as_str()) == Some(me)
-                }),
+                Some(arr) => !arr
+                    .iter()
+                    .any(|a| a.get("actor").and_then(|x| x.as_str()) == Some(me)),
                 None => true,
             }
         })
@@ -490,7 +737,7 @@ pub async fn get_msig_inbox(
 }
 
 /// Fetch a specific msig proposal, parse its packed_transaction, and decode
-/// each inner action's data via the chain's `abi_bin_to_json` endpoint.
+/// each inner action's data via local `rs_abieos` or the chain's `abi_bin_to_json` endpoint.
 /// Returns `{ expiration, actions: [{account, name, authorization, data}] }`.
 #[tauri::command]
 pub async fn get_msig_proposal_details(
@@ -501,36 +748,35 @@ pub async fn get_msig_proposal_details(
 ) -> Result<serde_json::Value, Error> {
     use crate::antelope::serialize::{hex_decode, parse_packed_transaction};
 
+    let msig_code = msig_contract_for_chain(&chain_id);
     let pm = &mut providers.get(&chain_id).await?;
 
-    // 1. Read the proposal row from eosio.msig::proposal (scope = proposer, pk = proposal_name).
+    // 1. Read the proposal row from <msig_code>::proposal (scope = proposer, pk = proposal_name).
+    let req_params = normalize_sysio_table_params(&serde_json::json!({
+        "code": msig_code,
+        "table": "proposal",
+        "scope": proposer,
+        "lower_bound": proposal_name,
+        "upper_bound": proposal_name,
+        "limit": 1,
+        "json": true,
+    }));
     let rows: serde_json::Value = pm
-        .rpc_call(
-            "/v1/chain/get_table_rows",
-            &serde_json::json!({
-                "code": "eosio.msig",
-                "table": "proposal",
-                "scope": proposer,
-                "lower_bound": proposal_name,
-                "upper_bound": proposal_name,
-                "limit": 1,
-                "json": true,
-            }),
-            |json| Ok(json),
-        )
+        .rpc_call("/v1/chain/get_table_rows", &req_params, Ok)
         .await?;
 
     let row = rows
         .get("rows")
         .and_then(|v| v.as_array())
         .and_then(|arr| arr.first())
+        .cloned()
+        .map(unwrap_kv_row)
         .ok_or_else(|| {
             Error::Serialization(format!(
                 "Proposal {}/{} not found",
                 proposer, proposal_name
             ))
-        })?
-        .clone();
+        })?;
 
     let packed_hex = row
         .get("packed_transaction")
@@ -549,27 +795,40 @@ pub async fn get_msig_proposal_details(
 
     let parsed = parse_packed_transaction(&packed_bytes)?;
 
-    // 2. For each action, try to decode its data. Failures fall back to hex so the UI
-    //    always shows something.
+    // 2. For each action, try to decode its data locally via rs_abieos first,
+    //    then fall back to RPC abi_bin_to_json, and finally raw hex.
     let mut decoded_actions = Vec::with_capacity(parsed.actions.len());
     for a in parsed.actions {
-        let data_val: serde_json::Value = match pm
-            .rpc_call(
-                "/v1/chain/abi_bin_to_json",
-                &serde_json::json!({
-                    "code": a.account,
-                    "action": a.name,
-                    "binargs": a.data_hex,
-                }),
-                |json| Ok(json),
-            )
-            .await
-        {
-            Ok(v) => v
-                .get("args")
-                .cloned()
-                .unwrap_or_else(|| serde_json::json!({ "hex": a.data_hex })),
-            Err(_) => serde_json::json!({ "hex": a.data_hex }),
+        let local_decoded = crate::antelope::abi_serializer::try_deserialize_action_hex(
+            pm,
+            &a.account,
+            &a.name,
+            &a.data_hex,
+        )
+        .await
+        .ok()
+        .flatten();
+
+        let data_val: serde_json::Value = match local_decoded {
+            Some(val) => val,
+            None => match pm
+                .rpc_call(
+                    "/v1/chain/abi_bin_to_json",
+                    &serde_json::json!({
+                        "code": a.account,
+                        "action": a.name,
+                        "binargs": a.data_hex,
+                    }),
+                    Ok,
+                )
+                .await
+            {
+                Ok(v) => v
+                    .get("args")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!({ "hex": a.data_hex })),
+                Err(_) => serde_json::json!({ "hex": a.data_hex }),
+            },
         };
 
         let auth: Vec<serde_json::Value> = a
@@ -590,7 +849,8 @@ pub async fn get_msig_proposal_details(
 
     // 3. Fetch approvals2 row (separate table, same scope/pk) so the UI can
     //    render a full card for manual-lookup flows without needing Hyperion.
-    let (requested, provided) = fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+    let (requested, provided) =
+        fetch_msig_approvals(pm, msig_code, &proposer, &proposal_name).await;
 
     Ok(serde_json::json!({
         "expiration": parsed.expiration,
@@ -617,6 +877,7 @@ pub async fn refresh_msig_status(
     keys: Vec<serde_json::Value>,
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
+    let msig_code = msig_contract_for_chain(&chain_id);
     let pm = &mut providers.get(&chain_id).await?;
 
     let mut active = Vec::new();
@@ -632,7 +893,8 @@ pub async fn refresh_msig_status(
             _ => continue,
         };
 
-        let (requested, provided) = fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+        let (requested, provided) =
+            fetch_msig_approvals(pm, msig_code, &proposer, &proposal_name).await;
 
         // Both empty → row missing (executed/cancelled/never existed). Mark dead.
         if requested.is_empty() && provided.is_empty() {
@@ -672,7 +934,7 @@ pub async fn refresh_msig_status(
     }))
 }
 
-/// Full scope-walk of `eosio.msig::proposal`, streaming progress to the
+/// Full scope-walk of `<msig_code>::proposal`, streaming progress to the
 /// frontend via Tauri events so the UI can show a spinner + counter.
 ///
 /// Emits:
@@ -689,6 +951,7 @@ pub async fn scan_msig_scopes_stream(
     providers: State<'_, ProviderState>,
 ) -> Result<serde_json::Value, Error> {
     use tauri::Emitter;
+    let msig_code = msig_contract_for_chain(&chain_id);
     let pm = &mut providers.get(&chain_id).await?;
 
     let cap = max_scopes.unwrap_or(500);
@@ -711,7 +974,7 @@ pub async fn scan_msig_scopes_stream(
             .rpc_call(
                 "/v1/chain/get_table_by_scope",
                 &serde_json::json!({
-                    "code": "eosio.msig",
+                    "code": msig_code,
                     "table": "proposal",
                     "lower_bound": lower,
                     "limit": remaining,
@@ -756,7 +1019,7 @@ pub async fn scan_msig_scopes_stream(
                 .rpc_call(
                     "/v1/chain/get_table_rows",
                     &serde_json::json!({
-                        "code": "eosio.msig",
+                        "code": msig_code,
                         "table": "proposal",
                         "scope": proposer,
                         "limit": count.min(50),
@@ -776,13 +1039,13 @@ pub async fn scan_msig_scopes_stream(
                 .cloned()
                 .unwrap_or_default();
 
-            for pr in proposal_rows {
+            for pr in proposal_rows.into_iter().map(unwrap_kv_row) {
                 let proposal_name = match pr.get("proposal_name").and_then(|v| v.as_str()) {
                     Some(s) if !s.is_empty() => s.to_string(),
                     _ => continue,
                 };
                 let (requested, provided) =
-                    fetch_msig_approvals(pm, &proposer, &proposal_name).await;
+                    fetch_msig_approvals(pm, msig_code, &proposer, &proposal_name).await;
 
                 let in_requested = requested
                     .iter()
@@ -833,27 +1096,25 @@ pub async fn scan_msig_scopes_stream(
     }))
 }
 
-/// Read `eosio.msig::approvals2` for `{proposer, proposal_name}`.
+/// Read `<msig_code>::approvals2` for `{proposer, proposal_name}`.
 /// Returns (requested, provided) approval lists. Empty on any error.
 async fn fetch_msig_approvals(
     pm: &mut crate::antelope::provider::ProviderManager,
+    msig_code: &str,
     proposer: &str,
     proposal_name: &str,
 ) -> (Vec<serde_json::Value>, Vec<serde_json::Value>) {
+    let req_params = normalize_sysio_table_params(&serde_json::json!({
+        "code": msig_code,
+        "table": "approvals2",
+        "scope": proposer,
+        "lower_bound": proposal_name,
+        "upper_bound": proposal_name,
+        "limit": 1,
+        "json": true,
+    }));
     let rows: serde_json::Value = match pm
-        .rpc_call(
-            "/v1/chain/get_table_rows",
-            &serde_json::json!({
-                "code": "eosio.msig",
-                "table": "approvals2",
-                "scope": proposer,
-                "lower_bound": proposal_name,
-                "upper_bound": proposal_name,
-                "limit": 1,
-                "json": true,
-            }),
-            |json| Ok(json),
-        )
+        .rpc_call("/v1/chain/get_table_rows", &req_params, Ok)
         .await
     {
         Ok(v) => v,
@@ -865,6 +1126,7 @@ async fn fetch_msig_approvals(
         .and_then(|v| v.as_array())
         .and_then(|arr| arr.first())
         .cloned()
+        .map(unwrap_kv_row)
         .unwrap_or(serde_json::json!({}));
 
     let extract = |key: &str| -> Vec<serde_json::Value> {
@@ -878,7 +1140,11 @@ async fn fetch_msig_approvals(
                 let level = entry.get("level")?.clone();
                 let actor = level.get("actor")?.as_str()?.to_string();
                 let permission = level.get("permission")?.as_str()?.to_string();
-                let time = entry.get("time").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                let time = entry
+                    .get("time")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("")
+                    .to_string();
                 Some(serde_json::json!({ "actor": actor, "permission": permission, "time": time }))
             })
             .collect()
@@ -1102,4 +1368,83 @@ pub struct ActiveEndpoints {
     pub hyperion: String,
     pub rpc_endpoints: Vec<EndpointState>,
     pub hyperion_endpoints: Vec<EndpointState>,
+}
+
+#[cfg(test)]
+mod kv_tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_sysio_payclaims_and_nodedist_bounds() {
+        for table in ["payclaims", "nodedist"] {
+            let params = serde_json::json!({
+                "code": "sysio",
+                "scope": "sysio",
+                "table": table,
+                "lower_bound": "alice",
+                "upper_bound": "alice",
+                "limit": 1,
+                "json": true,
+            });
+            let norm = normalize_sysio_table_params(&params);
+            let u = crate::antelope::serialize::name_to_u64("alice").unwrap();
+            assert_eq!(
+                norm["lower_bound"].as_str().unwrap(),
+                format!("{{\"account_name\":\"{}\"}}", u)
+            );
+            assert_eq!(
+                norm["upper_bound"].as_str().unwrap(),
+                format!("{{\"account_name\":\"{}\"}}", u + 1)
+            );
+        }
+
+        let roa_params = serde_json::json!({
+            "code": "sysio.roa",
+            "scope": "0",
+            "table": "nodeowners",
+            "lower_bound": "alice",
+            "upper_bound": "alice",
+            "limit": 1,
+            "json": true,
+        });
+        let roa_norm = normalize_sysio_table_params(&roa_params);
+        let u = crate::antelope::serialize::name_to_u64("alice").unwrap();
+        assert_eq!(
+            roa_norm["lower_bound"].as_str().unwrap(),
+            format!("{{\"owner\":\"{}\"}}", u)
+        );
+        assert_eq!(
+            roa_norm["upper_bound"].as_str().unwrap(),
+            format!("{{\"owner\":\"{}\"}}", u + 1)
+        );
+    }
+
+    #[test]
+    fn unwraps_wire_kv_row_and_decodes_viewnodedist_return_value() {
+        let wrapped = serde_json::json!({
+            "key": { "account_name": "3773066844340060160" },
+            "value": { "account_name": "alice", "balance": "12500000000" }
+        });
+        let unwrapped = unwrap_kv_row(wrapped);
+        assert_eq!(unwrapped["account_name"], "alice");
+        assert_eq!(unwrapped["balance"], "12500000000");
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(
+            &crate::antelope::serialize::serialize_asset("100.000000000 WIRE").unwrap(),
+        );
+        buf.extend_from_slice(
+            &crate::antelope::serialize::serialize_asset("25.000000000 WIRE").unwrap(),
+        );
+        buf.extend_from_slice(
+            &crate::antelope::serialize::serialize_asset("15.000000000 WIRE").unwrap(),
+        );
+        buf.push(1u8);
+        let decoded =
+            decode_read_only_return_value("viewnodedist", &hex::encode(&buf)).unwrap();
+        assert_eq!(decoded["total_allocation"], "100.000000000 WIRE");
+        assert_eq!(decoded["claimed"], "25.000000000 WIRE");
+        assert_eq!(decoded["claimable"], "15.000000000 WIRE");
+        assert_eq!(decoded["can_claim"], true);
+    }
 }

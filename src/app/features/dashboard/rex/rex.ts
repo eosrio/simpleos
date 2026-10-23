@@ -234,9 +234,9 @@ export class RexComponent {
     if (!account) return;
     try {
       const result = await this.ipc.getTableRows(account.chainId, {
-        code: 'eosio',
+        code: this.wallet.coreSystemContract?.() ?? 'eosio',
         table: 'rexbal',
-        scope: 'eosio',
+        scope: this.wallet.coreSystemContract?.() ?? 'eosio',
         lower_bound: account.name,
         upper_bound: account.name,
         limit: 1,

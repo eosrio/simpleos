@@ -477,9 +477,30 @@ impl WalletService {
         match self.store.load_key(chain_id, public_key) {
             Ok(encrypted) => Ok(encrypted),
             Err(primary_error) => {
+                // Match normalized public key representations (e.g. uncompressed PUB_EM_04...
+                // from get_account vs compressed PUB_EM_02/03... in store, or EOS vs PUB_K1_).
+                if let Ok(stored_keys) = self.store.list_keys(chain_id) {
+                    for stored in stored_keys {
+                        if signing::public_keys_match(&stored, public_key) {
+                            if let Ok(encrypted) = self.store.load_key(chain_id, &stored) {
+                                return Ok(encrypted);
+                            }
+                        }
+                    }
+                }
                 for legacy_chain_id in legacy_chain_ids(chain_id) {
                     if let Ok(encrypted) = self.store.load_key(legacy_chain_id, public_key) {
                         return Ok(encrypted);
+                    }
+                    if let Ok(stored_keys) = self.store.list_keys(legacy_chain_id) {
+                        for stored in stored_keys {
+                            if signing::public_keys_match(&stored, public_key) {
+                                if let Ok(encrypted) = self.store.load_key(legacy_chain_id, &stored)
+                                {
+                                    return Ok(encrypted);
+                                }
+                            }
+                        }
                     }
                 }
                 Err(primary_error)
@@ -641,11 +662,14 @@ impl WalletService {
         let verifying_key = signing_key.verifying_key();
         let compressed = verifying_key.to_sec1_point(true);
 
-        // Check both formats
+        // Check K1 and EM formats
         let eos_pub = signing::encode_eos_public_key_from_bytes(compressed.as_bytes());
         let k1_pub = signing::encode_k1_public_key_from_bytes(compressed.as_bytes());
+        let em_match = signing::encode_pub_em_from_bytes(compressed.as_bytes())
+            .map(|em_pub| signing::public_keys_match(&em_pub, public_key))
+            .unwrap_or(false);
 
-        Ok(eos_pub == public_key || k1_pub == public_key)
+        Ok(eos_pub == public_key || k1_pub == public_key || em_match)
     }
 
     // ── Backup Export / Import ──
